@@ -5265,36 +5265,37 @@ class Installer(object):
         and on flipping skip settings - and nowhere else hopefully.
         WIP ! I use eval to keep performance in par with previous
         implementation - do _not_ imitate. Ideally it will be refactored out,
-        once refreshDataSizeCrc is understood. Consider a dict for _globalSkips
-        grouping startswith, extensions and endswith...
-        """
+        once refreshDataSizeCrc is understood."""
         _globalSkips = []
+        fLower, fExt  = 'fileLower', 'fileExt'
         def _compile(s): return compile(s, '<string>', 'eval')
-        if settings['bash.installers.skipDistantLOD']: _globalSkips += [
-            _compile("fileLower.startswith(u'distantlod')")]
-        if settings['bash.installers.skipLandscapeLODMeshes']:_globalSkips += [
-            _compile("fileLower.startswith(u'meshes\\landscape\\lod')")]
+        # skips files starting with...
+        start = []
+        if settings['bash.installers.skipDistantLOD']:
+            start = [u'distantlod']
+        if settings['bash.installers.skipLandscapeLODMeshes']:
+            start.append(u'meshes\\landscape\\lod')
+        if settings['bash.installers.skipScreenshots']:
+            start.append(u'screenshots')
         # LOD textures
         skipLODTextures = settings['bash.installers.skipLandscapeLODTextures']
         skipLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
-        head = "fileLower.startswith(u'textures\\landscapelod\\generated')"
+        head = fLower + ".startswith(u'textures\\landscapelod\\generated')"
         if skipAllTextures:
-            _globalSkips += [_compile(head)]
+            start.append(u'textures\\landscapelod\\generated')
         elif skipLODTextures: _globalSkips += [
-            _compile(head + " and not fileLower.endswith(u'_fn.dds')")]
+            _compile(head + " and not " + fLower + ".endswith(u'_fn.dds')")]
         elif skipLODNormals: _globalSkips += [
-            _compile(head + " and fileLower.endswith(u'_fn.dds')")]
-        # here the original version checked voices skip - - DOES order matter ?
-        if settings['bash.installers.skipScreenshots']: _globalSkips += [
-            _compile("fileLower.startswith(u'screenshots')")]
-        skipExts = ''
-        if settings['bash.installers.skipTESVBsl']: skipExts = "{'.bsl'}"
+            _compile(head + " and " + fLower + ".endswith(u'_fn.dds')")]
+        if start: _globalSkips += [
+            _compile(fLower + ".startswith(" + str(tuple(start)) + ")")]
+        # Skipped extensions
+        skipExts =  {'.bsl'} if settings['bash.installers.skipTESVBsl'] else set()
         if settings['bash.installers.skipImages']:
-            if skipExts: skipExts += '|Installer.imageExts'
-            else: skipExts = 'Installer.imageExts'
+            skipExts |= Installer.imageExts
         if skipExts: _globalSkips += [
-                _compile("os.path.splitext(fileLower)[1] in " + skipExts)]
+            _compile(fExt + " in {" + ', '.join(map(repr, skipExts)) + '}')]
         Installer._globalSkips = _globalSkips
 
     def _initComplexSkips(self):
@@ -5341,9 +5342,9 @@ class Installer(object):
         goodDlls.update(settings['bash.installers.goodDlls'])
         badDlls = collections.defaultdict(list)
         badDlls.update(settings['bash.installers.badDlls'])
-        def __skipExecutable(fileLower, full, archiveRoot, size, crc, extens,
-                             desc, ext, bSkip, exeDir, dialogTitle):
-            if not (os.path.splitext(fileLower)[1] in extens): return False
+        def __skipExecutable(fileLower, full, fileExt, archiveRoot, size, crc,
+                             extens, desc, ext, bSkip, exeDir, dialogTitle):
+            if not (fileExt in extens): return False
             if bSkip or not fileLower.startswith(exeDir): return True
             if fileLower in badDlls and [archiveRoot, size, crc] in badDlls[
                 fileLower]: return True
@@ -5562,7 +5563,7 @@ class Installer(object):
                     break
             if _out: continue
             for lam in dll_skips:
-                if lam(fileLower, full, archiveRoot, size, crc):
+                if lam(fileLower, full, fileExt, archiveRoot, size, crc):
                     _out = True
                     break
             if _out: continue
