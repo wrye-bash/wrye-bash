@@ -5329,6 +5329,26 @@ class Installer(object):
             _skips.append(lambda f: f.startswith(u'sound\\voice'))
         return _skips
 
+    def _message(self, fileLower, full, archiveRoot, desc, ext, badDlls,
+                    goodDlls):
+        message = u'\n'.join((
+            _(u'This installer (%s) has an %s.'), _(u'The file is %s'),
+            _(u'Such files can be malicious and hence you should be very '
+              u'sure you know what this file is and that it is legitimate.'),
+            _(u'Are you sure you want to install this?'),)) % (
+                  archiveRoot, desc, full)
+        if fileLower in goodDlls:
+            message += _(u' You have previously chosen to install '
+                         u'%s by this name but with a different size, '
+                         u'crc and or source archive name.') % ext
+        elif fileLower in badDlls:
+            message += _(u' You have previously chosen to NOT '
+                         u'install %s by this name but with a different '
+                         u'size, crc and/or source archive name - make '
+                         u'extra sure you want to install this one before '
+                         u'saying yes.') % ext
+        return message
+
     def refreshDataSizeCrc(self,checkOBSE=False):
         """Updates self.data_sizeCrc and related variables.
         Also, returns dest_src map for install operation."""
@@ -5492,16 +5512,10 @@ class Installer(object):
                     pass
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
-                    message = u'\n'.join((
-                        _(u'This installer (%s) has an %s plugin DLL.'),
-                        _(u'The file is %s'),
-                        _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
-                        _(u'Are you sure you want to install this?'),
-                        )) % (archiveRoot, bush.game.se.shortName, full)
-                    if fileLower in goodDlls:
-                        message += _(u' You have previously chosen to install a dll by this name but with a different size, crc and or source archive name.')
-                    elif fileLower in badDlls:
-                        message += _(u' You have previously chosen to NOT install a dll by this name but with a different size, crc and or source archive name - make extra sure you want to install this one before saying yes.')
+                    desc =  _(u'%s plugin DLL') % bush.game.se.shortName
+                    ext = _(u'a dll')
+                    message = self._message(fileLower, full, archiveRoot,
+                                            desc, ext, badDlls, goodDlls)
                     if not balt.askYes(balt.Link.Frame,message,bush.game.se.shortName + _(u' DLL Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
@@ -5516,16 +5530,10 @@ class Installer(object):
                     pass
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
-                    message = u'\n'.join((
-                        _(u'This installer (%s) has an %s plugin ASI.'),
-                        _(u'The file is %s'),
-                        _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
-                        _(u'Are you sure you want to install this?'),
-                        )) % (archiveRoot, bush.game.sd.longName, full)
-                    if fileLower in goodDlls:
-                        message += _(u' You have previously chosen to install an asi by this name but with a different size, crc and or source archive name.')
-                    elif fileLower in badDlls:
-                        message += _(u' You have previously chosen to NOT install an asi by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
+                    desc =  _(u'%s plugin ASI') % bush.game.sd.longName
+                    ext = _(u'an asi')
+                    message = self._message(fileLower, full, archiveRoot,
+                                               desc, ext, badDlls, goodDlls)
                     if not balt.askYes(balt.Link.Frame,message,bush.game.sd.longName + _(u' ASI Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
@@ -5540,16 +5548,10 @@ class Installer(object):
                     pass
                 elif fileLower in goodDlls and [archiveRoot,size,crc] in goodDlls[fileLower]: pass
                 elif checkOBSE:
-                    message = u'\n'.join((
-                        _(u'This installer (%s) has an %s patcher JAR.'),
-                        _(u'The file is %s'),
-                        _(u'Such files can be malicious and hence you should be very sure you know what this file is and that it is legitimate.'),
-                        _(u'Are you sure you want to install this?'),
-                        )) % (archiveRoot, bush.game.sp.longName, full)
-                    if fileLower in goodDlls:
-                        message += _(u' You have previously chosen to install a jar by this name but with a different size, crc and or source archive name.')
-                    elif fileLower in badDlls:
-                        message += _(u' You have previously chosen to NOT install a jar by this name but with a different size, crc, and or source archive name - make extra sure you want to install this one before saying yes.')
+                    desc =  _(u'%s patcher JAR') % bush.game.sp.longName
+                    ext = _(u'a jar')
+                    message = self._message(fileLower, full, archiveRoot,
+                                            desc, ext, badDlls, goodDlls)
                     if not balt.askYes(balt.Link.Frame,message,bush.game.sp.longName + _(u' JAR Warning')):
                         badDlls.setdefault(fileLower,[])
                         badDlls[fileLower].append([archiveRoot,size,crc])
