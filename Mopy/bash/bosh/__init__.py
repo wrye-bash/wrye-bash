@@ -5081,9 +5081,16 @@ class Installer(object):
         setSkipImages = settings['bash.installers.skipImages']
         newSDirs = (x for x in sDirs if x.lower() not in Installer.dataDirsMinus)
         if settings['bash.installers.skipDistantLOD']:
-            newSDirs = (x for x in newSDirs if x.lower() != u'distandlod')
+            newSDirs = (x for x in newSDirs if x.lower() != u'distantlod')
+        if settings['bash.installers.skipLandscapeLODMeshes']:
+            newSDirs = (x for x in newSDirs if x.lower() != u'meshes\\landscape\\lod')
         if settings['bash.installers.skipScreenshots']:
             newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
+        # LOD textures
+        if settings['bash.installers.skipLandscapeLODTextures'] and settings[
+            'bash.installers.skipLandscapeLODNormals']:
+            newSDirs = (x for x in newSDirs if
+                        x.lower() != u'textures\\landscapelod\\generated')
         if setSkipOBSE:
             newSDirs = (x for x in newSDirs if
                         x.lower() != bush.game.se.shortName.lower())
