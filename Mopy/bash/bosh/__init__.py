@@ -5292,6 +5292,35 @@ class Installer(object):
                 lambda f: os.path.splitext(f)[1] in Installer.imageExts]
         Installer._globalSkips = _globalSkips
 
+    def _initComplexSkips(self):
+        """Return a list of functions which decide if the file is to be skipped
+        while at the same time update self attributes."""
+        skipDocs = not self.overrideSkips and settings[
+            'bash.installers.skipDocs']
+        reReadMeMatch = Installer.reReadMe.match
+        docExts = Installer.docExts
+        def _processDocs(fileLower, full, fileExt):
+            if not (fileExt in docExts): return False
+            if reReadMeMatch(fileLower): self.hasReadme = full
+            filePath = fileLower.split('\\')
+            end = fileLower.split('\\')[-1]
+            del filePath[-1]
+            filePath = '\\'.join(filePath)
+            return skipDocs and not (end in bush.game.dontSkip) and not (
+                fileExt in bush.game.dontSkipDirs.get(filePath, []))
+        def _processBCF(fileLower, full, fileExt):
+            if fileExt in defaultExt and ( # DOCS !
+                    fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
+                self.hasBCF = full
+                return True
+            return False
+        def _processWizard(fileLower, full, fileExt):
+            if fileLower == u'wizard.txt':
+                self.hasWizard = full
+                return True
+            return False
+        return [_processDocs, _processBCF, _processWizard]
+
     def _init_skips(self):
         if self.overrideSkips: # DOCS !
             _skips = []
@@ -5317,14 +5346,13 @@ class Installer(object):
         espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
         _skips = self._init_skips()
+        complex_skips = self._initComplexSkips()
         if self.overrideSkips:
             skipEspmVoices = None
-            skipDocs = False
             renameStrings = False
             bethFilesSkip = set()
         else:
             skipEspmVoices = set(x.cs for x in espmNots)
-            skipDocs = settings['bash.installers.skipDocs']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
             bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
@@ -5442,27 +5470,18 @@ class Installer(object):
             if len(rootLower) == 1: rootLower = u''
             else: rootLower = rootLower[0]
             fileStartsWith = fileLower.startswith
-            filePath = fileLower.split('\\')
-            del filePath[-1]
-            filePath = '\\'.join(filePath)
             #--Skips
             for lam in _skips:
                 if lam(fileLower):
                     _out = True
                     break
             if _out: continue
-            if fileLower == u'wizard.txt':
-                self.hasWizard = full
-                continue
-            elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
-                self.hasBCF = full
-                continue
-            elif fileExt in docExts:
-                if reReadMeMatch(file):
-                    self.hasReadme = full
-                if skipDocs and not (fileLower.split('\\')[-1] in bush.game.dontSkip) and not (fileExt in bush.game.dontSkipDirs.get(filePath, [])):
-                    continue
-            elif skipObse and fileStartsWith(obseDir):
+            for lam in complex_skips:
+                if lam(fileLower, full, fileExt):
+                    _out = True
+                    break
+            if _out: continue
+            if skipObse and fileStartsWith(obseDir):
                 continue
             elif fileExt in {u'.dll',u'.dlx'}:
                 if skipObse: continue
