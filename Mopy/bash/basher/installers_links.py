@@ -444,12 +444,17 @@ class Installers_SortStructure(_Installer_Sort, BoolLink):
 # Installers_Skip Links -------------------------------------------------------
 #------------------------------------------------------------------------------
 class _Installers_Skip(Installers_Link, BoolLink):
-    """Toggle various skip settings and update."""
+    """Toggle global skip settings and update."""
 
     @balt.conversation
     def Execute(self):
         super(_Installers_Skip, self).Execute()
-        with balt.Progress(_(u'Refreshing Packages...'),u'\n'+u' '*60, abort=False) as progress:
+        bosh.Installer.initGlobalSkips()
+        self._refreshInstallers()
+
+    def _refreshInstallers(self):
+        with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
+                           abort=False) as progress:
             progress.setFull(len(self.idata))
             for index, (name, installer) in enumerate(self.idata.iteritems()):
                 progress(index, _(u'Refreshing Packages...') + u'\n' + name.s)
@@ -464,10 +469,6 @@ class Installers_SkipScreenshots(_Installers_Skip):
 class Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
     text, key = _(u'Skip Images'), 'bash.installers.skipImages'
-
-class Installers_SkipDocs(_Installers_Skip):
-    """Toggle skipDocs setting and update."""
-    text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
 
 class Installers_SkipDistantLOD(_Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
@@ -492,19 +493,33 @@ class Installers_SkipBsl(AppendableLink, _Installers_Skip):
     text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
     def _append(self, window): return bush.game.fsName == 'Skyrim'
 
-class Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
+# Complex skips
+class _Installers_Process_Skip(_Installers_Skip):
+    """Toggle global skip settings and update - those skips however have to
+    be processed before skipped and are not set in initGlobalSkips."""
+
+    def Execute(self):
+        super(Installers_Link, self).Execute() # note Installers_Link !
+        self._refreshInstallers()
+
+class Installers_SkipDocs(_Installers_Process_Skip):
+    """Toggle skipDocs setting and update."""
+    text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
+
+class Installers_SkipOBSEPlugins(AppendableLink, _Installers_Process_Skip):
     """Toggle allowOBSEPlugins setting and update."""
     text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'
     def _append(self, window): return bool(bush.game.se_sd)
     def _check(self): return not bosh.settings[self.key]
 
-class Installers_RenameStrings(AppendableLink, _Installers_Skip):
+class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
     """Toggle auto-renaming of .STRINGS files"""
     text = _(u'Auto-name String Translation Files')
     key = 'bash.installers.renameStrings'
     def _append(self, window): return bool(bush.game.esp.stringsFiles)
 
+#--New project dialog ---------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
     """Open the Create New Project Dialog"""
     text = _(u'Create New Project...')

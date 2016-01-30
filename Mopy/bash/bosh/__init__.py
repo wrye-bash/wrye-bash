@@ -5257,6 +5257,49 @@ class Installer(object):
             (u'thumbs.db',u'desktop.ini',u'config')),
     ]
 
+    _globalSkips = [] # TODO(ut) turn it to a dict
+    @staticmethod
+    def initGlobalSkips():
+        _globalSkips = []
+        if settings['bash.installers.skipDistantLOD']:
+             _globalSkips += [lambda f: f.startswith(u'distantlod')]
+        if settings['bash.installers.skipLandscapeLODMeshes']:
+            _globalSkips += [lambda f: f.startswith(u'meshes\\landscape\\lod')]
+        # LOD textures
+        skipLandscapeLODTextures = settings[
+            'bash.installers.skipLandscapeLODTextures']
+        skipLandscapeLODNormals = settings[
+            'bash.installers.skipLandscapeLODNormals']
+        skipAllTextures = skipLandscapeLODTextures and skipLandscapeLODNormals
+        if skipAllTextures:
+            _globalSkips += [lambda f: f.startswith(
+                    u'textures\\landscapelod\\generated')]
+        elif skipLandscapeLODTextures:
+            _globalSkips += [lambda f:
+                f.startswith(u'textures\\landscapelod\\generated') and
+                                 not f.endswith(u'_fn.dds')]
+        elif skipLandscapeLODNormals:
+            _globalSkips += [lambda f:
+                f.startswith(u'textures\\landscapelod\\generated') and
+                                f.endswith(u'_fn.dds')]
+        # here the original version checked voices skip - - DOES order matter ?
+        if settings['bash.installers.skipScreenshots']:
+             _globalSkips += [lambda f: f.startswith(u'screenshots')]
+        if settings['bash.installers.skipTESVBsl']:
+             _globalSkips += [lambda f: os.path.splitext(f)[1] == u'.bsl']
+        if settings['bash.installers.skipImages']:
+            _globalSkips += [
+                lambda f: os.path.splitext(f)[1] in Installer.imageExts]
+        Installer._globalSkips = _globalSkips
+
+    def _init_skips(self):
+        if self.overrideSkips: # DOCS !
+            _skips = []
+        else: _skips = list(Installer._globalSkips)
+        if not self.overrideSkips and self.skipVoices:
+            _skips.append(lambda f: f.startswith(u'sound\\voice'))
+        return _skips
+
     def refreshDataSizeCrc(self,checkOBSE=False):
         """Updates self.data_sizeCrc and related variables.
         Also, returns dest_src map for install operation."""
@@ -5273,30 +5316,15 @@ class Installer(object):
         unSize = 0
         espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
+        _skips = self._init_skips()
         if self.overrideSkips:
-            skipVoices = False
             skipEspmVoices = None
-            skipScreenshots = False
             skipDocs = False
-            skipImages = False
-            skipDistantLOD = False
-            skipLandscapeLODMeshes = False
-            skipLandscapeLODTextures = False
-            skipLandscapeLODNormals = False
-            skipTESVBsl = False
             renameStrings = False
             bethFilesSkip = set()
         else:
-            skipVoices = self.skipVoices
             skipEspmVoices = set(x.cs for x in espmNots)
-            skipScreenshots = settings['bash.installers.skipScreenshots']
             skipDocs = settings['bash.installers.skipDocs']
-            skipImages = settings['bash.installers.skipImages']
-            skipDistantLOD = settings['bash.installers.skipDistantLOD']
-            skipLandscapeLODMeshes = settings['bash.installers.skipLandscapeLODMeshes']
-            skipLandscapeLODTextures = settings['bash.installers.skipLandscapeLODTextures']
-            skipLandscapeLODNormals = settings['bash.installers.skipLandscapeLODNormals']
-            skipTESVBsl = settings['bash.installers.skipTESVBsl']
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
             bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
@@ -5413,34 +5441,21 @@ class Installer(object):
             rootLower = rootLower.split(u'\\',1)
             if len(rootLower) == 1: rootLower = u''
             else: rootLower = rootLower[0]
-            fileEndsWith = fileLower.endswith
             fileStartsWith = fileLower.startswith
             filePath = fileLower.split('\\')
             del filePath[-1]
             filePath = '\\'.join(filePath)
             #--Skips
-            if skipDistantLOD and fileStartsWith(u'distantlod'):
-                continue
-            elif skipLandscapeLODMeshes and fileStartsWith(u'meshes\\landscape\\lod'):
-                continue
-            elif fileStartsWith(u'textures\\landscapelod\\generated'):
-                if skipLandscapeLODNormals and fileEndsWith(u'_fn.dds'):
-                    continue
-                elif skipLandscapeLODTextures and not fileEndsWith(u'_fn.dds'):
-                    continue
-            elif skipVoices and fileStartsWith(u'sound\\voice'):
-                continue
-            elif skipScreenshots and fileStartsWith(u'screenshots'):
-                continue
-            elif skipTESVBsl and fileExt == u'.bsl':
-                continue
-            elif fileLower == u'wizard.txt':
+            for lam in _skips:
+                if lam(fileLower):
+                    _out = True
+                    break
+            if _out: continue
+            if fileLower == u'wizard.txt':
                 self.hasWizard = full
                 continue
             elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                 self.hasBCF = full
-                continue
-            elif skipImages and fileExt in imageExts:
                 continue
             elif fileExt in docExts:
                 if reReadMeMatch(file):
