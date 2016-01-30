@@ -5354,6 +5354,14 @@ class Installer(object):
             start.extend(Installer._global_start_skips)
             skip_ext = Installer._global_skip_extensions
         if start: skips.append(lambda f: f.startswith((tuple(start))))
+        skipEspmVoices = not self.skipVoices and set(
+                x.cs for x in self.espmNots)
+        if skipEspmVoices:
+            def _skip_espm_voices(fileLower):
+                farPos = fileLower.startswith(
+                    u'sound\\voice\\') and fileLower.find(u'\\', 12)
+                return farPos > 12 and fileLower[12:farPos] in skipEspmVoices
+            skips.append(_skip_espm_voices)
         return skips, skip_ext
 
     @staticmethod
@@ -5458,11 +5466,9 @@ class Installer(object):
         bethFiles = bush.game.bethDataFiles
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
-            skipEspmVoices = None
             renameStrings = False
             bethFilesSkip = set()
         else:
-            skipEspmVoices = set(x.cs for x in espmNots)
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
             bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
@@ -5593,10 +5599,6 @@ class Installer(object):
                 pFile = GPath(file)
                 espmsAdd(pFile)
                 if pFile in espmNots: continue
-            if skipEspmVoices and fileStartsWith(u'sound\\voice\\'):
-                farPos = file.find(u'\\',12)
-                if farPos > 12 and fileLower[12:farPos] in skipEspmVoices:
-                    continue
             #--Remap docs, strings
             dest = file
             if rootLower in docDirs:
