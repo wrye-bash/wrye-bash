@@ -5257,9 +5257,17 @@ class Installer(object):
             (u'thumbs.db',u'desktop.ini',u'config')),
     ]
 
-    _globalSkips = [] # TODO(ut) turn it to a dict
+    _globalSkips = []
     @staticmethod
     def initGlobalSkips():
+        """Update _globalSkips with functions deciding if 'fileLower' (docs !)
+        must be skipped, based on global settings. Should be updated on boot
+        and on flipping skip settings - and nowhere else hopefully.
+        WIP ! I use eval to keep performance in par with previous
+        implementation - do _not_ imitate. Ideally it will be refactored out,
+        once refreshDataSizeCrc is understood. Consider a dict for _globalSkips
+        grouping startswith, extensions and endswith...
+        """
         _globalSkips = []
         def _compile(s): return compile(s, '<string>', 'eval')
         if settings['bash.installers.skipDistantLOD']: _globalSkips += [
@@ -5393,8 +5401,22 @@ class Installer(object):
         return message
 
     def refreshDataSizeCrc(self,checkOBSE=False):
-        """Updates self.data_sizeCrc and related variables.
-        Also, returns dest_src map for install operation."""
+        """Update self.data_sizeCrc and related variables and return
+        dest_src map for install operation....
+
+        WIP rewrite
+        Used:
+         - in __setstate__ to construct the installers from Installers.dat,
+         used once (and in full refresh ?)
+         - in refreshBasic, after refreshing persistent attributes - track
+         call graph from here should be the path that needs optimization (
+         irefresh, ShowPanel ?)
+         - in InstallersPanel.refreshCurrent()
+         - in 2 subclasses' install() and InstallerProject.syncToData()
+         - in _Installers_Skip._refreshInstallers()
+         - in _RefreshingLink (override skips, HasExtraData, skip voices)
+         - in Installer_CopyConflicts
+        """
         if isinstance(self,InstallerArchive):
             archiveRoot = GPath(self.archive).sroot
         else:
