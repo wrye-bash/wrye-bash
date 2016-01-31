@@ -512,7 +512,7 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
         super(Installer_OverrideSkips, self)._initData(window, selection)
         self.help = _(
             u"Override global file type skipping for %(installername)s.") % (
-                    {'installername': self.selected[0]})
+                    {'installername': self.selected[0]}) + u'  '+ _(u'BETA!')
 
     def _check(self): return self._enable() and (
         self.idata[self.selected[0]]).overrideSkips

@@ -5493,24 +5493,25 @@ class Installer(object):
         for full,size,crc in self.fileSizeCrcs:
             file = full[rootIdex:]
             fileLower = file.lower()
-            if fileLower.startswith(
+            if fileLower.startswith( # skip top level '--', 'fomod' etc
                     Installer._silentSkipsStart) or fileLower.endswith(
                     Installer._silentSkipsEnd): continue
             sub = u''
             if type_ == 2: #--Complex archive
                 sub = file.split(u'\\',1)
                 if len(sub) == 1:
-                    file, = sub
                     sub = u''
-                else:
+                else: # redefine file, excluding the subpackage directory
                     sub,file = sub
+                    fileLower = file.lower()
+                    if fileLower.startswith(Installer._silentSkipsStart):
+                        continue # skip subpackage level '--', 'fomod' etc
                 if sub not in activeSubs:
                     if sub not in allSubs:
                         skipDirFilesAdd(file)
                     # Run a modified version of the normal checks, just
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
-                    fileLower = file.lower()
                     rootLower,fileExt = splitExt(fileLower)
                     rootLower = rootLower.split(u'\\',1)
                     if len(rootLower) == 1: rootLower = u''
@@ -5546,11 +5547,12 @@ class Installer(object):
                         continue
                     elif not rootLower and reModExtMatch(fileExt):
                         #--Remap espms as defined by the user
-                        if file in self.remaps: file = self.remaps[file]
+                        if file in self.remaps:
+                            file = self.remaps[file]
+                            # fileLower = file.lower() # not needed will skip
                         if file not in subList: subListAppend(file)
                     if skip:
                         continue
-                fileLower = file.lower()
             subList = espmMap[sub]
             subListAppend = subList.append
             rootLower,fileExt = splitExt(fileLower)
