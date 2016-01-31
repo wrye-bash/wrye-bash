@@ -5436,8 +5436,6 @@ class Installer(object):
                     self.hasReadme = full
                 if skipDocs and not (fileLower.split('\\')[-1] in bush.game.dontSkip) and not (fileExt in bush.game.dontSkipDirs.get(filePath, [])):
                     continue
-            elif fileStartsWith(u'--'):
-                continue
             elif skipObse and fileStartsWith(obseDir):
                 continue
             elif fileExt in {u'.dll',u'.dlx'}:
