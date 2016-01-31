@@ -4683,23 +4683,25 @@ class Installer(object):
         if settings['bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
         if settings['bash.installers.skipLandscapeLODMeshes']:
-            Installer._global_start_skips.append(u'meshes\\landscape\\lod')
+            meshes_lod = os_sep.join((u'meshes', u'landscape', u'lod'))
+            Installer._global_start_skips.append(meshes_lod)
         if settings['bash.installers.skipScreenshots']:
             Installer._global_start_skips.append(u'screenshots')
         # LOD textures
         skipLODTextures = settings['bash.installers.skipLandscapeLODTextures']
         skipLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
+        tex_gen = os_sep.join((u'textures', u'landscapelod', u'generated'))
         if skipAllTextures:
-            Installer._global_start_skips.append(u'textures\\landscapelod\\generated')
-        elif skipLODTextures: Installer._global_skips.append(lambda f:  f.startswith(
-            u'textures\\landscapelod\\generated') and not f.endswith(u'_fn.dds'))
-        elif skipLODNormals: Installer._global_skips.append(lambda f:  f.startswith(
-            u'textures\\landscapelod\\generated') and f.endswith(u'_fn.dds'))
+            Installer._global_start_skips.append(tex_gen)
+        elif skipLODTextures: Installer._global_skips.append(
+            lambda f: f.startswith(tex_gen) and not f.endswith(u'_fn.dds'))
+        elif skipLODNormals: Installer._global_skips.append(
+            lambda f: f.startswith(tex_gen) and f.endswith(u'_fn.dds'))
         # Skipped extensions
         skipObse = not settings['bash.installers.allowOBSEPlugins']
         if skipObse:
-            Installer._global_start_skips.append(bush.game.se.shortName.lower() + u'\\')
+            Installer._global_start_skips.append(bush.game.se.shortName.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if settings['bash.installers.skipImages']:
             Installer._global_skip_extensions |= Installer.imageExts
@@ -4711,12 +4713,12 @@ class Installer(object):
         file is to be skipped while at the same time update self hasReadme,
         hasWizard, hasBCF attributes."""
         reReadMeMatch = Installer.reReadMe.match
-        sep = os.path.sep
+        docs_ = u'Docs' + os_sep
         def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
             maReadMe = reReadMeMatch(fileLower)
             if maReadMe: self.hasReadme = full
             # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
-            rsplit = fileLower.rsplit(sep, 1)
+            rsplit = fileLower.rsplit(os_sep, 1)
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
             if not self.overrideSkips and settings[
                 'bash.installers.skipDocs'] and not (
@@ -4732,15 +4734,15 @@ class Installer(object):
                     return None # we dont want to install those files
                 elif maReadMe:
                     if not (maReadMe.group(1) or maReadMe.group(3)):
-                        dest = u''.join((u'Docs\\', archiveRoot, fileExt))
+                        dest = u''.join((docs_, archiveRoot, fileExt))
                     else:
-                        dest = u''.join((u'Docs\\', file_relative))
+                        dest = u''.join((docs_, file_relative))
                     self.readMe = dest
                 elif fileLower == u'package.txt':
                     dest = self.packageDoc = u''.join(
-                        (u'Docs\\', archiveRoot, u'.package.txt'))
+                        (docs_, archiveRoot, u'.package.txt'))
                 else:
-                    dest = u''.join((u'Docs\\', file_relative))
+                    dest = u''.join((docs_, file_relative))
             return dest
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs
@@ -4757,7 +4759,7 @@ class Installer(object):
             return _process_docs(self, fileLower, full, fileExt, file_relative, sub)
         Installer._attributes_process[u'.txt'] = _process_txt
         def _remap_espms(self, fileLower, full, fileExt, file_relative, sub):
-            rootLower = file_relative.split(sep, 1)
+            rootLower = file_relative.split(os_sep, 1)
             if len(rootLower) > 1: return file_relative ##: maybe skip ??
             file_relative = self.remaps.get(file_relative, file_relative)
             if file_relative not in self.espmMap[sub]: self.espmMap[
@@ -4771,7 +4773,8 @@ class Installer(object):
         Installer._extensions_to_process = set(Installer._attributes_process)
 
     def _init_skips(self):
-        start = [u'sound\\voice'] if self.skipVoices else []
+        voice_dir = os_sep.join((u'sound', u'voice')) + os_sep
+        start = [voice_dir] if self.skipVoices else []
         skips, skip_ext = [], set()
         if not self.overrideSkips:
             skips = list(Installer._global_skips)
@@ -4782,8 +4785,8 @@ class Installer(object):
                 x.cs for x in self.espmNots)
         if skipEspmVoices:
             def _skip_espm_voices(fileLower):
-                farPos = fileLower.startswith(
-                    u'sound\\voice\\') and fileLower.find(u'\\', 12)
+                farPos = fileLower.startswith( # u'sound\\voice\\', 12 chars
+                    voice_dir) and fileLower.find(os_sep, 12)
                 return farPos > 12 and fileLower[12:farPos] in skipEspmVoices
             skips.append(_skip_espm_voices)
         return skips, skip_ext
@@ -4812,7 +4815,7 @@ class Installer(object):
             _obse = partial(__skipExecutable,
                     desc=_(u'%s plugin DLL') % bush.game.se.shortName,
                     ext=(_(u'a dll')),
-                    exeDir=(bush.game.se.shortName.lower() + u'\\'),
+                    exeDir=(bush.game.se.shortName.lower() + os_sep),
                     dialogTitle=bush.game.se.shortName + _(u' DLL Warning'))
             Installer._executables_process[u'.dll'] = \
             Installer._executables_process[u'.dlx'] = _obse
@@ -4820,14 +4823,14 @@ class Installer(object):
             _asi = partial(__skipExecutable,
                    desc=_(u'%s plugin ASI') % bush.game.sd.longName,
                    ext=(_(u'an asi')),
-                   exeDir=(bush.game.sd.installDir.lower() + u'\\'),
+                   exeDir=(bush.game.sd.installDir.lower() + os_sep),
                    dialogTitle=bush.game.sd.longName + _(u' ASI Warning'))
             Installer._executables_process[u'.asi'] = _asi
         if bush.game.sp.shortName:
             _jar = partial(__skipExecutable,
                    desc=_(u'%s patcher JAR') % bush.game.sp.longName,
                    ext=(_(u'a jar')),
-                   exeDir=(bush.game.sp.installDir.lower() + u'\\'),
+                   exeDir=(bush.game.sp.installDir.lower() + os_sep),
                    dialogTitle=bush.game.sp.longName + _(u' JAR Warning'))
             Installer._executables_process[u'.jar'] = _jar
 
@@ -4918,7 +4921,7 @@ class Installer(object):
                     Installer._silentSkipsEnd): continue
             sub = u''
             if type_ == 2: #--Complex archive
-                split = file.split(u'\\', 1)
+                split = file.split(os_sep, 1)
                 if len(split) > 1:
                     # redefine file, excluding the subpackage directory
                     sub,file = split
@@ -4932,7 +4935,7 @@ class Installer(object):
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
                     rootLower,fileExt = splitExt(fileLower)
-                    rootLower = rootLower.split(u'\\',1)
+                    rootLower = rootLower.split(os_sep, 1)
                     if len(rootLower) == 1: rootLower = u''
                     else: rootLower = rootLower[0]
                     skip = True
@@ -4966,7 +4969,7 @@ class Installer(object):
                         continue
             sub_esps = espmMap[sub] # add sub key to the espmMap
             rootLower,fileExt = splitExt(fileLower)
-            rootLower = rootLower.split(u'\\',1)
+            rootLower = rootLower.split(os_sep, 1)
             if len(rootLower) == 1: rootLower = u''
             else: rootLower = rootLower[0]
             fileStartsWith = fileLower.startswith
@@ -5010,8 +5013,8 @@ class Installer(object):
             #--Remap docs, strings
             if dest is None: dest = file
             if rootLower in docDirs:
-                dest = u'\\'.join((u'Docs',file[len(rootLower)+1:]))
-            elif (renameStrings and fileStartsWith(u'strings\\') and
+                dest = os_sep.join((u'Docs', file[len(rootLower) + 1:]))
+            elif (renameStrings and fileStartsWith(u'strings' + os_sep) and
                   fileExt in {u'.strings',u'.dlstrings',u'.ilstrings'}):
                 langSep = fileLower.rfind(u'_')
                 extSep = fileLower.rfind(u'.')
@@ -5027,9 +5030,10 @@ class Installer(object):
                 pass
             elif not rootLower:
                 if fileLower == u'package.jpg':
-                    dest = self.packagePic = u''.join((u'Docs\\',archiveRoot,u'.package.jpg'))
+                    dest = self.packagePic = u''.join(
+                        (u'Docs' + os_sep, archiveRoot, u'.package.jpg'))
                 elif fileExt in imageExts:
-                    dest = u''.join((u'Docs\\',file))
+                    dest = os_sep.join((u'Docs', file))
             if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
                 InstallersData.miscTrackedFiles.track(dirs['mods'].join(dest))
             #--Save
@@ -5054,7 +5058,7 @@ class Installer(object):
         # basically just care for skips and complex/simple packages
         #--Sort file names
         def fscSortKey(fsc):
-            dirFile = fsc[0].lower().rsplit(u'\\',1)
+            dirFile = fsc[0].lower().rsplit(os_sep, 1)
             if len(dirFile) == 1: dirFile.insert(0,u'')
             return dirFile
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
@@ -6253,14 +6257,15 @@ class InstallersData(_DataStore):
         if settings['bash.installers.skipDistantLOD']:
             newSDirs = (x for x in newSDirs if x.lower() != u'distantlod')
         if settings['bash.installers.skipLandscapeLODMeshes']:
-            newSDirs = (x for x in newSDirs if x.lower() != u'meshes\\landscape\\lod')
+            newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
+                u'meshes', u'landscape', u'lod'))
         if settings['bash.installers.skipScreenshots']:
             newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
         # LOD textures
         if settings['bash.installers.skipLandscapeLODTextures'] and settings[
             'bash.installers.skipLandscapeLODNormals']:
-            newSDirs = (x for x in newSDirs if
-                        x.lower() != u'textures\\landscapelod\\generated')
+            newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
+                u'textures', u'landscapelod', u'generated'))
         if setSkipOBSE:
             newSDirs = (x for x in newSDirs if
                         x.lower() != bush.game.se.shortName.lower())
