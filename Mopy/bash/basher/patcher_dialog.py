@@ -145,8 +145,10 @@ class PatchDialog(balt.Dialog):
         for patcher in self.patchers:
             gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
             gConfigSizer.Show(gConfigPanel,False)
-        self.gPatchers.Select(1)
-        self.ShowPatcher(self.patchers[1])
+        initial_select = min(len(self.patchers)-1,1)
+        if initial_select >= 0:
+            self.gPatchers.Select(initial_select)
+            self.ShowPatcher(self.patchers[initial_select])
         self.SetOkEnable()
 
     #--Core -------------------------------

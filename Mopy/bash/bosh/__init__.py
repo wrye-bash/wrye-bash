@@ -2593,6 +2593,10 @@ class ModInfo(FileInfo):
         """Returns True if plugin has an associated BSA."""
         return self.getBsaPath().exists()
 
+    def getIniPath(self):
+        """Returns path to plugin's INI, if it were to exists."""
+        return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
+
     def getStringsPaths(self,language=u'English'):
         """If Strings Files are available as loose files, just point to those, otherwise
            extract needed files from BSA if needed."""
@@ -2617,13 +2621,7 @@ class ModInfo(FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            bsaPaths = [self.getBsaPath()]
-            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
-                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
-                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
-                extraBsa.reverse()
-                bsaPaths.extend(extraBsa)
-            bsaPaths = [x for x in bsaPaths if x.exists()]
+            bsaPaths = modInfos.extra_bsas(self, descending=True)
             bsaFiles = {}
             targetJoin = dirs['bsaCache'].join
             for file in extract:
@@ -3900,12 +3898,7 @@ class ModInfos(FileInfos):
         if modInfo.header.flags1.hasStrings:
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
-            bsaPaths = [modInfo.getBsaPath()]
-            for key in (u'sResourceArchiveList',u'sResourceArchiveList2'):
-                extraBsa = oblivionIni.getSetting(u'Archive',key,u'').split(u',')
-                extraBsa = [dirs['mods'].join(x.strip()) for x in extraBsa]
-                bsaPaths.extend(extraBsa)
-            bsaPaths = [x for x in bsaPaths if x.exists()]
+            bsaPaths = self.extra_bsas(modInfo)
             bsaFiles = {}
             for stringsFile in bush.game.esp.stringsFiles:
                 dir,join,format = stringsFile
@@ -3934,6 +3927,29 @@ class ModInfos(FileInfos):
                 if not found:
                     return True
         return False
+
+    def _ini_files(self, descending=False):
+        if bush.game.fsName == u'Skyrim':
+            iniPaths = (self[name].getIniPath() for name in self.activeCached)
+            iniFiles = [IniFile(iniPath) for iniPath in iniPaths if
+                        iniPath.exists()]
+            if descending: iniFiles.reverse()
+            iniFiles.append(oblivionIni)
+        else:
+            iniFiles = [oblivionIni]
+        return iniFiles
+
+    def extra_bsas(self, mod_info, descending=False):
+        bsaPaths = [mod_info.getBsaPath()]
+        iniFiles = self._ini_files(descending=descending)
+        for iniFile in iniFiles:
+            for key in (u'sResourceArchiveList', u'sResourceArchiveList2'):
+                extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
+                extraBsa = [x.strip() for x in extraBsa]
+                extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                if descending: extraBsa.reverse()
+                bsaPaths.extend(extraBsa)
+        return [x for x in bsaPaths if x.exists() and x.isfile()]
 
     def hasBadMasterNames(self,modName):
         """True if there mod has master's with unencodable names."""
