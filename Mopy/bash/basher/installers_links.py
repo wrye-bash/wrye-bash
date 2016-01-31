@@ -506,7 +506,7 @@ class Installers_SkipDocs(_Installers_Process_Skip):
     """Toggle skipDocs setting and update."""
     text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
 
-class Installers_SkipOBSEPlugins(AppendableLink, _Installers_Process_Skip):
+class Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
     text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'

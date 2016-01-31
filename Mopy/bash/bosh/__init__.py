@@ -5254,38 +5254,62 @@ class Installer(object):
         u'--', u'omod conversion data', u'fomod', u'wizard images')
     _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'config')
 
-    _globalSkips = []
+    # global skips that can be overridden en masse by the installer
+    _global_skips = []
+    _global_start_skips = []
+    _global_skip_extensions = set()
+    # executables - global but if not skipped need additional processing
+    _executables_ext = {u'.dll', u'.dlx'} | {u'.asi'} | {u'.jar'}
+    _executables_process = {}
+    _goodDlls = _badDlls = None
+    @staticmethod
+    def goodDlls():
+        if Installer._goodDlls is None:
+            Installer._goodDlls = collections.defaultdict(list)
+            Installer._goodDlls.update(settings['bash.installers.goodDlls'])
+        return Installer._goodDlls
+    @staticmethod
+    def badDlls():
+        if Installer._badDlls is None:
+            Installer._badDlls = collections.defaultdict(list)
+            Installer._badDlls.update(settings['bash.installers.badDlls'])
+        return Installer._badDlls
+
     @staticmethod
     def initGlobalSkips():
-        """Update _globalSkips with functions deciding if 'fileLower' (docs !)
+        """Update _global_skips with functions deciding if 'fileLower' (docs !)
         must be skipped, based on global settings. Should be updated on boot
         and on flipping skip settings - and nowhere else hopefully."""
-        _globalSkips = []
+        del Installer._global_skips[:]
+        del Installer._global_start_skips[:]
+        Installer._global_skip_extensions.clear()
+        if settings['bash.installers.skipTESVBsl']:
+            Installer._global_skip_extensions.add('.bsl')
         # skips files starting with...
-        start = []
         if settings['bash.installers.skipDistantLOD']:
-            start = [u'distantlod']
+            Installer._global_start_skips.append(u'distantlod')
         if settings['bash.installers.skipLandscapeLODMeshes']:
-            start.append(u'meshes\\landscape\\lod')
+            Installer._global_start_skips.append(u'meshes\\landscape\\lod')
         if settings['bash.installers.skipScreenshots']:
-            start.append(u'screenshots')
+            Installer._global_start_skips.append(u'screenshots')
         # LOD textures
         skipLODTextures = settings['bash.installers.skipLandscapeLODTextures']
         skipLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
         if skipAllTextures:
-            start.append(u'textures\\landscapelod\\generated')
-        elif skipLODTextures: _globalSkips += [lambda f,e:  f.startswith(
-            u'textures\\landscapelod\\generated') and not f.endswith(u'_fn.dds')]
-        elif skipLODNormals: _globalSkips += [lambda f,e:  f.startswith(
-            u'textures\\landscapelod\\generated') and f.endswith(u'_fn.dds')]
-        if start: _globalSkips += [lambda f,e:  f.startswith((tuple(start)))]
+            Installer._global_start_skips.append(u'textures\\landscapelod\\generated')
+        elif skipLODTextures: Installer._global_skips.append(lambda f:  f.startswith(
+            u'textures\\landscapelod\\generated') and not f.endswith(u'_fn.dds'))
+        elif skipLODNormals: Installer._global_skips.append(lambda f:  f.startswith(
+            u'textures\\landscapelod\\generated') and f.endswith(u'_fn.dds'))
         # Skipped extensions
-        skipExts =  {'.bsl'} if settings['bash.installers.skipTESVBsl'] else set()
+        skipObse = not settings['bash.installers.allowOBSEPlugins']
+        if skipObse:
+            Installer._global_start_skips.append(bush.game.se.shortName.lower() + u'\\')
+            Installer._global_skip_extensions |= Installer._executables_ext
         if settings['bash.installers.skipImages']:
-            skipExts |= Installer.imageExts
-        if skipExts: _globalSkips += [lambda f,e:  e in skipExts]
-        Installer._globalSkips = _globalSkips
+            Installer._global_skip_extensions |= Installer.imageExts
+        Installer._init_executables_skips()
 
     def _initComplexSkips(self):
         """Return a list of functions which decide if the file is to be skipped
@@ -5317,58 +5341,57 @@ class Installer(object):
         return [_processDocs, _processBCF, _processWizard]
 
     def _init_skips(self):
-        if self.overrideSkips: # DOCS !
-           return []
-        _skips = list(Installer._globalSkips)
-        if self.skipVoices:
-            _skips.append(compile("fileLower.startswith(u'sound\\voice')", '<string>', 'eval'))
-        return _skips
+        start = [u'sound\\voice'] if self.skipVoices else []
+        skips, skip_ext = [], set()
+        if not self.overrideSkips: # DOCS !
+            skips = list(Installer._global_skips)
+            start.extend(Installer._global_start_skips)
+            skip_ext = Installer._global_skip_extensions
+        if start: skips.append(lambda f: f.startswith((tuple(start))))
+        return skips, skip_ext
 
     @staticmethod
-    def _init_executables_skips(checkOBSE):
-    # TODO(ut) call ONCE - access settings directly - optimize out !
-        goodDlls = collections.defaultdict(list)
-        goodDlls.update(settings['bash.installers.goodDlls'])
-        badDlls = collections.defaultdict(list)
-        badDlls.update(settings['bash.installers.badDlls'])
-        def __skipExecutable(fileLower, full, fileExt, archiveRoot, size, crc,
-                             extens, desc, ext, bSkip, exeDir, dialogTitle):
-            if not (fileExt in extens): return False
-            if bSkip or not fileLower.startswith(exeDir): return True
+    def _init_executables_skips():
+        goodDlls = Installer.goodDlls()
+        badDlls = Installer.badDlls()
+        def __skipExecutable(checkOBSE, fileLower, full, archiveRoot, size,
+                             crc, desc, ext, exeDir, dialogTitle):
+            if not fileLower.startswith(exeDir): return True
             if fileLower in badDlls and [archiveRoot, size, crc] in badDlls[
                 fileLower]: return True
-            if not checkOBSE: return False
-            elif fileLower in goodDlls and [archiveRoot, size, crc] in \
-                    goodDlls[fileLower]: return False
+            if not checkOBSE or fileLower in goodDlls and [
+                archiveRoot, size, crc] in goodDlls[fileLower]: return False
             message = Installer._dllMsg(fileLower, full, archiveRoot,
                                         desc, ext, badDlls, goodDlls)
             if not balt.askYes(balt.Link.Frame,message, dialogTitle):
                 badDlls[fileLower].append([archiveRoot,size,crc])
+                settings['bash.installers.badDlls'] = Installer._badDlls
                 return True
             goodDlls[fileLower].append([archiveRoot,size,crc])
+            settings['bash.installers.goodDlls'] = Installer._goodDlls
             return False
-        skipObse = not settings['bash.installers.allowOBSEPlugins']
-        obseDir = bush.game.se.shortName.lower() + u'\\'
-        tit = bush.game.se.shortName + _(u' DLL Warning')
-        _obse = partial(__skipExecutable, extens={u'.dll',u'.dlx'},
-            desc=_(u'%s plugin DLL') % bush.game.se.shortName,
-            ext=(_(u'a dll')), bSkip=skipObse, exeDir=obseDir, dialogTitle=tit)
-        skipSd = bush.game.sd.shortName and skipObse
-        sdDir = bush.game.sd.installDir.lower() + u'\\'
-        tit = bush.game.sd.longName + _(u' ASI Warning')
-        _asi = partial(__skipExecutable, extens={u'.asi'},
-            desc=_(u'%s plugin ASI') % bush.game.sd.longName,
-            ext=(_(u'an asi')), bSkip=skipSd, exeDir=sdDir, dialogTitle=tit)
-        skipSp = bush.game.sp.shortName and skipObse
-        spDir = bush.game.sp.installDir.lower() + u'\\'
-        tit = bush.game.sp.longName + _(u' JAR Warning')
-        _jar = partial(__skipExecutable, extens={u'.jar'},
-            desc=_(u'%s patcher JAR') % bush.game.sp.longName,
-            ext=(_(u'a jar')), bSkip=skipSp, exeDir=spDir, dialogTitle=tit)
-        return goodDlls, badDlls, (
-            lambda f, *a: skipObse and f.startswith(obseDir), # optimization ?
-            _obse, _asi, _jar)
-
+        if bush.game.se.shortName:
+            _obse = partial(__skipExecutable,
+                    desc=_(u'%s plugin DLL') % bush.game.se.shortName,
+                    ext=(_(u'a dll')),
+                    exeDir=(bush.game.se.shortName.lower() + u'\\'),
+                    dialogTitle=bush.game.se.shortName + _(u' DLL Warning'))
+            Installer._executables_process[u'.dll'] = \
+            Installer._executables_process[u'.dlx'] = _obse
+        if bush.game.sd.shortName:
+            _asi = partial(__skipExecutable,
+                   desc=_(u'%s plugin ASI') % bush.game.sd.longName,
+                   ext=(_(u'an asi')),
+                   exeDir=(bush.game.sd.installDir.lower() + u'\\'),
+                   dialogTitle=bush.game.sd.longName + _(u' ASI Warning'))
+            Installer._executables_process[u'.asi'] = _asi
+        if bush.game.sp.shortName:
+            _jar = partial(__skipExecutable,
+                   desc=_(u'%s patcher JAR') % bush.game.sp.longName,
+                   ext=(_(u'a jar')),
+                   exeDir=(bush.game.sp.installDir.lower() + u'\\'),
+                   dialogTitle=bush.game.sp.longName + _(u' JAR Warning'))
+            Installer._executables_process[u'.jar'] = _jar
 
     @staticmethod
     def _dllMsg(fileLower, full, archiveRoot, desc, ext, badDlls, goodDlls):
@@ -5407,6 +5430,15 @@ class Installer(object):
          - in _RefreshingLink (override skips, HasExtraData, skip voices)
          - in Installer_CopyConflicts
         """
+        type_    = self.type
+        #--Init to empty
+        self.hasWizard = self.hasBCF = self.hasReadme = False
+        self.readMe = self.packageDoc = self.packagePic = None
+        for attr in {'skipExtFiles','skipDirFiles','espms'}:
+            object.__getattribute__(self,attr).clear()
+        dest_src = {}
+        #--Bad archive?
+        if type_ not in {1,2}: return dest_src
         if isinstance(self,InstallerArchive):
             archiveRoot = GPath(self.archive).sroot
         else:
@@ -5420,7 +5452,7 @@ class Installer(object):
         unSize = 0
         espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
-        _skips = self._init_skips()
+        skips, global_skip_ext = self._init_skips()
         complex_skips = self._initComplexSkips()
         if self.overrideSkips:
             skipEspmVoices = None
@@ -5432,18 +5464,10 @@ class Installer(object):
             bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
-        goodDlls, badDlls, dll_skips = Installer._init_executables_skips(
-            checkOBSE)
         hasExtraData = self.hasExtraData
-        type_    = self.type
         if type_ == 2:
             allSubs = set(self.subNames[1:])
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
-        #--Init to empty
-        self.hasWizard = self.hasBCF = self.hasReadme = False
-        self.readMe = self.packageDoc = self.packagePic = None
-        for attr in {'skipExtFiles','skipDirFiles','espms'}:
-            object.__getattribute__(self,attr).clear()
         data_sizeCrc = {}
         remaps = self.remaps
         skipExtFiles = self.skipExtFiles
@@ -5464,9 +5488,6 @@ class Installer(object):
         reModExtMatch = reModExt.match
         reReadMeMatch = Installer.reReadMe.match
         splitExt = os.path.splitext
-        dest_src = {}
-        #--Bad archive?
-        if type_ not in {1,2}: return dest_src
         #--Scan over fileSizeCrcs
         rootIdex = self.fileRootIdex
         for full,size,crc in self.fileSizeCrcs:
@@ -5538,8 +5559,8 @@ class Installer(object):
             else: rootLower = rootLower[0]
             fileStartsWith = fileLower.startswith
             #--Skips
-            for lam in _skips:
-                if lam(fileLower, fileExt):
+            for lam in skips:
+                if lam(fileLower):
                     _out = True
                     break
             else: _out = False
@@ -5549,11 +5570,11 @@ class Installer(object):
                     _out = True
                     break
             if _out: continue
-            for lam in dll_skips:
-                if lam(fileLower, full, fileExt, archiveRoot, size, crc):
-                    _out = True
-                    break
-            if _out: continue
+            if fileExt in global_skip_ext: continue # docs treated above
+            elif fileExt in Installer._executables_process: # handle execs if not skipped
+                if Installer._executables_process[fileExt](
+                        checkOBSE, fileLower, full, archiveRoot, size, crc):
+                    continue
             #--Noisy skips
             if fileLower in bethFilesSkip:
                 self.hasBethFiles = True
@@ -5627,7 +5648,6 @@ class Installer(object):
             dest_src[key] = full
             unSize += size
         self.unSize = unSize
-        settings['bash.installers.goodDlls'], settings['bash.installers.badDlls'] = goodDlls, badDlls
         (self.data_sizeCrc,old_sizeCrc) = (data_sizeCrc,self.data_sizeCrc)
         #--Update dirty?
         if self.isActive and data_sizeCrc != old_sizeCrc:
