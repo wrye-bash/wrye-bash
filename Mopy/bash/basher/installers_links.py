@@ -449,7 +449,7 @@ class _Installers_Skip(Installers_Link, BoolLink):
     @balt.conversation
     def Execute(self):
         super(_Installers_Skip, self).Execute()
-        bosh.Installer.initGlobalSkips()
+        bosh.Installer.init_global_skips()
         self._refreshInstallers()
 
     def _refreshInstallers(self):
@@ -496,7 +496,7 @@ class Installers_SkipBsl(AppendableLink, _Installers_Skip):
 # Complex skips
 class _Installers_Process_Skip(_Installers_Skip):
     """Toggle global skip settings and update - those skips however have to
-    be processed before skipped and are not set in initGlobalSkips."""
+    be processed before skipped and are not set in init_global_skips."""
 
     def Execute(self):
         super(Installers_Link, self).Execute() # note Installers_Link !

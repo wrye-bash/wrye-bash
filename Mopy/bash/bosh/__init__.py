@@ -5276,7 +5276,7 @@ class Installer(object):
         return Installer._badDlls
 
     @staticmethod
-    def initGlobalSkips():
+    def init_global_skips():
         """Update _global_skips with functions deciding if 'fileLower' (docs !)
         must be skipped, based on global settings. Should be updated on boot
         and on flipping skip settings - and nowhere else hopefully."""
@@ -5439,10 +5439,8 @@ class Installer(object):
         dest_src = {}
         #--Bad archive?
         if type_ not in {1,2}: return dest_src
-        if isinstance(self,InstallerArchive):
-            archiveRoot = GPath(self.archive).sroot
-        else:
-            archiveRoot = self.archive
+        archiveRoot = GPath(self.archive).sroot if isinstance(self,
+                InstallerArchive) else self.archive
         docExts = self.docExts
         imageExts = self.imageExts
         docDirs = self.docDirs
@@ -5470,20 +5468,12 @@ class Installer(object):
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
         data_sizeCrc = {}
         remaps = self.remaps
-        skipExtFiles = self.skipExtFiles
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
         skipDirFilesDiscard = skipDirFiles.discard
-        skipExtFilesAdd = skipExtFiles.add
+        skipExtFilesAdd = self.skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
-        if InstallersData.miscTrackedFiles is not None:
-            dirsModsJoin = dirs['mods'].join
-            _trackedInfosTrack = InstallersData.miscTrackedFiles.track
-            trackedInfosTrack = lambda a: _trackedInfosTrack(dirsModsJoin(a))
-        else:
-            trackedInfosTrack = lambda a: None
-        espms = self.espms
-        espmsAdd = espms.add
+        espmsAdd = self.espms.add
         espmMap = self.espmMap = collections.defaultdict(list)
         reModExtMatch = reModExt.match
         reReadMeMatch = Installer.reReadMe.match
@@ -5570,7 +5560,7 @@ class Installer(object):
                     break
             if _out: continue
             if fileExt in global_skip_ext: continue # docs treated above
-            elif fileExt in Installer._executables_process: # handle execs if not skipped
+            elif fileExt in Installer._executables_process: # and handle execs
                 if Installer._executables_process[fileExt](
                         checkOBSE, fileLower, full, archiveRoot, size, crc):
                     continue
@@ -5640,7 +5630,7 @@ class Installer(object):
                 elif fileExt in imageExts:
                     dest = u''.join((u'Docs\\',file))
             if fileExt in commonlyEditedExts:
-                trackedInfosTrack(dest)
+                InstallersData.miscTrackedFiles.track(dirs['mods'].join(dest))
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)

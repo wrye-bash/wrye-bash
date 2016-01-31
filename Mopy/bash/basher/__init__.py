@@ -4289,7 +4289,7 @@ def InitSettings(): # this must run first !
     balt.sizes = bosh.settings.getChanged('bash.window.sizes',{})
     settings = bosh.settings
     settings.loadDefaults(settingDefaults)
-    bosh.Installer.initGlobalSkips() # must be after loadDefaults - grr #178
+    bosh.Installer.init_global_skips() # must be after loadDefaults - grr #178
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')
