@@ -5248,6 +5248,15 @@ class Installer(object):
             setter(clone,attr,copier(getter(self,attr)))
         return clone
 
+    #--refreshDataSizeCrc, err, framework -------------------------------------
+    # Those files/folders will be always skipped by refreshDataSizeCrc()
+    _silentSkips = [
+        lambda f: f.startswith(
+            (u'--', u'omod conversion data', u'fomod', u'wizard images')),
+        lambda f: f.endswith(
+            (u'thumbs.db',u'desktop.ini',u'config')),
+    ]
+
     def refreshDataSizeCrc(self,checkOBSE=False):
         """Updates self.data_sizeCrc and related variables.
         Also, returns dest_src map for install operation."""
@@ -5337,8 +5346,12 @@ class Installer(object):
         for full,size,crc in self.fileSizeCrcs:
             file = full[rootIdex:]
             fileLower = file.lower()
-            if fileLower.startswith((u'--',u'omod conversion data',u'fomod',u'wizard images')):
-                continue
+            for lam in Installer._silentSkips:
+                if lam(fileLower):
+                    _out = True
+                    break
+            else: _out = False
+            if _out: continue
             sub = u''
             if type_ == 2: #--Complex archive
                 sub = file.split(u'\\',1)
@@ -5405,10 +5418,8 @@ class Installer(object):
             filePath = fileLower.split('\\')
             del filePath[-1]
             filePath = '\\'.join(filePath)
-            #--Silent skips
-            if fileEndsWith((u'thumbs.db',u'desktop.ini',u'config')):
-                continue #--Silent skip
-            elif skipDistantLOD and fileStartsWith(u'distantlod'):
+            #--Skips
+            if skipDistantLOD and fileStartsWith(u'distantlod'):
                 continue
             elif skipLandscapeLODMeshes and fileStartsWith(u'meshes\\landscape\\lod'):
                 continue
