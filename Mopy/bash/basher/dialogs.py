@@ -480,5 +480,4 @@ class CreateNewProject(balt.Dialog):
             tmpDir.rmtree(tmpDir.s)
 
         # Move successful
-        BashFrame.iPanel.refreshed = False
-        BashFrame.iPanel.ShowPanel()
+        BashFrame.iPanel.ShowPanel(scan_data_dir=True)
