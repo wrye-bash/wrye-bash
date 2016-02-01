@@ -81,16 +81,14 @@ class Installers_MonitorInstall(Installers_Link):
                 u' and may take some time.')
         if not self._askOk(msg, _(u'External Installation')): return
         # Refresh Data
-        self.iPanel.refreshed = False
-        self.iPanel.ShowPanel(canCancel=False)
+        self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Backup CRC data
         data_sizeCrcDate = copy.copy(self.idata.data_sizeCrcDate)
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
-        self.iPanel.refreshed = False
-        self.iPanel.ShowPanel(canCancel=False)
+        self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
         oldFiles = set(data_sizeCrcDate)
@@ -255,8 +253,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
         """Refreshes all Installers data"""
         if self.full_refresh and not self._askWarning(self.msg, self.text):
             return
-        self.iPanel.refreshed = False
-        self.iPanel.ShowPanel(fullRefresh=self.full_refresh)
+        self.iPanel.ShowPanel(fullRefresh=self.full_refresh,scan_data_dir=True)
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
@@ -343,8 +340,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         super(Installers_AutoRefreshBethsoft, self).Execute()
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
-            self.iPanel.refreshed = False
-            self.iPanel.ShowPanel()
+            self.iPanel.ShowPanel(scan_data_dir=True)
         # Refresh Installers
         toRefresh = set()
         for name, installer in self.idata.iteritems():
@@ -368,8 +364,7 @@ class Installers_Enabled(BoolLink):
                                             title=self.dialogTitle): return
         enabled = bosh.settings[self.key] = not enabled
         if enabled:
-            self.window.panel.refreshed = False
-            self.window.panel.ShowPanel()
+            self.window.panel.ShowPanel(scan_data_dir=True)
         else:
             self.window.DeleteAll() ##: crude
             self.window.panel.ClearDetails()

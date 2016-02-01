@@ -2479,7 +2479,7 @@ class InstallersPanel(SashTankPanel):
         subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
         checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
         #--Refreshing
-        self.refreshed = False
+        self._data_dir_scanned = False
         self.refreshing = False
         self.frameActivated = False
         #--Contents
@@ -2585,38 +2585,39 @@ class InstallersPanel(SashTankPanel):
             settings['bash.installers.enabled'] = balt.askYes(self, message,
                                                               _(u'Installers'))
 
-    def ShowPanel(self, canCancel=True, fullRefresh=False):
+    def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled()
         if not settings['bash.installers.enabled'] or self.refreshing: return
         refresh_ui = [False]
         try:
             self.refreshing = True
-            self._refresh_installers(refresh_ui, canCancel, fullRefresh)
+            self._refresh_installers(refresh_ui, canCancel, fullRefresh, scan_data_dir)
             if refresh_ui[0]: self.uiList.RefreshUI()
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
 
-    def _refresh_installers(self, refreshui, canCancel, fullRefresh):
+    def _refresh_installers(self, refreshui, canCancel, fullRefresh, scan_data_dir):
         data = self.data
-        if settings.get('bash.installers.updatedCRCs',True):
+        if settings.get('bash.installers.updatedCRCs',True): #only checked here
             settings['bash.installers.updatedCRCs'] = False
-            self.refreshed = False
+            self._data_dir_scanned = False
         installers_paths = bass.dirs[
             'installers'].list() if self.frameActivated else ()
         if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
             self.__extractOmods()
-        if not self.refreshed or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
+        scan_data_dir = scan_data_dir or not self._data_dir_scanned
+        if scan_data_dir or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
-                    what = ('DISC','IC')[self.refreshed]
+                    what = ('DISC','IC')[scan_data_dir]
                     refreshui[0] |= data.irefresh(progress, what, fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
                 finally:
-                    self.refreshed = True
+                    self._data_dir_scanned = True
         elif self.frameActivated and data.refreshConvertersNeeded():
             with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
                 try:
