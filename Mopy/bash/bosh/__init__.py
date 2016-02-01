@@ -5413,7 +5413,7 @@ class Installer(object):
                          u'saying yes.') % ext
         return message
 
-    def refreshDataSizeCrc(self,checkOBSE=False):
+    def refreshDataSizeCrc(self, checkOBSE=False, splitExt=os.path.splitext):
         """Update self.data_sizeCrc and related variables and return
         dest_src map for install operation....
 
@@ -5487,7 +5487,6 @@ class Installer(object):
         espmMap = self.espmMap = collections.defaultdict(list)
         reModExtMatch = reModExt.match
         reReadMeMatch = Installer.reReadMe.match
-        splitExt = os.path.splitext
         #--Scan over fileSizeCrcs
         rootIdex = self.fileRootIdex
         for full,size,crc in self.fileSizeCrcs:
@@ -5510,14 +5509,14 @@ class Installer(object):
                     # Run a modified version of the normal checks, just
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
-                    skip = True
                     fileLower = file.lower()
-                    subList = espmMap[sub]
-                    subListAppend = subList.append
                     rootLower,fileExt = splitExt(fileLower)
                     rootLower = rootLower.split(u'\\',1)
                     if len(rootLower) == 1: rootLower = u''
                     else: rootLower = rootLower[0]
+                    skip = True
+                    subList = espmMap[sub]
+                    subListAppend = subList.append
                     if fileLower == u'wizard.txt':
                         self.hasWizard = full
                         skipDirFilesDiscard(file)
