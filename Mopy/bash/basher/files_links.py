@@ -70,23 +70,23 @@ class Files_Unhide(ItemLink):
     """Unhide file(s). (Move files back to Data Files or Save directory.)"""
     text = _(u"Unhide...")
 
-    def __init__(self, type_):
+    def __init__(self, files_type):
         super(Files_Unhide, self).__init__()
-        self.type = type_
-        self.help = _(u"Unhides hidden %ss.") % self.type
+        self.files_type = files_type # yak - move logic to the data model
+        self.help = _(u"Unhides hidden %ss.") % files_type
 
     def Execute(self):
         srcDir = bass.dirs['modsBash'].join(u'Hidden')
         window = self.window
         destDir = None
-        if self.type == 'mod':
+        if self.files_type == 'mod':
             wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
             destDir = window.data.dir
-        elif self.type == 'save':
+        elif self.files_type == 'save':
             wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
             srcDir = window.data.bashDir.join(u'Hidden')
             destDir = window.data.dir
-        elif self.type == 'installer':
+        elif self.files_type == 'installer':
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bass.dirs['installers']
             srcPaths = self._askOpenMulti(
@@ -97,7 +97,7 @@ class Files_Unhide(ItemLink):
         isSave = (destDir == bosh.saveInfos.dir)
         #--File dialog
         srcDir.makedirs()
-        if not self.type == 'installer':
+        if not self.files_type == 'installer':
             srcPaths = self._askOpenMulti(_(u'Unhide files:'),
                                           defaultDir=srcDir, wildcard=wildcard)
         if not srcPaths: return
