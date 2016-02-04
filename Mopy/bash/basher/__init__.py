@@ -2611,7 +2611,7 @@ class InstallersPanel(SashTankPanel):
         if scan_data_dir or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
-                    what = ('DISC','IC')[scan_data_dir]
+                    what = 'DISC' if scan_data_dir else 'IC'
                     refreshui[0] |= data.irefresh(progress, what, fullRefresh)
                     self.frameActivated = False
                 except CancelError:
