@@ -48,7 +48,7 @@ import time
 
 class NON_REPO(object):
     __slots__= []
-    
+
     # 'Enum' for options for non-repo files
     MOVE = 'MOVE'
     COPY = 'COPY'
@@ -400,7 +400,7 @@ def WarnNonRepoFiles(args, all_files):
                "directory.")
         if args.non_repo == NON_REPO.MOVE:
             lprint("          You have chosen to move the non-repository "
-                   "files out of the source directry temporarily.")
+                   "files out of the source directory temporarily.")
         elif args.non_repo == NON_REPO.COPY:
             lprint("          You have chosen to make a temporary clean copy "
                    " of the repository to build with.")
@@ -632,7 +632,7 @@ def GetGitFiles(gitDir, version):
                         continue
                     if os.path.isfile(os.path.join(path, u'git.exe')):
                         # Found it, put the path into PATH
-                        os.environ['PATH'] += u';' + path
+                        os.environ['PATH'] += ';' + path
                         break
         # Test out if git can be launched now
         try:
