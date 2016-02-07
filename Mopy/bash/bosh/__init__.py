@@ -6899,19 +6899,19 @@ class InstallersData(DataDict):
         getArchiveOrder = lambda x: self[x].order
         restoreArchives = sorted(set(restores.itervalues()),
                                  key=getArchiveOrder, reverse=True)
-        if restoreArchives:
-            progress.setFull(len(restoreArchives))
-            for index,archive in enumerate(restoreArchives):
-                progress(index,archive.s)
-                installer = self[archive]
-                destFiles = set(x for x,y in restores.iteritems() if y == archive)
-                if destFiles:
-                    installer.install(archive, destFiles, self.data_sizeCrcDate,
-                        SubProgress(progress,index,index+1))
-                    mods_changed, inis_changed = InstallersData.updateTable(
-                         destFiles, archive.s)
-                    refresh_ui[0] |= mods_changed
-                    refresh_ui[1] |= inis_changed
+        if not restoreArchives: return
+        progress.setFull(len(restoreArchives))
+        for index, archive in enumerate(restoreArchives):
+            progress(index, archive.s)
+            installer = self[archive]
+            destFiles = set(x for x, y in restores.iteritems() if y == archive)
+            if destFiles:
+                installer.install(archive, destFiles, self.data_sizeCrcDate,
+                                  SubProgress(progress, index, index + 1))
+                mods_changed, inis_changed = InstallersData.updateTable(
+                     destFiles, archive.s)
+                refresh_ui[0] |= mods_changed
+                refresh_ui[1] |= inis_changed
 
     def bain_anneal(self, anPackages, refresh_ui, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.

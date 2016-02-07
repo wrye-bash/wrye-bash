@@ -101,13 +101,12 @@ class Mod_CreateDummyMasters(OneItemLink):
                bosh.modInfos[self.selected[0]].getStatus() == 30  # Missing masters
 
     def Execute(self):
-        """Handle execution."""
+        """Create Dummy Masters"""
         msg = _(u"This is an advanced feature for editing 'Filter' patches in "
                 u"TES4Edit.  It will create dummy plugins for each missing "
-                u"master.  Are you sure you want to continue?")
-        if not self._askYes(msg + u'\n\n' +
-            _(u"To remove these files later, use 'Clean Dummy Masters...'"),
-            title=_(u'Create Files')): return
+                u"master.  Are you sure you want to continue?") + u'\n\n' + _(
+                u"To remove these files later, use 'Clean Dummy Masters...'")
+        if not self._askYes(msg, title=_(u'Create Files')): return
         doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
         modInfo = bosh.modInfos[self.selected[0]]
         lastTime = bosh.modInfos[bosh.modInfos.masterName].mtime
@@ -2259,6 +2258,9 @@ class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
 
 class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     """Import Sigil Stone details from text file."""
+    askTitle = _(u'Import Sigil Stone details from:')
+    csvFile = u'_SigilStones.csv'
+    progressTitle = _(u'Import Sigil Stone details')
     text = _(u'Sigil Stones...')
     help = _(u'Import Sigil Stone details from text file')
 
@@ -2271,10 +2273,10 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
                                  _(u'Import Sigil Stones details')): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_SigilStones.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import Sigil Stone details from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_SigilStones.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2283,14 +2285,9 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         if ext != u'.csv':
             self._showError(_(u'Source file must be a _SigilStones.csv file'))
             return
-        #--Export
-        with balt.Progress(_(u'Import Sigil Stone details')) as progress:
-            sigilStones = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            sigilStones.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = sigilStones.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant Sigil Stone details to import.'),
@@ -2301,8 +2298,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
                         +u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(),
-                          title=_(u'Import Sigil Stone details'))
+            self._showLog(buff.getvalue())
             buff.close()
 
 #------------------------------------------------------------------------------
