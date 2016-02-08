@@ -141,11 +141,11 @@ class MelConditions(MelStructs):
         """Include self if has fids."""
         formElements.add(self)
 
-    def loadData(self,record,ins,type,size,readId):
+    def loadData(self, record, ins, sub_type, size, readId):
         """Reads data from ins into record attribute."""
-        if type == 'CTDA' and size != 24:
+        if sub_type == 'CTDA' and size != 24:
             raise ModSizeError(ins.inName,readId,24,size,True)
-        if type == 'CTDT' and size != 20:
+        if sub_type == 'CTDT' and size != 20:
             raise ModSizeError(ins.inName,readId,20,size,True)
         target = MelObject()
         record.conditions.append(target)
@@ -203,7 +203,7 @@ class MelEffects(MelGroups):
                                ('school', 0), ('visual', '\x00\x00\x00\x00'),
                                (MelEffects.seFlags, 'flags', 0x0L),
                                ('unused1', null3))
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             #--Alternate formats
             if size == 16:
                 attrs,actions = self.attrs,self.actions
@@ -306,15 +306,15 @@ class MreLeveledList(MreLeveledListBase):
     #--Special load classes
     class MelLevListLvld(MelStruct):
         """Subclass to support alternate format."""
-        def loadData(self,record,ins,type,size,readId):
-            MelStruct.loadData(self,record,ins,type,size,readId)
+        def loadData(self, record, ins, sub_type, size, readId):
+            MelStruct.loadData(self, record, ins, sub_type, size, readId)
             if record.chanceNone > 127:
                 record.flags.calcFromAllLevels = True
                 record.chanceNone &= 127
 
     class MelLevListLvlo(MelStructs):
         """Subclass to support alternate format."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             target = self.getDefault()
             record.__getattribute__(self.attr).append(target)
             target.__slots__ = self.attrs
@@ -360,8 +360,8 @@ class MelScrxen(MelFids):
         loaders['SCRV'] = self
         loaders['SCRO'] = self
 
-    def loadData(self,record,ins,type,size,readId):
-        isFid = (type == 'SCRO')
+    def loadData(self, record, ins, sub_type, size, readId):
+        isFid = (sub_type == 'SCRO')
         if isFid: value = ins.unpackRef(readId)
         else: value, = ins.unpack('I',4,readId)
         record.__getattribute__(self.attr).append((isFid,value))
@@ -623,9 +623,9 @@ class MreClas(MelRecord):
         (17,'repair'),))
     class MelClasData(MelStruct):
         """Handle older truncated DATA for CLAS subrecords."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size == 52:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             #--Else 42 byte record (skips trainSkill, trainLevel,unused1...
             unpacked = ins.unpack('2iI7i2I',size,readId)
@@ -801,9 +801,9 @@ class MreCsty(MelRecord):
 
     class MelCstdData(MelStruct):
         """Handle older truncated DATA for CSTD subrecord."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size == 124:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 120:
                 #--Else 120 byte record (skips flagsB
@@ -961,9 +961,9 @@ class MreEfsh(MelRecord):
 
     class MelEfshData(MelStruct):
         """Handle older truncated DATA for EFSH subrecord."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size == 224:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 96:
                 #--Else 96 byte record (skips particle variables, and color
@@ -1133,9 +1133,9 @@ class MreInfo(MelRecord):
                                      'randomEnd', 'runForRumors'))
     class MelInfoData(MelStruct):
         """Support truncated 2 byte version."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size != 2:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             unpacked = ins.unpack('H',size,readId)
             unpacked += self.defaults[len(unpacked):]
@@ -1238,9 +1238,9 @@ class MreLigh(MelRecord):
     #--Mel NPC DATA
     class MelLighData(MelStruct):
         """Handle older truncated DATA for LIGH subrecord."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size == 32:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 24:
                 #--Else 24 byte record (skips value and weight...
@@ -1357,9 +1357,9 @@ class MreMgef(MelRecord):
     #--Mel NPC DATA
     class MelMgefData(MelStruct):
         """Handle older truncated DATA for DARK subrecord."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size == 64:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 36:
                 #--Else is data for DARK record, read it all.
@@ -1441,7 +1441,7 @@ class MreNpc(MreActor):
     #--Mel NPC DATA
     class MelNpcData(MelStruct):
         """Convert npc stats into skills, health, attributes."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             unpacked = list(ins.unpack('=21BH2s8B',size,readId))
             recordSetAttr = record.__setattr__
             recordSetAttr('skills',unpacked[:21])
@@ -1531,9 +1531,9 @@ class MrePack(MelRecord):
         'noIdleAnims',))
     class MelPackPkdt(MelStruct):
         """Support older 4 byte version."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size != 4:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
             else:
                 record.flags,record.aiType,junk = ins.unpack('HBs',4,readId)
                 record.flags = MrePack._flags(record.flags)
@@ -1733,8 +1733,8 @@ class MreRace(MelRecord):
 
         def getLoaders(self,loaders):
             """Self as loader for structure types."""
-            for type in ('NAM0','MNAM','FNAM','INDX'):
-                loaders[type] = self
+            for subType in ('NAM0','MNAM','FNAM','INDX'):
+                loaders[subType] = self
 
         def setMelSet(self,melSet):
             """Set parent melset. Need this so that can reassign loaders
@@ -1745,17 +1745,17 @@ class MreRace(MelRecord):
                 attr = element.__dict__.get('attr',None)
                 if attr: self.loaders[attr] = element
 
-        def loadData(self,record,ins,type,size,readId):
-            if type in ('NAM0','MNAM','FNAM'):
-                record._loadAttrs = self.attrs[type]
-                attr = self.tailModelAttrs.get(type)
+        def loadData(self, record, ins, sub_type, size, readId):
+            if sub_type in ('NAM0', 'MNAM', 'FNAM'):
+                record._loadAttrs = self.attrs[sub_type]
+                attr = self.tailModelAttrs.get(sub_type)
                 if not attr: return
             else: #--INDX
                 index, = ins.unpack('I',4,readId)
                 attr = record._loadAttrs[index]
             element = self.loaders[attr]
-            for type in ('MODL', 'MODB', 'MODT', 'ICON'):
-                self.melSet.loaders[type] = element
+            for sub_type_ in ('MODL', 'MODB', 'MODT', 'ICON'):
+                self.melSet.loaders[sub_type_] = element
 
     #--Mel Set
     melSet = MelSet(
@@ -1833,9 +1833,9 @@ class MreRefr(MelRecord):
     _lockFlags = Flags(0L,Flags.getNames(None, None, 'leveledLock'))
     class MelRefrXloc(MelOptStruct):
         """Handle older truncated XLOC for REFR subrecord."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size == 16:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 12:
                 #--Else is skipping unused2
@@ -1854,25 +1854,25 @@ class MreRefr(MelRecord):
 
     class MelRefrXmrk(MelStruct):
         """Handler for xmrk record. Conditionally loads next items."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             """Reads data from ins into record attribute."""
             junk = ins.read(size,readId)
             record.hasXmrk = True
             insTell = ins.tell
             insUnpack = ins.unpack
             pos = insTell()
-            (type,size) = insUnpack('4sH',6,readId+'.FULL')
-            while type in ['FNAM','FULL','TNAM']:
-                if type == 'FNAM':
+            (sub_type_, size) = insUnpack('4sH', 6, readId + '.FULL')
+            while sub_type_ in ['FNAM', 'FULL', 'TNAM']:
+                if sub_type_ == 'FNAM':
                     value = insUnpack('B',size,readId)
                     record.flags = MreRefr._flags(*value)
-                elif type == 'FULL':
+                elif sub_type_ == 'FULL':
                     record.full = ins.readString(size,readId)
-                elif type == 'TNAM':
+                elif sub_type_ == 'TNAM':
                     record.markerType, record.unused5 = insUnpack('Bs', size,
                                                                   readId)
                 pos = insTell()
-                (type,size) = insUnpack('4sH',6,readId+'.FULL')
+                (sub_type_, size) = insUnpack('4sH', 6, readId + '.FULL')
             ins.seek(pos)
             if self._debug: print ' ', record.flags, record.full, \
                 record.markerType
@@ -1962,15 +1962,15 @@ class MreRegn(MelRecord):
     ####Lazy hacks to correctly read/write regn data
     class MelRegnStructA(MelStructA):
         """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if record.entryType == 2 and self.subType == 'RDOT':
-                MelStructA.loadData(self,record,ins,type,size,readId)
+                MelStructA.loadData(self, record, ins, sub_type, size, readId)
             elif record.entryType == 3 and self.subType == 'RDWT':
-                MelStructA.loadData(self,record,ins,type,size,readId)
+                MelStructA.loadData(self, record, ins, sub_type, size, readId)
             elif record.entryType == 6 and self.subType == 'RDGS':
-                MelStructA.loadData(self,record,ins,type,size,readId)
+                MelStructA.loadData(self, record, ins, sub_type, size, readId)
             elif record.entryType == 7 and self.subType == 'RDSD':
-                MelStructA.loadData(self,record,ins,type,size,readId)
+                MelStructA.loadData(self, record, ins, sub_type, size, readId)
 
         def dumpData(self,record,out):
             """Conditionally dumps data."""
@@ -1985,11 +1985,11 @@ class MreRegn(MelRecord):
 
     class MelRegnString(MelString):
         """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if record.entryType == 4 and self.subType == 'RDMP':
-                MelString.loadData(self,record,ins,type,size,readId)
+                MelString.loadData(self, record, ins, sub_type, size, readId)
             elif record.entryType == 5 and self.subType == 'ICON':
-                MelString.loadData(self,record,ins,type,size,readId)
+                MelString.loadData(self, record, ins, sub_type, size, readId)
 
         def dumpData(self,record,out):
             """Conditionally dumps data."""
@@ -2000,9 +2000,9 @@ class MreRegn(MelRecord):
 
     class MelRegnOptStruct(MelOptStruct):
         """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if record.entryType == 7 and self.subType == 'RDMD':
-                MelOptStruct.loadData(self,record,ins,type,size,readId)
+                MelOptStruct.loadData(self, record, ins, sub_type, size, readId)
 
         def dumpData(self,record,out):
             """Conditionally dumps data."""
@@ -2132,8 +2132,8 @@ class MreSoun(MelRecord):
         'environmentIgnored', 'randomLocation', 'loop','menuSound', '2d', '360LFE'))
     class MelSounSndd(MelStruct):
         """SNDD is an older version of SNDX. Allow it to read in, but not set defaults or write."""
-        def loadData(self,record,ins,type,size,readId):
-            MelStruct.loadData(self,record,ins,type,size,readId)
+        def loadData(self, record, ins, sub_type, size, readId):
+            MelStruct.loadData(self, record, ins, sub_type, size, readId)
             record.staticAtten = 0
             record.stopTime = 0
             record.startTime = 0
@@ -2202,9 +2202,9 @@ class MreWatr(MelRecord):
     _flags = Flags(0L,Flags.getNames('causesDmg','reflective'))
     class MelWatrData(MelStruct):
         """Handle older truncated DATA for WATR subrecord."""
-        def loadData(self,record,ins,type,size,readId):
+        def loadData(self, record, ins, sub_type, size, readId):
             if size == 102:
-                MelStruct.loadData(self,record,ins,type,size,readId)
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 86:
                 #--Else 86 byte record (skips dispVelocity,
