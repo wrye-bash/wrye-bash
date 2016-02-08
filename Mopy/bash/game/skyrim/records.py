@@ -32,9 +32,9 @@ from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
 from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
     ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MreHeaderBase, MelBase, MelUnicode, MelModel, MelFidList, MelStructA, \
-    MreRecord, MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
-    MelCountedFids, MelSortedFidList
+    MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
+    MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
+    MelCountedFids, MelSortedFidList, MelStrings
 from ...bass import null1, null2, null3, null4
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions, \
@@ -1402,7 +1402,8 @@ class MreAlch(MelRecord,MreHasEffects):
         MelLString('DESC','description'),
         MelModel(),
         MelDestructible(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
         MelOptStruct('ETYP','I',(FID,'equipType')),
@@ -1430,7 +1431,8 @@ class MreAmmo(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -1473,7 +1475,8 @@ class MreAppa(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -1720,7 +1723,8 @@ class MreBook(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelLString('DESC','description'),
         MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
@@ -1880,7 +1884,7 @@ class MreCell(MelRecord):
         (5,'publicPlace'),
         (6,'handChanged'),
         # showSky
-        (7,'behaveLikeExterior'),
+        (7,'showSky'),
         ))
 
     CellDataFlags2 = Flags(0L,Flags.getNames(
@@ -2046,7 +2050,8 @@ class MreClas(MelRecord):
         MelString('EDID','eid'),
         MelLString('FULL','full'),
         MelLString('DESC','description'),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelStruct('DATA','4sb19BfI4B','unknown','teaches','maximumtraininglevel',
                   'skillWeightsOneHanded','skillWeightsTwoHanded',
                   'skillWeightsArchery','skillWeightsBlock',
@@ -2102,7 +2107,7 @@ class MreCobj(MelRecord):
     class MelCobjCnto(MelGroups):
         def __init__(self):
             MelGroups.__init__(self,'items',
-                MelStruct('CNTO','=2I',(FID,'item',None),'count'),
+                MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
                 MelCoed(),
                 )
 
@@ -2730,7 +2735,8 @@ class MreEyes(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelStruct('DATA','B',(EyesTypeFlags,'flags',0L)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -3597,7 +3603,8 @@ class MreIngr(MelRecord,MreHasEffects):
         MelLString('FULL','full'),
         MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
         MelModel(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelFid('ETYP','equipmentType',),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -3681,9 +3688,7 @@ class MreIpds(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         # This is a repeating subrecord of 8 bytes, 2 FormIDs First is MATT second is IPCT
-        MelGroups('data',
-            MelStruct('PNAM','2I',(FID,'material'), (FID,'impact')),
-            ),
+        MelStructs('PNAM','2I','impactData',(FID,'material'),(FID,'impact'),),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -3699,7 +3704,8 @@ class MreKeym(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -3885,7 +3891,8 @@ class MreLigh(MelRecord):
         MelModel(),
         MelDestructible(),
         MelLString('FULL','full'),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         # fe = 'Flicker Effect'
         MelStruct('DATA','iI4BI6fIf','duration','radius','red','green','blue',
                   'unknown',(LighTypeFlags,'flags',0L),'falloffExponent','fov',
@@ -3904,7 +3911,8 @@ class MreLscr(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelLString('DESC','description'),
         MelConditions(),
         MelFid('NNAM','loadingScreenNIF'),
@@ -4183,7 +4191,8 @@ class MreMisc(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
@@ -4412,14 +4421,14 @@ class MreNavm(MelRecord):
 #------------------------------------------------------------------------------
 class MelNpcCnto(MelGroups):
     def __init__(self):
-        MelGroups.__init__(self,'container',
-            MelStruct('CNTO','=2I',(FID,'item',None),'count'),
+        MelGroups.__init__(self,'items',
+            MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
             MelCoed(),
             )
 
     def dumpData(self,record,out):
         # Only write the COCT/CNTO/COED subrecords if count > 0
-        out.packSub('COCT','I',len(record.container))
+        out.packSub('COCT','I',len(record.items))
         MelGroups.dumpData(self,record,out)
 
 class MreNpc(MelRecord):
@@ -4572,7 +4581,7 @@ class MreNpc(MelRecord):
         MelOptStruct('VTCK', 'I', (FID, 'voice')),
         MelOptStruct('TPLT', 'I', (FID, 'template')),
         MelFid('RNAM','race'),
-        MelCountedFids('SPLO', 'keywords', 'SPCT', '<I'),
+        MelCountedFids('SPLO', 'spells', 'SPCT', '<I'),
         MelDestructible(),
         MelOptStruct('WNAM','I',(FID, 'wormArmor')),
         MelOptStruct('ANAM','I',(FID, 'farawaymodel')),
@@ -4644,7 +4653,7 @@ class MreNpc(MelRecord):
         MelOptStruct('NAMA', '<IiII', 'nose', 'unknown', 'eyes', 'mouth'),
         MelGroups('face_tint_layer',
             MelStruct('TINI', '<H', 'tint_item'),
-            MelStruct('TINC', '<4B', 'r', 'g', 'b' ,'a'),
+            MelStruct('TINC', '<4B', 'tintRed', 'tintGreen', 'tintBlue' ,'tintAlpha'),
             MelStruct('TINV', '<i', 'tint_value'),
             MelStruct('TIAS', '<h', 'preset'),
             ),
@@ -6073,7 +6082,8 @@ class MreSlgm(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel(),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
@@ -6167,12 +6177,12 @@ class MreSmqn(MelRecord):
         MelConditions(),
         MelStruct('DNAM','2H',(SmqnNodeFlags,'nodeFlags',0L),(SmqnQuestFlags,'questFlags',0L),),
         MelStruct('XNAM','I','maxConcurrentQuests'),
-        MelStruct('MNAM','I','numQuestsToRun'),
+        MelOptStruct('MNAM','I',('numQuestsToRun',None)),
         MelStruct('QNAM','I','questCount'),
         MelGroups('quests',
             MelFid('NNAM','quest',),
             MelBase('FNAM','fnam_p'),
-            MelStruct('RNAM','f','hoursUntilReset'),
+            MelOptStruct('RNAM','f',('hoursUntilReset',None)),
             )
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -6222,10 +6232,8 @@ class MreSndr(MelRecord):
         MelString('EDID','eid'),
         MelBase('CNAM','cnam_p'),
         MelFid('GNAM','category',),
-        MelFid('SNAM','alternateSoundFor',),
-        MelGroups('sounds',
-            MelString('ANAM','fileName',),
-            ),
+        MelFid('SNAM','altSoundFor',),
+        MelStrings('ANAM','sounds',),
         MelFid('ONAM','outputModel',),
         MelLString('FNAM','string'),
         MelConditions(),
@@ -6264,13 +6272,13 @@ class MreSopm(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('NAM1','B2sB',(SopmFlags,'flags',0L),'unknown','reverbSendpct',),
+        MelStruct('NAM1','B2sB',(SopmFlags,'flags',0L),'unknown1','reverbSendpct',),
         MelBase('FNAM','fnam_p'),
         MelStruct('MNAM','I','outputType',),
         MelBase('CNAM','cnam_p'),
         MelBase('SNAM','snam_p'),
         MelSopmData(),
-        MelStruct('ANAM','4s2f5B','unknown','minDistance','maxDistance',
+        MelStruct('ANAM','4s2f5B','unknown2','minDistance','maxDistance',
                   'curve1','curve2','curve3','curve4','curve5',
                    dumpExtra='extraData',),
         )
@@ -6453,6 +6461,7 @@ class MreTree(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
+        MelVmad(),
         MelBounds(),
         MelModel(),
         MelFid('PFIG','harvestIngredient'),
@@ -6662,7 +6671,8 @@ class MreWeap(MelRecord):
         MelBounds(),
         MelLString('FULL','full'),
         MelModel('model1','MODL'),
-        MelIcons(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
         MelFid('EITM','enchantment',),
         MelOptStruct('EAMT','H','enchantPoints'),
         MelDestructible(),
@@ -6685,16 +6695,18 @@ class MreWeap(MelRecord):
         MelFid('NAM9','equipSound',),
         MelFid('NAM8','unequipSound',),
         MelStruct('DATA','IfH','value','weight','damage',),
-        MelStruct('DNAM','B3s2fH2sf4s4B2f2I5f12si8si4sf','animationType','unknown1',
-                  'speed','reach',(WeapFlags1,'dnamFlags1',0L),'unknown2','sightFOV',
-                  'unknown3','baseVATSToHitChance','attackAnimation',
+        MelStruct('DNAM','B3s2fH2sf4s4B2f2I5f12si8si4sf','animationType',
+                  ('dnamUnk1',null3),'speed','reach',
+                  (WeapFlags1,'dnamFlags1',None),('dnamUnk2',null2),'sightFOV',
+                  ('dnamUnk3',null4),'baseVATSToHitChance','attackAnimation',
                   'numProjectiles','embeddedWeaponAVunused','minRange',
-                  'maxRange','onHit',(WeapFlags2,'dnamFlags2',0L),
-                  'animationAttackMultiplier','unknown4','rumbleLeftMotorStrength',
-                  'rumbleRightMotorStrength','rumbleDuration','unknown5',
-                  'skill','unknown6','resist','unknown7','stagger',),
-        MelStruct('CRDT','H2sfB3sI','critDamage','unused2','criticalMultiplier',
-                  (WeapFlags3,'criticalFlags',0L),'unused3',(FID,'criticalEffect'),),
+                  'maxRange','onHit',(WeapFlags2,'dnamFlags2',None),
+                  'animationAttackMultiplier',('dnamUnk4',0.0),
+                  'rumbleLeftMotorStrength','rumbleRightMotorStrength',
+                  'rumbleDuration',('dnamUnk5',null4+null4+null4),'skill',
+                  ('dnamUnk6',null4+null4),'resist',('dnamUnk7',null4),'stagger',),
+        MelStruct('CRDT','H2sfB3sI','critDamage',('crdtUnk1',null2),'criticalMultiplier',
+                  (WeapFlags3,'criticalFlags',0L),('crdtUnk2',null3),(FID,'criticalEffect',None),),
         MelStruct('VNAM','I','detectionSoundLevel'),
         MelFid('CNAM','template',),
         )
