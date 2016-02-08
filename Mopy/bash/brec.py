@@ -301,20 +301,20 @@ class ModReader:
         """Unpack a subrecord header.  Optionally checks for match with expected
         type and size."""
         selfUnpack = self.unpack
-        (type,size) = selfUnpack('4sH',6,recType+'.SUB_HEAD')
+        (rec_type, size) = selfUnpack('4sH', 6, recType + '.SUB_HEAD')
         #--Extended storage?
-        while type == 'XXXX':
+        while rec_type == 'XXXX':
             size = selfUnpack('I',4,recType+'.XXXX.SIZE.')[0]
-            type = selfUnpack('4sH',6,recType+'.XXXX.TYPE')[0] #--Throw away size (always == 0)
+            rec_type = selfUnpack('4sH', 6, recType + '.XXXX.TYPE')[0] #--Throw away size (always == 0)
         #--Match expected name?
-        if expType and expType != type:
-            raise ModError(self.inName,
-                u'%s: Expected %s subrecord, but found %s instead.'
-                % (recType,expType,type))
+        if expType and expType != rec_type:
+            raise ModError(self.inName, u'%s: Expected %s subrecord, but '
+                           u'found %s instead.' % (recType, expType, rec_type))
         #--Match expected size?
         if expSize and expSize != size:
-            raise ModSizeError(self.inName,recType+'.'+type,size,expSize,True)
-        return type,size
+            raise ModSizeError(self.inName, recType + '.' + rec_type, size,
+                               expSize, True)
+        return rec_type,size
 
     #--Find data ------------------------------------------
     def findSubRecord(self,subType,recType='----'):

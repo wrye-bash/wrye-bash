@@ -62,12 +62,12 @@ class RecordHeader(BaseRecordHeader):
     @staticmethod
     def unpack(ins):
         """Returns a RecordHeader object by reading the input stream."""
-        type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
+        rec_type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
         #--Bad type?
-        if type not in esp.recordTypes:
-            raise ModError(ins.inName,u'Bad header type: '+repr(type))
+        if rec_type not in esp.recordTypes:
+            raise ModError(ins.inName,u'Bad header type: '+repr(rec_type))
         #--Record
-        if type != 'GRUP':
+        if rec_type != 'GRUP':
             pass
         #--Top Group
         elif uint1 == 0: #groupType == 0 (Top Type)
@@ -79,7 +79,7 @@ class RecordHeader(BaseRecordHeader):
             else:
                 raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
         #--Other groups
-        return RecordHeader(type,size,uint0,uint1,uint2,uint3)
+        return RecordHeader(rec_type,size,uint0,uint1,uint2,uint3)
 
     def pack(self):
         """Return the record header packed into a bitstream to be written to file."""
