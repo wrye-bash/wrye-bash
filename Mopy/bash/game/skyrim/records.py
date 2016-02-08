@@ -599,9 +599,9 @@ class MelModel(MelGroup):
         'MOD5': ('MOD5','MO5T','MO5S'),
         'DMDL': ('DMDL','DMDT','DMDS'),
         }
-    def __init__(self,attr='model',type='MODL'):
+    def __init__(self, attr='model', subType='MODL'):
         """Initialize."""
-        types = self.__class__.typeSets[type]
+        types = self.__class__.typeSets[subType]
         MelGroup.__init__(self,attr,
             MelString(types[0],'modPath'),
             MelBase(types[1],'modt_p'),
@@ -1171,8 +1171,8 @@ class MelVmad(MelBase):
             for alias in self.aliases:
                 alias.mapFids(record,function,save)
 
-    def __init__(self,type='VMAD',attr='vmdata'):
-        MelBase.__init__(self,type,attr)
+    def __init__(self, subType='VMAD', attr='vmdata'):
+        MelBase.__init__(self, subType, attr)
 
     def hasFids(self,formElements):
         """Include self if has fids."""
@@ -1726,10 +1726,10 @@ class MelBookData(MelStruct):
     #  23:'Restoration',
     #  24:'Enchanting',
 
-    def __init__(self,type='DATA'):
+    def __init__(self, subType='DATA'):
         """Initialize."""
-        MelStruct.__init__(self,type,'2B2siIf',(MelBookData.bookTypeFlags,'flags',0L),
-            ('bookType',0),('unused',null2),('skillOrSpell',0),'value','weight'),
+        MelStruct.__init__(self, subType, '2B2siIf', (MelBookData.bookTypeFlags, 'flags', 0L),
+                           ('bookType',0), ('unused',null2), ('skillOrSpell',0),'value','weight'),
 
     def hasFids(self,formElements):
         """Include self if has fids."""
@@ -3682,10 +3682,10 @@ class MreIpctData(MelStruct):
         (0, 'noDecalData'),
     ))
 
-    def __init__(self,type='DATA'):
-        MelStruct.__init__(self,type,'fI2fI2B2s','effectDuration','effectOrientation',
+    def __init__(self, subType='DATA'):
+        MelStruct.__init__(self, subType, 'fI2fI2B2s', 'effectDuration', 'effectOrientation',
                   'angleThreshold','placementRadius','soundLevel',
-                  (MreIpctData.IpctTypeFlags,'flags',0L),'impactResult','unkIpct1',),
+                           (MreIpctData.IpctTypeFlags,'flags',0L),'impactResult','unkIpct1', ),
 
     def loadData(self, record, ins, sub_type, size, readId):
         """Handle older truncated DATA for IPCT subrecord."""
@@ -6316,8 +6316,8 @@ class MreSndr(MelRecord):
 # Verified for 305
 #------------------------------------------------------------------------------
 class MelSopmData(MelStruct):
-    def __init__(self,type='ONAM'):
-        MelStruct.__init__(self,type,'=24B',
+    def __init__(self, subType='ONAM'):
+        MelStruct.__init__(self, subType, '=24B',
                            'ch0_l','ch0_r','ch0_c','ch0_lFE','ch0_rL','ch0_rR','ch0_bL','ch0_bR',
                            'ch1_l','ch1_r','ch1_c','ch1_lFE','ch1_rL','ch1_rR','ch1_bL','ch1_bR',
                            'ch2_l','ch2_r','ch2_c','ch2_lFE','ch2_rL','ch2_rR','ch2_bL','ch2_bR',
@@ -6444,12 +6444,12 @@ class MreSpel(MelRecord,MreHasEffects):
     # 'Rain',
     # 'Snow',
 class MelSpgdData(MelStruct):
-    def __init__(self,type='DATA'):
-        MelStruct.__init__(self,type,'=7f4If',
+    def __init__(self, subType='DATA'):
+        MelStruct.__init__(self, subType, '=7f4If',
                            'gravityVelocity','rotationVelocity','particleSizeX',
                            'particleSizeY','centerOffsetMin','centerOffsetMax',
                            'initialRotationRange','numSubtexturesX',
-                           'numSubtexturesY','type',('boxSize',0),
+                           'numSubtexturesY','type', ('boxSize',0),
                            ('particleDensity',0),
                            )
 

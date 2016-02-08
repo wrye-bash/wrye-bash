@@ -426,9 +426,9 @@ class MelBase:
     """Represents a mod record raw element. Typically used for unknown elements.
     Also used as parent class for other element types."""
 
-    def __init__(self,type,attr,default=None):
+    def __init__(self, subType, attr, default=None):
         """Initialize."""
-        self.subType, self.attr, self.default = type, attr, default
+        self.subType, self.attr, self.default = subType, attr, default
         self._debug = False
 
     def debug(self,on=True):
@@ -566,9 +566,9 @@ class MelNull(MelBase):
     """Represents an obsolete record. Reads bytes from instream, but then
     discards them and is otherwise inactive."""
 
-    def __init__(self,type):
+    def __init__(self, subType):
         """Initialize."""
-        self.subType = type
+        self.subType = subType
         self._debug = False
 
     def getSlotsUsed(self):
@@ -672,11 +672,11 @@ class MelCountedFidList(MelFidList):
 class MelSortedFidList(MelFidList):
     """MelFidList that sorts the order of the Fids before writing them.  They are not sorted after modification, only just prior to writing."""
 
-    def __init__(self, type, attr, sortKeyFn = lambda x: x, default=None):
+    def __init__(self, subType, attr, sortKeyFn=lambda x: x, default=None):
         """sortKeyFn - function to pass to list.sort(key = ____) to sort the FidList
            just prior to writing.  Since the FidList will already be converted to short Fids
            at this point we're sorting 4-byte values,  not (FileName, 3-Byte) tuples."""
-        MelFidList.__init__(self, type, attr, default)
+        MelFidList.__init__(self, subType, attr, default)
         self.sortKeyFn = sortKeyFn
 
     def dumpData(self, record, out):
@@ -820,9 +820,9 @@ class MelXpci(MelNull):
 class MelString(MelBase):
     """Represents a mod record string element."""
 
-    def __init__(self,type,attr,default=None,maxSize=0):
+    def __init__(self, subType, attr, default=None, maxSize=0):
         """Initialize."""
-        MelBase.__init__(self,type,attr,default)
+        MelBase.__init__(self, subType, attr, default)
         self.maxSize = maxSize
 
     def loadData(self, record, ins, sub_type, size, readId):
@@ -860,8 +860,8 @@ class MelString(MelBase):
 class MelUnicode(MelString):
     """Like MelString, but instead of using bolt.pluginEncoding to read the
        string, it tries the encoding specified in the constructor instead"""
-    def __init__(self,type,attr,default=None,maxSize=0,encoding=None):
-        MelString.__init__(self,type,attr,default,maxSize)
+    def __init__(self, subType, attr, default=None, maxSize=0, encoding=None):
+        MelString.__init__(self, subType, attr, default, maxSize)
         self.encoding = encoding # None == automatic detection
 
     def loadData(self, record, ins, sub_type, size, readId):
@@ -930,10 +930,10 @@ class MelStrings(MelString):
 class MelStruct(MelBase):
     """Represents a structure record."""
 
-    def __init__(self,type,format,*elements,**kwdargs):
+    def __init__(self, subType, format, *elements, **kwdargs):
         """Initialize."""
         dumpExtra = kwdargs.get('dumpExtra', None)
-        self.subType, self.format = type,format
+        self.subType, self.format = subType, format
         self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*elements)
         self._debug = False
         if dumpExtra:
@@ -1007,9 +1007,9 @@ class MelStruct(MelBase):
 class MelStructs(MelStruct):
     """Represents array of structured records."""
 
-    def __init__(self,type,format,attr,*elements,**kwdargs):
+    def __init__(self, subType, format, attr, *elements, **kwdargs):
         """Initialize."""
-        MelStruct.__init__(self,type,format,*elements,**kwdargs)
+        MelStruct.__init__(self, subType, format, *elements, **kwdargs)
         self.attr = attr
 
     def getSlotsUsed(self):
@@ -1095,9 +1095,9 @@ class MelTuple(MelBase):
     """Represents a fixed length array that maps to a single subrecord.
     (E.g., the stats array for NPC_ which maps to the DATA subrecord.)"""
 
-    def __init__(self,type,format,attr,defaults):
+    def __init__(self, subType, format, attr, defaults):
         """Initialize."""
-        self.subType, self.format, self.attr, self.defaults = type, format, attr, defaults
+        self.subType, self.format, self.attr, self.defaults = subType, format, attr, defaults
         self._debug = False
 
     def setDefault(self,record):
