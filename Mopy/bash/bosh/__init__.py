@@ -5012,8 +5012,7 @@ class Installer(object):
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_(u"%s: Scanning...") % rootName)
         progress.setFull(1+len(dirDirsFiles))
-        pending = set()
-        pendingAdd = pending.add
+        pending, pending_size = {}, 0
         new_sizeCrcDate = {}
         oldGet = old_sizeCrcDate.get
         # below only for dirs['mods'] (aka the Data/ dir)
@@ -5048,32 +5047,32 @@ class Installer(object):
                 if not isEspm and size == oSize and date == oDate:
                     new_sizeCrcDate[rpFile] = (oSize,oCrc,oDate)
                 else:
-                    pendingAdd(rpFile)
+                    pending[rpFile] = (size, oCrc, date)
+                    pending_size += size
         #--Remove empty dirs?
         if rootIsMods and settings['bash.installers.removeEmptyDirs']:
             for dir in emptyDirs:
                 try: dir.removedirs()
                 except OSError: pass
         #--Force update?
-        if recalculate_all_crcs: pending |= set(new_sizeCrcDate)
+        if recalculate_all_crcs:
+            pending.update(new_sizeCrcDate)
+            pending_size += sum(x[0] for x in new_sizeCrcDate.itervalues())
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
         apRootJoin = apRoot.join
         if pending:
-            totalSize = sum([apRootJoin(normGet(x,x)).size for x in pending])
             done = 0
             progress(0,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n')
             # each mod increments the progress bar by at least one, even if it is size 0
             # add len(pending) to the progress bar max to ensure we don't hit 100% and cause the progress bar
             # to prematurely disappear
-            progress.setFull(max(totalSize+len(pending),1))
-            for rpFile in sorted(pending):
+            progress.setFull(max(pending_size + len(pending), 1))
+            for rpFile, (size, _crc, date) in iter(sorted(pending.items())):
                 progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
                 try:
                     apFile = apRootJoin(normGet(rpFile,rpFile))
-                    size = apFile.size
                     crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+max(size,1)))
-                    date = apFile.mtime
                     done += size
                 except WindowsError:
                     deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
