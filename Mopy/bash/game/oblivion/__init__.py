@@ -25,9 +25,19 @@
 """This modules defines static data for use by bush, when
    TES IV: Oblivion is set at the active game."""
 
-from constants import bethDataFiles, allBethFiles
+import re
+import struct
+from .constants import bethDataFiles, allBethFiles
 from ... import brec
-from ...brec import *
+from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, \
+    MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, \
+    MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGras, MreHair, MreIngr, \
+    MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, \
+    MreNpc, MrePack, MreQust, MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, \
+    MreSpel, MreStat, MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, \
+    MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, \
+    MreCell, MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
+from ...brec import MreGlob, BaseRecordHeader, ModError
 
 #--Name of the game to use in UI.
 displayName = u'Oblivion'
@@ -1604,10 +1614,63 @@ class esp:
 
     recordTypes = set(topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
 
-#------------------------------------------------------------------------------
-from records import * # MUST BE AFTER esp which is imported in records.py
-#------------------------------------------------------------------------------
+#--Mod I/O
+class RecordHeader(BaseRecordHeader):
+    size = 20
 
+    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
+        self.recType = recType
+        self.size = size
+        if recType == 'GRUP':
+            self.label = arg1
+            self.groupType = arg2
+            self.stamp = arg3
+        else:
+            self.flags1 = arg1
+            self.fid = arg2
+            self.flags2 = arg2
+        self.extra = extra
+
+    @staticmethod
+    def unpack(ins):
+        """Returns a RecordHeader object by reading the input stream."""
+        rec_type,size,uint0,uint1,uint2 = ins.unpack('=4s4I',20,'REC_HEADER')
+        #--Bad?
+        if rec_type not in esp.recordTypes:
+            raise ModError(ins.inName,u'Bad header type: '+repr(rec_type))
+        #--Record
+        if rec_type != 'GRUP':
+            pass
+        #--Top Group
+        elif uint1 == 0: # groupType == 0 (Top Group)
+            str0 = struct.pack('I',uint0)
+            if str0 in esp.topTypes:
+                uint0 = str0
+            elif str0 in esp.topIgTypes:
+                uint0 = esp.topIgTypes[str0]
+            else:
+                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
+        return RecordHeader(rec_type,size,uint0,uint1,uint2)
+
+    def pack(self):
+        """Returns the record header packed into a string for writing to
+        file."""
+        if self.recType == 'GRUP':
+            if isinstance(self.label, str):
+                return struct.pack('=4sI4sII', self.recType, self.size,
+                                   self.label, self.groupType, self.stamp)
+            elif isinstance(self.label, tuple):
+                return struct.pack('=4sIhhII', self.recType, self.size,
+                                   self.label[0], self.label[1],
+                                   self.groupType, self.stamp)
+            else:
+                return struct.pack('=4s4I', self.recType, self.size,
+                                   self.label, self.groupType, self.stamp)
+        else:
+            return struct.pack('=4s4I', self.recType, self.size, self.flags1,
+                               self.fid, self.flags2)
+
+#------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
     MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn,
