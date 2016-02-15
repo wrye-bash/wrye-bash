@@ -827,8 +827,8 @@ def main():
     # Parse command line, show help if invalid arguments are present
     try:
         args, extra = parser.parse_known_args()
-    except:
-        parser.print_help()
+    except SystemExit as e:
+        if e.code: parser.print_help()
         return
     if len(extra) > 0:
         parser.print_help()
