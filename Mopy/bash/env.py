@@ -533,3 +533,30 @@ def testUAC(gameDataPath):
         tmpDir.rmtree(safety=tmpDir.stail)
         shellDeletePass(dest)
     return False
+
+def getJava():
+    """Locate javaw.exe to launch jars from Bash."""
+    try:
+        java_home = GPath(_os.environ['JAVA_HOME'])
+        java = java_home.join('bin', u'javaw.exe')
+        if java.exists(): return java
+    except KeyError: # no JAVA_HOME
+        pass
+    win = GPath(_os.environ['SYSTEMROOT'])
+    # Default location: Windows\System32\javaw.exe
+    java = win.join(u'system32', u'javaw.exe')
+    if not java.exists():
+        # 1st possibility:
+        #  - Bash is running as 32-bit
+        #  - The only Java installed is 64-bit
+        # Because Bash is 32-bit, Windows\System32 redirects to
+        # Windows\SysWOW64.  So look in the ACTUAL System32 folder
+        # by using Windows\SysNative
+        java = win.join(u'sysnative', u'javaw.exe')
+    if not java.exists():
+        # 2nd possibility
+        #  - Bash is running as 64-bit
+        #  - The only Java installed is 32-bit
+        # So javaw.exe would actually be in Windows\SysWOW64
+        java = win.join(u'syswow64', u'javaw.exe')
+    return java
