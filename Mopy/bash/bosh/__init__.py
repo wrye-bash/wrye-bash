@@ -4563,6 +4563,18 @@ class Installer(object):
 
     @staticmethod
     def process_data_dir(dirDirsFiles, old_sizeCrcDate, progress, relPos):
+        """Construct a data_SizeCrcDate dict from paths in dirDirsFiles. Dirs
+        component is unused, only the absolute path and files are used. Old
+        data_SizeCrcDate is used to decide which files need their crc
+        recalculated. Return a tuple containing:
+        - new_sizeCrcDate and pending: two newly constructed dicts mapping
+        paths to their size, date and absolute path and also the crc (for
+        new_sizeCrcDate) if the cached value is valid (no change in mod time
+        or size of the file)
+        - the size of pending files used in displaying crc calculation progress
+
+        :param dirDirsFiles: list of tuples in the format of the output of walk
+        """
         pending, pending_size = {}, 0
         new_sizeCrcDate = {}
         oldGet = old_sizeCrcDate.get
@@ -4612,9 +4624,8 @@ class Installer(object):
             pending_size += sum(x[0] for x in new_sizeCrcDate.itervalues())
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
-        if pending: # will always calculate espms crc in Data/ folder
-            Installer.calc_crcs(pending, pending_size, rootName,
-                                new_sizeCrcDate, progress)
+        Installer.calc_crcs(pending, pending_size, rootName,
+                            new_sizeCrcDate, progress)
         old_sizeCrcDate.clear()
         for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
             old_sizeCrcDate[rpFile] = (size, crc, date)
@@ -4622,13 +4633,14 @@ class Installer(object):
 
     @staticmethod
     def calc_crcs(pending, pending_size, rootName, new_sizeCrcDate, progress):
+        if not pending: return
         done = 0
         progress_msg= rootName + u'\n' + _(u'Calculating CRCs...') + u'\n'
         progress(0, progress_msg)
         # each mod increments the progress bar by at least one, even if it
         # is size 0 - add len(pending) to the progress bar max to ensure we
         # don't hit 100% and cause the progress bar to prematurely disappear
-        progress.setFull(pending_size + len(pending)) # pending must not be []!
+        progress.setFull(pending_size + len(pending))
         for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
             progress(done, progress_msg + rpFile.s)
             sub = bolt.SubProgress(progress, done, done + size + 1)
@@ -5698,13 +5710,13 @@ class InstallerProject(Installer):
         progress.setFull(1)
         asRoot = apRoot.s
         relPos = len(asRoot)+1
-        transProgress = u'%s: ' + _(u'Scanning...') + u'\n%s'
+        transProgress = rootName + u': ' + _(u'Scanning...') + u'\n%s'
         max_mtime = apRoot.mtime
         pending, pending_size = {}, 0
         new_sizeCrcDate = {}
         oldGet = old_sizeCrcDate.get
         for asDir, __sDirs, sFiles in os.walk(asRoot):
-            progress(0.05, transProgress % (rootName, asDir[relPos:]))
+            progress(0.05, transProgress % asDir[relPos:])
             get_mtime = os.path.getmtime(asDir)
             max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
             rsDir = asDir[relPos:]
