@@ -6681,54 +6681,6 @@ class InstallersData(DataDict):
         return filter(installable, installerKeys)
 
 #------------------------------------------------------------------------------
-class ModDetails:
-    """Details data for a mods file. Similar to TesCS Details view."""
-    def __init__(self,modInfo=None,progress=None):
-        self.group_records = {} #--group_records[group] = [(fid0,eid0),(fid1,eid1),...]
-
-    def readFromMod(self,modInfo,progress=None):
-        """Extracts details from mod file."""
-        def getRecordReader(ins,flags,size):
-            """Decompress record data as needed."""
-            if not MreRecord._flags1(flags).compressed:
-                return ins,ins.tell()+size
-            else:
-                import zlib
-                sizeCheck, = struct.unpack('I',ins.read(4))
-                decomp = zlib.decompress(ins.read(size-4))
-                if len(decomp) != sizeCheck:
-                    raise ModError(self.inName,
-                        u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
-                reader = ModReader(modInfo.name,sio(decomp))
-                return reader,sizeCheck
-        progress = progress or bolt.Progress()
-        group_records = self.group_records = {}
-        records = group_records[bush.game.MreHeader.classType] = []
-        with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
-            while not ins.atEnd():
-                header = ins.unpackRecHeader()
-                recType,size = header.recType,header.size
-                if recType == 'GRUP':
-                    label = header.label
-                    progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
-                    records = group_records.setdefault(label,[])
-                    if label in ('CELL','WRLD','DIAL'):
-                        ins.seek(size-header.__class__.size,1)
-                elif recType != 'GRUP':
-                    eid = u''
-                    nextRecord = ins.tell() + size
-                    recs,endRecs = getRecordReader(ins,header.flags1,size)
-                    while recs.tell() < endRecs:
-                        (type,size) = recs.unpackSubHeader()
-                        if type == 'EDID':
-                            eid = recs.readString(size)
-                            break
-                        recs.seek(size,1)
-                    records.append((header.fid,eid))
-                    ins.seek(nextRecord)
-        del group_records[bush.game.MreHeader.classType]
-
-#------------------------------------------------------------------------------
 class ModGroups:
     """Groups for mods with functions for importing/exporting from/to text file."""
 

@@ -443,7 +443,7 @@ class Mod_Details(OneItemLink):
         modName = GPath(self.selected[0])
         modInfo = bosh.modInfos[modName]
         with balt.Progress(modName.s) as progress:
-            mod_details = bosh.ModDetails()
+            mod_details = bosh.mods_metadata.ModDetails()
             mod_details.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
             buff = StringIO.StringIO()
             progress(0.7,_(u'Sorting records.'))
