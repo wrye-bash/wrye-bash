@@ -6781,66 +6781,6 @@ class ModGroups:
                 out.write(rowFormat % (mod.s,mod_group[mod]))
 
 #------------------------------------------------------------------------------
-class CleanMod:
-    """Fixes cells to avoid nvidia fog problem."""
-    def __init__(self,modInfo):
-        self.modInfo = modInfo
-        self.fixedCells = set()
-
-    def clean(self,progress):
-        """Duplicates file, then walks through and edits file as necessary."""
-        progress.setFull(self.modInfo.size)
-        fixedCells = self.fixedCells
-        fixedCells.clear()
-        #--File stream
-        path = self.modInfo.getPath()
-        #--Scan/Edit
-        with ModReader(self.modInfo.name,path.open('rb')) as ins:
-            with path.temp.open('wb') as  out:
-                def copy(size):
-                    buff = ins.read(size)
-                    out.write(buff)
-                def copyPrev(size):
-                    ins.seek(-size,1)
-                    buff = ins.read(size)
-                    out.write(buff)
-                while not ins.atEnd():
-                    progress(ins.tell())
-                    header = ins.unpackRecHeader()
-                    type,size = header.recType,header.size
-                    #(type,size,str0,fid,uint2) = ins.unpackRecHeader()
-                    copyPrev(header.__class__.size)
-                    if type == 'GRUP':
-                        if header.groupType != 0: #--Ignore sub-groups
-                            pass
-                        elif header.label not in ('CELL','WRLD'):
-                            copy(size-header.__class__.size)
-                    #--Handle cells
-                    elif type == 'CELL':
-                        nextRecord = ins.tell() + size
-                        while ins.tell() < nextRecord:
-                            (type,size) = ins.unpackSubHeader()
-                            copyPrev(6)
-                            if type != 'XCLL':
-                                copy(size)
-                            else:
-                                color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
-                                if not (near or far or clip):
-                                    near = 0.0001
-                                    fixedCells.add(header.fid)
-                                out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
-                    #--Non-Cells
-                    else:
-                        copy(size)
-        #--Done
-        if fixedCells:
-            self.modInfo.makeBackup()
-            path.untemp()
-            self.modInfo.setmtime()
-        else:
-            path.temp.remove()
-
-#------------------------------------------------------------------------------
 class SaveSpells:
     """Player spells of a savegame."""
 

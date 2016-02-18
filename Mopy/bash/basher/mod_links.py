@@ -63,7 +63,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_IngredientDetails_Import', 'Mod_Scripts_Import',
            'Mod_SigilStoneDetails_Import', 'Mod_SpellRecords_Import',
            'Mod_Face_Import', 'Mod_Fids_Replace', 'Mod_SkipDirtyCheck',
-           'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_CleanMod',
+           'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_FogFixer',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
            'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
            'Mod_SetVersion', 'Mod_ListDependent', 'Mod_JumpToInstaller']
@@ -1331,7 +1331,7 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
-class Mod_CleanMod(EnabledLink):
+class Mod_FogFixer(EnabledLink):
     """Fix fog on selected cells."""
     text = _(u'Nvidia Fog Fix')
     help = _(u'Modify fog values in interior cells to avoid the Nvidia black '
@@ -1350,10 +1350,11 @@ class Mod_CleanMod(EnabledLink):
                 if fileName.cs in bush.game.masterFiles: continue
                 progress(index,_(u'Scanning')+fileName.s)
                 fileInfo = bosh.modInfos[fileName]
-                cleanMod = bosh.CleanMod(fileInfo)
-                cleanMod.clean(SubProgress(progress,index,index+1))
-                if cleanMod.fixedCells:
-                    fixed.append(u'* %4d %s' % (len(cleanMod.fixedCells),fileName.s))
+                fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
+                fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
+                if fog_fixer.fixedCells:
+                    fixed.append(
+                        u'* %4d %s' % (len(fog_fixer.fixedCells), fileName.s))
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
             self._showWryeLog(message, title=_(u'Nvidia Fog Fix'),
