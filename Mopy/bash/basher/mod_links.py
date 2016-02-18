@@ -1367,23 +1367,25 @@ class Mod_UndeleteRefs(EnabledLink):
     """Undeletes refs in cells."""
     text = _(u'Undelete Refs')
     help = _(u'Undeletes refs in cells')
+    warn = _(u"Changes deleted refs to ignored.  This is a very advanced "
+             u"feature and should only be used by modders who know exactly "
+             u"what they're doing.")
 
     def _enable(self):
         return len(self.selected) != 1 or (
             not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self):
-        message = _(u"Changes deleted refs to ignored.  This is a very advanced feature and should only be used by modders who know exactly what they're doing.")
-        if not self._askContinue(message, 'bash.undeleteRefs.continue',
-                                 _(u'Undelete Refs')): return
-        with balt.Progress(_(u'Undelete Refs')) as progress:
+        if not self._askContinue(self.warn, 'bash.undeleteRefs.continue',
+                                 self.text): return
+        with balt.Progress(self.text) as progress:
             progress.setFull(len(self.selected))
             hasFixed = False
             log = bolt.LogFile(StringIO.StringIO())
             for index,fileName in enumerate(map(GPath,self.selected)):
                 if bosh.reOblivion.match(fileName.s):
                     self._showWarning(_(u'Skipping') + u' ' + fileName.s,
-                                      _(u'Undelete Refs'))
+                                      self.text)
                     continue
                 progress(index,_(u'Scanning')+u' '+fileName.s+u'.')
                 fileInfo = bosh.modInfos[fileName]
@@ -1399,8 +1401,7 @@ class Mod_UndeleteRefs(EnabledLink):
             message = log.out.getvalue()
         else:
             message = _(u"No changes required.")
-        self._showWryeLog(message, title=_(u'Undelete Refs'),
-                          icons=Resources.bashBlue)
+        self._showWryeLog(message, title=self.text, icons=Resources.bashBlue)
         log.out.close()
 
 # Rest of menu Links ----------------------------------------------------------

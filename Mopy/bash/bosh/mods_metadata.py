@@ -328,6 +328,8 @@ class ConfigHelpers:
             if path.mtime != ruleSet.mtime:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
+    _cleaning_wiki_url = (u'[[!http://cs.elderscrolls.com/constwiki/index.php/'
+                          u'TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]]')
     def checkMods(self, showModList=False, showRuleSets=False, showNotes=False,
                   showConfig=True, showSuggest=True, showCRC=False,
                   showVersion=True, showWarn=True, scanDirty=None):
@@ -351,74 +353,93 @@ class ConfigHelpers:
             shouldActivateA = [x for x in imported if u'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
             #--Mods with invalid TES4 version
             invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
-            if True:
-                #--Look for dirty edits
-                shouldClean = {}
-                scan = []
-                for x in active:
-                    dirtyMessage = modInfos[x].getDirtyMessage()
-                    if dirtyMessage[0]:
-                        shouldClean[x] = dirtyMessage[1]
-                    elif scanDirty:
-                        scan.append(modInfos[x])
-                if scanDirty:
-                    try:
-                        with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60,parent=scanDirty,abort=True) as progress:
-                            ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
-                            for i,mod in enumerate(scan):
-                                udrs,itms,fog = ret[i]
-                                if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-                                if mod.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
-                                if udrs or itms:
-                                    cleanMsg = []
-                                    if udrs:
-                                        cleanMsg.append(u'UDR(%i)' % len(udrs))
-                                    if itms:
-                                        cleanMsg.append(u'ITM(%i)' % len(itms))
-                                    cleanMsg = u', '.join(cleanMsg)
-                                    shouldClean[mod.name] = cleanMsg
-                    except bolt.CancelError:
-                        pass
+            #--Look for dirty edits
+            shouldClean = {}
+            scan = []
+            for x in active:
+                dirtyMessage = modInfos[x].getDirtyMessage()
+                if dirtyMessage[0]:
+                    shouldClean[x] = dirtyMessage[1]
+                elif scanDirty:
+                    scan.append(modInfos[x])
+            if scanDirty:
+                try:
+                    with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60,parent=scanDirty,abort=True) as progress:
+                        ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
+                        for i,mod in enumerate(scan):
+                            udrs,itms,fog = ret[i]
+                            if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
+                            if mod.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
+                            if udrs or itms:
+                                cleanMsg = []
+                                if udrs:
+                                    cleanMsg.append(u'UDR(%i)' % len(udrs))
+                                if itms:
+                                    cleanMsg.append(u'ITM(%i)' % len(itms))
+                                cleanMsg = u', '.join(cleanMsg)
+                                shouldClean[mod.name] = cleanMsg
+                except bolt.CancelError:
+                    pass
             shouldCleanMaybe = [(x,modInfos[x].getDirtyMessage()[1]) for x in active if not modInfos[x].getDirtyMessage()[0] and modInfos[x].getDirtyMessage()[1] != u'']
             for mod in tuple(shouldMerge):
                 if u'NoMerge' in modInfos[mod].getBashTags():
                     shouldMerge.discard(mod)
             if shouldMerge:
                 log.setHeader(u'=== '+_(u'Mergeable'))
-                log(_(u'Following mods are active, but could be merged into the bashed patch.'))
+                log(_(u'Following mods are active, but could be merged into '
+                      u'the bashed patch.'))
                 for mod in sorted(shouldMerge):
                     log(u'* __'+mod.s+u'__')
             if shouldDeactivateB:
                 log.setHeader(u'=== '+_(u'NoMerge Tagged Mods'))
-                log(_(u'Following mods are tagged NoMerge and should be deactivated and imported into the bashed patch but are currently active.'))
+                log(_(u'Following mods are tagged NoMerge and should be '
+                      u'deactivated and imported into the bashed patch but '
+                      u'are currently active.'))
                 for mod in sorted(shouldDeactivateB):
                     log(u'* __'+mod.s+u'__')
             if shouldDeactivateA:
                 log.setHeader(u'=== '+_(u'Deactivate Tagged Mods'))
-                log(_(u'Following mods are tagged Deactivate and should be deactivated and imported into the bashed patch but are currently active.'))
+                log(_(u'Following mods are tagged Deactivate and should be '
+                      u'deactivated and imported into the bashed patch but '
+                      u'are currently active.'))
                 for mod in sorted(shouldDeactivateA):
                     log(u'* __'+mod.s+u'__')
             if shouldActivateA:
                 log.setHeader(u'=== '+_(u'MustBeActiveIfImported Tagged Mods'))
-                log(_(u'Following mods to work correctly have to be active as well as imported into the bashed patch but are currently only imported.'))
+                log(_(u'Following mods to work correctly have to be active as '
+                      u'well as imported into the bashed patch but are '
+                      u'currently only imported.'))
                 for mod in sorted(shouldActivateA):
                     log(u'* __'+mod.s+u'__')
             if shouldClean:
-                log.setHeader(u'=== '+_(u'Mods that need cleaning with TES4Edit'))
-                log(_(u'Following mods have identical to master (ITM) records, deleted records (UDR), or other issues that should be fixed with TES4Edit.  Visit the [[!http://cs.elderscrolls.com/constwiki/index.php/TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]] for more information.'))
+                log.setHeader(
+                    u'=== ' + _(u'Mods that need cleaning with TES4Edit'))
+                log(_(u'Following mods have identical to master (ITM) records,'
+                      u' deleted records (UDR), or other issues that should be'
+                      u' fixed with TES4Edit.  Visit the %(cleaning_wiki_url)s'
+                      u' for more information.') % {
+                        '_cleaning_wiki_url': self._cleaning_wiki_url})
                 for mod in sorted(shouldClean.keys()):
                     log(u'* __'+mod.s+u':__  %s' % shouldClean[mod])
             if shouldCleanMaybe:
-                log.setHeader(u'=== '+_(u'Mods with special cleaning instructions'))
-                log(_(u'Following mods have special instructions for cleaning with TES4Edit'))
+                log.setHeader(
+                    u'=== ' + _(u'Mods with special cleaning instructions'))
+                log(_(u'Following mods have special instructions for cleaning '
+                      u'with TES4Edit'))
                 for mod in sorted(shouldCleanMaybe):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
             elif scanDirty and not shouldClean:
-                log.setHeader(u'=== '+_(u'Mods that need cleaning with TES4Edit'))
+                log.setHeader(
+                    u'=== ' + _(u'Mods that need cleaning with TES4Edit'))
                 log(_(u'Congratulations all mods appear clean.'))
             if invalidVersion:
-                log.setHeader(u'=== '+_(u'Mods with non standard TES4 versions'))
-                log(_(u"Following mods have a TES4 version that isn't recognized as one of the standard versions (0.8 and 1.0).  It is untested what effect this can have on the game, but presumably Oblivion will refuse to load anything above 1.0"))
+                log.setHeader(
+                    u'=== ' + _(u'Mods with non standard TES4 versions'))
+                log(_(u"Following mods have a TES4 version that isn't "
+                      u"recognized as one of the standard versions (0.8 and "
+                      u"1.0).  It is untested what effect this can have on "
+                      u"the game, but presumably Oblivion will refuse to "
+                      u"load anything above 1.0"))
                 for mod in sorted(invalidVersion):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
             #--Missing/Delinquent Masters
@@ -608,364 +629,358 @@ class ModCleaner:
     @staticmethod
     def _scan_CBash(modInfos,what,progress):
         """Scan multiple mods for problems"""
-        if what & ModCleaner.ALL:
-            # There are scans to do
-            doUDR = bool(what & ModCleaner.UDR)
-            doITM = bool(what & ModCleaner.ITM)
-            doFog = bool(what & ModCleaner.FOG)
-            # If there are more than 255 mods, we have to break it up into
-            # smaller groups.  We'll do groups of 200 for now, to allow for
-            # added files due to implicitly loading masters.
-            modInfos = [x.modInfo if isinstance(x,ModCleaner) else x for x in modInfos]
-            numMods = len(modInfos)
-            if numMods > 255:
-                ModsPerGroup = 200
-                numGroups = numMods / ModsPerGroup
-                if numMods % ModsPerGroup:
-                    numGroups += 1
-            else:
-                ModsPerGroup = 255
-                numGroups = 1
-            progress.setFull(numGroups)
-            ret = []
-            for i in range(numGroups):
-                #--Load
-                progress(i,_(u'Loading...'))
-                groupModInfos = modInfos[i*ModsPerGroup:(i+1)*ModsPerGroup]
-                with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
-                    for mod in groupModInfos:
-                        if len(mod.masterNames) == 0: continue
-                        path = mod.getPath()
-                        Current.addMod(path.stail)
-                    Current.load()
-                    #--Scan
-                    subprogress1 = bolt.SubProgress(progress,i,i+1)
-                    subprogress1.setFull(max(len(groupModInfos),1))
-                    for j,modInfo in enumerate(groupModInfos):
-                        subprogress1(j,_(u'Scanning...') + u'\n' + modInfo.name.s)
-                        udr = set()
-                        itm = set()
-                        fog = set()
-                        if len(modInfo.masterNames) > 0:
-                            path = modInfo.getPath()
-                            modFile = Current.LookupModFile(path.stail)
-                            if modFile:
-                                udrRecords = []
-                                fogRecords = []
-                                if doUDR:
-                                    udrRecords += modFile.ACRES + modFile.ACHRS + modFile.REFRS
-                                if doFog:
-                                    fogRecords += modFile.CELL
-                                if doITM:
-                                    itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
-                                total = len(udrRecords) + len(fogRecords)
-                                subprogress2 = bolt.SubProgress(subprogress1,j,j+1)
-                                subprogress2.setFull(max(total,1))
-                                #--Scan UDR
-                                for record in udrRecords:
-                                    subprogress2.plus()
-                                    if record.IsDeleted:
-                                        udr.add(ModCleaner.UdrInfo(record))
-                                #--Scan fog
-                                for record in fogRecords:
-                                    subprogress2.plus()
-                                    if not (record.fogNear or record.fogFar or record.fogClip):
-                                        fog.add(record.fid)
-                                modFile.Unload()
-                        ret.append((udr,itm,fog))
-            return ret
+        if not (what & ModCleaner.ALL):
+            return [(set(),set(),set())] * len(modInfos)
+        # There are scans to do
+        doUDR = bool(what & ModCleaner.UDR)
+        doITM = bool(what & ModCleaner.ITM)
+        doFog = bool(what & ModCleaner.FOG)
+        # If there are more than 255 mods, we have to break it up into
+        # smaller groups.  We'll do groups of 200 for now, to allow for
+        # added files due to implicitly loading masters.
+        modInfos = [x.modInfo if isinstance(x,ModCleaner) else x for x in modInfos]
+        numMods = len(modInfos)
+        if numMods > 255:
+            ModsPerGroup = 200
+            numGroups = numMods / ModsPerGroup
+            if numMods % ModsPerGroup:
+                numGroups += 1
         else:
-            return [(set(),set(),set()) for x in range(len(modInfos))]
+            ModsPerGroup = 255
+            numGroups = 1
+        progress.setFull(numGroups)
+        ret = []
+        for i in range(numGroups):
+            #--Load
+            progress(i,_(u'Loading...'))
+            groupModInfos = modInfos[i*ModsPerGroup:(i+1)*ModsPerGroup]
+            with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
+                for mod in groupModInfos:
+                    if len(mod.masterNames) == 0: continue
+                    path = mod.getPath()
+                    Current.addMod(path.stail)
+                Current.load()
+                #--Scan
+                subprogress1 = bolt.SubProgress(progress,i,i+1)
+                subprogress1.setFull(max(len(groupModInfos),1))
+                for j,modInfo in enumerate(groupModInfos):
+                    subprogress1(j,_(u'Scanning...') + u'\n' + modInfo.name.s)
+                    udr = set()
+                    itm = set()
+                    fog = set()
+                    if len(modInfo.masterNames) > 0:
+                        path = modInfo.getPath()
+                        modFile = Current.LookupModFile(path.stail)
+                        if modFile:
+                            udrRecords = []
+                            fogRecords = []
+                            if doUDR:
+                                udrRecords += modFile.ACRES + modFile.ACHRS + modFile.REFRS
+                            if doFog:
+                                fogRecords += modFile.CELL
+                            if doITM:
+                                itm |= set([x.fid for x in modFile.GetRecordsIdenticalToMaster()])
+                            total = len(udrRecords) + len(fogRecords)
+                            subprogress2 = bolt.SubProgress(subprogress1,j,j+1)
+                            subprogress2.setFull(max(total,1))
+                            #--Scan UDR
+                            for record in udrRecords:
+                                subprogress2.plus()
+                                if record.IsDeleted:
+                                    udr.add(ModCleaner.UdrInfo(record))
+                            #--Scan fog
+                            for record in fogRecords:
+                                subprogress2.plus()
+                                if not (record.fogNear or record.fogFar or record.fogClip):
+                                    fog.add(record.fid)
+                            modFile.Unload()
+                    ret.append((udr,itm,fog))
+        return ret
 
     @staticmethod
     def _scan_Python(modInfos,what,progress,detailed=False):
-        if what & (ModCleaner.UDR|ModCleaner.FOG):
-            # Python can't do ITM scanning
-            doUDR = what & ModCleaner.UDR
-            doFog = what & ModCleaner.FOG
-            progress.setFull(max(len(modInfos),1))
-            ret = []
-            for i,modInfo in enumerate(modInfos):
-                progress(i,_(u'Scanning...') + u'\n' + modInfo.name.s)
-                itm = set()
-                fog = set()
-                #--UDR stuff
-                udr = {}
-                parents_to_scan = {}
-                if len(modInfo.masterNames) > 0:
-                    subprogress = bolt.SubProgress(progress,i,i+1)
-                    if detailed:
-                        subprogress.setFull(max(modInfo.size*2,1))
-                    else:
-                        subprogress.setFull(max(modInfo.size,1))
-                    #--File stream
-                    path = modInfo.getPath()
-                    #--Scan
-                    parentType = None
-                    parentFid = None
-                    parentParentFid = None
-                    # Location (Interior = #, Exteror = (X,Y)
-                    parentBlock = None
-                    parentSubBlock = None
-                    with ModReader(modInfo.name,path.open('rb')) as ins:
-                        try:
-                            insAtEnd = ins.atEnd
-                            insTell = ins.tell
-                            insUnpackRecHeader = ins.unpackRecHeader
-                            insUnpackSubHeader = ins.unpackSubHeader
-                            insRead = ins.read
-                            insUnpack = ins.unpack
-                            headerSize = ins.recHeader.size
-                            structUnpack = struct.unpack
-                            structPack = struct.pack
-                            while not insAtEnd():
-                                subprogress(insTell())
-                                header = insUnpackRecHeader()
-                                type,size = header.recType,header.size
-                                #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                                if type == 'GRUP':
-                                    groupType = header.groupType
-                                    if groupType == 0 and header.label not in {'CELL','WRLD'}:
-                                        # Skip Tops except for WRLD and CELL groups
-                                        insRead(size-headerSize)
-                                    elif detailed:
-                                        if groupType == 1:
-                                            # World Children
-                                            parentParentFid = header.label
-                                            parentType = 1 # Exterior Cell
-                                            parentFid = None
-                                        elif groupType == 2:
-                                            # Interior Cell Block
-                                            parentType = 0 # Interior Cell
-                                            parentParentFid = parentFid = None
-                                        elif groupType in {6,8,9,10}:
-                                            # Cell Children, Cell Persisten Children,
-                                            # Cell Temporary Children, Cell VWD Children
-                                            parentFid = header.label
-                                        else: # 3,4,5,7 - Topic Children
-                                            pass
-                                else:
-                                    if doUDR and header.flags1 & 0x20 and type in (
-                                        'ACRE',               #--Oblivion only
-                                        'ACHR','REFR',        #--Both
-                                        'NAVM','PHZD','PGRE', #--Skyrim only
-                                        ):
-                                        if not detailed:
-                                            udr[header.fid] = ModCleaner.UdrInfo(header.fid)
-                                        else:
-                                            fid = header.fid
-                                            udr[fid] = ModCleaner.UdrInfo(fid,type,parentFid,u'',parentType,parentParentFid,u'',None)
-                                            parents_to_scan.setdefault(parentFid,set())
-                                            parents_to_scan[parentFid].add(fid)
-                                            if parentParentFid:
-                                                parents_to_scan.setdefault(parentParentFid,set())
-                                                parents_to_scan[parentParentFid].add(fid)
-                                    if doFog and type == 'CELL':
-                                        nextRecord = insTell() + size
-                                        while insTell() < nextRecord:
-                                            (nextType,nextSize) = insUnpackSubHeader()
-                                            if nextType != 'XCLL':
-                                                insRead(nextSize)
-                                            else:
-                                                color,near,far,rotXY,rotZ,fade,clip = insUnpack('=12s2f2l2f',nextSize,'CELL.XCLL')
-                                                if not (near or far or clip):
-                                                    fog.add(header.fid)
-                                    else:
-                                        insRead(size)
-                            if parents_to_scan:
-                                # Detailed info - need to re-scan for CELL and WRLD infomation
-                                ins.seek(0)
-                                baseSize = modInfo.size
-                                while not insAtEnd():
-                                    subprogress(baseSize+insTell())
-                                    header = insUnpackRecHeader()
-                                    type,size = header.recType,header.size
-                                    if type == 'GRUP':
-                                        if header.groupType == 0 and header.label not in {'CELL','WRLD'}:
-                                            insRead(size-headerSize)
-                                    else:
-                                        fid = header.fid
-                                        if fid in parents_to_scan:
-                                            record = MreRecord(header,ins,True)
-                                            record.loadSubrecords()
-                                            eid = u''
-                                            x,y = (0,0)
-                                            for subrec in record.subrecords:
-                                                if subrec.subType == 'EDID':
-                                                    eid = bolt.decode(subrec.data)
-                                                elif subrec.subType == 'XCLC':
-                                                    pos = structUnpack('=2i',subrec.data[:8])
-                                            for udrFid in parents_to_scan[fid]:
-                                                if type == 'CELL':
-                                                    udr[udrFid].parentEid = eid
-                                                    if udr[udrFid].parentType == 1:
-                                                        # Exterior Cell, calculate position
-                                                        udr[udrFid].pos = pos
-                                                elif type == 'WRLD':
-                                                    udr[udrFid].parentParentEid = eid
-                                        else:
-                                            insRead(size)
-                        except bolt.CancelError:
-                            raise
-                        except:
-                            deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name.s,ins.tell()),traceback=True)
-                            udr = itm = fog = None
-                    #--Done
-                ret.append((udr.values() if udr is not None else None,itm,fog))
-            return ret
-        else:
-            return [(set(),set(),set()) for x in xrange(len(modInfos))]
-
-    @staticmethod
-    def _clean_CBash(cleaners,what,progress):
-        if what & ModCleaner.ALL:
-            # There are scans to do
-            doUDR = bool(what & ModCleaner.UDR)
-            doITM = bool(what & ModCleaner.ITM)
-            doFog = bool(what & ModCleaner.FOG)
-            # If there are more than 255 mods, we have to break it up into
-            # smaller groups.  We'll do groups of 200 for now, to allow for
-            # added files due to implicitly loading masters.
-            numMods = len(cleaners)
-            if numMods > 255:
-                ModsPerGroup = 200
-                numGroups = numMods / ModsPerGroup
-                if numMods % ModsPerGroup:
-                    numGroups += 1
-            else:
-                ModsPerGroup = 255
-                numGroups = 1
-            progress.setFull(numGroups)
-            for i in range(numGroups):
-                #--Load
-                progress(i,_(u'Loading...'))
-                groupCleaners = cleaners[i*ModsPerGroup:(i+1)*ModsPerGroup]
-                with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
-                    for cleaner in groupCleaners:
-                        if len(cleaner.modInfo.masterNames) == 0: continue
-                        path = cleaner.modInfo.getPath()
-                        Current.addMod(path.stail)
-                    Current.load()
-                    #--Clean
-                    subprogress1 = bolt.SubProgress(progress,i,i+1)
-                    subprogress1.setFull(max(len(groupCleaners),1))
-                    for j,cleaner in enumerate(groupCleaners):
-                        subprogress1(j,_(u'Cleaning...') + u'\n' + cleaner.modInfo.name.s)
-                        path = cleaner.modInfo.getPath()
-                        modFile = Current.LookupModFile(path.stail)
-                        changed = False
-                        if modFile:
-                            total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog,len(cleaner.itm)*doITM])
-                            subprogress2 = bolt.SubProgress(subprogress1,j,j+1)
-                            subprogress2.setFull(max(total,1))
-                            if doUDR:
-                                for udr in cleaner.udr:
-                                    fid = udr.fid
-                                    subprogress2.plus()
-                                    record = modFile.LookupRecord(fid)
-                                    if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
-                                        changed = True
-                                        record.IsDeleted = False
-                                        record.IsIgnored = True
-                            if doFog:
-                                for fid in cleaner.fog:
-                                    subprogress2.plus()
-                                    record = modFile.LookupRecord(fid)
-                                    if record and record._Type == 'CELL':
-                                        if not (record.fogNear or record.fogFar or record.fogClip):
-                                            record.fogNear = 0.0001
-                                            changed = True
-                            if doITM:
-                                for fid in cleaner.itm:
-                                    subprogress2.plus()
-                                    record = modFile.LookupRecord(fid)
-                                    if record:
-                                        record.DeleteRecord()
-                                        changed = True
-                            #--Save
-                            if changed:
-                                modFile.save(False)
-
-    @staticmethod
-    def _clean_Python(cleaners,what,progress):
-        if what & (ModCleaner.UDR|ModCleaner.FOG):
-            doUDR = what & ModCleaner.UDR
-            doFog = what & ModCleaner.FOG
-            progress.setFull(max(len(cleaners),1))
-            #--Clean
-            for i,cleaner in enumerate(cleaners):
-                progress(i,_(u'Cleaning...')+u'\n'+cleaner.modInfo.name.s)
+        if not (what & (ModCleaner.UDR|ModCleaner.FOG)):
+            return [(set(), set(), set())] * len(modInfos)
+        # Python can't do ITM scanning
+        doUDR = what & ModCleaner.UDR
+        doFog = what & ModCleaner.FOG
+        progress.setFull(max(len(modInfos),1))
+        ret = []
+        for i,modInfo in enumerate(modInfos):
+            progress(i,_(u'Scanning...') + u'\n' + modInfo.name.s)
+            itm = set()
+            fog = set()
+            #--UDR stuff
+            udr = {}
+            parents_to_scan = {}
+            if len(modInfo.masterNames) > 0:
                 subprogress = bolt.SubProgress(progress,i,i+1)
-                subprogress.setFull(max(cleaner.modInfo.size,1))
+                if detailed:
+                    subprogress.setFull(max(modInfo.size*2,1))
+                else:
+                    subprogress.setFull(max(modInfo.size,1))
                 #--File stream
-                path = cleaner.modInfo.getPath()
-                #--Scan & clean
-                with ModReader(cleaner.modInfo.name,path.open('rb')) as ins:
-                    with path.temp.open('wb') as out:
-                        def copy(size):
-                            out.write(ins.read(size))
-                        def copyPrev(size):
-                            ins.seek(-size,1)
-                            out.write(ins.read(size))
-                        changed = False
-                        while not ins.atEnd():
-                            subprogress(ins.tell())
-                            header = ins.unpackRecHeader()
+                path = modInfo.getPath()
+                #--Scan
+                parentType = None
+                parentFid = None
+                parentParentFid = None
+                # Location (Interior = #, Exteror = (X,Y)
+                with ModReader(modInfo.name,path.open('rb')) as ins:
+                    try:
+                        insAtEnd = ins.atEnd
+                        insTell = ins.tell
+                        insUnpackRecHeader = ins.unpackRecHeader
+                        insUnpackSubHeader = ins.unpackSubHeader
+                        insRead = ins.read
+                        insUnpack = ins.unpack
+                        headerSize = ins.recHeader.size
+                        structUnpack = struct.unpack
+                        while not insAtEnd():
+                            subprogress(insTell())
+                            header = insUnpackRecHeader()
                             type,size = header.recType,header.size
                             #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
                             if type == 'GRUP':
-                                if header.groupType != 0:
-                                    pass
-                                elif header.label not in ('CELL','WRLD'):
-                                    copy(size-header.__class__.size)
+                                groupType = header.groupType
+                                if groupType == 0 and header.label not in {'CELL','WRLD'}:
+                                    # Skip Tops except for WRLD and CELL groups
+                                    insRead(size-headerSize)
+                                elif detailed:
+                                    if groupType == 1:
+                                        # World Children
+                                        parentParentFid = header.label
+                                        parentType = 1 # Exterior Cell
+                                        parentFid = None
+                                    elif groupType == 2:
+                                        # Interior Cell Block
+                                        parentType = 0 # Interior Cell
+                                        parentParentFid = parentFid = None
+                                    elif groupType in {6,8,9,10}:
+                                        # Cell Children, Cell Persisten Children,
+                                        # Cell Temporary Children, Cell VWD Children
+                                        parentFid = header.label
+                                    else: # 3,4,5,7 - Topic Children
+                                        pass
                             else:
-                                if doUDR and header.flags1 & 0x20 and type in {
+                                if doUDR and header.flags1 & 0x20 and type in (
                                     'ACRE',               #--Oblivion only
                                     'ACHR','REFR',        #--Both
-                                    'NAVM','PGRE','PHZD', #--Skyrim only
-                                    }:
-                                    header.flags1 = (header.flags1 & ~0x20) | 0x1000
-                                    out.seek(-header.__class__.size,1)
-                                    out.write(header.pack())
-                                    change = True
+                                    'NAVM','PHZD','PGRE', #--Skyrim only
+                                    ):
+                                    if not detailed:
+                                        udr[header.fid] = ModCleaner.UdrInfo(header.fid)
+                                    else:
+                                        fid = header.fid
+                                        udr[fid] = ModCleaner.UdrInfo(fid,type,parentFid,u'',parentType,parentParentFid,u'',None)
+                                        parents_to_scan.setdefault(parentFid,set())
+                                        parents_to_scan[parentFid].add(fid)
+                                        if parentParentFid:
+                                            parents_to_scan.setdefault(parentParentFid,set())
+                                            parents_to_scan[parentParentFid].add(fid)
                                 if doFog and type == 'CELL':
-                                    nextRecord = ins.tell() + size
-                                    while ins.tell() < nextRecord:
-                                        subprogress(ins.tell())
-                                        (nextType,nextSize) = ins.unpackSubHeader()
-                                        copyPrev(6)
+                                    nextRecord = insTell() + size
+                                    while insTell() < nextRecord:
+                                        (nextType,nextSize) = insUnpackSubHeader()
                                         if nextType != 'XCLL':
-                                            copy(nextSize)
+                                            insRead(nextSize)
                                         else:
-                                            color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
+                                            color,near,far,rotXY,rotZ,fade,clip = insUnpack('=12s2f2l2f',nextSize,'CELL.XCLL')
                                             if not (near or far or clip):
-                                                near = 0.0001
-                                                changed = True
-                                            out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
+                                                fog.add(header.fid)
                                 else:
-                                    copy(size)
-                #--Save
-                if changed:
-                    cleaner.modInfo.makeBackup()
-                    try:
-                        path.untemp()
-                    except WindowsError as werr:
-                        if werr.winerror != 32: raise
-                        while balt.askYes(None,(_(u'Bash encountered an error when saving %s.')
-                                                + u'\n\n' +
-                                                _(u'The file is in use by another process such as TES4Edit.')
-                                                + u'\n' +
-                                                _(u'Please close the other program that is accessing %s.')
-                                                + u'\n\n' +
-                                                _(u'Try again?')
-                                                ) % (path.stail,path.stail),path.stail+_(u' - Save Error')):
-                            try:
-                                path.untemp()
-                            except WindowsError as werr:
-                                continue
-                            break
+                                    insRead(size)
+                        if parents_to_scan:
+                            # Detailed info - need to re-scan for CELL and WRLD infomation
+                            ins.seek(0)
+                            baseSize = modInfo.size
+                            while not insAtEnd():
+                                subprogress(baseSize+insTell())
+                                header = insUnpackRecHeader()
+                                type,size = header.recType,header.size
+                                if type == 'GRUP':
+                                    if header.groupType == 0 and header.label not in {'CELL','WRLD'}:
+                                        insRead(size-headerSize)
+                                else:
+                                    fid = header.fid
+                                    if fid in parents_to_scan:
+                                        record = MreRecord(header,ins,True)
+                                        record.loadSubrecords()
+                                        eid = u''
+                                        for subrec in record.subrecords:
+                                            if subrec.subType == 'EDID':
+                                                eid = bolt.decode(subrec.data)
+                                            elif subrec.subType == 'XCLC':
+                                                pos = structUnpack('=2i',subrec.data[:8])
+                                        for udrFid in parents_to_scan[fid]:
+                                            if type == 'CELL':
+                                                udr[udrFid].parentEid = eid
+                                                if udr[udrFid].parentType == 1:
+                                                    # Exterior Cell, calculate position
+                                                    udr[udrFid].pos = pos
+                                            elif type == 'WRLD':
+                                                udr[udrFid].parentParentEid = eid
+                                    else:
+                                        insRead(size)
+                    except bolt.CancelError:
+                        raise
+                    except:
+                        deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name.s,ins.tell()),traceback=True)
+                        udr = itm = fog = None
+                #--Done
+            ret.append((udr.values() if udr is not None else None,itm,fog))
+        return ret
+
+    @staticmethod
+    def _clean_CBash(cleaners,what,progress):
+        if not (what & ModCleaner.ALL): return
+        # There are scans to do
+        doUDR = bool(what & ModCleaner.UDR)
+        doITM = bool(what & ModCleaner.ITM)
+        doFog = bool(what & ModCleaner.FOG)
+        # If there are more than 255 mods, we have to break it up into
+        # smaller groups.  We'll do groups of 200 for now, to allow for
+        # added files due to implicitly loading masters.
+        numMods = len(cleaners)
+        if numMods > 255:
+            ModsPerGroup = 200
+            numGroups = numMods / ModsPerGroup
+            if numMods % ModsPerGroup:
+                numGroups += 1
+        else:
+            ModsPerGroup = 255
+            numGroups = 1
+        progress.setFull(numGroups)
+        for i in range(numGroups):
+            #--Load
+            progress(i,_(u'Loading...'))
+            groupCleaners = cleaners[i*ModsPerGroup:(i+1)*ModsPerGroup]
+            with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
+                for cleaner in groupCleaners:
+                    if len(cleaner.modInfo.masterNames) == 0: continue
+                    path = cleaner.modInfo.getPath()
+                    Current.addMod(path.stail)
+                Current.load()
+                #--Clean
+                subprogress1 = bolt.SubProgress(progress,i,i+1)
+                subprogress1.setFull(max(len(groupCleaners),1))
+                for j,cleaner in enumerate(groupCleaners):
+                    subprogress1(j,_(u'Cleaning...') + u'\n' + cleaner.modInfo.name.s)
+                    path = cleaner.modInfo.getPath()
+                    modFile = Current.LookupModFile(path.stail)
+                    changed = False
+                    if modFile:
+                        total = sum([len(cleaner.udr)*doUDR,len(cleaner.fog)*doFog,len(cleaner.itm)*doITM])
+                        subprogress2 = bolt.SubProgress(subprogress1,j,j+1)
+                        subprogress2.setFull(max(total,1))
+                        if doUDR:
+                            for udr in cleaner.udr:
+                                fid = udr.fid
+                                subprogress2.plus()
+                                record = modFile.LookupRecord(fid)
+                                if record and record._Type in ('ACRE','ACHR','REFR') and record.IsDeleted:
+                                    changed = True
+                                    record.IsDeleted = False
+                                    record.IsIgnored = True
+                        if doFog:
+                            for fid in cleaner.fog:
+                                subprogress2.plus()
+                                record = modFile.LookupRecord(fid)
+                                if record and record._Type == 'CELL':
+                                    if not (record.fogNear or record.fogFar or record.fogClip):
+                                        record.fogNear = 0.0001
+                                        changed = True
+                        if doITM:
+                            for fid in cleaner.itm:
+                                subprogress2.plus()
+                                record = modFile.LookupRecord(fid)
+                                if record:
+                                    record.DeleteRecord()
+                                    changed = True
+                        #--Save
+                        if changed:
+                            modFile.save(False)
+
+    @staticmethod
+    def _clean_Python(cleaners,what,progress):
+        if not (what & (ModCleaner.UDR|ModCleaner.FOG)): return
+        doUDR = what & ModCleaner.UDR
+        doFog = what & ModCleaner.FOG
+        progress.setFull(max(len(cleaners),1))
+        #--Clean
+        for i,cleaner in enumerate(cleaners):
+            progress(i,_(u'Cleaning...')+u'\n'+cleaner.modInfo.name.s)
+            subprogress = bolt.SubProgress(progress,i,i+1)
+            subprogress.setFull(max(cleaner.modInfo.size,1))
+            #--File stream
+            path = cleaner.modInfo.getPath()
+            #--Scan & clean
+            with ModReader(cleaner.modInfo.name,path.open('rb')) as ins:
+                with path.temp.open('wb') as out:
+                    def copy(size):
+                        out.write(ins.read(size))
+                    def copyPrev(size):
+                        ins.seek(-size,1)
+                        out.write(ins.read(size))
+                    changed = False
+                    while not ins.atEnd():
+                        subprogress(ins.tell())
+                        header = ins.unpackRecHeader()
+                        type,size = header.recType,header.size
+                        #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
+                        if type == 'GRUP':
+                            if header.groupType != 0:
+                                pass
+                            elif header.label not in ('CELL','WRLD'):
+                                copy(size-header.__class__.size)
                         else:
-                            raise
-                    cleaner.modInfo.setmtime()
-                else:
-                    path.temp.remove()
+                            if doUDR and header.flags1 & 0x20 and type in {
+                                'ACRE',               #--Oblivion only
+                                'ACHR','REFR',        #--Both
+                                'NAVM','PGRE','PHZD', #--Skyrim only
+                                }:
+                                header.flags1 = (header.flags1 & ~0x20) | 0x1000
+                                out.seek(-header.__class__.size,1)
+                                out.write(header.pack())
+                                changed = True
+                            if doFog and type == 'CELL':
+                                nextRecord = ins.tell() + size
+                                while ins.tell() < nextRecord:
+                                    subprogress(ins.tell())
+                                    (nextType,nextSize) = ins.unpackSubHeader()
+                                    copyPrev(6)
+                                    if nextType != 'XCLL':
+                                        copy(nextSize)
+                                    else:
+                                        color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
+                                        if not (near or far or clip):
+                                            near = 0.0001
+                                            changed = True
+                                        out.write(struct.pack('=12s2f2l2f',color,near,far,rotXY,rotZ,fade,clip))
+                            else:
+                                copy(size)
+            #--Save
+            if changed:
+                cleaner.modInfo.makeBackup()
+                try:
+                    path.untemp()
+                except WindowsError as werr:
+                    if werr.winerror != 32: raise
+                    while balt.askYes(None,(_(u'Bash encountered an error when saving %s.')
+                                            + u'\n\n' +
+                                            _(u'The file is in use by another process such as TES4Edit.')
+                                            + u'\n' +
+                                            _(u'Please close the other program that is accessing %s.')
+                                            + u'\n\n' +
+                                            _(u'Try again?')
+                                            ) % (path.stail,path.stail),path.stail+_(u' - Save Error')):
+                        try:
+                            path.untemp()
+                        except WindowsError as werr:
+                            continue
+                        break
+                    else:
+                        raise
+                cleaner.modInfo.setmtime()
+            else:
+                path.temp.remove()

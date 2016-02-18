@@ -6559,7 +6559,6 @@ class InstallersData(DataDict):
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []
-        getArchiveOrder = lambda a: self[a].order
         getBSAOrder = lambda b: modInfos.activeCached.index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
@@ -6598,8 +6597,8 @@ class InstallersData(DataDict):
                 if curConflicts: bsaConflicts.append((package, bsaPath, curConflicts))
 #        print("BSA Conflicts: {}".format(bsaConflicts))
         # Calculate esp/esm conflicts
-        for package in sorted(self.data,key=getArchiveOrder):
-            installer = data[package]
+        getArchiveOrder = lambda tup: tup[1].order
+        for package, installer in sorted(self.iteritems(),key=getArchiveOrder):
             if installer.order == srcOrder: continue
             if not showInactive and not installer.isActive: continue
             if not showLower and installer.order < srcOrder: continue
