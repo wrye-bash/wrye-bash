@@ -1731,7 +1731,9 @@ class UIList(wx.Panel):
 
     class _ListItemFormat(object):
         def __init__(self):
-            self.icon_key = self.text_key = self.back_key = None
+            self.icon_key = None
+            self.back_key = 'default.bkgd'
+            self.text_key = 'default.text'
             self.font = Resources.fonts.default
             self.underline = False
 
