@@ -436,8 +436,17 @@ class MasterList(_ModsUIList):
         masterInfo = self.data[mi]
         masterName = masterInfo.name
         #--Font color
+        fileBashTags = masterInfo.getBashTags()
+        mouseText = u''
         if masterInfo.isEsm():
             item_format.text_key = 'mods.text.esm'
+            mouseText += _(u"Master file. ")
+        elif masterName in bosh.modInfos.mergeable:
+            if u'NoMerge' in fileBashTags:
+                item_format.text_key = 'mods.text.noMerge'
+                mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
+            else:
+                item_format.text_key = 'mods.text.mergeable'
         #--Text BG
         if bosh.modInfos.isBadFileName(masterName.s):
             if bosh.modInfos.isActiveCached(masterName):
@@ -460,6 +469,7 @@ class MasterList(_ModsUIList):
         oninc = bosh.modInfos.isActiveCached(masterName) or (
             masterName in bosh.modInfos.merged and 2)
         item_format.icon_key = status, oninc
+        self.mouseTexts[mi] = mouseText
 
     #--Relist
     def _reList(self):
