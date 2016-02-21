@@ -5073,8 +5073,8 @@ class Installer(object):
             progress.setFull(max(pending_size + len(pending), 1))
             for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
                 progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
-                sub = bolt.SubProgress(progress, done, done + max(size, 1))
-                sub.setFull(max(size,1))
+                sub = bolt.SubProgress(progress, done, done + size + 1)
+                sub.setFull(size + 1)
                 crc = 0L
                 try:
                     with open(asFile, 'rb') as ins:
