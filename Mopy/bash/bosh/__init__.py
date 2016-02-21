@@ -4985,7 +4985,7 @@ class Installer(object):
 
     @staticmethod
     def refreshSizeCrcDate(apRoot, old_sizeCrcDate, progress=None,
-                           recalculate_all_crcs=False):
+                           recalculate_all_crcs=False, return_max_time=False):
         """Update old_sizeCrcDate for apRoot directory. Used by:
         - InstallerProject._refreshSource(): populates the project's
         src_sizeCrcDate cache with _all_ files present in the project dir.
@@ -5005,10 +5005,14 @@ class Installer(object):
         asRoot = apRoot.s
         relPos = len(asRoot)+1
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
+        max_mtime = apRoot.mtime
         for asDir,sDirs,sFiles in os.walk(asRoot):
             progress(0.05,transProgress % (rootName,asDir[relPos:]))
-            if rootIsMods and asDir == asRoot:
-                Installer._skips_in_data_dir(sDirs)
+            if rootIsMods:
+                if asDir == asRoot: Installer._skips_in_data_dir(sDirs)
+            else:
+                get_mtime = os.path.getmtime(asDir)
+                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_(u"%s: Scanning...") % rootName)
@@ -5040,7 +5044,9 @@ class Installer(object):
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 size = os.path.getsize(asFile)
-                date = int(os.path.getmtime(asFile))
+                get_mtime = os.path.getmtime(asFile)
+                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
+                date = int(get_mtime)
                 oSize,oCrc,oDate = oldGet(rpFile,(0,0,0))
                 if not isEspm and size == oSize and date == oDate:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
@@ -5087,6 +5093,7 @@ class Installer(object):
         for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
             old_sizeCrcDate[rpFile] = (size, crc, date)
         #--Done
+        if return_max_time: return int(max_mtime)
         return changed
 
     @staticmethod
@@ -6135,8 +6142,9 @@ class InstallerProject(Installer):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
         project directory, set project_refreshed to True."""
         apRoot = dirs['installers'].join(archive)
-        Installer.refreshSizeCrcDate(apRoot, self.src_sizeCrcDate, progress,
-                                     recalculate_project_crc)
+        self.modified = Installer.refreshSizeCrcDate(apRoot,
+                self.src_sizeCrcDate, progress, recalculate_project_crc,
+                return_max_time=True)
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
@@ -6147,7 +6155,6 @@ class InstallerProject(Installer):
             cumCRC += crc
             cumSize += size
         self.size = cumSize
-        self.modified = apRoot.getmtime(True)
         self.crc = cumCRC & 0xFFFFFFFFL
         self.project_refreshed = True
 

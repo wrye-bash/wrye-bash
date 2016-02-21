@@ -742,7 +742,7 @@ class Path(object):
         """Return mtime for path."""
         if self.isdir() and maxMTime:
             #fastest implementation I could make
-            c = []
+            c = [os.path.getmtime(self._s)]
             cExtend = c.extend
             join = os.path.join
             getM = os.path.getmtime
@@ -751,7 +751,7 @@ class Path(object):
             except: #slower but won't fail (fatally) on funky unicode files when Bash in ANSI Mode.
                 [cExtend([GPath(join(root,dir)).mtime for dir in dirs] + [GPath(join(root,file)).mtime for file in files]) for root,dirs,files in os.walk(self._s)]
             try:
-                return max(c)
+                return int(max(c))
             except ValueError:
                 return 0
         try:
