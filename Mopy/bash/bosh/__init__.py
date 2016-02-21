@@ -5040,7 +5040,7 @@ class Installer(object):
                     if not rsDir and sFileLower in bethFiles:
                         continue
                     rpFile = ghostGet(rpFile,rpFile)
-                isEspm = not rsDir and ext in (u'.esp',u'.esm')
+                isEspm = inModsRoot and ext in {u'.esp', u'.esm'}
                 apFile = apDirJoin(sFile)
                 size = apFile.size
                 date = apFile.mtime
