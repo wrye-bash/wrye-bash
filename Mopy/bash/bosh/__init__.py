@@ -4906,7 +4906,7 @@ class Installer(object):
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
-    dataDirsMinus = {u'bash', u'replacers',
+    dataDirsMinus = {u'bash',
                      u'--'}  #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(
         ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$', re.I | re.U)
