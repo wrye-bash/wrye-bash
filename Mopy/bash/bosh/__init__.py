@@ -5036,7 +5036,7 @@ class Installer(object):
                 rpFile = rpDirJoin(sFile)
                 if inModsRoot:
                     if ext in skipExts: continue
-                    if not rsDir and sFileLower in bethFiles:
+                    if sFileLower in bethFiles:
                         continue
                     rpFile = ghostGet(rpFile,rpFile)
                 isEspm = inModsRoot and ext in {u'.esp', u'.esm'}
