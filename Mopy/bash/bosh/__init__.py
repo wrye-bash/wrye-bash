@@ -109,6 +109,7 @@ _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
+imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
@@ -4357,7 +4358,9 @@ class PeopleData(_DataStore):
 
 #------------------------------------------------------------------------------
 class ScreensData(_DataStore):
-    reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
+    reImageExt = re.compile(
+        ur'\.(' + ur'|'.join(ext[1:] for ext in imageExts) + ur')$',
+        re.I | re.U)
 
     def __init__(self):
         self.dir = dirs['app']
@@ -4429,7 +4432,6 @@ class Installer(object):
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
     skipExts.update(set(readExts))
-    imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
     #--Regular game directories - needs update after bush.game has been set
@@ -4753,7 +4755,7 @@ class Installer(object):
             Installer._global_start_skips.append(bush.game.se.shortName.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if settings['bash.installers.skipImages']:
-            Installer._global_skip_extensions |= Installer.imageExts
+            Installer._global_skip_extensions |= imageExts
         Installer._init_executables_skips()
 
     @staticmethod
@@ -4932,7 +4934,6 @@ class Installer(object):
         archiveRoot = GPath(self.archive).sroot if isinstance(self,
                 InstallerArchive) else self.archive
         docExts = self.docExts
-        imageExts = self.imageExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus

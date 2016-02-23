@@ -1778,19 +1778,11 @@ class SaveList(balt.UIList):
 
     def OnLabelEdited(self, event):
         """Savegame renamed."""
-        if event.IsEditCancelled(): return
-        #--File Info
-        newName = event.GetLabel()
+        maPattern, newName = self.validate_filename(event,
+                                                    add_ext=bush.game.ess.ext)
+        if not maPattern: return
         detail_item = self.panel.GetDetailsItem()
         item_edited = detail_item.name if detail_item else None
-        if not newName.lower().endswith(bush.game.ess.ext):
-            newName += bush.game.ess.ext
-        rePattern = re.compile(ur'^[^/\\:*?"<>|]+?$', re.I | re.U)
-        maPattern = rePattern.match(newName)
-        if not maPattern:
-            balt.showError(self, _(u'Bad extension or file root: ') + newName)
-            event.Veto()
-            return
         newFileName = newName
         selected = self.GetSelected()
         to_select = set(selected)
@@ -3002,18 +2994,11 @@ class ScreensList(balt.UIList):
         self.OpenSelected(selected=[hitItem])
 
     def OnLabelEdited(self, event):
-        """Renamed a screenshot"""
-        if event.IsEditCancelled(): return
-        newName = event.GetLabel()
+        """Rename selected screenshots."""
+        maPattern, _newName = self.validate_filename(event, has_digits=True, ext=u'((('+ ur'|'.join(bosh.imageExts) +
+                                                                                 u'))+)')
+        if not maPattern: return
         selected = self.GetSelected()
-        rePattern = re.compile(
-            ur'^([^/\\:*?"<>|]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',
-            re.I | re.U)
-        maPattern = rePattern.match(newName)
-        if not maPattern:
-            balt.showError(self,_(u'Bad extension or file root: ')+newName)
-            event.Veto()
-            return
         root,numStr = maPattern.groups()[:2]
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)

@@ -23,6 +23,8 @@
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
+import re
+
 import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
@@ -2106,6 +2108,21 @@ class UIList(wx.Panel):
             index = self.GetIndex(selected[0])
             if index != -1:
                 self._gList.EditLabel(index)
+
+    def validate_filename(self, event, has_digits=False, ext=u'', add_ext=u''):
+        if event.IsEditCancelled(): return None, None
+        newName = event.GetLabel()
+        if add_ext and not newName.lower().endswith(add_ext):
+            newName += add_ext
+        regex = u'^([^/\\:*?"<>|]+?)'
+        if has_digits: regex += u'(\d*)'
+        regex += ext + u'$'
+        rePattern = re.compile(regex, re.I | re.U)
+        maPattern = rePattern.match(newName)
+        if not maPattern:
+            showError(self, _(u'Bad extension or file root: ') + newName)
+            event.Veto()
+        return maPattern, newName
 
     @conversation
     def DeleteItems(self, event=None, items=None,
