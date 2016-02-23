@@ -46,6 +46,7 @@ import struct
 import sys
 from operator import attrgetter
 from functools import wraps, partial
+from binascii import crc32
 
 #--Local
 from .. import bass, bolt, balt, bush, loot, libbsa, env
@@ -4906,7 +4907,7 @@ class Installer(object):
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
-    dataDirsMinus = {u'bash', u'replacers',
+    dataDirsMinus = {u'bash',
                      u'--'}  #--Will be skipped even if hasExtraData == True.
     reDataFile = re.compile(
         ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$', re.I | re.U)
@@ -4984,7 +4985,7 @@ class Installer(object):
 
     @staticmethod
     def refreshSizeCrcDate(apRoot, old_sizeCrcDate, progress=None,
-                           recalculate_all_crcs=False):
+                           recalculate_all_crcs=False, return_max_time=False):
         """Update old_sizeCrcDate for apRoot directory. Used by:
         - InstallerProject._refreshSource(): populates the project's
         src_sizeCrcDate cache with _all_ files present in the project dir.
@@ -5004,16 +5005,19 @@ class Installer(object):
         asRoot = apRoot.s
         relPos = len(asRoot)+1
         transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
+        max_mtime = apRoot.mtime
         for asDir,sDirs,sFiles in os.walk(asRoot):
             progress(0.05,transProgress % (rootName,asDir[relPos:]))
-            if rootIsMods and asDir == asRoot:
-                Installer._skips_in_data_dir(sDirs)
+            if rootIsMods:
+                if asDir == asRoot: Installer._skips_in_data_dir(sDirs)
+            else:
+                get_mtime = os.path.getmtime(asDir)
+                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
             dirDirsFilesAppend((asDir,sDirs,sFiles))
             if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
         progress(0,_(u"%s: Scanning...") % rootName)
         progress.setFull(1+len(dirDirsFiles))
-        pending = set()
-        pendingAdd = pending.add
+        pending, pending_size = {}, 0
         new_sizeCrcDate = {}
         oldGet = old_sizeCrcDate.get
         # below only for dirs['mods'] (aka the Data/ dir)
@@ -5022,66 +5026,74 @@ class Installer(object):
         bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         skipExts = Installer.skipExts
         ghostGet = ghost_norm.get
-        normGet = norm_ghost.get
         for index,(asDir,sDirs,sFiles) in enumerate(dirDirsFiles):
             progress(index)
             rsDir = asDir[relPos:]
             inModsRoot = rootIsMods and not rsDir
-            apDir = GPath(asDir)
-            rpDir = GPath(rsDir)
-            rpDirJoin = rpDir.join
-            apDirJoin = apDir.join
             for sFile in sFiles:
                 sFileLower = sFile.lower()
                 ext = sFileLower[sFileLower.rfind(u'.'):]
-                rpFile = rpDirJoin(sFile)
                 if inModsRoot:
                     if ext in skipExts: continue
-                    if not rsDir and sFileLower in bethFiles:
+                    if sFileLower in bethFiles:
                         continue
+                    rpFile = GPath(os.path.join(rsDir, sFile))
                     rpFile = ghostGet(rpFile,rpFile)
-                isEspm = not rsDir and ext in (u'.esp',u'.esm')
-                apFile = apDirJoin(sFile)
-                size = apFile.size
-                date = apFile.mtime
+                else: rpFile = GPath(os.path.join(rsDir, sFile))
+                isEspm = inModsRoot and ext in {u'.esp', u'.esm'}
+                asFile = os.path.join(asDir, sFile)
+                # below calls may now raise even if "werr.winerror = 123"
+                size = os.path.getsize(asFile)
+                get_mtime = os.path.getmtime(asFile)
+                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
+                date = int(get_mtime)
                 oSize,oCrc,oDate = oldGet(rpFile,(0,0,0))
                 if not isEspm and size == oSize and date == oDate:
-                    new_sizeCrcDate[rpFile] = (oSize,oCrc,oDate)
+                    new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 else:
-                    pendingAdd(rpFile)
+                    pending[rpFile] = (size, oCrc, date, asFile)
+                    pending_size += size
         #--Remove empty dirs?
         if rootIsMods and settings['bash.installers.removeEmptyDirs']:
             for dir in emptyDirs:
                 try: dir.removedirs()
                 except OSError: pass
         #--Force update?
-        if recalculate_all_crcs: pending |= set(new_sizeCrcDate)
+        if recalculate_all_crcs:
+            pending.update(new_sizeCrcDate)
+            pending_size += sum(x[0] for x in new_sizeCrcDate.itervalues())
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
-        apRootJoin = apRoot.join
         if pending:
-            totalSize = sum([apRootJoin(normGet(x,x)).size for x in pending])
             done = 0
             progress(0,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n')
             # each mod increments the progress bar by at least one, even if it is size 0
             # add len(pending) to the progress bar max to ensure we don't hit 100% and cause the progress bar
             # to prematurely disappear
-            progress.setFull(max(totalSize+len(pending),1))
-            for rpFile in sorted(pending):
+            progress.setFull(max(pending_size + len(pending), 1))
+            for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
                 progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
+                sub = bolt.SubProgress(progress, done, done + size + 1)
+                sub.setFull(size + 1)
+                crc = 0L
                 try:
-                    apFile = apRootJoin(normGet(rpFile,rpFile))
-                    size = apFile.size
-                    crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+max(size,1)))
-                    date = apFile.mtime
-                    done += size
-                except WindowsError:
-                    deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
+                    with open(asFile, 'rb') as ins:
+                        insRead = ins.read
+                        insTell = ins.tell
+                        while insTell() < size:
+                            crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
+                            sub(insTell())
+                except IOError as ierr:
+                    deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % asFile, traceback=True)
                     continue
-                new_sizeCrcDate[rpFile] = (size,crc,date)
+                crc &= 0xFFFFFFFF
+                done += size
+                new_sizeCrcDate[rpFile] = (size,crc,date,asFile)
         old_sizeCrcDate.clear()
-        old_sizeCrcDate.update(new_sizeCrcDate)
+        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+            old_sizeCrcDate[rpFile] = (size, crc, date)
         #--Done
+        if return_max_time: return int(max_mtime)
         return changed
 
     @staticmethod
@@ -6130,8 +6142,9 @@ class InstallerProject(Installer):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
         project directory, set project_refreshed to True."""
         apRoot = dirs['installers'].join(archive)
-        Installer.refreshSizeCrcDate(apRoot, self.src_sizeCrcDate, progress,
-                                     recalculate_project_crc)
+        self.modified = Installer.refreshSizeCrcDate(apRoot,
+                self.src_sizeCrcDate, progress, recalculate_project_crc,
+                return_max_time=True)
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
@@ -6142,7 +6155,6 @@ class InstallerProject(Installer):
             cumCRC += crc
             cumSize += size
         self.size = cumSize
-        self.modified = apRoot.getmtime(True)
         self.crc = cumCRC & 0xFFFFFFFFL
         self.project_refreshed = True
 
