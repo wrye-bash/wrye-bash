@@ -46,6 +46,7 @@ import struct
 import sys
 from operator import attrgetter
 from functools import wraps, partial
+from binascii import crc32
 
 #--Local
 from .. import bass, bolt, balt, bush, loot, libbsa, env
@@ -5021,7 +5022,6 @@ class Installer(object):
         bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
         skipExts = Installer.skipExts
         ghostGet = ghost_norm.get
-        normGet = norm_ghost.get
         for index,(asDir,sDirs,sFiles) in enumerate(dirDirsFiles):
             progress(index)
             rsDir = asDir[relPos:]
@@ -5043,9 +5043,9 @@ class Installer(object):
                 date = int(os.path.getmtime(asFile))
                 oSize,oCrc,oDate = oldGet(rpFile,(0,0,0))
                 if not isEspm and size == oSize and date == oDate:
-                    new_sizeCrcDate[rpFile] = (oSize,oCrc,oDate)
+                    new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 else:
-                    pending[rpFile] = (size, oCrc, date)
+                    pending[rpFile] = (size, oCrc, date, asFile)
                     pending_size += size
         #--Remove empty dirs?
         if rootIsMods and settings['bash.installers.removeEmptyDirs']:
@@ -5058,7 +5058,6 @@ class Installer(object):
             pending_size += sum(x[0] for x in new_sizeCrcDate.itervalues())
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
-        apRootJoin = apRoot.join
         if pending:
             done = 0
             progress(0,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n')
@@ -5066,18 +5065,27 @@ class Installer(object):
             # add len(pending) to the progress bar max to ensure we don't hit 100% and cause the progress bar
             # to prematurely disappear
             progress.setFull(max(pending_size + len(pending), 1))
-            for rpFile, (size, _crc, date) in iter(sorted(pending.items())):
+            for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
                 progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
-                apFile = apRootJoin(normGet(rpFile,rpFile))
+                sub = bolt.SubProgress(progress, done, done + max(size, 1))
+                sub.setFull(max(size,1))
+                crc = 0L
                 try:
-                    crc = apFile.crcProgress(bolt.SubProgress(progress,done,done+max(size,1)))
-                    done += size
-                except WindowsError:
-                    deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % apFile.s, traceback=True)
+                    with open(asFile, 'rb') as ins:
+                        insRead = ins.read
+                        insTell = ins.tell
+                        while insTell() < size:
+                            crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
+                            sub(insTell())
+                except IOError as ierr:
+                    deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % asFile, traceback=True)
                     continue
-                new_sizeCrcDate[rpFile] = (size,crc,date)
+                crc &= 0xFFFFFFFF
+                done += size
+                new_sizeCrcDate[rpFile] = (size,crc,date,asFile)
         old_sizeCrcDate.clear()
-        old_sizeCrcDate.update(new_sizeCrcDate)
+        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+            old_sizeCrcDate[rpFile] = (size, crc, date)
         #--Done
         return changed
 

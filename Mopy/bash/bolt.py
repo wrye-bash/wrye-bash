@@ -811,24 +811,6 @@ class Path(object):
                 crc = crc32(insRead(512),crc)
         return crc & 0xffffffff
 
-    #--crc with progress bar
-    def crcProgress(self, progress):
-        """Calculates and returns crc value for self, updating progress as it goes."""
-        size = self.size
-        progress.setFull(max(size,1))
-        crc = 0L
-        try:
-            with self.open('rb') as ins:
-                insRead = ins.read
-                insTell = ins.tell
-                while insTell() < size:
-                    crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
-                    progress(insTell())
-        except IOError as ierr:
-            #if werr.winerror != 123: raise
-            deprint(u'Unable to get crc of %s - probably a unicode error' % self._s)
-        return crc & 0xFFFFFFFF
-
     #--Path stuff -------------------------------------------------------
     #--New Paths, subpaths
     def __add__(self,other):
