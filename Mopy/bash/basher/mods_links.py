@@ -220,11 +220,7 @@ class Mods_CreateBlank(ItemLink):
 
     def Execute(self):
         fileInfos = self.window.data
-        count = 0
-        newName = GPath(u'New Mod.esp')
-        while newName in fileInfos: ##: 259 refactor renames
-            count += 1
-            newName = GPath(u'New Mod %d.esp' % count)
+        newName = self.window.new_name(GPath(u'New Mod.esp'))
         newInfo = fileInfos.factory(fileInfos.dir,newName)
         windowSelected = self.window.GetSelected()
         mods = [fileInfos[x] for x in

@@ -185,19 +185,13 @@ class File_Duplicate(ItemLink):
             (root,ext) = fileName.rootExt
             if ext.lower() == u'.bak': ext = bush.game.ess.ext
             (destDir,wildcard) = (fileInfo.dir, u'*'+ext)
-            destName = GPath(root+u' Copy'+ext)
-            destPath = destDir.join(destName)
-            count = 0
-            while destPath.exists() and count < 1000:
-                count += 1
-                destName = GPath(root + u' Copy %d'  % count + ext)
-                destPath = destDir.join(destName)
-            destName = destName.s
+            destName = self.window.new_path(GPath(root + u' Copy' + ext),
+                                            destDir)
             destDir.makedirs()
             if len(data) == 1:
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
-                    defaultFile=destName, wildcard=wildcard)
+                    defaultFile=destName.s, wildcard=wildcard)
                 if not destPath: return
                 destDir,destName = destPath.headTail
             if (destDir == fileInfo.dir) and (destName == fileName):

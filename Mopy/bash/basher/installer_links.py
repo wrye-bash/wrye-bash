@@ -410,16 +410,12 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
                                            bosh.InstallerMarker)
 
     def Execute(self):
-        """Handle selection."""
+        """Duplicate selected Installer."""
         curName = self.selected[0]
         isdir = self.idata.dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.rootExt
-        newName = root+_(u' Copy')+ext
-        index = 0
-        while newName in self.idata:
-            newName = root + (_(u' Copy (%d)') % index) + ext
-            index += 1
+        newName = self.window.new_name(root + _(u' Copy') + ext)
         result = self._askText(_(u"Duplicate %s to:") % curName.s,
                                default=newName.s)
         if not result: return
