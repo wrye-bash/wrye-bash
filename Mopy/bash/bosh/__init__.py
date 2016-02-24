@@ -2520,7 +2520,7 @@ class ModInfo(FileInfo):
             raise ArgumentError
         with self.getPath().open('r+b') as modFile:
             modFile.seek(8)
-            flags1 = MreRecord._flags1(struct.unpack('I',modFile.read(4))[0])
+            flags1 = MreRecord.flags1_(struct.unpack('I', modFile.read(4))[0])
             flags1.esm = (esm_or_esp == u'esm')
             modFile.seek(8)
             modFile.write(struct.pack('=I',int(flags1)))

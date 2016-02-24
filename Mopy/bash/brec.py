@@ -1352,7 +1352,7 @@ class MreSubrecord:
 class MreRecord(object):
     """Generic Record. flags1 are game specific see comments."""
     subtype_attr = {'EDID':'eid','FULL':'full','MODL':'model'}
-    _flags1 = bolt.Flags(0L,bolt.Flags.getNames(
+    flags1_ = bolt.Flags(0L, bolt.Flags.getNames(
         # {Sky}, {FNV} 0x00000000 ACTI: Collision Geometry (default)
         ( 0,'esm'), # {0x00000001}
         # {Sky}, {FNV} 0x00000004 ARMO: Not playable
@@ -1458,7 +1458,7 @@ class MreRecord(object):
         self.header = header
         self.recType = header.recType
         self.fid = header.fid
-        self.flags1 = MreRecord._flags1(header.flags1)
+        self.flags1 = MreRecord.flags1_(header.flags1)
         self.size = header.size
         self.flags2 = header.flags2
         self.longFids = False #--False: Short (numeric); True: Long (espname,objectindex)

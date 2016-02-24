@@ -1048,21 +1048,21 @@ class NvidiaFogFixer:
 #------------------------------------------------------------------------------
 class ModDetails:
     """Details data for a mods file. Similar to TesCS Details view."""
-    def __init__(self,modInfo=None,progress=None):
+    def __init__(self):
         self.group_records = {} #--group_records[group] = [(fid0,eid0),(fid1,eid1),...]
 
-    def readFromMod(self,modInfo,progress=None):
+    def readFromMod(self, modInfo, progress=None):
         """Extracts details from mod file."""
         def getRecordReader(ins,flags,size):
             """Decompress record data as needed."""
-            if not MreRecord._flags1(flags).compressed:
+            if not MreRecord.flags1_(flags).compressed:
                 return ins,ins.tell()+size
             else:
                 import zlib
                 sizeCheck, = struct.unpack('I',ins.read(4))
                 decomp = zlib.decompress(ins.read(size-4))
                 if len(decomp) != sizeCheck:
-                    raise ModError(self.inName,
+                    raise ModError(ins.inName,
                         u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
                 reader = ModReader(modInfo.name,sio(decomp))
                 return reader,sizeCheck
