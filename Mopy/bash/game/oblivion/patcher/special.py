@@ -25,7 +25,7 @@
 import os
 import re
 from ....bolt import GPath, sio, SubProgress, StateError, CsvReader
-from ....bosh import getPatchesList, getPatchesPath
+from ....patcher import getPatchesPath, getPatchesList
 from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord, ModReader
 from ....bass import null4

@@ -30,7 +30,8 @@ import re
 from ... import bosh # for modInfos
 from ...bush import game # for Name patcher
 from ...bolt import GPath, MemorySet
-from ...bosh import getPatchesList, reModExt, getPatchesPath
+from ...bosh import reModExt
+from .. import getPatchesPath, getPatchesList
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep

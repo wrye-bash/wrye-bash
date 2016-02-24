@@ -27,7 +27,8 @@ import struct
 from operator import itemgetter
 # Internal
 from ... import bosh, bass # for bosh.modInfos, bass.dirs
-from ...bosh import getPatchesList, reModExt, getPatchesPath
+from ...bosh import reModExt
+from .. import getPatchesPath, getPatchesList
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \

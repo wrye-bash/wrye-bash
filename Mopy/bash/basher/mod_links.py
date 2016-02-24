@@ -525,7 +525,7 @@ class Mod_CreateBOSSReport(EnabledLink):
         modInfos = [bosh.modInfos[x] for x in self.selected]
         try:
             with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
-                udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
+                udr_itm_fog = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress)
         except bolt.CancelError:
             return
         # Create the report
@@ -1208,7 +1208,7 @@ class Mod_ScanDirty(ItemLink):
         modInfos = [bosh.modInfos[x] for x in self.selected]
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
-                ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress,detailed=True)
+                ret = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress, detailed=True)
         except bolt.CancelError:
             return
         log = bolt.LogFile(StringIO.StringIO())
@@ -1387,8 +1387,9 @@ class Mod_UndeleteRefs(EnabledLink):
                     continue
                 progress(index,_(u'Scanning')+u' '+fileName.s+u'.')
                 fileInfo = bosh.modInfos[fileName]
-                cleaner = bosh.ModCleaner(fileInfo)
-                cleaner.clean(bosh.ModCleaner.UDR,SubProgress(progress,index,index+1))
+                cleaner = bosh.mods_metadata.ModCleaner(fileInfo)
+                cleaner.clean(bosh.mods_metadata.ModCleaner.UDR,
+                              SubProgress(progress, index, index + 1))
                 if cleaner.udr:
                     hasFixed = True
                     log.setHeader(u'== '+fileName.s)

@@ -22,7 +22,7 @@
 #
 # =============================================================================
 from collections import namedtuple
-from .. import balt, bolt
+from .. import balt, bolt, bass
 
 PatcherInfo = namedtuple('PatcherInfo', ['clazz', 'twinPatcher'])
 
@@ -45,3 +45,15 @@ def exportConfig(patchName, config, isCBash, win, outDir):
         table.setItem(bolt.GPath(u'Saved Bashed Patch Configuration (%s)' % (
             [u'Python', u'CBash'][isCBash])), 'bash.patch.configs', config)
         table.save()
+
+def getPatchesPath(fileName):
+    """Choose the correct Bash Patches path for the file."""
+    if bass.dirs['patches'].join(fileName).isfile():
+        return bass.dirs['patches'].join(fileName)
+    else:
+        return bass.dirs['defaultPatches'].join(fileName)
+
+def getPatchesList():
+    """Get a basic list of potential Bash Patches."""
+    return set(bass.dirs['patches'].list()) | set(
+        bass.dirs['defaultPatches'].list())

@@ -25,9 +25,9 @@ import copy
 from operator import itemgetter, attrgetter
 import string
 # Internal
-from ... import bosh # for modInfos, dirs
+from ... import bosh # for modInfos
 from ...bolt import GPath, SubProgress, CsvReader, Path
-from ...bosh import getPatchesPath
+from .. import getPatchesPath
 from ... import bush
 from ...cint import FormID
 from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
