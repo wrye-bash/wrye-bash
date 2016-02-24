@@ -4516,6 +4516,9 @@ class ConfigHelpers:
         except loot.LootGameError:
             deprint(u'The LOOT API does not support the current game.')
             lootDb = None
+        except OSError:
+            deprint(u'The LOOT API failed to initialize', traceback=True)
+            lootDb = None
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = dirs['userApp'].join(
             os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
@@ -4541,18 +4544,19 @@ class ConfigHelpers:
             if (path.mtime != self.lootMasterTime or
                 (userpath.exists() and userpath.mtime != self.lootUserTime)):
                 self.tagCache = {}
+                self.lootMasterTime = path.mtime
+                parsing = u'', u'%s' % path
                 try:
                     if userpath.exists():
-                        lootDb.Load(path.s,userpath.s)
-                        self.lootMasterTime = path.mtime
+                        parsing = u's', u'%s, %s' % (path, userpath)
                         self.lootUserTime = userpath.mtime
+                        lootDb.Load(path.s,userpath.s)
                     else:
                         lootDb.Load(path.s)
-                        self.lootMasterTime = path.mtime
                     return # we are done
                 except loot.LootError:
-                    deprint(u'An error occurred while using the LOOT API:',
-                            traceback=True)
+                    deprint(u'An error occurred while parsing file%s %s:'
+                            % parsing, traceback=True)
         #--No masterlist or an error occurred while reading it, use the taglist
         if not self.tagList.exists():
             raise bolt.BoltError(u'Mopy\\Bash Patches\\' + bush.game.fsName +
@@ -4563,9 +4567,9 @@ class ConfigHelpers:
         try:
             self.tagCache = {}
             lootDb.Load(self.tagList.s)
-        except loot.LootError as e:
-            raise bolt.BoltError, (u'An error occurred while parsing '
-            u'taglist.yaml with the LOOT API: ' + str(e)), sys.exc_info()[2]
+        except loot.LootError:
+            deprint(u'An error occurred while parsing taglist.yaml:',
+                    traceback=True)
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
