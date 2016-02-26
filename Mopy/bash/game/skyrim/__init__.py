@@ -104,7 +104,8 @@ class laa:
 
 # Files BAIN shouldn't skip
 dontSkip = (
-       #These are all in the Interface folder. Apart from the skyui_ files, they are all present in vanilla.
+       # These are all in the Interface folder. Apart from the skyui_ files,
+       # they are all present in vanilla.
        u'skyui_cfg.txt',
        u'skyui_translate.txt',
        u'credits.txt',

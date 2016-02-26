@@ -1589,7 +1589,7 @@ class UIList(wx.Panel):
     # yet initialized when balt is imported, so I can't use ColorChecks here
     icons = __icons
     _shellUI = False # only True in Screens/INIList/Installers
-    _recycle = True # False on tabs that recycle makes no sense (People, PM)
+    _recycle = True # False on tabs that recycle makes no sense (People)
     max_items_open = 7 # max number of items one can open without prompt
     #--Cols
     _min_column_width = 24

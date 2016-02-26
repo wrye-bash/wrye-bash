@@ -5332,7 +5332,7 @@ class Installer(object):
         file is to be skipped while at the same time update self hasReadme,
         hasWizard, hasBCF attributes."""
         reReadMeMatch = Installer.reReadMe.match
-        sep = os.path.pathsep
+        sep = os.path.sep
         def _process_docs(self, fileLower, full, fileExt):
             if reReadMeMatch(fileLower): self.hasReadme = full
             # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
