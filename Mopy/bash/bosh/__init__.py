@@ -4394,8 +4394,7 @@ class Installer(object):
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
-    reDataFile = re.compile(
-        ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$', re.I | re.U)
+    reDataFile = re.compile(ur'(\.(esp|esm|bsa|ini))$', re.I | re.U)
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
@@ -4714,7 +4713,8 @@ class Installer(object):
         reReadMeMatch = Installer.reReadMe.match
         sep = os.path.sep
         def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
-            if reReadMeMatch(fileLower): self.hasReadme = full
+            maReadMe = reReadMeMatch(fileLower)
+            if maReadMe: self.hasReadme = full
             # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
             rsplit = fileLower.rsplit(sep, 1)
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
@@ -4723,7 +4723,25 @@ class Installer(object):
                 fname in bush.game.dontSkip) and not (
                 fileExt in bush.game.dontSkipDirs.get(parentDir, [])):
                 return None # skip
-            return file_relative
+            dest = file_relative
+            if not parentDir:
+                archiveRoot = GPath(self.archive).sroot if isinstance(self,
+                        InstallerArchive) else self.archive
+                if fileLower in {u'masterlist.txt', u'dlclist.txt'}:
+                    self.skipDirFiles.add(full)
+                    return None # we dont want to install those files
+                elif maReadMe:
+                    if not (maReadMe.group(1) or maReadMe.group(3)):
+                        dest = u''.join((u'Docs\\', archiveRoot, fileExt))
+                    else:
+                        dest = u''.join((u'Docs\\', file_relative))
+                    self.readMe = dest
+                elif fileLower == u'package.txt':
+                    dest = self.packageDoc = u''.join(
+                        (u'Docs\\', archiveRoot, u'.package.txt'))
+                else:
+                    dest = u''.join((u'Docs\\', file_relative))
+            return dest
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs
         def _process_BCF(self, fileLower, full, fileExt, file_relative, sub):
@@ -4960,7 +4978,9 @@ class Installer(object):
             else: _out = False
             if _out: continue
             dest = None # destination of the file relative to the Data/ dir
-            if fileExt in Installer._extensions_to_process: # process attributes
+            # process attributes and define destination for docs and images
+            # (if not skipped globally)
+            if fileExt in Installer._extensions_to_process:
                 dest = Installer._attributes_process[fileExt](self, fileLower,
                                                           full, fileExt, file, sub)
                 if dest is None: continue
@@ -5006,21 +5026,8 @@ class Installer(object):
             elif rootLower in dataDirsPlus:
                 pass
             elif not rootLower:
-                maReadMe = reReadMeMatch(file)
-                if fileLower in {u'masterlist.txt',u'dlclist.txt'}:
-                    pass
-                elif maReadMe:
-                    if not (maReadMe.group(1) or maReadMe.group(3)):
-                        dest = u''.join((u'Docs\\',archiveRoot,fileExt))
-                    else:
-                        dest = u''.join((u'Docs\\',file))
-                    self.readMe = dest
-                elif fileLower == u'package.txt':
-                    dest = self.packageDoc = u''.join((u'Docs\\',archiveRoot,u'.package.txt'))
-                elif fileLower == u'package.jpg':
+                if fileLower == u'package.jpg':
                     dest = self.packagePic = u''.join((u'Docs\\',archiveRoot,u'.package.jpg'))
-                elif fileExt in docExts:
-                    dest = u''.join((u'Docs\\',file))
                 elif fileExt in imageExts:
                     dest = u''.join((u'Docs\\',file))
             if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
