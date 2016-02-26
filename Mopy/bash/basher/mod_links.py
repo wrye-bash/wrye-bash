@@ -63,7 +63,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_IngredientDetails_Import', 'Mod_Scripts_Import',
            'Mod_SigilStoneDetails_Import', 'Mod_SpellRecords_Import',
            'Mod_Face_Import', 'Mod_Fids_Replace', 'Mod_SkipDirtyCheck',
-           'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_CleanMod',
+           'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_FogFixer',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
            'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
            'Mod_SetVersion', 'Mod_ListDependent', 'Mod_JumpToInstaller']
@@ -443,7 +443,7 @@ class Mod_Details(OneItemLink):
         modName = GPath(self.selected[0])
         modInfo = bosh.modInfos[modName]
         with balt.Progress(modName.s) as progress:
-            mod_details = bosh.ModDetails()
+            mod_details = bosh.mods_metadata.ModDetails()
             mod_details.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
             buff = StringIO.StringIO()
             progress(0.7,_(u'Sorting records.'))
@@ -525,7 +525,7 @@ class Mod_CreateBOSSReport(EnabledLink):
         modInfos = [bosh.modInfos[x] for x in self.selected]
         try:
             with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
-                udr_itm_fog = bosh.ModCleaner.scan_Many(modInfos,progress=progress)
+                udr_itm_fog = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress)
         except bolt.CancelError:
             return
         # Create the report
@@ -1208,7 +1208,7 @@ class Mod_ScanDirty(ItemLink):
         modInfos = [bosh.modInfos[x] for x in self.selected]
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
-                ret = bosh.ModCleaner.scan_Many(modInfos,progress=progress,detailed=True)
+                ret = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress, detailed=True)
         except bolt.CancelError:
             return
         log = bolt.LogFile(StringIO.StringIO())
@@ -1331,7 +1331,7 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
-class Mod_CleanMod(EnabledLink):
+class Mod_FogFixer(EnabledLink):
     """Fix fog on selected cells."""
     text = _(u'Nvidia Fog Fix')
     help = _(u'Modify fog values in interior cells to avoid the Nvidia black '
@@ -1350,10 +1350,11 @@ class Mod_CleanMod(EnabledLink):
                 if fileName.cs in bush.game.masterFiles: continue
                 progress(index,_(u'Scanning')+fileName.s)
                 fileInfo = bosh.modInfos[fileName]
-                cleanMod = bosh.CleanMod(fileInfo)
-                cleanMod.clean(SubProgress(progress,index,index+1))
-                if cleanMod.fixedCells:
-                    fixed.append(u'* %4d %s' % (len(cleanMod.fixedCells),fileName.s))
+                fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
+                fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
+                if fog_fixer.fixedCells:
+                    fixed.append(
+                        u'* %4d %s' % (len(fog_fixer.fixedCells), fileName.s))
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
             self._showWryeLog(message, title=_(u'Nvidia Fog Fix'),
@@ -1367,28 +1368,31 @@ class Mod_UndeleteRefs(EnabledLink):
     """Undeletes refs in cells."""
     text = _(u'Undelete Refs')
     help = _(u'Undeletes refs in cells')
+    warn = _(u"Changes deleted refs to ignored.  This is a very advanced "
+             u"feature and should only be used by modders who know exactly "
+             u"what they're doing.")
 
     def _enable(self):
         return len(self.selected) != 1 or (
             not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self):
-        message = _(u"Changes deleted refs to ignored.  This is a very advanced feature and should only be used by modders who know exactly what they're doing.")
-        if not self._askContinue(message, 'bash.undeleteRefs.continue',
-                                 _(u'Undelete Refs')): return
-        with balt.Progress(_(u'Undelete Refs')) as progress:
+        if not self._askContinue(self.warn, 'bash.undeleteRefs.continue',
+                                 self.text): return
+        with balt.Progress(self.text) as progress:
             progress.setFull(len(self.selected))
             hasFixed = False
             log = bolt.LogFile(StringIO.StringIO())
             for index,fileName in enumerate(map(GPath,self.selected)):
                 if bosh.reOblivion.match(fileName.s):
                     self._showWarning(_(u'Skipping') + u' ' + fileName.s,
-                                      _(u'Undelete Refs'))
+                                      self.text)
                     continue
                 progress(index,_(u'Scanning')+u' '+fileName.s+u'.')
                 fileInfo = bosh.modInfos[fileName]
-                cleaner = bosh.ModCleaner(fileInfo)
-                cleaner.clean(bosh.ModCleaner.UDR,SubProgress(progress,index,index+1))
+                cleaner = bosh.mods_metadata.ModCleaner(fileInfo)
+                cleaner.clean(bosh.mods_metadata.ModCleaner.UDR,
+                              SubProgress(progress, index, index + 1))
                 if cleaner.udr:
                     hasFixed = True
                     log.setHeader(u'== '+fileName.s)
@@ -1398,8 +1402,7 @@ class Mod_UndeleteRefs(EnabledLink):
             message = log.out.getvalue()
         else:
             message = _(u"No changes required.")
-        self._showWryeLog(message, title=_(u'Undelete Refs'),
-                          icons=Resources.bashBlue)
+        self._showWryeLog(message, title=self.text, icons=Resources.bashBlue)
         log.out.close()
 
 # Rest of menu Links ----------------------------------------------------------

@@ -774,9 +774,9 @@ class Installer_CopyConflicts(_SingleInstallable):
                 curFile = 1
                 srcOrder = srcInstaller.order
                 destDir = GPath(u"%03d - Conflicts" % srcOrder)
-                getArchiveOrder = lambda y: idata[y].order
-                for package in sorted(idata.data,key=getArchiveOrder):
-                    installer = idata[package]
+                getArchiveOrder = lambda tup: tup[1].order
+                for package, installer in sorted(idata.iteritems(),
+                                                 key=getArchiveOrder):
                     curConflicts = set()
                     for z,y in installer.refreshDataSizeCrc().iteritems():
                         if z in mismatched and installer.data_sizeCrc[z] != \

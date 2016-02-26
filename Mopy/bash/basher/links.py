@@ -516,7 +516,7 @@ def InitModLinks():
             cleanMenu.links.append(SeparatorLink())
             cleanMenu.links.append(Mod_ScanDirty())
             cleanMenu.links.append(Mod_RemoveWorldOrphans())
-            cleanMenu.links.append(Mod_CleanMod())
+            cleanMenu.links.append(Mod_FogFixer())
             cleanMenu.links.append(Mod_UndeleteRefs())
             ModList.itemMenu.append(cleanMenu)
         ModList.itemMenu.append(Mod_AddMaster())
