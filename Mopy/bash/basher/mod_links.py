@@ -1836,6 +1836,9 @@ from ..parsers import ActorLevels, CBash_ActorLevels
 
 class Mod_ActorLevels_Export(_Mod_Export_Link):
     """Export actor levels from mod to text file."""
+    askTitle = _(u'Export NPC levels to:')
+    csvFile = u'_NPC_Levels.csv'
+    progressTitle = _(u'Export NPC levels')
     text = _(u'NPC Levels...')
     help = _(u"Export NPC level info from mod to text file.")
 
@@ -1847,28 +1850,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
                    _(u'See the Bash help file for more info.'))
         if not self._askContinue(message, 'bash.actorLevels.export.continue',
                                  _(u'Export NPC Levels')): return
-        fileName = GPath(self.selected[0])
-        textName = fileName.root+u'_NPC_Levels.csv'
-        textDir = bass.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = self._askSave(title=_(u'Export NPC levels to:'),
-                                 defaultDir=textDir, defaultFile=textName,
-                                 wildcard=u'*_NPC_Levels.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export NPC levels')) as progress:
-            actorLevels = self._parser()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.selected))
-            for index,fileName in enumerate(map(GPath,self.selected)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s)
-                actorLevels.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+u'.')
-            actorLevels.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+        super(Mod_ActorLevels_Export, self).Execute()
 
 class Mod_ActorLevels_Import(_Mod_Import_Link):
     """Imports actor levels from text file to mod."""
