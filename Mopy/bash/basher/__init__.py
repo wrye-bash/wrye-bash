@@ -2083,33 +2083,30 @@ class InstallersList(balt.UIList):
         installer = self.data[item]
         #--Text
         if installer.type == 2 and len(installer.subNames) == 2:
-            textKey = self._type_textKey[1]
-        else: textKey = self._type_textKey.get(installer.type,
+            item_format.text_key = self._type_textKey[1]
+        else: item_format.text_key = self._type_textKey.get(installer.type,
                                              'installers.text.invalid')
         #--Background
-        backKey = (
-                  installer.skipDirFiles and 'installers.bkgd.skipped') or None
-        if installer.dirty_sizeCrc: backKey = 'installers.bkgd.dirty'
-        elif installer.underrides: backKey = 'installers.bkgd.outOfOrder'
-        #--Icon
-        iconKey = ('off', 'on')[installer.isActive] + '.' + self._status_color[
-            installer.status]
-        if installer.type < 0: iconKey = 'corrupt'
-        elif isinstance(installer, bosh.InstallerProject): iconKey += '.dir'
-        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
-            iconKey += '.wiz'
+        item_format.back_key = (installer.skipDirFiles and
+                                'installers.bkgd.skipped') or None
         text = u''
+        if installer.dirty_sizeCrc:
+            item_format.back_key = 'installers.bkgd.dirty'
+            text += _(u'Needs Annealing due to a change in configuration.')
+        elif installer.underrides:
+            item_format.back_key = 'installers.bkgd.outOfOrder'
+            text += _(u'Needs Annealing due to a change in Install Order.')
+        #--Icon
+        item_format.icon_key = 'on' if installer.isActive else 'off'
+        item_format.icon_key += '.' + self._status_color[installer.status]
+        if installer.type < 0: item_format.icon_key = 'corrupt'
+        elif isinstance(installer, bosh.InstallerProject): item_format.icon_key += '.dir'
+        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
+            item_format.icon_key += '.wiz'
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
-        if backKey == 'installers.bkgd.outOfOrder':
-            text += _(u'Needs Annealing due to a change in Install Order.')
-        elif backKey == 'installers.bkgd.dirty':
-            text += _(u'Needs Annealing due to a change in configuration.')
         #--TODO: add mouse  mouse tips
         self.mouseTexts[item] = text
-        item_format.icon_key = iconKey
-        item_format.text_key = textKey
-        item_format.back_key = backKey
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
