@@ -1851,14 +1851,16 @@ class _Mod_Import_Link(OneItemLink):
         changed = self._import(ext, fileInfo, fileName, textDir, textName,
                                textPath)
         #--Log
+        #FIXME: They all use different logs what the heck. Some more detailed.
+        #Or do other weird stuff.
         if not changed:
-            # Need a way to know what to show here instead of NPC Levels.
-            self._showOk(_(u'No relevant NPC levels to import.'),
-                         self.__class__.progressTitle)
+            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
         else:
             buff = StringIO.StringIO()
             buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            self._showLog(buff.getvalue())
+            text = buff.getvalue()
+            buff.close()
+            self._showLog(text)
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
@@ -1888,6 +1890,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     progressTitle = _(u'Import NPC Levels')
     text = _(u'NPC Levels...')
     help = _(u"Import NPC level info from text file to mod")
+    noChange = _(u'No relevant NPC levels to import.')
 
     def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
 
@@ -1920,6 +1923,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Relations')
     text = _(u'Relations...')
     help = _(u'Import faction relations from text file to mod')
+    noChange = _(u'No relevant faction relations to import.')
 
     def _parser(self):
         return CBash_FactionRelations() if CBash else FactionRelations()
@@ -1931,33 +1935,7 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
         if not self._askContinue(
                 message, 'bash.factionRelations.import.continue',
                 _(u'Import Relations')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir, textName, u'*_Relations.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a _Relations.csv file.'))
-            return
-        #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant faction relations to import.'),
-                         _(u'Import Relations'))
-        else:
-            buff = StringIO.StringIO()
-            buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            text = buff.getvalue()
-            buff.close()
-            self._showLog(text)
+        super(Mod_FactionRelations_Import, self).Execute()
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions, CBash_ActorFactions
