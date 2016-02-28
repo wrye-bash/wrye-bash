@@ -38,7 +38,7 @@ import textwrap
 import time
 import threading
 from functools import partial, wraps
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 #--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -63,7 +63,8 @@ def fonts():
     font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
     font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
     font_italic.SetStyle(wx.FONTSTYLE_SLANT)
-    return font_default, font_bold, font_italic
+    Fonts = namedtuple('Fonts', ['default', 'bold', 'italic'])
+    return Fonts(font_default, font_bold, font_italic)
 
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
@@ -1728,8 +1729,34 @@ class UIList(wx.Panel):
                 self._gList.SetStringItem(itemDex, colDex, labelTxt)
         self.setUI(item, itemDex)
 
+    class _ListItemFormat(object):
+        def __init__(self):
+            self.icon_key = self.text_key = self.back_key = None
+            self.font = Resources.fonts.default
+            self.underline = False
+
+    def set_item_format(self, item, item_format):
+        """Populate item_format attributes for text and background colors
+        and set icon, font and mouse text."""
+
     def setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
+        gItem = self._gList.GetItem(itemDex)
+        df = self._ListItemFormat()
+        self.set_item_format(fileName, df)
+        if df.icon_key and self.icons:
+            if isinstance(df.icon_key, tuple):
+                img = self.icons.Get(*df.icon_key)
+            else: img = self.icons[df.icon_key]
+            gItem.SetImage(img)
+        if df.text_key: gItem.SetTextColour(colors[df.text_key])
+        else: gItem.SetTextColour(self._gList.GetTextColour())
+        if df.back_key: gItem.SetBackgroundColour(colors[df.back_key])
+        else: gItem.SetBackgroundColour(self._defaultTextBackground)
+        font = gItem.GetFont()
+        font.SetUnderlined(df.underline)
+        gItem.SetFont(font)
+        self._gList.SetItem(gItem)
 
     def PopulateItems(self):
         """Sort items and populate entire list."""
@@ -2125,32 +2152,6 @@ class UIList(wx.Panel):
         with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
-
-#------------------------------------------------------------------------------
-class Tank(UIList):
-    """'Tank' format table. Takes the form of a wxListCtrl in Report mode, with
-    multiple columns and (optionally) column and item menus."""
-    _sunkenBorder = False
-
-    #--Updating/Sorting/Refresh -----------------------------------------------
-    def getGuiKeys(self, item):
-        """Returns keys for icon and text and background colors."""
-        iconKey = textKey = backKey = None
-        return iconKey, textKey, backKey
-
-    def getMouseText(self, *args, **kwdargs): return u''
-
-    def setUI(self, fileName, itemDex):
-        gItem = self._gList.GetItem(itemDex)
-        iconKey, textKey, backKey = self.getGuiKeys(fileName)
-        self.mouseTexts[fileName] = self.getMouseText(
-            iconKey, textKey, backKey)
-        if iconKey and self.icons: gItem.SetImage(self.icons[iconKey])
-        if textKey: gItem.SetTextColour(colors[textKey])
-        else: gItem.SetTextColour(self._gList.GetTextColour())
-        if backKey: gItem.SetBackgroundColour(colors[backKey])
-        else: gItem.SetBackgroundColour(self._defaultTextBackground)
-        self._gList.SetItem(gItem)
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
