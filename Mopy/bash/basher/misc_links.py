@@ -25,7 +25,7 @@
 import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceLink, MenuLink, CheckLink, Image
+    ChoiceLink, MenuLink, CheckLink, Image, UIList_Rename
 from .. import bass, balt, bosh, bush
 from .import People_Link
 from ..bolt import GPath, LString
@@ -140,14 +140,9 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
         super(Screen_JpgQualityCustom, self).Execute()
 
 #------------------------------------------------------------------------------
-class Screen_Rename(EnabledLink):
+class Screen_Rename(UIList_Rename):
     """Renames files by pattern."""
-    text = _(u'Rename...')
     help = _(u'Renames files by pattern')
-
-    def _enable(self): return len(self.selected) > 0
-
-    def Execute(self): self.window.Rename(selected=self.selected)
 
 # People Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------

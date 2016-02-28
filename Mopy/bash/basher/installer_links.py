@@ -39,7 +39,8 @@ from . import settingDefaults, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bass, bolt, bosh, bush, balt
 from ..bass import Resources
-from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
+from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
+    UIList_Rename
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, LogFile, formatInteger, round_size
@@ -468,9 +469,8 @@ class Installer_Hide(_InstallerLink):
         self.idata.irefresh(what='ION')
         self.window.RefreshUI()
 
-class Installer_Rename(_InstallerLink):
+class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
-    text = _(u'Rename...')
     help = _(u"Rename selected installer(s).")
 
     def _enable(self):
@@ -487,8 +487,6 @@ class Installer_Rename(_InstallerLink):
             if not isinstance(self.idata[item], installer_type):
                 return False
         return True
-
-    def Execute(self): self.window.Rename(selected=self.selected)
 
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""

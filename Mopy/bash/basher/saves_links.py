@@ -35,7 +35,7 @@ from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, parsers
 from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
-    ItemLink, SeparatorLink, OneItemLink, Image
+    ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
 from ..bolt import GPath, ArgumentError, SubProgress, BoltError, formatInteger
 from ..bosh import faces
 
@@ -338,13 +338,9 @@ class Save_DiffMasters(EnabledLink):
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------
-class Save_Rename(EnabledLink):
+class Save_Rename(UIList_Rename):
     """Renames Save File."""
-    text = _(u'Rename...')
     help = _(u'Rename Save File')
-    def _enable(self): return len(self.selected) != 0
-
-    def Execute(self): self.window.Rename(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class Save_Renumber(EnabledLink):

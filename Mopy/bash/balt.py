@@ -2509,6 +2509,12 @@ class UIList_Delete(ItemLink):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
         with BusyCursor(): self.window.DeleteItems(items=self.selected)
 
+class UIList_Rename(ItemLink):
+    """Rename selected UIList item(s)."""
+    text = _(u'Rename...')
+
+    def Execute(self): self.window.Rename(selected=self.selected)
+
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 def copyToClipboard(text):
