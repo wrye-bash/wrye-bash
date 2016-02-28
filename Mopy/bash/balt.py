@@ -1701,9 +1701,6 @@ class UIList(wx.Panel):
     def _select(self, item): self.panel.SetDetails(item)
 
     #--Items ----------------------------------------------
-    @staticmethod
-    def _gpath(item): return GPath(item)
-
     def PopulateItem(self, itemDex=-1, item=None):
         """Populate ListCtrl for specified item. Either item or itemDex must be
         specified.
@@ -1721,7 +1718,6 @@ class UIList(wx.Panel):
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
-        item = self._gpath(item)
         cols = self.cols
         for colDex in range(len(cols)):
             col = cols[colDex]
@@ -2137,9 +2133,6 @@ class Tank(UIList):
     _sunkenBorder = False
 
     #--Updating/Sorting/Refresh -----------------------------------------------
-    @staticmethod
-    def _gpath(item): return item ##: maybe in installers use GPath ??
-
     def getGuiKeys(self, item):
         """Returns keys for icon and text and background colors."""
         iconKey = textKey = backKey = None

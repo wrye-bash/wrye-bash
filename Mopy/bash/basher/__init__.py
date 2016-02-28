@@ -432,9 +432,6 @@ class MasterList(_ModsSortMixin, balt.UIList):
         else:
             return status  # 0, Green
 
-    @staticmethod
-    def _gpath(mi): return mi
-
     def setUI(self, mi, itemDex):
         listCtrl = self._gList
         masterInfo = self.data[mi]
