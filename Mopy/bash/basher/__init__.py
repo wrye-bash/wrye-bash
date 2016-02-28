@@ -294,7 +294,7 @@ class SashTankPanel(SashPanel):
         return self.data[self.detailsItem] if self.detailsItem else None
 
 #------------------------------------------------------------------------------
-class _ModsSortMixin(object):
+class _ModsUIList(balt.UIList):
 
     _esmsFirstCols = balt.UIList.nonReversibleCols
     @property
@@ -318,10 +318,10 @@ class _ModsSortMixin(object):
             items.sort(key=lambda x: x not in set(bosh.modInfos.activeCached
                 ) | bosh.modInfos.imported | bosh.modInfos.merged)
 
-    def forceEsmFirst(self): return self.sort in _ModsSortMixin._esmsFirstCols
+    def forceEsmFirst(self): return self.sort in _ModsUIList._esmsFirstCols
 
 #------------------------------------------------------------------------------
-class MasterList(_ModsSortMixin, balt.UIList):
+class MasterList(_ModsUIList):
     mainMenu = Links()
     itemMenu = Links()
     keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
@@ -338,7 +338,7 @@ class MasterList(_ModsSortMixin, balt.UIList):
             items.sort(key=lambda x: self.data[x].name not in set(
                 bosh.modInfos.activeCached) | bosh.modInfos.imported
                                             | bosh.modInfos.merged)
-    _extra_sortings = [_ModsSortMixin._sortEsmsFirst, _activeModsFirst]
+    _extra_sortings = [_ModsUIList._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
     #--Labels
     labels = OrderedDict([
@@ -432,44 +432,44 @@ class MasterList(_ModsSortMixin, balt.UIList):
         else:
             return status  # 0, Green
 
-    @staticmethod
-    def _gpath(mi): return mi
-
-    def setUI(self, mi, itemDex):
-        listCtrl = self._gList
+    def set_item_format(self, mi, item_format):
         masterInfo = self.data[mi]
         masterName = masterInfo.name
         #--Font color
-        item = listCtrl.GetItem(itemDex)
+        fileBashTags = masterInfo.getBashTags()
+        mouseText = u''
         if masterInfo.isEsm():
-            item.SetTextColour(colors['mods.text.esm'])
-        else:
-            item.SetTextColour(colors['default.text'])
+            item_format.text_key = 'mods.text.esm'
+            mouseText += _(u"Master file. ")
+        elif masterName in bosh.modInfos.mergeable:
+            if u'NoMerge' in fileBashTags:
+                item_format.text_key = 'mods.text.noMerge'
+                mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
+            else:
+                item_format.text_key = 'mods.text.mergeable'
         #--Text BG
         if bosh.modInfos.isBadFileName(masterName.s):
             if bosh.modInfos.isActiveCached(masterName):
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+                item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+                item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif masterInfo.hasActiveTimeConflict():
-            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+            item_format.back_key = 'mods.bkgd.doubleTime.load'
         elif masterInfo.isExOverLoaded():
-            item.SetBackgroundColour(colors['mods.bkgd.exOverload'])
+            item_format.back_key = 'mods.bkgd.exOverload'
         elif masterInfo.hasTimeConflict():
-            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+            item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif masterInfo.isGhost:
-            item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
-        else:
-            item.SetBackgroundColour(colors['default.bkgd'])
+            item_format.back_key = 'mods.bkgd.ghosted'
         if self.allowEdit:
             if masterInfo.oldName in settings['bash.mods.renames']:
-                item.SetFont(Resources.fonts[1]) # aka bold it - add namedtuple
-        listCtrl.SetItem(item)
+                item_format.font = Resources.fonts.bold
         #--Image
         status = self.GetMasterStatus(mi)
         oninc = bosh.modInfos.isActiveCached(masterName) or (
             masterName in bosh.modInfos.merged and 2)
-        listCtrl.SetItemImage(itemDex,self.icons.Get(status,oninc))
+        item_format.icon_key = status, oninc
+        self.mouseTexts[mi] = mouseText
 
     #--Relist
     def _reList(self):
@@ -595,9 +595,8 @@ class INIList(balt.UIList):
         return self.filterOutDefaultTweaks(items) # will refilter if coming
         # from INI_Delete - expensive but I can't allow default tweaks deletion
 
-    def setUI(self, fileName, itemDex):
+    def set_item_format(self, fileName, item_format):
         fileInfo = self.data[fileName]
-        listCtrl = self._gList
         status = fileInfo.getStatus()
         #--Image
         checkMark = 0
@@ -623,15 +622,10 @@ class INIList(balt.UIList):
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
         self.mouseTexts[fileName] = mousetext
-        listCtrl.SetItemImage(itemDex,self.icons.Get(icon,checkMark))
+        item_format.icon_key = icon, checkMark
         #--Font/BG Color
-        item = listCtrl.GetItem(itemDex)
-        item.SetTextColour(colors['default.text'])
         if status < 0:
-            item.SetBackgroundColour(colors['ini.bkgd.invalid'])
-        else:
-            item.SetBackgroundColour(colors['default.bkgd'])
-        listCtrl.SetItem(item)
+            item_format.back_key = 'ini.bkgd.invalid'
 
     def OnLeftDown(self,event):
         """Handle click on icon events"""
@@ -765,7 +759,7 @@ class INILineCtrl(wx.ListCtrl):
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class ModList(_ModsSortMixin, balt.UIList):
+class ModList(_ModsUIList):
     #--Class Data
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
@@ -783,8 +777,8 @@ class ModList(_ModsSortMixin, balt.UIList):
         'Mod Status': lambda self, a: self.data[a].txt_status(),
         'CRC'       : lambda self, a: self.data[a].cachedCrc(),
     }
-    _extra_sortings = [_ModsSortMixin._sortEsmsFirst,
-                      _ModsSortMixin._activeModsFirst]
+    _extra_sortings = [_ModsUIList._sortEsmsFirst,
+                       _ModsUIList._activeModsFirst]
     _dndList, _dndColumns = True, ['Load Order']
     _sunkenBorder = False
     #--Labels
@@ -828,9 +822,8 @@ class ModList(_ModsSortMixin, balt.UIList):
         self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
-    def setUI(self, fileName, itemDex):
+    def set_item_format(self, fileName, item_format):
         fileInfo = self.data[fileName]
-        listCtrl = self._gList
         #--Image
         status = fileInfo.getStatus()
         checkMark = (
@@ -838,81 +831,68 @@ class ModList(_ModsSortMixin, balt.UIList):
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
-        listCtrl.SetItemImage(itemDex,self.icons.Get(status,checkMark))
-        #--Font color
-        item = listCtrl.GetItem(itemDex)
+        item_format.icon_key = status, checkMark
         #--Default message
         mouseText = u''
-        fileBashTags = bosh.modInfos[fileName].getBashTags()
+        fileBashTags = fileInfo.getBashTags()
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
         if fileName in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
         if fileInfo.isEsm():
-            item.SetTextColour(colors['mods.text.esm'])
+            item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
         elif fileName in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags:
-                item.SetTextColour(colors['mods.text.noMerge'])
+                item_format.text_key = 'mods.text.noMerge'
                 mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
             else:
-                item.SetTextColour(colors['mods.text.mergeable'])
+                item_format.text_key = 'mods.text.mergeable'
                 if checkMark == 2:
                     mouseText += _(u"Merged into Bashed Patch.  ")
                 else:
                     mouseText += _(u"Can be merged into Bashed Patch.  ")
-        else:
-            item.SetTextColour(colors['default.text'])
         #--Image messages
         if status == 30:     mouseText += _(u"One or more masters are missing.  ")
         elif status == 20:   mouseText += _(u"Masters have been re-ordered.  ")
         if checkMark == 1:   mouseText += _(u"Active in load list.  ")
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
-
         #should mod be deactivated
         if u'Deactivate' in fileBashTags:
-            item.SetFont(Resources.fonts[2])
-        else:
-            item.SetFont(Resources.fonts[0])
+            item_format.font = Resources.fonts.italic
         #--Text BG
         if fileName in bosh.modInfos.bad_names:
-            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+            item_format.back_key ='mods.bkgd.doubleTime.exists'
         elif fileName in bosh.modInfos.missing_strings:
             if bosh.modInfos.isActiveCached(fileName):
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+                item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+                item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif fileInfo.hasBadMasterNames():
             if bosh.modInfos.isActiveCached(fileName):
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+                item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
-                item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+                item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText += _(u"WARNING: Has master names that will not load.  ")
         elif fileInfo.hasActiveTimeConflict():
-            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.load'])
+            item_format.back_key = 'mods.bkgd.doubleTime.load'
             mouseText += _(u"WARNING: Has same load order as another mod.  ")
         elif u'Deactivate' in fileBashTags and checkMark == 1:
-            item.SetBackgroundColour(colors['mods.bkgd.deactivate'])
+            item_format.back_key = 'mods.bkgd.deactivate'
             mouseText += _(u"Mod should be imported and deactivated.  ")
         elif fileInfo.isExOverLoaded():
-            item.SetBackgroundColour(colors['mods.bkgd.exOverload'])
+            item_format.back_key = 'mods.bkgd.exOverload'
             mouseText += _(u"WARNING: Exclusion group is overloaded.  ")
         elif fileInfo.hasTimeConflict():
-            item.SetBackgroundColour(colors['mods.bkgd.doubleTime.exists'])
+            item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText += _(u"Has same time as another (unloaded) mod.  ")
         elif fileInfo.isGhost:
-            item.SetBackgroundColour(colors['mods.bkgd.ghosted'])
-        else:
-            item.SetBackgroundColour(colors['default.bkgd'])
-        if fileInfo.isGhost: mouseText += _(u"File is ghosted.  ")
+            item_format.back_key = 'mods.bkgd.ghosted'
+            mouseText += _(u"File is ghosted.  ")
         if settings['bash.mods.scanDirty']:
             message = fileInfo.getDirtyMessage()
             mouseText += message[1]
-            if message[0]:
-                font = item.GetFont()
-                font.SetUnderlined(True)
-                item.SetFont(font)
-        listCtrl.SetItem(item)
+            if message[0]: item_format.underline = True
         self.mouseTexts[fileName] = mouseText
 
     def RefreshUI(self, **kwargs):
@@ -982,7 +962,6 @@ class ModList(_ModsSortMixin, balt.UIList):
         """Left Down: Check/uncheck mods."""
         mod_clicked_on_icon = self._getItemClicked(event, on_icon=True)
         if mod_clicked_on_icon:
-            self._gList.SetDnD(False)
             self._checkUncheckMod(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
@@ -991,7 +970,6 @@ class ModList(_ModsSortMixin, balt.UIList):
             mod_clicked = self._getItemClicked(event)
             if event.AltDown() and mod_clicked:
                 if self.jump_to_mods_installer(mod_clicked): return
-            self._gList.SetDnD(True)
             #--Pass Event onward to OnSelectItem
             event.Skip()
 
@@ -1814,12 +1792,12 @@ class SaveList(balt.UIList):
         # self.RefreshUI(renamed) ##: not yet due to how PopulateItem works
 
     #--Populate Item
-    def setUI(self, fileName, itemDex):
+    def set_item_format(self, fileName, item_format):
         fileInfo = self.data[fileName]
         #--Image
         status = fileInfo.getStatus()
         on = fileName.cext == bush.game.ess.ext
-        self._gList.SetItemImage(itemDex,self.icons.Get(status,on))
+        item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
     def OnKeyUp(self,event):
@@ -2055,10 +2033,11 @@ class SavePanel(SashPanel):
         super(SavePanel, self).ClosePanel()
 
 #------------------------------------------------------------------------------
-class InstallersList(balt.Tank):
+class InstallersList(balt.UIList):
     mainMenu = Links()
     itemMenu = Links()
     icons = installercons
+    _sunkenBorder = False
     _shellUI = True
     _editLabels = True
     _default_sort_col = 'Package'
@@ -2098,39 +2077,34 @@ class InstallersList(balt.Tank):
     _type_textKey = {1: 'default.text', 2: 'installers.text.complex'}
 
     #--Item Info
-    def getGuiKeys(self, item):
-        """Returns keys for icon and text and background colors."""
+    def set_item_format(self, item, item_format):
         installer = self.data[item]
         #--Text
         if installer.type == 2 and len(installer.subNames) == 2:
-            textKey = self._type_textKey[1]
-        else: textKey = self._type_textKey.get(installer.type,
+            item_format.text_key = self._type_textKey[1]
+        else: item_format.text_key = self._type_textKey.get(installer.type,
                                              'installers.text.invalid')
         #--Background
-        backKey = (
-                  installer.skipDirFiles and 'installers.bkgd.skipped') or None
-        if installer.dirty_sizeCrc: backKey = 'installers.bkgd.dirty'
-        elif installer.underrides: backKey = 'installers.bkgd.outOfOrder'
-        #--Icon
-        iconKey = ('off', 'on')[installer.isActive] + '.' + self._status_color[
-            installer.status]
-        if installer.type < 0: iconKey = 'corrupt'
-        elif isinstance(installer, bosh.InstallerProject): iconKey += '.dir'
-        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
-            iconKey += '.wiz'
-        return iconKey, textKey, backKey
-
-    def getMouseText(self,iconKey,textKey,backKey):
-        """Return mouse text to use, given the iconKey, textKey and backKey."""
+        item_format.back_key = (installer.skipDirFiles and
+                                'installers.bkgd.skipped') or None
         text = u''
+        if installer.dirty_sizeCrc:
+            item_format.back_key = 'installers.bkgd.dirty'
+            text += _(u'Needs Annealing due to a change in configuration.')
+        elif installer.underrides:
+            item_format.back_key = 'installers.bkgd.outOfOrder'
+            text += _(u'Needs Annealing due to a change in Install Order.')
+        #--Icon
+        item_format.icon_key = 'on' if installer.isActive else 'off'
+        item_format.icon_key += '.' + self._status_color[installer.status]
+        if installer.type < 0: item_format.icon_key = 'corrupt'
+        elif isinstance(installer, bosh.InstallerProject): item_format.icon_key += '.dir'
+        if settings['bash.installers.wizardOverlay'] and installer.hasWizard:
+            item_format.icon_key += '.wiz'
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
-        if backKey == 'installers.bkgd.outOfOrder':
-            text += _(u'Needs Annealing due to a change in Install Order.')
-        elif backKey == 'installers.bkgd.dirty':
-            text += _(u'Needs Annealing due to a change in configuration.')
         #--TODO: add mouse  mouse tips
-        return text
+        self.mouseTexts[item] = text
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
@@ -2406,13 +2380,6 @@ class InstallersList(balt.Tank):
                 self.SelectItem((new[-1])) # show details for the last one
         else:
             self.OpenSelected(selected=[item])
-
-    def Rename(self, selected=None):
-        selected = self.GetSelected()
-        if selected > 0:
-            index = self.GetIndex(selected[0])
-            if index != -1:
-                self._gList.EditLabel(index)
 
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
@@ -3262,10 +3229,11 @@ class BSAPanel(SashPanel):
         # bosh.bsaInfos.profiles.save()
 
 #------------------------------------------------------------------------------
-class PeopleList(balt.Tank):
+class PeopleList(balt.UIList):
     mainMenu = Links()
     itemMenu = Links()
     icons = karmacons
+    _sunkenBorder = False
     _recycle = False
     _default_sort_col = 'Name'
     _sort_keys = {'Name'  : lambda self, x: x.lower(),
@@ -3284,11 +3252,8 @@ class PeopleList(balt.Tank):
                                    self.data[name][2].split(u'\n', 1)[0][:75]),
     ])
 
-    def getGuiKeys(self, item):
-        """Return keys for icon and text and background colors."""
-        textKey = backKey = None
-        iconKey = u'karma%+d' % self.data[item][1]
-        return iconKey, textKey, backKey
+    def set_item_format(self, item, item_format):
+        item_format.icon_key = u'karma%+d' % self.data[item][1]
 
 #------------------------------------------------------------------------------
 class PeoplePanel(SashTankPanel):

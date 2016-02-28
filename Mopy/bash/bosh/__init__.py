@@ -2300,6 +2300,13 @@ class MasterInfo:
         else:
             return False
 
+    def getBashTags(self):
+        """Retrieve bash tags for master info if it's present in Data."""
+        if self.modInfo:
+            return self.modInfo.getBashTags()
+        else:
+            return set()
+
     def getStatus(self):
         if not self.modInfo:
             return 30
