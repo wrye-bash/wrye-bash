@@ -1831,6 +1831,35 @@ class _Mod_Import_Link(OneItemLink):
             title=title or self.__class__.progressTitle, asDialog=asDialog,
             fixedFont=fixedFont, icons=icons, size=size)
 
+    def Execute(self):
+        fileName = GPath(self.selected[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root + self.__class__.csvFile
+        textDir = bass.dirs['patches']
+        #--File dialog
+        textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
+                                 u'*' + self.__class__.csvFile, mustExist=True)
+        if not textPath: return
+        (textDir, textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext != u'.csv':
+            self._showError(_(u'Source file must be a {0} file.'.format(
+                self.__class__.csvFile)))
+            return
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
+        #--Log
+        if not changed:
+            # Need a way to know what to show here instead of NPC Levels.
+            self._showOk(_(u'No relevant NPC levels to import.'),
+                         self.__class__.progressTitle)
+        else:
+            buff = StringIO.StringIO()
+            buff.write(u'* %03d  %s\n' % (changed, fileName.s))
+            self._showLog(buff.getvalue())
+
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
 
@@ -1868,31 +1897,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
                    _(u'See the Bash help file for more info.'))
         if not self._askContinue(message, 'bash.actorLevels.import.continue',
                                  _(u'Import NPC Levels')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir,textName,u'*_NPC_Levels.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a _NPC_Levels.csv file.'))
-            return
-        #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant NPC levels to import.'),
-                         _(u'Import NPC Levels'))
-        else:
-            buff = StringIO.StringIO()
-            buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            self._showLog(buff.getvalue())
+        super(Mod_ActorLevels_Import, self).Execute()
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
