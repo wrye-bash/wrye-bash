@@ -1428,8 +1428,6 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
                 # On last item/one that's not fully visible
                 self.ScrollLines(1)
 
-    def SetDnD(self, allow): self.doDnD = allow
-
     def OnBeginDrag(self, event):
         if not self.dndAllow(): return
 
@@ -1727,7 +1725,7 @@ class UIList(wx.Panel):
                 self._gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
                 self._gList.SetStringItem(itemDex, colDex, labelTxt)
-        self.setUI(item, itemDex)
+        self.__setUI(item, itemDex)
 
     class _ListItemFormat(object):
         def __init__(self):
@@ -1741,7 +1739,7 @@ class UIList(wx.Panel):
         """Populate item_format attributes for text and background colors
         and set icon, font and mouse text."""
 
-    def setUI(self, fileName, itemDex):
+    def __setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
         gItem = self._gList.GetItem(itemDex)
         df = self._ListItemFormat()
@@ -2113,9 +2111,10 @@ class UIList(wx.Panel):
     # Data commands (WIP)------------------------------------------------------
     def Rename(self, selected=None):
         if not selected: selected = self.GetSelected()
-        if len(selected) > 0:
-            index = self._gList.FindItem(0, selected[0].s)
-            if index != -1: self._gList.EditLabel(index)
+        if selected:
+            index = self.GetIndex(selected[0])
+            if index != -1:
+                self._gList.EditLabel(index)
 
     @conversation
     def DeleteItems(self, event=None, items=None,

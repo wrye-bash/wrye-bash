@@ -962,7 +962,6 @@ class ModList(_ModsUIList):
         """Left Down: Check/uncheck mods."""
         mod_clicked_on_icon = self._getItemClicked(event, on_icon=True)
         if mod_clicked_on_icon:
-            self._gList.SetDnD(False)
             self._checkUncheckMod(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
@@ -971,7 +970,6 @@ class ModList(_ModsUIList):
             mod_clicked = self._getItemClicked(event)
             if event.AltDown() and mod_clicked:
                 if self.jump_to_mods_installer(mod_clicked): return
-            self._gList.SetDnD(True)
             #--Pass Event onward to OnSelectItem
             event.Skip()
 
@@ -2382,13 +2380,6 @@ class InstallersList(balt.UIList):
                 self.SelectItem((new[-1])) # show details for the last one
         else:
             self.OpenSelected(selected=[item])
-
-    def Rename(self, selected=None):
-        selected = self.GetSelected()
-        if selected > 0:
-            index = self.GetIndex(selected[0])
-            if index != -1:
-                self._gList.EditLabel(index)
 
     def OnKeyUp(self,event):
         """Char events: Action depends on keys pressed"""
