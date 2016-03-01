@@ -4682,7 +4682,9 @@ class Installer(object):
         map(self.__setattr__,self.persistent,values)
         if self.dirty_sizeCrc is None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
-        self.refreshDataSizeCrc()
+        dest_scr = self.refreshDataSizeCrc()
+        if self.overrideSkips:
+            InstallersData.overridden_skips.update(dest_scr.keys())
 
     def __copy__(self):
         """Create a copy of self -- works for subclasses too (assuming
@@ -5789,6 +5791,13 @@ class InstallersData(DataDict):
     # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track
     # ini deletions from Data/Ini Tweaks as well as mods/xmls etc in Data/)
     miscTrackedFiles = TrackedFileInfos()
+    # cache with paths in Data/ that would be skipped but are not, due to
+    # an installer having the override skip etc flag on - when turning the skip
+    # off leave the files here - will be cleaned on restart (files will show
+    # as dirty till then, but to remove them we should examine all installers
+    # that override skips - not worth the hassle)
+    overridden_skips = set()
+    __clean_overridden_after_load = True
 
     def __init__(self):
         self.dir = dirs['installers']
@@ -6152,6 +6161,7 @@ class InstallersData(DataDict):
                                          pending_size, progress,
                                          recalculate_all_crcs,
                                          dirs['mods'].stail)
+        self.update_for_overridden_skips() # after the final update !
         #--Done
         return changed
 
@@ -6274,6 +6284,16 @@ class InstallersData(DataDict):
                             new_sizeCrcDate, bolt.Progress()) ##: Progress !
         for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
             self.data_sizeCrcDate[rpFile] = (size, crc, date)
+
+    def update_for_overridden_skips(self, dont_skip=None):
+        if dont_skip is not None:
+            dont_skip.difference_update(self.data_sizeCrcDate)
+            self.overridden_skips |= dont_skip
+        elif self.__clean_overridden_after_load:
+            self.overridden_skips.difference_update(self.data_sizeCrcDate)
+            self.__clean_overridden_after_load = False
+        new_skips_overrides = self.overridden_skips - set(self.data_sizeCrcDate)
+        self.update_data_SizeCrcDate(new_skips_overrides)
 
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
