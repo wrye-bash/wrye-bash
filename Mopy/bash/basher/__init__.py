@@ -60,7 +60,6 @@ import sys
 import time
 from types import ClassType
 from functools import partial
-from itertools import groupby
 #--wxPython
 import wx
 import wx.gizmos
@@ -71,7 +70,7 @@ from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods, Installer
+from ..bosh import omods
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -2420,45 +2419,19 @@ class InstallersList(balt.UIList):
             with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
-                dest_src = set() # installer's destination paths rel to Data/
+                dest = set() # installer's destination paths rel to Data/
                 for index, (name, installer) in enumerate(sorted(toRefresh, key=lambda tup: tup[1].order)):
                     progress(index,
                              _(u'Refreshing Packages...') + u'\n' + name.s)
                     apath = bass.dirs['installers'].join(name)
-                    dest_src.update(installer.refreshBasic(
+                    dest.update(installer.refreshBasic(
                         apath, SubProgress(progress, index, index + 1)).keys())
-                self.update_data_SizeCrcDate(dest_src)
-                self.data.hasChanged = True  # is it really needed ?
+                    self.data.hasChanged = True  # is it really needed ?
+                self.data.update_data_SizeCrcDate(dest)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
         self.data.irefresh(what='NSC')
         self.RefreshUI()
-
-    def update_data_SizeCrcDate(self, dest_src):
-        """Update data_SizeCrcDate with info on given paths.
-        :param dest_src: set of paths relative to Data/ - may not exist."""
-        root_files = []
-        norm_ghost = Installer.getGhosted()
-        for path in dest_src:
-            sp = path.s.rsplit(os.sep, 1) # split into ['/root_path, 'file']
-            if len(sp) == 1: # top level file
-                name = norm_ghost.get(path, path)
-                root_files.append((bass.dirs['mods'].s, name.s))
-            else:
-                root_files.append((bass.dirs['mods'].join(sp[0]).s, sp[1]))
-        root_files.sort()
-        root_dirs_files = []
-        for key, val in groupby(root_files, key=lambda t: t[0]):
-            root_dirs_files.append((key, [], [j for i, j in val]))
-        new_sizeCrcDate, pending, pending_size = Installer.process_data_dir(
-            root_dirs_files, self.data.data_sizeCrcDate, bolt.Progress(),
-            len(bass.dirs['mods'].s) + 1)
-        deleted = set(dest_src) - set(new_sizeCrcDate)
-        for d in deleted: self.data.data_sizeCrcDate.pop(d, None)
-        Installer.calc_crcs(pending, pending_size, bass.dirs['mods'].stail,
-                            new_sizeCrcDate, bolt.Progress()) ##: Progress !
-        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
-            self.data.data_sizeCrcDate[rpFile] = (size, crc, date)
 
 #------------------------------------------------------------------------------
 class InstallersPanel(SashTankPanel):
