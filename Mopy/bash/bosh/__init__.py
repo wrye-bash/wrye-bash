@@ -4916,10 +4916,10 @@ class Installer(object):
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
             renameStrings = False
-            bethFilesSkip = set()
+            bethFilesSkip = False
         else:
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
-            bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
+            bethFilesSkip = not settings['bash.installers.autoRefreshBethsoft']
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
         hasExtraData = self.hasExtraData
@@ -4987,6 +4987,8 @@ class Installer(object):
                                 skip = False
                     elif fileLower in bethFiles:
                         self.hasBethFiles = True
+                        skipDirFilesDiscard(file)
+                        skipDirFilesAdd(file + u' ' + _(u'[Bethesda Content]'))
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                         continue
@@ -5026,10 +5028,11 @@ class Installer(object):
                         checkOBSE, fileLower, full, archiveRoot, size, crc):
                     continue
             #--Noisy skips
-            if fileLower in bethFilesSkip:
+            if fileLower in bethFiles:
                 self.hasBethFiles = True
-                skipDirFilesAdd(full)
-                continue
+                if bethFilesSkip:
+                    skipDirFilesAdd(full + u' ' + _(u'[Bethesda Content]'))
+                    continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                 skipDirFilesAdd(full)
                 continue
@@ -5039,9 +5042,6 @@ class Installer(object):
             elif fileExt in skipExts:
                 skipExtFilesAdd(full)
                 continue
-            #--Bethesda Content?
-            if fileLower in bethFiles:
-                self.hasBethFiles = True
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user

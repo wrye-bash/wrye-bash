@@ -2408,7 +2408,7 @@ class InstallersList(balt.UIList):
             self.SelectItemAtIndex(index)
             self._gList.EditLabel(index)
 
-    def rescanInstallers(self, toRefresh, abort):
+    def rescanInstallers(self, toRefresh, abort, update_from_data=True):
         """Refresh installers, ignoring skip refresh flag.
 
         Will also update InstallersData for the paths this installer would
@@ -2427,8 +2427,9 @@ class InstallersList(balt.UIList):
                     dest.update(installer.refreshBasic(
                         apath, SubProgress(progress, index, index + 1)).keys())
                     self.data.hasChanged = True  # is it really needed ?
-                progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
-                self.data.update_data_SizeCrcDate(dest, progress)
+                if update_from_data:
+                    progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
+                    self.data.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
         self.data.irefresh(what='NSC')
