@@ -5577,7 +5577,7 @@ class InstallerProject(Installer):
         rootName = apRoot.stail
         progress = progress if progress else bolt.Progress()
         progress_msg = rootName + u'\n' + _(u'Scanning...')
-        progress(0, progress_msg)
+        progress(0, progress_msg + u'\n')
         progress.setFull(1)
         asRoot = apRoot.s
         relPos = len(asRoot) + 1
@@ -6128,7 +6128,7 @@ class InstallersData(DataDict):
         #--Scan for changed files
         progress = progress if progress else bolt.Progress()
         progress_msg = dirs['mods'].stail + u': ' + _(u'Pre-Scanning...')
-        progress(0, progress_msg)
+        progress(0, progress_msg + u'\n')
         progress.setFull(1)
         dirDirsFiles, emptyDirs = [], set()
         dirDirsFilesAppend, emptyDirsAdd = dirDirsFiles.append, emptyDirs.add
