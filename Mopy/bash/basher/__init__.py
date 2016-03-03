@@ -60,7 +60,7 @@ import sys
 import time
 from types import ClassType
 from functools import partial
-
+from itertools import groupby
 #--wxPython
 import wx
 import wx.gizmos
@@ -71,7 +71,7 @@ from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods
+from ..bosh import omods, Installer
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -2410,19 +2410,51 @@ class InstallersList(balt.UIList):
             self._gList.EditLabel(index)
 
     def rescanInstallers(self, toRefresh, abort):
-        """Refresh installers, ignoring skip refresh flag."""
+        """Refresh installers, ignoring skip refresh flag.
+
+        Will also update InstallersData for the paths this installer would
+        install, in case a refresh is requested because those files were
+        modified/deleted (BAIN only scans Data/ once or boot)."""
         if not toRefresh: return
         try:
             with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
-                for index, (name, installer) in enumerate(toRefresh):
+                dest_src = {}
+                for index, (name, installer) in enumerate(sorted(toRefresh, key=lambda tup: tup[1].order)):
                     progress(index,
                              _(u'Refreshing Packages...') + u'\n' + name.s)
                     apath = bass.dirs['installers'].join(name)
-                    installer.refreshBasic(apath, SubProgress(progress, index,
-                                                              index + 1))
-                    self.data.hasChanged = True  # is it really needed ?
+                    dest_src.update(installer.refreshBasic(
+                        apath, SubProgress(progress, index, index + 1)))
+                root_files = []
+                norm_ghost = Installer.getGhosted()
+                for p in dest_src:
+                    sp = p.s.rsplit(os.sep, 1)
+                    if len(sp) == 1:
+                        ghost = norm_ghost.get(sp[-1], sp[-1])
+                        root_files.append((bass.dirs['mods'].s, ghost))
+                    else:
+                        root_files.append(
+                            (bass.dirs['mods'].join(sp[0]).s, sp[-1]))
+                root_files.sort()
+                root_dirs_files = []
+                for key, val in groupby(root_files, key=lambda t: t[0]):
+                    root_dirs_files.append((key, [], [j for i, j in val]))
+
+                new_sizeCrcDate, pending, pending_size= Installer\
+                    .process_data_dir(
+                    root_dirs_files, self.data.data_sizeCrcDate,
+                    bolt.Progress(),
+                    len(bass.dirs['mods'].s) + 1)
+                deleted = set(dest_src) - set(new_sizeCrcDate)
+                for d in deleted: self.data.data_sizeCrcDate.pop(d, None)
+                if pending:
+                    Installer.calc_crcs(pending, pending_size, bass.dirs['mods'].stail,
+                                        new_sizeCrcDate, bolt.Progress())
+                for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+                    self.data.data_sizeCrcDate[rpFile] = (size, crc, date)
+                self.data.hasChanged = True  # is it really needed ?
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
         self.data.irefresh(what='NSC')

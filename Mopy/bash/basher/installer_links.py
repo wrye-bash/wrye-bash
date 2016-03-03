@@ -707,6 +707,7 @@ class Installer_Refresh(_InstallerLink):
 
     def _enable(self): return bool(self.filterInstallables())
 
+    @balt.conversation
     def Execute(self):
         toRefresh = set((x, self.idata[x]) for x in self.selected)
         self.window.rescanInstallers(toRefresh, abort=True)
