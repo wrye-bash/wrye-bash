@@ -438,7 +438,8 @@ class MelBase:
     def getSlotsUsed(self):
         return self.attr,
 
-    def parseElements(self,*elements):
+    @staticmethod
+    def parseElements(*elements):
         """Parses elements and returns attrs,defaults,actions,formAttrs where:
         * attrs is tuple of attibute (names)
         * formAttrs is tuple of attributes that have fids,
@@ -933,7 +934,7 @@ class MelStruct(MelBase):
         """Initialize."""
         dumpExtra = kwdargs.get('dumpExtra', None)
         self.subType, self.format = subType, format
-        self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*elements)
+        self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*elements)
         self._debug = False
         if dumpExtra:
             self.attrs += (dumpExtra,)
@@ -1527,7 +1528,7 @@ class MreRecord(object):
         elif ins and not self.flags1.compressed:
             inPos = ins.tell()
             self.data = ins.read(self.size,type)
-            ins.seek(inPos,0,type+'_REWIND')
+            ins.seek(inPos,0,type+'_REWIND') # type+'_REWIND' is just for debug
             self.loadData(ins,inPos+self.size)
         #--Buffered analysis (subclasses only)
         else:

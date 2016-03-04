@@ -30,10 +30,6 @@ import struct
 from .constants import * # WIP
 from ... import brec
 
-# Mod Record Elements ---------------------------------------------------------
-#------------------------------------------------------------------------------
-# Constants
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 #--Name of the game
 ## Example: u'Oblivion'
@@ -149,7 +145,7 @@ class ess:
     def load(ins,header):
         """Extract basic info from save file.close
            At a minimum, this should set the following
-           attrubutes in 'header':
+           attributes in 'header':
             pcName
             pcLevel
             pcLocation
@@ -178,17 +174,6 @@ iniFiles = [
 #-- INI setting used to setup Save Profiles
 ## (section,key)
 saveProfilesKey = (u'General',u'SLocalSavePath')
-
-#--Game ESM/ESP/BSA files
-## These are all of the ESM,ESP,and BSA data files that belong to the game
-bethDataFiles = set((
-    # Use lowercase names
-))
-
-#--Every file in the Data directory from Bethsoft
-## These are every single file in the Data directory that
-## belong to the game
-allBethFiles = set()
 
 #--BAIN:
 ## These are the allowed default data directories that BAIN can install to
@@ -291,7 +276,7 @@ pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
 allTags = sorted((
 ))
 
-#--Patcher available when building a Bashed Patch (refrerenced by class name)
+#--Patcher available when building a Bashed Patch (referenced by class name)
 patchers = (
 )
 
@@ -321,7 +306,7 @@ writeClasses = ()
 def ini():
     # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
     # re-executing all lines within the module, it acts like another 'import'
-    # statement - in otherwords, nothing happens.  This means any lines that
+    # statement - in other words, nothing happens.  This means any lines that
     # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
     brec.ModReader.recHeader = RecordHeader

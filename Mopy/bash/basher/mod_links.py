@@ -1740,7 +1740,7 @@ class Mod_Face_Import(OneItemLink):
         #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
         if not imagePath.exists():
-            srcInfo.getHeader()
+            srcInfo.readHeader()
             width,height,data = srcInfo.header.image
             image = Image.GetImage(data, height, width)
             imagePath.head.makedirs()

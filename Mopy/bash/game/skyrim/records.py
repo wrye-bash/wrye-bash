@@ -2192,7 +2192,7 @@ class MreDebr(MelRecord):
         _elements = (('percentage',0),('modPath',null1),('flags',0),)
         def __init__(self):
             """Initialize."""
-            self.attrs,self.defaults,self.actions,self.formAttrs = self.parseElements(*self._elements)
+            self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*self._elements)
             self._debug = False
         def loadData(self, record, ins, sub_type, size, readId):
             """Reads data from ins into record attribute."""

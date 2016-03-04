@@ -1041,7 +1041,7 @@ def parseRecords(fileName='Oblivion.esm'):
     loadFactory.keepAll = True
     modFile.safeSave()
     print modFile.fileInfo.name.s,'saved.'
-    modFile.fileInfo.getHeader()
+    modFile.fileInfo.readHeader()
     modFile.fileInfo.setType('esp')
 
 @mainfunc

@@ -87,14 +87,14 @@ undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 #..Bit-and this with the fid to get the objectindex.
 oiMask = 0xFFFFFFL
 
-#--File Singletons
+#--Singletons
 gameInis = None
 oblivionIni = None
-modInfos  = None  #--ModInfos singleton
-saveInfos = None #--SaveInfos singleton
-iniInfos = None #--INIInfos singleton
-bsaInfos = None #--BSAInfos singleton
-screensData = None #--ScreensData singleton
+modInfos  = None  # type: ModInfos
+saveInfos = None  # type: SaveInfos
+iniInfos = None   # type: INIInfos
+bsaInfos = None   # type: BSAInfos
+screensData = None # type: ScreensData
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
 load_order = None #--can't import yet as I need bass.dirs to be initialized
 
@@ -2393,15 +2393,15 @@ class FileInfo(_AFileInfo):
         self.ctime = path.ctime
         self.mtime = path.mtime
         self.size  = path.size
-        if self.header: self.getHeader() # if not header remains None
+        if self.header: self.readHeader() # if not header remains None
 
-    def getHeader(self):
-        """Read header for file."""
+    def readHeader(self):
+        """Read header from file and set self.header attribute."""
         pass
 
     def getHeaderError(self):
         """Read header for file. But detects file error and returns that."""
-        try: self.getHeader()
+        try: self.readHeader()
         except FileError as error:
             return error.message
         else:
@@ -2770,8 +2770,8 @@ class ModInfo(FileInfo):
         return configHelpers.getDirtyMessage(self.name)
 
     #--Header Editing ---------------------------------------------------------
-    def getHeader(self):
-        """Read header from file set self.header and return it."""
+    def readHeader(self):
+        """Read header from file and set self.header attribute."""
         with ModReader(self.name,self.getPath().open('rb')) as ins:
             try:
                 recHeader = ins.unpackRecHeader()
@@ -2784,7 +2784,6 @@ class ModInfo(FileInfo):
         #--Master Names/Order
         self.masterNames = tuple(self.header.masters)
         self.masterOrder = tuple() #--Reset to empty for now
-        return self.header # to honor the method's name
 
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
@@ -2979,8 +2978,8 @@ class SaveInfo(FileInfo):
         else:
             return -10
 
-    def getHeader(self):
-        """Read header from file set self.header and return it."""
+    def readHeader(self):
+        """Read header from file and set self.header attribute."""
         try:
             self.header = SaveHeader(self.getPath())
             #--Master Names/Order
@@ -2988,7 +2987,6 @@ class SaveInfo(FileInfo):
             self.masterOrder = tuple() #--Reset to empty for now
         except struct.error as rex:
             raise SaveFileError(self.name,u'Struct.error: %s' % rex)
-        return self.header # to honor the method's name
 
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
@@ -3038,7 +3036,7 @@ class TrackedFileInfos(DataDict):
     def track(self, absPath, factory=None): # cf FileInfos.refreshFile
         factory = factory or self.factory
         fileInfo = factory(self.dir, absPath)
-        # fileInfo.getHeader() #ModInfo: will blow if absPath doesn't exist
+        # fileInfo.readHeader() #ModInfo: will blow if absPath doesn't exist
         self[absPath] = fileInfo
 
 #------------------------------------------------------------------------------
@@ -3069,7 +3067,7 @@ class FileInfos(DataDict):
     def refreshFile(self,fileName):
         try:
             fileInfo = self.factory(self.dir,fileName)
-            fileInfo.getHeader()
+            fileInfo.readHeader()
             self[fileName] = fileInfo
         except FileError as error:
             self.corrupted[fileName] = error.message

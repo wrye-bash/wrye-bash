@@ -227,15 +227,6 @@ namesPatcherMaster = re.compile(ur"^Oblivion.esm$",re.I|re.U)
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
 pklfile = ur'bash\db\Oblivion_ids.pkl'
 
-#--Game ESM/ESP/BSA files
-#  These filenames need to be in lowercase,
-# bethDataFiles = set((
-# Moved to oblivion_const
-
-#--Every file in the Data directory from Bethsoft
-# allBethFiles = set((
-# Moved to oblivion_const
-
 #--BAIN: Directories that are OK to install to
 dataDirs = {
     u'distantlod',

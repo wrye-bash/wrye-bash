@@ -114,7 +114,7 @@ def _indexFirstEsp(lord):
 def __fixLoadOrder(lord, _selected=None):
     """HACK: Fix inconsistencies between given loadorder and actually installed
     mod files as well as impossible load orders - save the fixed order via
-    liblo.
+    liblo. We need a refreshed bosh.modInfos reflecting the contents of Data/.
 
     Called in _getLoFromLiblo() to fix a newly fetched LO and in
     SaveLoadOrder() to check if a load order passed in is valid. Needs
@@ -131,7 +131,7 @@ def __fixLoadOrder(lord, _selected=None):
     except ValueError:
         raise bolt.BoltError(u'%s is missing or corrupted' % masterName)
     if masterDex > 0:
-        bolt.deprint(u'%s in %d position' % (masterName, masterDex))
+        bolt.deprint(u'%s has index %d (must be 0)' % (masterName, masterDex))
         lord.remove(masterName)
         lord.insert(0, masterName)
         _reordered = True
@@ -199,7 +199,7 @@ def __fixActive(acti, lord):
     # is made to return actual contents of plugins.txt at all times) I may
     # need to correct this here
     addUpdateEsm = False
-    if bush.game.fsName == 'Skyrim':
+    if bush.game.fsName == u'Skyrim':
         skyrim = bolt.GPath(u'Skyrim.esm')
         if not skyrim in actiFiltered:
             actiFiltered.insert(0, skyrim)

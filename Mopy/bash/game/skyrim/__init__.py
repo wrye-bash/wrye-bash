@@ -280,15 +280,6 @@ namesPatcherMaster = re.compile(ur"^Skyrim.esm$",re.I|re.U)
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
 pklfile = r'bash\db\Skyrim_ids.pkl'
 
-#--Game ESM/ESP/BSA files
-#  These filenames need to be in lowercase,
-# bethDataFiles = set()
-# Moved to skyrim_const
-
-#--Every file in the Data directory from Bethsoft
-# allBethFiles = set()
-# Moved to skyrim_const
-
 #--BAIN: Directories that are OK to install to
 dataDirs = {
     u'dialogueviews',

@@ -2619,6 +2619,7 @@ class InstallersPanel(SashTankPanel):
         finally:
             self.refreshing = False
 
+    @balt.conversation
     def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
                                       scan_data_dir):
         data = self.listData

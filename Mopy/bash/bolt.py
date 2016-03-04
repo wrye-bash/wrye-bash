@@ -475,7 +475,9 @@ class sio(StringIO.StringIO):
 _gpaths = {}
 
 def GPath(name):
-    """Path factory and cache."""
+    """Path factory and cache.
+    :rtype: Path
+    """
     if name is None: return None
     elif not name: norm = name
     elif isinstance(name,Path): norm = name._s

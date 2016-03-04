@@ -27,7 +27,8 @@
 # no imports
 
 #--Game ESM/ESP/BSA files
-#  These filenames need to be in lowercase,
+## These are all of the ESM,ESP,and BSA data files that belong to the game
+## These filenames need to be in lowercase,
 bethDataFiles = set() # initialize with literal
 
 #--Every file in the Data directory from Bethsoft
