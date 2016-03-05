@@ -70,7 +70,7 @@ from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods
+from ..bosh import omods, SaveInfo, CoSaves
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -1769,9 +1769,15 @@ class SaveList(balt.UIList):
         newName = event.GetLabel()
         if not newName.lower().endswith(bush.game.ess.ext):
             newName += bush.game.ess.ext
+        rePattern = re.compile(ur'^[^/\\:*?"<>|]+?$', re.I | re.U)
+        maPattern = rePattern.match(newName)
+        if not maPattern:
+            balt.showError(self, _(u'Bad extension or file root: ') + newName)
+            event.Veto()
+            return
         newFileName = newName
         selected = self.GetSelected()
-        # renamed = []
+        to_select = set(selected)
         for index, path in enumerate(selected):
             if index:
                 newFileName = newName.replace(bush.game.ess.ext, (
@@ -1779,16 +1785,30 @@ class SaveList(balt.UIList):
             if newFileName != path.s:
                 oldPath = bosh.saveInfos.dir.join(path.s)
                 newPath = bosh.saveInfos.dir.join(newFileName)
+                renames = [(oldPath, newPath)]
+                renames.extend(CoSaves.get_new_paths(oldPath, newPath))
                 if not newPath.exists():
-                    oldPath.moveTo(newPath)
-                    if GPath(oldPath.s[:-3]+bush.game.se.shortName.lower()).exists():
-                        GPath(oldPath.s[:-3]+bush.game.se.shortName.lower()).moveTo(GPath(newPath.s[:-3]+bush.game.se.shortName.lower()))
-                    if GPath(oldPath.s[:-3]+u'pluggy').exists():
-                        GPath(oldPath.s[:-3]+u'pluggy').moveTo(GPath(newPath.s[:-3]+u'pluggy'))
-                    # renamed.append(GPath(newPath))
+                    try:
+                        oldPath.moveTo(newPath)
+                        SaveInfo.coMove(oldPath, newPath)
+                        to_select.discard(path)
+                        to_select.add(GPath(newFileName))
+                    except (OSError, IOError):
+                        deprint('Renaming %s to %s failed'
+                                % (oldPath, newPath), traceback=True)
+                        ##: WindowsError:[Error 32]The process cannot access...
+                        for old, new in renames:
+                            if new.exists() and not old.exists():
+                                # some cosave move failed, restore files
+                                new.moveTo(old)
+                            if new.exists() and old.exists(): new.remove()
+                        break
         bosh.saveInfos.refresh()
         self.RefreshUI()
-        # self.RefreshUI(renamed) ##: not yet due to how PopulateItem works
+        # self.RefreshUI(to_select) ##: not yet due to how PopulateItem works
+        #--Reselect the items - renamed or not
+        for save in to_select: self.SelectItem(save)
+        event.Veto() # needed ! clears new name from label on exception
 
     #--Populate Item
     def set_item_format(self, fileName, item_format):

@@ -39,7 +39,8 @@ from . import settingDefaults, Installers_Link, BashFrame
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bass, bolt, bosh, bush, balt
 from ..bass import Resources
-from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink
+from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
+    UIList_Rename
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, LogFile, formatInteger, round_size
@@ -410,16 +411,12 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
                                            bosh.InstallerMarker)
 
     def Execute(self):
-        """Handle selection."""
+        """Duplicate selected Installer."""
         curName = self.selected[0]
         isdir = self.idata.dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.rootExt
-        newName = root+_(u' Copy')+ext
-        index = 0
-        while newName in self.idata:
-            newName = root + (_(u' Copy (%d)') % index) + ext
-            index += 1
+        newName = self.window.new_name(root + _(u' Copy') + ext)
         result = self._askText(_(u"Duplicate %s to:") % curName.s,
                                default=newName.s)
         if not result: return
@@ -472,9 +469,8 @@ class Installer_Hide(_InstallerLink):
         self.idata.irefresh(what='ION')
         self.window.RefreshUI()
 
-class Installer_Rename(_InstallerLink):
+class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
-    text = _(u'Rename...')
     help = _(u"Rename selected installer(s).")
 
     def _enable(self):
@@ -491,8 +487,6 @@ class Installer_Rename(_InstallerLink):
             if not isinstance(self.idata[item], installer_type):
                 return False
         return True
-
-    def Execute(self): self.window.Rename(selected=self.selected)
 
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""

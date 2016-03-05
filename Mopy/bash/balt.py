@@ -2154,6 +2154,26 @@ class UIList(wx.Panel):
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
 
+    # Generate unique filenames when duplicating files etc
+    @staticmethod
+    def _new_name(new_name, count):
+        count += 1
+        new_name = GPath(new_name.root + (u' (%d)' % count) + new_name.ext)
+        return new_name, count
+
+    def new_name(self, new_name):
+        base_name, count = new_name, 0
+        while new_name in self.data:
+            new_name, count = self._new_name(base_name, count)
+        return new_name
+
+    @staticmethod
+    def new_path(new_name, dest_dir):
+        base_name, count = new_name, 0
+        while dest_dir.join(new_name).exists() and count < 1000:
+            new_name, count = UIList._new_name(base_name, count)
+        return new_name
+
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Links(list):
@@ -2488,6 +2508,12 @@ class UIList_Delete(ItemLink):
     def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
         with BusyCursor(): self.window.DeleteItems(items=self.selected)
+
+class UIList_Rename(ItemLink):
+    """Rename selected UIList item(s)."""
+    text = _(u'Rename...')
+
+    def Execute(self): self.window.Rename(selected=self.selected)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
