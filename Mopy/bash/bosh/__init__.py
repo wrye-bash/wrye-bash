@@ -6161,7 +6161,7 @@ class InstallersData(DataDict):
                                          pending_size, progress,
                                          recalculate_all_crcs,
                                          dirs['mods'].stail)
-        self.update_for_overridden_skips() # after the final update !
+        self.update_for_overridden_skips(progress=progress) #after final_update
         #--Done
         return changed
 
@@ -6260,8 +6260,9 @@ class InstallersData(DataDict):
                       u'sDirs = %s\r\n' % (sDirs[:]))
             log.close()
 
-    def update_data_SizeCrcDate(self, dest_paths):
+    def update_data_SizeCrcDate(self, dest_paths, progress=None):
         """Update data_SizeCrcDate with info on given paths.
+        :param progress: must be zeroed - message is used in _process_data_dir
         :param dest_paths: set of paths relative to Data/ - may not exist."""
         root_files = []
         norm_ghost = Installer.getGhosted()
@@ -6276,16 +6277,17 @@ class InstallersData(DataDict):
         root_dirs_files = []
         for key, val in groupby(root_files, key=lambda t: t[0]):
             root_dirs_files.append((key, [], [j for i, j in val]))
+        progress = progress or bolt.Progress()
         new_sizeCrcDate, pending, pending_size = self._process_data_dir(
-            root_dirs_files, bolt.Progress())
+            root_dirs_files, progress)
         deleted = set(dest_paths) - set(new_sizeCrcDate)
         for d in deleted: self.data_sizeCrcDate.pop(d, None)
         Installer.calc_crcs(pending, pending_size, bass.dirs['mods'].stail,
-                            new_sizeCrcDate, bolt.Progress()) ##: Progress !
+                            new_sizeCrcDate, progress)
         for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
             self.data_sizeCrcDate[rpFile] = (size, crc, date)
 
-    def update_for_overridden_skips(self, dont_skip=None):
+    def update_for_overridden_skips(self, dont_skip=None, progress=None):
         if dont_skip is not None:
             dont_skip.difference_update(self.data_sizeCrcDate)
             self.overridden_skips |= dont_skip
@@ -6293,7 +6295,9 @@ class InstallersData(DataDict):
             self.overridden_skips.difference_update(self.data_sizeCrcDate)
             self.__clean_overridden_after_load = False
         new_skips_overrides = self.overridden_skips - set(self.data_sizeCrcDate)
-        self.update_data_SizeCrcDate(new_skips_overrides)
+        progress = progress or bolt.Progress()
+        progress(0, (_(u"%s: Skips overrides...") % dirs['mods'].stail)+ u'\n')
+        self.update_data_SizeCrcDate(new_skips_overrides, progress)
 
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):

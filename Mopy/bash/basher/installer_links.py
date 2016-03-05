@@ -169,12 +169,14 @@ class _SingleInstallable(OneItemLink, _InstallerLink):
 class _RefreshingLink(_SingleInstallable):
     _overrides_skips = False
 
+    @balt.conversation
     def Execute(self):
         installer = self.idata[self.selected[0]]
         dest_src = installer.refreshDataSizeCrc()
-        if self._overrides_skips:
-            self.idata.update_for_overridden_skips(set(dest_src))
-        self.idata.irefresh(what='NS')
+        with balt.Progress(title=_(u'Override Skips')) as progress:
+            if self._overrides_skips:
+                self.idata.update_for_overridden_skips(set(dest_src), progress)
+            self.idata.irefresh(what='NS', progress=progress)
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------

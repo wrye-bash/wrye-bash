@@ -2427,7 +2427,8 @@ class InstallersList(balt.UIList):
                     dest.update(installer.refreshBasic(
                         apath, SubProgress(progress, index, index + 1)).keys())
                     self.data.hasChanged = True  # is it really needed ?
-                self.data.update_data_SizeCrcDate(dest)
+                progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
+                self.data.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
         self.data.irefresh(what='NSC')
