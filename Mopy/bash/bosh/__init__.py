@@ -1337,7 +1337,7 @@ class CoSaves:
         if saveName: savePath = savePath.join(saveName)
         newPaths = CoSaves.getPaths(savePath)
         for oldPath,newPath in zip(self.paths,newPaths):
-            if newPath.exists(): newPath.remove()
+            if newPath.exists(): newPath.remove() ##: dont like it, investigate
             if oldPath.exists(): pathFunc(oldPath,newPath)
 
     def copy(self,savePath,saveName=None):
@@ -1347,6 +1347,10 @@ class CoSaves:
     def move(self,savePath,saveName=None):
         """Renames cofiles."""
         self._recopy(savePath, saveName, bolt.Path.moveTo)
+
+    @staticmethod
+    def get_new_paths(old_path, new_path):
+        return zip(CoSaves.getPaths(old_path), CoSaves.getPaths(new_path))
 
     def getTags(self):
         """Returns tags expressing whether cosaves exist and are correct."""
@@ -2988,6 +2992,11 @@ class SaveInfo(FileInfo):
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
         CoSaves(oldPath).copy(newPath)
+
+    @staticmethod
+    def coMove(oldPath, newPath):
+        """Move co files corresponding to oldPath to newPath."""
+        return CoSaves(oldPath).move(newPath)
 
     def coSaves(self):
         """Returns CoSaves instance corresponding to self."""
