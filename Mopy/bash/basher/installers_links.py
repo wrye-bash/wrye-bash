@@ -31,6 +31,7 @@ from .dialogs import CreateNewProject
 from .. import bass, bosh, balt, bush
 from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes
 from ..bass import Resources
+from ..bolt import GPath
 
 __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_Refresh', 'Installers_AddMarker',
@@ -329,23 +330,27 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     opposite = True
     message = _(u"Enable installation of Bethsoft Content?") + u'\n\n' + _(
         u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to "
-        u"have their CRCs calculated.  This will be accomplished by a full "
-        u"refresh of BAIN data an may take quite some time.  Are you sure "
+        u"have their CRCs calculated.  Moreover Bethesda ESPs, ESMs will have "
+        u"their crc recalculated every time on booting BAIN.  Are you sure "
         u"you want to continue?")
 
     @balt.conversation
-    def Execute(self): ##: needs optimizing - ShowPanel + rescanInstallers...
+    def Execute(self):
         if not bosh.settings[self.key] and not self._askYes(self.message):
             return
         super(Installers_AutoRefreshBethsoft, self).Execute()
         if bosh.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
-            self.iPanel.ShowPanel(scan_data_dir=True)
+            with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
+                               message=u'\n' + u' ' * 60) as progress:
+                beth_files = set(GPath(x) for x in bush.game.bethDataFiles)
+                self.idata.update_data_SizeCrcDate(beth_files, progress)
         # Refresh Installers
         toRefresh = set()
         for name, installer in self.idata.iteritems():
             if installer.hasBethFiles: toRefresh.add((name,installer))
-        self.window.rescanInstallers(toRefresh, abort=False)
+        self.window.rescanInstallers(toRefresh, abort=False,
+                                     update_from_data=False)
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""

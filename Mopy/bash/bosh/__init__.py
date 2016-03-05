@@ -47,6 +47,7 @@ import sys
 from operator import attrgetter
 from functools import wraps, partial
 from binascii import crc32
+from itertools import groupby
 
 #--Local
 from .. import bass, bolt, balt, bush, env
@@ -4520,156 +4521,54 @@ class Installer(object):
         return sorted(files, key=sortKeys.__getitem__)
 
     @staticmethod
-    def refreshSizeCrcDate(apRoot, old_sizeCrcDate, progress=None,
-                           recalculate_all_crcs=False, return_max_time=False):
-        """Update old_sizeCrcDate for apRoot directory. Used by:
-        - InstallerProject._refreshSource(): populates the project's
-        src_sizeCrcDate cache with _all_ files present in the project dir.
-        src_sizeCrcDate is then used to populate fileSizeCrcs, used to populate
-        data_sizeCrc in refreshDataSizeCrc.
-        - InstallersData.irefresh(): it populates its data_sizeCrcDate but
-        taking into account ghosts and (somewhat buggily) global skips.
-        """
-        rootIsMods = (apRoot == dirs['mods']) #--Filtered scanning for mods directory.
-        #--Scan for changed files
-        rootName = apRoot.stail
-        progress = progress if progress else bolt.Progress()
-        progress(0,rootName+u': '+_(u'Pre-Scanning...'))
-        progress.setFull(1)
-        dirDirsFiles, emptyDirs = [], set()
-        dirDirsFilesAppend, emptyDirsAdd = dirDirsFiles.append, emptyDirs.add
-        asRoot = apRoot.s
-        relPos = len(asRoot)+1
-        transProgress = u'%s: '+_(u'Pre-Scanning...')+u'\n%s'
-        max_mtime = apRoot.mtime
-        for asDir,sDirs,sFiles in os.walk(asRoot):
-            progress(0.05,transProgress % (rootName,asDir[relPos:]))
-            if rootIsMods:
-                if asDir == asRoot: Installer._skips_in_data_dir(sDirs)
-            else:
-                get_mtime = os.path.getmtime(asDir)
-                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
-            dirDirsFilesAppend((asDir,sDirs,sFiles))
-            if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
-        progress(0,_(u"%s: Scanning...") % rootName)
-        progress.setFull(1+len(dirDirsFiles))
-        pending, pending_size = {}, 0
-        new_sizeCrcDate = {}
-        oldGet = old_sizeCrcDate.get
-        # below only for dirs['mods'] (aka the Data/ dir)
-        norm_ghost = (rootIsMods and Installer.getGhosted()) or {}
-        ghost_norm = dict((y,x) for x,y in norm_ghost.iteritems())
-        bethFiles = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
-        skipExts = Installer.skipExts
-        ghostGet = ghost_norm.get
-        for index,(asDir,sDirs,sFiles) in enumerate(dirDirsFiles):
-            progress(index)
-            rsDir = asDir[relPos:]
-            inModsRoot = rootIsMods and not rsDir
-            for sFile in sFiles:
-                sFileLower = sFile.lower()
-                ext = sFileLower[sFileLower.rfind(u'.'):]
-                if inModsRoot:
-                    if ext in skipExts: continue
-                    if sFileLower in bethFiles:
-                        continue
-                    rpFile = GPath(os.path.join(rsDir, sFile))
-                    rpFile = ghostGet(rpFile,rpFile)
-                else: rpFile = GPath(os.path.join(rsDir, sFile))
-                isEspm = inModsRoot and ext in {u'.esp', u'.esm'}
-                asFile = os.path.join(asDir, sFile)
-                # below calls may now raise even if "werr.winerror = 123"
-                size = os.path.getsize(asFile)
-                get_mtime = os.path.getmtime(asFile)
-                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
-                date = int(get_mtime)
-                oSize,oCrc,oDate = oldGet(rpFile,(0,0,0))
-                if not isEspm and size == oSize and date == oDate:
-                    new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
-                else:
-                    pending[rpFile] = (size, oCrc, date, asFile)
-                    pending_size += size
-        #--Remove empty dirs?
-        if rootIsMods and settings['bash.installers.removeEmptyDirs']:
-            for dir in emptyDirs:
-                try: dir.removedirs()
-                except OSError: pass
+    def final_update(new_sizeCrcDate, old_sizeCrcDate, pending, pending_size,
+                      progress, recalculate_all_crcs, rootName):
+        """Clear old_sizeCrcDate and update it with new_sizeCrcDate after
+        calculating crcs for pending."""
         #--Force update?
         if recalculate_all_crcs:
             pending.update(new_sizeCrcDate)
             pending_size += sum(x[0] for x in new_sizeCrcDate.itervalues())
         changed = bool(pending) or (len(new_sizeCrcDate) != len(old_sizeCrcDate))
         #--Update crcs?
-        if pending:
-            done = 0
-            progress(0,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n')
-            # each mod increments the progress bar by at least one, even if it is size 0
-            # add len(pending) to the progress bar max to ensure we don't hit 100% and cause the progress bar
-            # to prematurely disappear
-            progress.setFull(max(pending_size + len(pending), 1))
-            for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
-                progress(done,rootName+u'\n'+_(u'Calculating CRCs...')+u'\n'+rpFile.s)
-                sub = bolt.SubProgress(progress, done, done + size + 1)
-                sub.setFull(size + 1)
-                crc = 0L
-                try:
-                    with open(asFile, 'rb') as ins:
-                        insRead = ins.read
-                        insTell = ins.tell
-                        while insTell() < size:
-                            crc = crc32(insRead(2097152),crc) # 2MB at a time, probably ok
-                            sub(insTell())
-                except IOError as ierr:
-                    deprint(_(u'Failed to calculate crc for %s - please report this, and the following traceback:') % asFile, traceback=True)
-                    continue
-                crc &= 0xFFFFFFFF
-                done += size
-                new_sizeCrcDate[rpFile] = (size,crc,date,asFile)
+        Installer.calc_crcs(pending, pending_size, rootName,
+                            new_sizeCrcDate, progress)
         old_sizeCrcDate.clear()
         for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
             old_sizeCrcDate[rpFile] = (size, crc, date)
-        #--Done
-        if return_max_time: return int(max_mtime)
         return changed
 
     @staticmethod
-    def _skips_in_data_dir(sDirs):
-        """Skip some top level directories based on global settings - EVEN
-        on a fullRefresh."""
-        if inisettings['KeepLog'] > 1:
-            try: log = inisettings['LogFile'].open('a', encoding='utf-8-sig')
-            except: log = None
-        else: log = None
-        setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
-        setSkipDocs = settings['bash.installers.skipDocs']
-        setSkipImages = settings['bash.installers.skipImages']
-        newSDirs = (x for x in sDirs if x.lower() not in Installer.dataDirsMinus)
-        if settings['bash.installers.skipDistantLOD']:
-            newSDirs = (x for x in newSDirs if x.lower() != u'distantlod')
-        if settings['bash.installers.skipLandscapeLODMeshes']:
-            newSDirs = (x for x in newSDirs if x.lower() != u'meshes\\landscape\\lod')
-        if settings['bash.installers.skipScreenshots']:
-            newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
-        # LOD textures
-        if settings['bash.installers.skipLandscapeLODTextures'] and settings[
-            'bash.installers.skipLandscapeLODNormals']:
-            newSDirs = (x for x in newSDirs if
-                        x.lower() != u'textures\\landscapelod\\generated')
-        if setSkipOBSE:
-            newSDirs = (x for x in newSDirs if
-                        x.lower() != bush.game.se.shortName.lower())
-        if bush.game.sd.shortName and setSkipOBSE:
-            newSDirs = (x for x in newSDirs if
-                        x.lower() != bush.game.sd.installDir.lower())
-        if setSkipDocs and setSkipImages:
-            newSDirs = (x for x in newSDirs if x.lower() != u'docs')
-        newSDirs = (x for x in newSDirs if
-                    x.lower() not in bush.game.SkipBAINRefresh)
-        sDirs[:] = [x for x in newSDirs]
-        if log:
-            log.write(u'(in refreshSizeCRCDate after accounting for skipping) '
-                      u'sDirs = %s\r\n' % (sDirs[:]))
-            log.close()
+    def calc_crcs(pending, pending_size, rootName, new_sizeCrcDate, progress):
+        if not pending: return
+        done = 0
+        progress_msg= rootName + u'\n' + _(u'Calculating CRCs...') + u'\n'
+        progress(0, progress_msg)
+        # each mod increments the progress bar by at least one, even if it
+        # is size 0 - add len(pending) to the progress bar max to ensure we
+        # don't hit 100% and cause the progress bar to prematurely disappear
+        progress.setFull(pending_size + len(pending))
+        for rpFile, (size, _crc, date, asFile) in iter(sorted(pending.items())):
+            progress(done, progress_msg + rpFile.s)
+            sub = bolt.SubProgress(progress, done, done + size + 1)
+            sub.setFull(size + 1)
+            crc = 0L
+            try:
+                with open(asFile, 'rb') as ins:
+                    insRead = ins.read
+                    insTell = ins.tell
+                    while insTell() < size:
+                        crc = crc32(insRead(2097152),
+                                    crc) # 2MB at a time, probably ok
+                        sub(insTell())
+            except IOError:
+                deprint(_(u'Failed to calculate crc for %s - please report '
+                          u'this, and the following traceback:') % asFile,
+                        traceback=True)
+                continue
+            crc &= 0xFFFFFFFF
+            done += size + 1
+            new_sizeCrcDate[rpFile] = (size, crc, date, asFile)
 
     #--Initialization, etc ----------------------------------------------------
     def initDefault(self):
@@ -4783,7 +4682,9 @@ class Installer(object):
         map(self.__setattr__,self.persistent,values)
         if self.dirty_sizeCrc is None:
             self.dirty_sizeCrc = {} #--Use empty dict instead.
-        self.refreshDataSizeCrc()
+        dest_scr = self.refreshDataSizeCrc()
+        if self.overrideSkips:
+            InstallersData.overridden_skips.update(dest_scr.keys())
 
     def __copy__(self):
         """Create a copy of self -- works for subclasses too (assuming
@@ -5015,10 +4916,10 @@ class Installer(object):
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
             renameStrings = False
-            bethFilesSkip = set()
+            bethFilesSkip = False
         else:
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
-            bethFilesSkip = set() if settings['bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
+            bethFilesSkip = not settings['bash.installers.autoRefreshBethsoft']
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
         hasExtraData = self.hasExtraData
@@ -5086,6 +4987,8 @@ class Installer(object):
                                 skip = False
                     elif fileLower in bethFiles:
                         self.hasBethFiles = True
+                        skipDirFilesDiscard(file)
+                        skipDirFilesAdd(file + u' ' + _(u'[Bethesda Content]'))
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                         continue
@@ -5125,10 +5028,11 @@ class Installer(object):
                         checkOBSE, fileLower, full, archiveRoot, size, crc):
                     continue
             #--Noisy skips
-            if fileLower in bethFilesSkip:
+            if fileLower in bethFiles:
                 self.hasBethFiles = True
-                skipDirFilesAdd(full)
-                continue
+                if bethFilesSkip:
+                    skipDirFilesAdd(full + u' ' + _(u'[Bethesda Content]'))
+                    continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                 skipDirFilesAdd(full)
                 continue
@@ -5138,9 +5042,6 @@ class Installer(object):
             elif fileExt in skipExts:
                 skipExtFilesAdd(full)
                 continue
-            #--Bethesda Content?
-            if fileLower in bethFiles:
-                self.hasBethFiles = True
             #--Esps
             if not rootLower and reModExtMatch(fileExt):
                 #--Remap espms as defined by the user
@@ -5308,7 +5209,7 @@ class Installer(object):
             self.subNames = []
             self.subActives = []
         #--Data Size Crc
-        self.refreshDataSizeCrc()
+        return self.refreshDataSizeCrc()
 
     def refreshStatus(self, installersData):
         """Updates missingFiles, mismatchedFiles and status.
@@ -5462,7 +5363,7 @@ class InstallerMarker(Installer):
         return True, False, False
 
     def refreshBasic(self, archive, progress, recalculate_project_crc=True):
-        pass
+        return {}
 
 #------------------------------------------------------------------------------
 class InstallerArchiveError(bolt.BoltError): pass
@@ -5664,6 +5565,53 @@ class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
     __slots__ = tuple() #--No new slots
 
+    def _refresh_from_project_dir(self, progress=None,
+                                  recalculate_all_crcs=False):
+        """Update src_sizeCrcDate cache from project directory. Used by
+        _refreshSource() to populate the project's src_sizeCrcDate with
+        _all_ files present in the project dir. src_sizeCrcDate is then used
+        to populate fileSizeCrcs, used to populate data_sizeCrc in
+        refreshDataSizeCrc. Compare to InstallersData._refresh_from_data_dir.
+        :return: max modification time for files/folders in project directory
+        :rtype: int"""
+        #--Scan for changed files
+        apRoot = dirs['installers'].join(self.archive)
+        rootName = apRoot.stail
+        progress = progress if progress else bolt.Progress()
+        progress_msg = rootName + u'\n' + _(u'Scanning...')
+        progress(0, progress_msg + u'\n')
+        progress.setFull(1)
+        asRoot = apRoot.s
+        relPos = len(asRoot) + 1
+        max_mtime = apRoot.mtime
+        pending, pending_size = {}, 0
+        new_sizeCrcDate = {}
+        oldGet = self.src_sizeCrcDate.get
+        for asDir, __sDirs, sFiles in os.walk(asRoot):
+            progress(0.05, progress_msg + (u'\n%s' % asDir[relPos:]))
+            get_mtime = os.path.getmtime(asDir)
+            max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
+            rsDir = asDir[relPos:]
+            for sFile in sFiles:
+                rpFile = GPath(os.path.join(rsDir, sFile))
+                asFile = os.path.join(asDir, sFile)
+                # below calls may now raise even if "werr.winerror = 123"
+                size = os.path.getsize(asFile)
+                get_mtime = os.path.getmtime(asFile)
+                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
+                date = int(get_mtime)
+                oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
+                if size == oSize and date == oDate:
+                    new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
+                else:
+                    pending[rpFile] = (size, oCrc, date, asFile)
+                    pending_size += size
+        Installer.final_update(new_sizeCrcDate, self.src_sizeCrcDate, pending,
+                               pending_size, progress, recalculate_all_crcs,
+                               rootName)
+        #--Done
+        return int(max_mtime)
+
     @staticmethod
     def removeEmpties(name):
         """Removes empty directories from project directory."""
@@ -5677,10 +5625,8 @@ class InstallerProject(Installer):
     def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
         project directory, set project_refreshed to True."""
-        apRoot = dirs['installers'].join(archive)
-        self.modified = Installer.refreshSizeCrcDate(apRoot,
-                self.src_sizeCrcDate, progress, recalculate_project_crc,
-                return_max_time=True)
+        self.modified = self._refresh_from_project_dir(progress,
+                                                       recalculate_project_crc)
         cumCRC = 0
 ##        cumDate = 0
         cumSize = 0
@@ -5845,6 +5791,13 @@ class InstallersData(DataDict):
     # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track
     # ini deletions from Data/Ini Tweaks as well as mods/xmls etc in Data/)
     miscTrackedFiles = TrackedFileInfos()
+    # cache with paths in Data/ that would be skipped but are not, due to
+    # an installer having the override skip etc flag on - when turning the skip
+    # off leave the files here - will be cleaned on restart (files will show
+    # as dirty till then, but to remove them we should examine all installers
+    # that override skips - not worth the hassle)
+    overridden_skips = set()
+    __clean_overridden_after_load = True
 
     def __init__(self):
         self.dir = dirs['installers']
@@ -5890,8 +5843,7 @@ class InstallersData(DataDict):
             self.data[self.lastKey] = InstallerMarker(self.lastKey)
         #--Refresh Other - FIXME(ut): docs
         if 'D' in what:
-            changed |= Installer.refreshSizeCrcDate(
-                dirs['mods'], self.data_sizeCrcDate, progress, fullRefresh)
+            changed |= self._refresh_from_data_dir(progress, fullRefresh)
         if 'I' in what: changed |= self.refreshInstallers(progress,fullRefresh)
         if 'O' in what or changed: changed |= self.refreshOrder()
         if 'N' in what or changed: changed |= self.refreshNorm()
@@ -6173,6 +6125,179 @@ class InstallersData(DataDict):
         for installer in self.itervalues():
             changed |= installer.refreshStatus(self)
         return changed
+
+    def _refresh_from_data_dir(self, progress=None, recalculate_all_crcs=False):
+        """Update self.data_sizeCrcDate, using current data_sizeCrcDate as a
+        cache.
+
+        Recalculates crcs for all espms in Data/ directory and all other
+        files whose cached date or size has changed. Will skip directories (
+        but not files) specified in Installer global skips and remove empty
+        dirs if the setting is on."""
+        #--Scan for changed files
+        progress = progress if progress else bolt.Progress()
+        progress_msg = dirs['mods'].stail + u': ' + _(u'Pre-Scanning...')
+        progress(0, progress_msg + u'\n')
+        progress.setFull(1)
+        dirDirsFiles, emptyDirs = [], set()
+        dirDirsFilesAppend, emptyDirsAdd = dirDirsFiles.append, emptyDirs.add
+        asRoot = dirs['mods'].s
+        relPos = len(asRoot) + 1
+        for asDir, sDirs, sFiles in os.walk(asRoot):
+            progress(0.05, progress_msg + (u'\n%s' % asDir[relPos:]))
+            if not (sDirs or sFiles): emptyDirsAdd(GPath(asDir))
+            if asDir == asRoot: InstallersData._skips_in_data_dir(sDirs)
+            dirDirsFilesAppend((asDir, sDirs, sFiles))
+        progress(0, _(u"%s: Scanning...") % dirs['mods'].stail)
+        new_sizeCrcDate, pending, pending_size = \
+            self._process_data_dir(dirDirsFiles, progress)
+        #--Remove empty dirs?
+        if settings['bash.installers.removeEmptyDirs']:
+            for empty in emptyDirs:
+                try: empty.removedirs()
+                except OSError: pass
+        changed = Installer.final_update(new_sizeCrcDate,
+                                         self.data_sizeCrcDate, pending,
+                                         pending_size, progress,
+                                         recalculate_all_crcs,
+                                         dirs['mods'].stail)
+        self.update_for_overridden_skips(progress=progress) #after final_update
+        #--Done
+        return changed
+
+    def _process_data_dir(self, dirDirsFiles, progress):
+        """Construct dictionaries mapping the paths in dirDirsFiles to
+        filesystem attributes. Old data_SizeCrcDate is used to decide which
+        files need their crc recalculated. Return a tuple containing:
+        - new_sizeCrcDate and pending: two newly constructed dicts mapping
+        paths to their size, date and absolute path and also the crc (for
+        new_sizeCrcDate) if the cached value is valid (no change in mod time
+        or size of the file)
+        - the size of pending files used in displaying crc calculation progress
+        Compare to similar code in InstallerProject._refresh_from_project_dir
+
+        :param dirDirsFiles: list of tuples in the format of the output of walk
+        """
+        progress.setFull(1 + len(dirDirsFiles))
+        pending, pending_size = {}, 0
+        new_sizeCrcDate = {}
+        oldGet = self.data_sizeCrcDate.get
+        norm_ghost = Installer.getGhosted()
+        ghost_norm = dict((y, x) for x, y in norm_ghost.iteritems())
+        bethFiles = set() if settings[
+            'bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
+        skipExts = Installer.skipExts
+        ghostGet = ghost_norm.get
+        relPos = len(bass.dirs['mods'].s) + 1
+        for index, (asDir, __sDirs, sFiles) in enumerate(dirDirsFiles):
+            progress(index)
+            rsDir = asDir[relPos:]
+            for sFile in sFiles:
+                sFileLower = sFile.lower()
+                ext = sFileLower[sFileLower.rfind(u'.'):]
+                top_level_espm = False
+                if not rsDir:
+                    if ext in skipExts: continue
+                    if sFileLower in bethFiles: continue
+                    top_level_espm = ext in {u'.esp', u'.esm'}
+                    rpFile = GPath(os.path.join(rsDir, sFile))
+                    rpFile = ghostGet(rpFile,rpFile)
+                else: rpFile = GPath(os.path.join(rsDir, sFile))
+                asFile = os.path.join(asDir, sFile)
+                # below calls may now raise even if "werr.winerror = 123"
+                try:
+                    size = os.path.getsize(asFile)
+                    get_mtime = os.path.getmtime(asFile)
+                    date = int(get_mtime)
+                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
+                    if top_level_espm or size != oSize or date != oDate:
+                        pending[rpFile] = (size, oCrc, date, asFile)
+                        pending_size += size
+                    else:
+                        new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
+                except Exception as e:
+                    if isinstance(e, WindowsError) and e.errno == 2: ##: winerror also == 2
+                        continue # file does not exist
+                    raise
+        return new_sizeCrcDate, pending, pending_size
+
+    @staticmethod
+    def _skips_in_data_dir(sDirs):
+        """Skip some top level directories based on global settings - EVEN
+        on a fullRefresh."""
+        if inisettings['KeepLog'] > 1:
+            try: log = inisettings['LogFile'].open('a', encoding='utf-8-sig')
+            except: log = None
+        else: log = None
+        setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
+        setSkipDocs = settings['bash.installers.skipDocs']
+        setSkipImages = settings['bash.installers.skipImages']
+        newSDirs = (x for x in sDirs if x.lower() not in Installer.dataDirsMinus)
+        if settings['bash.installers.skipDistantLOD']:
+            newSDirs = (x for x in newSDirs if x.lower() != u'distantlod')
+        if settings['bash.installers.skipLandscapeLODMeshes']:
+            newSDirs = (x for x in newSDirs if x.lower() != u'meshes\\landscape\\lod')
+        if settings['bash.installers.skipScreenshots']:
+            newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
+        # LOD textures
+        if settings['bash.installers.skipLandscapeLODTextures'] and settings[
+            'bash.installers.skipLandscapeLODNormals']:
+            newSDirs = (x for x in newSDirs if
+                        x.lower() != u'textures\\landscapelod\\generated')
+        if setSkipOBSE:
+            newSDirs = (x for x in newSDirs if
+                        x.lower() != bush.game.se.shortName.lower())
+        if bush.game.sd.shortName and setSkipOBSE:
+            newSDirs = (x for x in newSDirs if
+                        x.lower() != bush.game.sd.installDir.lower())
+        if setSkipDocs and setSkipImages:
+            newSDirs = (x for x in newSDirs if x.lower() != u'docs')
+        newSDirs = (x for x in newSDirs if
+                    x.lower() not in bush.game.SkipBAINRefresh)
+        sDirs[:] = [x for x in newSDirs]
+        if log:
+            log.write(u'(in refreshSizeCRCDate after accounting for skipping) '
+                      u'sDirs = %s\r\n' % (sDirs[:]))
+            log.close()
+
+    def update_data_SizeCrcDate(self, dest_paths, progress=None):
+        """Update data_SizeCrcDate with info on given paths.
+        :param progress: must be zeroed - message is used in _process_data_dir
+        :param dest_paths: set of paths relative to Data/ - may not exist."""
+        root_files = []
+        norm_ghost = Installer.getGhosted()
+        for path in dest_paths:
+            sp = path.s.rsplit(os.sep, 1) # split into ['rel_path, 'file']
+            if len(sp) == 1: # top level file
+                name = norm_ghost.get(path, path)
+                root_files.append((bass.dirs['mods'].s, name.s))
+            else:
+                root_files.append((bass.dirs['mods'].join(sp[0]).s, sp[1]))
+        root_files.sort()
+        root_dirs_files = []
+        for key, val in groupby(root_files, key=lambda t: t[0]):
+            root_dirs_files.append((key, [], [j for i, j in val]))
+        progress = progress or bolt.Progress()
+        new_sizeCrcDate, pending, pending_size = self._process_data_dir(
+            root_dirs_files, progress)
+        deleted = set(dest_paths) - set(new_sizeCrcDate)
+        for d in deleted: self.data_sizeCrcDate.pop(d, None)
+        Installer.calc_crcs(pending, pending_size, bass.dirs['mods'].stail,
+                            new_sizeCrcDate, progress)
+        for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
+            self.data_sizeCrcDate[rpFile] = (size, crc, date)
+
+    def update_for_overridden_skips(self, dont_skip=None, progress=None):
+        if dont_skip is not None:
+            dont_skip.difference_update(self.data_sizeCrcDate)
+            self.overridden_skips |= dont_skip
+        elif self.__clean_overridden_after_load:
+            self.overridden_skips.difference_update(self.data_sizeCrcDate)
+            self.__clean_overridden_after_load = False
+        new_skips_overrides = self.overridden_skips - set(self.data_sizeCrcDate)
+        progress = progress or bolt.Progress()
+        progress(0, (_(u"%s: Skips overrides...") % dirs['mods'].stail)+ u'\n')
+        self.update_data_SizeCrcDate(new_skips_overrides, progress)
 
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):

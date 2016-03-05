@@ -60,7 +60,6 @@ import sys
 import time
 from types import ClassType
 from functools import partial
-
 #--wxPython
 import wx
 import wx.gizmos
@@ -2409,20 +2408,28 @@ class InstallersList(balt.UIList):
             self.SelectItemAtIndex(index)
             self._gList.EditLabel(index)
 
-    def rescanInstallers(self, toRefresh, abort):
-        """Refresh installers, ignoring skip refresh flag."""
+    def rescanInstallers(self, toRefresh, abort, update_from_data=True):
+        """Refresh installers, ignoring skip refresh flag.
+
+        Will also update InstallersData for the paths this installer would
+        install, in case a refresh is requested because those files were
+        modified/deleted (BAIN only scans Data/ once or boot)."""
         if not toRefresh: return
         try:
             with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
-                for index, (name, installer) in enumerate(toRefresh):
+                dest = set() # installer's destination paths rel to Data/
+                for index, (name, installer) in enumerate(sorted(toRefresh, key=lambda tup: tup[1].order)):
                     progress(index,
                              _(u'Refreshing Packages...') + u'\n' + name.s)
                     apath = bass.dirs['installers'].join(name)
-                    installer.refreshBasic(apath, SubProgress(progress, index,
-                                                              index + 1))
+                    dest.update(installer.refreshBasic(
+                        apath, SubProgress(progress, index, index + 1)).keys())
                     self.data.hasChanged = True  # is it really needed ?
+                if update_from_data:
+                    progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
+                    self.data.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
         self.data.irefresh(what='NSC')

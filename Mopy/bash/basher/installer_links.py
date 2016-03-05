@@ -167,13 +167,16 @@ class _SingleInstallable(OneItemLink, _InstallerLink):
             self.filterInstallables())
 
 class _RefreshingLink(_SingleInstallable):
-    _refreshType = 'N' ##: so what's this about exactly ?
+    _overrides_skips = False
 
+    @balt.conversation
     def Execute(self):
         installer = self.idata[self.selected[0]]
-        installer.refreshDataSizeCrc()
-        if not 'S' in self._refreshType: installer.refreshStatus(self.idata)
-        self.idata.irefresh(what=self._refreshType)
+        dest_src = installer.refreshDataSizeCrc()
+        with balt.Progress(title=_(u'Override Skips')) as progress:
+            if self._overrides_skips:
+                self.idata.update_for_overridden_skips(set(dest_src), progress)
+            self.idata.irefresh(what='NS', progress=progress)
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -519,6 +522,7 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
 
     def Execute(self):
         self.idata[self.selected[0]].overrideSkips ^= True
+        self._overrides_skips = self.idata[self.selected[0]].overrideSkips
         super(Installer_OverrideSkips, self).Execute()
 
 class Installer_SkipRefresh(CheckLink, _InstallerLink):
@@ -707,6 +711,7 @@ class Installer_Refresh(_InstallerLink):
 
     def _enable(self): return bool(self.filterInstallables())
 
+    @balt.conversation
     def Execute(self):
         toRefresh = set((x, self.idata[x]) for x in self.selected)
         self.window.rescanInstallers(toRefresh, abort=True)
@@ -714,12 +719,10 @@ class Installer_Refresh(_InstallerLink):
 class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""
     text = _(u'Skip Voices')
-    _refreshType = 'NS' ##: Why NS and not N like the rest ?
 
     def _initData(self, window, selection):
         super(Installer_SkipVoices, self)._initData(window, selection)
-        self.help = _(
-            u"Override global voices skip setting for %(installername)s.") % (
+        self.help = _(u"Skip over any voice files in %(installername)s") % (
                     {'installername': self.selected[0]})
 
     def _check(self): return self._enable() and (
