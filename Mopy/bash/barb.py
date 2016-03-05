@@ -279,7 +279,7 @@ class RestoreSettings(BaseBackupSettings):
         # reinitialize bass.dirs using the backup copy of bash.ini if it exists
         game, dirs = bush.game.fsName, bass.dirs
         tmpBash = self.tmp.join(game+u'\\Mopy\\bash.ini')
-        opts, args = bash.opts, bash.extra
+        opts = bash.opts
 
         bash.SetUserPath(tmpBash.s,opts.userPath)
 
