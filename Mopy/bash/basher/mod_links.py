@@ -1849,6 +1849,9 @@ class _Mod_Import_Link(OneItemLink):
             extraExts = self.__class__.extraExts
         except AttributeError:
             extraExts = []
+        message = self.__class__.continueInfo
+        if not self._askContinue(message, self.__class__.continueKey,
+                                 self.__class__.progressTitle): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
@@ -1898,17 +1901,13 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     progressTitle = _(u'Import NPC Levels')
     text = _(u'NPC Levels...')
     help = _(u"Import NPC level info from text file to mod")
+    continueInfo = _(
+        u'This command will import NPC level info from a previously exported '
+        u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
+    continueKey = 'bash.actorLevels.import.continue'
     noChange = _(u'No relevant NPC levels to import.')
 
     def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
-
-    def Execute(self):
-        message = (_(u'This command will import NPC level info from a previously exported file.')
-                   + u'\n\n' +
-                   _(u'See the Bash help file for more info.'))
-        if not self._askContinue(message, 'bash.actorLevels.import.continue',
-                                 _(u'Import NPC Levels')): return
-        super(Mod_ActorLevels_Import, self).Execute()
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
@@ -1931,19 +1930,15 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Relations')
     text = _(u'Relations...')
     help = _(u'Import faction relations from text file to mod')
+    continueInfo = _(
+        u"This command will import faction relation info from a previously "
+        u"exported file.") + u'\n\n' + _(
+        u"See the Bash help file for more info.")
+    continueKey = 'bash.factionRelations.import.continue'
     noChange = _(u'No relevant faction relations to import.')
 
     def _parser(self):
         return CBash_FactionRelations() if CBash else FactionRelations()
-
-    def Execute(self):
-        message = (_(u"This command will import faction relation info from a previously exported file.")
-                   + u'\n\n' +
-                   _(u"See the Bash help file for more info."))
-        if not self._askContinue(
-                message, 'bash.factionRelations.import.continue',
-                _(u'Import Relations')): return
-        super(Mod_FactionRelations_Import, self).Execute()
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions, CBash_ActorFactions
@@ -1966,18 +1961,14 @@ class Mod_Factions_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Factions')
     text = _(u'Factions...')
     help = _(u'Import factions from text file to mod')
+    continueInfo = _(
+        u"This command will import faction ranks from a previously exported "
+        u"file.") + u'\n\n' + _(u'See the Bash help file for more info.')
+    continueKey = 'bash.factionRanks.import.continue'
     noChange = _(u'No relevant faction ranks to import.')
 
     def _parser(self):
         return CBash_ActorFactions() if CBash else ActorFactions()
-
-    def Execute(self):
-        message = (_(u"This command will import faction ranks from a previously exported file.")
-                   + u'\n\n' +
-                   _(u'See the Bash help file for more info.'))
-        if not self._askContinue(message, 'bash.factionRanks.import.continue',
-                                 _(u'Import Factions')): return
-        super(Mod_Factions_Import, self).Execute()
 
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
@@ -2131,15 +2122,12 @@ class Mod_Stats_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Stats')
     text = _(u'Stats...')
     help = _(u'Import stats from text file or other mod')
+    continueInfo = _(u"Import item stats from a text file. This will replace "
+                     u"existing stats and is not reversible!")
+    continueKey = 'bash.stats.import.continue'
     noChange = _(u"No relevant stats to import.")
 
     def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
-
-    def Execute(self):
-        message = (_(u"Import item stats from a text file. This will replace existing stats and is not reversible!"))
-        if not self._askContinue(message, 'bash.stats.import.continue',
-                                 _(u'Import Stats')): return
-        super(Mod_Stats_Import, self).Execute()
 
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
@@ -2168,16 +2156,13 @@ class Mod_Prices_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Prices')
     text = _(u'Prices...')
     help = _(u'Import item prices from text file')
+    continueInfo = _(u"Import item prices from a text file.  This will "
+                     u"replace existing prices and is not reversible!")
+    continueKey = 'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
     extraExts = [u'.ghost', u'.esm', u'.esp']
 
     def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
-
-    def Execute(self):
-        message = (_(u"Import item prices from a text file.  This will replace existing prices and is not reversible!"))
-        if not self._askContinue(message, 'bash.prices.import.continue',
-                                 _(u'Import prices')): return
-        super(Mod_Prices_Import, self).Execute()
 
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
@@ -2208,16 +2193,15 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Sigil Stone details')
     text = _(u'Sigil Stones...')
     help = _(u'Import Sigil Stone details from text file')
+    continueInfo = _(
+        u"Import Sigil Stone details from a text file.  This will replace "
+        u"existing the data on sigil stones with the same form ids and is "
+        u"not reversible!")
+    continueKey = 'bash.SigilStone.import.continue'
     noChange = _(u'No relevant Sigil Stone details to import.')
 
     def _parser(self):
         return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
-
-    def Execute(self):
-        message = (_(u"Import Sigil Stone details from a text file.  This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.SigilStone.import.continue',
-                                 _(u'Import Sigil Stones details')): return
-        super(Mod_SigilStoneDetails_Import, self).Execute()
 
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
@@ -2256,6 +2240,10 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Spell details')
     text = _(u'Spells...')
     help = _(u'Import Spell details from text file')
+    continueInfo = _(
+        u"Import Spell details from a text file.  This will replace existing "
+        u"the data on spells with the same form ids and is not reversible!")
+    continueKey = 'bash.SpellRecords.import.continue'
     noChange = _(u'No relevant Spell details to import.')
 
     def _parser(self):
@@ -2267,12 +2255,6 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
                                   questionIcon=True)
         return CBash_SpellRecords(detailed=doDetailed) if CBash else \
             SpellRecords(detailed=doDetailed)
-
-    def Execute(self):
-        message = (_(u"Import Spell details from a text file.  This will replace existing the data on spells with the same form ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.SpellRecords.import.continue',
-                                 _(u'Import Spell details')): return
-        super(Mod_SpellRecords_Import, self).Execute()
 
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
@@ -2304,16 +2286,14 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Ingredient details')
     text = _(u'Ingredients...')
     help = _(u'Import Ingredient details from text file')
+    continueInfo = _(u"Import Ingredient details from a text file.  This will "
+                     u"replace existing the data on Ingredients with the same "
+                     u"form ids and is not reversible!")
+    continueKey = 'bash.Ingredient.import.continue'
     noChange = _(u'No relevant Ingredient details to import.')
 
     def _parser(self):
         return CBash_IngredientDetails() if CBash else IngredientDetails()
-
-    def Execute(self):
-        message = (_(u"Import Ingredient details from a text file.  This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.Ingredient.import.continue',
-                                 _(u'Import Ingredients details')): return
-        super(Mod_IngredientDetails_Import, self).Execute()
 
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
@@ -2558,17 +2538,15 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     text = _(u'Item Data...')
     help = _(u'Import pretty much complete item data from text file or other'
              u' mod')
+    continueInfo = _(
+        u"Import pretty much complete item data from a text file.  This will "
+        u"replace existing data and is not reversible!")
+    continueKey = 'bash.itemdata.import.continue'
     noChange = _(u'No relevant data to import.')
 
     def _parser(self):
     # CBash_CompleteItemData.writeToText is disabled, apparently has problems
         return CompleteItemData()
-
-    def Execute(self):
-        message = (_(u"Import pretty much complete item data from a text file.  This will replace existing data and is not reversible!"))
-        if not self._askContinue(message, 'bash.itemdata.import.continue',
-                                 _(u'Import Item Data')): return
-        super(Mod_ItemData_Import, self).Execute()
 
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
