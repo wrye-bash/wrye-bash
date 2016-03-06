@@ -4713,29 +4713,43 @@ class Installer(object):
         hasWizard, hasBCF attributes."""
         reReadMeMatch = Installer.reReadMe.match
         sep = os.path.sep
-        def _process_docs(self, fileLower, full, fileExt):
+        def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
             if reReadMeMatch(fileLower): self.hasReadme = full
             # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
             rsplit = fileLower.rsplit(sep, 1)
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
-            return not self.overrideSkips and settings[
+            if not self.overrideSkips and settings[
                 'bash.installers.skipDocs'] and not (
                 fname in bush.game.dontSkip) and not (
-                fileExt in bush.game.dontSkipDirs.get(parentDir, []))
+                fileExt in bush.game.dontSkipDirs.get(parentDir, [])):
+                return None # skip
+            return file_relative
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs
-        def _process_BCF(self, fileLower, full, fileExt):
+        def _process_BCF(self, fileLower, full, fileExt, file_relative, sub):
             if fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower: # DOCS !
                 self.hasBCF = full
-                return True
-            return False
+                return None # skip
+            return file_relative
         Installer._attributes_process[defaultExt] = _process_BCF # .7z
-        def _process_txt(self, fileLower, full, fileExt):
+        def _process_txt(self, fileLower, full, fileExt, file_relative, sub):
             if fileLower == u'wizard.txt': # first check if it's the wizard.txt
                 self.hasWizard = full
-                return True
-            return _process_docs(self, fileLower, full, fileExt)
+                return None # skip
+            return _process_docs(self, fileLower, full, fileExt, file_relative, sub)
         Installer._attributes_process[u'.txt'] = _process_txt
+        def _remap_espms(self, fileLower, full, fileExt, file_relative, sub):
+            rootLower = file_relative.split(sep, 1)
+            if len(rootLower) > 1: return file_relative ##: maybe skip ??
+            file_relative = self.remaps.get(file_relative, file_relative)
+            if file_relative not in self.espmMap[sub]: self.espmMap[
+                sub].append(file_relative)
+            pFile = GPath(file_relative)
+            self.espms.add(pFile)
+            if pFile in self.espmNots: return None # skip
+            return file_relative
+        Installer._attributes_process[u'.esm'] = \
+        Installer._attributes_process[u'.esp'] = _remap_espms
         Installer._extensions_to_process = set(Installer._attributes_process)
 
     def _init_skips(self):
@@ -4854,7 +4868,6 @@ class Installer(object):
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
         unSize = 0
-        espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
@@ -4870,13 +4883,11 @@ class Installer(object):
             allSubs = set(self.subNames[1:])
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
         data_sizeCrc = {}
-        remaps = self.remaps
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
         skipDirFilesDiscard = skipDirFiles.discard
         skipExtFilesAdd = self.skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
-        espmsAdd = self.espms.add
         espmMap = self.espmMap = collections.defaultdict(list)
         reModExtMatch = reModExt.match
         reReadMeMatch = Installer.reReadMe.match
@@ -4909,8 +4920,7 @@ class Installer(object):
                     if len(rootLower) == 1: rootLower = u''
                     else: rootLower = rootLower[0]
                     skip = True
-                    subList = espmMap[sub]
-                    subListAppend = subList.append
+                    sub_esps = espmMap[sub] # add sub key to the espmMap
                     if fileLower == u'wizard.txt':
                         self.hasWizard = full
                         skipDirFilesDiscard(file)
@@ -4928,7 +4938,7 @@ class Installer(object):
                     elif fileLower in bethFiles:
                         self.hasBethFiles = True
                         skipDirFilesDiscard(file)
-                        skipDirFilesAdd(file + u' ' + _(u'[Bethesda Content]'))
+                        skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + file)
                         continue
                     elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                         continue
@@ -4941,11 +4951,10 @@ class Installer(object):
                         if file in self.remaps:
                             file = self.remaps[file]
                             # fileLower = file.lower() # not needed will skip
-                        if file not in subList: subListAppend(file)
+                        if file not in sub_esps: sub_esps.append(file)
                     if skip:
                         continue
-            subList = espmMap[sub]
-            subListAppend = subList.append
+            sub_esps = espmMap[sub] # add sub key to the espmMap
             rootLower,fileExt = splitExt(fileLower)
             rootLower = rootLower.split(u'\\',1)
             if len(rootLower) == 1: rootLower = u''
@@ -4958,10 +4967,11 @@ class Installer(object):
                     break
             else: _out = False
             if _out: continue
+            dest = None # destination of the file relative to the Data/ dir
             if fileExt in Installer._extensions_to_process: # process attributes
-                if Installer._attributes_process[fileExt](self, fileLower,
-                                                          full, fileExt):
-                    continue
+                dest = Installer._attributes_process[fileExt](self, fileLower,
+                                                          full, fileExt, file, sub)
+                if dest is None: continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
                 if Installer._executables_process[fileExt](
@@ -4971,7 +4981,10 @@ class Installer(object):
             if fileLower in bethFiles:
                 self.hasBethFiles = True
                 if bethFilesSkip:
-                    skipDirFilesAdd(full + u' ' + _(u'[Bethesda Content]'))
+                    skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + full)
+                    if sub_esps and sub_esps[-1].lower() == fileLower:
+                        del sub_esps[-1] # added in extensions processing
+                        self.espms.discard(GPath(file)) #dont show in espm list
                     continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                 skipDirFilesAdd(full)
@@ -4982,16 +4995,8 @@ class Installer(object):
             elif fileExt in skipExts:
                 skipExtFilesAdd(full)
                 continue
-            #--Esps
-            if not rootLower and reModExtMatch(fileExt):
-                #--Remap espms as defined by the user
-                file = remaps.get(file,file)
-                if file not in subList: subListAppend(file)
-                pFile = GPath(file)
-                espmsAdd(pFile)
-                if pFile in espmNots: continue
             #--Remap docs, strings
-            dest = file
+            if dest is None: dest = file
             if rootLower in docDirs:
                 dest = u'\\'.join((u'Docs',file[len(rootLower)+1:]))
             elif (renameStrings and fileStartsWith(u'strings\\') and
@@ -5026,7 +5031,7 @@ class Installer(object):
                     dest = u''.join((u'Docs\\',file))
                 elif fileExt in imageExts:
                     dest = u''.join((u'Docs\\',file))
-            if fileExt in commonlyEditedExts:
+            if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
                 InstallersData.miscTrackedFiles.track(dirs['mods'].join(dest))
             #--Save
             key = GPath(dest)
