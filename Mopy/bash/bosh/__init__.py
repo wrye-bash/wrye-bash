@@ -5997,7 +5997,7 @@ class InstallersData(DataDict):
                 try:
                     installer.refreshBasic(apath,
                             SubProgress(progress, index, index + 1),
-                            recalculate_project_crc=False)
+                            recalculate_project_crc=fullRefresh)
                 except InstallerArchiveError:
                     installer.type = -1
         self.data = newData
