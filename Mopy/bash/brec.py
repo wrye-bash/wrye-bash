@@ -1537,7 +1537,7 @@ class MreRecord(object):
             if not self.__class__ == MreRecord:
                 with self.getReader() as reader:
                     # Check This
-                    if ins.hasStrings: reader.setStringTable(ins.strings)
+                    if ins and ins.hasStrings: reader.setStringTable(ins.strings)
                     self.loadData(reader,reader.size)
         #--Discard raw data?
         if unpack == 2:
