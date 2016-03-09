@@ -517,7 +517,7 @@ class Save_EditPCSpellsData(balt.ListEditorData):
         self.saveSpells = bosh.SaveSpells(saveInfo)
         with balt.Progress(_(u'Loading Masters')) as progress:
             self.saveSpells.load(progress)
-        self.data = self.saveSpells.getPlayerSpells()
+        self.player_spells = self.saveSpells.getPlayerSpells()
         self.removed = set()
         #--GUI
         balt.ListEditorData.__init__(self,parent)
@@ -528,19 +528,19 @@ class Save_EditPCSpellsData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        return sorted(self.data.keys(),key=lambda a: a.lower())
+        return sorted(self.player_spells.keys(), key=lambda a: a.lower())
 
     def getInfo(self,item):
         """Returns string info on specified item."""
-        iref,record = self.data[item]
+        iref,record = self.player_spells[item]
         return record.getEffectsSummary()
 
     def remove(self,item):
         """Removes item. Return true on success."""
-        if not item in self.data: return False
-        iref,record = self.data[item]
+        if not item in self.player_spells: return False
+        iref,record = self.player_spells[item]
         self.removed.add(iref)
-        del self.data[item]
+        del self.player_spells[item]
         return True
 
     def save(self):
