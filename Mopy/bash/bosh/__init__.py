@@ -5307,13 +5307,9 @@ class Installer(object):
     def match_valid_name(self, newName):
         return self.reValidNamePattern.match(newName)
 
-    def size_or_mtime_changed(self, apath):
-        if self.size != apath.size: return True
-        ## FIXME: getmtime(True) won't detect all changes - for instance COBL
-        # has 3/25/2020 8:02:00 AM modification time if unpacked and no
-        # amount of internal shuffling won't change its apath.getmtime(True)
-        if self.modified != apath.getmtime(True): return True
-        return False
+    def size_or_mtime_changed(self, apath, _lstat=os.lstat):
+        stat = _lstat(apath.s)
+        return self.size != stat.st_size or self.modified != int(stat.st_mtime)
 
     @staticmethod
     def _rename(archive, data, newName):
@@ -5660,6 +5656,29 @@ class InstallerProject(Installer):
                                rootName)
         #--Done
         return int(max_mtime)
+
+    def size_or_mtime_changed(self, apath, _lstat=os.lstat):
+        #FIXME(ut): getmtime(True) won't detect all changes - for instance COBL
+        # has 3/25/2020 8:02:00 AM modification time if unpacked and no
+        # amount of internal shuffling won't change its apath.getmtime(True)
+        getM, join = os.path.getmtime, os.path.join
+        c, size = [], 0
+        cExtend, cAppend = c.extend, c.append
+        for root, d, files in os.walk(apath.s):
+            cAppend(getM(root))
+            stats = [_lstat(join(root, fi)) for fi in files]
+            cExtend(fi.st_mtime for fi in stats)
+            size += sum(fi.st_size for fi in stats)
+        if self.size != size: return True
+        # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
+        # c.sort() # is this needed or os.walk will return the same order during program run
+        # mtimes_str = '.'.join(map(str, c))
+        # mtimes_str_crc = crc32(mtimes_str)
+        try:
+            mtime = int(max(c))
+        except ValueError: # int(max([]))
+            mtime = 0
+        return self.modified != mtime
 
     @staticmethod
     def removeEmpties(name):
