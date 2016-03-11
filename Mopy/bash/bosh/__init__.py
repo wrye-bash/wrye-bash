@@ -5864,7 +5864,7 @@ class InstallersData(DataDict):
     def refresh(self, *args, **kwargs): return self.irefresh(*args, **kwargs)
 
     def irefresh(self, progress=None, what='DIONSC', fullRefresh=False,
-                 refresh_info=None):
+                 refresh_info=None, deleted=None, pending=None, projects=None):
         progress = progress or bolt.Progress()
         #--MakeDirs
         self.bashDir.makedirs()
@@ -5880,7 +5880,7 @@ class InstallersData(DataDict):
         if 'D' in what:
             changed |= self._refresh_from_data_dir(progress, fullRefresh)
         if 'I' in what: changed |= self._refreshInstallers(
-            progress, fullRefresh, refresh_info)
+            progress, fullRefresh, refresh_info, deleted, pending, projects)
         if 'O' in what or changed: changed |= self.refreshOrder()
         if 'N' in what or changed: changed |= self.refreshNorm()
         if 'S' in what or changed: changed |= self.refreshInstallersStatus()
@@ -5964,22 +5964,24 @@ class InstallersData(DataDict):
     class _RefreshInfo(object):
         """Refresh info for Bash Installers directory."""
         def __init__(self, deleted=(), pending=(), projects=(), have_bcfs=()):
-            self.deleted = frozenset(deleted)   # deleted keys
-            self.pending = frozenset(pending)   # new or updated keys
-            self.projects = frozenset(projects) # all project keys
-            self.have_bcfs = frozenset(have_bcfs) # if empty do not auto extract bcfs
+            self.deleted = frozenset(deleted or ())   # deleted keys
+            self.pending = frozenset(pending or ())   # new or updated keys
+            self.projects = frozenset(projects or ()) # all project keys
+            self.have_bcfs = frozenset(have_bcfs or ()) # if empty do not auto extract bcfs
 
         def refresh_needed(self):
             return bool(self.deleted or self.pending)
 
-    def _refreshInstallers(self, progress=None, fullRefresh=False,
-                           refresh_info=None):
+    def _refreshInstallers(self, progress, fullRefresh, refresh_info, deleted,
+                           pending, projects):
         """Refresh installer data from the installers' directory."""
         progress = progress or bolt.Progress()
         #--Current archives
-        if refresh_info is None:
+        if refresh_info is deleted is pending is None:
             refresh_info = self.scan_installers_dir(dirs['installers'].list(),
                                                     fullRefresh)
+        elif refresh_info is None:
+            refresh_info = self._RefreshInfo(deleted, pending, projects)
         changed = refresh_info.refresh_needed()
         changed |= self.applyEmbeddedBCFs( #empty refresh_info.have_bcfs aborts
             refresh_info.have_bcfs, progress=progress)
