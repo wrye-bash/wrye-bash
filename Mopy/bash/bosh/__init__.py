@@ -5963,11 +5963,11 @@ class InstallersData(DataDict):
     #--Refresh Functions ------------------------------------------------------
     class _RefreshInfo(object):
         """Refresh info for Bash Installers directory."""
-        def __init__(self):
-            self.deleted = set()   # deleted keys
-            self.pending = set()   # new or updated keys
-            self.projects = set()  # all project keys
-            self.have_bcfs = set() # if empty perform no auto bcf extraction
+        def __init__(self, deleted=(), pending=(), projects=(), have_bcfs=()):
+            self.deleted = frozenset(deleted)   # deleted keys
+            self.pending = frozenset(pending)   # new or updated keys
+            self.projects = frozenset(projects) # all project keys
+            self.have_bcfs = frozenset(have_bcfs) # if empty do not auto extract bcfs
 
         def refresh_needed(self):
             return bool(self.deleted or self.pending)
@@ -6061,7 +6061,7 @@ class InstallersData(DataDict):
         :rtype: InstallersData._RefreshInfo"""
         installers = set([])
         installersJoin = dirs['installers'].join
-        refresh_info = self._RefreshInfo()
+        pending, projects, have_bcfs = set(), set(), set()
         for item in installers_paths:
             if item.s.lower().startswith((u'bash',u'--')): continue
             apath = installersJoin(item)
@@ -6069,10 +6069,10 @@ class InstallersData(DataDict):
                 if item.s.lower() in self.installers_dir_skips:
                     continue # skip Bash directories
                 installer = self.get(item)
-                refresh_info.projects.add(item)
+                projects.add(item)
                 # refresh projects once on boot even if skipRefresh is on
                 if installer and not installer.project_refreshed:
-                    refresh_info.pending.add(item)
+                    pending.add(item)
                     continue
                 elif installer and not fullRefresh and (installer.skipRefresh
                        or not settings['bash.installers.autoRefreshProjects']):
@@ -6084,14 +6084,14 @@ class InstallersData(DataDict):
                 continue ##: treat symlinks
             if fullRefresh or not installer or installer.size_or_mtime_changed(
                     apath):
-                refresh_info.pending.add(item)
+                pending.add(item)
             else: installers.add(item)
-        #--Added/removed packages?
         # if settings['bash.installers.autoApplyEmbeddedBCFs']:
-        #     refresh_info.have_bcfs.update(x for x in self.itervalues() if
+        #     have_bcfs.update(x for x in self.itervalues() if
         #                   isinstance(x, InstallerArchive) and x.hasBCF)
-        refresh_info.deleted = set(x for x, y in self.iteritems() if not isinstance(
-            y, InstallerMarker)) - installers - refresh_info.pending
+        deleted = set(x for x, y in self.iteritems() if not isinstance(
+            y, InstallerMarker)) - installers - pending
+        refresh_info = self._RefreshInfo(deleted, pending, projects, have_bcfs)
         return refresh_info
 
     def refreshConvertersNeeded(self):
