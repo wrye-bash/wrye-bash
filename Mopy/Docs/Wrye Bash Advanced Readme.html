@@ -316,7 +316,7 @@
             does is:
             <ol type="a">
                 <li>rescan the game Data directory (as is done on booting BAIN).
-                <li>run a Quick refresh on all installers (but <i>without ignoring Skip refresh flags for projects</i>, as Quick Refresh does)
+                <li>run a Quick refresh on all installers (ignoring Skip refresh flags for projects, as Quick Refresh does)
             </ol>
         <tr><td colspan="2" id="bainFullRefresh">Full Refresh<td>This does a full refresh <i>of all data files</i>, both the contents of the game Data directory tree and Bash Installers
             folder, bypassing all skip refresh flags for projects. Notably this will recalculate <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all files
@@ -401,8 +401,7 @@
         somewhat buggy (Bash may not detect files that are not skipped for this installer and that are already installed but globally skipped and show them as missing)
         <tr><td colspan="2" id="bainSkipVoices">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
         <tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing installers (when switching out and in the installers tab), this <i>project</i> won't be scanned for changes.
-            The project will only get refreshed during the first refresh of BAIN on a restart, or on a <a href="#bainFullRefresh">Full Refresh</a>, or by manually selecting <a
-                    href="#bainQuickRefresh">Quick Refresh</a> or <a href="#bainRefresh">Refresh</a>.
+            The project will only get refreshed during the first refresh of BAIN on a restart, or by manually refreshing (see <a href="#bainQuickRefresh">Quick Refresh</a> and co).
         <tr><td colspan="2" id="bainWizard">Wizard<td>Runs the Wizard for the package, if it has one.
         <tr><td colspan="2" id="bainAutoWizard">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
         <tr><td colspan="2" id="bainViewWizard">View Wizard...<td>Opens the wizard.txt for viewing.

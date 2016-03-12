@@ -6246,6 +6246,11 @@ class InstallersData(DataDict):
                     raise
         return new_sizeCrcDate, pending, pending_size
 
+    def reset_refresh_flag_on_projects(self):
+        for installer in self.itervalues():
+            if isinstance(installer, InstallerProject):
+                installer.project_refreshed = False
+
     @staticmethod
     def _skips_in_data_dir(sDirs):
         """Skip some top level directories based on global settings - EVEN

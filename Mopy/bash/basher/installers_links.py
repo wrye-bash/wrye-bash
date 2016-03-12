@@ -254,6 +254,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
         """Refreshes all Installers data"""
         if self.full_refresh and not self._askWarning(self.msg, self.text):
             return
+        self.idata.reset_refresh_flag_on_projects()
         self.iPanel.ShowPanel(fullRefresh=self.full_refresh,scan_data_dir=True)
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
