@@ -525,4 +525,5 @@ class Installers_CreateNewProject(ItemLink):
     text = _(u'Create New Project...')
     help = _(u'Create a new project...')
 
+    @balt.conversation
     def Execute(self): CreateNewProject.Display()

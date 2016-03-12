@@ -2581,18 +2581,20 @@ class InstallersPanel(SashTankPanel):
 
     def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False):
         """Panel is shown. Update self.data."""
-        self._first_run_set_enabled()
+        self._first_run_set_enabled() # must run _before_ if below
         if not settings['bash.installers.enabled'] or self.refreshing: return
         refresh_ui = [False]
         try:
             self.refreshing = True
-            self._refresh_installers(refresh_ui, canCancel, fullRefresh, scan_data_dir)
+            self._refresh_installers_if_needed(refresh_ui, canCancel,
+                                               fullRefresh, scan_data_dir)
             if refresh_ui[0]: self.uiList.RefreshUI()
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
 
-    def _refresh_installers(self, refreshui, canCancel, fullRefresh, scan_data_dir):
+    def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
+                                      scan_data_dir):
         data = self.data
         if settings.get('bash.installers.updatedCRCs',True): #only checked here
             settings['bash.installers.updatedCRCs'] = False

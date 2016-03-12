@@ -4004,8 +4004,8 @@ class ModInfos(FileInfos):
         method used, when mod times method is used make sure we get the latest
         mod time). The mod times stuff must be moved to load_order.py."""
         if not load_order.usingTxtFile():
-            maxi = max([x.mtime for x in self.values()] + [self.__max_time])
-            maxi = [maxi + 60]
+            maxi = max(x.mtime for x in self.itervalues())
+            maxi = [max(maxi, self.__max_time) + 60] # a list to be manipulated
             def timestamps(p):
                 if reModExt.search(p.s):
                     self.__max_time = p.mtime = maxi[0]
@@ -4317,7 +4317,7 @@ class BSAInfos(FileInfos):
         return dirs['modsBash'].join(u'BSA Data')
 
     def resetBSAMTimes(self):
-        for bsa in self.values(): bsa.resetMTime()
+        for bsa in self.itervalues(): bsa.resetMTime()
 
     @staticmethod
     def check_bsa_timestamps():
@@ -4474,12 +4474,12 @@ class Installer(object):
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
     #--Needs to be called after bush.game has been set
-    dataDirs = dataDirsPlus = ()
+    dataDirsPlus = ()
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
-        Installer.dataDirs = bush.game.dataDirs
-        Installer.dataDirsPlus = Installer.dataDirs | Installer.docDirs | bush.game.dataDirsPlus
+        Installer.dataDirsPlus = bush.game.dataDirs | Installer.docDirs | \
+                                 bush.game.dataDirsPlus
 
     #--Temp Files/Dirs
     _tempDir = None
@@ -5115,15 +5115,16 @@ class Installer(object):
 
     @staticmethod
     def _find_root_index(fileSizeCrcs):
+        # basically just care for skips and complex/simple packages
         #--Sort file names
         def fscSortKey(fsc):
             dirFile = fsc[0].lower().rsplit(u'\\',1)
             if len(dirFile) == 1: dirFile.insert(0,u'')
             return dirFile
         sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
-        fileSizeCrcs.sort(key=lambda x: sortKeys[x])
+        fileSizeCrcs.sort(key=sortKeys.__getitem__)
         #--Find correct starting point to treat as BAIN package
-        dataDirs = Installer.dataDirsPlus
+        dataDirsPlus = Installer.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
         for file,size,crc in fileSizeCrcs:
@@ -5149,7 +5150,7 @@ class Installer(object):
                 rootIdex = 0
             else:
                 rootStr = layout.keys()[0]
-                if rootStr in dataDirs:
+                if rootStr in dataDirsPlus:
                     rootIdex = 0
                 else:
                     root = layout[rootStr]
@@ -5164,7 +5165,7 @@ class Installer(object):
                             # Only one subfolder, see if it's either 'Data', or an accepted
                             # Data sub-folder
                             rootDirKey = rootDirKeys[0]
-                            if rootDirKey in dataDirs or rootDirKey == u'data':
+                            if rootDirKey in dataDirsPlus or rootDirKey == u'data':
                                 # Found suitable starting point
                                 break
                             # Keep looking deeper
@@ -5187,7 +5188,7 @@ class Installer(object):
         subNameSetAdd = subNameSet.add
         subNameSetAdd(u'')
         reDataFileSearch = self.reDataFile.search
-        dataDirs = self.dataDirsPlus
+        dataDirsPlus = self.dataDirsPlus
         for file, size, crc in self.fileSizeCrcs:
             file = file[rootIdex:]
             if type_ != 1:
@@ -5195,12 +5196,12 @@ class Installer(object):
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFileSearch(frags[0]) or
-                    nfrags > 1 and frags[0].lower() in dataDirs):
+                    nfrags > 1 and frags[0].lower() in dataDirsPlus):
                     type_ = 1
                     break
                 #--Type 2?
                 elif nfrags > 2 and not frags[0].startswith(u'--') and \
-                                frags[1].lower() in dataDirs \
+                                frags[1].lower() in dataDirsPlus \
                  or nfrags == 2 and not frags[0].startswith(u'--') and \
                                 reDataFileSearch(frags[1]):
                     subNameSetAdd(frags[0])
@@ -5922,7 +5923,7 @@ class InstallersData(DataDict):
 
     def delete_Refresh(self, deleted): self.irefresh(what='ION')
 
-    def copy(self,item,destName,destDir=None):
+    def copy_installer(self,item,destName,destDir=None):
         """Copies archive to new location."""
         if item == self.lastKey: return
         destDir = destDir or self.dir
@@ -5986,7 +5987,8 @@ class InstallersData(DataDict):
                 except InstallerArchiveError:
                     installer.type = -1
         self.data = newData
-        self.crc_installer = dict((x.crc,x) for x in self.data.values() if isinstance(x, InstallerArchive))
+        self.crc_installer = dict((x.crc, x) for x in self.values() if
+                                  isinstance(x, InstallerArchive))
         #--Apply embedded BCFs
         if settings['bash.installers.autoApplyEmbeddedBCFs']:
             changed |= self.applyEmbeddedBCFs(progress=progress)
@@ -6033,7 +6035,7 @@ class InstallersData(DataDict):
             #--Add the new archive to Bash
             if destArchive not in self:
                 self[destArchive] = InstallerArchive(destArchive)
-            #--Apply settings to the new archive
+            #--Apply settings from the BCF to the new InstallerArchive
             iArchive = self[destArchive]
             converter.applySettings(iArchive)
             #--Refresh UI
@@ -6110,7 +6112,7 @@ class InstallersData(DataDict):
 
     def refreshNorm(self):
         """Refresh self.abnorm_sizeCrc."""
-        active = [x for x in self.values() if x.isActive]
+        active = [x for x in self.itervalues() if x.isActive]
         active.sort(key=lambda pac: pac.order)
         #--norm
         norm_sizeCrc = {}
@@ -6630,12 +6632,11 @@ class InstallersData(DataDict):
 
     def clean_data_dir(self, refresh_ui):
         getArchiveOrder = lambda x: x.order
-        installed = []
+        keepFiles = set()
         for installer in sorted(self.values(), key=getArchiveOrder,
                                 reverse=True):
             if installer.isActive:
-                installed += installer.data_sizeCrc
-        keepFiles = set(installed)
+                keepFiles.update(installer.data_sizeCrc)
         keepFiles.update((GPath(f) for f in bush.game.allBethFiles))
         keepFiles.update((GPath(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((GPath(f) for f in bush.game.ignoreDataFiles))

@@ -363,7 +363,6 @@ class InstallerConverter(object):
         try:
             self._arrangeFiles(SubProgress(progress, lastStep, 0.7))
         except bolt.StateError:
-            self.hasBCF = False
             raise
         else:
             self.pack(Installer.getTempDir(), destArchive, installers_dir,

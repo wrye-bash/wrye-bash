@@ -434,7 +434,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
             return
         #--Duplicate
         with balt.BusyCursor():
-            self.idata.copy(curName,newName)
+            self.idata.copy_installer(curName,newName)
             self.idata.irefresh(what='N')
             self.window.RefreshUI()
 
@@ -1158,8 +1158,6 @@ class InstallerConverter_Apply(_InstallerLink):
                 self.converter.apply(destArchive, self.idata.crc_installer,
                                      SubProgress(progress, 0.0, 0.99))
             except StateError:
-                # hasBCF will be set to False if there is an error while
-                # rearranging files
                 msg = u'%s: ' % destArchive.s + _(
                     u'An error occurred while applying an Auto-BCF.')
                 deprint(msg, traceback=True)

@@ -474,10 +474,9 @@ class CreateNewProject(balt.Dialog):
         # Move into the target location
         try:
             env.shellMove(tempProject, projectDir, parent=self)
+            # Move successful
+            BashFrame.iPanel.ShowPanel(canCancel=False)
         except:
             pass
         finally:
             tmpDir.rmtree(tmpDir.s)
-
-        # Move successful
-        BashFrame.iPanel.ShowPanel(scan_data_dir=True)
