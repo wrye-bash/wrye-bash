@@ -4504,6 +4504,9 @@ class Installer(object):
         Installer.dataDirsPlus |= bush.game.dataDirs | bush.game.dataDirsPlus
         InstallersData.installers_dir_skips.update(
             {dirs['converters'].stail.lower(), u'bash'})
+        user_skipped = inisettings['SkippedBashInstallersDirs'].split(u'|')
+        InstallersData.installers_dir_skips.update(
+            skipped.lower() for skipped in user_skipped if skipped)
 
     #--Temp Files/Dirs
     _tempDir = None
@@ -6104,7 +6107,7 @@ class InstallersData(DataDict):
             apath = installersJoin(item)
             if apath.isdir(): # Project - auto-refresh those only if specified
                 if item.s.lower() in self.installers_dir_skips:
-                    continue # skip Bash directories
+                    continue # skip Bash directories and user specified ones
                 installer = self.get(item)
                 projects.add(item)
                 # refresh projects once on boot even if skipRefresh is on
@@ -7594,6 +7597,7 @@ def initDefaultSettings():
     inisettings['EnableSplashScreen'] = True
     inisettings['PromptActivateBashedPatch'] = True
     inisettings['WarnTooManyFiles'] = True
+    inisettings['SkippedBashInstallersDirs'] = u''
 
 def initOptions(bashIni):
     initDefaultTools()
