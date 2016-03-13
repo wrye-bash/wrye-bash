@@ -4494,6 +4494,8 @@ class Installer(object):
         """Initialize BAIN data directories on a per game basis."""
         Installer.dataDirsPlus = bush.game.dataDirs | Installer.docDirs | \
                                  bush.game.dataDirsPlus
+        InstallersData.installers_dir_skips.update(
+            {dirs['converters'].stail.lower(), u'bash'})
 
     #--Temp Files/Dirs
     _tempDir = None
@@ -5830,6 +5832,7 @@ class InstallersData(DataDict):
     # that override skips - not worth the hassle)
     overridden_skips = set()
     __clean_overridden_after_load = True
+    installers_dir_skips = set()
 
     def __init__(self):
         self.dir = dirs['installers']
@@ -5860,8 +5863,8 @@ class InstallersData(DataDict):
 
     def refresh(self, *args, **kwargs): return self.irefresh(*args, **kwargs)
 
-    def irefresh(self,progress=None,what='DIONSC',fullRefresh=False):
-        """Refresh info."""
+    def irefresh(self, progress=None, what='DIONSC', fullRefresh=False,
+                 refresh_info=None):
         progress = progress or bolt.Progress()
         #--MakeDirs
         self.bashDir.makedirs()
@@ -5876,7 +5879,8 @@ class InstallersData(DataDict):
         #--Refresh Other - FIXME(ut): docs
         if 'D' in what:
             changed |= self._refresh_from_data_dir(progress, fullRefresh)
-        if 'I' in what: changed |= self.refreshInstallers(progress,fullRefresh)
+        if 'I' in what: changed |= self._refreshInstallers(
+            progress, fullRefresh, refresh_info)
         if 'O' in what or changed: changed |= self.refreshOrder()
         if 'N' in what or changed: changed |= self.refreshNorm()
         if 'S' in what or changed: changed |= self.refreshInstallersStatus()
@@ -5957,40 +5961,33 @@ class InstallersData(DataDict):
             self.moveArchives([destName],self.data[item].order+1)
 
     #--Refresh Functions ------------------------------------------------------
-    def refreshInstallers(self,progress=None,fullRefresh=False):
+    class _RefreshInfo(object):
+        """Refresh info for Bash Installers directory."""
+        def __init__(self):
+            self.deleted = set()   # deleted keys
+            self.pending = set()   # new or updated keys
+            self.projects = set()  # all project keys
+            self.have_bcfs = set() # if empty perform no auto bcf extraction
+
+        def refresh_needed(self):
+            return bool(self.deleted or self.pending)
+
+    def _refreshInstallers(self, progress=None, fullRefresh=False,
+                           refresh_info=None):
         """Refresh installer data from the installers' directory."""
         progress = progress or bolt.Progress()
-        pending = set()
-        projects = set()
         #--Current archives
-        newData = {}
-        for k, v in self.items():
-            if isinstance(v, InstallerMarker): newData[k] = v
-        installersJoin = dirs['installers'].join
-        dataGet = self.data.get
-        pendingAdd = pending.add
-        for archive in dirs['installers'].list():
-            if archive.s.lower().startswith((u'--',u'bash')): continue
-            apath = installersJoin(archive)
-            isdir = apath.isdir()
-            if isdir: projects.add(archive)
-            if (isdir and archive != dirs['converters'].stail) or archive.cext in readExts:
-                installer = dataGet(archive)
-                if not installer:
-                    pendingAdd(archive)
-                elif (isdir and not installer.project_refreshed) or (
-                        installer.size, installer.modified) != (
-                                apath.size, apath.getmtime(maxMTime=True)):
-                    newData[archive] = installer
-                    pendingAdd(archive)
-                else:
-                    newData[archive] = installer
-        if fullRefresh: pending |= set(newData)
-        changed = bool(pending) or (len(newData) != len(self.data))
+        if refresh_info is None:
+            refresh_info = self.scan_installers_dir(dirs['installers'].list(),
+                                                    fullRefresh)
+        changed = refresh_info.refresh_needed()
+        changed |= self.applyEmbeddedBCFs( #empty refresh_info.have_bcfs aborts
+            refresh_info.have_bcfs, progress=progress)
+        for deleted in refresh_info.deleted:
+            self.pop(deleted)
+        pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
         progressSetFull = progress.setFull
-        newDataGet = newData.get
-        newDataSetDefault = newData.setdefault
         for subPending, iClass in zip((pending - projects, pending & projects),
                                       (InstallerArchive, InstallerProject)):
             if not subPending: continue
@@ -5998,36 +5995,21 @@ class InstallersData(DataDict):
             progressSetFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
-                installer = newDataGet(package)
+                installer = self.get(package, None)
                 if not installer:
-                    installer = newDataSetDefault(package,iClass(package))
-                if installer.skipRefresh and isinstance(installer, InstallerProject) and not fullRefresh: continue
-                apath = installersJoin(package)
+                    installer = self.setdefault(package, iClass(package))
+                apath = dirs['installers'].join(package)
                 try:
                     installer.refreshBasic(apath,
                             SubProgress(progress, index, index + 1),
                             recalculate_project_crc=fullRefresh)
                 except InstallerArchiveError:
                     installer.type = -1
-        self.data = newData
         self.crc_installer = dict((x.crc, x) for x in self.values() if
                                   isinstance(x, InstallerArchive))
-        #--Apply embedded BCFs
-        if settings['bash.installers.autoApplyEmbeddedBCFs']:
-            changed |= self.applyEmbeddedBCFs(progress=progress)
         return changed
 
-    def embeddedBCFsExist(self):
-        """Return true if any InstallerArchive's have an embedded BCF file in them"""
-        for installer in self.values():
-            if installer.hasBCF and isinstance(installer,InstallerArchive):
-                return True
-        return False
-
-    def applyEmbeddedBCFs(self,installers=None,destArchives=None,progress=bolt.Progress()):
-        if not installers:
-            installers = [x for x in self.values() if
-                          x.hasBCF and isinstance(x, InstallerArchive)]
+    def applyEmbeddedBCFs(self,installers,destArchives=None,progress=bolt.Progress()):
         if not installers: return False
         if not destArchives:
             destArchives = [GPath(x.archive) for x in installers]
@@ -6073,37 +6055,44 @@ class InstallersData(DataDict):
         self.irefresh(what='I')
         return True
 
-    def refreshInstallersNeeded(self, installers_paths=()):
-        """Returns true if refreshInstallers is necessary. (Point is to skip use
-        of progress dialog when possible."""
-        ## TODO(ut): make it return exactly which installers need refresh
+    def scan_installers_dir(self, installers_paths=(), fullRefresh=False):
+        """March through the Bash Installers dir scanning for new and modified
+        projects/packages, skipping as necessary.
+        :rtype: InstallersData._RefreshInfo"""
         installers = set([])
         installersJoin = dirs['installers'].join
-        dataGet = self.data.get
-        installersAdd = installers.add
+        refresh_info = self._RefreshInfo()
         for item in installers_paths:
-            apath = installersJoin(item)
             if item.s.lower().startswith((u'bash',u'--')): continue
+            apath = installersJoin(item)
             if apath.isdir(): # Project - auto-refresh those only if specified
-                if item == u'Bash' or item == dirs['converters'].stail:
-                    continue # skip Bash directories, Bash already skipped above...
-                installer = dataGet(item)
-                if installer and (installer.skipRefresh or not settings[
-                    'bash.installers.autoRefreshProjects']):
-                    installersAdd(item) # installer is present
+                if item.s.lower() in self.installers_dir_skips:
+                    continue # skip Bash directories
+                installer = self.get(item)
+                refresh_info.projects.add(item)
+                # refresh projects once on boot even if skipRefresh is on
+                if installer and not installer.project_refreshed:
+                    refresh_info.pending.add(item)
+                    continue
+                elif installer and not fullRefresh and (installer.skipRefresh
+                       or not settings['bash.installers.autoRefreshProjects']):
+                    installers.add(item) # installer is present
                     continue # and needs not refresh
             elif apath.isfile() and item.cext in readExts:
-                installer = dataGet(item)
+                installer = self.get(item)
             else:
                 continue ##: treat symlinks
-            if not installer or installer.size_or_mtime_changed(apath):
-                return True
-            installersAdd(item)
+            if fullRefresh or not installer or installer.size_or_mtime_changed(
+                    apath):
+                refresh_info.pending.add(item)
+            else: installers.add(item)
         #--Added/removed packages?
-        if settings['bash.installers.autoApplyEmbeddedBCFs'] and self.embeddedBCFsExist():
-            return True
-        deleted = set(x for x,y in self.iteritems() if not isinstance(y,InstallerMarker)) - installers
-        return bool(deleted)
+        # if settings['bash.installers.autoApplyEmbeddedBCFs']:
+        #     refresh_info.have_bcfs.update(x for x in self.itervalues() if
+        #                   isinstance(x, InstallerArchive) and x.hasBCF)
+        refresh_info.deleted = set(x for x, y in self.iteritems() if not isinstance(
+            y, InstallerMarker)) - installers - refresh_info.pending
+        return refresh_info
 
     def refreshConvertersNeeded(self):
         """Return True if refreshConverters is necessary. (Point is to skip
