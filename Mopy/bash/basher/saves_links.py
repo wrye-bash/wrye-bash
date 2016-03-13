@@ -383,9 +383,9 @@ class Save_EditCreatedData(balt.ListEditorData):
         """Initialize."""
         self.changed = False
         self.saveFile = saveFile
-        data = self.data = {}
+        name_nameRecords = self.name_nameRecords = {}
         self.enchantments = {}
-        #--Parse records and get into data
+        #--Parse records and get into name_nameRecords
         for index,record in enumerate(saveFile.created):
             if record.recType == 'ENCH':
                 self.enchantments[record.fid] = record.getTypeCopy()
@@ -395,8 +395,9 @@ class Save_EditCreatedData(balt.ListEditorData):
                 record.getSize() #--Since type copy makes it changed.
                 saveFile.created[index] = record
                 record_full = record.full
-                if record_full not in data: data[record_full] = (record_full,[])
-                data[record_full][1].append(record)
+                if record_full not in name_nameRecords:
+                    name_nameRecords[record_full] = (record_full, [])
+                name_nameRecords[record_full][1].append(record)
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showRename = True
@@ -406,14 +407,14 @@ class Save_EditCreatedData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        items = sorted(self.data.keys())
-        items.sort(key=lambda x: self.data[x][1][0].recType)
+        items = sorted(self.name_nameRecords.keys())
+        items.sort(key=lambda x: self.name_nameRecords[x][1][0].recType)
         return items
 
     def getInfo(self,item):
         """Returns string info on specified item."""
         buff = StringIO.StringIO()
-        name,records = self.data[item]
+        name,records = self.name_nameRecords[item]
         record = records[0]
         #--Armor, clothing, weapons
         if record.recType == 'ARMO':
@@ -448,11 +449,11 @@ class Save_EditCreatedData(balt.ListEditorData):
         elif len(newName) > 128:
             balt.showError(self.parent,_(u'Name is too long.'))
             return False
-        elif newName in self.data:
+        elif newName in self.name_nameRecords:
             balt.showError(self.parent,_(u'Name is already used.'))
             return False
         #--Rename
-        self.data[newName] = self.data.pop(oldName)
+        self.name_nameRecords[newName] = self.name_nameRecords.pop(oldName)
         self.changed = True
         return newName
 
@@ -463,7 +464,7 @@ class Save_EditCreatedData(balt.ListEditorData):
         else:
             self.changed = False #--Allows graceful effort if close fails.
             count = 0
-            for newName,(oldName,records) in self.data.items():
+            for newName,(oldName,records) in self.name_nameRecords.items():
                 if newName == oldName: continue
                 for record in records:
                     record.full = newName
