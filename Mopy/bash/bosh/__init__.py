@@ -5928,26 +5928,24 @@ class InstallersData(DataDict):
         """Delete multiple installers. Delete entry AND archive file itself."""
         toDelete = []
         markers = []
-        toDeleteAppend = toDelete.append
-        dirJoin = self.dir.join
-        selfLastKey = self.lastKey
         for item in items:
-            if item == selfLastKey: continue
+            if item == self.lastKey: continue
             if isinstance(self[item], InstallerMarker): markers.append(item)
-            else: toDeleteAppend(dirJoin(item))
+            else: toDelete.append(self.dir.join(item))
         #--Delete
+        doRefresh = kwargs.pop('doRefresh', True)
         try:
             for m in markers: del self[m]
             _delete(toDelete, **kwargs)
         finally:
-            refresh = bool(markers)
-            for item in toDelete:
-                if not item.exists():
-                    del self[item.tail]
-                    refresh = True
-            if refresh: self.delete_Refresh(toDelete) # will "set changed" too
+            if doRefresh:
+                deleted = set(markers)
+                deleted.update(
+                    item.tail for item in toDelete if not item.exists())
+                if deleted:
+                    self.delete_Refresh(deleted) # markers are already popped
 
-    def delete_Refresh(self, deleted): self.irefresh(what='ION')
+    def delete_Refresh(self, deleted): self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -6007,8 +6005,8 @@ class InstallersData(DataDict):
                             recalculate_project_crc=fullRefresh)
                 except InstallerArchiveError:
                     installer.type = -1
-        self.crc_installer = dict((x.crc, x) for x in self.values() if
-                                  isinstance(x, InstallerArchive))
+        if changed: self.crc_installer = dict((x.crc, x) for x in
+                        self.itervalues() if isinstance(x, InstallerArchive))
         return changed
 
     def applyEmbeddedBCFs(self,installers,destArchives=None,progress=bolt.Progress()):
