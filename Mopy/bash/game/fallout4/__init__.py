@@ -277,8 +277,6 @@ pklfile = r'bash\db\Fallout4_ids.pkl'
 
 #--BAIN: Directories that are OK to install to
 dataDirs = {
-    u'bash patches',
-    u'docs',
     u'interface',
     u'lodsettings',
     u'materials',
@@ -293,12 +291,11 @@ dataDirs = {
     u'textures',
     u'video',
     u'vis',
-    }
+}
 dataDirsPlus = {
-    u'ini tweaks',
     u'f4se',
     u'ini',
-    }
+}
 
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of

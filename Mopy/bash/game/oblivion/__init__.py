@@ -228,9 +228,7 @@ pklfile = ur'bash\db\Oblivion_ids.pkl'
 
 #--BAIN: Directories that are OK to install to
 dataDirs = {
-    u'bash patches',
     u'distantlod',
-    u'docs',
     u'facegen',
     u'fonts',
     u'menus',
@@ -240,15 +238,16 @@ dataDirs = {
     u'sound',
     u'textures',
     u'trees',
-    u'video'}
+    u'video',
+}
 dataDirsPlus = {
     u'streamline',
     u'_tejon',
-    u'ini tweaks',
     u'scripts',
     u'pluggy',
     u'ini',
-    u'obse'}
+    u'obse',
+}
 
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of

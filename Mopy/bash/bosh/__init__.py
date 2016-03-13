@@ -4494,13 +4494,12 @@ class Installer(object):
     imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
-    #--Needs to be called after bush.game has been set
-    dataDirsPlus = ()
+    #--Regular game directories - needs update after bush.game has been set
+    dataDirsPlus = docDirs | {u'bash patches', u'ini tweaks', u'docs'}
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
-        Installer.dataDirsPlus = bush.game.dataDirs | Installer.docDirs | \
-                                 bush.game.dataDirsPlus
+        Installer.dataDirsPlus |= bush.game.dataDirs | bush.game.dataDirsPlus
         InstallersData.installers_dir_skips.update(
             {dirs['converters'].stail.lower(), u'bash'})
 
@@ -4830,7 +4829,7 @@ class Installer(object):
     def _init_skips(self):
         start = [u'sound\\voice'] if self.skipVoices else []
         skips, skip_ext = [], set()
-        if not self.overrideSkips: # DOCS !
+        if not self.overrideSkips:
             skips = list(Installer._global_skips)
             start.extend(Installer._global_start_skips)
             skip_ext = Installer._global_skip_extensions
@@ -5341,8 +5340,7 @@ class Installer(object):
         """Refresh fileSizeCrcs, size, and modified from source
         archive/directory. fileSizeCrcs is a list of tuples, one for _each_
         file in the archive or project directory. _refreshSource is called
-        in refreshBasic only - so may be skipped if this is a project and
-        skipRefresh is on. In projects the src_sizeCrcDate cache is used to
+        in refreshBasic only. In projects the src_sizeCrcDate cache is used to
         avoid recalculating crc's.
         :param recalculate_project_crc: only used in InstallerProject override
         """
