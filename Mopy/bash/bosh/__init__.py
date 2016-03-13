@@ -5979,7 +5979,8 @@ class InstallersData(DataDict):
                 if not installer:
                     pendingAdd(archive)
                 elif (isdir and not installer.project_refreshed) or (
-                    (installer.size,installer.modified) != (apath.size,apath.mtime)):
+                        installer.size, installer.modified) != (
+                                apath.size, apath.getmtime(maxMTime=True)):
                     newData[archive] = installer
                     pendingAdd(archive)
                 else:
