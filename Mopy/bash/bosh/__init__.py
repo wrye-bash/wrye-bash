@@ -5289,6 +5289,14 @@ class Installer(object):
     def match_valid_name(self, newName):
         return self.reValidNamePattern.match(newName)
 
+    def size_or_mtime_changed(self, apath):
+        if self.size != apath.size: return True
+        ## FIXME: getmtime(True) won't detect all changes - for instance COBL
+        # has 3/25/2020 8:02:00 AM modification time if unpacked and no
+        # amount of internal shuffling won't change its apath.getmtime(True)
+        if self.modified != apath.getmtime(True): return True
+        return False
+
     @staticmethod
     def _rename(archive, data, newName):
         """Rename package or project."""
@@ -6067,6 +6075,7 @@ class InstallersData(DataDict):
     def refreshInstallersNeeded(self, installers_paths=()):
         """Returns true if refreshInstallers is necessary. (Point is to skip use
         of progress dialog when possible."""
+        ## TODO(ut): make it return exactly which installers need refresh
         installers = set([])
         installersJoin = dirs['installers'].join
         dataGet = self.data.get
@@ -6074,27 +6083,26 @@ class InstallersData(DataDict):
         for item in installers_paths:
             apath = installersJoin(item)
             if item.s.lower().startswith((u'bash',u'--')): continue
-            if settings['bash.installers.autoRefreshProjects']:
-                if (apath.isdir() and item != u'Bash' and item != dirs['converters'].stail) or (apath.isfile() and item.cext in readExts):
-                    installer = dataGet(item)
-                    if installer and installer.skipRefresh:
-                        continue
-                    if not installer or (installer.size,installer.modified) != (apath.size,apath.getmtime(True)):
-                        return True
-                    installersAdd(item)
+            if apath.isdir(): # Project - auto-refresh those only if specified
+                if item == u'Bash' or item == dirs['converters'].stail:
+                    continue # skip Bash directories, Bash already skipped above...
+                installer = dataGet(item)
+                if installer and (installer.skipRefresh or not settings[
+                    'bash.installers.autoRefreshProjects']):
+                    installersAdd(item) # installer is present
+                    continue # and needs not refresh
+            elif apath.isfile() and item.cext in readExts:
+                installer = dataGet(item)
             else:
-                if apath.isfile() and item.cext in readExts:
-                    installer = dataGet(item)
-                    if not installer or (installer.size,installer.modified) != (apath.size,apath.getmtime(True)):
-                        return True
-                    installersAdd(item)
+                continue ##: treat symlinks
+            if not installer or installer.size_or_mtime_changed(apath):
+                return True
+            installersAdd(item)
         #--Added/removed packages?
         if settings['bash.installers.autoApplyEmbeddedBCFs'] and self.embeddedBCFsExist():
             return True
-        elif settings['bash.installers.autoRefreshProjects']:
-            return installers != set(x for x,y in self.iteritems() if not isinstance(y,InstallerMarker) and not (isinstance(y,InstallerProject) and y.skipRefresh))
-        else:
-            return installers != set(x for x,y in self.iteritems() if isinstance(y,InstallerArchive))
+        deleted = set(x for x,y in self.iteritems() if not isinstance(y,InstallerMarker)) - installers
+        return bool(deleted)
 
     def refreshConvertersNeeded(self):
         """Return True if refreshConverters is necessary. (Point is to skip
