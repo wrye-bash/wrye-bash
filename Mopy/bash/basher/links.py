@@ -396,6 +396,7 @@ def InitModLinks():
         if bush.game.esp.canBash:
             fileMenu.links.append(Mods_CreateBlankBashedPatch())
             fileMenu.links.append(Mods_CreateBlank())
+            fileMenu.links.append(Mods_CreateBlank(masterless=True))
             fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(Files_Open())
         fileMenu.links.append(Files_Unhide('mod'))

@@ -218,20 +218,21 @@ class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
     text, help = _(u'New Mod...'), _(u'Create a new blank mod')
 
+    def __init__(self, masterless=False):
+        super(Mods_CreateBlank, self).__init__()
+        self.masterless = masterless
+        if masterless:
+            self.text = _(u'New Mod (masterless)...')
+            self.help = _(u'Create a new blank mod with no masters')
+
     def Execute(self):
-        fileInfos = self.window.data
         newName = self.window.new_name(GPath(u'New Mod.esp'))
-        newInfo = fileInfos.factory(fileInfos.dir,newName)
         windowSelected = self.window.GetSelected()
-        mods = [fileInfos[x] for x in
-                windowSelected] if windowSelected else fileInfos.values()
-        newTime = max(x.mtime for x in mods)
-        newInfo.mtime = fileInfos.getFreeTime(newTime,newTime)
-        newFile = parsers.ModFile(newInfo, parsers.LoadFactory(True))
-        newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
-        newFile.safeSave()
-        mod_group = fileInfos.table.getColumn('group')
-        mod_group[newName] = mod_group.get(newName,u'')
+        self.window.data.create_new_mod(newName, windowSelected,
+                                        masterless=self.masterless)
+        if windowSelected: # assign it the group of the first selected mod
+            mod_group = self.window.data.table.getColumn('group')
+            mod_group[newName] = mod_group.get(windowSelected[0], u'')
         bosh.modInfos.refresh()
         self.window.RefreshUI(files=[newName], refreshSaves=False)
         self.window.SelectItem(newName, deselectOthers=True)

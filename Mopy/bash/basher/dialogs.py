@@ -369,6 +369,8 @@ class CreateNewProject(balt.Dialog):
                                  onText=self.OnCheckProjectsColorTextCtrl)
         self.checkEsp = checkBox(self, _(u'Blank.esp'),
                                  onCheck=self.OnCheckBoxChange, checked=True)
+        self.checkEspMasterless = checkBox(self, _(u'Blank Masterless.esp'),
+                                   onCheck=self.OnCheckBoxChange, checked=False)
         self.checkWizard = checkBox(self, _(u'Blank wizard.txt'),
                                     onCheck=self.OnCheckBoxChange)
         self.checkWizardImages = checkBox(self, _(u'Wizard Images Directory'))
@@ -390,6 +392,7 @@ class CreateNewProject(balt.Dialog):
         vsizer.Add(self.textName,0,wx.ALL|wx.ALIGN_CENTER|wx.EXPAND,2)
         vsizer.Add(StaticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer.Add(self.checkEsp,0,wx.ALL|wx.ALIGN_TOP,5)
+        vsizer.Add(self.checkEspMasterless,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkWizard,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkDocs,0,wx.ALL|wx.ALIGN_TOP,5)
@@ -451,11 +454,13 @@ class CreateNewProject(balt.Dialog):
         # Shell commands (UAC workaround)
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
-        extrasDir = bass.dirs['templates'].join(bush.game.fsName)
         if self.checkEsp.IsChecked():
-            # Copy blank esp into project
             fileName = u'Blank, %s.esp' % bush.game.fsName
-            extrasDir.join(fileName).copyTo(tempProject.join(fileName))
+            bosh.modInfos.create_new_mod(fileName, directory=tempProject.s)
+        if self.checkEspMasterless.IsChecked():
+            fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
+            bosh.modInfos.create_new_mod(fileName, directory=tempProject.s,
+                                         masterless=True)
         if self.checkWizard.IsChecked():
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')

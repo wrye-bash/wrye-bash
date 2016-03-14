@@ -4025,6 +4025,20 @@ class ModInfos(FileInfos):
         mods.sort(key=lambda x: not self[x].isEsm())
         return mods
 
+    def create_new_mod(self, newName, selected=(), masterless=False,
+                       directory=u''):
+        directory = directory or self.dir
+        newInfo = self.factory(directory, GPath(newName))
+        if directory == self.dir:
+            mods = (self[x] for x in selected) if selected else self.itervalues()
+            newTime = max(x.mtime for x in mods)
+            newInfo.mtime = self.getFreeTime(newTime, newTime)
+        else: newInfo.mtime = time.time()
+        newFile = ModFile(newInfo, LoadFactory(True))
+        if not masterless:
+            newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
+        newFile.safeSave()
+
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
