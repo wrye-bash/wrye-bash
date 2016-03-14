@@ -5987,7 +5987,7 @@ class InstallersData(DataDict):
         if refresh_info is deleted is pending is None:
             refresh_info = self.scan_installers_dir(dirs['installers'].list(),
                                                     fullRefresh)
-        elif refresh_info is None:
+        elif refresh_info is None: # no auto BCF will run !
             refresh_info = self._RefreshInfo(deleted, pending, projects)
         changed = refresh_info.refresh_needed()
         changed |= self.applyEmbeddedBCFs( #empty refresh_info.have_bcfs aborts
@@ -6023,6 +6023,7 @@ class InstallersData(DataDict):
         if not destArchives:
             destArchives = [GPath(x.archive) for x in installers]
         progress.setFull(len(installers))
+        pending = set()
         for i,installer in enumerate(installers):
             name = GPath(installer.archive)
             progress(i,name.s)
@@ -6037,32 +6038,45 @@ class InstallersData(DataDict):
             destArchive = destArchives[i]
             converter = InstallerConverter(bcfFile.tail)
             try:
-                converter.apply(destArchive, self.crc_installer,
-                                bolt.SubProgress(progress, 0.0, 0.99),
-                                installer.crc)
-            except StateError:
-                deprint(u'%s: ' % destArchive.s + _(u'An error occurred '
-                        u'while applying an Embedded BCF.'), traceback=True)
-                bcfFile.remove()
-                continue
-            ##: finally: bcfFile.remove() # ?
+                msg = u'%s: ' % destArchive.s + _(
+                    u'An error occurred while applying an Embedded BCF.')
+                self.apply_converter(converter, destArchive, progress, msg,
+                                     installer, pending)
+            finally: bcfFile.remove()
+        # we need to pass a _RefreshInfo info with empty have_bcfs attribute
+        refresh_info = self._RefreshInfo(pending=pending)
+        changed = self.irefresh(what='I', refresh_info=refresh_info)
+        for created in refresh_info.pending:
+            self[created].hasBCF = False
+        return changed
+
+    def apply_converter(self, converter, destArchive, progress, msg,
+                        installer=None, pending=None, show_warning=None):
+        try:
+            converter.apply(destArchive, self.crc_installer,
+                            bolt.SubProgress(progress, 0.0, 0.99),
+                            embedded=installer.crc if installer else 0L)
             #--Add the new archive to Bash
             if destArchive not in self:
                 self[destArchive] = InstallerArchive(destArchive)
             #--Apply settings from the BCF to the new InstallerArchive
             iArchive = self[destArchive]
             converter.applySettings(iArchive)
-            #--Refresh UI
-            pArchive = dirs['installers'].join(destArchive)
-            iArchive.project_refreshed = False
-            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
-            # If applying the BCF created a new archive with an embedded BCF,
-            # ignore the embedded BCF for now, so we don't end up in an
-            # infinite loop
-            iArchive.hasBCF = False
-            bcfFile.remove()
-        self.irefresh(what='I')
-        return True
+            if pending is not None: # caller must take care of the else below !
+                pending.add(destArchive)
+            else:
+                refresh_info = self._RefreshInfo(pending=[destArchive])
+                self.irefresh(what='I', refresh_info=refresh_info)
+                # If applying the BCF created a new archive with an embedded
+                # BCF, ignore the embedded BCF for now, so we don't end up in
+                # an infinite loop
+                iArchive.hasBCF = False
+                return iArchive
+        except StateError:
+            # short circuit further attempts to extract (embedded BCF case)
+            if installer: installer.hasBCF = False
+            deprint(msg, traceback=True)
+            if show_warning: show_warning(msg)
 
     def scan_installers_dir(self, installers_paths=(), fullRefresh=False):
         """March through the Bash Installers dir scanning for new and modified
