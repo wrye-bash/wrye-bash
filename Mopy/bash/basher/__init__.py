@@ -2752,6 +2752,7 @@ class InstallersPanel(SashTankPanel):
                 del bosh.modInfos.mtimesReset[:] ##: not sure why this here
             BashFrame.modList.RefreshUI(refreshSaves=True)
             Link.Frame.warn_corrupted(warn_saves=False)
+            Link.Frame.warn_load_order()
         if BashFrame.iniList is not None:
             if inis_changed: ##: why this if below ??
                 if bosh.iniInfos.refresh():
@@ -3952,7 +3953,7 @@ class BashFrame(wx.Frame):
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
-        self._loadOrderWarnings()
+        self.warn_load_order()
         self.warn_corrupted()
         self._corruptedGameIni()
         self._obmmWarn()
@@ -3960,7 +3961,7 @@ class BashFrame(wx.Frame):
         #--Done (end recursion blocker)
         self.inRefreshData = False
 
-    def _loadOrderWarnings(self):
+    def warn_load_order(self):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
         def warn(message, lists, title=_(u'Warning: Load List Sanitized')):
             ListBoxes.Display(self, title, message, [lists], liststyle='list',
