@@ -99,10 +99,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
-    def move_after_selected(self, destArchive):
-        lastInstaller = self.idata[self.selected[-1]]
-        self.idata.moveArchives([destArchive], lastInstaller.order + 1)
-        self.idata.irefresh(what='N')
 
     ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
@@ -1162,15 +1158,15 @@ class InstallerConverter_Apply(_InstallerLink):
         #--Ask for an output filename
         destArchive = self._askFilename(message, filename=defaultFilename)
         if not destArchive: return
-        dont_move = destArchive in self.idata
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
             msg = u'%s: ' % destArchive.s + _(
                 u'An error occurred while applying an Auto-BCF.')
+            new_archive_order = self.idata[self.selected[-1]].order + 1
             try:
-                if self.idata.apply_converter(self.converter, destArchive,
-                    progress, msg, show_warning=self._showWarning):
-                    if not dont_move: self.move_after_selected(destArchive)
+                self.idata.apply_converter(self.converter, destArchive,
+                    progress, msg, show_warning=self._showWarning,
+                    position=new_archive_order)
             except StateError:
                 return
         self.window.RefreshUI()
@@ -1187,12 +1183,10 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
         #--Ask for an output filename
         dest = self._askFilename(_(u'Output file:'), filename=name.stail)
         if not dest: return
-        dont_move = dest in self.idata
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
             destinations, converted = self.idata.applyEmbeddedBCFs(
                 [archive], [dest], progress)
             if not destinations: return # destinations == [dest] if all was ok
-            if not dont_move: self.move_after_selected(dest)
         self.window.RefreshUI()
 
 class InstallerConverter_Create(_InstallerLink):

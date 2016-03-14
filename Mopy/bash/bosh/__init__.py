@@ -6050,7 +6050,8 @@ class InstallersData(DataDict):
         return pending, list(GPath(x.archive) for x in installers)
 
     def apply_converter(self, converter, destArchive, progress, msg,
-                        installer=None, pending=None, show_warning=None):
+                        installer=None, pending=None, show_warning=None,
+                        position=-1):
         try:
             converter.apply(destArchive, self.crc_installer,
                             bolt.SubProgress(progress, 0.0, 0.99),
@@ -6058,9 +6059,15 @@ class InstallersData(DataDict):
             #--Add the new archive to Bash
             if destArchive not in self:
                 self[destArchive] = InstallerArchive(destArchive)
+                reorder = True
+            else: reorder = False
             #--Apply settings from the BCF to the new InstallerArchive
             iArchive = self[destArchive]
             converter.applySettings(iArchive)
+            if reorder and position >= 0:
+                self.moveArchives([destArchive], position)
+            elif reorder and installer: #embedded BCF, move after its installer
+                self.moveArchives([destArchive], installer.order + 1)
             if pending is not None: # caller must take care of the else below !
                 pending.append(destArchive)
             else:
