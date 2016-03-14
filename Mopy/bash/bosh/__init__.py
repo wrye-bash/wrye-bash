@@ -5972,7 +5972,16 @@ class InstallersData(DataDict):
 
     def _refreshInstallers(self, progress, fullRefresh, refresh_info, deleted,
                            pending, projects):
-        """Refresh installer data from the installers' directory."""
+        """Update given installers or scan the installers' directory. Any of
+        deleted, pending takes priority over refresh_info. If all refresh
+        parameters are None, the Installers dir will be scanned for changes.
+        Note that if any of those are not None "changed" will be always
+        True, triggering the rest of the refreshes in irefresh. Once
+        refresh_info is calculated, deleted are removed, refreshBasic is
+        called on added/updated files and crc_installer updated. If you
+        don't need that last step you may directly call refreshBasic."""
+        # TODO(ut):we need to return the refresh_info for more granular control
+        # in irefresh and also add extra processing for deleted files
         progress = progress or bolt.Progress()
         #--Current archives
         if refresh_info is deleted is pending is None:

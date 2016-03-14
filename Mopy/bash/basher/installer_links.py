@@ -130,14 +130,12 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 self.idata[archive] = bosh.InstallerArchive(archive)
             #--Refresh UI
             iArchive = self.idata[archive]
-            pArchive = bass.dirs['installers'].join(archive)
             iArchive.blockSize = blockSize
-            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99))
             if iArchive.order == -1:
                 self.idata.moveArchives([archive], installer.order + 1)
             #--Refresh UI
-            self.idata.irefresh(what='I')
-            self.window.RefreshUI()
+            self.idata.irefresh(what='I', pending=[archive]) # fullrefresh is unneeded
+        self.window.RefreshUI()
 
     def _askFilename(self, message, filename):
         result = self._askText(message, title=self.dialogTitle,
@@ -842,12 +840,11 @@ class Installer_CopyConflicts(_SingleInstallable):
                     iProject = idata[project] #bash.bosh.InstallerProject object
                     pProject = installers_dir.join(project) # bolt.Path
                     # ...\Bash Installers\030 - Conflicts
-                    iProject.project_refreshed = False
                     iProject.refreshBasic(pProject, progress=None)
                     if iProject.order == -1:
                         idata.moveArchives([project],srcInstaller.order + 1)
-                    idata.irefresh(what='I')
-                    self.window.RefreshUI()
+                    idata.irefresh(what='NS')
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
@@ -1058,7 +1055,6 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
             self.idata[project] = bosh.InstallerProject(project)
         iProject = self.idata[project]
         pProject = bass.dirs['installers'].join(project)
-        iProject.project_refreshed = False
         iProject.refreshBasic(pProject, SubProgress(progress, 0.8, 0.99))
         if iProject.order == -1:
             self.idata.moveArchives([project], installer.order + 1)
@@ -1105,7 +1101,6 @@ class InstallerProject_Sync(_InstallerLink):
             progress(0.1,_(u'Updating files.'))
             installer.syncToData(project,missing|mismatched)
             pProject = bass.dirs['installers'].join(project)
-            installer.project_refreshed = False
             installer.refreshBasic(pProject, SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
