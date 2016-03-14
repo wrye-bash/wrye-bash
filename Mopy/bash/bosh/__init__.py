@@ -4457,6 +4457,7 @@ class ScreensData(DataDict):
     def delete_Refresh(self, deleted): self.refresh()
 
 #------------------------------------------------------------------------------
+os_sep = os.path.sep
 class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
@@ -4474,8 +4475,9 @@ class Installer(object):
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
-    dataDirsMinus = {u'bash',
-                     u'--'}  #--Will be skipped even if hasExtraData == True.
+    #--Will be skipped even if hasExtraData == True (bonus: skipped also on
+    # scanning the game Data directory)
+    dataDirsMinus = {u'bash', u'--'}
     reDataFile = re.compile(
         ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$', re.I | re.U)
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
@@ -4731,8 +4733,10 @@ class Installer(object):
     #--refreshDataSizeCrc, err, framework -------------------------------------
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
-        u'--', u'omod conversion data', u'fomod', u'wizard images')
-    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'config')
+        u'--', u'omod conversion data%s' % os_sep, u'fomod%s' % os_sep,
+        u'wizard images%s' % os_sep)
+    _silentSkipsEnd = (
+        u'%sthumbs.db' % os_sep, u'%sdesktop.ini' % os_sep, u'config')
 
     # global skips that can be overridden en masse by the installer
     _global_skips = []
@@ -5133,7 +5137,8 @@ class Installer(object):
         return dest_src
 
     @staticmethod
-    def _find_root_index(fileSizeCrcs):
+    def _find_root_index(fileSizeCrcs, _os_sep=os_sep,
+                         skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
         #--Sort file names
         def fscSortKey(fsc):
@@ -5147,9 +5152,9 @@ class Installer(object):
         layout = {}
         layoutSetdefault = layout.setdefault
         for file,size,crc in fileSizeCrcs:
-            if file.startswith(u'--'): continue ##: also ignore other silent skips !!
+            if file.startswith(skips_start): continue
             fileLower = file.lower()
-            frags = fileLower.split(u'\\')
+            frags = fileLower.split(_os_sep)
             if len(frags) == 1:
                 # Files in the root of the package, start there
                 rootIdex = 0
@@ -5173,7 +5178,7 @@ class Installer(object):
                     rootIdex = 0
                 else:
                     root = layout[rootStr]
-                    rootStr = u''.join((rootStr,u'\\'))
+                    rootStr = u''.join((rootStr, _os_sep))
                     while True:
                         if root['files']:
                             # There are files in this folder, call it the starting point
@@ -5189,7 +5194,7 @@ class Installer(object):
                                 break
                             # Keep looking deeper
                             root = rootDirs[rootDirKey]
-                            rootStr = u''.join((rootStr,rootDirKey,u'\\'))
+                            rootStr = u''.join((rootStr, rootDirKey, _os_sep))
                         else:
                             # Multiple folders, stop here even if it's no good
                             break
@@ -5197,6 +5202,11 @@ class Installer(object):
         return rootIdex
 
     def refreshBasic(self, archive, progress, recalculate_project_crc=True):
+        return self._refreshBasic(archive, progress, recalculate_project_crc)
+
+    def _refreshBasic(self, archive, progress, recalculate_project_crc=True,
+                     _os_sep=os_sep, skips_start=tuple(
+                x.replace(os_sep, u'') for x in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
         self._refreshSource(archive, progress, recalculate_project_crc)
         self.fileRootIdex = rootIdex = self._find_root_index(self.fileSizeCrcs)
@@ -5211,7 +5221,7 @@ class Installer(object):
         for file, size, crc in self.fileSizeCrcs:
             file = file[rootIdex:]
             if type_ != 1:
-                frags = file.split(u'\\')
+                frags = file.split(_os_sep)
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFileSearch(frags[0]) or
@@ -5219,9 +5229,9 @@ class Installer(object):
                     type_ = 1
                     break
                 #--Type 2?
-                elif nfrags > 2 and not frags[0].startswith(u'--') and \
+                elif nfrags > 2 and not frags[0].startswith(skips_start) and \
                                 frags[1].lower() in dataDirsPlus \
-                 or nfrags == 2 and not frags[0].startswith(u'--') and \
+                 or nfrags == 2 and not frags[0].startswith(skips_start) and \
                                 reDataFileSearch(frags[1]):
                     subNameSetAdd(frags[0])
                     type_ = 2

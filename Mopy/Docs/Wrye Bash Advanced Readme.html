@@ -231,16 +231,15 @@
 <ul>
     <li>Silent skips. These are <i>not</i> listed on the <q>Skipped</q> panel on the right and are:
         <ul>
-            <li><code>thumbs.db</code> and <code>desktop.ini</code> files (actually any file path that ends in those strings)
+            <li><code>thumbs.db</code> and <code>desktop.ini</code> files
             <li>any path that ends in <code>config</code>
-            <li>the omod conversion directory (<code>omod conversion data</code>, <code>fomod</code>) - actually any top level package or subpackage file/directory that starts with those
-                strings
-            <li>the wizard images directory (or any file/directory that starts with <code>wizard images</code>)
+            <li>the omod conversion directory (<code>omod conversion data</code>, <code>fomod</code>) if on the top level of package or subpackage
+            <li>the <code>wizard images</code> directory (again if on the top level of package or subpackage)
             <li>Developer files. Any file or directory that begins with <code>'--'</code> and is at the top level of a package or a subpackage will be silently skipped. This is so that mod
                 authors can include files related to a mod that are not required for it to work (eg. screenshots) in packages.
             <li>Bash will also skip voices for espms that are not installed from complex installers
             <li>Specified skips. There are a few options in BAIN to skip the installation of certain file types. If any such options are enabled, the file type(s) in question will be
-            <i>silently</i> skipped.
+                <i>silently</i> skipped.
             <li>Voices (on a per installer basis) if <a href="#bainSkipVoices">Skip Voices</a> is checked.
         </ul>
     <li>Non-standard directories. Standard directories include all the game's default directories (including those only found in BSAs by default) - see
