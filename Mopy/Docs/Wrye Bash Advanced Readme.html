@@ -53,6 +53,7 @@
     <li><a href="#bain">Installers Tab</a>
     <ol>
         <li><a href="#bain-ui">The User Interface In Detail</a>
+        <li><a href="#bain-refresh">BAIN Refresh</a>
         <li><a href="#bain-skipped">Skipped Files</a>
         <li><a href="#bain-se">Script Extender Plugin Installation</a>
         <li><a href="#bain-omod">OMOD Conversion Data</a>
@@ -196,6 +197,34 @@
 </table>
 <p>The Comments field is provided as an area in which notes may be kept on packages. It is useful for keeping track of what packages do, what your favourite install options are, etc.
 
+
+<h3 id="bain-refresh">BAIN Refresh</h3>
+<p>To perform its magicks BAIN needs to know what's inside two directories: the game Data/ directory and its subdirectories and the Bash Installers folder (where the packages are). The Data
+    directory scanning is done once per run of Wrye Bash, when the Installers tab is first opened, because walking this potentially huge directory and checking sizes and modification times
+    does take a while. The Bash Installers folder however will be scanned whenever the installers tab regains focus after losing it (ie. you select another program's window, then switch back
+    to Wrye Bash, or you switch to another tab then back to installers tab). This automatic scanning just checks modification times and sizes of installers inside Bash Installers folder to
+    decide if any package changed, and should usually be very fast (although noticeable). There is a catch however: this check is almost instantaneous for packages (archives) but for biggish
+    projects takes a while as Bash needs to scan modification times and sizes for <i>all</i> files inside the project. To make this (automatic) scan faster two options are provided for
+    projects: <a href="#bainDontRefresh">Don't Refresh</a> (on the project's context menu) and <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a> (on the global menu). If a project
+    is affected by these options Bash will skip over it when scanning Bash Installers directory and changes inside the project's dir have to be detected manually. However the initial refresh
+    (on booting BAIN) will ignore those skip flags and will scan all project directories for changes (comparing their sizes and modification times with the ones it loads from Installers.dat).
+<p>However, changes in files in the Data directory will have to be manually detected after initial refresh, as in this scenario:
+
+<ol>
+    <li>Install a mod from some package.
+    <li>Go to the installers tab. Note the package is marked green.
+    <li>Go back to the mods tab and edit the mod using xEdit or the CK/CS/etc.
+    <li>Return to the installers tab. The package is still marked green instead of being marked as out of sync with the data.
+</ol>
+
+<p>This is because, as already mentioned, the refresh of the game <i>Data</i> directory is performed once on boot, so modifying/deleting/adding files in the game directory will not be detected
+    afterwards, except in some few scenarios - notably, deleting an espm from inside Bash will notify BAIN (add more actions is in the TODOs).
+<p>BAIN provides several menu items for manually refreshing for the scenarios above (and others). What you most likely need is <a href="#bainQuickRefresh">Quick Refresh</a>. See also
+    <a href="#bainFullRefresh">Full Refresh</a>, <a href="#bainRefreshData">Refresh Data</a> and <a href="#bainRefresh">Refresh</a>.
+<p>Technical: This situation is a limitation of our refresh model which is basically polling the directories for changes. We should switch to an event based refresh but the code is not yet
+    ready (see <a href="https://github.com/wrye-bash/wrye-bash/issues/265">relevant issue</a>).
+
+
 <h3 id="bain-skipped">Skipped Files</h3>
 <p>BAIN skips the installation of some files and directories. The types of files skipped are:
 <ul>
@@ -280,8 +309,18 @@
         <tr><td>Size<td>Display the Size column.
         <tr><td>Files<td>Display the (number of) Files column.
         <tr><td colspan="2" id="bainOpenDir">Open...<td>Opens the Installers directory in Windows Explorer.
-        <tr><td colspan="2" id="bainRefreshData">Refresh Data<td>Re-scans the Data directory and all project directories. This is done once per run of Wrye Bash, when the Installers tab is first opened. If you manually alter the directories after that, you should run this command to update BAIN to reflect the changes.
-        <tr><td colspan="2" id="bainFullRefresh">Full Refresh<td>This does a full refresh of all data files. Notably this will recalculate CRCs for all files (ordinarily CRCs are only calculated for files that seem to have changed). Running this command will likely take 5-15 minutes.
+        <tr><td colspan="2" id="bainRefreshData">Refresh Data<td>Re-scans the Data directory (and all packages). Scanning of the Data directory is done once per run of Wrye Bash, when the
+            Installers tab is first opened. If you manually alter files in the Data directory after that, <i>you had to run this command to update BAIN to reflect the changes</i>. However
+            BAIN will now scan the Data directory for changes in files corresponding to the package(s) you run <a href="#bainQuickRefresh">Quick Refresh</a> (or
+            <a href="#bainRefresh">Refresh</a>) on, so in most use cases (if the files you altered belong to a particular project/package) just use Quick Refresh. What this command basically
+            does is:
+            <ol type="a">
+                <li>rescan the game Data directory (as is done on booting BAIN).
+                <li>run a Quick refresh on all installers (but <i>without ignoring Skip refresh flags for projects</i>, as Quick Refresh does)
+            </ol>
+        <tr><td colspan="2" id="bainFullRefresh">Full Refresh<td>This does a full refresh <i>of all data files</i>, both the contents of the game Data directory tree and Bash Installers
+            folder, bypassing all skip refresh flags for projects. Notably this will recalculate <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all files
+            inside Data and Bash Installers (including project directories). Running this command will likely take <i>aeons</i>, and you seldom need it.
         <tr><td colspan="2" id="bainAddMarker">Add Marker...<td>Creates a marker for organising your packages. The <q>==</q> will be added for you.
         <tr><td colspan="2" id="bainCreateNewProject">Create New Project...<td>Displays a dialog that allows you to create a new project and select some starting files for it.
 		<tr><td colspan="2" id="bainMonitorExternalInstallation">Monitor External Installation...<td>When you absolutely cannot install a mod via BAIN, you can put BAIN into Monitor Mode using this command.  It will scan the Data folder before and after you install the mod, then provide an option to create a Project from the changes it detects.
@@ -301,7 +340,12 @@
         <tr><td colspan="2" id="bainEnabled">Enabled<td>This enables/disables Bain itself. Preferred setting: Enabled (checked).
         <tr><td colspan="2" id="bainAutoAnneal">Auto-Anneal<td>Toggles the auto-anneal process on/off. Preferred setting: enabled.
         <tr><td colspan="2" id="bainAutoAnnealInstallWizards">Auto-Anneal/Install Wizards<td>Toggles whether or not to automatically install/anneal a package when finished with its wizard.
-        <tr><td colspan="2" id="bainAutoRefreshProjects">Auto-Refresh Projects<td>Toggles the auto-refreshing of projects on/off. Preferred setting: enabled.
+        <tr><td colspan="2" id="bainAutoRefreshProjects">Auto-Refresh Projects<td>Toggles the auto-refreshing of projects on/off, for all projects. This is useful when you have many big
+            projects and you want to minimize the lag when you switch back to the installers tab, whereupon BAIN will (behind the scenes) scan the Bash Installers folder for changed
+            projects/packages. While scanning packages (archives) is pretty fast, scanning projects is slow, however you will miss on updates done in the project directories (you will have to
+            manually refresh) - so it's recommended to leave this enabled. If you are concerned about a particularly big project then consider enabling the <a href="#bainDontRefresh">Don't
+                Refresh</a> flag <i>on that particular project</i>. Keep in mind that Projects will be anyway refreshed once on Bash restart, irrespective of this setting (except if popular
+            demand arises).
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
         <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td>If checked, archives that contain Bain Conversion Files will have them automatically applied when BAIN refreshes.
         <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
@@ -336,13 +380,29 @@
         <tr><td>TES Alliance...<td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.
         <tr><td colspan="2" id="bainHide">Hide...<td>Hides the package in the list, and moves it to the <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
         <tr><td colspan="2" id="bainRename">Rename...<td>Renames the selected package or marker.
-        <tr><td colspan="2" id="bainRefresh">Refresh<td>Refreshes all info for the selected package(s). Since BAIN refreshes package information whenever Wrye Bash regains focus after losing it (ie. you select another program's window, then switch back to Wrye Bash), this is only useful if a package has been changed and it has <a href="#bainDontRefresh">Don't Refresh</a> selected, or the <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a> option is disabled. Note that scanning a project for changes takes much longer than scanning an archive for changes.
+        <tr><td colspan="2" id="bainRefresh">Refresh<td>As <a href="#bainRefresh">Quick Refresh</a> below. Refresh will however recalculate the
+            <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all selected items <i>from scratch</i>, which is not what you usually need (for projects
+            especially it will take much longer than for packages, cause to calculate the CRC of a project <i>all the individual CRCs</i> of <i>all</i> the files in the project folder must be
+            recalculated). Bash will of course recalculate CRCs for files that have their dates/sizes changed <i>anyway</i>, so forcing CRC recalculation with Refresh is only needed if you
+            changed the contents of a file inside a project <i>without changing its modification time <b>and</b> its size</i> - that's super rare, you most probably just need Quick Refresh
+            below.
+        <tr><td colspan="2" id="bainQuickRefresh">Quick Refresh<td>Refreshes all info for the selected package(s), also checking the files that correspond to this package inside the Data
+            directory. It will bypass skip refresh flags on projects (see case A below). BAIN does refresh package information whenever the installer's tab regains focus, except for projects
+            if project skipping is on, but does not scan the Data folder but once on boot. So this command is useful if:
+            <ol type="A">
+                <li>a <i>project</i> has been changed and it has <a href="#bainDontRefresh">Don't Refresh</a> selected, or the <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a>
+                    option is disabled
+                <li>files that correspond to a package/project have changed in the game's Data directory, but the package is still marked in sync (or out of sync) erroneously
+            </ol>Case B) is relevant cause now Bash will recheck the files in Data that would belong to the packages that are being refreshed - this was not the case in 306, where you needed
+        a full <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.
         <tr><td colspan="2" id="bainMoveTo">Move To...<td>Moves the selected package(s) to the specified position.
         <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories.
         <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to the Skip XX options. Currently
         somewhat buggy (Bash may not detect files that are not skipped for this installer and that are already installed but globally skipped and show them as missing)
         <tr><td colspan="2" id="bainSkipVoices">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
-        <tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing Projects, this package won't get refreshed. The package will only get refreshed on a Full Refresh, or by manually selecting Refresh.
+        <tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing installers (when switching out and in the installers tab), this <i>project</i> won't be scanned for changes.
+            The project will only get refreshed during the first refresh of BAIN on a restart, or on a <a href="#bainFullRefresh">Full Refresh</a>, or by manually selecting <a
+                    href="#bainQuickRefresh">Quick Refresh</a> or <a href="#bainRefresh">Refresh</a>.
         <tr><td colspan="2" id="bainWizard">Wizard<td>Runs the Wizard for the package, if it has one.
         <tr><td colspan="2" id="bainAutoWizard">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
         <tr><td colspan="2" id="bainViewWizard">View Wizard...<td>Opens the wizard.txt for viewing.

@@ -279,6 +279,8 @@ def InitInstallerLinks():
     #--Install, uninstall, etc.
     InstallersList.itemMenu.append(SeparatorLink())
     InstallersList.itemMenu.append(Installer_Refresh())
+    InstallersList.itemMenu.append(
+        Installer_Refresh(calculate_projects_crc=False))
     InstallersList.itemMenu.append(Installer_Move())
     InstallersList.itemMenu.append(SeparatorLink())
     InstallersList.itemMenu.append(Installer_HasExtraData())

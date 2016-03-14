@@ -703,12 +703,22 @@ class Installer_Refresh(_InstallerLink):
     help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
         u'Ignores skip refresh flag on projects')
 
+    def __init__(self, calculate_projects_crc=True):
+        super(Installer_Refresh, self).__init__()
+        self.calculate_projects_crc = calculate_projects_crc
+        if not calculate_projects_crc:
+            self.text = _(u'Quick Refresh')
+            self.help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
+                u'Ignores skip refresh flag on projects') + u'.  ' + _(
+            u'Will not recalculate cached crcs of files in a project')
+
     def _enable(self): return bool(self.filterInstallables())
 
     @balt.conversation
     def Execute(self):
         toRefresh = set((x, self.idata[x]) for x in self.selected)
-        self.window.rescanInstallers(toRefresh, abort=True)
+        self.window.rescanInstallers(toRefresh, abort=True,
+                            calculate_projects_crc=self.calculate_projects_crc)
 
 class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""

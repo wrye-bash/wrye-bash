@@ -2428,7 +2428,8 @@ class InstallersList(balt.UIList):
             self.SelectItemAtIndex(index)
             self._gList.EditLabel(index)
 
-    def rescanInstallers(self, toRefresh, abort, update_from_data=True):
+    def rescanInstallers(self, toRefresh, abort, update_from_data=True,
+                         calculate_projects_crc=False):
         """Refresh installers, ignoring skip refresh flag.
 
         Will also update InstallersData for the paths this installer would
@@ -2444,8 +2445,9 @@ class InstallersList(balt.UIList):
                     progress(index,
                              _(u'Refreshing Packages...') + u'\n' + name.s)
                     apath = bass.dirs['installers'].join(name)
-                    dest.update(installer.refreshBasic(
-                        apath, SubProgress(progress, index, index + 1)).keys())
+                    dest.update(installer.refreshBasic(apath,
+                        SubProgress(progress, index, index + 1),
+                        recalculate_project_crc=calculate_projects_crc).keys())
                     self.data.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
