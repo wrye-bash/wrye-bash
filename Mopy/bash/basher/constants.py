@@ -107,7 +107,11 @@ colorInfo = {
         _(u'Tabs: Installers') + u'\n\n' +
         _(u'This is the text color used for a complex BAIN package.'),
     ),
-    'installers.text.invalid': (_(u'Marker'),
+    'installers.text.invalid': (_(u'Invalid'),
+        _(u'Tabs: Installers') + u'\n\n' +
+        _(u'This is the text color used for invalid packages.'),
+    ),
+    'installers.text.marker': (_(u'Marker'),
         _(u'Tabs: Installers') + u'\n\n' +
         _(u'This is the text color used for Markers.'),
     ),
@@ -173,6 +177,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         #--Installers Tab
         'installers.text.complex':      'NAVY',
         'installers.text.invalid':      'GREY',
+        'installers.text.marker':       (230, 97, 89),
         'installers.bkgd.skipped':      (0xE0, 0xE0, 0xE0),
         'installers.bkgd.outOfOrder':   (0xFF, 0xFF, 0x00),
         'installers.bkgd.dirty':        (0xFF, 0xBB, 0x33),
