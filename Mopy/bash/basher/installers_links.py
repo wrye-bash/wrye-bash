@@ -47,13 +47,8 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_ConflictsReportShowsInactive',
            'Installers_ConflictsReportShowsLower',
            'Installers_ConflictsReportShowBSAConflicts',
-           'Installers_WizardOverlay', 'Installers_SkipOBSEPlugins',
-           'Installers_SkipScreenshots', 'Installers_SkipImages',
-           'Installers_SkipDocs', 'Installers_SkipDistantLOD',
-           'Installers_SkipLandscapeLODMeshes',
-           'Installers_SkipLandscapeLODTextures',
-           'Installers_SkipLandscapeLODNormals', 'Installers_SkipBsl',
-           'Installers_RenameStrings']
+           'Installers_WizardOverlay', 'Installers_RenameStrings',
+           'Installers_GlobalSkips']
 
 #------------------------------------------------------------------------------
 # Installers Links ------------------------------------------------------------
@@ -463,40 +458,57 @@ class _Installers_Skip(Installers_Link, BoolLink):
             progress.setFull(len(self.idata))
             for index, (name, installer) in enumerate(self.idata.iteritems()):
                 progress(index, _(u'Refreshing Packages...') + u'\n' + name.s)
+                ##: maybe update data too when turning skips off ??
                 installer.refreshDataSizeCrc()
         self.idata.irefresh(what='NS')
         self.window.RefreshUI()
 
-class Installers_SkipScreenshots(_Installers_Skip):
+class _Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""
     text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
 
-class Installers_SkipImages(_Installers_Skip):
+class _Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
     text, key = _(u'Skip Images'), 'bash.installers.skipImages'
 
-class Installers_SkipDistantLOD(_Installers_Skip):
+class _Installers_SkipDistantLOD(_Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
     text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
 
-class Installers_SkipLandscapeLODMeshes(_Installers_Skip):
+class _Installers_SkipLandscapeLODMeshes(_Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
     text, key = _(u'Skip LOD Meshes'), 'bash.installers.skipLandscapeLODMeshes'
 
-class Installers_SkipLandscapeLODTextures(_Installers_Skip):
+class _Installers_SkipLandscapeLODTextures(_Installers_Skip):
     """Toggle skipLandscapeLODTextures setting and update."""
     text = _(u'Skip LOD Textures')
     key = 'bash.installers.skipLandscapeLODTextures'
 
-class Installers_SkipLandscapeLODNormals(_Installers_Skip):
+class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
     text = _(u'Skip LOD Normals')
     key = 'bash.installers.skipLandscapeLODNormals'
 
-class Installers_SkipBsl(AppendableLink, _Installers_Skip):
+class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
     """Toggle skipTESVBsl setting and update."""
     text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
     def _append(self, window): return bush.game.fsName == 'Skyrim'
+
+class Installers_GlobalSkips(balt.MenuLink):
+    """Global Skips submenu."""
+    text = _(u'Global Skips')
+
+    def __init__(self):
+        super(Installers_GlobalSkips, self).__init__()
+        self.append(_Installers_SkipOBSEPlugins())
+        self.append(_Installers_SkipScreenshots())
+        self.append(_Installers_SkipImages())
+        self.append(_Installers_SkipDocs())
+        self.append(_Installers_SkipDistantLOD())
+        self.append(_Installers_SkipLandscapeLODMeshes())
+        self.append(_Installers_SkipLandscapeLODTextures())
+        self.append(_Installers_SkipLandscapeLODNormals())
+        self.append(_Installers_SkipBsl())
 
 # Complex skips
 class _Installers_Process_Skip(_Installers_Skip):
@@ -507,11 +519,11 @@ class _Installers_Process_Skip(_Installers_Skip):
         super(Installers_Link, self).Execute() # note Installers_Link !
         self._refreshInstallers()
 
-class Installers_SkipDocs(_Installers_Process_Skip):
+class _Installers_SkipDocs(_Installers_Process_Skip):
     """Toggle skipDocs setting and update."""
     text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
 
-class Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
+class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
     text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'

@@ -238,9 +238,9 @@
             <li>Developer files. Any file or directory that begins with <code>'--'</code> and is at the top level of a package or a subpackage will be silently skipped. This is so that mod
                 authors can include files related to a mod that are not required for it to work (eg. screenshots) in packages.
             <li>Bash will also skip voices for espms that are not installed from complex installers
-            <li>Specified skips. There are a few options in BAIN to skip the installation of certain file types. If any such options are enabled, the file type(s) in question will be
-                <i>silently</i> skipped.
-            <li>Voices (on a per installer basis) if <a href="#bainSkipVoices">Skip Voices</a> is checked.
+            <li>Specified skips. There are a few options in BAIN to skip the installation of certain file types, namely the ones on the <a href="#bainGlobalSkips">Global Skips</a> submenu for
+            all installers and <a href="#bainSkipVoices">Skip Voices</a> (on a per installer basis). If any such options are enabled, the file type(s) in question will be <i>silently</i>
+            skipped.
         </ul>
     <li>Non-standard directories. Standard directories include all the game's default directories (including those only found in BSAs by default) - see
     <a href="Wrye%20Bash%20General%20Readme.html#bain-structure">BAIN-Compatible installer layout</a> for a detailed list per game. Files skipped because of this will be
@@ -257,7 +257,7 @@
 
 
 <h3 id="bain-data-dir-skipped">Skipped Data subdirectories and uninstall quirks</h3>
-<p>When scanning the contents of the Data folder BAIN will skip some of its subdirectories either by default or based on global skips in the installer
+<p>When scanning the contents of the Data folder BAIN will skip some of its subdirectories either by default or based on <a href="#bainGlobalSkips">Global Skips</a> in the installer
 tab. The directories skipped are:
 
 <table>
@@ -359,8 +359,9 @@ tab. The directories skipped are:
             <a href="#bainRefresh">Refresh</a>) on, so in most use cases (if the files you altered belong to a particular project/package) just use Quick Refresh. What this command basically
             does is:
             <ol type="a">
-                <li>rescan the game Data directory (as is done on booting BAIN). If you enabled/disabled Skip XXX option and this enabled/disabled new skips in the Data dir then rescanning
-                    Data will take those skips into account. See <a href="#bain-data-dir-skipped">Skipped Data subdirectories</a> for the Data directories that are skipped.
+                <li>rescan the game Data directory (as is done on booting BAIN). If you enabled/disabled any <a href="#bainGlobalSkips">global skip option</a> and this enabled/disabled new
+                    skips in the Data dir then rescanning Data will take those skips into account. See <a href="#bain-data-dir-skipped">Skipped Data subdirectories</a> for the Data directories
+                    that are skipped.
                 <li>run a Quick refresh on all installers (ignoring Skip refresh flags for projects, as Quick Refresh does)
             </ol>
         <tr><td colspan="2" id="bainFullRefresh">Full Refresh<td>This does a full refresh <i>of all data files</i>, both the contents of the game Data directory tree and Bash Installers
@@ -403,15 +404,16 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
         <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td>If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed  (for other games replace OBSE with SKSE etc)
         <tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
-        <tr><td colspan="2" id="bainSkipScreenshots">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
-        <tr><td colspan="2" id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
-        <tr><td colspan="2" id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
-        <tr><td colspan="2" id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
-        <tr><td colspan="2" id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
-        <tr><td colspan="2" id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
-        <tr><td colspan="2" id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
-        <tr><td colspan="2" id="bainSkipBSLFiles">Skip BSL Files<td><i>Skyrim only.</i> If checked, BSL Files will be skipped.
-        <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
+        <tr><td rowspan="9" id="bainGlobalSkips">Global Skips
+        <tr><td id="bainSkipScreenshots">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
+        <tr><td id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
+        <tr><td id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
+        <tr><td id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
+        <tr><td id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
+        <tr><td id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
+        <tr><td id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
+        <tr><td id="bainSkipBSLFiles">Skip BSL Files<td><i>Skyrim only.</i> If checked, BSL Files will be skipped.
+        <tr><td  colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
 </table>
 <table id="bainPackageCommands">
     <thead>
@@ -444,7 +446,8 @@ tab. The directories skipped are:
         a full <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.
         <tr><td colspan="2" id="bainMoveTo">Move To...<td>Moves the selected package(s) to the specified position.
         <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories.
-        <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to the Skip XXX options.
+        <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to a <a href="#bainGlobalSkips">global
+            skip option</a>.
         <tr><td colspan="2" id="bainSkipVoices">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
         <tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing installers (when switching out and in the installers tab), this <i>project</i> won't be scanned for changes.
             The project will only get refreshed during the first refresh of BAIN on a restart, or by manually refreshing (see <a href="#bainQuickRefresh">Quick Refresh</a> and co).
