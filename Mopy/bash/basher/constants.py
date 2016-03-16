@@ -256,7 +256,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.fastStart': True,
     'bash.installers.autoRefreshBethsoft': False,
     'bash.installers.autoRefreshProjects': True,
-    'bash.installers.autoApplyEmbeddedBCFs': True,
     'bash.installers.removeEmptyDirs':True,
     'bash.installers.skipScreenshots':False,
     'bash.installers.skipImages':False,

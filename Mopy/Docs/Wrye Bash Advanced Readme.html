@@ -336,6 +336,9 @@
                 <li>Installed BAIN packages.
             </ul>
         The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
+        <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td>Automatically apply Embedded BCFs to archives that have one. The new package will be
+            created next to the archive that contains the BCF, and named as this archive prepended with "[Auto applied BCF] ". If a package with that name exists it will be
+            <i>overridden</i>. BAIN used to try and do that automatically on refresh based on a setting (set by this column menu item), but this had many issues and was removed.
         <tr><td colspan="2" id="bainAvoidAtStartup">Avoid At Startup<td>Toggles Bash to avoid the Installers tab on startup, thus avoiding unnecessary data scanning. Unless you're spending a lot of time in the Installers tab, you should enable this.
         <tr><td colspan="2" id="bainEnabled">Enabled<td>This enables/disables Bain itself. Preferred setting: Enabled (checked).
         <tr><td colspan="2" id="bainAutoAnneal">Auto-Anneal<td>Toggles the auto-anneal process on/off. Preferred setting: enabled.
@@ -347,7 +350,6 @@
                 Refresh</a> flag <i>on that particular project</i>. Keep in mind that Projects will be anyway refreshed once on Bash restart, irrespective of this setting (except if popular
             demand arises).
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
-        <tr><td colspan="2" id="bainAutoApplyEmbeddedBCFs">Auto-Apply Embedded BCFs<td>If checked, archives that contain Bain Conversion Files will have them automatically applied when BAIN refreshes.
         <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.

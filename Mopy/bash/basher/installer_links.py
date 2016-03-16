@@ -1167,11 +1167,12 @@ class InstallerConverter_Apply(_InstallerLink):
             #--Perform the conversion
             msg = u'%s: ' % destArchive.s + _(
                 u'An error occurred while applying an Auto-BCF.')
-            iArchive = self.idata.apply_converter(self.converter, destArchive,
-                progress, msg, show_warning=self._showWarning)
-            if not iArchive: return
-            #--Refresh UI
-            if not dont_move: self.move_after_selected(destArchive)
+            try:
+                if self.idata.apply_converter(self.converter, destArchive,
+                    progress, msg, show_warning=self._showWarning):
+                    if not dont_move: self.move_after_selected(destArchive)
+            except StateError:
+                return
         self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -1188,8 +1189,10 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
         if not dest: return
         dont_move = dest in self.idata
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
-            if self.idata.applyEmbeddedBCFs([archive], [dest], progress):
-                if not dont_move: self.move_after_selected(dest)
+            destinations, converted = self.idata.applyEmbeddedBCFs(
+                [archive], [dest], progress)
+            if not destinations: return # destinations == [dest] if all was ok
+            if not dont_move: self.move_after_selected(dest)
         self.window.RefreshUI()
 
 class InstallerConverter_Create(_InstallerLink):

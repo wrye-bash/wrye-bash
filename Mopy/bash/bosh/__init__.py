@@ -4998,10 +4998,7 @@ class Installer(object):
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
-                        ## Disabling Auto-BCF's for now, until the code for them can be updated to the latest
-                        ## tempDir stuff
-                        ## TODO: DO THIS!
-                        #self.hasBCF = full
+                        self.hasBCF = full
                         skipDirFilesDiscard(file)
                         continue
                     elif fileExt in docExts and sub == u'':
@@ -5961,11 +5958,10 @@ class InstallersData(DataDict):
     #--Refresh Functions ------------------------------------------------------
     class _RefreshInfo(object):
         """Refresh info for Bash Installers directory."""
-        def __init__(self, deleted=(), pending=(), projects=(), have_bcfs=()):
+        def __init__(self, deleted=(), pending=(), projects=()):
             self.deleted = frozenset(deleted or ())   # deleted keys
             self.pending = frozenset(pending or ())   # new or updated keys
             self.projects = frozenset(projects or ()) # all project keys
-            self.have_bcfs = frozenset(have_bcfs or ()) # if empty do not auto extract bcfs
 
         def refresh_needed(self):
             return bool(self.deleted or self.pending)
@@ -5987,11 +5983,9 @@ class InstallersData(DataDict):
         if refresh_info is deleted is pending is None:
             refresh_info = self.scan_installers_dir(dirs['installers'].list(),
                                                     fullRefresh)
-        elif refresh_info is None: # no auto BCF will run !
+        elif refresh_info is None:
             refresh_info = self._RefreshInfo(deleted, pending, projects)
         changed = refresh_info.refresh_needed()
-        changed |= self.applyEmbeddedBCFs( #empty refresh_info.have_bcfs aborts
-            refresh_info.have_bcfs, progress=progress)
         for deleted in refresh_info.deleted:
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
@@ -6018,13 +6012,19 @@ class InstallersData(DataDict):
                         self.itervalues() if isinstance(x, InstallerArchive))
         return changed
 
-    def applyEmbeddedBCFs(self,installers,destArchives=None,progress=bolt.Progress()):
+    def applyEmbeddedBCFs(self, installers=None, destArchives=None,
+                          progress=bolt.Progress()):
+        if installers is None:
+            installers = [x for x in self.itervalues() if
+                          isinstance(x, InstallerArchive) and x.hasBCF]
         if not installers: return False
         if not destArchives:
-            destArchives = [GPath(x.archive) for x in installers]
+            destArchives = [GPath(u'[Auto applied BCF] %s' % x.archive) for x
+                            in installers]
         progress.setFull(len(installers))
-        pending = set()
-        for i,installer in enumerate(installers):
+        pending = []
+        for i, (installer, destArchive) in enumerate(zip(installers,
+                        destArchives)): # no izip - we may modify installers
             name = GPath(installer.archive)
             progress(i,name.s)
             #--Extract the embedded BCF and move it to the Converters folder
@@ -6035,20 +6035,19 @@ class InstallersData(DataDict):
             srcBcfFile.moveTo(bcfFile)
             Installer.rmTempDir()
             #--Create the converter, apply it
-            destArchive = destArchives[i]
             converter = InstallerConverter(bcfFile.tail)
             try:
                 msg = u'%s: ' % destArchive.s + _(
                     u'An error occurred while applying an Embedded BCF.')
                 self.apply_converter(converter, destArchive, progress, msg,
                                      installer, pending)
+            except StateError:
+                # maybe short circuit further attempts to extract
+                # installer.hasBCF = False
+                installers.remove(installer)
             finally: bcfFile.remove()
-        # we need to pass a _RefreshInfo info with empty have_bcfs attribute
-        refresh_info = self._RefreshInfo(pending=pending)
-        changed = self.irefresh(what='I', refresh_info=refresh_info)
-        for created in refresh_info.pending:
-            self[created].hasBCF = False
-        return changed
+        self.irefresh(what='I', pending=pending)
+        return pending, list(GPath(x.archive) for x in installers)
 
     def apply_converter(self, converter, destArchive, progress, msg,
                         installer=None, pending=None, show_warning=None):
@@ -6063,18 +6062,11 @@ class InstallersData(DataDict):
             iArchive = self[destArchive]
             converter.applySettings(iArchive)
             if pending is not None: # caller must take care of the else below !
-                pending.add(destArchive)
+                pending.append(destArchive)
             else:
-                refresh_info = self._RefreshInfo(pending=[destArchive])
-                self.irefresh(what='I', refresh_info=refresh_info)
-                # If applying the BCF created a new archive with an embedded
-                # BCF, ignore the embedded BCF for now, so we don't end up in
-                # an infinite loop
-                iArchive.hasBCF = False
+                self.irefresh(what='I', pending=[destArchive])
                 return iArchive
         except StateError:
-            # short circuit further attempts to extract (embedded BCF case)
-            if installer: installer.hasBCF = False
             deprint(msg, traceback=True)
             if show_warning: show_warning(msg)
 
@@ -6084,7 +6076,7 @@ class InstallersData(DataDict):
         :rtype: InstallersData._RefreshInfo"""
         installers = set([])
         installersJoin = dirs['installers'].join
-        pending, projects, have_bcfs = set(), set(), set()
+        pending, projects = set(), set()
         for item in installers_paths:
             if item.s.lower().startswith((u'bash',u'--')): continue
             apath = installersJoin(item)
@@ -6109,12 +6101,9 @@ class InstallersData(DataDict):
                     apath):
                 pending.add(item)
             else: installers.add(item)
-        # if settings['bash.installers.autoApplyEmbeddedBCFs']:
-        #     have_bcfs.update(x for x in self.itervalues() if
-        #                   isinstance(x, InstallerArchive) and x.hasBCF)
         deleted = set(x for x, y in self.iteritems() if not isinstance(
             y, InstallerMarker)) - installers - pending
-        refresh_info = self._RefreshInfo(deleted, pending, projects, have_bcfs)
+        refresh_info = self._RefreshInfo(deleted, pending, projects)
         return refresh_info
 
     def refreshConvertersNeeded(self):
