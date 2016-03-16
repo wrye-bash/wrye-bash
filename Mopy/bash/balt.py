@@ -1365,16 +1365,16 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             wx.PyDropTarget.__init__(self)
             self.window = window
 
-            self.data = wx.DataObjectComposite()
+            self.data_object = wx.DataObjectComposite()
             self.dataFile = wx.FileDataObject()                 # Accept files
             self.dataList = wx.CustomDataObject('ListIndexes')  # Accept indexes from a list
-            if dndFiles: self.data.Add(self.dataFile)
-            if dndList : self.data.Add(self.dataList)
-            self.SetDataObject(self.data)
+            if dndFiles: self.data_object.Add(self.dataFile)
+            if dndList : self.data_object.Add(self.dataList)
+            self.SetDataObject(self.data_object)
 
         def OnData(self, x, y, data):
             if self.GetData():
-                dtype = self.data.GetReceivedFormat().GetType()
+                dtype = self.data_object.GetReceivedFormat().GetType()
                 if dtype == wx.DF_FILENAME:
                     # File(s) were dropped
                     self.window.OnDropFiles(x, y, self.dataFile.GetFilenames())

@@ -181,7 +181,7 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.setKey = modLabels.setKey
         self.addPrompt = modLabels.addPrompt
         #--Key/type
-        self.data = bosh.settings[self.setKey]
+        self.mod_labels = bosh.settings[self.setKey]
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showAdd = True
@@ -190,14 +190,14 @@ class _Mod_LabelsData(balt.ListEditorData):
 
     def getItemList(self):
         """Returns load list keys in alpha order."""
-        return sorted(self.data,key=lambda a: a.lower())
+        return sorted(self.mod_labels, key=lambda a: a.lower())
 
     def add(self):
         """Adds a new group."""
         #--Name Dialog
         newName = balt.askText(self.parent, self.addPrompt)
         if newName is None: return
-        if newName in self.data:
+        if newName in self.mod_labels:
             balt.showError(self.parent,_(u'Name must be unique.'))
             return False
         elif len(newName) == 0 or len(newName) > 64:
@@ -205,8 +205,8 @@ class _Mod_LabelsData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         bosh.settings.setChanged(self.setKey)
-        self.data.append(newName)
-        self.data.sort()
+        self.mod_labels.append(newName)
+        self.mod_labels.sort()
         return newName
 
     def _refresh(self, files): # editing mod labels should not affect saves
@@ -221,9 +221,9 @@ class _Mod_LabelsData(balt.ListEditorData):
             return False
         #--Rename
         bosh.settings.setChanged(self.setKey)
-        self.data.remove(oldName)
-        self.data.append(newName)
-        self.data.sort()
+        self.mod_labels.remove(oldName)
+        self.mod_labels.append(newName)
+        self.mod_labels.sort()
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
         changed= []
@@ -238,7 +238,7 @@ class _Mod_LabelsData(balt.ListEditorData):
     def remove(self,item):
         """Removes group."""
         bosh.settings.setChanged(self.setKey)
-        self.data.remove(item)
+        self.mod_labels.remove(item)
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
         changed= []
@@ -256,9 +256,10 @@ class _Mod_LabelsData(balt.ListEditorData):
         there may be mods still assigned to it or rated) - it's a feature.
         """
         items.sort(key=lambda a: a.lower())
-        if self.data == items: return False
+        if self.mod_labels == items: return False
         bosh.settings.setChanged(self.setKey)
-        self.data[:] = items # do not reassign! points to settings[self.setKey]
+        # do not reassign self.mod_labels! points to settings[self.setKey]
+        self.mod_labels[:] = items
         return True
 
 class _Mod_Labels(ChoiceLink):
@@ -270,7 +271,7 @@ class _Mod_Labels(ChoiceLink):
 
     def __init__(self):
         super(_Mod_Labels, self).__init__()
-        self.labels = bosh.settings[self.setKey]
+        self.mod_labels = bosh.settings[self.setKey]
         #-- Links
         _self = self
         class _Edit(ItemLink):
@@ -306,7 +307,7 @@ class _Mod_Labels(ChoiceLink):
         self.__class__.choiceLinkType = _LabelLink
 
     @property
-    def _choices(self): return sorted(self.labels , key=lambda a: a.lower())
+    def _choices(self): return sorted(self.mod_labels, key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
 class _Mod_Groups_Export(EnabledLink):

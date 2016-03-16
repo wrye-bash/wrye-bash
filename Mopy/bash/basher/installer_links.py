@@ -632,8 +632,7 @@ class Installer_Open(_InstallerLink):
         self.help = _(u"Open '%s'") % selection[0] if len(selection) == 1 \
             else _(u"Open selected files.")
         self.selected = [x for x in self.selected if
-                         not isinstance(self.idata.data[x],
-                                        bosh.InstallerMarker)]
+                         not isinstance(self.idata[x], bosh.InstallerMarker)]
 
     def _enable(self): return bool(self.selected)
 

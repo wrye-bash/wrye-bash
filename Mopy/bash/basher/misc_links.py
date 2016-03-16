@@ -205,7 +205,7 @@ class People_Import(ItemLink, People_Link):
 class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     """Add Karma setting links."""
     text = _(u'Karma')
-    labels = [u'%+d' % x for x in xrange(5, -6, -1)]
+    karma_labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
     class _Karma(ItemLink, People_Link):
         def Execute(self):
@@ -219,7 +219,7 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     choiceLinkType = _Karma
 
     @property
-    def _choices(self): return self.__class__.labels
+    def _choices(self): return self.__class__.karma_labels
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------

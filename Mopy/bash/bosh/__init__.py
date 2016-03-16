@@ -2443,7 +2443,7 @@ class FileInfo(_AFileInfo):
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
-        if not self in self.getFileInfos().data.values(): return
+        if not self in self.getFileInfos().values(): return
         if self.madeBackup and not forceBackup: return
         #--Backup Directory
         backupDir.makedirs()
@@ -2477,7 +2477,7 @@ class FileInfo(_AFileInfo):
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
-        if not self in self.getFileInfos().data.values():
+        if not self in self.getFileInfos().values():
             raise StateError(u"Can't get snapshot parameters for file outside main directory.")
         destDir = self.bashDir.join(u'Snapshots')
         destDir.makedirs()
@@ -2886,18 +2886,19 @@ class INIInfo(FileInfo):
                         # Check to see if the mismatch is from another
                         # ini tweak that is applied, and from the same installer
                         mismatch = 2
-                        for info in infos.data:
-                            if self is infos[info]: continue
+                        for name, ini_info in infos.iteritems():
+                            if self is ini_info: continue
                             this = infos.table.getItem(path.tail,'installer')
-                            other = infos.table.getItem(info,'installer')
-                            if this == other:
-                                # It's from the same installer
-                                other_settings,other_deletes = ini.getTweakFileSettings(infos[info].getPath())
-                                value = other_settings.get(key,{}).get(item)
-                                if value == settingsKey[item]:
-                                    # The other tweak has the setting we're worried about
-                                    mismatch = 1
-                                    break
+                            other = infos.table.getItem(name, 'installer')
+                            if this != other: continue
+                            # It's from the same installer
+                            other_settings, other_deletes = \
+                                ini.getTweakFileSettings(ini_info.getPath())
+                            value = other_settings.get(key,{}).get(item)
+                            if value == settingsKey[item]:
+                                # The other tweak has the setting we're worried about
+                                mismatch = 1
+                                break
                 else:
                     match = True
         if not match:
@@ -3027,16 +3028,15 @@ class TrackedFileInfos(DataDict):
         self.data = {}
 
     def refreshTracked(self):
-        data = self.data
         changed = set()
-        for name in data.keys():
+        for name, tracked in self.items():
             fileInfo = self.factory(self.dir, name)
             filePath = fileInfo.getPath()
             if not filePath.exists(): # untrack - runs on first run !!
-                self.data.pop(name, None)
+                self.pop(name, None)
                 changed.add(name)
-            elif not fileInfo.sameAs(data[name]):
-                data[name] = fileInfo
+            elif not fileInfo.sameAs(tracked):
+                self[name] = fileInfo
                 changed.add(name)
         return changed
 
@@ -3048,7 +3048,8 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
-
+    """Common superclass for mod, ini, saves and bsa infos."""
+    ##: we need a common API for this and TankData...
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
         self.data = {} # populated in refresh ()
@@ -3108,7 +3109,7 @@ class FileInfos(DataDict):
                 fileInfo = self.factory(self.dir,name)
             name = fileInfo.name #--Might have '.ghost' lopped off.
             if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
-            oldInfo = self.data.get(name) # None if name was in corrupted
+            oldInfo = self.get(name) # None if name was in corrupted
             isAdded = name not in oldNames
             dont_recheck = isUpdated = False
             if oldInfo is not None:
@@ -3253,6 +3254,12 @@ class FileInfos(DataDict):
     def moveIsSafe(fileName,destDir):
         """Bool: Safe to move file to destDir."""
         return not destDir.join(fileName).exists()
+
+    def save(self):
+        # items deleted outside Bash
+        for deleted in set(self.table.keys()) - set(self.keys()):
+            del self.table[deleted]
+        self.table.save()
 
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
