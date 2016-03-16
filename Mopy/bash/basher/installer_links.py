@@ -99,6 +99,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
+
     ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
         return self._askNumber(
@@ -130,14 +131,12 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 self.idata[archive] = bosh.InstallerArchive(archive)
             #--Refresh UI
             iArchive = self.idata[archive]
-            pArchive = bass.dirs['installers'].join(archive)
             iArchive.blockSize = blockSize
-            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.8, 0.99))
             if iArchive.order == -1:
                 self.idata.moveArchives([archive], installer.order + 1)
             #--Refresh UI
-            self.idata.irefresh(what='I')
-            self.window.RefreshUI()
+            self.idata.irefresh(what='I', pending=[archive]) # fullrefresh is unneeded
+        self.window.RefreshUI()
 
     def _askFilename(self, message, filename):
         result = self._askText(message, title=self.dialogTitle,
@@ -703,12 +702,22 @@ class Installer_Refresh(_InstallerLink):
     help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
         u'Ignores skip refresh flag on projects')
 
+    def __init__(self, calculate_projects_crc=True):
+        super(Installer_Refresh, self).__init__()
+        self.calculate_projects_crc = calculate_projects_crc
+        if not calculate_projects_crc:
+            self.text = _(u'Quick Refresh')
+            self.help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
+                u'Ignores skip refresh flag on projects') + u'.  ' + _(
+            u'Will not recalculate cached crcs of files in a project')
+
     def _enable(self): return bool(self.filterInstallables())
 
     @balt.conversation
     def Execute(self):
         toRefresh = set((x, self.idata[x]) for x in self.selected)
-        self.window.rescanInstallers(toRefresh, abort=True)
+        self.window.rescanInstallers(toRefresh, abort=True,
+                            calculate_projects_crc=self.calculate_projects_crc)
 
 class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""
@@ -832,12 +841,11 @@ class Installer_CopyConflicts(_SingleInstallable):
                     iProject = idata[project] #bash.bosh.InstallerProject object
                     pProject = installers_dir.join(project) # bolt.Path
                     # ...\Bash Installers\030 - Conflicts
-                    iProject.project_refreshed = False
                     iProject.refreshBasic(pProject, progress=None)
                     if iProject.order == -1:
                         idata.moveArchives([project],srcInstaller.order + 1)
-                    idata.irefresh(what='I')
-                    self.window.RefreshUI()
+                    idata.irefresh(what='NS')
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
@@ -1048,7 +1056,6 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
             self.idata[project] = bosh.InstallerProject(project)
         iProject = self.idata[project]
         pProject = bass.dirs['installers'].join(project)
-        iProject.project_refreshed = False
         iProject.refreshBasic(pProject, SubProgress(progress, 0.8, 0.99))
         if iProject.order == -1:
             self.idata.moveArchives([project], installer.order + 1)
@@ -1095,7 +1102,6 @@ class InstallerProject_Sync(_InstallerLink):
             progress(0.1,_(u'Updating files.'))
             installer.syncToData(project,missing|mismatched)
             pProject = bass.dirs['installers'].join(project)
-            installer.project_refreshed = False
             installer.refreshBasic(pProject, SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
@@ -1154,30 +1160,16 @@ class InstallerConverter_Apply(_InstallerLink):
         if not destArchive: return
         with balt.Progress(_(u'Converting to Archive...'),u'\n'+u' '*60) as progress:
             #--Perform the conversion
+            msg = u'%s: ' % destArchive.s + _(
+                u'An error occurred while applying an Auto-BCF.')
+            new_archive_order = self.idata[self.selected[-1]].order + 1
             try:
-                self.converter.apply(destArchive, self.idata.crc_installer,
-                                     SubProgress(progress, 0.0, 0.99))
+                self.idata.apply_converter(self.converter, destArchive,
+                    progress, msg, show_warning=self._showWarning,
+                    position=new_archive_order)
             except StateError:
-                msg = u'%s: ' % destArchive.s + _(
-                    u'An error occurred while applying an Auto-BCF.')
-                deprint(msg, traceback=True)
-                self._showWarning(msg)
                 return
-            #--Add the new archive to Bash
-            if destArchive not in self.idata:
-                self.idata[destArchive] = bosh.InstallerArchive(destArchive)
-            #--Apply settings from the BCF to the new InstallerArchive
-            iArchive = self.idata[destArchive]
-            self.converter.applySettings(iArchive)
-            #--Refresh UI
-            pArchive = bass.dirs['installers'].join(destArchive)
-            iArchive.project_refreshed = False
-            iArchive.refreshBasic(pArchive, SubProgress(progress, 0.99, 1.0))
-            if iArchive.order == -1:
-                lastInstaller = self.idata[self.selected[-1]]
-                self.idata.moveArchives([destArchive],lastInstaller.order+1)
-            self.idata.irefresh(what='I')
-            self.window.RefreshUI()
+        self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
@@ -1192,13 +1184,10 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
         dest = self._askFilename(_(u'Output file:'), filename=name.stail)
         if not dest: return
         with balt.Progress(_(u'Extracting BCF...'),u'\n'+u' '*60) as progress:
-            self.idata.applyEmbeddedBCFs([archive], [dest], progress)
-            iArchive = self.idata[dest]
-            if iArchive.order == -1:
-                lastInstaller = self.idata[self.selected[-1]]
-                self.idata.moveArchives([dest], lastInstaller.order + 1)
-            self.idata.irefresh(what='I')
-            self.window.RefreshUI()
+            destinations, converted = self.idata.applyEmbeddedBCFs(
+                [archive], [dest], progress)
+            if not destinations: return # destinations == [dest] if all was ok
+        self.window.RefreshUI()
 
 class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""

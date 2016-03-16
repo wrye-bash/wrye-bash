@@ -254,6 +254,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
         """Refreshes all Installers data"""
         if self.full_refresh and not self._askWarning(self.msg, self.text):
             return
+        self.idata.reset_refresh_flag_on_projects()
         self.iPanel.ShowPanel(fullRefresh=self.full_refresh,scan_data_dir=True)
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
@@ -311,16 +312,20 @@ class Installers_AutoRefreshProjects(BoolLink):
     text = _(u'Auto-Refresh Projects')
     key = 'bash.installers.autoRefreshProjects'
 
-class Installers_AutoApplyEmbeddedBCFs(BoolLink):
-    """Toggle autoApplyEmbeddedBCFs setting and update."""
+class Installers_AutoApplyEmbeddedBCFs(ItemLink):
+    """Automatically apply Embedded BCFs to archives that have one."""
     text = _(u'Auto-Apply Embedded BCFs')
     key = 'bash.installers.autoApplyEmbeddedBCFs'
-    help = _(u'If enabled, embedded BCFs will automatically be applied to '
-        u'archives.')
+    help = _(u'Automatically apply Embedded BCFs to their containing archives.')
 
+    @balt.conversation
     def Execute(self):
-        super(Installers_AutoApplyEmbeddedBCFs, self).Execute()
-        self.window.panel.ShowPanel()
+        with balt.Progress(_(u'Auto-Applying Embedded BCFs...'),
+                           message=u'\n' + u' ' * 60) as progress:
+            destinations, converted = self.window.data.applyEmbeddedBCFs(
+                progress=progress)
+            if not destinations: return
+        self.window.RefreshUI()
 
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""

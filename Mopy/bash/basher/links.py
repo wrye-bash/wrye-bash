@@ -234,6 +234,7 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Installers_UninstallAllPackages())
     InstallersList.mainMenu.append(Installers_UninstallAllUnknownFiles())
+    InstallersList.mainMenu.append(Installers_AutoApplyEmbeddedBCFs())
     #--Behavior
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(Installers_AvoidOnStart())
@@ -244,7 +245,6 @@ def InitInstallerLinks():
         InstallersList.mainMenu.append(Installers_AutoWizard())
     InstallersList.mainMenu.append(Installers_AutoRefreshProjects())
     InstallersList.mainMenu.append(Installers_AutoRefreshBethsoft())
-    InstallersList.mainMenu.append(Installers_AutoApplyEmbeddedBCFs())
     InstallersList.mainMenu.append(Installers_BsaRedirection())
     InstallersList.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersList.mainMenu.append(Installers_ConflictsReportShowsInactive())
@@ -279,6 +279,8 @@ def InitInstallerLinks():
     #--Install, uninstall, etc.
     InstallersList.itemMenu.append(SeparatorLink())
     InstallersList.itemMenu.append(Installer_Refresh())
+    InstallersList.itemMenu.append(
+        Installer_Refresh(calculate_projects_crc=False))
     InstallersList.itemMenu.append(Installer_Move())
     InstallersList.itemMenu.append(SeparatorLink())
     InstallersList.itemMenu.append(Installer_HasExtraData())

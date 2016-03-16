@@ -2428,7 +2428,8 @@ class InstallersList(balt.UIList):
             self.SelectItemAtIndex(index)
             self._gList.EditLabel(index)
 
-    def rescanInstallers(self, toRefresh, abort, update_from_data=True):
+    def rescanInstallers(self, toRefresh, abort, update_from_data=True,
+                         calculate_projects_crc=False):
         """Refresh installers, ignoring skip refresh flag.
 
         Will also update InstallersData for the paths this installer would
@@ -2444,8 +2445,9 @@ class InstallersList(balt.UIList):
                     progress(index,
                              _(u'Refreshing Packages...') + u'\n' + name.s)
                     apath = bass.dirs['installers'].join(name)
-                    dest.update(installer.refreshBasic(
-                        apath, SubProgress(progress, index, index + 1)).keys())
+                    dest.update(installer.refreshBasic(apath,
+                        SubProgress(progress, index, index + 1),
+                        recalculate_project_crc=calculate_projects_crc).keys())
                     self.data.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
@@ -2603,12 +2605,16 @@ class InstallersPanel(SashTankPanel):
             'installers'].list() if self.frameActivated else ()
         if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
             self.__extractOmods()
-        scan_data_dir = scan_data_dir or not self._data_dir_scanned
-        if scan_data_dir or (self.frameActivated and data.refreshInstallersNeeded(installers_paths)):
+        do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
+        if not do_refresh and self.frameActivated:
+            refresh_info = data.scan_installers_dir(installers_paths, fullRefresh)
+            do_refresh = refresh_info.refresh_needed()
+        else: refresh_info = None
+        if do_refresh:
             with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
                 try:
                     what = 'DISC' if scan_data_dir else 'IC'
-                    refreshui[0] |= data.irefresh(progress, what, fullRefresh)
+                    refreshui[0] |= data.irefresh(progress, what, fullRefresh, refresh_info)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
