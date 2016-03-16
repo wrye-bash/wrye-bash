@@ -3048,7 +3048,8 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class FileInfos(DataDict):
-
+    """Common superclass for mod, ini, saves and bsa infos."""
+    ##: we need a common API for this and TankData...
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
         self.data = {} # populated in refresh ()
@@ -3253,6 +3254,12 @@ class FileInfos(DataDict):
     def moveIsSafe(fileName,destDir):
         """Bool: Safe to move file to destDir."""
         return not destDir.join(fileName).exists()
+
+    def save(self):
+        # items deleted outside Bash
+        for deleted in set(self.table.keys()) - set(self.keys()):
+            del self.table[deleted]
+        self.table.save()
 
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):

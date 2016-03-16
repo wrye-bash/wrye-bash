@@ -200,12 +200,7 @@ class NotebookPanel(wx.Panel):
         if hasattr(self, 'listData'):
         # the only SashPanels that do not have this attribute are ModDetails
         # and SaveDetails that use a MasterList whose data is initially {}
-        # and the SashTankPanels...
-            table = self.listData.table
-            # items deleted outside Bash
-            for deleted in set(table.keys()) - set(self.listData.keys()):
-                del table[deleted]
-            table.save()
+            self.listData.save()
 
 #------------------------------------------------------------------------------
 class _DetailsViewMixin(object):
@@ -279,18 +274,16 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
 
-    def __init__(self,data,parent):
-        self.data = data
+    def __init__(self, parent):
         self.detailsItem = None
         super(SashTankPanel,self).__init__(parent)
 
     def ClosePanel(self):
         self.SaveDetails()
-        self.data.save()
         super(SashTankPanel, self).ClosePanel()
 
     def GetDetailsItem(self):
-        return self.data[self.detailsItem] if self.detailsItem else None
+        return self.listData[self.detailsItem] if self.detailsItem else None
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -2467,8 +2460,8 @@ class InstallersPanel(SashTankPanel):
     def __init__(self,parent):
         """Initialize."""
         BashFrame.iPanel = self
-        data = bosh.InstallersData()
-        SashTankPanel.__init__(self,data,parent)
+        self.listData = bosh.InstallersData()
+        SashTankPanel.__init__(self, parent)
         left,right = self.left,self.right
         self.commentsSplitter = commentsSplitter = \
             wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
@@ -2480,8 +2473,8 @@ class InstallersPanel(SashTankPanel):
         self.frameActivated = False
         #--Contents
         self.detailsPanel = self # YAK
-        self.uiList = InstallersList(left, data=data, keyPrefix=self.keyPrefix,
-                                     panel=self)
+        self.uiList = InstallersList(left, data=self.listData,
+                                     keyPrefix=self.keyPrefix, panel=self)
         #--Package
         self.gPackage = RoTextCtrl(right, noborder=True)
         self.gPackage.HideNativeCaret()
@@ -2597,7 +2590,7 @@ class InstallersPanel(SashTankPanel):
 
     def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
                                       scan_data_dir):
-        data = self.data
+        data = self.listData
         if settings.get('bash.installers.updatedCRCs',True): #only checked here
             settings['bash.installers.updatedCRCs'] = False
             self._data_dir_scanned = False
@@ -2630,7 +2623,7 @@ class InstallersPanel(SashTankPanel):
         changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
-            data_sizeCrcDate = self.data.data_sizeCrcDate
+            data_sizeCrcDate = self.listData.data_sizeCrcDate
             refresh = False
             for apath in changed:
                 # the Game/Data dir - will give correct relative path for both
@@ -2645,7 +2638,7 @@ class InstallersPanel(SashTankPanel):
                 else:
                     refresh |= bool(data_sizeCrcDate.pop(path, None))
             if refresh:
-                refreshui[0] |= self.data.refreshInstallersStatus()
+                refreshui[0] |= self.listData.refreshInstallersStatus()
 
     def __extractOmods(self):
         with balt.Progress(_(u'Extracting OMODs...'),
@@ -2725,12 +2718,12 @@ class InstallersPanel(SashTankPanel):
             index = event.GetSelection()
             gPage,initialized = self.infoPages[index]
             if self.detailsItem and not initialized:
-                self.RefreshInfoPage(index,self.data[self.detailsItem])
+                self.RefreshInfoPage(index, self.listData[self.detailsItem])
             event.Skip()
 
     def _sbCount(self):
-        active = len(filter(lambda x: x.isActive, self.data.itervalues()))
-        text = _(u'Packages:') + u' %d/%d' % (active, len(self.data.data))
+        active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
+        text = _(u'Packages:') + u' %d/%d' % (active, len(self.listData.data))
         return text
 
     def ClosePanel(self):
@@ -2744,11 +2737,11 @@ class InstallersPanel(SashTankPanel):
         """Saves details if they need saving."""
         settings['bash.installers.page'] = self.gNotebook.GetSelection()
         if not self.detailsItem: return
-        if self.detailsItem not in self.data: return
+        if self.detailsItem not in self.listData: return
         if not self.gComments.IsModified(): return
-        installer = self.data[self.detailsItem]
+        installer = self.listData[self.detailsItem]
         installer.comments = self.gComments.GetValue()
-        self.data.setChanged()
+        self.listData.setChanged()
 
     def RefreshUIMods(self, mods_changed, inis_changed):
         """Refresh UI plus refresh mods state."""
@@ -2770,12 +2763,12 @@ class InstallersPanel(SashTankPanel):
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
         if fileName == 'SAME': fileName = self.detailsItem
-        if fileName not in self.data: fileName = None
+        if fileName not in self.listData: fileName = None
         self.SaveDetails() #--Save previous details
         self.detailsItem = fileName
         del self.espms[:]
         if fileName:
-            installer = self.data[fileName]
+            installer = self.listData[fileName]
             #--Name
             self.gPackage.SetValue(fileName.s)
             #--Info Pages
@@ -2914,9 +2907,9 @@ class InstallersPanel(SashTankPanel):
         elif pageName == 'gMismatched':
             gPage.SetValue(dumpFiles(installer,installer.mismatchedFiles,sNone,isPath=True))
         elif pageName == 'gConflicts':
-            gPage.SetValue(self.data.getConflictReport(installer,'OVER'))
+            gPage.SetValue(self.listData.getConflictReport(installer, 'OVER'))
         elif pageName == 'gUnderrides':
-            gPage.SetValue(self.data.getConflictReport(installer,'UNDER'))
+            gPage.SetValue(self.listData.getConflictReport(installer, 'UNDER'))
         elif pageName == 'gDirty':
             gPage.SetValue(dumpFiles(installer,installer.dirty_sizeCrc,isPath=True))
         elif pageName == 'gSkipped':
@@ -2929,7 +2922,7 @@ class InstallersPanel(SashTankPanel):
     def refreshCurrent(self,installer):
         """Refreshes current item while retaining scroll positions."""
         installer.refreshDataSizeCrc()
-        installer.refreshStatus(self.data)
+        installer.refreshStatus(self.listData)
 
         # Save scroll bar positions, because gList.RefreshUI will
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
@@ -2949,7 +2942,7 @@ class InstallersPanel(SashTankPanel):
 
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
-        installer = self.data[self.detailsItem]
+        installer = self.listData[self.detailsItem]
         index = event.GetSelection()
         self.gSubList.SetSelection(index)
         for index in range(self.gSubList.GetCount()):
@@ -2977,7 +2970,7 @@ class InstallersPanel(SashTankPanel):
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
-        installer = self.data[self.detailsItem]
+        installer = self.listData[self.detailsItem]
         espmNots = installer.espmNots
         index = event.GetSelection()
         name = self.gEspmList.GetString(index).replace('&&','&')
@@ -3099,7 +3092,7 @@ class ScreensPanel(SashPanel):
         self.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbCount(self):
-        return _(u'Screens:') + u' %d' % (len(self.uiList.data.data),)
+        return _(u'Screens:') + u' %d' % (len(self.listData.data),)
 
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
@@ -3298,13 +3291,13 @@ class PeoplePanel(SashTankPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        data = bosh.PeopleData()
-        SashTankPanel.__init__(self,data,parent)
+        self.listData = bosh.PeopleData()
+        SashTankPanel.__init__(self, parent)
         left,right = self.left,self.right
         #--Contents
         self.detailsPanel = self # YAK
-        self.uiList = PeopleList(left, data=data, keyPrefix=self.keyPrefix,
-                                 panel=self)
+        self.uiList = PeopleList(left, data=self.listData,
+                                 keyPrefix=self.keyPrefix, panel=self)
         self.gName = RoTextCtrl(right, multiline=False)
         self.gText = TextCtrl(right, multiline=True)
         self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
@@ -3320,42 +3313,42 @@ class PeoplePanel(SashTankPanel):
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
 
-    def _sbCount(self): return _(u'People:') + u' %d' % len(self.data.data)
+    def _sbCount(self): return _(u'People:') + u' %d' % len(self.listData.data)
 
     def ShowPanel(self):
-        if self.uiList.data.refresh(): self.uiList.RefreshUI()
+        if self.listData.refresh(): self.uiList.RefreshUI()
         super(PeoplePanel, self).ShowPanel()
 
     def OnSpin(self):
         """Karma spin."""
         if not self.detailsItem: return
         karma = int(self.gKarma.GetValue())
-        text = self.data[self.detailsItem][2]
-        self.data[self.detailsItem] = (time.time(),karma,text)
+        text = self.listData[self.detailsItem][2]
+        self.listData[self.detailsItem] = (time.time(), karma, text)
         self.uiList.PopulateItem(item=self.detailsItem)
-        self.data.setChanged()
+        self.listData.setChanged()
 
     #--Details view (if it exists)
     def SaveDetails(self):
         """Saves details if they need saving."""
         if not self.gText.IsModified(): return
-        if not self.detailsItem or self.detailsItem not in self.data: return
-        mtime,karma,text = self.data[self.detailsItem]
-        self.data[self.detailsItem] = (time.time(),karma,self.gText.GetValue().strip())
+        if not self.detailsItem or self.detailsItem not in self.listData: return
+        mtime,karma,text = self.listData[self.detailsItem]
+        self.listData[self.detailsItem] = (time.time(), karma, self.gText.GetValue().strip())
         self.uiList.PopulateItem(item=self.detailsItem)
-        self.data.setChanged()
+        self.listData.setChanged()
 
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
         item = self.detailsItem if fileName == 'SAME' else fileName
-        if item not in self.data: item = None
+        if item not in self.listData: item = None
         self.SaveDetails()
         if item is None:
             self.gKarma.SetValue(0)
             self.gName.SetValue(u'')
             self.gText.Clear()
         else:
-            karma,text = self.data[item][1:3]
+            karma,text = self.listData[item][1:3]
             self.gName.SetValue(item)
             self.gKarma.SetValue(karma)
             self.gText.SetValue(text)
