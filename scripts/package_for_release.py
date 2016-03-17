@@ -105,6 +105,10 @@ def GetVersionInfo(version, padding=4):
        version of 291 would with default padding would return:
        ('291','0.2.9.1')"""
     v = version.split(u'.')
+    if len(v) == 2:
+        if len(v[1]) == 12 and float(v[1]) >= 201603171733L: # 2016/03/17 17:33
+            v, v1 = v[:1], v[1]
+            v.extend((v1[:4], v1[4:8], v1[8:]))
     # If version is too short, pad it with 0's
     abspad = abs(padding)
     delta = abspad - len(v)

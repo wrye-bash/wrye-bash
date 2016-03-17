@@ -29,7 +29,7 @@ import os as _os
 import ConfigParser as _cp
 
 language = None
-AppVersion = u"307"
+AppVersion = u"307" # must represent a valid float
 bashIni = None
 
 #--Null strings (for default empty byte arrays)
