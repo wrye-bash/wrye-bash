@@ -699,7 +699,8 @@ def GetNonRepoFiles(repo_files):
     all_dirs = [os.path.normcase(os.path.normpath(x)) for x in all_dirs]
     # Pick out every file that doesn't belong
     non_repo.extend((x for x in all_files if x not in repo_files))
-    # Pick out every directory that doesn't belong
+    # Pick out every directory that doesn't contain repo files
+    non_repo_dirs = []
     for dir in all_dirs:
         for file in repo_files:
             if file.startswith(dir):
@@ -709,9 +710,25 @@ def GetNonRepoFiles(repo_files):
             # It's not good to keep
             # Insert these at the beginning so they get handled first when
             # relocating
-            non_repo.insert(0, dir)
+            non_repo_dirs.append(dir)
+    if non_repo_dirs:
+        non_repo_dirs.sort(key=unicode.lower)
+        parent_dir = non_repo_dirs[0][5:]
+        parent_dirs, parent_dir = [parent_dir], parent_dir.lower()
+        for skip_dir in non_repo_dirs[1:]:
+            new_parent = skip_dir[5:]
+            if new_parent.lower().startswith(parent_dir):
+                if new_parent[len(parent_dir)] == os.sep:
+                    continue # subdir keep only the top level dir
+            parent_dirs.append(new_parent)
+            parent_dir = new_parent.lower()
+    else: parent_dirs = []
     # Lop off the "mopy/" part
-    non_repo = [x[5:] for x in non_repo]
+    non_repo = (x[5:] for x in non_repo)
+    tuple_parent_dirs = tuple(parent_dirs)
+    non_repo = [x for x in non_repo if not x.startswith(tuple_parent_dirs)]
+    # Insert these at the beginning so they get handled first when relocating
+    non_repo = parent_dirs + non_repo
     return non_repo
 
 
