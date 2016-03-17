@@ -19,7 +19,7 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" "Mopy\*.*"
+        File /r /x "*.bat" /x "*.py*" /x "*.template" /x "Wrye Bash.exe" "Mopy\*.*"
         ${If} ${DoAII} == true
             ; Some games don't use ArchiveInvalidationInvalidated
             SetOutPath "${GameDir}\Data"
@@ -29,7 +29,7 @@
         ${If} ${DoPython} == ${BST_CHECKED}
             ; Install Python only files
             SetOutPath "${GameDir}\Mopy"
-            File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
+            File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat" "Mopy\*.template"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version" "True"
         ${ElseIf} ${RegValuePy} == $Empty
@@ -52,7 +52,7 @@
     !macro RemoveRegistryEntries GameName
         ; Paramters:
         ;  GameName -  name of the game to remove registry entries for
-        
+
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Path"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version"
