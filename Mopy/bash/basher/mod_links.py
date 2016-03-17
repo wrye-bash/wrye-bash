@@ -766,13 +766,18 @@ class Mod_MarkMergeable(EnabledLink):
     def __init__(self,doCBash):
         Link.__init__(self)
         self.doCBash = doCBash
-        self.text = _(u'Mark Mergeable (CBash)...') if doCBash else _(u'Mark Mergeable...')
+        self.text = _(u'Mark Mergeable (CBash)...') if doCBash else _(
+            u'Mark Mergeable...')
+        self.help = _(u'Scans the selected plugin(s) to determine if they are '
+                      u'mergeable into the %(patch_type)s bashed patch, '
+                      u'reporting also the reason they are unmergeable') % {
+                        'patch_type': _(u'Cbash') if doCBash else _(u'Python')}
 
     def _enable(self): return bool(self.selected)
 
     @balt.conversation
     def Execute(self):
-        yes,no = [],[]
+        yes, no, nopes = [], [], []
         mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
         with balt.BusyCursor():
             for fileName in map(GPath,self.selected):
@@ -795,6 +800,7 @@ class Mod_MarkMergeable(EnabledLink):
                     else:
                         mod_mergeInfo[fileName] = (fileInfo.size,False)
                     no.append(u"%s:%s" % (fileName.s,reason))
+                    nopes.append(fileName)
             message = u'== %s ' % ([u'Python',u'CBash'][self.doCBash])+_(u'Mergeability')+u'\n\n'
             if yes:
                 message += u'=== ' + _(
@@ -802,9 +808,9 @@ class Mod_MarkMergeable(EnabledLink):
             if yes and no:
                 message += u'\n\n'
             if no:
-                message += u'=== '+_(u'Not Mergeable')+u'\n* '+'\n\n* '.join(no)
-            self.window.RefreshUI(files=yes, refreshSaves=False) # was True
-            self.window.RefreshUI(files=no, refreshSaves=False) # was True
+                message += u'=== ' + _(
+                    u'Not Mergeable') + u'\n* ' + '\n\n* '.join(no)
+            self.window.RefreshUI(files=yes + nopes, refreshSaves=False)
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
