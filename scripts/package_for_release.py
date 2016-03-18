@@ -810,16 +810,14 @@ def main():
         default=NON_REPO.MOVE,
         action='store',
         choices=[NON_REPO.MOVE, NON_REPO.COPY, NON_REPO.NONE],
-        help='''If non-repository files are detected during packaging, the
-                packaging script will deal with them in the following way:
-                {MOVE} - move the non-repository files out of the source
-                directory, then restore them after (recommeneded).  {COPY} -
-                make a copy of the repository files into a temporary
-                directory, then build from there (slower).  {NONE} - do
-                nothing, causing those files to be included in the installer
-                (HIGHLY DISCOURAGED).'''.format(COPY=NON_REPO.COPY,
-                                                MOVE=NON_REPO.MOVE,
-                                                NONE=NON_REPO.NONE),
+        help='''If non-repository files are detected during packaging the
+        *installer* version, the packaging script will deal with them in the
+        following way: {MOVE} - move the non-repository files out of the
+        source directory, then restore them after (recommended).  {COPY} -
+        make a copy of the repository files into a temporary directory,
+        then build from there (slower).  {NONE} - do nothing, causing those
+        files to be included in the installer(HIGHLY DISCOURAGED).'''.format(
+            COPY=NON_REPO.COPY, MOVE=NON_REPO.MOVE, NONE=NON_REPO.NONE),
         )
     parser.add_argument(
         '-v', '--verbose',
