@@ -40,6 +40,13 @@
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
             File "Mopy\Wrye Bash.exe"
+            ; HACK: remove empty dirs added by the File "Mopy\*.*" - clear errors ??
+            RMDir /r "${GameDir}\Mopy\bash\basher"
+            RMDir /r "${GameDir}\Mopy\bash\basher"
+            RMDir /r "${GameDir}\Mopy\bash\bosh"
+            RMDir /r "${GameDir}\Mopy\bash\chardet"
+            RMDir /r "${GameDir}\Mopy\bash\game"
+            RMDir /r "${GameDir}\Mopy\bash\patcher"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
         ${ElseIf} ${RegValueExe} == $Empty
@@ -50,7 +57,7 @@
 
 
     !macro RemoveRegistryEntries GameName
-        ; Paramters:
+        ; Parameters:
         ;  GameName -  name of the game to remove registry entries for
 
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Path"
