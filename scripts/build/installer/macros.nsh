@@ -19,7 +19,13 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "*.template" /x "Wrye Bash.exe" "${WB_CLEAN_MOPY}\*.*"
+        File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
+                        /x "basher" \
+                        /x "bosh" \
+                        /x "chardet" \
+                        /x "game" \
+                        /x "patcher" \
+                        "${WB_CLEAN_MOPY}\*.*"
         ${If} ${DoAII} == true
             ; Some games don't use ArchiveInvalidationInvalidated
             SetOutPath "${GameDir}\Data"
@@ -40,13 +46,6 @@
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
             File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
-            ; HACK: remove empty dirs added by the File "Mopy\*.*" - clear errors ??
-            RMDir /r "${GameDir}\Mopy\bash\basher"
-            RMDir /r "${GameDir}\Mopy\bash\basher"
-            RMDir /r "${GameDir}\Mopy\bash\bosh"
-            RMDir /r "${GameDir}\Mopy\bash\chardet"
-            RMDir /r "${GameDir}\Mopy\bash\game"
-            RMDir /r "${GameDir}\Mopy\bash\patcher"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
         ${ElseIf} ${RegValueExe} == $Empty
