@@ -365,9 +365,9 @@ def PackStandaloneVersion(args, all_files):
     # We do not want any python files with the standalone
     # version, and we need to include the built EXEs
     all_files = [x for x in all_files
-                 if os.path.splitext(x)[1] not in (u'.py',
-                                                   u'.pyw',
-                                                   u'.bat')
+                 if os.path.splitext(x)[1].lower() not in (u'.py',
+                                                           u'.pyw',
+                                                           u'.bat')
                  ]
     all_files.append(u'Mopy\\Wrye Bash.exe')
     listFile = os.path.join(dest, u'standalone_list.txt')
@@ -607,8 +607,10 @@ def GetGitFiles(gitDir, version):
        files get included in the installers.  This function will also print a
        warning if there are non-committed changes.
 
-       The dictionary format is:
+       The dictionary format is: ##: not a bad idea but for now a list
        { case_insensitive_file_name: real_file_name}
+       :return: a list of all paths that git tracks plus Mopy/Apps (
+       preserves case)
     """
     # First, ensure GitPython will be able to call git.  On windows, this means
     # ensuring that the Git/bin directory is in the PATH variable.
@@ -666,14 +668,14 @@ def GetGitFiles(gitDir, version):
                    % (branchName, version))
         else:
             lprint('Building from branch "%s".' % branchName)
-        files = [os.path.normpath(os.path.normcase(x.path))
+        files = [os.path.normpath(x.path)
                  for x in repo.tree().traverse()
                  if x.path.lower().startswith(u'mopy')
                     and os.path.isfile(x.path)
                  ]
         # Special case: we want the Apps folder to be included, even though
         # it's not in the repository
-        files.append(os.path.join(u'mopy', u'apps'))
+        files.append(os.path.join(u'Mopy', u'Apps'))
         return files
     except:
         lprint('An error occurred while attempting to interface with '
@@ -694,28 +696,28 @@ def GetNonRepoFiles(repo_files):
     for root, dirs, files in os.walk(u'Mopy'):
         all_files.extend((os.path.join(root, x) for x in files))
         all_dirs.extend((os.path.join(root, x) for x in dirs))
-    all_files = (os.path.normcase(os.path.normpath(x)) for x in all_files)
+    all_files = (os.path.normpath(x) for x in all_files)
     # We can ignore .pyc and .pyo files, since the NSIS scripts skip those
     all_files = (x for x in all_files
-                 if os.path.splitext(x)[1] not in (u'.pyc', u'.pyo'))
+                 if os.path.splitext(x)[1].lower() not in (u'.pyc', u'.pyo'))
     # We can also ignore Wrye Bash.exe, for the same reason
-    all_files = [x for x in all_files
-                 if os.path.basename(x) != u'wrye bash.exe']
-    all_dirs = [os.path.normcase(os.path.normpath(x)) for x in all_dirs]
+    all_files = (x for x in all_files
+                 if os.path.basename(x).lower() != u'wrye bash.exe')
+    all_dirs = (os.path.normpath(x) for x in all_dirs)
     # Pick out every file that doesn't belong
     non_repo.extend((x for x in all_files if x not in repo_files))
     # Pick out every directory that doesn't contain repo files
     non_repo_dirs = []
-    for dir in all_dirs:
-        for file in repo_files:
-            if file.startswith(dir):
+    for mopy_dir in all_dirs:
+        for tracked_file in repo_files:
+            if tracked_file.lower().startswith(mopy_dir.lower()):
                 # It's good to keep
                 break
         else:
             # It's not good to keep
             # Insert these at the beginning so they get handled first when
             # relocating
-            non_repo_dirs.append(dir)
+            non_repo_dirs.append(mopy_dir)
     if non_repo_dirs:
         non_repo_dirs.sort(key=unicode.lower)
         parent_dir = non_repo_dirs[0][5:]
@@ -730,9 +732,9 @@ def GetNonRepoFiles(repo_files):
     else: parent_dirs = []
     # Lop off the "mopy/" part
     non_repo = (x[5:] for x in non_repo)
-    tuple_parent_dirs = tuple(parent_dirs)
-    non_repo = [x for x in non_repo if not x.startswith(tuple_parent_dirs)]
-    # Insert these at the beginning so they get handled first when relocating
+    tuple_parent_dirs = tuple(d.lower() + os.sep for d in parent_dirs)
+    non_repo = [x for x in non_repo if not x.lower().startswith(tuple_parent_dirs)]
+    # Insert parent_dirs at the beginning so they get handled first when relocating
     non_repo = parent_dirs + non_repo
     return non_repo
 
