@@ -36,6 +36,8 @@
 
 # Imports ---------------------------------------------------------------------
 from __future__ import print_function
+
+import glob
 import subprocess
 import os
 import shutil
@@ -218,10 +220,14 @@ def BuildManualVersion(args, all_files):
     version = args.version
     archive = os.path.join(dest, u'Wrye Bash %s - Python Source.7z' % version)
     listFile = os.path.join(dest, u'manual_list.txt')
+    # We want every file for the manual version
+    _pack7z(all_files, archive, listFile)
+
+
+def _pack7z(all_files, archive, listFile):
     with open(listFile, 'wb') as out:
-        # We want every file for the manual version
-        for file in all_files:
-            out.write(file)
+        for node in all_files:
+            out.write(node)
             out.write('\n')
     cmd_7z = [exe7z, 'a', '-mx9', archive, '@%s' % listFile]
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
@@ -356,23 +362,16 @@ def PackStandaloneVersion(args, all_files):
                   dest,
                   u'Wrye Bash %s - Standalone Executable.7z' % version
                   )
-
+    # We do not want any python files with the standalone
+    # version, and we need to include the built EXEs
+    all_files = [x for x in all_files
+                 if os.path.splitext(x)[1] not in (u'.py',
+                                                   u'.pyw',
+                                                   u'.bat')
+                 ]
+    all_files.append(u'Mopy\\Wrye Bash.exe')
     listFile = os.path.join(dest, u'standalone_list.txt')
-    with open(listFile, 'wb') as out:
-        # We do not want any python files with the standalone
-        # version, and we need to include the built EXEs
-        all_files = [x for x in all_files
-                     if os.path.splitext(x)[1] not in (u'.py',
-                                                       u'.pyw',
-                                                       u'.bat')
-                     ]
-        all_files.append(u'Mopy\\Wrye Bash.exe')
-        for file in all_files:
-            out.write(file)
-            out.write('\n')
-    cmd_7z = [exe7z, 'a', '-mx9', archive, '@%s' % listFile]
-    subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
-    rm(listFile)
+    _pack7z(all_files, archive, listFile)
 
 
 def RelocateNonRepoFiles(non_repo):
@@ -671,7 +670,7 @@ def GetGitFiles(gitDir, version):
         files.append(os.path.join(u'mopy', u'apps'))
         return files
     except:
-        lprint('An error occured while attempting to interface with '
+        lprint('An error occurred while attempting to interface with '
                'git.')
         traceback.print_exc(file=pipe)
         return False
@@ -887,8 +886,13 @@ def main():
             args.installer = True
 
         # Create the Mopy/Apps folder if it's not present
-        if not appsPresent:
-            os.makedirs(apps)
+        if appsPresent:
+            apps_temp = os.path.join(scripts, u'apps_temp')
+            rm(apps_temp)
+            os.makedirs(apps_temp)
+            lprint('Moving your Apps folder to %s' % apps_temp)
+            shutil.move(apps, apps_temp)
+        os.makedirs(apps)
 
         # Get repository files
         all_files = GetGitFiles(args.git, args.version)
@@ -940,8 +944,13 @@ def main():
         traceback.print_exc()
     finally:
         # Clean up Mopy/Apps if it was not present to begin with
-        if not appsPresent:
-            rm(apps)
+        if appsPresent:
+            backapps = os.path.join(apps_temp, u'Apps')
+            for lnk in glob.glob(backapps + os.sep + u'*'):
+                shutil.copy(lnk, os.path.join(mopy, u'Apps'))
+            # shutil.move(backapps, mopy)
+            rm(apps_temp)
+        else: rm(apps)
         if not args.exe:
             # Clean up the WBSA exe's if necessary
             CleanupStandaloneFiles()
