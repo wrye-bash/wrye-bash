@@ -19,17 +19,17 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "*.template" /x "Wrye Bash.exe" "Mopy\*.*"
+        File /r /x "*.bat" /x "*.py*" /x "*.template" /x "Wrye Bash.exe" "${WB_CLEAN_MOPY}\*.*"
         ${If} ${DoAII} == true
             ; Some games don't use ArchiveInvalidationInvalidated
             SetOutPath "${GameDir}\Data"
-            File /r "Mopy\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
+            File /r "${WB_CLEAN_MOPY}\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
         ${EndIf}
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
         ${If} ${DoPython} == ${BST_CHECKED}
             ; Install Python only files
             SetOutPath "${GameDir}\Mopy"
-            File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat" "Mopy\*.template"
+            File /r "${WB_CLEAN_MOPY}\*.py" "${WB_CLEAN_MOPY}\*.pyw" "${WB_CLEAN_MOPY}\*.bat" "${WB_CLEAN_MOPY}\*.template"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version" "True"
         ${ElseIf} ${RegValuePy} == $Empty
@@ -39,7 +39,7 @@
         ${If} ${DoExe} == ${BST_CHECKED}
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
-            File "Mopy\Wrye Bash.exe"
+            File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
             ; HACK: remove empty dirs added by the File "Mopy\*.*" - clear errors ??
             RMDir /r "${GameDir}\Mopy\bash\basher"
             RMDir /r "${GameDir}\Mopy\bash\basher"

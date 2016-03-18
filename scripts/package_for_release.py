@@ -514,18 +514,24 @@ def BuildInstallerVersion(args, all_files, file_version):
 
         try:
             non_repo = WarnNonRepoFiles(args, all_files)
+            clean_mopy_dir = mopy
             if non_repo:
                 if args.non_repo == NON_REPO.MOVE:
                     RelocateNonRepoFiles(non_repo)
                 elif args.non_repo == NON_REPO.COPY:
                     temp_root = MakeTempRepoCopy(all_files)
                     script = os.path.join(temp_root, u'scripts', rel_script)
+                    clean_mopy_dir = os.path.join(temp_root, u'Mopy')
+            clean_mopy_dir = os.path.relpath(clean_mopy_dir, os.getcwd())
 
             # Build the installer
             lprint(" Calling makensis.exe...")
             ret = subprocess.call([nsis, '/NOCD',
                                    '/DWB_NAME=Wrye Bash %s' % args.version,
                                    '/DWB_FILEVERSION=%s' % file_version,
+                                   # pass the correct mopy dir for the script
+                                   # to copy the right files in the installer
+                                   '/DWB_CLEAN_MOPY=%s' % clean_mopy_dir,
                                    script],
                                   shell=True, stdout=pipe, stderr=pipe)
             if ret != 0:
