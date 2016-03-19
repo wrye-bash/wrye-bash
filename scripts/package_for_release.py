@@ -367,7 +367,8 @@ def PackStandaloneVersion(args, all_files):
     all_files = [x for x in all_files
                  if os.path.splitext(x)[1].lower() not in (u'.py',
                                                            u'.pyw',
-                                                           u'.bat')
+                                                           u'.bat',
+                                                           u'.template')
                  ]
     all_files.append(u'Mopy\\Wrye Bash.exe')
     listFile = os.path.join(dest, u'standalone_list.txt')
