@@ -156,3 +156,7 @@ a list, and make a dictionary as the second list item with {'defaultEnabled
 Tweaks)
 """
 GmstTweaks = list()
+
+# Record type to name dictionary
+
+record_type_name = {}
