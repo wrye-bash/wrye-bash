@@ -215,7 +215,7 @@ def VerifyPy2Exe():
         return 'filename = fullname.replace(".","\\")' in ins.read()
 
 
-def BuildManualVersion(args, all_files):
+def PackManualVersion(args, all_files):
     """Creates the standard python manual install version"""
     version = args.version
     archive = os.path.join(dest, u'Wrye Bash %s - Python Source.7z' % version)
@@ -226,7 +226,7 @@ def BuildManualVersion(args, all_files):
 
 def _pack7z(all_files, archive, listFile):
     with open(listFile, 'wb') as out:
-        for node in all_files:
+        for node in sorted(all_files, key=unicode.lower):
             out.write(node)
             out.write('\n')
     cmd_7z = [exe7z, 'a', '-mx9', archive, '@%s' % listFile]
@@ -669,7 +669,7 @@ def GetGitFiles(gitDir, version):
                    % (branchName, version))
         else:
             lprint('Building from branch "%s".' % branchName)
-        files = [os.path.normpath(x.path)
+        files = [unicode(os.path.normpath(x.path))
                  for x in repo.tree().traverse()
                  if x.path.lower().startswith(u'mopy')
                     and os.path.isfile(x.path)
@@ -692,24 +692,24 @@ def GetNonRepoFiles(repo_files):
     """
     non_repo = []
     # Get a list of every directory and file actually present
-    all_files = []
-    all_dirs = []
+    mopy_files = []
+    mopy_dirs = []
     for root, dirs, files in os.walk(u'Mopy'):
-        all_files.extend((os.path.join(root, x) for x in files))
-        all_dirs.extend((os.path.join(root, x) for x in dirs))
-    all_files = (os.path.normpath(x) for x in all_files)
+        mopy_files.extend((os.path.join(root, x) for x in files))
+        mopy_dirs.extend((os.path.join(root, x) for x in dirs))
+    mopy_files = (os.path.normpath(x) for x in mopy_files)
     # We can ignore .pyc and .pyo files, since the NSIS scripts skip those
-    all_files = (x for x in all_files
+    mopy_files = (x for x in mopy_files
                  if os.path.splitext(x)[1].lower() not in (u'.pyc', u'.pyo'))
     # We can also ignore Wrye Bash.exe, for the same reason
-    all_files = (x for x in all_files
+    mopy_files = (x for x in mopy_files
                  if os.path.basename(x).lower() != u'wrye bash.exe')
-    all_dirs = (os.path.normpath(x) for x in all_dirs)
+    mopy_dirs = (os.path.normpath(x) for x in mopy_dirs)
     # Pick out every file that doesn't belong
-    non_repo.extend((x for x in all_files if x not in repo_files))
+    non_repo.extend((x for x in mopy_files if x not in set(repo_files)))
     # Pick out every directory that doesn't contain repo files
     non_repo_dirs = []
-    for mopy_dir in all_dirs:
+    for mopy_dir in mopy_dirs:
         for tracked_file in repo_files:
             if tracked_file.lower().startswith(mopy_dir.lower()):
                 # It's good to keep
@@ -926,7 +926,7 @@ def main():
 
         if args.manual:
             lprint('Creating Python archive distributable...')
-            BuildManualVersion(args, all_files)
+            PackManualVersion(args, all_files)
 
         exe_made = False
 
