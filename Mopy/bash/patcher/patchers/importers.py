@@ -3126,34 +3126,7 @@ class StatsPatcher(ImportPatcher):
         log(self.__class__.logMsg)
         for type,count,counts in allCounts:
             if not count: continue
-            if game.fsName == u'Skyrim':
-                typeName = {'ALCH':_(u'Potions'),
-                            'AMMO':_(u'Ammo'),
-                            'APPA':_(u'Apparatuses'),
-                            'ARMO':_(u'Armors'),
-                            'BOOK':_(u'Books'),
-                            'INGR':_(u'Ingredients'),
-                            'KEYM':_(u'Keys'),
-                            'LIGH':_(u'Lights'),
-                            'MISC':_(u'Misc'),
-                            'SLGM':_(u'Soulgems'),
-                            'WEAP':_(u'Weapons'),
-                            }[type]
-            elif game.fsName == u'Oblivion':
-                typeName = {'ALCH':_(u'Potions'),
-                            'AMMO':_(u'Ammo'),
-                            'APPA':_(u'Apparatuses'),
-                            'ARMO':_(u'Armors'),
-                            'BOOK':_(u'Books'),
-                            'CLOT':_(u'Clothes'),
-                            'INGR':_(u'Ingredients'),
-                            'KEYM':_(u'Keys'),
-                            'LIGH':_(u'Lights'),
-                            'MISC':_(u'Misc'),
-                            'SGST':_(u'Sigil Stones'),
-                            'SLGM':_(u'Soulgems'),
-                            'WEAP':_(u'Weapons'),
-                            }[type]
+            typeName = game.record_type_name[type]
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
