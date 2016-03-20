@@ -19,17 +19,23 @@
 
         ; Install common files
         SetOutPath "${GameDir}\Mopy"
-        File /r /x "*.bat" /x "*.py*" /x "w9xpopen.exe" /x "Wrye Bash.exe" "Mopy\*.*"
+        File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
+                        /x "basher" \
+                        /x "bosh" \
+                        /x "chardet" \
+                        /x "game" \
+                        /x "patcher" \
+                        "${WB_CLEAN_MOPY}\*.*"
         ${If} ${DoAII} == true
             ; Some games don't use ArchiveInvalidationInvalidated
             SetOutPath "${GameDir}\Data"
-            File /r "Mopy\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
+            File /r "${WB_CLEAN_MOPY}\templates\Oblivion\ArchiveInvalidationInvalidated!.bsa"
         ${EndIf}
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${RegPath}" "${GameDir}"
         ${If} ${DoPython} == ${BST_CHECKED}
             ; Install Python only files
             SetOutPath "${GameDir}\Mopy"
-            File /r "Mopy\*.py" "Mopy\*.pyw" "Mopy\*.bat"
+            File /r "${WB_CLEAN_MOPY}\*.py" "${WB_CLEAN_MOPY}\*.pyw" "${WB_CLEAN_MOPY}\*.bat" "${WB_CLEAN_MOPY}\*.template"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version" "True"
         ${ElseIf} ${RegValuePy} == $Empty
@@ -39,11 +45,7 @@
         ${If} ${DoExe} == ${BST_CHECKED}
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
-            File "Mopy\Wrye Bash.exe"
-            ${IfNot} ${AtLeastWinXP}
-                # Running earlier than WinXP, need w9xpopen
-                File "Mopy\w9xpopen.exe"
-            ${EndIf}
+            File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
         ${ElseIf} ${RegValueExe} == $Empty
@@ -54,9 +56,9 @@
 
 
     !macro RemoveRegistryEntries GameName
-        ; Paramters:
+        ; Parameters:
         ;  GameName -  name of the game to remove registry entries for
-        
+
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Path"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version"
@@ -65,77 +67,17 @@
 
     !macro RemoveOldFiles Path
         ; Old old files to delete (from before 294, the directory restructure)
-        Delete "${Path}\Mopy\BashBugDump.log"
         Delete "${Path}\Mopy\DebugLog(Python2.7).bat"
         Delete "${Path}\Mopy\7zUnicode.exe"
         Delete "${Path}\Mopy\Wizard Images\Thumbs.db"
-        Delete "${Path}\Data\Bashed Lists.txt"
-        Delete "${Path}\Data\Bashed Lists.html"
-        Delete "${Path}\Data\Ini Tweaks\Autosave, Never [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Autosave, ~Always [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Border Regions, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Border Regions, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Fonts 1, ~Default [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Fonts, ~Default [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Grass, Fade 4k-5k [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Grass, ~Fade 2k-3k [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Intro Movies, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Intro Movies, ~Normal [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Joystick, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Joystick, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Local Map Shader, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Local Map Shader, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Music, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Music, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Refraction Shader, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Refraction Shader, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 1 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 2 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 3 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Save Backups, 5 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Screenshot, Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Screenshot, ~Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\ShadowMapResolution, 10 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\ShadowMapResolution, ~256 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\ShadowMapResolution, 1024 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 24 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, ~32 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 128 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 16 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 192 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 48 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 64 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 8 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound Card Channels, 96 [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound, Disabled [Oblivion].ini"
-        Delete "${Path}\Data\Ini Tweaks\Sound, ~Enabled [Oblivion].ini"
-        Delete "${Path}\Data\Bash Patches\Assorted to Cobl.csv"
-        Delete "${Path}\Data\Bash Patches\Assorted_Exhaust.csv"
-        Delete "${Path}\Data\Bash Patches\Bash_Groups.csv"
-        Delete "${Path}\Data\Bash Patches\Bash_MFact.csv"
-        Delete "${Path}\Data\Bash Patches\ShiveringIsleTravellers_Names.csv"
-        Delete "${Path}\Data\Bash Patches\TamrielTravellers_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Guard_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Kmacg94_Exhaust.csv"
-        Delete "${Path}\Data\Bash Patches\P1DCandles_Formids.csv"
-        Delete "${Path}\Data\Bash Patches\OOO_Potion_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Random_NPC_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Random_NPC_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Rational_Names.csv"
-        Delete "${Path}\Data\Bash Patches\TI to Cobl_Formids.csv"
-        Delete "${Path}\Data\Bash Patches\taglist.txt"
-        Delete "${Path}\Data\Bash Patches\OOO, 1.23 Mincapped_NPC_Levels.csv"
-        Delete "${Path}\Data\Bash Patches\OOO, 1.23 Uncapped_NPC_Levels.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 15_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 15_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 30_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Cities 30_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Roads Revamped_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Roads Revisited_Alternate_Names.csv"
-        Delete "${Path}\Data\Bash Patches\Crowded Roads Revisited_Names.csv"
-        Delete "${Path}\Data\Bash Patches\PTRoamingNPCs_Names.csv"
         Delete "${Path}\Mopy\uninstall.exe"
-        Delete "${Path}\Mopy\*.html"
+        Delete "${Path}\Mopy\Wrye Bash General Readme.html"
+        Delete "${Path}\Mopy\Wrye Bash Advanced Readme.html"
+        Delete "${Path}\Mopy\Wrye Bash Technical Readme.html"
+        Delete "${Path}\Mopy\Wrye Bash Version History.html"
+        Delete "${Path}\Mopy\Wrye Bash.html"
+        Delete "${Path}\Mopy\patch_option_reference.html"
+        Delete "${Path}\Mopy\wizards.html"
         Delete "${Path}\Mopy\7z.*"
         Delete "${Path}\Mopy\*CBash.dll"
         Delete "${Path}\Mopy\DebugLog(Python2.6).bat"
@@ -156,7 +98,6 @@
         Delete "${Path}\Mopy\gpl.txt"
         Delete "${Path}\Mopy\lzma.exe"
         Delete "${Path}\Mopy\Wrye Bash.txt"
-        Delete "${Path}\Mopy\Wrye Bash.exe.log"
         Delete "${Path}\Mopy\wizards.txt"
         Delete "${Path}\Mopy\patch_option_reference.txt"
         RMDir /r "${Path}\Mopy\Data"
@@ -554,15 +495,69 @@
         Delete "${Path}\Mopy\bash\compiled\libloadorder64.dll"
         ; As of 305, the following are obsolete:
         RMDir /r "${Path}\Mopy\bash\compiled\Microsoft.VC80.CRT"
-        Delete "${Path}\Mopy\bash\images\WryeSplash_Original.png"
         Delete "${Path}\Mopy\bash\compiled\7zUnicode.exe"
         Delete "${Path}\Mopy\bash\compiled\7zCon.sfx"
         Delete "${Path}\Mopy\Bash Patches\Oblivion\taglist.txt"
         Delete "${Path}\Mopy\Bash Patches\Skyrim\taglist.txt"
         ${If} ${AtLeastWinXP}
             # Running XP or later, w9xpopen is only for 95/98/ME
+            # Bash no longer ships with w9xpopen, but it may be left
+            # over from a previous install
             Delete "${Path}\Mopy\w9xpopen.exe"
         ${EndIf}
+        ; As of 306, the following are obsolete and the 306 installer did not remove them (bug)
+        ; Some of them appeared on dev only:
+        Delete "${Path}\Mopy\bash\basher.p*"
+        Delete "${Path}\Mopy\bash\game\oblivion.p*"
+        Delete "${Path}\Mopy\bash\game\oblivion_const.p*"
+        Delete "${Path}\Mopy\bash\game\skyrim.p*"
+        Delete "${Path}\Mopy\bash\game\skyrim_const.p*"
+        Delete "${Path}\Mopy\bash\game\oblivion\oblivion_const.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\base.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\importers.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_actors.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_assorted.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_clothes.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_names.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\multitweak_settings.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\races_multitweaks.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\special.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\patchers\__init__.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\record_groups.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\utilities.p*"
+        Delete "${Path}\Mopy\bash\patcher\oblivion\__init__.p*"
+        Delete "${Path}\Mopy\bash\patcher\RecordGroups.p*"
+        Delete "${Path}\Mopy\bash\patcher\record_groups.p*"
+        Delete "${Path}\Mopy\bash\patcher\utilities.p*"
+        ; And some leftovers from various releases, some of them only appeared on dev:
+        Delete "${Path}\Mopy\INI Tweaks\Skyrim\Archery, NavMeshMove 4096 -Default [Skyrim].ini"
+        Delete "${Path}\Mopy\INI Tweaks\Skyrim\Screenshot, ~Disabled [Skyrim].ini"
+        Delete "${Path}\Mopy\bash\compiled\7za.exe"
+        Delete "${Path}\Mopy\7z_newversion.dll"
+        Delete "${Path}\Mopy\7z_newversion.exe"
+        Delete "${Path}\Mopy\bash\images\4gb16.png"
+        Delete "${Path}\Mopy\bash\images\4gb24.png"
+        Delete "${Path}\Mopy\bash\images\4gb32.png"
+        Delete "${Path}\Bug List thread Starter.txt"
+        Delete "${Path}\Forum thread starter post.txt"
+        Delete "${Path}\Mopy\WizardDocs.txt"
+        Delete "${Path}\New Skyrim Forum thread starter.txt"
+        Delete "${Path}\Package For Release.p*"
+        Delete "${Path}\Patcher Reference.txt"
+        Delete "${Path}\scripts\Build All Packages.bat"
+        Delete "${Path}\scripts\Build Package.bat"
+        Delete "${Path}\scripts\build\standalone\w9xpopen.exe"
+        Delete "${Path}\scripts\build\Wrye Bash.nsi"
+        Delete "${Path}\scripts\mktaglist"
+        Delete "${Path}\scripts\WBReleaseBuild.bat"
+        Delete "${Path}\Wrye Bash.nsi"
+        ; As of 307, the following are obsolete:
+        Delete "${Path}\Mopy\bash\images\readme\pm-archive-1.png"
+        Delete "${Path}\Mopy\bash\images\readme\pm-archive-2.png"
+        Delete "${Path}\Mopy\bash\images\readme\wryebash_08.png"
+        Delete "${Path}\Mopy\bash\basher\pm_tab.p*"
+        Delete "${Path}\Mopy\bash\bosh.p*"
+        Delete "${Path}\Mopy\bash\bosh\msgs.p*"
     !macroend
 
 

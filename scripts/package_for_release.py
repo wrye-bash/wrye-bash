@@ -36,6 +36,8 @@
 
 # Imports ---------------------------------------------------------------------
 from __future__ import print_function
+
+import glob
 import subprocess
 import os
 import shutil
@@ -44,6 +46,15 @@ import argparse
 import binascii
 import textwrap
 import traceback
+import time
+
+class NON_REPO(object):
+    __slots__= []
+
+    # 'Enum' for options for non-repo files
+    MOVE = 'MOVE'
+    COPY = 'COPY'
+    NONE = 'NONE'
 
 # environment detection
 try:
@@ -95,20 +106,47 @@ def GetVersionInfo(version, padding=4):
        For example, a
        version of 291 would with default padding would return:
        ('291','0.2.9.1')"""
-    file_version = (u'0.' * abs(padding))[:-1]
-
-    v = version
-    v = v.replace(u'.', u'')
-    if padding < 0:
-        file_version = u'.'.join(c for c in v.ljust(-padding, u'0'))
-    else:
-        file_version = u'.'.join(c for c in v.rjust(padding, u'0'))
-
+    v = version.split(u'.')
+    if len(v) == 2:
+        if len(v[1]) == 12 and float(v[1]) >= 201603171733L: # 2016/03/17 17:33
+            v, v1 = v[:1], v[1]
+            v.extend((v1[:4], v1[4:8], v1[8:]))
+    # If version is too short, pad it with 0's
+    abspad = abs(padding)
+    delta = abspad - len(v)
+    if delta > 0:
+        pad = ['0'] * delta
+        if padding > 0:
+            v.extend(pad)
+        else:
+            v = pad + v
+    # If version is too long, warn and truncate
+    if delta < 0:
+        lprint('WARNING: The version specified ({version}) has too many'
+               ' version pieces.  The extra pieces will be truncated.'
+               ''.format(version=version))
+        v = v[:abspad]
+    # Verify version pieces are actually integers, as non-integer values will
+    # cause much of the 'Details' section of the built exe to be non-existant
+    newv = []
+    error = False
+    for x in v:
+        try:
+            int(x)
+            newv.append(x)
+        except ValueError:
+            error = True
+            newv.append(u'0')
+    if error:
+        lprint('WARNING: The version specified ({version}) does not convert '
+               'to integer values.'.format(version=version))
+    file_version = u'.'.join(newv)
+    lprint('Using file version:', file_version)
     return file_version
 
 
 def rm(node):
-    """Removes a file or directory if it exitsts"""
+    """Removes a file or directory if it exists"""
     if os.path.isfile(node): os.remove(node)
     elif os.path.isdir(node): shutil.rmtree(node)
 
@@ -117,6 +155,20 @@ def mv(node, dst):
     """Moves a file or directory if it exists"""
     if os.path.exists(node):
         shutil.move(node, dst)
+
+
+def cpy(src, dst):
+    """Moves a file to a destination, creating the target
+       directory as needed."""
+    if os.path.isdir(src):
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+    else:
+        # file
+        dstdir = os.path.dirname(dst)
+        if not os.path.exists(dstdir):
+            os.makedirs(dstdir)
+        shutil.copy2(src, dst)
 
 
 def lprint(*args, **kwdargs):
@@ -163,15 +215,19 @@ def VerifyPy2Exe():
         return 'filename = fullname.replace(".","\\")' in ins.read()
 
 
-def BuildManualVersion(args, all_files):
+def PackManualVersion(args, all_files):
     """Creates the standard python manual install version"""
     version = args.version
     archive = os.path.join(dest, u'Wrye Bash %s - Python Source.7z' % version)
     listFile = os.path.join(dest, u'manual_list.txt')
+    # We want every file for the manual version
+    _pack7z(all_files, archive, listFile)
+
+
+def _pack7z(all_files, archive, listFile):
     with open(listFile, 'wb') as out:
-        # We want every file for the manual version
-        for file in all_files:
-            out.write(file)
+        for node in sorted(all_files, key=unicode.lower):
+            out.write(node)
             out.write('\n')
     cmd_7z = [exe7z, 'a', '-mx9', archive, '@%s' % listFile]
     subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
@@ -181,7 +237,6 @@ def BuildManualVersion(args, all_files):
 def CleanupStandaloneFiles():
     """Removes standalone exe files that are not needed after packaging"""
     rm(os.path.join(mopy, u'Wrye Bash.exe'))
-    rm(os.path.join(mopy, u'w9xpopen.exe'))
 
 
 def CreateStandaloneExe(args, file_version):
@@ -204,7 +259,6 @@ def CreateStandaloneExe(args, file_version):
     manifest = os.path.join(wbsa, u'manifest.template')
     script = os.path.join(wbsa, u'setup.template')
     exe = os.path.join(mopy, u'Wrye Bash.exe')
-    w9xexe = os.path.join(mopy, u'w9xpopen.exe')
     setup = os.path.join(mopy, u'setup.py')
     #--For l10n
     msgfmt = os.path.join(sys.prefix, u'Tools', u'i18n', u'msgfmt.py')
@@ -257,26 +311,35 @@ def CreateStandaloneExe(args, file_version):
 
         # Call the setup script
         os.chdir(mopy)
+        lprint(' Calling py2exe...')
         subprocess.call([setup, 'py2exe', '-q'], shell=True, stdout=pipe,
                         stderr=pipe)
         os.chdir(root)
 
         # Copy the exe's to the Mopy folder
         mv(os.path.join(dist, u'Wrye Bash Launcher.exe'), exe)
-        mv(os.path.join(dist, u'w9xpopen.exe'), w9xexe)
 
         # Insert the icon
+        lprint(' Adding icon...')
         subprocess.call([reshacker, '-addoverwrite', exe+',', exe+',',
-                         icon+',', 'icon,', '101,', '0'], stdout=pipe,
+                         icon+',', 'ICONGROUP,', 'MAINICON,', '0'], stdout=pipe,
                         stderr=pipe)
+        # Also copy contents of ResHacker.log to the pipe file
+        if pipe is not None:
+            try:
+                with open(os.path.join(wbsa, u'Reshacker.log'), 'r') as ins:
+                    for line in ins:
+                        print(line, file=pipe)
+            except:
+                # Don't care why it failed
+                pass
 
         # Compress with UPX
+        lprint(' Compressing with UPX...')
         subprocess.call([upx, '-9', exe], stdout=pipe, stderr=pipe)
-        subprocess.call([upx, '-9', w9xexe], stdout=pipe, stderr=pipe)
     except:
         # On error, don't keep the built exe's
         rm(exe)
-        rm(w9xexe)
         raise
     finally:
         # Clean up left over files
@@ -299,33 +362,25 @@ def PackStandaloneVersion(args, all_files):
                   dest,
                   u'Wrye Bash %s - Standalone Executable.7z' % version
                   )
-
+    # We do not want any python files with the standalone
+    # version, and we need to include the built EXEs
+    all_files = [x for x in all_files
+                 if os.path.splitext(x)[1].lower() not in (u'.py',
+                                                           u'.pyw',
+                                                           u'.bat',
+                                                           u'.template')
+                 ]
+    all_files.append(u'Mopy\\Wrye Bash.exe')
     listFile = os.path.join(dest, u'standalone_list.txt')
-    with open(listFile, 'wb') as out:
-        # We do not want any python files with the standalone
-        # version, and we need to include the built EXEs
-        all_files = [x for x in all_files
-                     if os.path.splitext(x)[1] not in (u'.py',
-                                                       u'.pyw',
-                                                       u'.bat')
-                     ]
-        all_files.extend([u'Mopy\\Wrye Bash.exe',
-                          u'Mopy\\w9xPopen.exe'])
-        for file in all_files:
-            out.write(file)
-            out.write('\n')
-    cmd_7z = [exe7z, 'a', '-mx9', archive, '@%s' % listFile]
-    subprocess.call(cmd_7z, stdout=pipe, stderr=pipe)
-    rm(listFile)
+    _pack7z(all_files, archive, listFile)
 
 
-def RelocateNonRepoFiles(all_files):
+def RelocateNonRepoFiles(non_repo):
     """Moves any non-repository files/directories to scripts/temp"""
     tmpDir = os.path.join(u'scripts', u'temp')
     rm(tmpDir)
     os.makedirs(tmpDir)
 
-    non_repo = GetNonRepoFiles(all_files)
     if non_repo:
         lprint(" Relocating non-repository files:")
     for path in non_repo:
@@ -341,21 +396,32 @@ def RelocateNonRepoFiles(all_files):
             shutil.move(src, dst)
 
 
-def WarnNonRepoFiles(all_files):
+def WarnNonRepoFiles(args, all_files):
     """Prints a warning if non-repository files are detected."""
     non_repo = GetNonRepoFiles(all_files)
     if non_repo:
         lprint(" WARNING: Non-repository files are present in your source "
-               "directory, and you have chosen to not relocate them.  "
-               "These files will be included in the installer!")
-        for file in non_repo:
-            lprint(" ", file)
+               "directory.")
+        if args.non_repo == NON_REPO.MOVE:
+            lprint("          You have chosen to move the non-repository "
+                   "files out of the source directory temporarily.")
+        elif args.non_repo == NON_REPO.COPY:
+            lprint("          You have chosen to make a temporary clean copy "
+                   " of the repository to build with.")
+        else:
+            lprint("          You have chosen to not relocate them.  "
+                   "These files will be included in the installer!")
+            for file in non_repo:
+                lprint(" ", file)
+    return non_repo
 
 
 def RestoreNonRepoFiles():
     """Returns non-repository files scripts/temp to their proper locations"""
-    failed = []
     tmpDir = os.path.join(u'scripts', u'temp')
+    if not os.path.exists(tmpDir):
+        return
+    failed = []
     if os.listdir(tmpDir):
         lprint(" Restoring non-repository files")
     for top, dirs, files in os.walk(tmpDir):
@@ -385,6 +451,36 @@ def RestoreNonRepoFiles():
             pass
 
 
+def MakeTempRepoCopy(all_files):
+    """Create a temporary copy of the necessary repository files to
+       have a clean repository for building."""
+    temp_root = os.path.join(scripts, u'build_temp')
+    temp_scripts = os.path.join(temp_root, u'scripts')
+    temp_nsis = os.path.join(temp_scripts, u'build', u'installer')
+    nsis = os.path.join(scripts, u'build', u'installer')
+    lprint(" Copying repository files to temporary location...")
+    # Clean the destination
+    if os.path.exists(temp_root):
+        shutil.rmtree(temp_root)
+    os.makedirs(temp_root)
+    # Copy the NSIS scripts to the correct location
+    shutil.copytree(nsis, temp_nsis)
+    # Copy the repository files + WBSA files
+    wbsa_files = [u'Mopy\\Wrye Bash.exe']
+    for fname in all_files + wbsa_files:
+        dst = os.path.join(temp_root, fname)
+        src = os.path.join(root, fname)
+        cpy(src, dst)
+    return temp_root
+
+
+def RemoveTempRepoCopy():
+    """Deletes the temporary repository copy if present."""
+    temp_root = os.path.join(scripts, u'build_temp')
+    if os.path.exists(temp_root):
+        shutil.rmtree(temp_root)
+
+
 def BuildInstallerVersion(args, all_files, file_version):
     """Compiles the NSIS script, creating the installer version"""
     nsis = args.nsis
@@ -393,7 +489,8 @@ def BuildInstallerVersion(args, all_files, file_version):
                "creation.")
         return
 
-    script = os.path.join(scripts, u'build', u'installer', u'main.nsi')
+    rel_script = os.path.join(u'build', u'installer', u'main.nsi')
+    script = os.path.join(scripts, rel_script)
     if not os.path.exists(script):
         lprint(" Could not find nsis script '%s', aborting installer "
                "creation." % script)
@@ -417,24 +514,35 @@ def BuildInstallerVersion(args, all_files, file_version):
             return
 
         try:
-            if not args.no_reloc:
-                RelocateNonRepoFiles(all_files)
-            else:
-                WarnNonRepoFiles(all_files)
+            non_repo = WarnNonRepoFiles(args, all_files)
+            clean_mopy_dir = mopy
+            if non_repo:
+                if args.non_repo == NON_REPO.MOVE:
+                    RelocateNonRepoFiles(non_repo)
+                elif args.non_repo == NON_REPO.COPY:
+                    temp_root = MakeTempRepoCopy(all_files)
+                    script = os.path.join(temp_root, u'scripts', rel_script)
+                    clean_mopy_dir = os.path.join(temp_root, u'Mopy')
+            clean_mopy_dir = os.path.relpath(clean_mopy_dir, os.getcwd())
 
             # Build the installer
             lprint(" Calling makensis.exe...")
             ret = subprocess.call([nsis, '/NOCD',
                                    '/DWB_NAME=Wrye Bash %s' % args.version,
                                    '/DWB_FILEVERSION=%s' % file_version,
+                                   # pass the correct mopy dir for the script
+                                   # to copy the right files in the installer
+                                   '/DWB_CLEAN_MOPY=%s' % clean_mopy_dir,
                                    script],
                                   shell=True, stdout=pipe, stderr=pipe)
             if ret != 0:
                 lprint(' makensis exited with error code %s.  Check the output'
                        ' log for errors in the NSIS script.' % ret)
         finally:
-            if not args.no_reloc:
+            if args.non_repo == NON_REPO.MOVE:
                 RestoreNonRepoFiles()
+            elif args.non_repo == NON_REPO.COPY:
+                RemoveTempRepoCopy()
     except KeyboardInterrupt:
         raise
     except Exception as e:
@@ -500,8 +608,10 @@ def GetGitFiles(gitDir, version):
        files get included in the installers.  This function will also print a
        warning if there are non-committed changes.
 
-       The dictionary format is:
+       The dictionary format is: ##: not a bad idea but for now a list
        { case_insensitive_file_name: real_file_name}
+       :return: a list of all paths that git tracks plus Mopy/Apps (
+       preserves case)
     """
     # First, ensure GitPython will be able to call git.  On windows, this means
     # ensuring that the Git/bin directory is in the PATH variable.
@@ -534,7 +644,7 @@ def GetGitFiles(gitDir, version):
                         continue
                     if os.path.isfile(os.path.join(path, u'git.exe')):
                         # Found it, put the path into PATH
-                        os.environ['PATH'] += u';' + path
+                        os.environ['PATH'] += ';' + path
                         break
         # Test out if git can be launched now
         try:
@@ -559,17 +669,17 @@ def GetGitFiles(gitDir, version):
                    % (branchName, version))
         else:
             lprint('Building from branch "%s".' % branchName)
-        files = [os.path.normpath(os.path.normcase(x.path))
+        files = [unicode(os.path.normpath(x.path))
                  for x in repo.tree().traverse()
                  if x.path.lower().startswith(u'mopy')
                     and os.path.isfile(x.path)
                  ]
         # Special case: we want the Apps folder to be included, even though
         # it's not in the repository
-        files.append(os.path.join(u'mopy', u'apps'))
+        files.append(os.path.join(u'Mopy', u'Apps'))
         return files
     except:
-        lprint('An error occured while attempting to interface with '
+        lprint('An error occurred while attempting to interface with '
                'git.')
         traceback.print_exc(file=pipe)
         return False
@@ -582,35 +692,51 @@ def GetNonRepoFiles(repo_files):
     """
     non_repo = []
     # Get a list of every directory and file actually present
-    all_files = []
-    all_dirs = []
+    mopy_files = []
+    mopy_dirs = []
     for root, dirs, files in os.walk(u'Mopy'):
-        all_files.extend((os.path.join(root, x) for x in files))
-        all_dirs.extend((os.path.join(root, x) for x in dirs))
-    all_files = (os.path.normcase(os.path.normpath(x)) for x in all_files)
+        mopy_files.extend((os.path.join(root, x) for x in files))
+        mopy_dirs.extend((os.path.join(root, x) for x in dirs))
+    mopy_files = (os.path.normpath(x) for x in mopy_files)
     # We can ignore .pyc and .pyo files, since the NSIS scripts skip those
-    all_files = (x for x in all_files
-                 if os.path.splitext(x)[1] not in (u'.pyc', u'.pyo'))
-    # We can also ignore w9xpopen and Wrye Bash.exe, for the same reason
-    all_files = [x for x in all_files
-                 if os.path.basename(x) not in (u'w9xpopen.exe',
-                                                u'wrye bash.exe')]
-    all_dirs = [os.path.normcase(os.path.normpath(x)) for x in all_dirs]
+    mopy_files = (x for x in mopy_files
+                 if os.path.splitext(x)[1].lower() not in (u'.pyc', u'.pyo'))
+    # We can also ignore Wrye Bash.exe, for the same reason
+    mopy_files = (x for x in mopy_files
+                 if os.path.basename(x).lower() != u'wrye bash.exe')
+    mopy_dirs = (os.path.normpath(x) for x in mopy_dirs)
     # Pick out every file that doesn't belong
-    non_repo.extend((x for x in all_files if x not in repo_files))
-    # Pick out every directory that doesn't belong
-    for dir in all_dirs:
-        for file in repo_files:
-            if file.startswith(dir):
+    non_repo.extend((x for x in mopy_files if x not in set(repo_files)))
+    # Pick out every directory that doesn't contain repo files
+    non_repo_dirs = []
+    for mopy_dir in mopy_dirs:
+        for tracked_file in repo_files:
+            if tracked_file.lower().startswith(mopy_dir.lower()):
                 # It's good to keep
                 break
         else:
             # It's not good to keep
             # Insert these at the beginning so they get handled first when
             # relocating
-            non_repo.insert(0, dir)
+            non_repo_dirs.append(mopy_dir)
+    if non_repo_dirs:
+        non_repo_dirs.sort(key=unicode.lower)
+        parent_dir = non_repo_dirs[0][5:]
+        parent_dirs, parent_dir = [parent_dir], parent_dir.lower()
+        for skip_dir in non_repo_dirs[1:]:
+            new_parent = skip_dir[5:]
+            if new_parent.lower().startswith(parent_dir):
+                if new_parent[len(parent_dir)] == os.sep:
+                    continue # subdir keep only the top level dir
+            parent_dirs.append(new_parent)
+            parent_dir = new_parent.lower()
+    else: parent_dirs = []
     # Lop off the "mopy/" part
-    non_repo = [x[5:] for x in non_repo]
+    non_repo = (x[5:] for x in non_repo)
+    tuple_parent_dirs = tuple(d.lower() + os.sep for d in parent_dirs)
+    non_repo = [x for x in non_repo if not x.lower().startswith(tuple_parent_dirs)]
+    # Insert parent_dirs at the beginning so they get handled first when relocating
+    non_repo = parent_dirs + non_repo
     return non_repo
 
 
@@ -688,13 +814,18 @@ def main():
                 script cannot locate git automatically.''',
         )
     parser.add_argument(
-        '--no-reloc',
-        default=False,
-        dest='no_reloc',
-        action='store_true',
-        help='''If specified, the packaging script will NOT attempt to move
-                non-repository files out of the source directory prior to
-                creating the installer.  Moved files are moved back after.''',
+        '--non-repo',
+        default=NON_REPO.MOVE,
+        action='store',
+        choices=[NON_REPO.MOVE, NON_REPO.COPY, NON_REPO.NONE],
+        help='''If non-repository files are detected during packaging the
+        *installer* version, the packaging script will deal with them in the
+        following way: {MOVE} - move the non-repository files out of the
+        source directory, then restore them after (recommended).  {COPY} -
+        make a copy of the repository files into a temporary directory,
+        then build from there (slower).  {NONE} - do nothing, causing those
+        files to be included in the installer(HIGHLY DISCOURAGED).'''.format(
+            COPY=NON_REPO.COPY, MOVE=NON_REPO.MOVE, NONE=NON_REPO.NONE),
         )
     parser.add_argument(
         '-v', '--verbose',
@@ -703,6 +834,14 @@ def main():
         dest='verbose',
         help='''Verbose mode.  Directs output from 7z, py2exe, etc. to the
                 console instead of the build log''',
+        )
+    parser.add_argument(
+        '-l', '--view-logfile',
+        default=False,
+        action='store_true',
+        dest='view_log',
+        help='''If specified, and verbose mode is not enabled, opens the log
+                file for viewing after completion of the packaging script.''',
         )
     parser.add_argument(
         '-t', '--tutorial',
@@ -715,8 +854,8 @@ def main():
     # Parse command line, show help if invalid arguments are present
     try:
         args, extra = parser.parse_known_args()
-    except:
-        parser.print_help()
+    except SystemExit as e:
+        if e.code: parser.print_help()
         return
     if len(extra) > 0:
         parser.print_help()
@@ -756,8 +895,13 @@ def main():
             args.installer = True
 
         # Create the Mopy/Apps folder if it's not present
-        if not appsPresent:
-            os.makedirs(apps)
+        if appsPresent:
+            apps_temp = os.path.join(scripts, u'apps_temp')
+            rm(apps_temp)
+            os.makedirs(apps_temp)
+            lprint('Moving your Apps folder to %s' % apps_temp)
+            shutil.move(apps, apps_temp)
+        os.makedirs(apps)
 
         # Get repository files
         all_files = GetGitFiles(args.git, args.version)
@@ -770,11 +914,19 @@ def main():
         # clean and create distributable directory
         if os.path.exists(dest):
             shutil.rmtree(dest)
-        os.makedirs(dest)
+        try:
+            # Sometimes in Windows, if the dist directory was open in Windows
+            # Explorer, this will cause an OSError: Accessed Denied, while
+            # Explorer is renavigating as a result of the deletion.  So just
+            # wait a second and try again.
+            os.makedirs(dest)
+        except OSError:
+            time.sleep(1)
+            os.makedirs(dest)
 
         if args.manual:
             lprint('Creating Python archive distributable...')
-            BuildManualVersion(args, all_files)
+            PackManualVersion(args, all_files)
 
         exe_made = False
 
@@ -801,8 +953,13 @@ def main():
         traceback.print_exc()
     finally:
         # Clean up Mopy/Apps if it was not present to begin with
-        if not appsPresent:
-            rm(apps)
+        if appsPresent:
+            backapps = os.path.join(apps_temp, u'Apps')
+            for lnk in glob.glob(backapps + os.sep + u'*'):
+                shutil.copy(lnk, os.path.join(mopy, u'Apps'))
+            # shutil.move(backapps, mopy)
+            rm(apps_temp)
+        else: rm(apps)
         if not args.exe:
             # Clean up the WBSA exe's if necessary
             CleanupStandaloneFiles()
@@ -810,6 +967,8 @@ def main():
         if not args.verbose:
             if pipe:
                 pipe.close()
+                if args.view_log:
+                    os.startfile(logFile)
 
 
 if __name__=='__main__':

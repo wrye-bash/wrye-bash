@@ -322,6 +322,7 @@
             IntOp $1 $1 + 25
         ${NSD_CreateCheckBox} $1% $0u 75% 8u "Delete files from old Bash versions"
             Pop $Check_DeleteOldFiles
+            EnableWindow $Check_DeleteOldFiles 0 ; always delete old files
             ${NSD_SetState} $Check_DeleteOldFiles ${BST_CHECKED}
         nsDialogs::Show
     FunctionEnd
