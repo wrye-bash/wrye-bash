@@ -347,7 +347,7 @@ class Settings_PluginEncoding(RadioLink):
         super(Settings_PluginEncoding, self).__init__()
         self.text = name
         self.encoding = encoding
-        self.help = _("Select %(encodingname)s encoding for Wrye Bash to use."
+        self.help = _(u"Select %(encodingname)s encoding for Wrye Bash to use."
             ) % ({'encodingname': self.text})
 
     def _check(self): return self.encoding == bosh.settings[
@@ -370,7 +370,7 @@ class _Settings_Game(RadioLink):
     def __init__(self,game):
         super(_Settings_Game, self).__init__()
         self.game = self.text = game
-        self.help = _("Restart Wrye Bash to manage %(game)s.") % (
+        self.help = _(u"Restart Wrye Bash to manage %(game)s.") % (
             {'game': game})
 
     def _check(self): return self.game.lower() == bush.game.fsName.lower()

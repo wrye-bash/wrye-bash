@@ -816,9 +816,9 @@ class ModList(_ModsUIList):
 
     #--Populate Item
     def set_item_format(self, fileName, item_format):
-        fileInfo = self.data_store[fileName]
+        modInfo = self.data_store[fileName]
         #--Image
-        status = fileInfo.getStatus()
+        status = modInfo.getStatus()
         checkMark = (
             1 if bosh.modInfos.isActiveCached(fileName)
             else 2 if fileName in bosh.modInfos.merged
@@ -827,12 +827,12 @@ class ModList(_ModsUIList):
         item_format.icon_key = status, checkMark
         #--Default message
         mouseText = u''
-        fileBashTags = fileInfo.getBashTags()
+        fileBashTags = modInfo.getBashTags()
         if fileName in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
         if fileName in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
-        if fileInfo.isEsm():
+        if modInfo.isEsm():
             item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
         elif fileName in bosh.modInfos.mergeable:
@@ -861,29 +861,29 @@ class ModList(_ModsUIList):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
-        elif fileInfo.hasBadMasterNames():
+        elif modInfo.hasBadMasterNames():
             if bosh.modInfos.isActiveCached(fileName):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText += _(u"WARNING: Has master names that will not load.  ")
-        elif fileInfo.hasActiveTimeConflict():
+        elif modInfo.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
             mouseText += _(u"WARNING: Has same load order as another mod.  ")
         elif u'Deactivate' in fileBashTags and checkMark == 1:
             item_format.back_key = 'mods.bkgd.deactivate'
             mouseText += _(u"Mod should be imported and deactivated.  ")
-        elif fileInfo.isExOverLoaded():
+        elif modInfo.isExOverLoaded():
             item_format.back_key = 'mods.bkgd.exOverload'
             mouseText += _(u"WARNING: Exclusion group is overloaded.  ")
-        elif fileInfo.hasTimeConflict():
+        elif modInfo.hasTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText += _(u"Has same time as another (unloaded) mod.  ")
-        elif fileInfo.isGhost:
+        elif modInfo.isGhost:
             item_format.back_key = 'mods.bkgd.ghosted'
             mouseText += _(u"File is ghosted.  ")
         if settings['bash.mods.scanDirty']:
-            message = fileInfo.getDirtyMessage()
+            message = modInfo.getDirtyMessage()
             mouseText += message[1]
             if message[0]: item_format.underline = True
         self.mouseTexts[fileName] = mouseText
@@ -1822,10 +1822,10 @@ class SaveList(balt.UIList):
 
     #--Populate Item
     def set_item_format(self, fileName, item_format):
-        fileInfo = self.data_store[fileName]
+        save_info = self.data_store[fileName]
         #--Image
-        status = fileInfo.getStatus()
-        on = bosh.SaveInfos.isEnabled(fileInfo.getPath()) # yak
+        status = save_info.getStatus()
+        on = bosh.SaveInfos.isEnabled(save_info.getPath()) # yak
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------

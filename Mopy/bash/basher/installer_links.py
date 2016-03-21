@@ -1237,9 +1237,7 @@ class InstallerConverter_Create(_InstallerLink):
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self.dialogTitle, value=destInstaller.blockSize or 0)
-        progress = balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60)
-        log = None
-        try:
+        with balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60) as progress:
             #--Create the converter
             converter = bosh.converters.InstallerConverter(self.selected,
                     self.idata, destArchive, BCFArchive, blockSize, progress)
@@ -1270,10 +1268,8 @@ class InstallerConverter_Create(_InstallerLink):
             log(u'  *  '+_(u'Has Packages Selected')+u' = %s'%bool(converter.subActives))
             log.setHeader(u'. '+_(u'Contains')+u': %s'%formatInteger(len(converter.missingFiles))+ (_(u'file'),_(u'files'))[len(converter.missingFiles) > 1])
             log(u'  * '+u'\n  * '.join(sorted(u'%s' % x for x in converter.missingFiles)))
-        finally:
-            progress.Destroy()
-            if log:
-                self._showLog(log.out.getvalue(), title=_(u'BCF Information'))
+        if log:
+            self._showLog(log.out.getvalue(), title=_(u'BCF Information'))
 
 #------------------------------------------------------------------------------
 # Installer Submenus ----------------------------------------------------------

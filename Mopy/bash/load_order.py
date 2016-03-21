@@ -81,7 +81,12 @@ class LoadOrder(object):
     def __hash__(self): return hash((self._loadOrder, self._active))
 
     def lindex(self, path): return self.__mod_loIndex[path] # KeyError
-    def lorder(self, paths): # API: sort in place ? see usages
+    def lorder(self, paths):
+        """Return a tuple containing the given paths in their load order.
+        :param paths: iterable of paths that must all have a load order
+        :type paths: collections.Iterable[bolt.Path]
+        :rtype: tuple
+        """
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
     def activeIndex(self, path): return self.__mod_actIndex[path]
 

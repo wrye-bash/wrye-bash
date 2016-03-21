@@ -2214,7 +2214,7 @@ class Plugins:
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
         self.lord = load_order.SetActivePlugins(
-            self.lord.lorder(active if active else self.selected),
+            self.lord.lorder(active if active is not None else self.selected),
             self.lord.loadOrder)
 
     @_cache

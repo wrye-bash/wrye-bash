@@ -332,8 +332,7 @@ class _Mod_Groups_Export(EnabledLink):
         modGroups = bosh.ModGroups()
         modGroups.readFromModInfos(self.selected)
         modGroups.writeToText(textPath)
-        self._showOk(_(u"Exported %d mod/groups.") % len(modGroups.mod_group),
-                     _(u"Export Groups"))
+        self._showOk(_(u"Exported %d mod/groups.") % len(modGroups.mod_group))
 
 class _Mod_Groups_Import(EnabledLink):
     """Import mod groups from text file."""
@@ -1368,7 +1367,7 @@ class Mod_FogFixer(EnabledLink):
                               icons=Resources.bashBlue)
         else:
             message = _(u'No changes required.')
-            self._showOk(message, _(u'Nvidia Fog Fix'))
+            self._showOk(message)
 
 #------------------------------------------------------------------------------
 class Mod_UndeleteRefs(EnabledLink):

@@ -112,7 +112,7 @@ class InstallerWizard(wiz.Wizard):
                     u'*.ico',            # ICO's
                     u'*.cur',            # CUR's
                     u'*.ani',            # ANI's
-                    ], bosh.SubProgress(progress,0,0.9), recurse=True)
+                    ], bolt.SubProgress(progress,0,0.9), recurse=True)
             self.wizard_file = installer.getTempDir().join(installer.hasWizard)
         else:
             self.wizard_file = idata.dir.join(path.s, installer.hasWizard)

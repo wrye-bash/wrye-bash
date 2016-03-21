@@ -666,8 +666,7 @@ class Save_RepairAbomb(OneItemLink):
         progress = 100*abombFloat/struct.unpack('f',struct.pack('I',0x49000000))[0]
         newCounter = 0x41000000
         if abombCounter <= newCounter:
-            self._showOk(_(u'Abomb counter is too low to reset.'),
-                         _(u'Repair Abomb'))
+            self._showOk(_(u'Abomb counter is too low to reset.'))
             return
         message = (_(u"Reset Abomb counter? (Current progress: %.0f%%.)")
                    + u'\n\n' +
@@ -676,7 +675,7 @@ class Save_RepairAbomb(OneItemLink):
         if self._askYes(message, _(u'Repair Abomb'), default=False):
             saveFile.setAbomb(newCounter)
             saveFile.safeSave()
-            self._showOk(_(u'Abomb counter reset.'), _(u'Repair Abomb'))
+            self._showOk(_(u'Abomb counter reset.'))
 
 #------------------------------------------------------------------------------
 class Save_RepairHair(OneItemLink):
