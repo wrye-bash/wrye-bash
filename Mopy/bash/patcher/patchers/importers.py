@@ -40,6 +40,7 @@ from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
 from .base import ImportPatcher, CBash_ImportPatcher, CountDict
+from ...patcher.base import Patcher
 
 # Functions -------------------------------------------------------------------
 # Factor out common code in the patchers. Serve as a document on the patcher
@@ -211,8 +212,7 @@ class _ACellImporter(AImportPatcher):
     name = _(u'Import Cells')
 
 class CellImporter(_ACellImporter, ImportPatcher):
-    autoKey = (u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
-               u'C.RecordFlags', u'C.Music')  # ,u'C.Maps')
+    autoKey = game.cellAutoKeys
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
@@ -221,28 +221,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
         self.cellData = {}
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
-        self.recAttrs = {
-            u'C.Climate': ('climate',),
-            u'C.Music': ('music',),
-            u'C.Name': ('full',),
-            u'C.Owner': ('ownership',),
-            u'C.Water': ('water','waterHeight'),
-            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-                        'directionalRed','directionalGreen','directionalBlue','unused2',
-                        'fogRed','fogGreen','fogBlue','unused3',
-                        'fogNear','fogFar','directionalXY','directionalZ',
-                        'directionalFade','fogClip'),
-            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-            }
-        self.recFlags = {
-            u'C.Climate': 'behaveLikeExterior',
-            u'C.Music': '',
-            u'C.Name': '',
-            u'C.Owner': 'publicPlace',
-            u'C.Water': 'hasWater',
-            u'C.Light': '',
-            u'C.RecordFlags': '',
-            }
+        self.recAttrs = game.cellRecAttrs
+        self.recFlags = game.cellRecFlags
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -472,6 +452,167 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
+class DestructiblePatcher(ImportPatcher):
+    """Merges changes to destructible records for Fallout3/FalloutNV."""
+    name = _("Import Destructible")
+    text = _("Merges changes to destructible records.\n\nWill have to use if Destruction Environment mod is installed and active.")
+    tip = text
+    autoKey = ('Destructible',)
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        self.classestemp = set()
+        #--Type Fields
+        recAttrs_class = self.recAttrs_class = {}
+        recFidAttrs_class = self.recFidAttrs_class = {}
+        if game.fsName == u'Fallout3':
+            self.longTypes = set(('ACTI','ALCH','AMMO','ARMO','BOOK','CONT','CREA','DOOR','FURN','KEYM','LIGH','MISC','MSTT','NPC_','PROJ','TACT','TERM','WEAP'))
+        elif game.fsName == u'FalloutNV':
+            self.longTypes = set(('ACTI','ALCH','AMMO','ARMO','BOOK','CHIP','CONT','CREA','DOOR','FURN','IMOD','KEYM','LIGH','MISC','MSTT','NPC_','PROJ','TACT','TERM','WEAP'))
+        else:
+            self.longTypes = set()
+        for recClass in (MreRecord.type_class[x] for x in self.longTypes):
+            recAttrs_class[recClass] = ('destructible',)
+
+    def initData(self,progress):
+        """Get graphics from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
+        progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.sourceMods):
+            temp_id_data = {}
+            if srcMod not in bosh.modInfos: continue
+            srcInfo = bosh.modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for recClass,recAttrs in recAttrs_class.iteritems():
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                self.classestemp.add(recClass)
+                recFidAttrs = self.recFidAttrs_class.get(recClass, None)
+                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    if recFidAttrs:
+                        attr_fidvalue = dict((attr,record.__getattribute__(attr)) for attr in recFidAttrs)
+                        for fidvalue in attr_fidvalue.values():
+                            if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                                #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                                mod_skipcount[srcMod] = mod_skipcount.setdefault(srcMod, 0) + 1
+                                break
+                        else:
+                            temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                            temp_id_data[fid].update(attr_fidvalue)
+                    else:
+                        temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+            for master in masters:
+                if not master in bosh.modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = bosh.modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for recClass,recAttrs in recAttrs_class.iteritems():
+                    if recClass.classType not in masterFile.tops: continue
+                    if recClass not in self.classestemp: continue
+                    for record in masterFile.tops[recClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            if value == record.__getattribute__(attr): continue
+                            else:
+                                if fid not in id_data: id_data[fid] = dict()
+                                try:
+                                    id_data[fid][attr] = temp_id_data[fid][attr]
+                                except KeyError:
+                                    id_data[fid].setdefault(attr,value)
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched destructible data as needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    if isinstance(record.__getattribute__(attr),str) and isinstance(value, str):
+                        if record.__getattribute__(attr).lower() != value.lower():
+                            break
+                        continue
+                    elif attr == 'model':
+                        try:
+                            if record.__getattribute__(attr).modPath.lower() != value.modPath.lower():
+                                break
+                            continue
+                        except:
+                            break #assume they are not equal (ie they aren't __both__ NONE)
+                    if record.__getattribute__(attr) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    record.__setattr__(attr,value)
+                keep(fid)
+                type_count[type] += 1
+        id_data = None
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.sourceMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
+        for type,count in sorted(type_count.iteritems()):
+            if count: log("* %s: %d" % (type,count))
+
+#------------------------------------------------------------------------------
 class GraphicsPatcher(ImportPatcher):
     """Merges changes to graphics (models and icons)."""
     name = _(u'Import Graphics')
@@ -489,39 +630,35 @@ class GraphicsPatcher(ImportPatcher):
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         recFidAttrs_class = self.recFidAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('BSGN','LSCR','CLAS','LTEX','REGN')):
-            recAttrs_class[recClass] = ('iconPath',)
-        for recClass in (MreRecord.type_class[x] for x in ('ACTI','DOOR','FLOR','FURN','GRAS','STAT')):
-            recAttrs_class[recClass] = ('model',)
-        for recClass in (MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE')):
-            recAttrs_class[recClass] = ('iconPath','model')
-        for recClass in (MreRecord.type_class[x] for x in ('ARMO','CLOT')):
-            recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
-        for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
-            recAttrs_class[recClass] = ('bodyParts','nift_p')
-        for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-            recAttrs_class[recClass] = ('iconPath','model')
-            recFidAttrs_class[recClass] = ('effectShader','enchantEffect','light')
-        for recClass in (MreRecord.type_class[x] for x in ('EFSH',)):
-            recAttrs_class[recClass] = ('particleTexture','fillTexture','flags','unused1','memSBlend',
-                                        'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue','unused2',
-                                        'fillAIn','fillAFull','fillAOut','fillAPRatio','fillAAmp','fillAFreq',
-                                        'fillAnimSpdU','fillAnimSpdV','edgeOff','edgeRed','edgeGreen',
-                                        'edgeBlue','unused3','edgeAIn','edgeAFull','edgeAOut','edgeAPRatio',
-                                        'edgeAAmp','edgeAFreq','fillAFRatio','edgeAFRatio','memDBlend',
-                                        'partSBlend','partBlendOp','partZFunc','partDBlend','partBUp',
-                                        'partBFull','partBDown','partBFRatio','partBPRatio','partLTime',
-                                        'partLDelta','partNSpd','partNAcc','partVel1','partVel2','partVel3',
-                                        'partAcc1','partAcc2','partAcc3','partKey1','partKey2','partKey1Time',
-                                        'partKey2Time','key1Red','key1Green','key1Blue','unused4','key2Red',
-                                        'key2Green','key2Blue','unused5','key3Red','key3Green','key3Blue',
-                                        'unused6','key1A','key2A','key3A','key1Time','key2Time','key3Time')
+        # Not available in Skyrim yet LAND, PERK, PACK, QUST, RACE, SCEN, REFR, REGN
+        # Look into why these records are not included, are they part of other patchers?
+        # no 'model' attr: 'EYES', 'AVIF', 'MICN',
+        # Would anyone ever change these: 'PERK', 'QUST', 'SKIL', 'REPU'
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconOnlyRecs):
+        #     recAttrs_class[recClass] = ('iconPath',)
+        # no 'iconPath' attr: 'ADDN', 'ANIO', 'ARTO', 'BPTD', 'CAMS', 'CLMT',
+        # 'CONT', 'EXPL', 'HAZD', 'HPDT', 'IDLM',  'IPCT', 'MATO', 'MSTT',
+        # 'PROJ', 'TACT', 'TREE',
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsModelOnlyRecs):
+        #     recAttrs_class[recClass] = ('model',)
+        # no'model' and 'iconpath' attr: 'COBJ', 'HAIR', 'NOTE', 'CCRD', 'CHIP', 'CMNY', 'IMOD',
+        # Is 'RACE' included in race patcher?
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconModelRecs):
+        #     recAttrs_class[recClass] = ('iconPath','model',)
+
+        for recType, attrs in game.graphicsTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recAttrs_class[recClass] = attrs
+
+        # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
+        # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
+        #     recFidAttrs_class[recClass] = game.graphicsMgefFidAttrs
+        for recType, attrs in game.graphicsFidTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recFidAttrs_class[recClass] = attrs
+
         #--Needs Longs
-        self.longTypes = {'BSGN', 'LSCR', 'CLAS', 'LTEX', 'REGN', 'ACTI',
-                          'DOOR', 'FLOR', 'FURN', 'GRAS', 'STAT', 'ALCH',
-                          'AMMO', 'APPA', 'BOOK', 'INGR', 'KEYM', 'LIGH',
-                          'MISC', 'SGST', 'SLGM', 'WEAP', 'TREE', 'ARMO',
-                          'CLOT', 'CREA', 'MGEF', 'EFSH'}
+        self.longTypes = game.graphicsLongsTypes
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -623,7 +760,7 @@ class GraphicsPatcher(ImportPatcher):
                     if record.__getattribute__(attr).lower() != value.lower():
                         break
                     continue
-                elif attr == 'model':
+                elif attr in game.graphicsModelAttrs:
                     try:
                         if record.__getattribute__(
                                 attr).modPath.lower() != value.modPath.lower():
@@ -1950,25 +2087,33 @@ class ImportInventory(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive or not self.srcs: return
-        loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
+        if game.fsName == u'Skyrim':
+            loadFactory = LoadFactory(False,'NPC_','CONT')
+        else:
+            loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             mapper = srcFile.getLongMapper()
-            for block in (srcFile.CREA, srcFile.NPC_, srcFile.CONT):
-                for record in block.getActiveRecords():
-                    self.touched.add(mapper(record.fid))
+            if game.fsName == u'Skyrim':
+                for block in (srcFile.NPC_, srcFile.CONT):
+                    for record in block.getActiveRecords():
+                        self.touched.add(mapper(record.fid))
+            else:
+                for block in (srcFile.CREA, srcFile.NPC_, srcFile.CONT):
+                    for record in block.getActiveRecords():
+                        self.touched.add(mapper(record.fid))
             progress.plus()
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('NPC_','CREA','CONT',) if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('NPC_','CREA','CONT',) if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add record from modFile."""
@@ -1981,8 +2126,8 @@ class ImportInventory(ImportPatcher):
         #--Master or source?
         if modName in self.allMods:
             id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(('NPC_','CREA','CONT'))
-            for type in ('NPC_','CREA','CONT'):
+            modFile.convertToLongFids(game.inventoryTypes)
+            for type in game.inventoryTypes:
                 for record in getattr(modFile,type).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = record.items[:]
@@ -2005,7 +2150,7 @@ class ImportInventory(ImportPatcher):
                 deltas.append((removeItems,addEntries))
         #--Keep record?
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for type in ('NPC_','CREA','CONT'):
+            for type in game.inventoryTypes:
                 patchBlock = getattr(self.patchFile,type)
                 id_records = patchBlock.id_records
                 for record in getattr(modFile,type).getActiveRecords():
@@ -2019,7 +2164,7 @@ class ImportInventory(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = {}
-        for type in ('NPC_','CREA','CONT'):
+        for type in game.inventoryTypes:
             for record in getattr(self.patchFile,type).records:
                 changed = False
                 deltas = id_deltas.get(record.fid)
@@ -2955,19 +3100,11 @@ class SoundPatcher(ImportPatcher):
         #  mods/files.
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-            recAttrs_class[recClass] = (
-                'castingSound', 'boltSound', 'hitSound', 'areaSound')
-        for recClass in (MreRecord.type_class[x] for x in ('ACTI','LIGH')):
-            recAttrs_class[recClass] = ('sound',)
-        for recClass in (MreRecord.type_class[x] for x in ('WTHR',)):
-            recAttrs_class[recClass] = ('sounds',)
-        for recClass in (MreRecord.type_class[x] for x in ('CONT',)):
-            recAttrs_class[recClass] = ('soundOpen','soundClose')
-        for recClass in (MreRecord.type_class[x] for x in ('DOOR',)):
-            recAttrs_class[recClass] = ('soundOpen','soundClose','soundLoop')
+        for recType, attrs in game.soundsTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recAttrs_class[recClass] = attrs
         #--Needs Longs
-        self.longTypes = {'MGEF', 'ACTI', 'LIGH', 'WTHR', 'CONT', 'DOOR'}
+        self.longTypes = game.soundsLongsTypes
 
     def initData(self,progress):
         """Get sounds from source files."""
@@ -3151,20 +3288,7 @@ class StatsPatcher(ImportPatcher):
         log(self.__class__.logMsg)
         for type,count,counts in allCounts:
             if not count: continue
-            typeName = {'ALCH':_(u'Potions'),
-                        'AMMO':_(u'Ammo'),
-                        'ARMO':_(u'Armors'),
-                        'INGR':_(u'Ingredients'),
-                        'MISC':_(u'Misc'),
-                        'WEAP':_(u'Weapons'),
-                        'SLGM':_(u'Soulgems'),
-                        'SGST':_(u'Sigil Stones'),
-                        'LIGH':_(u'Lights'),
-                        'KEYM':_(u'Keys'),
-                        'CLOT':_(u'Clothes'),
-                        'BOOK':_(u'Books'),
-                        'APPA':_(u'Apparatuses'),
-                        }[type]
+            typeName = game.record_type_name[type]
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
@@ -3416,3 +3540,177 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
                                                              0) + 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
+
+#------------------------------------------------------------------------------
+class WeaponModsPatcher(ImportPatcher):
+    """Merge changes to weapon modifications for FalloutNV."""
+    scanOrder = 27
+    editOrder = 27
+    name = _("Import Weapon Modifications")
+    text = _("Merges changes to weapon modifications.")
+    tip = text
+    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoKey = 'WeaponMods'
+
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        """Prepare to handle specified patch mod. All functions are called after this."""
+        Patcher.initPatchFile(self,patchFile,loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src mods/files.
+        self.sourceMods = self.getConfigChecked()
+        self.isActive = len(self.sourceMods) != 0
+        self.classestemp = set()
+        #--Type Fields
+        recAttrs_class = self.recAttrs_class = {}
+        recFidAttrs_class = self.recFidAttrs_class = {}
+        self.longTypes = set(('WEAP',))
+        for recClass in (MreRecord.type_class[x] for x in self.longTypes):
+            recAttrs_class[recClass] = ('modelWithMods','firstPersonModelWithMods','weaponMods','soundMod1Shoot3Ds','soundMod1Shoot2D',
+                                        'effectMod1','effectMod2','effectMod3','valueAMod1','valueAMod2','valueAMod3',
+                                        'valueBMod1','valueBMod2','valueBMod3','reloadAnimationMod','vatsModReqiured','scopeModel',
+                                        'dnamFlags1.hasScope','dnamFlags2.scopeFromMod')
+
+    def initData(self,progress):
+        """Get graphics from source files."""
+        if not self.isActive: return
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        longTypes = self.longTypes & set(x.classType for x in recAttrs_class)
+        progress.setFull(len(self.sourceMods))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.sourceMods):
+            temp_id_data = {}
+            if srcMod not in bosh.modInfos: continue
+            srcInfo = bosh.modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
+            for recClass,recAttrs in recAttrs_class.iteritems():
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                self.classestemp.add(recClass)
+                recFidAttrs = self.recFidAttrs_class.get(recClass, None)
+                for record in srcFile.tops[recClass.classType].getActiveRecords():
+                    fid = mapper(record.fid)
+                    if recFidAttrs:
+                        #attr_fidvalue = dict((attr,record.__getattribute__(attr)) for attr in recFidAttrs)
+                        attr_fidvalue = dict((attr,reduce(getattr, attr.split('.'), record)) for attr in recFidAttrs)
+                        for fidvalue in attr_fidvalue.values():
+                            if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
+                                #Ignore the record. Another option would be to just ignore the attr_fidvalue result
+                                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
+                                mod_skipcount[srcMod] = mod_skipcount.setdefault(srcMod, 0) + 1
+                                break
+                        else:
+                            #temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                            temp_id_data[fid] = dict((attr,reduce(getattr, attr.split('.'), record)) for attr in recAttrs)
+                            temp_id_data[fid].update(attr_fidvalue)
+                    else:
+                        #temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                        temp_id_data[fid] = dict((attr,reduce(getattr, attr.split('.'), record)) for attr in recAttrs)
+            for master in masters:
+                if not master in bosh.modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = bosh.modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for recClass,recAttrs in recAttrs_class.iteritems():
+                    if recClass.classType not in masterFile.tops: continue
+                    if recClass not in self.classestemp: continue
+                    for record in masterFile.tops[recClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            #if value == record.__getattribute__(attr): continue
+                            if value == reduce(getattr, attr.split('.'), record): continue
+                            else:
+                                if fid not in id_data: id_data[fid] = dict()
+                                try:
+                                    id_data[fid][attr] = temp_id_data[fid][attr]
+                                except KeyError:
+                                    id_data[fid].setdefault(attr,value)
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def scanModFile(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        modName = modFile.fileInfo.name
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile,type)
+            for record in modFile.tops[type].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    #if record.__getattribute__(attr) != value:
+                    if reduce(getattr, attr.split('.'), record) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        """Merge last version of record with patched destructible data as needed."""
+        if not self.isActive: return
+        modFile = self.patchFile
+        keep = self.patchFile.getKeeper()
+        id_data = self.id_data
+        type_count = {}
+        for recClass in self.srcClasses:
+            type = recClass.classType
+            if type not in modFile.tops: continue
+            type_count[type] = 0
+            for record in modFile.tops[type].records:
+                fid = record.fid
+                if fid not in id_data: continue
+                for attr,value in id_data[fid].iteritems():
+                    #if isinstance(record.__getattribute__(attr),str) and isinstance(value, str):
+                    if isinstance(reduce(getattr, attr.split('.'), record),str) and isinstance(value, str):
+                        #if record.__getattribute__(attr).lower() != value.lower():
+                        if reduce(getattr, attr.split('.'), record).lower() != value.lower():
+                            break
+                        continue
+                    elif attr == 'model':
+                        try:
+                            #if record.__getattribute__(attr).modPath.lower() != value.modPath.lower():
+                            if reduce(getattr, attr.split('.'), record).modPath.lower() != value.modPath.lower():
+                                break
+                            continue
+                        except:
+                            break #assume they are not equal (ie they aren't __both__ NONE)
+                    #if record.__getattribute__(attr) != value:
+                    if reduce(getattr, attr.split('.'), record) != value:
+                        break
+                else:
+                    continue
+                for attr,value in id_data[fid].iteritems():
+                    #record.__setattr__(attr,value)
+                    sattr = attr.split('.')
+                    lastattr = sattr.pop()
+                    reduce(getattr, sattr, record).__setattr__(lastattr, value)
+                keep(fid)
+                type_count[type] += 1
+        id_data = None
+        log.setHeader('= '+self.__class__.name)
+        log(_("=== Source Mods"))
+        for mod in self.sourceMods:
+            log("* " +mod.s)
+        log(_("\n=== Modified Records"))
+        for type,count in sorted(type_count.iteritems()):
+            if count: log("* %s: %d" % (type,count))

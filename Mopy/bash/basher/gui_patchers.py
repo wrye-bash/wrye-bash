@@ -711,6 +711,10 @@ class SpellsPatcher(importers.SpellsPatcher, _ListPatcherPanel): pass
 class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
                           _ListPatcherPanel): pass
 
+class DestructiblePatcher(importers.DestructiblePatcher, _ListPatcherPanel): pass
+
+class WeaponModsPatcher(importers.WeaponModsPatcher, _ListPatcherPanel): pass
+
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,
                       _TweakPatcherPanel): pass
@@ -749,6 +753,9 @@ class ListsMerger(special.ListsMerger, _ListPatcherPanel):
     listLabel = _(u'Override Delev/Relev Tags')
 class CBash_ListsMerger(special.CBash_ListsMerger, _ListPatcherPanel):
     listLabel = _(u'Override Delev/Relev Tags')
+
+class FidListsMerger(special.FidListsMerger, _ListPatcherPanel):
+    listLabel = _("Override Deflst Tags")
 
 class ContentsChecker(special.ContentsChecker, _PatcherPanel): pass
 class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel): pass

@@ -105,3 +105,58 @@ fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
 # Skip 3 and 4 because it needs to be set per runOn
 fid5Conditions = set(entry[0] for entry in conditionFunctionData if entry[4] == 2)
+
+#--List of GMST's in the main plugin (Fallout4.esm) that have 0x00000000
+#  as the form id.  Any GMST as such needs it Editor Id listed here.
+gmstEids = [
+    ## TODO: Initial inspection did not seem to have any null FormID GMST's,
+    ## double check before enabling the GMST Tweaker
+    ]
+
+"""
+GLOB record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
+
+Each entry is a tuple in the following format:
+  (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, ..., OptionN)
+  -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If
+  it's a tuple, then Value (below) must be a tuple of equal length, providing
+  values for each GLOB
+Each Option is a tuple:
+  (DisplayText, Value)
+  - If you enclose DisplayText in brackets like this: _(u'[Default]'),
+  then the patcher will treat this option as the default value.
+  - If you use _(u'Custom') as the entry, the patcher will bring up a number
+  input dialog
+
+To make a tweak Enabled by Default, enclose the tuple entry for the tweak in
+a list, and make a dictionary as the second list item with {'defaultEnabled
+':True}. See the UOP Vampire face fix for an example of this (in the GMST
+Tweaks)
+"""
+GlobalsTweaks = list()
+
+"""
+GMST record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
+
+Each entry is a tuple in the following format:
+  (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, ..., OptionN)
+  - EditorID can be a plain string, or a tuple of multiple Editor IDs. If
+  it's a tuple, then Value (below) must be a tuple of equal length, providing
+  values for each GMST
+Each Option is a tuple:
+  (DisplayText, Value)
+  - If you enclose DisplayText in brackets like this: _(u'[Default]'),
+  then the patcher will treat this option as the default value.
+  - If you use _(u'Custom') as the entry, the patcher will bring up a number
+  input dialog
+
+To make a tweak Enabled by Default, enclose the tuple entry for the tweak in
+a list, and make a dictionary as the second list item with {'defaultEnabled
+':True}. See the UOP Vampire facefix for an example of this (in the GMST
+Tweaks)
+"""
+GmstTweaks = list()
+
+# Record type to name dictionary
+
+record_type_name = {}

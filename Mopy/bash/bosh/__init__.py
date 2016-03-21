@@ -2143,6 +2143,7 @@ class OblivionIni(IniFile):
             aiBsa.mtime = aiBsaMTime
         if doRedirect == self.getBsaRedirection():
             return
+        # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
             source = dirs['templates'].join(bush.game.fsName, u'ArchiveInvalidationInvalidated!.bsa')
             source.mtime = aiBsaMTime
@@ -7483,6 +7484,8 @@ def initDefaultTools():
     tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
     tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
+    tooldirs['Fo3EditPath'] = dirs['app'].join(u'FO3Edit.exe')
+    tooldirs['FnvEditPath'] = dirs['app'].join(u'FNVEdit.exe')
     tooldirs['Tes4LodGenPath'] = dirs['app'].join(u'TES4LodGen.exe')
     tooldirs['Tes4GeckoPath'] = dirs['app'].join(u'Tes4Gecko.jar')
     tooldirs['Tes5GeckoPath'] = pathlist(u'Dark Creations',u'TESVGecko',u'TESVGecko.exe')

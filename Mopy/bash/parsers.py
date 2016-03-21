@@ -351,7 +351,7 @@ class ActorLevels:
                     fid,eid,offset,calcMin,calcMax = fields[:5]
                     source = GPath(u'Unknown')
                     fidObject = _coerce(fid[4:], int, 16)
-                    fid = (GPath(u'Oblivion.esm'), fidObject)
+                    fid = (GPath(bush.game.masterFiles[0]), fidObject)
                     eid = _coerce(eid, unicode)
                     offset = _coerce(offset, int)
                     calcMin = _coerce(calcMin, int)
@@ -361,7 +361,7 @@ class ActorLevels:
                     source,eid,fidMod,fidObject,offset,calcMin,calcMax = \
                         fields[:7]
                     source = _coerce(source, unicode)
-                    if source.lower() in (u'none', u'oblivion.esm'): continue
+                    if source.lower() in (u'none', bush.game.masterFiles[0].lower()): continue
                     source = GPath(source)
                     eid = _coerce(eid, unicode)
                     fidMod = GPath(_coerce(fidMod, unicode))
@@ -390,9 +390,9 @@ class ActorLevels:
                 _(u'Old IsPCLevelOffset'),_(u'Old Offset'),_(u'Old CalcMin'),
                 _(u'Old CalcMax')))
             #Sorted based on mod, then editor ID
-            obId_levels = mod_id_levels[GPath(u'Oblivion.esm')]
+            obId_levels = mod_id_levels[GPath(bush.game.masterFiles[0])]
             for mod in sorted(mod_id_levels):
-                if mod.s.lower() == u'oblivion.esm': continue
+                if mod.s.lower() == bush.game.masterFiles[0].lower(): continue
                 id_levels = mod_id_levels[mod]
                 for id_ in sorted(id_levels,key=lambda k:(
                         k[0].s.lower(),id_levels[k][0].lower())):
@@ -1385,19 +1385,87 @@ class ItemStats:
     def __init__(self,types=None,aliases=None):
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
-        self.attr_type = {'eid':self.sstr,
-                          'weight':self.sfloat,
-                          'value':self.sint,
-                          'damage':self.sint,
-                          'speed':self.sfloat,
-                          'enchantPoints':self.sint,
-                          'health':self.sint,
-                          'strength':self.sint,
-                          'duration':self.sint,
-                          'quality':self.sfloat,
-                          'uses':self.sint,
-                          'reach':self.sfloat,
-                          'armorRating':self.sint,}
+        if bush.game.fsName == u'Skyrim':
+            self.attr_type = {'eid':self.sstr,
+                              'weight':self.sfloat,
+                              'value':self.sint,
+                              'damage':self.sint,
+                              'armorRating':self.sint,
+                              'duration':self.sint,
+                              'speed':self.sfloat,
+                              'reach':self.sfloat,
+                              'stagger':self.sfloat,
+                              'enchantPoints':self.sint,
+                              'critDamage':self.sint,
+                              'criticalMultiplier':self.sfloat,
+                              'criticalEffect':self.sint,}
+        elif bush.game.fsName in (u'FalloutNV', u'Fallout3'):
+            self.attr_type = {'eid':self.sstr,
+                              'weight':self.sfloat,
+                              'value':self.sint,
+                              'damage':self.sint,
+                              'speed':self.sfloat,
+                              'enchantPoints':self.snoneint,
+                              'health':self.sint,
+                              'strength':self.sint,
+                              'duration':self.sint,
+                              'quality':self.sfloat,
+                              'uses':self.sint,
+                              'reach':self.sfloat,
+                              'clipRounds':self.sint,
+                              'projPerShot':self.sint,
+                              'ar':self.sint,
+                              'dt':self.sfloat,
+                              'clipsize':self.sint,
+                              'animationMultiplier':self.sfloat,
+                              'reach':self.sfloat,
+                              'ammoUse':self.sint,
+                              'minSpread':self.sfloat,
+                              'spread':self.sfloat,
+                              'sightFov':self.sfloat,
+                              'baseVatsToHitChance':self.sint,
+                              'projectileCount':self.sint,
+                              'minRange':self.sfloat,
+                              'maxRange':self.sfloat,
+                              'animationAttackMultiplier':self.sfloat,
+                              'fireRate':self.sfloat,
+                              'overrideActionPoint':self.sfloat,
+                              'rumbleLeftMotorStrength':self.sfloat,
+                              'rumbleRightMotorStrength':self.sfloat,
+                              'rumbleDuration':self.sfloat,
+                              'overrideDamageToWeaponMult':self.sfloat,
+                              'attackShotsPerSec':self.sfloat,
+                              'reloadTime':self.sfloat,
+                              'jamTime':self.sfloat,
+                              'aimArc':self.sfloat,
+                              'rambleWavelangth':self.sfloat,
+                              'limbDmgMult':self.sfloat,
+                              'sightUsage':self.sfloat,
+                              'semiAutomaticFireDelayMin':self.sfloat,
+                              'semiAutomaticFireDelayMax':self.sfloat,
+                              'strengthReq':self.sint,
+                              'regenRate':self.sfloat,
+                              'killImpulse':self.sfloat,
+                              'impulseDist':self.sfloat,
+                              'skillReq':self.sint,
+                              'criticalDamage':self.sint,
+                              'criticalMultiplier':self.sfloat,
+                              'vatsSkill':self.sfloat,
+                              'vatsDamMult':self.sfloat,
+                              'vatsAp':self.sfloat,}
+        elif bush.game.fsName == u'Oblivion':
+            self.attr_type = {'eid':self.sstr,
+                              'weight':self.sfloat,
+                              'value':self.sint,
+                              'damage':self.sint,
+                              'speed':self.sfloat,
+                              'enchantPoints':self.sint,
+                              'health':self.sint,
+                              'strength':self.sint,
+                              'duration':self.sint,
+                              'quality':self.sfloat,
+                              'uses':self.sint,
+                              'reach':self.sfloat,}
         for group in self.class_attrs:
             self.class_fid_attr_value[group] = {}
 
@@ -4116,7 +4184,10 @@ class ModFile:
         if 'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 if isinstance(record,MreRecord.type_class['MGEF']):
-                    mgef_school[record.eid] = record.school
+                    if bush.game.fsName == u'Oblivion':
+                        mgef_school[record.eid] = record.school
+                    else:
+                        mgef_school[record.eid] = record.magicSkill
         return mgef_school
 
     def getMgefHostiles(self,refresh=False):

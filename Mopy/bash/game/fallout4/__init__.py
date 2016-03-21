@@ -28,8 +28,10 @@
 import re
 import struct
 import itertools
-from constants import bethDataFiles, allBethFiles
+from .constants import *
+from .records import MreHeader
 from ... import brec
+from ...brec import BaseRecordHeader, ModError
 
 #--Name of the game to use in UI.
 displayName = u'Fallout 4'
@@ -338,45 +340,6 @@ ignoreDataFiles = set()
 ignoreDataFilePrefixes = set()
 ignoreDataDirs = set()
 
-
-#--List of GMST's in the main plugin (Fallout4.esm) that have 0x00000000
-#  as the form id.  Any GMST as such needs it Editor Id listed here.
-gmstEids = [
-    ## TODO: Initial inspection did not seem to have any null FormID GMST's,
-    ## double check before enabling the GMST Tweaker
-    ]
-
-#--GLOB record tweaks used by bosh's GmstTweaker
-#  Each entry is a tuple in the following format:
-#    (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, Option3, ..., OptionN)
-#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
-#     then Value (below) must be a tuple of equal length, providing values for each GLOB
-#  Each Option is a tuple:
-#    (DisplayText, Value)
-#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
-#      will treat this option as the default value.
-#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
-#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
-#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
-#  fix for an example of this (in the GMST Tweaks)
-GlobalsTweaks = list()
-
-
-#--GMST record tweaks used by bosh's GmstTweaker
-#  Each entry is a tuple in the following format:
-#    (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, Option3, ..., OptionN)
-#    -EditorID can be a plain string, or a tuple of multiple Editor IDs.  If it's a tuple,
-#     then Value (below) must be a tuple of equal length, providing values for each GMST
-#  Each Option is a tuple:
-#    (DisplayText, Value)
-#    - If you enclose DisplayText in brackets like this: _(u'[Default]'), then the patcher
-#      will treat this option as the default value.
-#    - If you use _(u'Custom') as the entry, the patcher will bring up a number input dialog
-#  To make a tweak Enabled by Default, enclose the tuple entry for the tweak in a list, and make
-#  a dictionary as the second list item with {'defaultEnabled':True}.  See the UOP Vampire face
-#  fix for an example of this (in the GMST Tweaks)
-GmstTweaks = list()
-
 #--Tags supported by this game
 allTags = sorted(set())
 
@@ -392,15 +355,15 @@ listTypes = ('LVLI','LVLN',)
 namesTypes = set()
 pricesTypes = dict()
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # StatsImporter
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 statsTypes = dict()
 statsHeaders = tuple()
 
 
-# Mod Record Elements ----------------------------------------------------------
-#-------------------------------------------------------------------------------
+# Mod Record Elements ---------------------------------------------------------
+#------------------------------------------------------------------------------
 # Constants
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
@@ -463,8 +426,62 @@ class esp:
                    {'GRUP','TES4','REFR','NAVM','PGRE','PHZD','LAND',
                        'PMIS','DLBR','DIAL','INFO','SCEN'})
 
-#------------------------------------------------------------------------------
-from records import * # MUST BE HERE, remaining code requires it
+#--Mod I/O
+class RecordHeader(BaseRecordHeader):
+    size = 24
+
+    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,extra=0):
+        self.recType = recType
+        self.size = size
+        if recType == 'GRUP':
+            self.label = arg1
+            self.groupType = arg2
+            self.stamp = arg3
+        else:
+            self.flags1 = arg1
+            self.fid = arg2
+            self.flags2 = arg3
+        self.extra = extra
+
+    @staticmethod
+    def unpack(ins):
+        """Returns a RecordHeader object by reading the input stream."""
+        rec_type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
+        #--Bad type?
+        if rec_type not in esp.recordTypes:
+            raise ModError(ins.inName,u'Bad header type: '+repr(rec_type))
+        #--Record
+        if rec_type != 'GRUP':
+            pass
+        #--Top Group
+        elif uint1 == 0: #groupType == 0 (Top Type)
+            str0 = struct.pack('I',uint0)
+            if str0 in esp.topTypes:
+                uint0 = str0
+            elif str0 in esp.topIgTypes:
+                uint0 = esp.topIgTypes[str0]
+            else:
+                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
+        #--Other groups
+        return RecordHeader(rec_type,size,uint0,uint1,uint2,uint3)
+
+    def pack(self):
+        """Return the record header packed into a bitstream to be written to file."""
+        if self.recType == 'GRUP':
+            if isinstance(self.label,str):
+                return struct.pack('=4sI4sIII',self.recType,self.size,
+                                   self.label,self.groupType,self.stamp,
+                                   self.extra)
+            elif isinstance(self.label,tuple):
+                return struct.pack('=4sIhhIII',self.recType,self.size,
+                                   self.label[0],self.label[1],self.groupType,
+                                   self.stamp,self.extra)
+            else:
+                return struct.pack('=4s5I',self.recType,self.size,self.label,
+                                   self.groupType,self.stamp,self.extra)
+        else:
+            return struct.pack('=4s5I',self.recType,self.size,self.flags1,
+                               self.fid,self.flags2,self.extra)
 
 #--Mergeable record types
 mergeClasses = tuple()
