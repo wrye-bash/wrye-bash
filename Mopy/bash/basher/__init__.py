@@ -683,11 +683,11 @@ class INITweakLineCtrl(INIListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            status = line[4]
+            status, deleted = line[4], line[6]
             if status == -10: color = colors['tweak.bkgd.invalid']
             elif status == 10: color = colors['tweak.bkgd.mismatched']
             elif status == 20: color = colors['tweak.bkgd.matched']
-            elif line[6]: color = colors['tweak.bkgd.mismatched']
+            elif deleted: color = colors['tweak.bkgd.mismatched']
             else: color = self.GetBackgroundColour()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
