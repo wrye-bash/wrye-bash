@@ -582,9 +582,10 @@ class INIList(balt.UIList):
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
 
-    def RefreshUIValid(self):
+    def RefreshUIValid(self, tweak=None):
         valid = [k for k, v in self.data_store.iteritems() if v.tweak_status >= 0]
         self.RefreshUI(files=valid)
+        if tweak: self.panel.RefreshIniDetails(tweak)
 
     @staticmethod
     def filterOutDefaultTweaks(tweaks):
@@ -648,9 +649,7 @@ class INIList(balt.UIList):
         #--No point applying a tweak that's already applied
         file_ = tweak.dir.join(hitItem)
         self.data_store.ini.applyTweakFile(file_)
-        self.RefreshUIValid()
-        iniPanel.iniContents.RefreshIniContents()
-        iniPanel.tweakContents.RefreshTweakLineCtrl(self.data_store[0])
+        self.RefreshUIValid(hitItem)
 
     def _select(self, tweakfile): self.panel.SelectTweak(tweakfile)
 
@@ -1650,9 +1649,12 @@ class INIPanel(SashPanel):
         if refresh:
             self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
             self.trackedInfo.track(self.GetChoice())
-        self.iniContents.RefreshIniContents(refresh)
-        self.tweakContents.RefreshTweakLineCtrl(selected)
+        self.RefreshIniDetails(selected, resetScroll=refresh)
         if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
+
+    def RefreshIniDetails(self, selected_tweak, resetScroll=False):
+        self.iniContents.RefreshIniContents(resetScroll)
+        self.tweakContents.RefreshTweakLineCtrl(selected_tweak)
 
     def OnRemove(self):
         """Called when the 'Remove' button is pressed."""

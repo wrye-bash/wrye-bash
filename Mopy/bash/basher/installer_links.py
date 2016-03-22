@@ -322,9 +322,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 manuallyApply.append((outFile,iniFile))
         #--Refresh after all the tweaks are applied
         if lastApplied is not None and BashFrame.iniList is not None:
-            BashFrame.iniList.RefreshUIValid()
-            BashFrame.iniList.panel.iniContents.RefreshIniContents()
-            BashFrame.iniList.panel.tweakContents.RefreshTweakLineCtrl(lastApplied)
+            BashFrame.iniList.RefreshUIValid(lastApplied)
         if len(manuallyApply) > 0:
             message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
             message += u'\n\n'

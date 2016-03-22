@@ -161,8 +161,7 @@ class INI_Apply(EnabledLink):
     def Execute(self):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
-        iniPanel = self.iniPanel
-        choice = iniPanel.GetChoice().tail
+        choice = self.iniPanel.GetChoice().tail
         if choice in bush.game.iniFiles:
             message = (_(u'Apply an ini tweak to %s?') % choice
                        + u'\n\n' +
@@ -183,9 +182,7 @@ class INI_Apply(EnabledLink):
                     bass.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
-            self.window.RefreshUIValid()
-            iniPanel.iniContents.RefreshIniContents()
-            iniPanel.tweakContents.RefreshTweakLineCtrl(self.selected[0])
+            self.window.RefreshUIValid(self.selected[0])
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):
