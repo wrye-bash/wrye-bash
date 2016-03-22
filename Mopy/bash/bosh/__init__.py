@@ -2777,6 +2777,7 @@ class INIInfo(FileInfo):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
         self.__target_ini = None # used in status only
+        self._ini_file = BestIniFile(self.getPath())
 
     @property
     def tweak_status(self):
