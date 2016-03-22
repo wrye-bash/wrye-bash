@@ -575,7 +575,7 @@ class INIList(balt.UIList):
         return tweaklist
 
     def RefreshUIValid(self):
-        valid = filter(lambda k: self.data_store[k].status >= 0, self.data_store.keys())
+        valid = [k for k, v in self.data_store.iteritems() if v.status >= 0]
         self.RefreshUI(files=valid)
 
     @staticmethod
@@ -1576,26 +1576,23 @@ class INIPanel(SashPanel):
 
     def SetBaseIni(self,path=None):
         """Sets the target INI file."""
-        refresh = True
         choicePath = self.GetChoice()
-        isGameIni = False
         for iFile in bosh.gameInis:
             if iFile.path == choicePath:
-                refresh = bosh.iniInfos.ini != iFile
-                bosh.iniInfos.setBaseIni(iFile)
-                self.button.Enable(False)
                 isGameIni = True
+                target = iFile
                 break
-        if not isGameIni:
+        else:
             if not path:
                 path = choicePath
-            ini = bosh.BestIniFile(path)
-            refresh = bosh.iniInfos.ini != ini
-            bosh.iniInfos.setBaseIni(ini)
-            self.button.Enable(True)
+            target = bosh.BestIniFile(path)
+            isGameIni = False
+        refresh = bosh.iniInfos.ini != target
+        bosh.iniInfos.ini = target
+        self.button.Enable(not isGameIni)
         selected = None
-        ##: iniList can be None below cause we are called in IniList.__init__()
-        ##: before iniList is assigned - possibly to avoid a refresh ?
+        # iniList can be None below cause we are called in INIPanel.__init__()
+        # before iniList is assigned - possibly to avoid the RefreshUI below
         if BashFrame.iniList is not None:
             selected = BashFrame.iniList.GetSelected()
             if len(selected) > 0:

@@ -3269,9 +3269,6 @@ class INIInfos(FileInfos):
         FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
 
-    def setBaseIni(self,ini):
-        self.ini = ini
-
     def getBashDir(self):
         """Return directory to save info."""
         dir_ = dirs['modsBash'].join(u'INI Data')
