@@ -74,7 +74,7 @@ class INI_ListErrors(EnabledLink):
 
     def _enable(self):
         for i in self.selected:
-            if bosh.iniInfos[i].getStatus() < 0:
+            if bosh.iniInfos[i].tweak_status < 0:
                 return True
         return False
 

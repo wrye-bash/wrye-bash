@@ -598,7 +598,7 @@ class INIList(balt.UIList):
 
     def set_item_format(self, ini_name, item_format):
         iniInfo = self.data_store[ini_name]
-        status = iniInfo.getStatus()
+        status = iniInfo.getStatus() ## FIXME ! performance, use status....
         #--Image
         checkMark = 0
         icon = 0    # Ok tweak, not applied

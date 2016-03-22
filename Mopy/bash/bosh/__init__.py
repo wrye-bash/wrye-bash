@@ -2755,10 +2755,12 @@ class INIInfo(FileInfo):
     def __init__(self,*args,**kwdargs):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
+        self.__target_ini = None # used in status only
 
     @property
     def tweak_status(self):
-        if self._status is None: self.getStatus()
+        self.__target_ini, old = iniInfos.ini, self.__target_ini
+        if self._status is None or self.__target_ini != old: self.getStatus()
         return self._status
 
     def getFileInfos(self):
@@ -3895,7 +3897,7 @@ class ModInfos(FileInfos):
                     return True
         return False
 
-    def _ini_files(self, descending=False):
+    def _ini_files(self, descending=False): ##: cache them
         if bush.game.fsName == u'Skyrim':
             iniPaths = (self[name].getIniPath() for name in load_order.activeCached())
             iniFiles = [IniFile(iniPath) for iniPath in iniPaths if
@@ -4133,19 +4135,14 @@ class SaveInfos(FileInfos):
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
         local save attribute to that value."""
-        if oblivionIni.path.exists() and (
-            oblivionIni.path.mtime != self.iniMTime):
-            # saveInfos 'singleton' is constructed in InitData after
-            # bosh.oblivionIni is set (hopefully) - TODO(ut) test
-            self.localSave = oblivionIni.getSetting(
-                bush.game.saveProfilesKey[0], bush.game.saveProfilesKey[1],
-                u'Saves\\')
-            # Hopefully will solve issues with unicode usernames # TODO(ut) test
-            self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
-            self.iniMTime = oblivionIni.path.mtime
+        # saveInfos singleton is constructed in InitData after bosh.oblivionIni
+        self.localSave = oblivionIni.getSetting(
+            bush.game.saveProfilesKey[0], bush.game.saveProfilesKey[1],
+            u'Saves\\')
+        # Hopefully will solve issues with unicode usernames # TODO(ut) test
+        self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
 
     def __init__(self):
-        self.iniMTime = 0
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
         FileInfos.__init__(self, dirs['saveBase'].join(self.localSave), SaveInfo)
@@ -4222,7 +4219,6 @@ class SaveInfos(FileInfos):
         oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
                                 bush.game.saveProfilesKey[1],
                                 localSave)
-        self.iniMTime = oblivionIni.path.mtime
         self._initDB(dirs['saveBase'].join(self.localSave))
         if refreshSaveInfos: self.refresh()
 

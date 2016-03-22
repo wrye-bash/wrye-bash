@@ -1721,7 +1721,10 @@ class UIList(wx.Panel):
 
     def set_item_format(self, item, item_format):
         """Populate item_format attributes for text and background colors
-        and set icon, font and mouse text."""
+        and set icon, font and mouse text. Responsible (applicable if the
+        data_store is a FileInfo subclass) for calling getStatus (or
+        tweak_status in Inis) to update respective info's status."""
+        pass # screens, bsas
 
     def __setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
