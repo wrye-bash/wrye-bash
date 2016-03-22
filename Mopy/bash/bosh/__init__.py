@@ -2102,7 +2102,8 @@ class OblivionIni(IniFile):
         # default to user profile directory"""
         IniFile.__init__(self, dirs['saveBase'].join(name), u'General')
 
-    def ensureExists(self):
+    def __ensureExists(self): ##: YAK - track down call graph - we should avoid
+        # creating the ini and if we must (bsa redirection ?) warn the user !!!
         """Ensures that Oblivion.ini file exists. Copies from default
         oblivion.ini if necessary."""
         if self.path.exists(): return
@@ -2114,13 +2115,13 @@ class OblivionIni(IniFile):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
         full key=value line ending in newline char."""
-        self.ensureExists()
+        self.__ensureExists()
         IniFile.saveSettings(self,settings,deleted_settings)
 
     def applyTweakFile(self,tweakPath):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        self.ensureExists()
+        self.__ensureExists()
         IniFile.applyTweakFile(self,tweakPath)
 
     #--BSA Redirection --------------------------------------------------------
@@ -2128,7 +2129,7 @@ class OblivionIni(IniFile):
         """Returns True if BSA redirection is active."""
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return False
-        self.ensureExists()
+        self.__ensureExists()
         sArchives = self.getSetting(section,key,u'')
         return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
 

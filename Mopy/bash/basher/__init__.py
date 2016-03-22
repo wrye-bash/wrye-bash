@@ -750,14 +750,15 @@ class INILineCtrl(wx.ListCtrl):
                     self.DeleteItem(len(lines))
         except IOError:
             warn = True
-            if hasattr(Link.Frame,'notebook'): ##: why all this fuss ?
+            if hasattr(Link.Frame, 'notebook'): # we may be called before
+                # the notebook is build, in INIPanel.__init__ > SetBaseIni
                 page = Link.Frame.notebook.currentPage
                 if page != self.GetParent().GetParent().GetParent():
                     warn = False
-            if warn:
-                balt.showWarning(self, _(u"%(ini)s does not exist yet.  %(game)s will create this file on first run.  INI tweaks will not be usable until then.")
-                                 % {'ini':bosh.iniInfos.ini.path,
-                                    'game':bush.game.displayName})
+            else: warn = False # we are booting - queue the warning cause it
+            # interrupts building of the UI !
+            Link.Frame.queue_game_ini_missing()
+            if warn: Link.Frame.warn_game_ini()
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
@@ -3904,6 +3905,8 @@ class BashFrame(wx.Frame):
         #--Status Bar
         self.SetStatusBar(BashStatusBar(self))
         #--Notebook panel
+        # attributes used when ini panel is created (warn for missing game ini)
+        self.oblivionIniCorrupted = self.oblivionIniMissing = False
         self.notebook = notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
@@ -3913,7 +3916,6 @@ class BashFrame(wx.Frame):
         self.booting = True #--Prevent calling refresh on fileInfos twice when booting
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
-        self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
@@ -3937,6 +3939,8 @@ class BashFrame(wx.Frame):
                     u" under auto-ghost for more details. ") % \
                           bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
+
+    def queue_game_ini_missing(self): self.oblivionIniMissing = True
 
     def BindRefresh(self, bind=True, __event=wx.EVT_ACTIVATE):
         self.Bind(__event, self.RefreshData) if bind else self.Unbind(__event)
@@ -4061,7 +4065,7 @@ class BashFrame(wx.Frame):
         #--WARNINGS----------------------------------------
         self.warn_load_order()
         self.warn_corrupted()
-        self._corruptedGameIni()
+        self.warn_game_ini()
         self._obmmWarn()
         self._missingDocsDir()
         #--Done (end recursion blocker)
@@ -4132,7 +4136,9 @@ class BashFrame(wx.Frame):
               _(u'Some files have corrupted headers or TES4 header versions:'),
               message, liststyle='list', canCancel=False)
 
-    def _corruptedGameIni(self):
+    _ini_missing = _(u"%(ini)s does not exist yet.  %(game)s will create this "
+        u"file on first run.  INI tweaks will not be usable until then.")
+    def warn_game_ini(self):
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
@@ -4141,6 +4147,10 @@ class BashFrame(wx.Frame):
                         u'(e.g. "[General]"), but does not. You should edit '
                         u'the file to correct this.') % bush.game.iniFiles[0]
                 balt.showWarning(self, fill(msg))
+        elif self.oblivionIniMissing:
+            self.oblivionIniMissing = False
+            balt.showWarning(self, self._ini_missing % {
+                'ini': bosh.oblivionIni.path, 'game': bush.game.displayName})
 
     def _obmmWarn(self):
         #--OBMM Warning?
