@@ -2770,10 +2770,18 @@ class ModInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 class INIInfo(FileInfo):
+    """DEPRECATED ! IniInfos should contain IniFiles directly !!"""
     def __init__(self,*args,**kwdargs):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
         self.__target_ini = None # used in status only
+        self.__ini_file = None
+
+    @property
+    def _ini_file(self): # init once when we need it
+        if self.__ini_file is None:
+            self.__ini_file = BestIniFile(self.getPath())
+        return self.__ini_file
 
     @property
     def tweak_status(self):
