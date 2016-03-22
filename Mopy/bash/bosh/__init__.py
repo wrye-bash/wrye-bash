@@ -1562,6 +1562,7 @@ class IniFile(object):
         self._ini_size = self.path.size if self.path.exists() else 0
         self._ini_mod_time = self.path.mtime if self.path.exists() else 0
         self._settings_cache = self.__empty
+        self._settings_cache_linenum = self.__empty
 
     @classmethod
     def formatMatch(cls, path):
@@ -1584,7 +1585,7 @@ class IniFile(object):
         else:
             return default
 
-    def getSettings(self):
+    def getSettings(self, with_line_numbers=False):
         """Gets settings for self."""
         if not self.path.exists() or self.path.isdir(): return {}, {}
         psize, pmtime = self.path.size_mtime()
@@ -1593,10 +1594,13 @@ class IniFile(object):
             deleted = {}
         else:
             self._ini_size, self._ini_mod_time = psize, pmtime
-            self._settings_cache, deleted = self.getTweakFileSettings(self.path, True)
-        return copy.copy(self._settings_cache), deleted
+            self._settings_cache_linenum, deleted = self.getTweakFileSettings(self.path, lineNumbers=True)
+            self._settings_cache = dict(
+                (k, dict((x, y[0]) for x, y in v.iteritems())) for k, v in
+                self._settings_cache_linenum.iteritems())
+        return copy.copy(self._settings_cache if not with_line_numbers else self._settings_cache_linenum), deleted
 
-    def getTweakFileSettings(self,tweakPath,setCorrupted=False,lineNumbers=False):
+    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
         """Gets settings in a tweak file."""
         ini_settings = {}
         deleted_settings = {}
@@ -1604,8 +1608,10 @@ class IniFile(object):
             return ini_settings,deleted_settings
         if tweakPath != self.path:
             encoding = 'utf-8'
+            setCorrupted = False
         else:
             encoding = self.encoding
+            setCorrupted = True
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -1661,7 +1667,7 @@ class IniFile(object):
             encoding = 'utf-8'
         else:
             encoding = self.encoding
-        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True,True)
+        iniSettings,deletedSettings = self.getSettings(with_line_numbers=True)
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -1875,7 +1881,7 @@ class OBSEIniFile(IniFile):
         elif lstr == u'setGS': section = u']setGS['
         return IniFile.getSetting(self,section,key,default)
 
-    def getTweakFileSettings(self,tweakPath,setCorrupted=False,lineNumbers=False):
+    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
         """Get the settings in the ini script."""
         ini_settings = {}
         deleted_settings = {}
@@ -1928,7 +1934,7 @@ class OBSEIniFile(IniFile):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True,True)
+        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True)
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
