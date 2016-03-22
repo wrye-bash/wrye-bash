@@ -1554,10 +1554,10 @@ class IniFile(object):
     formatRes = (reSetting, reSection)
     encoding = 'utf-8'
     __empty = {}
+    defaultSection = u'General'
 
-    def __init__(self,path,defaultSection=u'General'):
+    def __init__(self, path):
         self.path = path
-        self.defaultSection = defaultSection
         self.isCorrupted = False
         self._ini_size = self.path.size if self.path.exists() else 0
         self._ini_mod_time = self.path.mtime if self.path.exists() else 0
@@ -1610,16 +1610,17 @@ class IniFile(object):
         deleted_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings,deleted_settings
+        default_section = self.__class__.defaultSection
         if tweakPath != self.path:
             encoding = 'utf-8'
             setCorrupted = False
         else:
             encoding = self.encoding
             setCorrupted = True
-        reComment = self.reComment
-        reSection = self.reSection
-        reDeleted = self.reDeletedSetting
-        reSetting = self.reSetting
+        reComment = IniFile.reComment
+        reSection = IniFile.reSection
+        reDeleted = IniFile.reDeletedSetting
+        reSetting = IniFile.reSetting
         if lineNumbers:
             def makeSetting(match,lineNo): return match.group(2).strip(),lineNo
         else:
@@ -1642,7 +1643,8 @@ class IniFile(object):
                     sectionSettings = ini_settings.setdefault(section,{})
                 elif maSetting:
                     if sectionSettings is None:
-                        sectionSettings = ini_settings.setdefault(LString(self.defaultSection),{})
+                        sectionSettings = ini_settings.setdefault(LString(
+                            default_section), {})
                         if setCorrupted: self.isCorrupted = True
                     sectionSettings[LString(maSetting.group(1))] = makeSetting(maSetting,i)
                 elif maDeleted:
@@ -1679,7 +1681,7 @@ class IniFile(object):
         reSetting = self.reSetting
         #--Read ini file
         with tweakPath.open('r') as iniFile:
-            section = LString(self.defaultSection)
+            section = LString(self.__class__.defaultSection)
             for i,line in enumerate(iniFile.readlines()):
                 try:
                     line = unicode(line,encoding)
@@ -1874,11 +1876,13 @@ class OBSEIniFile(IniFile):
     reSet     = re.compile(ur'\s*set\s+(.+?)\s+to\s+(.*)', re.I|re.U)
     reSetGS   = re.compile(ur'\s*setGS\s+(.+?)\s+(.*)', re.I|re.U)
     formatRes = (reSet, reSetGS)
+    defaultSection = u'' # Change the default section to something that
+    # can't occur in a normal ini
 
-    def __init__(self,path,defaultSection=u''):
+    def __init__(self, path):
         """Change the default section to something that can't
         occur in a normal ini"""
-        IniFile.__init__(self,path,u'')
+        IniFile.__init__(self, path)
 
     def getSetting(self,section,key,default=None):
         lstr = LString(section)
@@ -2099,13 +2103,13 @@ class OblivionIni(IniFile):
     def __init__(self,name):
         # Use local copy of the oblivion.ini if present
         if dirs['app'].join(name).exists():
-            IniFile.__init__(self, dirs['app'].join(name), u'General')
+            IniFile.__init__(self, dirs['app'].join(name))
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self, dirs['saveBase'].join(name), u'General')
+        IniFile.__init__(self, dirs['saveBase'].join(name))
 
     def __ensureExists(self): ##: YAK - track down call graph - we should avoid
         # creating the ini and if we must (bsa redirection ?) warn the user !!!
