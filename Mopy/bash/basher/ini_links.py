@@ -25,7 +25,7 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
-from .. import bass, bosh, balt, bush, env
+from .. import bass, bosh, balt, env
 from ..bass import Resources
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
 
@@ -162,13 +162,7 @@ class INI_Apply(EnabledLink):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
         choice = self.iniPanel.current_ini_path.tail
-        if choice in bush.game.iniFiles:
-            message = (_(u'Apply an ini tweak to %s?') % choice
-                       + u'\n\n' +
-                       _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to your computer!')
-                       )
-            if not self._askContinue(message, 'bash.iniTweaks.continue',
-                                     _(u'INI Tweaks')): return
+        if not self.window.warn_tweak_game_ini(choice): return
         needsRefresh = False
         for item in self.selected:
             #--No point applying a tweak that's already applied
