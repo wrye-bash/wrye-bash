@@ -1223,11 +1223,6 @@ class DataDict:
     def itervalues(self):
         return self.data.itervalues()
 
-    def delete(self, itemOrItems, **kwargs):
-        raise NotImplementedError('Only use in UIList data stores.')
-    def delete_Refresh(self, deleted):
-        raise NotImplementedError('Only use in UIList data stores.')
-
 #------------------------------------------------------------------------------
 from collections import MutableSet
 class OrderedSet(list, MutableSet):

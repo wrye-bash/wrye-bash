@@ -2954,7 +2954,14 @@ class TrackedFileInfos(DataDict):
         self[absPath] = fileInfo
 
 #------------------------------------------------------------------------------
-class FileInfos(DataDict):
+class _DataStore(DataDict):
+
+    def delete(self, itemOrItems, **kwargs): raise AbstractError
+    def delete_Refresh(self, deleted): raise AbstractError # Yak - absorb in refresh - add deleted parameter
+    def refresh(self): raise AbstractError
+    def save(self): pass # for Screenshots
+
+class FileInfos(_DataStore):
     """Common superclass for mod, ini, saves and bsa infos."""
     ##: we need a common API for this and TankData...
     file_pattern = None # subclasses must define this !
@@ -4262,13 +4269,11 @@ class BSAInfos(FileInfos):
             if bsaInfos.refresh():
                 bsaInfos.resetBSAMTimes()
 
-# TankDatas -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class PickleTankData:
-    """Mix in class for tank datas built on PickleDicts."""
-    def __init__(self,path):
-        """Initialize. Definite data from pickledict."""
-        self.dictFile = bolt.PickleDict(path)
+class PeopleData(_DataStore):
+    """Data for a People UIList. Built on a PickleDict."""
+    def __init__(self):
+        self.dictFile = bolt.PickleDict(dirs['saveBase'].join(u'People.dat'))
         self.data = self.dictFile.data
         self.hasChanged = False ##: move to bolt.PickleDict
         self.loaded = False
@@ -4292,13 +4297,7 @@ class PickleTankData:
             self.dictFile.save()
             self.hasChanged = False
 
-#------------------------------------------------------------------------------
-class PeopleData(PickleTankData, DataDict):
-    """Data for a People UIList."""
-    def __init__(self):
-        PickleTankData.__init__(self, dirs['saveBase'].join(u'People.dat'))
-
-    def delete(self, key, **kwargs): ##: ripped from MesageData - move to DataDict ?
+    def delete(self, key, **kwargs):
         """Delete entry."""
         del self.data[key]
         self.hasChanged = True
@@ -4335,7 +4334,7 @@ class PeopleData(PickleTankData, DataDict):
                 out.write(u'\n\n')
 
 #------------------------------------------------------------------------------
-class ScreensData(DataDict):
+class ScreensData(_DataStore):
     reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
 
     def __init__(self):
@@ -5786,7 +5785,7 @@ from .converters import InstallerConverter
 # noinspection PyRedeclaration
 class InstallerConverter(InstallerConverter): pass
 
-class InstallersData(DataDict):
+class InstallersData(_DataStore):
     """Installers tank data. This is the data source for the InstallersList."""
     # hack to track changes in installed mod inis etc _in the Data/ dir_ and
     # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track

@@ -161,6 +161,7 @@ class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
     # UI settings keys prefix - used for sashPos and uiList gui settings
     keyPrefix = 'OVERRIDE'
+    _status_str = u'OVERRIDE:' + u' %d'
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
@@ -170,7 +171,7 @@ class NotebookPanel(wx.Panel):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def _sbCount(self): return u''
+    def _sbCount(self): return self.__class__._status_str % len(self.listData)
 
     def SetStatusCount(self):
         """Sets status bar count field."""
@@ -195,9 +196,7 @@ class NotebookPanel(wx.Panel):
     def ClosePanel(self):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc."""
-        # ScreensPanel is not backed up by a pickle file
-        if isinstance(self, ScreensPanel): return
-        if hasattr(self, 'listData'):
+        if hasattr(self, 'listData'): # must be a _DataStore instance
         # the only SashPanels that do not have this attribute are ModDetails
         # and SaveDetails that use a MasterList whose data is initially {}
             self.listData.save()
@@ -2086,6 +2085,7 @@ class SaveDetails(_SashDetailsPanel):
 class SavePanel(SashPanel):
     """Savegames tab."""
     keyPrefix = 'bash.saves'
+    _status_str = _(u'Saves:') + u' %d'
 
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
@@ -2104,8 +2104,6 @@ class SavePanel(SashPanel):
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
         super(SavePanel, self).RefreshUIColors()
-
-    def _sbCount(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
     def ClosePanel(self):
         bosh.saveInfos.profiles.save()
@@ -2802,8 +2800,7 @@ class InstallersPanel(SashTankPanel):
 
     def _sbCount(self):
         active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
-        text = _(u'Packages:') + u' %d/%d' % (active, len(self.listData.data))
-        return text
+        return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
 
     def ClosePanel(self):
         if not hasattr(self, '_firstShow'): # save comments text box size
@@ -3182,6 +3179,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 class ScreensPanel(SashPanel):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
+    _status_str = _(u'Screens:') + u' %d'
 
     def __init__(self,parent):
         """Initialize."""
@@ -3195,9 +3193,6 @@ class ScreensPanel(SashPanel):
         #--Layout
         left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
-
-    def _sbCount(self):
-        return _(u'Screens:') + u' %d' % (len(self.listData.data),)
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -3347,6 +3342,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
 class BSAPanel(SashPanel):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
+    _status_str = _(u'BSAs:') + u' %d'
 
     def __init__(self,parent):
         super(BSAPanel, self).__init__(parent)
@@ -3360,8 +3356,6 @@ class BSAPanel(SashPanel):
         right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
         self.detailsPanel.Fit()
-
-    def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.bsaInfos.data))
 
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
@@ -3398,6 +3392,7 @@ class PeopleList(balt.UIList):
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""
     keyPrefix = 'bash.people'
+    _status_str = _(u'People:') + u' %d'
 
     def __init__(self,parent):
         """Initialize."""
@@ -3422,8 +3417,6 @@ class PeoplePanel(SashTankPanel):
             ))
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
-
-    def _sbCount(self): return _(u'People:') + u' %d' % len(self.listData.data)
 
     def ShowPanel(self):
         if self.listData.refresh(): self.uiList.RefreshUI()
