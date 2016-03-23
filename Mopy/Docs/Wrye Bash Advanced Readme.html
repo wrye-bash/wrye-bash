@@ -319,7 +319,7 @@ tab. The directories skipped are:
     <li>Right-click the project and select <a href="#bainPackToArchive">Pack To Archive...</a>.
     <li>Name the new archive, and choose whether to use solid compression or not. Solid compression results in smaller file sizes, but also reduces performance.
     <li>Set any options on the new archive package that you wish to be set whenever the BCF is applied (such as default sub-packages or <q>Skip...</q> options).
-    <li>Select all the source archives in the package list, then right-click them and choose <a href="#modsConversionsCreate">Conversions->Create</a>. Select the archive that you just created, and name the BCF.
+    <li>Select all the source archives in the package list, then right-click them and choose <a href="#bainConversion">Conversions->Create</a>. Select the archive that you just created, and name the BCF.
     <li>Look over the result log to make sure it looks OK. If it looks wrong, try again, you may have gotten the sources/target wrong. If it looks right, you can find the new BCF in <code>[Game] Mods\Bash Installers\Bain Converters</code>. It is recommended that you copy/paste the result log into your readme for your BCF.
 </ol>
 <p>Some points of interest regarding BCFs:
@@ -395,7 +395,7 @@ tab. The directories skipped are:
                 Refresh</a> flag <i>on that particular project</i>. Keep in mind that Projects will be anyway refreshed once on Bash restart, irrespective of this setting (except if popular
             demand arises).
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
-        <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+        <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.com/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
         <tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
@@ -1300,7 +1300,7 @@ tab. The directories skipped are:
         <tr><td>No Light Fade Value Fix<td>Sets the fade values on all lights to a default of 1.0 if not already set.
         <tr><td>No Light Flicker<td>Turns off flickering effects for lights. May help on machines with low end graphic cards.
         <tr><td>Number of uses for pre-enchanted weapons and Staffs/Staves<td>The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.
-        <tr><td>Nvidia Fog Fix<td>Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen. This feature is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859">Quarn's Nvidia Black Screen Fix</a>.
+        <tr><td>Nvidia Fog Fix<td>Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen. This feature is based on <a href="http://www.nexusmods.com/oblivion/mods/11167/?">Quarn's Nvidia Black Screen Fix</a>.
         <tr><td>Reweigh: Arrows<td>Reweighs arrows to a maximum weight.
         <tr><td>Reweigh: Ingredients<td>Reweighs ingredients to a maximum weight.
         <tr><td>Reweigh: Potions (Maximum)<td>Reweighs potions to a maximum weight. This does not affect potions with script effects or with current weight >= 1.0. Thus it should not affect alcoholic beverages or scripted "potions" like HTS water skins. Note that this is similar to, but not the same as, the Reweigh Potions command for savegames, which reweighs user created potions rather than mod created potions.
