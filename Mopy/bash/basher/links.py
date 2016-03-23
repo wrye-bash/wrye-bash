@@ -253,15 +253,7 @@ def InitInstallerLinks():
         Installers_ConflictsReportShowBSAConflicts())
     InstallersList.mainMenu.append(Installers_WizardOverlay())
     InstallersList.mainMenu.append(SeparatorLink())
-    InstallersList.mainMenu.append(Installers_SkipOBSEPlugins())
-    InstallersList.mainMenu.append(Installers_SkipScreenshots())
-    InstallersList.mainMenu.append(Installers_SkipImages())
-    InstallersList.mainMenu.append(Installers_SkipDocs())
-    InstallersList.mainMenu.append(Installers_SkipDistantLOD())
-    InstallersList.mainMenu.append(Installers_SkipLandscapeLODMeshes())
-    InstallersList.mainMenu.append(Installers_SkipLandscapeLODTextures())
-    InstallersList.mainMenu.append(Installers_SkipLandscapeLODNormals())
-    InstallersList.mainMenu.append(Installers_SkipBsl())
+    InstallersList.mainMenu.append(Installers_GlobalSkips())
     InstallersList.mainMenu.append(Installers_RenameStrings())
     #--Item links
     #--File

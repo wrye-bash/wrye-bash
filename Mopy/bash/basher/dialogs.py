@@ -108,7 +108,7 @@ class ColorDialog(balt.Dialog):
 
     def UpdateUIButtons(self):
         # Apply All and Default All
-        for key, val in self.changes.iteritems():
+        for key, val in self.changes.items():
             if val == colors[key]:
                 del self.changes[key]
         anyChanged = bool(self.changes)

@@ -2094,6 +2094,8 @@ class InstallersList(balt.UIList):
         #--Text
         if installer.type == 2 and len(installer.subNames) == 2:
             item_format.text_key = self._type_textKey[1]
+        elif isinstance(installer, bosh.InstallerMarker):
+            item_format.text_key = 'installers.text.marker'
         else: item_format.text_key = self._type_textKey.get(installer.type,
                                              'installers.text.invalid')
         #--Background

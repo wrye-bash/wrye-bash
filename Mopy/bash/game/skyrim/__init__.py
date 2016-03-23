@@ -276,9 +276,7 @@ pklfile = r'bash\db\Skyrim_ids.pkl'
 
 #--BAIN: Directories that are OK to install to
 dataDirs = {
-    u'bash patches',
     u'dialogueviews',
-    u'docs',
     u'interface',
     u'meshes',
     u'strings',
@@ -290,13 +288,14 @@ dataDirs = {
     u'shadersfx',
     u'music',
     u'sound',
-    u'seq',}
+    u'seq',
+}
 dataDirsPlus = {
-    u'ini tweaks',
     u'skse',
     u'ini',
     u'asi',
-    u'skyproc patchers',}
+    u'skyproc patchers',
+}
 
 # Installer -------------------------------------------------------------------
 # ensure all path strings are prefixed with 'r' to avoid interpretation of

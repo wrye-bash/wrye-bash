@@ -4457,6 +4457,7 @@ class ScreensData(DataDict):
     def delete_Refresh(self, deleted): self.refresh()
 
 #------------------------------------------------------------------------------
+os_sep = os.path.sep
 class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
@@ -4474,8 +4475,9 @@ class Installer(object):
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
-    dataDirsMinus = {u'bash',
-                     u'--'}  #--Will be skipped even if hasExtraData == True.
+    #--Will be skipped even if hasExtraData == True (bonus: skipped also on
+    # scanning the game Data directory)
+    dataDirsMinus = {u'bash', u'--'}
     reDataFile = re.compile(
         ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$', re.I | re.U)
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
@@ -4494,15 +4496,17 @@ class Installer(object):
     imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
-    #--Needs to be called after bush.game has been set
-    dataDirsPlus = ()
+    #--Regular game directories - needs update after bush.game has been set
+    dataDirsPlus = docDirs | {u'bash patches', u'ini tweaks', u'docs'}
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
-        Installer.dataDirsPlus = bush.game.dataDirs | Installer.docDirs | \
-                                 bush.game.dataDirsPlus
+        Installer.dataDirsPlus |= bush.game.dataDirs | bush.game.dataDirsPlus
         InstallersData.installers_dir_skips.update(
             {dirs['converters'].stail.lower(), u'bash'})
+        user_skipped = inisettings['SkippedBashInstallersDirs'].split(u'|')
+        InstallersData.installers_dir_skips.update(
+            skipped.lower() for skipped in user_skipped if skipped)
 
     #--Temp Files/Dirs
     _tempDir = None
@@ -4732,8 +4736,10 @@ class Installer(object):
     #--refreshDataSizeCrc, err, framework -------------------------------------
     # Those files/folders will be always skipped by refreshDataSizeCrc()
     _silentSkipsStart = (
-        u'--', u'omod conversion data', u'fomod', u'wizard images')
-    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'config')
+        u'--', u'omod conversion data%s' % os_sep, u'fomod%s' % os_sep,
+        u'wizard images%s' % os_sep)
+    _silentSkipsEnd = (
+        u'%sthumbs.db' % os_sep, u'%sdesktop.ini' % os_sep, u'config')
 
     # global skips that can be overridden en masse by the installer
     _global_skips = []
@@ -4830,7 +4836,7 @@ class Installer(object):
     def _init_skips(self):
         start = [u'sound\\voice'] if self.skipVoices else []
         skips, skip_ext = [], set()
-        if not self.overrideSkips: # DOCS !
+        if not self.overrideSkips:
             skips = list(Installer._global_skips)
             start.extend(Installer._global_start_skips)
             skip_ext = Installer._global_skip_extensions
@@ -5134,7 +5140,8 @@ class Installer(object):
         return dest_src
 
     @staticmethod
-    def _find_root_index(fileSizeCrcs):
+    def _find_root_index(fileSizeCrcs, _os_sep=os_sep,
+                         skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
         #--Sort file names
         def fscSortKey(fsc):
@@ -5148,9 +5155,9 @@ class Installer(object):
         layout = {}
         layoutSetdefault = layout.setdefault
         for file,size,crc in fileSizeCrcs:
-            if file.startswith(u'--'): continue ##: also ignore other silent skips !!
+            if file.startswith(skips_start): continue
             fileLower = file.lower()
-            frags = fileLower.split(u'\\')
+            frags = fileLower.split(_os_sep)
             if len(frags) == 1:
                 # Files in the root of the package, start there
                 rootIdex = 0
@@ -5174,7 +5181,7 @@ class Installer(object):
                     rootIdex = 0
                 else:
                     root = layout[rootStr]
-                    rootStr = u''.join((rootStr,u'\\'))
+                    rootStr = u''.join((rootStr, _os_sep))
                     while True:
                         if root['files']:
                             # There are files in this folder, call it the starting point
@@ -5190,7 +5197,7 @@ class Installer(object):
                                 break
                             # Keep looking deeper
                             root = rootDirs[rootDirKey]
-                            rootStr = u''.join((rootStr,rootDirKey,u'\\'))
+                            rootStr = u''.join((rootStr, rootDirKey, _os_sep))
                         else:
                             # Multiple folders, stop here even if it's no good
                             break
@@ -5198,6 +5205,11 @@ class Installer(object):
         return rootIdex
 
     def refreshBasic(self, archive, progress, recalculate_project_crc=True):
+        return self._refreshBasic(archive, progress, recalculate_project_crc)
+
+    def _refreshBasic(self, archive, progress, recalculate_project_crc=True,
+                     _os_sep=os_sep, skips_start=tuple(
+                x.replace(os_sep, u'') for x in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
         self._refreshSource(archive, progress, recalculate_project_crc)
         self.fileRootIdex = rootIdex = self._find_root_index(self.fileSizeCrcs)
@@ -5212,7 +5224,7 @@ class Installer(object):
         for file, size, crc in self.fileSizeCrcs:
             file = file[rootIdex:]
             if type_ != 1:
-                frags = file.split(u'\\')
+                frags = file.split(_os_sep)
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFileSearch(frags[0]) or
@@ -5220,9 +5232,9 @@ class Installer(object):
                     type_ = 1
                     break
                 #--Type 2?
-                elif nfrags > 2 and not frags[0].startswith(u'--') and \
+                elif nfrags > 2 and not frags[0].startswith(skips_start) and \
                                 frags[1].lower() in dataDirsPlus \
-                 or nfrags == 2 and not frags[0].startswith(u'--') and \
+                 or nfrags == 2 and not frags[0].startswith(skips_start) and \
                                 reDataFileSearch(frags[1]):
                     subNameSetAdd(frags[0])
                     type_ = 2
@@ -5295,13 +5307,9 @@ class Installer(object):
     def match_valid_name(self, newName):
         return self.reValidNamePattern.match(newName)
 
-    def size_or_mtime_changed(self, apath):
-        if self.size != apath.size: return True
-        ## FIXME: getmtime(True) won't detect all changes - for instance COBL
-        # has 3/25/2020 8:02:00 AM modification time if unpacked and no
-        # amount of internal shuffling won't change its apath.getmtime(True)
-        if self.modified != apath.getmtime(True): return True
-        return False
+    def size_or_mtime_changed(self, apath, _lstat=os.lstat):
+        stat = _lstat(apath.s)
+        return self.size != stat.st_size or self.modified != int(stat.st_mtime)
 
     @staticmethod
     def _rename(archive, data, newName):
@@ -5341,8 +5349,7 @@ class Installer(object):
         """Refresh fileSizeCrcs, size, and modified from source
         archive/directory. fileSizeCrcs is a list of tuples, one for _each_
         file in the archive or project directory. _refreshSource is called
-        in refreshBasic only - so may be skipped if this is a project and
-        skipRefresh is on. In projects the src_sizeCrcDate cache is used to
+        in refreshBasic only. In projects the src_sizeCrcDate cache is used to
         avoid recalculating crc's.
         :param recalculate_project_crc: only used in InstallerProject override
         """
@@ -5649,6 +5656,29 @@ class InstallerProject(Installer):
                                rootName)
         #--Done
         return int(max_mtime)
+
+    def size_or_mtime_changed(self, apath, _lstat=os.lstat):
+        #FIXME(ut): getmtime(True) won't detect all changes - for instance COBL
+        # has 3/25/2020 8:02:00 AM modification time if unpacked and no
+        # amount of internal shuffling won't change its apath.getmtime(True)
+        getM, join = os.path.getmtime, os.path.join
+        c, size = [], 0
+        cExtend, cAppend = c.extend, c.append
+        for root, d, files in os.walk(apath.s):
+            cAppend(getM(root))
+            stats = [_lstat(join(root, fi)) for fi in files]
+            cExtend(fi.st_mtime for fi in stats)
+            size += sum(fi.st_size for fi in stats)
+        if self.size != size: return True
+        # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
+        # c.sort() # is this needed or os.walk will return the same order during program run
+        # mtimes_str = '.'.join(map(str, c))
+        # mtimes_str_crc = crc32(mtimes_str)
+        try:
+            mtime = int(max(c))
+        except ValueError: # int(max([]))
+            mtime = 0
+        return self.modified != mtime
 
     @staticmethod
     def removeEmpties(name):
@@ -6096,7 +6126,7 @@ class InstallersData(DataDict):
             apath = installersJoin(item)
             if apath.isdir(): # Project - auto-refresh those only if specified
                 if item.s.lower() in self.installers_dir_skips:
-                    continue # skip Bash directories
+                    continue # skip Bash directories and user specified ones
                 installer = self.get(item)
                 projects.add(item)
                 # refresh projects once on boot even if skipRefresh is on
@@ -7586,6 +7616,7 @@ def initDefaultSettings():
     inisettings['EnableSplashScreen'] = True
     inisettings['PromptActivateBashedPatch'] = True
     inisettings['WarnTooManyFiles'] = True
+    inisettings['SkippedBashInstallersDirs'] = u''
 
 def initOptions(bashIni):
     initDefaultTools()

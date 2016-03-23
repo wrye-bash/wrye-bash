@@ -50,6 +50,7 @@
 	<li><a href="#bain">Installing Mods</a>
 	<ol>
 		<li><a href="#bain-overview">Overview</a>
+		<li><a href="#bain-structure">BAIN-Compatible installer layout</a>
 		<li><a href="#bain-convert">Restructuring Packages to be BAIN-Compatible</a>
 		<li><a href="#bain-install">Installing/Uninstalling Via BAIN</a>
 		<li><a href="#bain-order">BAIN Package Order</a>
@@ -192,9 +193,77 @@
 <img src="../bash/images/readme/installers-8.png" alt="Installers Tab"/>
 <figcaption style="padding-top:650px;">Wrye Bash's Installers tab.</figcaption>
 </figure>
+
 <h3 id="bain-overview">Overview</h3>
-<p>Wrye Bash's mod installer is known as <abbr title="Bash Installers">BAIN</abbr>, and is represented by the Installers tab. The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>, BAIN will be initialised, which can take some time. After that, the information refresh performed when the Installers tab is opened is much faster. BAIN's primary function is to install mod packages. <b>BAIN Packages</b> can be .zip, .7z or .rar archives or uncompressed directories. Uncompressed directories are called <b>Projects</b>.
+<p>Wrye Bash's mod installer is known as <abbr title="Bash Installers">BAIN</abbr>, and is represented by the Installers tab. The first time the Installers tab is opened, a
+	dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>, BAIN will be initialised, which can take some time. After that, the information refresh
+	performed when the Installers tab is opened is much faster. BAIN's primary function is to install mod packages. <b>BAIN Packages</b> can be <code>.zip</code>,
+	<code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <b>projects</b> while archives are usually called
+	<b>packages</b>, abusing terminology. When we refer to projects and packages together we will be also using the term <b>installer</b>.
 <p>If BAIN is disabled, ie. if you clicked <q>No</q> on the dialog that was displayed the first time you selected the Installers tab, it can be re-enabled by right clicking on a column header in the Installers tab and selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainEnabled">Enabled</a>.
+
+<h3 id="bain-structure">BAIN-Compatible installer layout</h3>
+
+<p>When looking at an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. In broad lines, BAIN
+will search for specific directories and file extensions (mod, texture, nif, docs etc). The directories BAIN is aware of, independently of the game,
+are:
+
+<table>
+	<thead><tr><th>Bash directories<th>Notes
+	<tbody>
+		<tr><td>bash patches<td>yep, Bash will install files in this folder from packages
+		<tr><td>docs<td>its contents will be copied inside Data/Docs
+		<tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ - do <b>not</b> include subfolders in ini tweaks/
+		<tr><td>screenshots<td>its contents will be copied inside Data/Docs
+	<thead><tr><th colspan="2">Vanilla game directory present on all games
+	<tbody>
+		<tr><td colspan="2">meshes, music, textures, video
+</table>
+
+but there are game specific directories as well (all directory detection is <i>case insensitive</i>):
+
+<table>
+	<thead><tr><th>Game<th>Extra Game Directories<th>Bonus Directories (tools or modders)
+	<tbody>
+		<tr><td>Oblivion<td>distantlod, facegen, fonts, menus, shaders, sound, trees<td>_tejon, ini, obse, pluggy, scripts, streamline
+		<tr><td>Skyrim<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, sound, strings<td>asi, ini, skse, skyproc patchers
+		<tr><td>Fallout 4<td>interface, lodsettings, materials, misc, programs, scripts, shadersfx, sounds, strings, vis<td>f4se, ini
+</table>
+
+All these directories (either in the Global or Extra and Bonus Game directories) constitute the <i>standard game directories</i> for this game. If
+<a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories">Has Extra Directories</a> is not on for the package, any other top level directory in the (sub)package
+will be skipped (and their content listed in Skipped tab). There are also some directories and files that will be always skipped (for all the gory details see
+<a href="Wrye%20Bash%20Advanced%20Readme.html#bain-skipped">Skipped Files</a>).
+
+<p>There are, loosely speaking, three types of BAIN-compatible package structures:
+
+<table>
+	<thead><tr><th>Structure<th>Description
+	<tbody>
+		<tr><td>Simple<td>Installer has .esp, .esm and/or .bsa files, and/or any of the standard game subdirectories at the top level of the package/project.
+		<tr><td>Complex<td>Installer has top-level subdirectories that each have a simple structure (as defined above). The top level subdirectories
+			(known as subpackages) <b>must not have the same name as any of the regular game subdirectories for this game.</b>
+			Each top-level subdirectory will be treated as a sub-package, and can be independently activated or deactivated as desired.
+		<tr><td>Complex/Simple<td>A complex installer with only one top-level subdirectory. It is treated as a simple installer, starting at this
+			top level subdirectory. Examples include mods packaged with a top-level Data directory.
+</table>
+
+<p>You must dump your installer in <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
+	created on the same level as your game directory (that is if your game exe is located in "C:\GAMES\TESIV\Oblivion" then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
+	directory on first run, but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
+	<i>not</i> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance, mods thrashing and whatnot. To add an installer to the Bash
+	Installers dir it's enough to drag and drop it on the installers list.
+<p>Bash will scan the Bash Installers directory and pick up all subfolders and all <code>.zip</code>, <code>.7z</code> or <code>.rar</code> archives - except for:
+
+<ol>
+	<li>folders or files that begin with <code>--</code> will be skipped
+	<li>a <code>Bain Converters</code> subdir of Bash Installers will be skipped
+	<li>folders or files that begin with <code>bash</code> will be skipped
+	<li>you may specify additional directories to be skipped via the <code>sSkippedBashInstallersDirs</code> ini setting
+</ol>
+
+<p>Now BAIN will try to classify the packages it detected in Bash Installers into its package formats - if it fails the package will display as unrecognized and will have to
+be restructured.
 
 <h3 id="bain-convert">Restructuring Packages to be BAIN-Compatible</h3>
 <p>The easiest way to tell if a package needs manual converting to be compatible with BAIN is to try installing it. If it is listed in the Package list with a grey checkbox and name, then BAIN cannot install it. Due to BAIN's flexibility, many mods are already packaged in ways that are compatible, but for those that are not, there are a few possible cases:
@@ -207,19 +276,13 @@
 <p>If an archive has a BCF, it can be converted for installation with BAIN using the following instructions.
 <ol>
 	<li>Ensure that the BCF is installed in the correct location, <code>[Game] Mods\Bash Installers\Bain Converters</code>. Also ensure that the archive(s) it converts is/are in <code>[Game] Mods\Bash Installers</code>.
-	<li>From the BAIN installers list, select the archive(s) to be converted (i.e., the <q>source</q> packages) and right click on the selected file(s) to bring up the context menu, and select <a href="#bainConversions">Conversions</a> to open the sub-menu.
-	<li>Click on <a href="#bainApply">Apply</a> to open a second sub-menu and select the BCF from it. There may be more than one BCF listed if multiple installed BCFs can convert the selected package(s). An asterisk ('*') is added to the end of a BCF's name for every archive it converts that isn't selected.
+	<li>From the BAIN installers list, select the archive(s) to be converted (i.e., the <q>source</q> packages) and right click on the selected file(s) to bring up the context menu, and select <a href="Wrye%20Bash%20Advanced%20Readme.html#bainConversion">Conversions</a> to open the sub-menu.
+	<li>Click on <i>Apply</i> to open a second sub-menu and select the BCF from it. There may be more than one BCF listed if multiple installed BCFs can convert the selected package(s).
+	An asterisk ('*') is added to the end of a BCF's name for every archive it converts that isn't selected.
 	<li>Optionally choose a name for the converted archive(s).
 	<li>Once Wrye Bash has finished the conversion, the converted archive(s) will appear in the BAIN package list ready for install. You can now delete the original archive(s).
 </ol>
-<p>If a package is unrecognised by BAIN and has no associated BCF, its contents will have to be rearranged so that the structure matches one of the three types of BAIN-compatible package structures:
-<table>
-	<thead><tr><th>Structure<th>Description
-	<tbody>
-		<tr><td>Simple<td>Package has .esp, .esm and/or .bsa files, and/or any of the regular game subdirectories (screenshots, bash patches, distantlod, docs, facegen, fonts, menus, meshes, music, shaders, sound, textures, trees, video, streamline, _tejon, ini tweaks, scripts, pluggy, ini, obse) at the top level of the package.
-		<tr><td>Complex<td>Package has top-level subdirectories that each have a simple structure (as defined above). Each top-level subdirectory will be treated as a sub-package, and can be independently activated or deactivated as desired.
-		<tr><td>Complex/Simple<td>A complex package with only one top-level subdirectory. It is treated as a simple package. Examples include mods packaged with a top-level Data directory.
-</table>
+<p>If a package is unrecognised by BAIN and has no associated BCF, its contents will have to be rearranged so that the structure matches one of the three types of BAIN-compatible package structures.
 
 <h3 id="bain-install">Installing/Uninstalling Via BAIN</h3>
 <p>Packages must first be placed in the <code>[Game] Mods\Bash Installers</code> directory. This can either be done via Windows Explorer, or by dragging and dropping the package into the Wrye Bash window when the Installers tab is open. If you drag and drop, you will be asked whether you want to copy the package or move it.

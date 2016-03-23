@@ -55,6 +55,7 @@
         <li><a href="#bain-ui">The User Interface In Detail</a>
         <li><a href="#bain-refresh">BAIN Refresh</a>
         <li><a href="#bain-skipped">Skipped Files</a>
+        <li><a href="#bain-data-dir-skipped">Skipped Data subdirectories and uninstall quirks</a>
         <li><a href="#bain-se">Script Extender Plugin Installation</a>
         <li><a href="#bain-omod">OMOD Conversion Data</a>
         <li><a href="#bain-bcf">BAIN Conversion Files</a>
@@ -228,25 +229,68 @@
 <h3 id="bain-skipped">Skipped Files</h3>
 <p>BAIN skips the installation of some files and directories. The types of files skipped are:
 <ul>
-    <li>Silent skips. These are:
+    <li>Silent skips. These are <i>not</i> listed on the <q>Skipped</q> panel on the right and are:
         <ul>
-            <li><code>thumbs.db</code> and <code>desktop.ini</code> files (actually any file path that ends in those strings)
+            <li><code>thumbs.db</code> and <code>desktop.ini</code> files
             <li>any path that ends in <code>config</code>
-            <li>the omod conversion directory (<code>omod conversion data</code>, <code>fomod</code>) - actually any top level package or subpackage file/directory that starts with those
-                strings
-            <li>the wizard images directory (or any file/directory that starts with <code>wizard images</code>)
+            <li>the omod conversion directory (<code>omod conversion data</code>, <code>fomod</code>) if on the top level of package or subpackage
+            <li>the <code>wizard images</code> directory (again if on the top level of package or subpackage)
             <li>Developer files. Any file or directory that begins with <code>'--'</code> and is at the top level of a package or a subpackage will be silently skipped. This is so that mod
                 authors can include files related to a mod that are not required for it to work (eg. screenshots) in packages.
             <li>Bash will also skip voices for espms that are not installed from complex installers
+            <li>Specified skips. There are a few options in BAIN to skip the installation of certain file types, namely the ones on the <a href="#bainGlobalSkips">Global Skips</a> submenu for
+            all installers and <a href="#bainSkipVoices">Skip Voices</a> (on a per installer basis). If any such options are enabled, the file type(s) in question will be <i>silently</i>
+            skipped.
         </ul>
-    <li>Non-standard directories. Standard directories include all the game's default directories (including those only found in BSAs by default) and 'ini', ini tweaks', 'pluggy', 'scripts',
-        'streamline' and '_tejon'. Installation of these directories may be forced by using the <a href="#bainHasExtraDirectories">Has Extra Directories</a> option. Files skipped because of
-    this will be listed in the <q>Skipped</q> panel on the right. Even if Has Extra Directories option is checked directories that start with Bash (or the ones that are silently skipped) will
-    still be skipped.
-    <li>Archives &amp; executables. Executable files, apart from Script Extender plugins if the <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> option is disabled, and archives in packages will be skipped. Files skipped because of this will be listed in the <q>Skipped</q> panel on the right.
-    <li>Specified skips. There are a few options in BAIN to skip the installation of certain file types. If any such options are enabled, the file type(s) in question will be skipped.
-    <li>Voices (on a per installer basis) if <a href="#bainSkipVoices">Skip Voices</a> is checked.
+    <li>Non-standard directories. Standard directories include all the game's default directories (including those only found in BSAs by default) - see
+    <a href="Wrye%20Bash%20General%20Readme.html#bain-structure">BAIN-Compatible installer layout</a> for a detailed list per game. Files skipped because of this will be
+    listed in the <q>Skipped</q> panel on the right on the <i>== Skipped (Dir)</i> section. Installation of non-standard directories may be forced by using the <a
+            href="#bainHasExtraDirectories">Has Extra Directories</a> option. Even if Has Extra Directories option is checked, directories that are silently skipped will still be skipped.
+    <b>For a complex package,</b> any top level files (with the exception of files that contain "readme" and variations in their name) will be also considered as belonging to a skipped directory
+    and will be listed in the '== Skipped (Dir)' section. Top level means at the subpackages level, not inside a subpackage.
+    <li>Archives &amp; executables. Executable files, apart from Script Extender plugins if the <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> option is disabled, and archives in
+    packages will be skipped. Files skipped because of this will be listed in the <q>Skipped</q> panel on the right on the <i>== Skipped (Extension)</i> section. The complete list of
+    extensions skipped is:
+    <code>.001, .7z, .7z.001, .ace, .bz2, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip</code>
+    This includes BCFs (they have a .7z extension) - still BAIN will detect those.
 </ul>
+
+
+<h3 id="bain-data-dir-skipped">Skipped Data subdirectories and uninstall quirks</h3>
+<p>When scanning the contents of the Data folder BAIN will skip some of its subdirectories either by default or based on <a href="#bainGlobalSkips">Global Skips</a> in the installer
+tab. The directories skipped are:
+
+<table>
+	<thead><tr><th>Skipped Data subdirectories<th colspan="2">Notes
+	<tbody>
+		<tr><td>Bash<td colspan="2"><code>Data/Bash</code> directory that may contain Bash related data
+		<tr><td>--<td colspan="2">If you create a <code>Data/--</code> directory it will be ignored by Bash - dump your cruft there
+		<tr><td>distantlod<td colspan="2">If <a href="#bainSkipDistantLOD">Skip DistantLOD</a> is checked
+		<tr><td>meshes\landscape\lod<td colspan="2">If <a href="#bainSkipLODMeshes">Skip LOD Meshes</a> is checked
+		<tr><td>textures\landscapelod\generated<td colspan="2">If <a href="#bainSkipLODTextures">Skip LOD Textures</a> <b>and</b>
+            <a href="#bainSkipLODNormals">Skip LOD Normals</a> are <b>both</b> checked
+		<tr><td>docs<td colspan="2">If <a href="#bainSkipDocs">Skip Docs</a>  <b>and</b> <a href="#bainSkipImages">Skip Images</a> are
+            <b>both</b> checked
+		<tr><td>Script extender (see game specific below)<td colspan="2">If <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> is checked
+		<tr><td>screenshots<td colspan="2">If <a href="#bainSkipScreenshots">Skip Screenshots</a> is checked (that may change as Skip Screenshots will
+            skip a screenshots directory in the package, whose contents would be currently installed in Data/Docs, not Data/Screenshots).
+	<thead><tr><th colspan="3">Skipped file extensions
+    <tbody>
+        <td colspan="3">.001, .7z, .7z.001, .ace, .bz2, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip
+	<thead><tr><th colspan="3">Per game skipped Data subdirectories
+	<thead><tr><th>Game<th>Skipped Data subdirectories<td>Script extender(s) directories
+	<tbody>
+		<tr><td>Oblivion<td>tes4edit backups, bgsee, conscribe logs<td>OBSE
+		<tr><td>Skyrim<td>tes5edit backups<td>SKSE, SkyProc, Script Dragon
+		<tr><td>Fallout 4<td>fo4edit backups<td>F4SEs
+</table>
+
+<p>Skipping of Data subdirectories has some implications vis-à-vis uninstalling those skipped files. So say you turn Skip DistantLOD on, all packages
+    that have installed files in Data/distantlod will show as dirty (as expected). You should at this point hit
+    <a href="#bainAnnealAll">Anneal All</a>. If you don't, then restart Bash, the files will no more show as dirty (remember Bash scans the data dir on
+    booting, and will now boot with Skip DistantLOD on, so will simply loose track of any files in the distantlod folder). If you want to uninstall
+    those files after a restart you should turn <a href="#bainOverrideSkips">Override Skips</a> on for the package, so that BAIN will re-detect the
+    skipped files for this package and be able to uninstall them.
 
 
 <h3 id="bain-se">Script Extender Plugin Installation</h3>
@@ -275,7 +319,7 @@
     <li>Right-click the project and select <a href="#bainPackToArchive">Pack To Archive...</a>.
     <li>Name the new archive, and choose whether to use solid compression or not. Solid compression results in smaller file sizes, but also reduces performance.
     <li>Set any options on the new archive package that you wish to be set whenever the BCF is applied (such as default sub-packages or <q>Skip...</q> options).
-    <li>Select all the source archives in the package list, then right-click them and choose <a href="#modsConversionsCreate">Conversions->Create</a>. Select the archive that you just created, and name the BCF.
+    <li>Select all the source archives in the package list, then right-click them and choose <a href="#bainConversion">Conversions->Create</a>. Select the archive that you just created, and name the BCF.
     <li>Look over the result log to make sure it looks OK. If it looks wrong, try again, you may have gotten the sources/target wrong. If it looks right, you can find the new BCF in <code>[Game] Mods\Bash Installers\Bain Converters</code>. It is recommended that you copy/paste the result log into your readme for your BCF.
 </ol>
 <p>Some points of interest regarding BCFs:
@@ -315,7 +359,9 @@
             <a href="#bainRefresh">Refresh</a>) on, so in most use cases (if the files you altered belong to a particular project/package) just use Quick Refresh. What this command basically
             does is:
             <ol type="a">
-                <li>rescan the game Data directory (as is done on booting BAIN).
+                <li>rescan the game Data directory (as is done on booting BAIN). If you enabled/disabled any <a href="#bainGlobalSkips">global skip option</a> and this enabled/disabled new
+                    skips in the Data dir then rescanning Data will take those skips into account. See <a href="#bain-data-dir-skipped">Skipped Data subdirectories</a> for the Data directories
+                    that are skipped.
                 <li>run a Quick refresh on all installers (ignoring Skip refresh flags for projects, as Quick Refresh does)
             </ol>
         <tr><td colspan="2" id="bainFullRefresh">Full Refresh<td>This does a full refresh <i>of all data files</i>, both the contents of the game Data directory tree and Bash Installers
@@ -350,23 +396,24 @@
                 Refresh</a> flag <i>on that particular project</i>. Keep in mind that Projects will be anyway refreshed once on Bash restart, irrespective of this setting (except if popular
             demand arises).
         <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
-        <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.net/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+        <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.com/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
         <tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
         <tr><td colspan="2">Show BSA Conflicts<td>If checked, the contents of BSAs are compared and any conflicting resources found are displayed in the conflicts list.
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
-        <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td><i>Oblivion only.</i> If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed.
+        <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td>If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed  (for other games replace OBSE with SKSE etc)
         <tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
-        <tr><td colspan="2" id="bainSkipScreenshots">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
-        <tr><td colspan="2" id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
-        <tr><td colspan="2" id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
-        <tr><td colspan="2" id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
-        <tr><td colspan="2" id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
-        <tr><td colspan="2" id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
-        <tr><td colspan="2" id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
-        <tr><td colspan="2" id="bainSkipBSLFiles">Skip BSL Files<td><i>Skyrim only.</i> If checked, BSL Files will be skipped.
-        <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
+        <tr><td rowspan="9" id="bainGlobalSkips">Global Skips
+        <tr><td id="bainSkipScreenshots">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
+        <tr><td id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
+        <tr><td id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
+        <tr><td id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
+        <tr><td id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
+        <tr><td id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
+        <tr><td id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
+        <tr><td id="bainSkipBSLFiles">Skip BSL Files<td><i>Skyrim only.</i> If checked, BSL Files will be skipped.
+        <tr><td  colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
 </table>
 <table id="bainPackageCommands">
     <thead>
@@ -399,8 +446,8 @@
         a full <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.
         <tr><td colspan="2" id="bainMoveTo">Move To...<td>Moves the selected package(s) to the specified position.
         <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories.
-        <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to the Skip XX options. Currently
-        somewhat buggy (Bash may not detect files that are not skipped for this installer and that are already installed but globally skipped and show them as missing)
+        <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to a <a href="#bainGlobalSkips">global
+            skip option</a>.
         <tr><td colspan="2" id="bainSkipVoices">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
         <tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing installers (when switching out and in the installers tab), this <i>project</i> won't be scanned for changes.
             The project will only get refreshed during the first refresh of BAIN on a restart, or by manually refreshing (see <a href="#bainQuickRefresh">Quick Refresh</a> and co).
@@ -1256,7 +1303,7 @@
         <tr><td>No Light Fade Value Fix<td>Sets the fade values on all lights to a default of 1.0 if not already set.
         <tr><td>No Light Flicker<td>Turns off flickering effects for lights. May help on machines with low end graphic cards.
         <tr><td>Number of uses for pre-enchanted weapons and Staffs/Staves<td>The charge amount and cast cost will be edited so that all enchanted weapons and staffs have the amount of uses specified. Cost will be rounded up to 1 (unless set to unlimited) so number of uses may not exactly match for all weapons.
-        <tr><td>Nvidia Fog Fix<td>Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen. This feature is based on <a href="http://planetelderscrolls.gamespy.com/View.php?view=oblivionmods.detail&amp;id=2859">Quarn's Nvidia Black Screen Fix</a>.
+        <tr><td>Nvidia Fog Fix<td>Ensures that cells have at least one non-zero fog value. For avoiding the Nvidia fog-related black screen. This feature is based on <a href="http://www.nexusmods.com/oblivion/mods/11167/?">Quarn's Nvidia Black Screen Fix</a>.
         <tr><td>Reweigh: Arrows<td>Reweighs arrows to a maximum weight.
         <tr><td>Reweigh: Ingredients<td>Reweighs ingredients to a maximum weight.
         <tr><td>Reweigh: Potions (Maximum)<td>Reweighs potions to a maximum weight. This does not affect potions with script effects or with current weight >= 1.0. Thus it should not affect alcoholic beverages or scripted "potions" like HTS water skins. Note that this is similar to, but not the same as, the Reweigh Potions command for savegames, which reweighs user created potions rather than mod created potions.
