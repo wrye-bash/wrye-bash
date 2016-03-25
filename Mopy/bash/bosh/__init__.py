@@ -6436,17 +6436,17 @@ class InstallersData(_DataStore):
         installing, a tweak file will be generated. Call me *before*
         installing the new inis then call _editTweaks() to populate the tweaks.
         """
-        for relPath in destFiles:
-            if (not relPath.cext in (u'.ini', u'.cfg') or
+        dest_files = (x for x in destFiles if x .cext in (u'.ini', u'.cfg') and
                 # don't create ini tweaks for overridden ini tweaks...
-                relPath.head.cs == u'ini tweaks'): continue
+                x.head.cs != u'ini tweaks')
+        for relPath in dest_files:
             oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
             newCrc = installer.data_sizeCrc.get(relPath, (None, None))[1]
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
             iniAbsDataPath = dirs['mods'].join(relPath)
             # Create a copy of the old one
             baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
-                iniAbsDataPath.sbody, iniAbsDataPath.sbody))
+                iniAbsDataPath.sbody, installer.archive))
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
             tweaksCreated.add((tweakPath, iniAbsDataPath))
@@ -6533,6 +6533,7 @@ class InstallersData(_DataStore):
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
+            refresh_ui[1] |= bool(tweaksCreated)
         return tweaksCreated
 
     def sorted_pairs(self, package_keys=None, reverse=False):
