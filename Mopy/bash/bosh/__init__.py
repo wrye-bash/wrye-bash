@@ -4486,7 +4486,7 @@ class Installer(object):
                u'.ppt', u'.pptx'}
     reReadMe = re.compile(
         ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
-        ur'\.(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
+        ur'(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
     reList = re.compile(
         u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
     reValidNamePattern = re.compile(ur'^([^/\\:*?"<>|]+?)(\d*)$', re.I | re.U)
