@@ -235,6 +235,9 @@ class _DetailsViewMixin(object):
         if self.detailsPanel and self.detailsPanel is not self:
             self.detailsPanel.ShowPanel()
 
+    def GetDetailsItem(self): ##: unify with/absorb SashTankPanel !!
+        return self.detailsPanel.file_info
+
 class SashPanel(_DetailsViewMixin, NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
@@ -1760,7 +1763,8 @@ class SaveList(balt.UIList):
         if event.IsEditCancelled(): return
         #--File Info
         newName = event.GetLabel()
-        item_edited = self.GetListEventItem(event)
+        detail_item = self.panel.GetDetailsItem()
+        item_edited = detail_item.name if detail_item else None
         if not newName.lower().endswith(bush.game.ess.ext):
             newName += bush.game.ess.ext
         rePattern = re.compile(ur'^[^/\\:*?"<>|]+?$', re.I | re.U)
@@ -1803,7 +1807,7 @@ class SaveList(balt.UIList):
         self.RefreshUI(files=to_select)
         #--Reselect the items - renamed or not
         self.SelectItemsNoCallback(to_select)
-        self.SelectItem(item_edited)
+        if item_edited: self.SelectItem(item_edited)
         event.Veto() # needed ! clears new name from label on exception
 
     #--Populate Item

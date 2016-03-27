@@ -1910,9 +1910,6 @@ class UIList(wx.Panel):
             return None
         return self.GetItem(hitItem)
 
-    def GetListEventItem(self, event):
-        return self._gList.FindItemAt(event.GetIndex())
-
     #-- Item selection --------------------------------------------------------
     def GetItems(self): return self.data.keys()
 
