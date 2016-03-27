@@ -26,10 +26,9 @@
 import re
 import struct
 import itertools
-from . import esp
 from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
     encode
-from ...brec import MelRecord, BaseRecordHeader, ModError, MelStructs, \
+from ...brec import MelRecord, ModError, MelStructs, \
     ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
@@ -41,63 +40,6 @@ from constants import allConditions, fid1Conditions, fid2Conditions, \
     fid5Conditions
 
 from_iterable = itertools.chain.from_iterable
-
-#--Mod I/O
-class RecordHeader(BaseRecordHeader):
-    size = 24
-
-    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,extra=0):
-        self.recType = recType
-        self.size = size
-        if recType == 'GRUP':
-            self.label = arg1
-            self.groupType = arg2
-            self.stamp = arg3
-        else:
-            self.flags1 = arg1
-            self.fid = arg2
-            self.flags2 = arg3
-        self.extra = extra
-
-    @staticmethod
-    def unpack(ins):
-        """Returns a RecordHeader object by reading the input stream."""
-        rec_type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
-        #--Bad type?
-        if rec_type not in esp.recordTypes:
-            raise ModError(ins.inName,u'Bad header type: '+repr(rec_type))
-        #--Record
-        if rec_type != 'GRUP':
-            pass
-        #--Top Group
-        elif uint1 == 0: #groupType == 0 (Top Type)
-            str0 = struct.pack('I',uint0)
-            if str0 in esp.topTypes:
-                uint0 = str0
-            elif str0 in esp.topIgTypes:
-                uint0 = esp.topIgTypes[str0]
-            else:
-                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
-        #--Other groups
-        return RecordHeader(rec_type,size,uint0,uint1,uint2,uint3)
-
-    def pack(self):
-        """Return the record header packed into a bitstream to be written to file."""
-        if self.recType == 'GRUP':
-            if isinstance(self.label,str):
-                return struct.pack('=4sI4sIII',self.recType,self.size,
-                                   self.label,self.groupType,self.stamp,
-                                   self.extra)
-            elif isinstance(self.label,tuple):
-                return struct.pack('=4sIhhIII',self.recType,self.size,
-                                   self.label[0],self.label[1],self.groupType,
-                                   self.stamp,self.extra)
-            else:
-                return struct.pack('=4s5I',self.recType,self.size,self.label,
-                                   self.groupType,self.stamp,self.extra)
-        else:
-            return struct.pack('=4s5I',self.recType,self.size,self.flags1,
-                               self.fid,self.flags2,self.extra)
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
@@ -204,49 +146,12 @@ class MelBounds(MelStruct):
 
 #------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
+    """Needs custom unpacker to look at FormID type of owner.  If owner is an
+	NPC then it is followed by a FormID.  If owner is a faction then it is
+	followed by an signed integer or '=Iif' instead of '=IIf' """ # see #282
     def __init__(self):
         MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'glob'),
-                              'rank')
-
-#function wbCOEDOwnerDecider(aBasePtr: Pointer; aEndPtr: Pointer; const aElement: IwbElement): Integer;
-#var
-#  Container  : IwbContainer;
-#  LinksTo    : IwbElement;
-#  MainRecord : IwbMainRecord;
-#begin
-#  Result := 0;
-#  if aElement.ElementType = etValue then
-#    Container := aElement.Container
-#  else
-#    Container := aElement as IwbContainer;
-#
-#  LinksTo := Container.ElementByName['Owner'].LinksTo;
-#
-#
-#  if Supports(LinksTo, IwbMainRecord, MainRecord) then
-#    if MainRecord.Signature = 'NPC_' then
-#      Result := 1
-#    else if MainRecord.Signature = 'FACT' then
-#      Result := 2;
-#end;
-#Basically the Idea is this;
-#When it's an NPC_ then it's a FormID of a [GLOB]
-#When it's an FACT (Faction) then it's a 4Byte integer Rank of the faction.
-#When it's not an NPC_ or FACT then it's unknown and just a 4Byte integer
-
-#class MelCoed(MelStruct):
-# wbCOED := wbStructExSK(COED, [2], [0, 1], 'Extra Data', [
-#    {00} wbFormIDCkNoReach('Owner', [NPC_, FACT, NULL]),
-#    {04} wbUnion('Global Variable / Required Rank', wbCOEDOwnerDecider, [
-#           wbByteArray('Unknown', 4, cpIgnore),
-#           wbFormIDCk('Global Variable', [GLOB, NULL]),
-#           wbInteger('Required Rank', itS32)
-#         ]),
-#    {08} wbFloat('Item Condition')
-#  ]);
-
-# When all of Skyrim's records are entered this needs to be updated
-# To more closly resemple the wbCOEDOwnerDecider from TES5Edit
+                              'itemCondition')
 #------------------------------------------------------------------------------
 class MelColorN(MelOptStruct):
         def __init__(self):
@@ -5229,7 +5134,7 @@ class MelItems(MelGroups):
     def __init__(self, attr='items'):
         MelGroups.__init__(self,attr,
             MelStruct('CNTO','=Ii',(FID,'item',None),'count'),
-            MelOptStruct('COED','=IIf', (FID,'owner'), (FID,'glob'), 'rank')
+            MelCoed(),
             )
 
     def getLoaders(self, loaders):

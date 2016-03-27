@@ -211,8 +211,7 @@ class _ACellImporter(AImportPatcher):
     name = _(u'Import Cells')
 
 class CellImporter(_ACellImporter, ImportPatcher):
-    autoKey = (u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
-               u'C.RecordFlags', u'C.Music')  # ,u'C.Maps')
+    autoKey = game.cellAutoKeys
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
@@ -221,28 +220,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
         self.cellData = {}
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
-        self.recAttrs = {
-            u'C.Climate': ('climate',),
-            u'C.Music': ('music',),
-            u'C.Name': ('full',),
-            u'C.Owner': ('ownership',),
-            u'C.Water': ('water','waterHeight'),
-            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-                        'directionalRed','directionalGreen','directionalBlue','unused2',
-                        'fogRed','fogGreen','fogBlue','unused3',
-                        'fogNear','fogFar','directionalXY','directionalZ',
-                        'directionalFade','fogClip'),
-            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-            }
-        self.recFlags = {
-            u'C.Climate': 'behaveLikeExterior',
-            u'C.Music': '',
-            u'C.Name': '',
-            u'C.Owner': 'publicPlace',
-            u'C.Water': 'hasWater',
-            u'C.Light': '',
-            u'C.RecordFlags': '',
-            }
+        self.recAttrs = game.cellRecAttrs
+        self.recFlags = game.cellRecFlags
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -489,39 +468,35 @@ class GraphicsPatcher(ImportPatcher):
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         recFidAttrs_class = self.recFidAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('BSGN','LSCR','CLAS','LTEX','REGN')):
-            recAttrs_class[recClass] = ('iconPath',)
-        for recClass in (MreRecord.type_class[x] for x in ('ACTI','DOOR','FLOR','FURN','GRAS','STAT')):
-            recAttrs_class[recClass] = ('model',)
-        for recClass in (MreRecord.type_class[x] for x in ('ALCH','AMMO','APPA','BOOK','INGR','KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE')):
-            recAttrs_class[recClass] = ('iconPath','model')
-        for recClass in (MreRecord.type_class[x] for x in ('ARMO','CLOT')):
-            recAttrs_class[recClass] = ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath','flags')
-        for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
-            recAttrs_class[recClass] = ('bodyParts','nift_p')
-        for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-            recAttrs_class[recClass] = ('iconPath','model')
-            recFidAttrs_class[recClass] = ('effectShader','enchantEffect','light')
-        for recClass in (MreRecord.type_class[x] for x in ('EFSH',)):
-            recAttrs_class[recClass] = ('particleTexture','fillTexture','flags','unused1','memSBlend',
-                                        'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue','unused2',
-                                        'fillAIn','fillAFull','fillAOut','fillAPRatio','fillAAmp','fillAFreq',
-                                        'fillAnimSpdU','fillAnimSpdV','edgeOff','edgeRed','edgeGreen',
-                                        'edgeBlue','unused3','edgeAIn','edgeAFull','edgeAOut','edgeAPRatio',
-                                        'edgeAAmp','edgeAFreq','fillAFRatio','edgeAFRatio','memDBlend',
-                                        'partSBlend','partBlendOp','partZFunc','partDBlend','partBUp',
-                                        'partBFull','partBDown','partBFRatio','partBPRatio','partLTime',
-                                        'partLDelta','partNSpd','partNAcc','partVel1','partVel2','partVel3',
-                                        'partAcc1','partAcc2','partAcc3','partKey1','partKey2','partKey1Time',
-                                        'partKey2Time','key1Red','key1Green','key1Blue','unused4','key2Red',
-                                        'key2Green','key2Blue','unused5','key3Red','key3Green','key3Blue',
-                                        'unused6','key1A','key2A','key3A','key1Time','key2Time','key3Time')
+        # Not available in Skyrim yet LAND, PERK, PACK, QUST, RACE, SCEN, REFR, REGN
+        # Look into why these records are not included, are they part of other patchers?
+        # no 'model' attr: 'EYES', 'AVIF', 'MICN',
+        # Would anyone ever change these: 'PERK', 'QUST', 'SKIL', 'REPU'
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconOnlyRecs):
+        #     recAttrs_class[recClass] = ('iconPath',)
+        # no 'iconPath' attr: 'ADDN', 'ANIO', 'ARTO', 'BPTD', 'CAMS', 'CLMT',
+        # 'CONT', 'EXPL', 'HAZD', 'HPDT', 'IDLM',  'IPCT', 'MATO', 'MSTT',
+        # 'PROJ', 'TACT', 'TREE',
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsModelOnlyRecs):
+        #     recAttrs_class[recClass] = ('model',)
+        # no'model' and 'iconpath' attr: 'COBJ', 'HAIR', 'NOTE', 'CCRD', 'CHIP', 'CMNY', 'IMOD',
+        # Is 'RACE' included in race patcher?
+        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconModelRecs):
+        #     recAttrs_class[recClass] = ('iconPath','model',)
+
+        for recType, attrs in game.graphicsTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recAttrs_class[recClass] = attrs
+
+        # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
+        # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
+        #     recFidAttrs_class[recClass] = game.graphicsMgefFidAttrs
+        for recType, attrs in game.graphicsFidTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recFidAttrs_class[recClass] = attrs
+
         #--Needs Longs
-        self.longTypes = {'BSGN', 'LSCR', 'CLAS', 'LTEX', 'REGN', 'ACTI',
-                          'DOOR', 'FLOR', 'FURN', 'GRAS', 'STAT', 'ALCH',
-                          'AMMO', 'APPA', 'BOOK', 'INGR', 'KEYM', 'LIGH',
-                          'MISC', 'SGST', 'SLGM', 'WEAP', 'TREE', 'ARMO',
-                          'CLOT', 'CREA', 'MGEF', 'EFSH'}
+        self.longTypes = game.graphicsLongsTypes
 
     def initData(self,progress):
         """Get graphics from source files."""
@@ -623,7 +598,7 @@ class GraphicsPatcher(ImportPatcher):
                     if record.__getattribute__(attr).lower() != value.lower():
                         break
                     continue
-                elif attr == 'model':
+                elif attr in game.graphicsModelAttrs:
                     try:
                         if record.__getattribute__(
                                 attr).modPath.lower() != value.modPath.lower():
@@ -1950,25 +1925,33 @@ class ImportInventory(ImportPatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive or not self.srcs: return
-        loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
+        if game.fsName == u'Skyrim':
+            loadFactory = LoadFactory(False,'NPC_','CONT')
+        else:
+            loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             mapper = srcFile.getLongMapper()
-            for block in (srcFile.CREA, srcFile.NPC_, srcFile.CONT):
-                for record in block.getActiveRecords():
-                    self.touched.add(mapper(record.fid))
+            if game.fsName == u'Skyrim':
+                for block in (srcFile.NPC_, srcFile.CONT):
+                    for record in block.getActiveRecords():
+                        self.touched.add(mapper(record.fid))
+            else:
+                for block in (srcFile.CREA, srcFile.NPC_, srcFile.CONT):
+                    for record in block.getActiveRecords():
+                        self.touched.add(mapper(record.fid))
             progress.plus()
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('NPC_','CREA','CONT',) if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('NPC_','CREA','CONT',) if self.isActive else ()
+        return game.inventoryTypes if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add record from modFile."""
@@ -1981,8 +1964,8 @@ class ImportInventory(ImportPatcher):
         #--Master or source?
         if modName in self.allMods:
             id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(('NPC_','CREA','CONT'))
-            for type in ('NPC_','CREA','CONT'):
+            modFile.convertToLongFids(game.inventoryTypes)
+            for type in game.inventoryTypes:
                 for record in getattr(modFile,type).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = record.items[:]
@@ -2005,7 +1988,7 @@ class ImportInventory(ImportPatcher):
                 deltas.append((removeItems,addEntries))
         #--Keep record?
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for type in ('NPC_','CREA','CONT'):
+            for type in game.inventoryTypes:
                 patchBlock = getattr(self.patchFile,type)
                 id_records = patchBlock.id_records
                 for record in getattr(modFile,type).getActiveRecords():
@@ -2019,7 +2002,7 @@ class ImportInventory(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = {}
-        for type in ('NPC_','CREA','CONT'):
+        for type in game.inventoryTypes:
             for record in getattr(self.patchFile,type).records:
                 changed = False
                 deltas = id_deltas.get(record.fid)
@@ -2955,19 +2938,11 @@ class SoundPatcher(ImportPatcher):
         #  mods/files.
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-            recAttrs_class[recClass] = (
-                'castingSound', 'boltSound', 'hitSound', 'areaSound')
-        for recClass in (MreRecord.type_class[x] for x in ('ACTI','LIGH')):
-            recAttrs_class[recClass] = ('sound',)
-        for recClass in (MreRecord.type_class[x] for x in ('WTHR',)):
-            recAttrs_class[recClass] = ('sounds',)
-        for recClass in (MreRecord.type_class[x] for x in ('CONT',)):
-            recAttrs_class[recClass] = ('soundOpen','soundClose')
-        for recClass in (MreRecord.type_class[x] for x in ('DOOR',)):
-            recAttrs_class[recClass] = ('soundOpen','soundClose','soundLoop')
+        for recType, attrs in game.soundsTypes.iteritems():
+            recClass = MreRecord.type_class[recType]
+            recAttrs_class[recClass] = attrs
         #--Needs Longs
-        self.longTypes = {'MGEF', 'ACTI', 'LIGH', 'WTHR', 'CONT', 'DOOR'}
+        self.longTypes = game.soundsLongsTypes
 
     def initData(self,progress):
         """Get sounds from source files."""
@@ -3151,20 +3126,7 @@ class StatsPatcher(ImportPatcher):
         log(self.__class__.logMsg)
         for type,count,counts in allCounts:
             if not count: continue
-            typeName = {'ALCH':_(u'Potions'),
-                        'AMMO':_(u'Ammo'),
-                        'ARMO':_(u'Armors'),
-                        'INGR':_(u'Ingredients'),
-                        'MISC':_(u'Misc'),
-                        'WEAP':_(u'Weapons'),
-                        'SLGM':_(u'Soulgems'),
-                        'SGST':_(u'Sigil Stones'),
-                        'LIGH':_(u'Lights'),
-                        'KEYM':_(u'Keys'),
-                        'CLOT':_(u'Clothes'),
-                        'BOOK':_(u'Books'),
-                        'APPA':_(u'Apparatuses'),
-                        }[type]
+            typeName = game.record_type_name[type]
             log(u'* %s: %d' % (typeName,count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))

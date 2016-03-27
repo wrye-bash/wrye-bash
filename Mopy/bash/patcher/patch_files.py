@@ -240,6 +240,7 @@ class PatchFile(_PFile, ModFile):
                 #--Error checks
                 if 'WRLD' in modFile.tops and modFile.WRLD.orphansSkipped:
                     self.worldOrphanMods.append(modName)
+                # What game mode is this for exactly?
                 if 'SCPT' in modFile.tops and modName != u'Oblivion.esm':
                     gls = modFile.SCPT.getRecord(0x00025811)
                     if gls and gls.compiledSize == 4 and gls.lastIndex == 0:
@@ -281,7 +282,7 @@ class PatchFile(_PFile, ModFile):
         selfLoadFactoryAddClass = self.loadFactory.addClass
         nullFid = (GPath(bosh.modInfos.masterName),0)
         for blockType,block in modFile.tops.iteritems():
-            iiSkipMerge = iiMode and blockType not in ('LVLC','LVLI','LVSP')
+            iiSkipMerge = iiMode and blockType not in bush.game.listTypes
             #--Make sure block type is also in read and write factories
             if blockType not in selfLoadFactoryRecTypes:
                 recClass = selfMergeFactoryType_class[blockType]
@@ -430,6 +431,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         if not len(self.loadMods): return
         #Parent records must be processed before any children
         #EYES,HAIR must be processed before RACE
+        # This should probably be updated for FO3/FNV/TES5 - see issue #287
         groupOrder = ['GMST','GLOB','MGEF','CLAS','HAIR','EYES','RACE',
                       'SOUN','SKIL','SCPT','LTEX','ENCH','SPEL','BSGN',
                       'ACTI','APPA','ARMO','BOOK','CLOT','DOOR','INGR',
@@ -442,7 +444,7 @@ class CBash_PatchFile(_PFile, ObModFile):
                       'ACRES','REFRS']
 
         iiModeSet = {u'InventOnly', u'IIM'}
-        levelLists = {'LVLC', 'LVLI', 'LVSP'}
+        levelLists = bush.game.listTypes
         nullProgress = Progress()
 
         infos = bosh.modInfos

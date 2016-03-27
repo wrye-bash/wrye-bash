@@ -22,96 +22,27 @@
 #
 # =============================================================================
 
+"""Constants to define for each new game."""
+
+# no imports
+
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
-bethDataFiles = {
-    #--Vanilla
-    u'fallout4.esm',
-    u'fallout4 - animations.ba2',
-    u'fallout4 - interface.ba2',
-    u'fallout4 - materials.ba2',
-    u'fallout4 - meshes.ba2',
-    u'fallout4 - meshesextra.ba2',
-    u'fallout4 - misc.ba2',
-    u'fallout4 - shaders.ba2',
-    u'fallout4 - sounds.ba2',
-    u'fallout4 - startup.ba2',
-    u'fallout4 - textures1.ba2',
-    u'fallout4 - textures2.ba2',
-    u'fallout4 - textures3.ba2',
-    u'fallout4 - textures4.ba2',
-    u'fallout4 - textures5.ba2',
-    u'fallout4 - textures6.ba2',
-    u'fallout4 - textures7.ba2',
-    u'fallout4 - textures8.ba2',
-    u'fallout4 - textures9.ba2',
-    u'fallout4 - voices.ba2',
-}
+bethDataFiles = set() # initialize with literal
 
 #--Every file in the Data directory from Bethsoft
-allBethFiles = {
-    # Section 1: Vanilla files
-    u'Fallout4.esm',
-    u'Fallout4.cdx',
-    u'Fallout4 - Animations.ba2',
-    u'Fallout4 - Geometry.csg',
-    u'Fallout4 - Interface.ba2',
-    u'Fallout4 - Materials.ba2',
-    u'Fallout4 - Meshes.ba2',
-    u'Fallout4 - MeshesExtra.ba2',
-    u'Fallout4 - Misc.ba2',
-    u'Fallout4 - Shaders.ba2',
-    u'Fallout4 - Sounds.ba2',
-    u'Fallout4 - Startup.ba2',
-    u'Fallout4 - Textures1.ba2',
-    u'Fallout4 - Textures2.ba2',
-    u'Fallout4 - Textures3.ba2',
-    u'Fallout4 - Textures4.ba2',
-    u'Fallout4 - Textures5.ba2',
-    u'Fallout4 - Textures6.ba2',
-    u'Fallout4 - Textures7.ba2',
-    u'Fallout4 - Textures8.ba2',
-    u'Fallout4 - Textures9.ba2',
-    u'Fallout4 - Voices.ba2',
-    # Section 2: Strings Files
-    u'Strings\\Fallout4_en.DLSTRINGS',
-    u'Strings\\Fallout4_en.ILSTRINGS',
-    u'Strings\\Fallout4_en.STRINGS',
-    # Section 3: Video Clips
-    u'Video\\AGILITY.bk2',
-    u'Video\\CHARISMA.bk2',
-    u'Video\\Endgame_FEMALE_A.bk2',
-    u'Video\\Endgame_FEMALE_B.bk2',
-    u'Video\\Endgame_MALE_A.bk2',
-    u'Video\\Endgame_MALE_B.bk2',
-    u'Video\\ENDURANCE.bk2',
-    u'Video\\GameIntro_V3_B.bk2',
-    u'Video\\INTELLIGENCE.bk2',
-    u'Video\\Intro.bk2',
-    u'Video\\LUCK.bk2',
-    u'Video\\MainMenuLoop.bk2',
-    u'Video\\PERCEPTION.bk2',
-    u'Video\\STRENGTH.bk2',
-    # Section 4: F4SE INI File
-    u'F4SE\\f4se.ini',
-    # Section 5: GECK files
-}
+allBethFiles = set() # initialize with literal
 
 # Function Info ---------------------------------------------------------------
-conditionFunctionData = tuple()
-
+conditionFunctionData = ( #--0: no param; 1: int param; 2: formid param
+)
 allConditions = set(entry[0] for entry in conditionFunctionData)
 fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
-# Skip 3 and 4 because it needs to be set per runOn
-fid5Conditions = set(entry[0] for entry in conditionFunctionData if entry[4] == 2)
 
-#--List of GMST's in the main plugin (Fallout4.esm) that have 0x00000000
+#--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
-gmstEids = [
-    ## TODO: Initial inspection did not seem to have any null FormID GMST's,
-    ## double check before enabling the GMST Tweaker
-    ]
+gmstEids = []
 
 """
 GLOB record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
@@ -133,7 +64,7 @@ a list, and make a dictionary as the second list item with {'defaultEnabled
 ':True}. See the UOP Vampire face fix for an example of this (in the GMST
 Tweaks)
 """
-GlobalsTweaks = list()
+GlobalsTweaks = []
 
 """
 GMST record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
@@ -155,7 +86,52 @@ a list, and make a dictionary as the second list item with {'defaultEnabled
 ':True}. See the UOP Vampire facefix for an example of this (in the GMST
 Tweaks)
 """
-GmstTweaks = list()
+GmstTweaks = []
+
+#------------------------------------------------------------------------------
+# ListsMerger
+#------------------------------------------------------------------------------
+listTypes = ()
+#------------------------------------------------------------------------------
+# NamesPatcher
+#------------------------------------------------------------------------------
+namesTypes = set() # initialize with literal
+#------------------------------------------------------------------------------
+# ItemPrices Patcher
+#------------------------------------------------------------------------------
+pricesTypes = {}
+#------------------------------------------------------------------------------
+# StatsImporter
+#------------------------------------------------------------------------------
+statsTypes = {}
+statsHeaders = ()
+#------------------------------------------------------------------------------
+# SoundPatcher
+#------------------------------------------------------------------------------
+# Needs longs in SoundPatcher
+soundsLongsTypes = set() # initialize with literal
+soundsTypes = {}
+#------------------------------------------------------------------------------
+# CellImporter
+#------------------------------------------------------------------------------
+cellAutoKeys = ()
+cellRecAttrs = {}
+cellRecFlags = {}
+#------------------------------------------------------------------------------
+# GraphicsPatcher
+#------------------------------------------------------------------------------
+graphicsLongsTypes = set() # initialize with literal
+graphicsTypes = {}
+graphicsFidTypes = {}
+graphicsModelAttrs = ()
+#------------------------------------------------------------------------------
+# Inventory Patcher
+#------------------------------------------------------------------------------
+inventoryTypes = ()
+#------------------------------------------------------------------------------
+# Mod Record Elements ---------------------------------------------------------
+#------------------------------------------------------------------------------
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Record type to name dictionary
 
