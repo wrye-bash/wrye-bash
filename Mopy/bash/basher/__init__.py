@@ -70,7 +70,7 @@ from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods, SaveInfo, CoSaves
+from ..bosh import omods, CoSaves
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -1775,17 +1775,17 @@ class SaveList(balt.UIList):
             if index:
                 newFileName = newName.replace(bush.game.ess.ext, (
                     u'%d' % index) + bush.game.ess.ext)
-            if newFileName != path.s:
-                oldPath = bosh.saveInfos.dir.join(path.s)
+            newFileName = GPath(newFileName)
+            if newFileName != path:
+                oldPath = bosh.saveInfos.dir.join(path)
                 newPath = bosh.saveInfos.dir.join(newFileName)
                 renames = [(oldPath, newPath)]
                 renames.extend(CoSaves.get_new_paths(oldPath, newPath))
                 if not newPath.exists():
                     try:
-                        oldPath.moveTo(newPath)
-                        SaveInfo.coMove(oldPath, newPath)
+                        bosh.saveInfos.rename(path, newFileName)
                         to_select.discard(path)
-                        to_select.add(GPath(newFileName))
+                        to_select.add(newFileName)
                     except (OSError, IOError):
                         deprint('Renaming %s to %s failed'
                                 % (oldPath, newPath), traceback=True)
@@ -1796,7 +1796,6 @@ class SaveList(balt.UIList):
                                 new.moveTo(old)
                             if new.exists() and old.exists(): new.remove()
                         break
-        bosh.saveInfos.refresh()
         self.RefreshUI()
         # self.RefreshUI(to_select) ##: not yet due to how PopulateItem works
         #--Reselect the items - renamed or not

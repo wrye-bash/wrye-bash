@@ -2994,11 +2994,6 @@ class SaveInfo(FileInfo):
         """Copies co files corresponding to oldPath to newPath."""
         CoSaves(oldPath).copy(newPath)
 
-    @staticmethod
-    def coMove(oldPath, newPath):
-        """Move co files corresponding to oldPath to newPath."""
-        return CoSaves(oldPath).move(newPath)
-
     def coSaves(self):
         """Returns CoSaves instance corresponding to self."""
         return CoSaves(self.getPath())
@@ -3167,7 +3162,7 @@ class FileInfos(DataDict):
         del self[oldName]
         self.table.moveRow(oldName,newName)
         #--Done
-        fileInfo.madeBackup = False
+        fileInfo.madeBackup = False ##: #292
 
     #--Delete
     def delete(self, fileName, **kwargs):
