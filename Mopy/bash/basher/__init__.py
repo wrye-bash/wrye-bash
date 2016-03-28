@@ -3073,12 +3073,46 @@ class ScreensList(balt.UIList):
         elif code in balt.wxReturn: self.OpenSelected()
         super(ScreensList, self).OnKeyUp(event)
 
-    def _select(self, fileName):
-        filePath = bosh.screensData.dir.join(fileName)
-        bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
-        self.panel.picture.SetBitmap(bitmap)
-
 #------------------------------------------------------------------------------
+class ScreensDetails(_DetailsMixin, NotebookPanel):
+
+    def __init__(self, parent):
+        super(ScreensDetails, self).__init__(parent)
+        self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
+        self.displayed_screen = None
+        parent.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
+
+    @property
+    def file_info(self): return self.displayed_screen
+    @property
+    def file_infos(self): return bosh.screensData
+
+    def _resetDetails(self):
+        self.screenshot_control.SetBitmap(None)
+
+    def SetFile(self, fileName='SAME'):
+        """Set file to be viewed."""
+        #--Reset?
+        if fileName == 'SAME':
+            if self.file_info is None or self.file_info not in self.file_infos:
+                fileName = None
+            else:
+                fileName = self.displayed_screen
+        elif fileName not in self.file_infos:
+            fileName = None
+        self.displayed_screen = fileName
+        if not fileName: self._resetDetails()
+        else:
+            filePath = bosh.screensData.dir.join(fileName)
+            bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
+            self.screenshot_control.SetBitmap(bitmap)
+
+    def RefreshUIColors(self):
+        self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
+
+    def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ShowPanel(self): pass
+
 class ScreensPanel(SashPanel):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
@@ -3089,16 +3123,12 @@ class ScreensPanel(SashPanel):
         left,right = self.left,self.right
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()
+        self.detailsPanel = ScreensDetails(right)
         self.uiList = ScreensList(
             left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
-        right.SetSizer(hSizer((self.picture,1,wx.GROW)))
         left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
-
-    def RefreshUIColors(self):
-        self.picture.SetBackground(colors['screens.bkgd.image'])
 
     def _sbCount(self):
         return _(u'Screens:') + u' %d' % (len(self.listData.data),)
@@ -3107,7 +3137,6 @@ class ScreensPanel(SashPanel):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
             self.uiList.RefreshUI()
-            #self.Refresh()
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
