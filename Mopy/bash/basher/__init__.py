@@ -271,8 +271,8 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
         super(SashPanel, self).ClosePanel()
 
     def SelectUIListItem(self, item, deselectOthers=False):
-        self.uiList.SelectItem(item, deselectOthers=deselectOthers)
-        self.uiList.EnsureVisibleItem(item, focus=True)
+        self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
+                                      focus=True)
 
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):

@@ -420,6 +420,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         return isSingle and not isinstance(self.idata[self.selected[0]],
                                            bosh.InstallerMarker)
 
+    @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
         curName = self.selected[0]
@@ -446,7 +447,8 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         with balt.BusyCursor():
             self.idata.copy_installer(curName,newName)
             self.idata.irefresh(what='N')
-            self.window.RefreshUI()
+        self.window.RefreshUI()
+        self.window.SelectAndShowItem(newName)
 
 class Installer_Hide(_InstallerLink):
     """Hide selected Installers."""
@@ -1119,6 +1121,7 @@ class InstallerProject_Pack(_InstallerLink):
             message=_(u'Pack %s to Archive:') % project.s, filename=archive.s)
         if not archive: return
         self._pack(archive, installer, project, release=self.__class__.release)
+        self.window.SelectAndShowItem(archive)
 
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerProject_Pack):

@@ -1965,6 +1965,10 @@ class UIList(wx.Panel):
         self._gList.Focus(dex) if focus else self._gList.EnsureVisible(dex)
         self._gList.SetFocus()
 
+    def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
+        self.SelectItem(item, deselectOthers=deselectOthers)
+        self.EnsureVisibleItem(item, focus=focus)
+
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
         dataDir = self.data.dir
@@ -2238,8 +2242,9 @@ class Link(object):
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
         the column clicked on or the first column. Set in Links.PopupMenu().
+        :type window: UIList | wx.Panel | wx.Button | basher.BashStatusbar
+        :type selection: list[Path | unicode | int] | int
         """
-        # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
         self.selected = selection
 
