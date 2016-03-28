@@ -1910,6 +1910,9 @@ class UIList(wx.Panel):
             return None
         return self.GetItem(hitItem)
 
+    def GetListEventItem(self, event):
+        return self._gList.FindItemAt(event.GetIndex())
+
     #-- Item selection --------------------------------------------------------
     def GetItems(self): return self.data.keys()
 
@@ -1937,16 +1940,18 @@ class UIList(wx.Panel):
         self.SelectItemAtIndex(dex)
 
     def SelectItemsNoCallback(self, items, deselectOthers=False):
+        if deselectOthers: self.ClearSelected()
         try:
             self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
-            for item in items: self.SelectItem(item, deselectOthers)
+            for item in items: self.SelectItem(item)
         finally:
             self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
 
-    def ClearSelected(self):
+    def ClearSelected(self, clear_details=False):
         """Unselect all items."""
-        listCtrl = self._gList
-        for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
+        for i in xrange(self._gList.GetItemCount()):
+            self.SelectItemAtIndex(i, False)
+        if clear_details: self.panel.ClearDetails()
 
     def SelectAll(self):
         for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)

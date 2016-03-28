@@ -1760,6 +1760,7 @@ class SaveList(balt.UIList):
         if event.IsEditCancelled(): return
         #--File Info
         newName = event.GetLabel()
+        item_edited = self.GetListEventItem(event)
         if not newName.lower().endswith(bush.game.ess.ext):
             newName += bush.game.ess.ext
         rePattern = re.compile(ur'^[^/\\:*?"<>|]+?$', re.I | re.U)
@@ -1787,6 +1788,8 @@ class SaveList(balt.UIList):
                         bosh.saveInfos.rename(path, newFileName)
                         to_select.discard(path)
                         to_select.add(newFileName)
+                        if path == item_edited:
+                            item_edited = newFileName
                     except (OSError, IOError):
                         deprint('Renaming %s to %s failed'
                                 % (oldPath, newPath), traceback=True)
@@ -1799,7 +1802,8 @@ class SaveList(balt.UIList):
                         break
         self.RefreshUI(files=to_select)
         #--Reselect the items - renamed or not
-        for save in to_select: self.SelectItem(save)
+        self.SelectItemsNoCallback(to_select)
+        self.SelectItem(item_edited)
         event.Veto() # needed ! clears new name from label on exception
 
     #--Populate Item
@@ -3050,7 +3054,7 @@ class ScreensList(balt.UIList):
             bosh.screensData.refresh()
             self.RefreshUI()
             #--Reselected the renamed items
-            for screen in newselected: self.SelectItem(screen)
+            self.SelectItemsNoCallback(newselected)
             event.Veto()
 
     def OnKeyUp(self,event):

@@ -321,6 +321,8 @@ class Installers_AutoApplyEmbeddedBCFs(ItemLink):
                 progress=progress)
             if not destinations: return
         self.window.RefreshUI()
+        self.window.ClearSelected(clear_details=True)
+        self.window.SelectItemsNoCallback(destinations + converted)
 
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""

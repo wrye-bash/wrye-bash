@@ -139,6 +139,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         self.window.RefreshUI()
 
     def _askFilename(self, message, filename):
+        """:rtype: bolt.Path"""
         result = self._askText(message, title=self.dialogTitle,
                                default=filename)
         if not result: return
@@ -1169,6 +1170,7 @@ class InstallerConverter_Apply(_InstallerLink):
             except StateError:
                 return
         self.window.RefreshUI()
+        self.window.SelectItem(destArchive)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
@@ -1187,6 +1189,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
                 [archive], [dest], progress)
             if not destinations: return # destinations == [dest] if all was ok
         self.window.RefreshUI()
+        self.window.SelectItem(dest)
 
 class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""
