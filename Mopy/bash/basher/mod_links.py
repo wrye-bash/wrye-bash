@@ -2319,22 +2319,28 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
 
 class Mod_EditorIds_Import(_Mod_Import_Link):
     """Import editor ids from text file or other mod."""
+    askTitle = _(u'Import eids from:')
+    csvFile = u'_Eids.csv'
+    continueInfo = _(u"Import editor ids from a text file. This will replace "
+                     u"existing ids and is not reversible!")
+    continueKey = 'bash.editorIds.import.continue'
+    progressTitle = _(u"Import Editor Ids")
     text = _(u'Editor Ids...')
     help = _(u'Import faction editor ids from text file or other mod')
 
     def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
     def Execute(self):
-        message = (_(u"Import editor ids from a text file. This will replace existing ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.editorIds.import.continue',
-                                 _(u'Import Editor Ids')): return
+        message = self.__class__.continueInfo
+        if not self._askContinue(message, self.__class__.continueKey,
+                                 self.__class__.progressTitle): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Eids.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import names from:'),textDir,
-            textName, u'*_Eids.csv',mustExist=True)
+        textPath = self._askOpen(self.__class__.askTitle,textDir,
+            textName, u'*' + self.__class__.csvFile ,mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -2345,7 +2351,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         questionableEidsSet = set()
         badEidsList = []
         try:
-            with balt.Progress(_(u"Import Editor Ids")) as progress:
+            with balt.Progress(self.__class__.progressTitle) as progress:
                 editorIds = self._parser()
                 progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
