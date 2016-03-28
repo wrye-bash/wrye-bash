@@ -223,7 +223,7 @@ class _DetailsViewMixin(object):
 
     def RefreshUIColors(self):
         super(_DetailsViewMixin, self).RefreshUIColors()
-        self.RefreshDetails()
+        if self.detailsPanel: self.detailsPanel.RefreshUIColors()
 
     def ClosePanel(self):
         super(_DetailsViewMixin, self).ClosePanel()
@@ -2034,6 +2034,9 @@ class SaveDetails(_SashDetailsPanel):
         else: # files=[saveInfo.name], Nope: deleted oldName drives _glist nuts
             BashFrame.saveListRefresh()
 
+    def RefreshUIColors(self):
+        self.picture.SetBackground(colors['screens.bkgd.image'])
+
 #------------------------------------------------------------------------------
 class SavePanel(SashPanel):
     """Savegames tab."""
@@ -2054,7 +2057,8 @@ class SavePanel(SashPanel):
         left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
-        self.detailsPanel.picture.SetBackground(colors['screens.bkgd.image'])
+        self.uiList.RefreshUI()
+        super(SavePanel, self).RefreshUIColors()
 
     def _sbCount(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
@@ -2117,8 +2121,8 @@ class InstallersList(balt.UIList):
         else: item_format.text_key = self._type_textKey.get(installer.type,
                                              'installers.text.invalid')
         #--Background
-        item_format.back_key = (installer.skipDirFiles and
-                                'installers.bkgd.skipped') or None
+        if installer.skipDirFiles:
+            item_format.back_key = 'installers.bkgd.skipped'
         text = u''
         if installer.dirty_sizeCrc:
             item_format.back_key = 'installers.bkgd.dirty'
@@ -3144,6 +3148,10 @@ class ScreensPanel(SashPanel):
     def _sbCount(self):
         return _(u'Screens:') + u' %d' % (len(self.listData.data),)
 
+    def RefreshUIColors(self):
+        self.uiList.RefreshUI()
+        super(ScreensPanel, self).RefreshUIColors()
+
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
@@ -3404,6 +3412,8 @@ class PeoplePanel(SashTankPanel):
             self.gKarma.SetValue(karma)
             self.gText.SetValue(text)
         self.detailsItem = item
+
+    def RefreshUIColors(self): self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 #--Tabs menu
