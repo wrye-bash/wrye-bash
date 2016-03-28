@@ -1809,6 +1809,7 @@ class _Mod_Export_Link(EnabledLink):
 
 class _Mod_Import_Link(OneItemLink):
     noChange = _(u"No changes required.")
+    supportedExts = {u'.csv'}
 
     def _parser(self): raise AbstractError
 
@@ -1846,10 +1847,7 @@ class _Mod_Import_Link(OneItemLink):
             self._log(changed, fileName)
 
     def Execute(self):
-        try:
-            extraExts = self.__class__.extraExts
-        except AttributeError:
-            extraExts = []
+        supportedExts = self.__class__.supportedExts
         message = self.__class__.continueInfo
         if not self._askContinue(message, self.__class__.continueKey,
                                  self.__class__.progressTitle): return
@@ -1857,16 +1855,21 @@ class _Mod_Import_Link(OneItemLink):
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
+        #--Wildcard
+        try:
+            wildCard = self.__class__.wildCard
+        except AttributeError:
+            wildCard = u'*' + self.__class__.csvFile
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
-                                 u'*' + self.__class__.csvFile, mustExist=True)
+                                 wildCard, mustExist=True)
         if not textPath: return
         (textDir, textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
-        if ext not in [u'.csv'] + extraExts:
+        if ext not in supportedExts:
             self._showError(_(u'Source file must be a {0} file{1}.'.format(
-                self.__class__.csvFile, (extraExts and u" or esp/m") or u"")))
+                self.__class__.csvFile, (len(supportedExts) > 1 and u" or esp/m") or u"")))
             return
         #--Import
         changed = self._import(ext, fileInfo, fileName, textDir, textName,
@@ -2161,7 +2164,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
                      u"replace existing prices and is not reversible!")
     continueKey = 'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
-    extraExts = [u'.ghost', u'.esm', u'.esp']
+    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
 
     def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
@@ -2401,47 +2404,28 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     askTitle = _(u'Import names from:')
     csvFile = u'_Names.csv'
     progressTitle = _(u'Import Names')
+    continueInfo = _(
+        u"Import record names from a text file. This will replace existing "
+        u"names and is not reversible!")
+    continueKey = 'bash.fullNames.import.continue'
     text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
+    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
+    wildCard = _(u'Mod/Text File') + u'|*_Names.csv;*.esp;*.esm'
 
     def _parser(self): return CBash_FullNames() if CBash else FullNames()
 
-    def Execute(self):
-        message = (_(u"Import record names from a text file. This will replace existing names and is not reversible!"))
-        if not self._askContinue(message, 'bash.fullNames.import.continue',
-                                 _(u'Import Names')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir,textName, _(u'Mod/Text File')+u'|*_Names.csv;*.esp;*.esm',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext not in (u'.esp',u'.esm',u'.csv'):
-            self._showError(
-                _(u'Source file must be mod (.esp or .esm) or csv file.'))
-            return
-        #--Import
-        renamed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
-        if not renamed:
-            self._showOk(self.__class__.noChange)
-        else:
-            with bolt.sio() as buff:
-                format_ = u'%s:   %s >> %s\n'
-                #buff.write(format_ % (_(u'Editor Id'),_(u'Name')))
-                for eid in sorted(renamed.keys()):
-                    full,newFull = renamed[eid]
-                    try:
-                        buff.write(format_ % (eid,full,newFull))
-                    except:
-                        print u'unicode error:', (format_, eid, full, newFull)
-                self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
+            format_ = u'%s:   %s >> %s\n'
+            #buff.write(format_ % (_(u'Editor Id'),_(u'Name')))
+            for eid in sorted(changed.keys()):
+                full, newFull = changed[eid]
+                try:
+                    buff.write(format_ % (eid, full, newFull))
+                except:
+                    print u'unicode error:', (format_, eid, full, newFull)
+            self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
 
 # CBash only Import/Export ----------------------------------------------------
 class _Mod_Export_Link_CBash(_Mod_Export_Link):
