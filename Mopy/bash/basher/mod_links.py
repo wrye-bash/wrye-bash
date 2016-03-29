@@ -1810,6 +1810,7 @@ class _Mod_Export_Link(EnabledLink):
 class _Mod_Import_Link(OneItemLink):
     noChange = _(u"No changes required.")
     supportedExts = {u'.csv'}
+    progressTitle = continueInfo = continueKey = 'OVERRIDE'
 
     def _parser(self): raise AbstractError
     @property
@@ -1851,10 +1852,8 @@ class _Mod_Import_Link(OneItemLink):
             self._log(changed, fileName)
 
     def Execute(self):
+        if not self._askContinueImport(): return
         supportedExts = self.__class__.supportedExts
-        message = self.__class__.continueInfo
-        if not self._askContinue(message, self.__class__.continueKey,
-                                 self.__class__.progressTitle): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
@@ -1876,6 +1875,10 @@ class _Mod_Import_Link(OneItemLink):
                                textPath)
         #--Log
         self.show_change_log(changed, fileName)
+
+    def _askContinueImport(self):
+        return self._askContinue(self.__class__.continueInfo,
+            self.__class__.continueKey, self.__class__.progressTitle)
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
@@ -2051,13 +2054,16 @@ class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file."""
     text = _(u'Scripts...')
     help = _(u'Import scripts from text file')
+    continueInfo = _(
+        u"Import script from a text file.  This will replace existing "
+        u"scripts and is not reversible (except by restoring from backup)!")
+    continueKey = 'bash.scripts.import.continue'
+    progressTitle = _(u'Import Scripts')
 
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
     def Execute(self):
-        message = (_(u"Import script from a text file.  This will replace existing scripts and is not reversible (except by restoring from backup)!"))
-        if not self._askContinue(message, 'bash.scripts.import.continue',
-                                 _(u'Import Scripts')): return
+        if not self._askContinueImport(): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
@@ -2322,16 +2328,14 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
     continueInfo = _(u"Import editor ids from a text file. This will replace "
                      u"existing ids and is not reversible!")
     continueKey = 'bash.editorIds.import.continue'
-    progressTitle = _(u"Import Editor Ids")
+    progressTitle = _(u'Import Editor Ids')
     text = _(u'Editor Ids...')
     help = _(u'Import faction editor ids from text file')
 
     def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
     def Execute(self):
-        message = self.__class__.continueInfo
-        if not self._askContinue(message, self.__class__.continueKey,
-                                 self.__class__.progressTitle): return
+        if not self._askContinueImport(): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
@@ -2448,13 +2452,16 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
     progressTitle = _(u'Import Map Markers')
     text = _(u'Map Markers...')
     help = _(u'Import MapMarkers from text file')
+    continueInfo = _(
+        u"Import Map Markers data from a text file.  This will replace "
+        u"the existing data on map markers with the same editor ids and is "
+        u"not reversible!")
+    continueKey = 'bash.MapMarkers.import.continue'
 
     def _parser(self): return CBash_MapMarkers()
 
     def Execute(self):
-        message = (_(u"Import Map Markers data from a text file.  This will replace the existing data on map markers with the same editor ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.MapMarkers.import.continue',
-                                 _(u'Import Map Markers')): return
+        if not self._askContinueImport(): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
