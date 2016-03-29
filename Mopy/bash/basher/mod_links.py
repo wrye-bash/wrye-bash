@@ -1831,17 +1831,18 @@ class _Mod_Import_Link(OneItemLink):
             title=title or self.__class__.progressTitle, asDialog=asDialog,
             fixedFont=fixedFont, icons=icons, size=size)
 
-    def _formatLog(self, changed, fileName):
-        try:  # Allow subclasses to override the display through a _log method.
-            self.__class__._log(self, changed, fileName)
-            return
-        except AttributeError:
-            pass
+    def _log(self, changed, fileName):
         buff = StringIO.StringIO()
         buff.write(u'* %03d  %s\n' % (changed, fileName.s))
         text = buff.getvalue()
         buff.close()
         self._showLog(text)
+
+    def show_change_log(self, changed, fileName):
+        if not changed:
+            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
+        else:
+            self._log(changed, fileName)
 
     def Execute(self):
         try:
@@ -1867,10 +1868,7 @@ class _Mod_Import_Link(OneItemLink):
         changed = self._import(ext, fileInfo, fileName, textDir, textName,
                                textPath)
         #--Log
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
-        else:
-            self._formatLog(changed, fileName)
+        self.show_change_log(changed, fileName)
 
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
@@ -1982,16 +1980,13 @@ class Mod_Factions_Import(_Mod_Import_Link):
         super(Mod_Factions_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        #--Log
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
-        else:
-            buff = StringIO.StringIO()
-            for groupName in sorted(changed):
-                buff.write(u'* %s : %03d  %s\n' % (groupName,changed[groupName],fileName.s))
-            text = buff.getvalue()
-            buff.close()
-            self._showLog(text)
+        buff = StringIO.StringIO()
+        for groupName in sorted(changed):
+            buff.write(u'* %s : %03d  %s\n' % (
+            groupName, changed[groupName], fileName.s))
+        text = buff.getvalue()
+        buff.close()
+        self._showLog(text)
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText, CBash_ScriptText
@@ -2147,18 +2142,15 @@ class Mod_Stats_Import(_Mod_Import_Link):
         super(Mod_Stats_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
+        if not len(changed): ## FIXME, never executed
+            self._showOk(_(u"No changed stats to import."),
+                         _(u"Import Stats"))
         else:
-            if not len(changed):
-                self._showOk(_(u"No changed stats to import."),
-                             _(u"Import Stats"))
-            else:
-                buff = StringIO.StringIO()
-                for modName in sorted(changed):
-                    buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
-                self._showLog(buff.getvalue())
-                buff.close()
+            buff = StringIO.StringIO()
+            for modName in sorted(changed):
+                buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
+            self._showLog(buff.getvalue())
+            buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemPrices, CBash_ItemPrices
@@ -2192,15 +2184,12 @@ class Mod_Prices_Import(_Mod_Import_Link):
         super(Mod_Prices_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
-        else:
-            buff = StringIO.StringIO()
-            for modName in sorted(changed):
-                buff.write(_(u'Imported Prices:')
-                           + u'\n* %s: %d\n' % (modName.s,changed[modName]))
-            self._showLog(buff.getvalue())
-            buff.close()
+        buff = StringIO.StringIO()
+        for modName in sorted(changed):
+            buff.write(_(u'Imported Prices:')
+                       + u'\n* %s: %d\n' % (modName.s,changed[modName]))
+        self._showLog(buff.getvalue())
+        buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import SigilStoneDetails, CBash_SigilStoneDetails
@@ -2235,16 +2224,13 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
         super(Mod_SigilStoneDetails_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
-        else:
-            buff = StringIO.StringIO()
-            buff.write((_(u'Imported Sigil Stone details to mod %s:')
-                        +u'\n') % fileName.s)
-            for eid in sorted(changed):
-                buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue())
-            buff.close()
+        buff = StringIO.StringIO()
+        buff.write((_(u'Imported Sigil Stone details to mod %s:')
+                    +u'\n') % fileName.s)
+        for eid in sorted(changed):
+            buff.write(u'* %s\n' % eid)
+        self._showLog(buff.getvalue())
+        buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import SpellRecords, CBash_SpellRecords
@@ -2293,16 +2279,13 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
         super(Mod_SpellRecords_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
-        else:
-            buff = StringIO.StringIO()
-            buff.write((_(u'Imported Spell details to mod %s:')
-                        +u'\n') % fileName.s)
-            for eid in sorted(changed):
-                buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue())
-            buff.close()
+        buff = StringIO.StringIO()
+        buff.write((_(u'Imported Spell details to mod %s:')
+                    +u'\n') % fileName.s)
+        for eid in sorted(changed):
+            buff.write(u'* %s\n' % eid)
+        self._showLog(buff.getvalue())
+        buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import IngredientDetails, CBash_IngredientDetails
@@ -2337,16 +2320,13 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
         super(Mod_IngredientDetails_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
-        else:
-            buff = StringIO.StringIO()
-            buff.write((_(u'Imported Ingredient details to mod %s:')
-                        + u'\n') % fileName.s)
-            for eid in sorted(changed):
-                buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue())
-            buff.close()
+        buff = StringIO.StringIO()
+        buff.write((_(u'Imported Ingredient details to mod %s:')
+                    + u'\n') % fileName.s)
+        for eid in sorted(changed):
+            buff.write(u'* %s\n' % eid)
+        self._showLog(buff.getvalue())
+        buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import EditorIds, CBash_EditorIds
@@ -2595,15 +2575,12 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
         super(Mod_ItemData_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        if not changed:
-            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
-        else:
-            buff = StringIO.StringIO()
-            for modName in sorted(changed):
-                buff.write(_(u'Imported Item Data:')
-                           + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
-            self._showLog(buff.getvalue())
-            buff.close()
+        buff = StringIO.StringIO()
+        for modName in sorted(changed):
+            buff.write(_(u'Imported Item Data:')
+                       + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
+        self._showLog(buff.getvalue())
+        buff.close()
 
 #------------------------------------------------------------------------------
 from ..bolt import deprint
