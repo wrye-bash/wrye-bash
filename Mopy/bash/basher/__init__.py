@@ -235,8 +235,8 @@ class _DetailsViewMixin(object):
         if self.detailsPanel and self.detailsPanel is not self:
             self.detailsPanel.ShowPanel()
 
-    def GetDetailsItem(self): ##: unify with/absorb SashTankPanel !!
-        return self.detailsPanel.file_info
+    def GetDetailsItem(self):
+        return self.detailsPanel.file_info if self.detailsPanel else None
 
 class SashPanel(_DetailsViewMixin, NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
@@ -284,9 +284,6 @@ class SashTankPanel(SashPanel):
     def ClosePanel(self):
         self.SaveDetails()
         super(SashTankPanel, self).ClosePanel()
-
-    def GetDetailsItem(self):
-        return self.listData[self.detailsItem] if self.detailsItem else None
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1034,9 +1031,11 @@ class _DetailsMixin(object):
     """Mixin for panels that display detailed info on mods, saves etc."""
 
     @property
-    def file_info(self): raise AbstractError
+    def file_info(self): return self.file_infos.get(self.displayed_item, None)
     @property
-    def file_infos(self): return self.file_info.getFileInfos()
+    def displayed_item(self): raise AbstractError
+    @property
+    def file_infos(self): raise AbstractError
 
     def _resetDetails(self): raise AbstractError
 
@@ -1045,11 +1044,12 @@ class _DetailsMixin(object):
         """Set file to be viewed."""
         #--Reset?
         if fileName == 'SAME':
-            if not self.file_info or \
-                            self.file_info.name not in self.file_infos:
+            if self.displayed_item not in self.file_infos:
                 fileName = None
             else:
-                fileName = self.file_info.name
+                fileName = self.displayed_item
+        elif not fileName or (fileName not in self.file_infos):
+            fileName = None
         if not fileName: self._resetDetails()
         return fileName
 
@@ -1077,7 +1077,7 @@ class _EditableMixin(_DetailsMixin):
     def allowDetailsEdit(self): raise AbstractError
 
     def SetEdited(self):
-        if not self.file_info: return
+        if not self.displayed_item: return
         self.edited = True
         if self.allowDetailsEdit:
             self.save.Enable()
@@ -1085,10 +1085,17 @@ class _EditableMixin(_DetailsMixin):
 
     def DoSave(self): raise AbstractError
 
-    def DoCancel(self):
-        self.SetFile(self.file_info.name if self.file_info else None)
+    def DoCancel(self): self.SetFile(self.displayed_item)
 
-class _SashDetailsPanel(_EditableMixin, SashPanel):
+class _EditableMixinOnFileInfos(_EditableMixin):
+    """Bsa/Mods/Saves details, DEPRECATED: we need common data stores API!"""
+    @property
+    def file_info(self): raise AbstractError
+    @property
+    def displayed_item(self):
+        return self.file_info.name if self.file_info else None
+
+class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     """Mod and Saves details panel, feature a master's list."""
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
 
@@ -1100,7 +1107,7 @@ class _SashDetailsPanel(_EditableMixin, SashPanel):
         self.subSplitter = wx.gizmos.ThinSplitterWindow(self.bottom,
                                                         style=splitterStyle)
         self.masterPanel = wx.Panel(self.subSplitter)
-        _EditableMixin.__init__(self, self.masterPanel)
+        _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
 
     def ShowPanel(self): ##: does not call super
         if hasattr(self, '_firstShow'):
@@ -1128,6 +1135,8 @@ class ModDetails(_SashDetailsPanel):
 
     @property
     def file_info(self): return self.modInfo
+    @property
+    def file_infos(self): return bosh.modInfos
     @property
     def allowDetailsEdit(self): return bush.game.esp.canEditHeader
 
@@ -1341,7 +1350,7 @@ class ModDetails(_SashDetailsPanel):
             newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
-            self.SetFile(self.modInfo.name)
+            self.SetFile(self.displayed_item)
             bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
             return
@@ -1850,6 +1859,8 @@ class SaveDetails(_SashDetailsPanel):
 
     @property
     def file_info(self): return self.saveInfo
+    @property
+    def file_infos(self): return bosh.saveInfos
     @property
     def allowDetailsEdit(self): return bush.game.ess.canEditMasters
 
@@ -2466,6 +2477,14 @@ class InstallersPanel(SashTankPanel):
     subsMenu = Links()
     keyPrefix = 'bash.installers'
 
+    ##: belong to InstallersDetails
+    @property
+    def displayed_item(self): return self.detailsItem
+    @property
+    def file_infos(self): return self.listData
+    @property
+    def file_info(self): return self.file_infos.get(self.displayed_item, None)
+
     def __init__(self,parent):
         """Initialize."""
         BashFrame.iPanel = self
@@ -3079,11 +3098,11 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def __init__(self, parent):
         super(ScreensDetails, self).__init__(parent)
         self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
-        self.displayed_screen = None
+        self.displayed_screen = None # type: bolt.Path
         parent.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
 
     @property
-    def file_info(self): return self.displayed_screen
+    def displayed_item(self): return self.displayed_screen
     @property
     def file_infos(self): return bosh.screensData
 
@@ -3093,19 +3112,11 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def SetFile(self, fileName='SAME'):
         """Set file to be viewed."""
         #--Reset?
-        if fileName == 'SAME':
-            if self.file_info is None or self.file_info not in self.file_infos:
-                fileName = None
-            else:
-                fileName = self.displayed_screen
-        elif fileName not in self.file_infos:
-            fileName = None
-        self.displayed_screen = fileName
-        if not fileName: self._resetDetails()
-        else:
-            filePath = bosh.screensData.dir.join(fileName)
-            bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
-            self.screenshot_control.SetBitmap(bitmap)
+        self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
+        if not self.displayed_screen: return
+        filePath = bosh.screensData.dir.join(self.displayed_screen)
+        bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
+        self.screenshot_control.SetBitmap(bitmap)
 
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
@@ -3156,11 +3167,13 @@ class BSAList(balt.UIList):
     ])
 
 #------------------------------------------------------------------------------
-class BSADetails(_EditableMixin, SashPanel):
+class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     """BSAfile details panel."""
 
     @property
     def file_info(self): return self.BSAInfo
+    @property
+    def file_infos(self): return bosh.bsaInfos
     @property
     def allowDetailsEdit(self): return True
 
@@ -3170,7 +3183,7 @@ class BSADetails(_EditableMixin, SashPanel):
         self.top, self.bottom = self.left, self.right
         bsaPanel = parent.GetParent().GetParent()
         self.bsaList = bsaPanel.uiList
-        _EditableMixin.__init__(self, self.bottom)
+        _EditableMixinOnFileInfos.__init__(self, self.bottom)
         #--Data
         self.BSAInfo = None
         #--File Name
