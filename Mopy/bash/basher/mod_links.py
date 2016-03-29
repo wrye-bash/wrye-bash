@@ -1844,6 +1844,10 @@ class _Mod_Import_Link(OneItemLink):
         self._showLog(text)
 
     def Execute(self):
+        try:
+            extraExts = self.__class__.extraExts
+        except AttributeError:
+            extraExts = []
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
@@ -1855,9 +1859,9 @@ class _Mod_Import_Link(OneItemLink):
         (textDir, textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a {0} file.'.format(
-                self.__class__.csvFile)))
+        if ext not in [u'.csv'] + extraExts:
+            self._showError(_(u'Source file must be a {0} file{1}.'.format(
+                self.__class__.csvFile, (extraExts and u" or esp/m") or u"")))
             return
         #--Import
         changed = self._import(ext, fileInfo, fileName, textDir, textName,
@@ -2177,6 +2181,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
     text = _(u'Prices...')
     help = _(u'Import item prices from text file')
     noChange = _(u'No relevant prices to import.')
+    extraExts = [u'.ghost', u'.esm', u'.esp']
 
     def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
@@ -2184,25 +2189,9 @@ class Mod_Prices_Import(_Mod_Import_Link):
         message = (_(u"Import item prices from a text file.  This will replace existing prices and is not reversible!"))
         if not self._askContinue(message, 'bash.prices.import.continue',
                                  _(u'Import prices')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir, textName, u'*_Prices.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext not in [u'.csv',u'.ghost',u'.esm',u'.esp']:
-            self._showError(
-                _(u'Source file must be a Prices.csv file or esp/m.'))
-            return
-        #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
+        super(Mod_Prices_Import, self).Execute()
+
+    def _log(self, changed, fileName):
         if not changed:
             self._showOk(self.__class__.noChange, self.__class__.progressTitle)
         else:
