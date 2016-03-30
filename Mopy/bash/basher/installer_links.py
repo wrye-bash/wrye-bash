@@ -770,85 +770,80 @@ class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
     text = _(u'Copy Conflicts to Project')
     help = _(u'Copy all files that conflict with the selected installer into a'
-             u' new project')
+             u' new project') + u'  .' + _(
+        u'Conflicts with inactive installers are included')
 
+    @balt.conversation
     def Execute(self):
-        """Handle selection."""
-        idata = self.idata # bosh.InstallersData instance (dict bolt.Path ->
-        # InstallerArchive)
+        """Copy files that conflict with this installer from all other
+        installers to a project."""
+        idata = self.idata
         installers_dir = idata.dir
         srcConflicts = set()
         packConflicts = []
+        srcArchive = self.selected[0]
+        srcInstaller = idata[srcArchive]
+        src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path -> (int, int)
+        all_files = set(src_sizeCrc) # bolt.PathS of ALL installer's files
+        if not all_files:
+            self._showOk(_(u'No files to install for %s') % srcArchive)
+            return
+        with balt.BusyCursor():
+            numFiles = 0
+            destDir = GPath(u"%03d - Conflicts" % srcInstaller.order)
+            getArchiveOrder = lambda tup: tup[1].order
+            for package, installer in sorted(idata.items(),
+                                             key=getArchiveOrder):
+                curConflicts = set()
+                for z, y in installer.refreshDataSizeCrc().iteritems():
+                    if z in all_files and installer.data_sizeCrc[z] != \
+                            src_sizeCrc[z]:
+                        curConflicts.add(y)
+                        srcConflicts.add(src_sizeCrc[z])
+                numFiles += len(curConflicts)
+                if curConflicts: packConflicts.append(
+                    (installer.order, package, curConflicts))
+            srcConflicts = set( # we need the paths rel to the archive not Data
+                src for src,size,crc in srcInstaller.fileSizeCrcs if
+                (size,crc) in srcConflicts)
+            numFiles += len(srcConflicts)
+        if not numFiles:
+            self._showOk(_(u'No conflicts detected for %s') % srcArchive)
+            return
+        def _copy_conflicts(curFile):
+            inst = self.idata[package]
+            if isinstance(inst, bosh.InstallerProject):
+                for src in curConflicts:
+                    srcFull = installers_dir.join(package, src)
+                    destFull = installers_dir.join(destDir, g_path, src)
+                    if srcFull.exists():
+                        progress(curFile, srcArchive.s + u'\n' + _(
+                            u'Copying files...') + u'\n' + src)
+                        srcFull.copyTo(destFull)
+                        curFile += 1
+            else:
+                inst.unpackToTemp(package, curConflicts,
+                    SubProgress(progress, curFile, curFile + len(curConflicts),
+                                len(curConflicts)))
+                inst.getTempDir().moveTo(
+                    installers_dir.join(destDir, g_path))
+                curFile += len(curConflicts)
+            return curFile
         with balt.Progress(_(u"Copying Conflicts..."),
                            u'\n' + u' ' * 60) as progress:
-            srcArchive = self.selected[0]
-            srcInstaller = idata[srcArchive]
-            src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path
-            mismatched = set(src_sizeCrc) # just a set of bolt.Path of the src
-            # installer files
-            if mismatched:
-                numFiles = 0
-                curFile = 1
-                srcOrder = srcInstaller.order
-                destDir = GPath(u"%03d - Conflicts" % srcOrder)
-                getArchiveOrder = lambda tup: tup[1].order
-                for package, installer in sorted(idata.iteritems(),
-                                                 key=getArchiveOrder):
-                    curConflicts = set()
-                    for z,y in installer.refreshDataSizeCrc().iteritems():
-                        if z in mismatched and installer.data_sizeCrc[z] != \
-                                src_sizeCrc[z]:
-                            curConflicts.add(y)
-                            srcConflicts.add(src_sizeCrc[z])
-                    numFiles += len(curConflicts)
-                    if curConflicts: packConflicts.append(
-                        (installer.order,installer,package,curConflicts))
-                srcConflicts = set(
-                    src for src,size,crc in srcInstaller.fileSizeCrcs if
-                    (size,crc) in srcConflicts)
-                numFiles += len(srcConflicts)
-                if numFiles: # there are conflicting files
-                    progress.setFull(numFiles)
-                    if isinstance(srcInstaller,bosh.InstallerProject):
-                        for src in srcConflicts:
-                            srcFull = installers_dir.join(srcArchive,src)
-                            destFull = installers_dir.join(destDir,
-                                                           GPath(srcArchive.s),
-                                                           src)
-                            if srcFull.exists():
-                                progress(curFile,srcArchive.s + u'\n' + _(
-                                    u'Copying files...') + u'\n' + src)
-                                srcFull.copyTo(destFull)
-                                curFile += 1
-                    else:
-                        srcInstaller.unpackToTemp(srcArchive,srcConflicts,
-                                                  SubProgress(progress,0,len(
-                                                      srcConflicts),numFiles))
-                        srcInstaller.getTempDir().moveTo(
-                            installers_dir.join(destDir,GPath(srcArchive.s)))
-                    curFile = len(srcConflicts)
-                    for order,installer,package,curConflicts in packConflicts:
-                        if isinstance(installer,bosh.InstallerProject):
-                            for src in curConflicts:
-                                srcFull = installers_dir.join(package,src)
-                                destFull = installers_dir.join(destDir,GPath(
-                                    u"%03d - %s" % (order,package.s)),src)
-                                if srcFull.exists():
-                                    progress(curFile,srcArchive.s + u'\n' + _(
-                                        u'Copying files...') + u'\n' + src)
-                                    srcFull.copyTo(destFull)
-                                    curFile += 1
-                        else:
-                            installer.unpackToTemp(package, curConflicts,
-                                SubProgress(progress, curFile,
-                                    curFile + len(curConflicts), numFiles))
-                            installer.getTempDir().moveTo(
-                                installers_dir.join(destDir,GPath(
-                                    u"%03d - %s" % (order,package.s))))
-                            curFile += len(curConflicts)
-                    project = destDir.root
-                    self._get_refreshed(project, srcInstaller)
+            progress.setFull(numFiles)
+            curFile = 0
+            package = srcArchive
+            curConflicts = srcConflicts
+            g_path = GPath(package.s)
+            curFile = _copy_conflicts(curFile)
+            for order,package,curConflicts in packConflicts:
+                g_path = GPath(u"%03d - %s" % (order, package.s))
+                curFile = _copy_conflicts(curFile)
+            project = destDir.root
+        self._get_refreshed(project, srcInstaller)
         self.window.RefreshUI()
+        self.window.SelectAndShowItem(project)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------

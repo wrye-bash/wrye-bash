@@ -2280,6 +2280,7 @@ class Link(object):
         return askOk(self.window, message, title)
 
     def _showOk(self, message, title=u'', **kwdargs):
+        if not title: title = self.text
         return showOk(self.window, message, title, **kwdargs)
 
     def _askWarning(self, message, title=_(u'Warning'), **kwdargs):

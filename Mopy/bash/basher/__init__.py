@@ -131,14 +131,14 @@ def SetUAC(item): # item must define a GetHandle() method
 class Installers_Link(ItemLink):
     """InstallersData mixin"""
     @property
-    def idata(self): return self.window.data # InstallersData singleton
+    def idata(self): return self.window.data  # type: bosh.InstallersData
     @property
-    def iPanel(self): return self.window.panel # ex gInstallers InstallersPanel
+    def iPanel(self): return self.window.panel # type: InstallersPanel
 
 class People_Link(Link):
     """PeopleData mixin"""
     @property
-    def pdata(self): return self.window.data # PeopleData singleton
+    def pdata(self): return self.window.data # type: bosh.PeopleData
 
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
