@@ -27,6 +27,7 @@
 bethDataFiles = {
     #--Vanilla
     u'fallout4.esm',
+    u'fallout4.cdx',
     u'fallout4 - animations.ba2',
     u'fallout4 - interface.ba2',
     u'fallout4 - materials.ba2',
@@ -74,6 +75,7 @@ allBethFiles = {
     u'Fallout4 - Textures9.ba2',
     u'Fallout4 - Voices.ba2',
     # Section 2: Strings Files
+    #--probably need one for each language
     u'Strings\\Fallout4_en.DLSTRINGS',
     u'Strings\\Fallout4_en.ILSTRINGS',
     u'Strings\\Fallout4_en.STRINGS',
@@ -156,6 +158,54 @@ a list, and make a dictionary as the second list item with {'defaultEnabled
 Tweaks)
 """
 GmstTweaks = list()
+
+#------------------------------------------------------------------------------
+# ListsMerger
+#------------------------------------------------------------------------------
+listTypes = ('LVLI','LVLN',)
+#------------------------------------------------------------------------------
+# NamesPatcher
+#------------------------------------------------------------------------------
+# remaining to add: 'PERK', 'RACE',
+namesTypes = set()
+#------------------------------------------------------------------------------
+# ItemPrices Patcher
+#------------------------------------------------------------------------------
+pricesTypes = dict()
+
+#------------------------------------------------------------------------------
+# StatsImporter
+#------------------------------------------------------------------------------
+statsTypes = dict()
+statsHeaders = tuple()
+
+#------------------------------------------------------------------------------
+# SoundPatcher
+#------------------------------------------------------------------------------
+# Needs longs in SoundPatcher
+soundsLongsTypes = set() # initialize with literal
+soundsTypes = {}
+#------------------------------------------------------------------------------
+# CellImporter
+#------------------------------------------------------------------------------
+cellAutoKeys = ()
+cellRecAttrs = {}
+cellRecFlags = {}
+#------------------------------------------------------------------------------
+# GraphicsPatcher
+#------------------------------------------------------------------------------
+graphicsLongsTypes = set() # initialize with literal
+graphicsTypes = {}
+graphicsFidTypes = {}
+graphicsModelAttrs = ()
+#------------------------------------------------------------------------------
+# Inventory Patcher
+#------------------------------------------------------------------------------
+inventoryTypes = ('NPC_','CONT',)
+#------------------------------------------------------------------------------
+# Mod Record Elements ---------------------------------------------------------
+#------------------------------------------------------------------------------
+FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Record type to name dictionary
 

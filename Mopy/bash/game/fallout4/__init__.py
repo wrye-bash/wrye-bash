@@ -49,7 +49,9 @@ exe = u'Fallout4.exe'
 regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
 
 #--patch information
-patchURL = u'' # Update via steam
+## URL to download patches for the main game.
+# Update via steam
+patchURL = u''
 patchTip = u'Update via Steam'
 
 #--URL to the Nexus site for this game
@@ -59,13 +61,13 @@ nexusKey = 'bash.installers.openFallout4Nexus.continue'
 
 #--Creation Kit Set information
 class cs:
-    ## TODO:  When the GECK is actually released, double check
+    ## TODO:  When the Fallout 4 Creation Kit is actually released, double check
     ## that the filename is correct, and create an actual icon
-    shortName = u'G.E.C.K.'                   # Abbreviated name
-    longName = u'Garden of Eden Creation Kit' # Full name
-    exe = u'GECK.exe'                         # Executable to run
-    seArgs = None # u'-editor'
-    imageName = u'creationkit%s.png' # Image name template for the status bar
+    shortName = u'FO4CK'                 # Abbreviated name
+    longName = u'Fallout 4 Creation Kit' # Full name
+    exe = u'FO4CK.exe'                   # Executable to run
+    seArgs = None                        # u'-editor'
+    imageName = u'creationkit%s.png'     # Image name template for the status bar
 
 #--Script Extender information
 class se:
@@ -73,7 +75,7 @@ class se:
     shortName = u'F4SE'                      # Abbreviated name
     longName = u'Fallout 4 Script Extender'  # Full name
     exe = u'f4se_loader.exe'                 # Exe to run
-    steamExe = u'f4se_loader.exe'            # Exe to run if a steam install
+    steamExe = u'f4se_steam_loader.dll'      # Exe to run if a steam install
     url = u'http://f4se.silverlock.org/'     # URL to download from
     urlTip = u'http://f4se.silverlock.org/'  # Tooltip for mouse over the URL
 
@@ -96,6 +98,12 @@ se_sd = se.shortName
 class ge:
     shortName = u''
     longName = u''
+    ## exe is treated specially here.  If it is a string, then it should
+    ## be the path relative to the root directory of the game
+    ## if it is list, each list element should be an iterable to pass to Path.join
+    ## relative to the root directory of the game.  In this case, each filename
+    ## will be tested in reverse order.  This was required for Oblivion, as the newer
+    ## OBGE has a different filename than the older OBGE
     exe = u'**DNE**'
     url = u''
     urlTip = u''
@@ -106,23 +114,23 @@ class laa:
     # no longer required (Bethsoft updated TESV.exe to already
     # be LAA)
     name = u''
-    exe = u'**DNE**'
+    exe = u'**DNE**'       # Executable to run
     launchesSE = False
 
 # Files BAIN shouldn't skip
 dontSkip = (
+# Nothing so far
 )
 
 # Directories where specific file extensions should not be skipped by BAIN
 dontSkipDirs = {
-                # This rule is to allow mods with string translation enabled.
-                'interface\\translations':['.txt']
+    # This rule is to allow mods with string translation enabled.
+    'interface\\translations':['.txt']
 }
 
 #Folders BAIN should never check
 SkipBAINRefresh = {
     #Use lowercase names
-    ## TODO: Verify this is the directory the xEdit team will use
     u'fo4edit backups',
 }
 
@@ -266,7 +274,7 @@ nonDeactivatableFiles = [
 namesPatcherMaster = re.compile(ur"^Fallout4.esm$",re.I|re.U)
 
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
-pklfile = r'bash\db\Fallout4_ids.pkl'
+pklfile = ur'bash\db\Fallout4_ids.pkl'
 
 #--Game ESM/ESP/BSA files
 #  These filenames need to be in lowercase,
@@ -287,8 +295,9 @@ dataDirs = {
     u'music',
     u'programs',
     u'scripts',
+    u'seq',
     u'shadersfx',
-    u'sounds',
+    u'sound',
     u'strings',
     u'textures',
     u'video',
@@ -346,24 +355,6 @@ patchers = tuple()
 #--CBash Gui patcher classes available when building a Bashed Patch
 CBash_patchers = tuple()
 
-# For ListsMerger
-listTypes = ('LVLI','LVLN',)
-
-namesTypes = set()
-pricesTypes = dict()
-
-#------------------------------------------------------------------------------
-# StatsImporter
-#------------------------------------------------------------------------------
-statsTypes = dict()
-statsHeaders = tuple()
-
-
-# Mod Record Elements ---------------------------------------------------------
-#------------------------------------------------------------------------------
-# Constants
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
-
 # Magic Info ------------------------------------------------------------------
 weaponTypes = tuple()
 
@@ -372,7 +363,6 @@ raceNames = dict()
 raceShortNames = dict()
 raceHairMale = dict()
 raceHairFemale = dict()
-
 
 #--Plugin format stuff
 class esp:
