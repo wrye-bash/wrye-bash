@@ -614,12 +614,9 @@ class Installer_Move(_InstallerLink):
     text = _(u'Move To...')
 
     def Execute(self):
-        """Handle selection."""
         curPos = min(self.idata[x].order for x in self.selected)
-        message = (_(u'Move selected archives to what position?')
-                   + u'\n' +
-                   _(u'Enter position number.')
-                   + u'\n' +
+        message = (_(u'Move selected archives to what position?') + u'\n' +
+                   _(u'Enter position number.') + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
                    )
         newPos = self._askText(message, default=unicode(curPos))
@@ -632,9 +629,11 @@ class Installer_Move(_InstallerLink):
         if newPos == -3: newPos = self.idata[self.idata.lastKey].order
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
         elif newPos < 0: newPos = len(self.idata.data)
+        current_archive = self.window.panel.GetDetailsItem()
         self.idata.moveArchives(self.selected,newPos)
         self.idata.irefresh(what='N')
         self.window.RefreshUI()
+        self.window.SelectAndShowItem(GPath(current_archive.archive), focus=True)
 
 class Installer_Open(_InstallerLink):
     """Open selected file(s)."""
@@ -1166,7 +1165,7 @@ class InstallerConverter_Apply(_InstallerLink):
             except StateError:
                 return
         self.window.RefreshUI()
-        self.window.SelectItem(destArchive)
+        self.window.SelectAndShowItem(destArchive)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
@@ -1185,7 +1184,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
                 [archive], [dest], progress)
             if not destinations: return # destinations == [dest] if all was ok
         self.window.RefreshUI()
-        self.window.SelectItem(dest)
+        self.window.SelectAndShowItem(dest)
 
 class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""

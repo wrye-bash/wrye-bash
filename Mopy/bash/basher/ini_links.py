@@ -231,4 +231,4 @@ class INI_CreateNew(OneItemLink):
                             setting]
         target.saveSettings(settings)
         self.window.RefreshUI()
-        self.window.SelectItem(path.tail)
+        self.window.SelectAndShowItem(path.tail)
