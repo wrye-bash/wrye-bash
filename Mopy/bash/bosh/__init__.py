@@ -5451,7 +5451,8 @@ class InstallerArchive(Installer):
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
-        from archive to self.tempDir.
+        from archive to self.tempDir. progress will be zeroed so pass a
+        SubProgress in.
         fileNames: File names (not paths)."""
         if not fileNames: raise ArgumentError(u'No files to extract for %s.' % archive.s)
         # expand wildcards in fileNames to get actual count of files to extract
@@ -5463,9 +5464,9 @@ class InstallerArchive(Installer):
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
             if progress:
-                numFiles = countFilesInArchive(arch,
-                                listFilePath=self.tempList, recurse=recurse)
                 progress.state = 0
+                progress(0, u'%s\n' %archive + _(u'Counting files...') + u'\n')
+                numFiles = countFilesInArchive(arch, self.tempList, recurse)
                 progress.setFull(numFiles)
             #--Extract files
             args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
@@ -6059,7 +6060,8 @@ class InstallersData(DataDict):
             progress(i,name.s)
             #--Extract the embedded BCF and move it to the Converters folder
             Installer.rmTempDir()
-            installer.unpackToTemp(name,[installer.hasBCF],progress)
+            installer.unpackToTemp(name, [installer.hasBCF],
+                                   SubProgress(progress, i, i + 0.5))
             srcBcfFile = Installer.getTempDir().join(installer.hasBCF)
             bcfFile = dirs['converters'].join(u'temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
@@ -6069,8 +6071,9 @@ class InstallersData(DataDict):
             try:
                 msg = u'%s: ' % destArchive.s + _(
                     u'An error occurred while applying an Embedded BCF.')
-                self.apply_converter(converter, destArchive, progress, msg,
-                                     installer, pending)
+                self.apply_converter(converter, destArchive,
+                                     SubProgress(progress, i + 0.5, i + 1.0),
+                                     msg, installer, pending)
             except StateError:
                 # maybe short circuit further attempts to extract
                 # installer.hasBCF = False
