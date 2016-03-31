@@ -1022,11 +1022,12 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         self.window = window # and the idata access is via self.window
         return self.isSelectedArchives()
 
+    @balt.conversation
     def Execute(self):
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
-            for archive in self.selected:
-                installer = self.idata[archive]
+            projects = set()
+            for archive, installer in self._sorted_install_order():
                 project = archive.root
                 if self.isSingleArchive():
                     result = self._askText(_(u"Unpack %s to Project:") % archive.s,
@@ -1046,8 +1047,17 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                         default=False): continue
                 installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                 self._get_refreshed(project, installer, progress=SubProgress(progress, 0.8, 0.99), do_refresh=False)
+                projects.add(project)
+            if not projects: return
             self.idata.irefresh(what='NS')
-            self.window.RefreshUI()
+            self.window.RefreshUI() # all files ? can status of others change ?
+            self.window.SelectItemsNoCallback(projects)
+            self.window.SelectAndShowItem(project)
+
+    def _sorted_install_order(self):
+        pairs = [(installer, self.idata[installer]) for installer in
+                 self.selected]
+        return sorted(pairs, key=lambda tup: tup[1].order)
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
