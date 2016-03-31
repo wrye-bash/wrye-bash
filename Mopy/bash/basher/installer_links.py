@@ -600,6 +600,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
         return isSingle and not isinstance(self.idata[self.selected[0]],
                                                   bosh.InstallerMarker)
 
+    @balt.conversation
     def Execute(self):
         archive = self.selected[0]
         installer = self.idata[archive]
@@ -613,6 +614,7 @@ class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
     text = _(u'Move To...')
 
+    @balt.conversation
     def Execute(self):
         curPos = min(self.idata[x].order for x in self.selected)
         message = (_(u'Move selected archives to what position?') + u'\n' +
@@ -726,8 +728,7 @@ class Installer_Refresh(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        toRefresh = set((x, self.idata[x]) for x in self.selected)
-        self.window.rescanInstallers(toRefresh, abort=True,
+        self.window.rescanInstallers(self.selected, abort=True,
                             calculate_projects_crc=self.calculate_projects_crc)
 
 class Installer_SkipVoices(CheckLink, _RefreshingLink):
@@ -777,12 +778,10 @@ class Installer_CopyConflicts(_SingleInstallable):
     def Execute(self):
         """Copy files that conflict with this installer from all other
         installers to a project."""
-        idata = self.idata
-        installers_dir = idata.dir
         srcConflicts = set()
         packConflicts = []
         srcArchive = self.selected[0]
-        srcInstaller = idata[srcArchive]
+        srcInstaller = self.idata[srcArchive]
         src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path -> (int, int)
         all_files = set(src_sizeCrc) # bolt.PathS of ALL installer's files
         if not all_files:
@@ -791,9 +790,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         with balt.BusyCursor():
             numFiles = 0
             destDir = GPath(u"%03d - Conflicts" % srcInstaller.order)
-            getArchiveOrder = lambda tup: tup[1].order
-            for package, installer in sorted(idata.items(),
-                                             key=getArchiveOrder):
+            for package, installer in self.idata.sorted_pairs():
                 curConflicts = set()
                 for z, y in installer.refreshDataSizeCrc().iteritems():
                     if z in all_files and installer.data_sizeCrc[z] != \
@@ -810,12 +807,13 @@ class Installer_CopyConflicts(_SingleInstallable):
         if not numFiles:
             self._showOk(_(u'No conflicts detected for %s') % srcArchive)
             return
+        ijoin = self.idata.dir.join
         def _copy_conflicts(curFile):
             inst = self.idata[package]
             if isinstance(inst, bosh.InstallerProject):
                 for src in curConflicts:
-                    srcFull = installers_dir.join(package, src)
-                    destFull = installers_dir.join(destDir, g_path, src)
+                    srcFull = ijoin(package, src)
+                    destFull = ijoin(destDir, g_path, src)
                     if srcFull.exists():
                         progress(curFile, srcArchive.s + u'\n' + _(
                             u'Copying files...') + u'\n' + src)
@@ -825,8 +823,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                 inst.unpackToTemp(package, curConflicts,
                     SubProgress(progress, curFile, curFile + len(curConflicts),
                                 len(curConflicts)))
-                inst.getTempDir().moveTo(
-                    installers_dir.join(destDir, g_path))
+                inst.getTempDir().moveTo(ijoin(destDir, g_path))
                 curFile += len(curConflicts)
             return curFile
         with balt.Progress(_(u"Copying Conflicts..."),
@@ -1027,7 +1024,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
             projects = set()
-            for archive, installer in self._sorted_install_order():
+            for archive, installer in self.idata.sorted_pairs(self.selected):
                 project = archive.root
                 if self.isSingleArchive():
                     result = self._askText(_(u"Unpack %s to Project:") % archive.s,
@@ -1053,11 +1050,6 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
             self.window.RefreshUI() # all files ? can status of others change ?
             self.window.SelectItemsNoCallback(projects)
             self.window.SelectAndShowItem(project)
-
-    def _sorted_install_order(self):
-        pairs = [(installer, self.idata[installer]) for installer in
-                 self.selected]
-        return sorted(pairs, key=lambda tup: tup[1].order)
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------

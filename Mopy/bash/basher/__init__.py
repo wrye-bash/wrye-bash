@@ -2458,9 +2458,10 @@ class InstallersList(balt.UIList):
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
-                for index, (name, installer) in enumerate(sorted(toRefresh, key=lambda tup: tup[1].order)):
-                    progress(index,
-                             _(u'Refreshing Packages...') + u'\n' + name.s)
+                for index, (name, installer) in enumerate(
+                        self.data.sorted_pairs(toRefresh)):
+                    progress(index, _(u'Refreshing Packages...') + u'\n%s' +
+                                    name.s)
                     apath = bass.dirs['installers'].join(name)
                     dest.update(installer.refreshBasic(apath,
                         SubProgress(progress, index, index + 1),

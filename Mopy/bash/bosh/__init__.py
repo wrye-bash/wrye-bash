@@ -6382,14 +6382,14 @@ class InstallersData(DataDict):
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
         """Move specified archives to specified position."""
-        moveSet = set(moveList)
-        data = self.data
-        orderKey = lambda p: data[p].order
-        newList = [x for x in sorted(data,key=orderKey) if x not in moveSet]
-        moveList.sort(key=orderKey)
-        newList[newPos:newPos] = moveList
-        for index,archive in enumerate(newList):
-            data[archive].order = index
+        old_ordered = self.sorted_pairs(set(self.data) - set(moveList))
+        new_ordered = self.sorted_pairs(moveList)
+        for index,(archive,installer) in enumerate(old_ordered[:newPos]):
+            installer.order = index
+        for index,(archive,installer) in enumerate(new_ordered):
+            installer.order = newPos + index
+        for index,(archive,installer) in enumerate(old_ordered[newPos:]):
+            installer.order = newPos + len(new_ordered) + index
         self.setChanged()
 
     @staticmethod
@@ -6497,10 +6497,9 @@ class InstallersData(DataDict):
                     mask |= set(installer.data_sizeCrc)
         #--Install archives in turn
         progress.setFull(len(archives))
-        archives.sort(key=lambda x: self[x].order,reverse=True)
-        for index,archive in enumerate(archives):
+        for index, (archive, installer) in enumerate(
+                self.sorted_pairs(archives, reverse=True)):
             progress(index,archive.s)
-            installer = self[archive]
             destFiles = set(installer.data_sizeCrc) - mask
             if not override:
                 destFiles &= installer.missingFiles
@@ -6517,6 +6516,16 @@ class InstallersData(DataDict):
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
         return tweaksCreated
+
+    def sorted_pairs(self, package_keys=None, reverse=False):
+        """Return pairs of key, installer for package_keys in self, sorted by
+        install order.
+        :type package_keys: None | collections.Iterable[Path]
+        :rtype: list[(Path, Installer)]
+        """
+        if package_keys is None: package_keys = self.keys()
+        pairs = [(installer, self[installer]) for installer in package_keys]
+        return sorted(pairs, key=lambda tup: tup[1].order, reverse=reverse)
 
     def bain_install(self, archives, refresh_ui, progress=None, last=False,
                      override=True):
@@ -6622,9 +6631,7 @@ class InstallersData(DataDict):
         removes = set()
         restores = {}
         #--March through archives in reverse order...
-        getArchiveOrder =  lambda tup: tup[1].order
-        for archive, installer in sorted(self.iteritems(), key=getArchiveOrder,
-                                         reverse=True):
+        for archive, installer in self.sorted_pairs(reverse=True):
             #--Uninstall archive?
             if archive in unArchives:
                 for data_sizeCrc in (installer.data_sizeCrc,installer.dirty_sizeCrc):
@@ -6649,14 +6656,11 @@ class InstallersData(DataDict):
             self.irefresh(what='NS')
 
     def _restoreFiles(self, restores, progress, refresh_ui):
-        getArchiveOrder = lambda x: self[x].order
-        restoreArchives = sorted(set(restores.itervalues()),
-                                 key=getArchiveOrder, reverse=True)
+        restoreArchives = self.sorted_pairs(restores.itervalues(),reverse=True)
         if not restoreArchives: return
         progress.setFull(len(restoreArchives))
-        for index, archive in enumerate(restoreArchives):
+        for index, (archive, installer) in enumerate(restoreArchives):
             progress(index, archive.s)
-            installer = self[archive]
             destFiles = set(x for x, y in restores.iteritems() if y == archive)
             if destFiles:
                 installer.install(archive, destFiles, self.data_sizeCrcDate,
@@ -6684,9 +6688,7 @@ class InstallersData(DataDict):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = {}
-        getArchiveOrder =  lambda tup: tup[1].order
-        for archive, installer in sorted(self.iteritems(), key=getArchiveOrder,
-                                         reverse=True):
+        for archive, installer in self.sorted_pairs(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
@@ -6808,8 +6810,7 @@ class InstallersData(DataDict):
                 if curConflicts: bsaConflicts.append((package, bsaPath, curConflicts))
 #        print("BSA Conflicts: {}".format(bsaConflicts))
         # Calculate esp/esm conflicts
-        getArchiveOrder = lambda tup: tup[1].order
-        for package, installer in sorted(self.iteritems(),key=getArchiveOrder):
+        for package, installer in self.sorted_pairs():
             if installer.order == srcOrder: continue
             if not showInactive and not installer.isActive: continue
             if not showLower and installer.order < srcOrder: continue
@@ -6865,18 +6866,18 @@ class InstallersData(DataDict):
         with sio() as out:
             log = bolt.LogFile(out)
             log.setHeader(_(u'Bain Packages:'))
-            orderKey = lambda x: self.data[x].order
-            allPackages = sorted(self.data,key=orderKey)
             #--List
             log(u'[spoiler][xml]\n',False)
-            for package in allPackages:
-                prefix = u'%03d' % self.data[package].order
-                if isinstance(self.data[package],InstallerMarker):
-                    log(u'%s - %s' % (prefix,package.s))
-                elif self.data[package].isActive:
-                    log(u'++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
+            for package, installer in self.sorted_pairs():
+                prefix = u'%03d' % installer.order
+                if isinstance(installer, InstallerMarker):
+                    log(u'%s - %s' % (prefix, package.s))
+                elif installer.isActive:
+                    log(u'++ %s - %s (%08X) (Installed)' % (
+                        prefix, package.s, installer.crc))
                 elif showInactive:
-                    log(u'-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
+                    log(u'-- %s - %s (%08X) (Not Installed)' % (
+                        prefix, package.s, installer.crc))
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
