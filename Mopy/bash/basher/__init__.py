@@ -1772,6 +1772,7 @@ class SaveList(balt.UIList):
         selected = self.GetSelected()
         to_select = set(selected)
         for index, path in enumerate(selected):
+            if bosh.saveInfos.bak_file_pattern.match(path.s): continue
             if index:
                 newFileName = newName.replace(bush.game.ess.ext, (
                     u'%d' % index) + bush.game.ess.ext)
@@ -1796,8 +1797,7 @@ class SaveList(balt.UIList):
                                 new.moveTo(old)
                             if new.exists() and old.exists(): new.remove()
                         break
-        self.RefreshUI()
-        # self.RefreshUI(to_select) ##: not yet due to how PopulateItem works
+        self.RefreshUI(files=to_select)
         #--Reselect the items - renamed or not
         for save in to_select: self.SelectItem(save)
         event.Veto() # needed ! clears new name from label on exception

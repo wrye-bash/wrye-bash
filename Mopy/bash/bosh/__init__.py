@@ -4200,6 +4200,7 @@ class SaveInfos(FileInfos):
         _ext + ur'|' + _ext[:-1] + ur'r' + ur'))$', # enabled or disabled save
         re.I | re.U)
     del _ext
+    bak_file_pattern = re.compile(ur'(quick|auto)save(\.bak)+', re.I | re.U)
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
