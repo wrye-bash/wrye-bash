@@ -321,6 +321,8 @@ class Installers_AutoApplyEmbeddedBCFs(ItemLink):
                 progress=progress)
             if not destinations: return
         self.window.RefreshUI()
+        self.window.ClearSelected(clear_details=True)
+        self.window.SelectItemsNoCallback(destinations + converted)
 
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""
@@ -346,9 +348,8 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
                 beth_files = set(GPath(x) for x in bush.game.bethDataFiles)
                 self.idata.update_data_SizeCrcDate(beth_files, progress)
         # Refresh Installers
-        toRefresh = set()
-        for name, installer in self.idata.iteritems():
-            if installer.hasBethFiles: toRefresh.add((name,installer))
+        toRefresh = set(name for name, installer in self.idata.iteritems() if
+                        installer.hasBethFiles)
         self.window.rescanInstallers(toRefresh, abort=False,
                                      update_from_data=False)
 

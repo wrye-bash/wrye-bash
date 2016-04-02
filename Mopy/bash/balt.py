@@ -1937,16 +1937,18 @@ class UIList(wx.Panel):
         self.SelectItemAtIndex(dex)
 
     def SelectItemsNoCallback(self, items, deselectOthers=False):
+        if deselectOthers: self.ClearSelected()
         try:
             self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
-            for item in items: self.SelectItem(item, deselectOthers)
+            for item in items: self.SelectItem(item)
         finally:
             self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
 
-    def ClearSelected(self):
+    def ClearSelected(self, clear_details=False):
         """Unselect all items."""
-        listCtrl = self._gList
-        for i in xrange(listCtrl.GetItemCount()): self.SelectItemAtIndex(i, False)
+        for i in xrange(self._gList.GetItemCount()):
+            self.SelectItemAtIndex(i, False)
+        if clear_details: self.panel.ClearDetails()
 
     def SelectAll(self):
         for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
@@ -1962,6 +1964,10 @@ class UIList(wx.Panel):
     def EnsureVisibleIndex(self, dex, focus=False):
         self._gList.Focus(dex) if focus else self._gList.EnsureVisible(dex)
         self._gList.SetFocus()
+
+    def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
+        self.SelectItem(item, deselectOthers=deselectOthers)
+        self.EnsureVisibleItem(item, focus=focus)
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
@@ -2236,8 +2242,9 @@ class Link(object):
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
         the column clicked on or the first column. Set in Links.PopupMenu().
+        :type window: UIList | wx.Panel | wx.Button | basher.BashStatusbar
+        :type selection: list[Path | unicode | int] | int
         """
-        # Tank, List, Panel, wx.Button, BashStatusbar etc instances
         self.window = window
         self.selected = selection
 
@@ -2273,6 +2280,7 @@ class Link(object):
         return askOk(self.window, message, title)
 
     def _showOk(self, message, title=u'', **kwdargs):
+        if not title: title = self.text
         return showOk(self.window, message, title, **kwdargs)
 
     def _askWarning(self, message, title=_(u'Warning'), **kwdargs):

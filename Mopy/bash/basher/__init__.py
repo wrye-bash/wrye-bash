@@ -70,7 +70,7 @@ from .. import bush, bosh, bolt, bass, env
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods, SaveInfo, CoSaves
+from ..bosh import omods, CoSaves
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
 
@@ -131,14 +131,14 @@ def SetUAC(item): # item must define a GetHandle() method
 class Installers_Link(ItemLink):
     """InstallersData mixin"""
     @property
-    def idata(self): return self.window.data # InstallersData singleton
+    def idata(self): return self.window.data  # type: bosh.InstallersData
     @property
-    def iPanel(self): return self.window.panel # ex gInstallers InstallersPanel
+    def iPanel(self): return self.window.panel # type: InstallersPanel
 
 class People_Link(Link):
     """PeopleData mixin"""
     @property
-    def pdata(self): return self.window.data # PeopleData singleton
+    def pdata(self): return self.window.data # type: bosh.PeopleData
 
 # Exceptions ------------------------------------------------------------------
 class BashError(BoltError): pass
@@ -223,7 +223,7 @@ class _DetailsViewMixin(object):
 
     def RefreshUIColors(self):
         super(_DetailsViewMixin, self).RefreshUIColors()
-        self.RefreshDetails()
+        if self.detailsPanel: self.detailsPanel.RefreshUIColors()
 
     def ClosePanel(self):
         super(_DetailsViewMixin, self).ClosePanel()
@@ -234,6 +234,9 @@ class _DetailsViewMixin(object):
         super(_DetailsViewMixin, self).ShowPanel()
         if self.detailsPanel and self.detailsPanel is not self:
             self.detailsPanel.ShowPanel()
+
+    def GetDetailsItem(self):
+        return self.detailsPanel.file_info if self.detailsPanel else None
 
 class SashPanel(_DetailsViewMixin, NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
@@ -268,8 +271,8 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
         super(SashPanel, self).ClosePanel()
 
     def SelectUIListItem(self, item, deselectOthers=False):
-        self.uiList.SelectItem(item, deselectOthers=deselectOthers)
-        self.uiList.EnsureVisibleItem(item, focus=True)
+        self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
+                                      focus=True)
 
 #------------------------------------------------------------------------------
 class SashTankPanel(SashPanel):
@@ -281,9 +284,6 @@ class SashTankPanel(SashPanel):
     def ClosePanel(self):
         self.SaveDetails()
         super(SashTankPanel, self).ClosePanel()
-
-    def GetDetailsItem(self):
-        return self.listData[self.detailsItem] if self.detailsItem else None
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1031,9 +1031,11 @@ class _DetailsMixin(object):
     """Mixin for panels that display detailed info on mods, saves etc."""
 
     @property
-    def file_info(self): raise AbstractError
+    def file_info(self): return self.file_infos.get(self.displayed_item, None)
     @property
-    def file_infos(self): return self.file_info.getFileInfos()
+    def displayed_item(self): raise AbstractError
+    @property
+    def file_infos(self): raise AbstractError
 
     def _resetDetails(self): raise AbstractError
 
@@ -1042,11 +1044,12 @@ class _DetailsMixin(object):
         """Set file to be viewed."""
         #--Reset?
         if fileName == 'SAME':
-            if not self.file_info or \
-                            self.file_info.name not in self.file_infos:
+            if self.displayed_item not in self.file_infos:
                 fileName = None
             else:
-                fileName = self.file_info.name
+                fileName = self.displayed_item
+        elif not fileName or (fileName not in self.file_infos):
+            fileName = None
         if not fileName: self._resetDetails()
         return fileName
 
@@ -1074,7 +1077,7 @@ class _EditableMixin(_DetailsMixin):
     def allowDetailsEdit(self): raise AbstractError
 
     def SetEdited(self):
-        if not self.file_info: return
+        if not self.displayed_item: return
         self.edited = True
         if self.allowDetailsEdit:
             self.save.Enable()
@@ -1082,10 +1085,17 @@ class _EditableMixin(_DetailsMixin):
 
     def DoSave(self): raise AbstractError
 
-    def DoCancel(self):
-        self.SetFile(self.file_info.name if self.file_info else None)
+    def DoCancel(self): self.SetFile(self.displayed_item)
 
-class _SashDetailsPanel(_EditableMixin, SashPanel):
+class _EditableMixinOnFileInfos(_EditableMixin):
+    """Bsa/Mods/Saves details, DEPRECATED: we need common data stores API!"""
+    @property
+    def file_info(self): raise AbstractError
+    @property
+    def displayed_item(self):
+        return self.file_info.name if self.file_info else None
+
+class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     """Mod and Saves details panel, feature a master's list."""
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
 
@@ -1097,7 +1107,7 @@ class _SashDetailsPanel(_EditableMixin, SashPanel):
         self.subSplitter = wx.gizmos.ThinSplitterWindow(self.bottom,
                                                         style=splitterStyle)
         self.masterPanel = wx.Panel(self.subSplitter)
-        _EditableMixin.__init__(self, self.masterPanel)
+        _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
 
     def ShowPanel(self): ##: does not call super
         if hasattr(self, '_firstShow'):
@@ -1125,6 +1135,8 @@ class ModDetails(_SashDetailsPanel):
 
     @property
     def file_info(self): return self.modInfo
+    @property
+    def file_infos(self): return bosh.modInfos
     @property
     def allowDetailsEdit(self): return bush.game.esp.canEditHeader
 
@@ -1338,7 +1350,7 @@ class ModDetails(_SashDetailsPanel):
             newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
-            self.SetFile(self.modInfo.name)
+            self.SetFile(self.displayed_item)
             bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
             return
@@ -1760,6 +1772,8 @@ class SaveList(balt.UIList):
         if event.IsEditCancelled(): return
         #--File Info
         newName = event.GetLabel()
+        detail_item = self.panel.GetDetailsItem()
+        item_edited = detail_item.name if detail_item else None
         if not newName.lower().endswith(bush.game.ess.ext):
             newName += bush.game.ess.ext
         rePattern = re.compile(ur'^[^/\\:*?"<>|]+?$', re.I | re.U)
@@ -1772,20 +1786,23 @@ class SaveList(balt.UIList):
         selected = self.GetSelected()
         to_select = set(selected)
         for index, path in enumerate(selected):
+            if bosh.saveInfos.bak_file_pattern.match(path.s): continue
             if index:
                 newFileName = newName.replace(bush.game.ess.ext, (
                     u'%d' % index) + bush.game.ess.ext)
-            if newFileName != path.s:
-                oldPath = bosh.saveInfos.dir.join(path.s)
+            newFileName = GPath(newFileName)
+            if newFileName != path:
+                oldPath = bosh.saveInfos.dir.join(path)
                 newPath = bosh.saveInfos.dir.join(newFileName)
                 renames = [(oldPath, newPath)]
                 renames.extend(CoSaves.get_new_paths(oldPath, newPath))
                 if not newPath.exists():
                     try:
-                        oldPath.moveTo(newPath)
-                        SaveInfo.coMove(oldPath, newPath)
+                        bosh.saveInfos.rename(path, newFileName)
                         to_select.discard(path)
-                        to_select.add(GPath(newFileName))
+                        to_select.add(newFileName)
+                        if path == item_edited:
+                            item_edited = newFileName
                     except (OSError, IOError):
                         deprint('Renaming %s to %s failed'
                                 % (oldPath, newPath), traceback=True)
@@ -1796,11 +1813,10 @@ class SaveList(balt.UIList):
                                 new.moveTo(old)
                             if new.exists() and old.exists(): new.remove()
                         break
-        bosh.saveInfos.refresh()
-        self.RefreshUI()
-        # self.RefreshUI(to_select) ##: not yet due to how PopulateItem works
+        self.RefreshUI(files=to_select)
         #--Reselect the items - renamed or not
-        for save in to_select: self.SelectItem(save)
+        self.SelectItemsNoCallback(to_select)
+        if item_edited: self.SelectItem(item_edited)
         event.Veto() # needed ! clears new name from label on exception
 
     #--Populate Item
@@ -1808,7 +1824,7 @@ class SaveList(balt.UIList):
         fileInfo = self.data[fileName]
         #--Image
         status = fileInfo.getStatus()
-        on = fileName.cext == bush.game.ess.ext
+        on = bosh.SaveInfos.isEnabled(fileInfo.getPath()) # yak
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
@@ -1832,7 +1848,7 @@ class SaveList(balt.UIList):
                  % {'ess': bush.game.ess.ext})
         if not balt.askContinue(self, msg, 'bash.saves.askDisable.continue'):
             return
-        newEnabled = not self.data.isEnabled(hitItem)
+        newEnabled = not bosh.SaveInfos.isEnabled(hitItem)
         newName = self.data.enable(hitItem, newEnabled)
         if newName != hitItem: self.RefreshUI() ##: files=[fileName]
 
@@ -1843,6 +1859,8 @@ class SaveDetails(_SashDetailsPanel):
 
     @property
     def file_info(self): return self.saveInfo
+    @property
+    def file_infos(self): return bosh.saveInfos
     @property
     def allowDetailsEdit(self): return bush.game.ess.canEditMasters
 
@@ -2016,6 +2034,9 @@ class SaveDetails(_SashDetailsPanel):
         else: # files=[saveInfo.name], Nope: deleted oldName drives _glist nuts
             BashFrame.saveListRefresh()
 
+    def RefreshUIColors(self):
+        self.picture.SetBackground(colors['screens.bkgd.image'])
+
 #------------------------------------------------------------------------------
 class SavePanel(SashPanel):
     """Savegames tab."""
@@ -2036,7 +2057,8 @@ class SavePanel(SashPanel):
         left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
-        self.detailsPanel.picture.SetBackground(colors['screens.bkgd.image'])
+        self.uiList.RefreshUI()
+        super(SavePanel, self).RefreshUIColors()
 
     def _sbCount(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
@@ -2099,8 +2121,8 @@ class InstallersList(balt.UIList):
         else: item_format.text_key = self._type_textKey.get(installer.type,
                                              'installers.text.invalid')
         #--Background
-        item_format.back_key = (installer.skipDirFiles and
-                                'installers.bkgd.skipped') or None
+        if installer.skipDirFiles:
+            item_format.back_key = 'installers.bkgd.skipped'
         text = u''
         if installer.dirty_sizeCrc:
             item_format.back_key = 'installers.bkgd.dirty'
@@ -2364,7 +2386,7 @@ class InstallersList(balt.UIList):
                 newPos = self.data.data[thisFile].order + moveMod
                 if newPos < 0 or maxPos < newPos: break
                 self.data.moveArchives([thisFile],newPos)
-            self.data.irefresh(what='IN')
+            self.data.irefresh(what='N')
             self.RefreshUI()
             visibleIndex = sorted([visibleIndex, 0, maxPos])[1]
             self.EnsureVisibleIndex(visibleIndex)
@@ -2436,9 +2458,10 @@ class InstallersList(balt.UIList):
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
-                for index, (name, installer) in enumerate(sorted(toRefresh, key=lambda tup: tup[1].order)):
-                    progress(index,
-                             _(u'Refreshing Packages...') + u'\n' + name.s)
+                for index, (name, installer) in enumerate(
+                        self.data.sorted_pairs(toRefresh)):
+                    progress(index, _(u'Refreshing Packages...') + u'\n%s' +
+                                    name.s)
                     apath = bass.dirs['installers'].join(name)
                     dest.update(installer.refreshBasic(apath,
                         SubProgress(progress, index, index + 1),
@@ -2458,6 +2481,14 @@ class InstallersPanel(SashTankPanel):
     espmMenu = Links()
     subsMenu = Links()
     keyPrefix = 'bash.installers'
+
+    ##: belong to InstallersDetails
+    @property
+    def displayed_item(self): return self.detailsItem
+    @property
+    def file_infos(self): return self.listData
+    @property
+    def file_info(self): return self.file_infos.get(self.displayed_item, None)
 
     def __init__(self,parent):
         """Initialize."""
@@ -3051,7 +3082,7 @@ class ScreensList(balt.UIList):
             bosh.screensData.refresh()
             self.RefreshUI()
             #--Reselected the renamed items
-            for screen in newselected: self.SelectItem(screen)
+            self.SelectItemsNoCallback(newselected)
             event.Veto()
 
     def OnKeyUp(self,event):
@@ -3066,12 +3097,38 @@ class ScreensList(balt.UIList):
         elif code in balt.wxReturn: self.OpenSelected()
         super(ScreensList, self).OnKeyUp(event)
 
-    def _select(self, fileName):
-        filePath = bosh.screensData.dir.join(fileName)
-        bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
-        self.panel.picture.SetBitmap(bitmap)
-
 #------------------------------------------------------------------------------
+class ScreensDetails(_DetailsMixin, NotebookPanel):
+
+    def __init__(self, parent):
+        super(ScreensDetails, self).__init__(parent)
+        self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
+        self.displayed_screen = None # type: bolt.Path
+        parent.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
+
+    @property
+    def displayed_item(self): return self.displayed_screen
+    @property
+    def file_infos(self): return bosh.screensData
+
+    def _resetDetails(self):
+        self.screenshot_control.SetBitmap(None)
+
+    def SetFile(self, fileName='SAME'):
+        """Set file to be viewed."""
+        #--Reset?
+        self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
+        if not self.displayed_screen: return
+        filePath = bosh.screensData.dir.join(self.displayed_screen)
+        bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
+        self.screenshot_control.SetBitmap(bitmap)
+
+    def RefreshUIColors(self):
+        self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
+
+    def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ShowPanel(self): pass
+
 class ScreensPanel(SashPanel):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
@@ -3082,25 +3139,24 @@ class ScreensPanel(SashPanel):
         left,right = self.left,self.right
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()
+        self.detailsPanel = ScreensDetails(right)
         self.uiList = ScreensList(
             left, data=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.picture = balt.Picture(right,256,192,background=colors['screens.bkgd.image'])
         #--Layout
-        right.SetSizer(hSizer((self.picture,1,wx.GROW)))
         left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
 
-    def RefreshUIColors(self):
-        self.picture.SetBackground(colors['screens.bkgd.image'])
-
     def _sbCount(self):
         return _(u'Screens:') + u' %d' % (len(self.listData.data),)
+
+    def RefreshUIColors(self):
+        self.uiList.RefreshUI()
+        super(ScreensPanel, self).RefreshUIColors()
 
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
             self.uiList.RefreshUI()
-            #self.Refresh()
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
@@ -3120,11 +3176,13 @@ class BSAList(balt.UIList):
     ])
 
 #------------------------------------------------------------------------------
-class BSADetails(_EditableMixin, SashPanel):
+class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     """BSAfile details panel."""
 
     @property
     def file_info(self): return self.BSAInfo
+    @property
+    def file_infos(self): return bosh.bsaInfos
     @property
     def allowDetailsEdit(self): return True
 
@@ -3134,7 +3192,7 @@ class BSADetails(_EditableMixin, SashPanel):
         self.top, self.bottom = self.left, self.right
         bsaPanel = parent.GetParent().GetParent()
         self.bsaList = bsaPanel.uiList
-        _EditableMixin.__init__(self, self.bottom)
+        _EditableMixinOnFileInfos.__init__(self, self.bottom)
         #--Data
         self.BSAInfo = None
         #--File Name
@@ -3355,6 +3413,8 @@ class PeoplePanel(SashTankPanel):
             self.gKarma.SetValue(karma)
             self.gText.SetValue(text)
         self.detailsItem = item
+
+    def RefreshUIColors(self): self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 #--Tabs menu

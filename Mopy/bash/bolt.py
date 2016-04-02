@@ -2146,7 +2146,7 @@ class Progress:
     def __init__(self,full=1.0):
         if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
         self.message = u''
-        self.full = full
+        self.full = 1.0 * full
         self.state = 0
         self.debug = False
 
@@ -2156,7 +2156,7 @@ class Progress:
     def setFull(self,full):
         """Set's full and for convenience, returns self."""
         if (1.0*full) == 0: raise ArgumentError(u'Full must be non-zero!')
-        self.full = full
+        self.full = 1.0 * full
         return self
 
     def plus(self,increment=1):

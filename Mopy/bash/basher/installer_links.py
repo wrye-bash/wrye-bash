@@ -99,6 +99,20 @@ class _InstallerLink(Installers_Link, EnabledLink):
                               bosh.InstallerArchive): return False
         return True
 
+    def _get_refreshed(self, installer, src_installer, is_project=True,
+                       progress=None, do_refresh=True):
+        new = installer not in self.idata
+        clazz = bosh.InstallerProject if is_project else bosh.InstallerArchive
+        if new:
+            self.idata[installer] = clazz(installer)
+            self.idata.moveArchives([installer], src_installer.order + 1)
+        installer_info = self.idata[installer]
+        if is_project: # no need to call irefresh(what='I')
+            installer_path = self.idata.dir.join(installer) # bolt.Path
+            installer_info.refreshBasic(installer_path, progress=progress)
+        if do_refresh:
+            self.idata.irefresh(what='NS')
+        return installer_info
 
     ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
@@ -127,18 +141,15 @@ class _InstallerLink(Installers_Link, EnabledLink):
                                     SubProgress(progress, 0, 0.8),
                                     release=release)
             #--Add the new archive to Bash
-            if archive not in self.idata:
-                self.idata[archive] = bosh.InstallerArchive(archive)
-            #--Refresh UI
-            iArchive = self.idata[archive]
+            iArchive = self._get_refreshed(archive, installer,
+                                           is_project=False, do_refresh=False)
             iArchive.blockSize = blockSize
-            if iArchive.order == -1:
-                self.idata.moveArchives([archive], installer.order + 1)
             #--Refresh UI
-            self.idata.irefresh(what='I', pending=[archive]) # fullrefresh is unneeded
+            self.idata.irefresh(what='I', pending=[archive])
         self.window.RefreshUI()
 
     def _askFilename(self, message, filename):
+        """:rtype: bolt.Path"""
         result = self._askText(message, title=self.dialogTitle,
                                default=filename)
         if not result: return
@@ -409,6 +420,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         return isSingle and not isinstance(self.idata[self.selected[0]],
                                            bosh.InstallerMarker)
 
+    @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
         curName = self.selected[0]
@@ -435,7 +447,8 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         with balt.BusyCursor():
             self.idata.copy_installer(curName,newName)
             self.idata.irefresh(what='N')
-            self.window.RefreshUI()
+        self.window.RefreshUI()
+        self.window.SelectAndShowItem(newName)
 
 class Installer_Hide(_InstallerLink):
     """Hide selected Installers."""
@@ -587,6 +600,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
         return isSingle and not isinstance(self.idata[self.selected[0]],
                                                   bosh.InstallerMarker)
 
+    @balt.conversation
     def Execute(self):
         archive = self.selected[0]
         installer = self.idata[archive]
@@ -600,13 +614,11 @@ class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
     text = _(u'Move To...')
 
+    @balt.conversation
     def Execute(self):
-        """Handle selection."""
         curPos = min(self.idata[x].order for x in self.selected)
-        message = (_(u'Move selected archives to what position?')
-                   + u'\n' +
-                   _(u'Enter position number.')
-                   + u'\n' +
+        message = (_(u'Move selected archives to what position?') + u'\n' +
+                   _(u'Enter position number.') + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
                    )
         newPos = self._askText(message, default=unicode(curPos))
@@ -619,9 +631,11 @@ class Installer_Move(_InstallerLink):
         if newPos == -3: newPos = self.idata[self.idata.lastKey].order
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
         elif newPos < 0: newPos = len(self.idata.data)
+        current_archive = self.iPanel.GetDetailsItem()
         self.idata.moveArchives(self.selected,newPos)
         self.idata.irefresh(what='N')
         self.window.RefreshUI()
+        self.window.SelectAndShowItem(GPath(current_archive.archive), focus=True)
 
 class Installer_Open(_InstallerLink):
     """Open selected file(s)."""
@@ -714,8 +728,7 @@ class Installer_Refresh(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        toRefresh = set((x, self.idata[x]) for x in self.selected)
-        self.window.rescanInstallers(toRefresh, abort=True,
+        self.window.rescanInstallers(self.selected, abort=True,
                             calculate_projects_crc=self.calculate_projects_crc)
 
 class Installer_SkipVoices(CheckLink, _RefreshingLink):
@@ -758,93 +771,76 @@ class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
     text = _(u'Copy Conflicts to Project')
     help = _(u'Copy all files that conflict with the selected installer into a'
-             u' new project')
+             u' new project') + u'  .' + _(
+        u'Conflicts with inactive installers are included')
 
+    @balt.conversation
     def Execute(self):
-        """Handle selection."""
-        idata = self.idata # bosh.InstallersData instance (dict bolt.Path ->
-        # InstallerArchive)
-        installers_dir = idata.dir
+        """Copy files that conflict with this installer from all other
+        installers to a project."""
         srcConflicts = set()
         packConflicts = []
+        srcArchive = self.selected[0]
+        srcInstaller = self.idata[srcArchive]
+        src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path -> (int, int)
+        all_files = set(src_sizeCrc) # bolt.PathS of ALL installer's files
+        if not all_files:
+            self._showOk(_(u'No files to install for %s') % srcArchive)
+            return
+        with balt.BusyCursor():
+            numFiles = 0
+            destDir = GPath(u"%03d - Conflicts" % srcInstaller.order)
+            for package, installer in self.idata.sorted_pairs():
+                curConflicts = set()
+                for z, y in installer.refreshDataSizeCrc().iteritems():
+                    if z in all_files and installer.data_sizeCrc[z] != \
+                            src_sizeCrc[z]:
+                        curConflicts.add(y)
+                        srcConflicts.add(src_sizeCrc[z])
+                numFiles += len(curConflicts)
+                if curConflicts: packConflicts.append(
+                    (installer.order, package, curConflicts))
+            srcConflicts = set( # we need the paths rel to the archive not Data
+                src for src,size,crc in srcInstaller.fileSizeCrcs if
+                (size,crc) in srcConflicts)
+            numFiles += len(srcConflicts)
+        if not numFiles:
+            self._showOk(_(u'No conflicts detected for %s') % srcArchive)
+            return
+        ijoin = self.idata.dir.join
+        def _copy_conflicts(curFile):
+            inst = self.idata[package]
+            if isinstance(inst, bosh.InstallerProject):
+                for src in curConflicts:
+                    srcFull = ijoin(package, src)
+                    destFull = ijoin(destDir, g_path, src)
+                    if srcFull.exists():
+                        progress(curFile, srcArchive.s + u'\n' + _(
+                            u'Copying files...') + u'\n' + src)
+                        srcFull.copyTo(destFull)
+                        curFile += 1
+            else:
+                inst.unpackToTemp(package, curConflicts,
+                    SubProgress(progress, curFile, curFile + len(curConflicts),
+                                len(curConflicts)))
+                inst.getTempDir().moveTo(ijoin(destDir, g_path))
+                curFile += len(curConflicts)
+            return curFile
         with balt.Progress(_(u"Copying Conflicts..."),
                            u'\n' + u' ' * 60) as progress:
-            srcArchive = self.selected[0]
-            srcInstaller = idata[srcArchive]
-            src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path
-            mismatched = set(src_sizeCrc) # just a set of bolt.Path of the src
-            # installer files
-            if mismatched:
-                numFiles = 0
-                curFile = 1
-                srcOrder = srcInstaller.order
-                destDir = GPath(u"%03d - Conflicts" % srcOrder)
-                getArchiveOrder = lambda tup: tup[1].order
-                for package, installer in sorted(idata.iteritems(),
-                                                 key=getArchiveOrder):
-                    curConflicts = set()
-                    for z,y in installer.refreshDataSizeCrc().iteritems():
-                        if z in mismatched and installer.data_sizeCrc[z] != \
-                                src_sizeCrc[z]:
-                            curConflicts.add(y)
-                            srcConflicts.add(src_sizeCrc[z])
-                    numFiles += len(curConflicts)
-                    if curConflicts: packConflicts.append(
-                        (installer.order,installer,package,curConflicts))
-                srcConflicts = set(
-                    src for src,size,crc in srcInstaller.fileSizeCrcs if
-                    (size,crc) in srcConflicts)
-                numFiles += len(srcConflicts)
-                if numFiles: # there are conflicting files
-                    progress.setFull(numFiles)
-                    if isinstance(srcInstaller,bosh.InstallerProject):
-                        for src in srcConflicts:
-                            srcFull = installers_dir.join(srcArchive,src)
-                            destFull = installers_dir.join(destDir,
-                                                           GPath(srcArchive.s),
-                                                           src)
-                            if srcFull.exists():
-                                progress(curFile,srcArchive.s + u'\n' + _(
-                                    u'Copying files...') + u'\n' + src)
-                                srcFull.copyTo(destFull)
-                                curFile += 1
-                    else:
-                        srcInstaller.unpackToTemp(srcArchive,srcConflicts,
-                                                  SubProgress(progress,0,len(
-                                                      srcConflicts),numFiles))
-                        srcInstaller.getTempDir().moveTo(
-                            installers_dir.join(destDir,GPath(srcArchive.s)))
-                    curFile = len(srcConflicts)
-                    for order,installer,package,curConflicts in packConflicts:
-                        if isinstance(installer,bosh.InstallerProject):
-                            for src in curConflicts:
-                                srcFull = installers_dir.join(package,src)
-                                destFull = installers_dir.join(destDir,GPath(
-                                    u"%03d - %s" % (order,package.s)),src)
-                                if srcFull.exists():
-                                    progress(curFile,srcArchive.s + u'\n' + _(
-                                        u'Copying files...') + u'\n' + src)
-                                    srcFull.copyTo(destFull)
-                                    curFile += 1
-                        else:
-                            installer.unpackToTemp(package, curConflicts,
-                                SubProgress(progress, curFile,
-                                    curFile + len(curConflicts), numFiles))
-                            installer.getTempDir().moveTo(
-                                installers_dir.join(destDir,GPath(
-                                    u"%03d - %s" % (order,package.s))))
-                            curFile += len(curConflicts)
-                    project = destDir.root
-                    if project not in idata:
-                        idata[project] = bosh.InstallerProject(project)
-                    iProject = idata[project] #bash.bosh.InstallerProject object
-                    pProject = installers_dir.join(project) # bolt.Path
-                    # ...\Bash Installers\030 - Conflicts
-                    iProject.refreshBasic(pProject, progress=None)
-                    if iProject.order == -1:
-                        idata.moveArchives([project],srcInstaller.order + 1)
-                    idata.irefresh(what='NS')
+            progress.setFull(numFiles)
+            curFile = 0
+            package = srcArchive
+            curConflicts = srcConflicts
+            g_path = GPath(package.s)
+            curFile = _copy_conflicts(curFile)
+            for order,package,curConflicts in packConflicts:
+                g_path = GPath(u"%03d - %s" % (order, package.s))
+                curFile = _copy_conflicts(curFile)
+            project = destDir.root
+        self._get_refreshed(project, srcInstaller)
         self.window.RefreshUI()
+        self.window.SelectAndShowItem(project)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
@@ -1023,11 +1019,12 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
         self.window = window # and the idata access is via self.window
         return self.isSelectedArchives()
 
+    @balt.conversation
     def Execute(self):
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
-            for archive in self.selected:
-                installer = self.idata[archive]
+            projects = set()
+            for archive, installer in self.idata.sorted_pairs(self.selected):
                 project = archive.root
                 if self.isSingleArchive():
                     result = self._askText(_(u"Unpack %s to Project:") % archive.s,
@@ -1046,18 +1043,13 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                         _(u"%s already exists. Overwrite it?") % project.s,
                         default=False): continue
                 installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
-                self._create_project(installer, progress, project)
+                self._get_refreshed(project, installer, progress=SubProgress(progress, 0.8, 0.99), do_refresh=False)
+                projects.add(project)
+            if not projects: return
             self.idata.irefresh(what='NS')
-            self.window.RefreshUI()
-
-    def _create_project(self, installer, progress, project):
-        if project not in self.idata:
-            self.idata[project] = bosh.InstallerProject(project)
-        iProject = self.idata[project]
-        pProject = bass.dirs['installers'].join(project)
-        iProject.refreshBasic(pProject, SubProgress(progress, 0.8, 0.99))
-        if iProject.order == -1:
-            self.idata.moveArchives([project], installer.order + 1)
+            self.window.RefreshUI() # all files ? can status of others change ?
+            self.window.SelectItemsNoCallback(projects)
+            self.window.SelectAndShowItem(project)
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
@@ -1125,6 +1117,7 @@ class InstallerProject_Pack(_InstallerLink):
             message=_(u'Pack %s to Archive:') % project.s, filename=archive.s)
         if not archive: return
         self._pack(archive, installer, project, release=self.__class__.release)
+        self.window.SelectAndShowItem(archive)
 
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerProject_Pack):
@@ -1169,6 +1162,7 @@ class InstallerConverter_Apply(_InstallerLink):
             except StateError:
                 return
         self.window.RefreshUI()
+        self.window.SelectAndShowItem(destArchive)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
@@ -1187,6 +1181,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
                 [archive], [dest], progress)
             if not destinations: return # destinations == [dest] if all was ok
         self.window.RefreshUI()
+        self.window.SelectAndShowItem(dest)
 
 class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""

@@ -134,7 +134,8 @@ class Saves_ProfilesData(balt.ListEditorData):
             return False
         #--Get file count. If > zero, verify with user.
         profileDir = bass.dirs['saveBase'].join(profileSaves)
-        files = [file for file in profileDir.list() if bosh.reSaveExt.search(file.s)]
+        files = [save for save in profileDir.list() if
+                 bosh.SaveInfos.rightFileType(save)]
         if files:
             message = _(u'Delete profile %s and the %d save files it contains?') % (profile,len(files))
             if not balt.askYes(self.parent,message,_(u'Delete Profile')):
@@ -232,7 +233,7 @@ class Save_ImportFace(OneItemLink):
         srcPath = self._askOpen(title=_(u'Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard, mustExist=True)
         if not srcPath: return
-        if bosh.reSaveExt.search(srcPath.s):
+        if bosh.SaveInfos.rightFileType(srcPath):
             self.FromSave(fileInfo,srcPath)
         elif bosh.reModExt.search(srcPath.s):
             self.FromMod(fileInfo,srcPath)

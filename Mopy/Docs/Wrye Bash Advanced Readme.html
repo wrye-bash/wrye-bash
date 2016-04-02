@@ -466,7 +466,9 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainPackToArchive">Pack to Archive...<td>Projects only. Packs the project to an archive. It defaults to .7z, but also supports .zip.
         <tr><td colspan="2" id="bainPackageForRelease">Package For Release...<td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".
         <tr><td colspan="2" id="bainSyncFromData">Sync From Data<td>Projects only. Synchronize the project with files from the Data directory. This is essentially the reverse of "Install" for projects since it copies from the Data directory to the project rather than the other way around.
-        <tr><td colspan="2" id="bainCopyConflictsToProject">Copy Conflicts to Project<td>Copies all files that conflict with the selected package into a new project. Useful for comparing conflicting resources.
+        <tr><td colspan="2" id="bainCopyConflictsToProject">Copy Conflicts to Project<td>Copies all files that conflict with the selected package into a new project. Conflicts with inactive
+            installers and lower order packages are included as if <a href="#bainShowInactiveConflicts">Show Inactive Conflicts</a> and <a href="#bainShowLowerConflicts">Show Lower
+                Conflicts</a> options were selected. Useful for comparing conflicting resources.
         <tr><td colspan="2" id="bainOmodInfo">Omod Info...<td>Projects only. Allows you to read/write omod configuration info.
         <tr><td colspan="2" id="bainListStructure">List Structure...<td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.
 </table>

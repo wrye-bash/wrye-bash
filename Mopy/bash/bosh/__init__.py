@@ -26,6 +26,8 @@
 files and environment. It does not provide interface functions which are instead
 provided by separate modules: bish for CLI and bash/basher for GUI."""
 
+############# bush.game must be set by the time you import bosh ! #############
+
 # Localization ----------------------------------------------------------------
 #--Not totally clear on this, but it seems to safest to put locale first...
 import locale
@@ -105,9 +107,6 @@ reExGroup = re.compile(u'(.*?),',re.U)
 reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
-reBSAExt  = re.compile(ur'\.bsa(.ghost)?$',re.I|re.U)
-reSaveExt = re.compile(ur'(quicksave(\.bak)+|autosave(\.bak)+|\.(es|fo)[rs])$',re.I|re.U)
-reINIExt  = re.compile(ur'\.ini$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
 
@@ -1304,7 +1303,7 @@ def _delete(itemOrItems, **kwargs):
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
-    reSave  = re.compile(r'\.ess(f?)$',re.I)
+    reSave = re.compile(ur'\.' + bush.game.ess.ext[1:] + '(f?)$', re.I | re.U)
 
     @staticmethod
     def getPaths(savePath):
@@ -2995,11 +2994,6 @@ class SaveInfo(FileInfo):
         """Copies co files corresponding to oldPath to newPath."""
         CoSaves(oldPath).copy(newPath)
 
-    @staticmethod
-    def coMove(oldPath, newPath):
-        """Move co files corresponding to oldPath to newPath."""
-        return CoSaves(oldPath).move(newPath)
-
     def coSaves(self):
         """Returns CoSaves instance corresponding to self."""
         return CoSaves(self.getPath())
@@ -3051,6 +3045,7 @@ class TrackedFileInfos(DataDict):
 class FileInfos(DataDict):
     """Common superclass for mod, ini, saves and bsa infos."""
     ##: we need a common API for this and TankData...
+    file_pattern = None # subclasses must define this !
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
         self.data = {} # populated in refresh ()
@@ -3139,10 +3134,14 @@ class FileInfos(DataDict):
                 del self.table[d]
         return bool(_added) or bool(_updated) or bool(_deleted)
 
-    #--Right File Type? [ABSTRACT]
-    def rightFileType(self,fileName):
-        """Bool: filetype (extension) is correct for subclass. [ABSTRACT]"""
-        raise AbstractError
+    #--Right File Type?
+    @classmethod
+    def rightFileType(cls, fileName):
+        """Check if the filetype (extension) is correct for subclass.
+        :type fileName: bolt.Path | basestring
+        :rtype: _sre.SRE_Match | None
+        """
+        return cls.file_pattern.search(u'%s' % fileName)
 
     #--Rename
     def rename(self,oldName,newName):
@@ -3163,7 +3162,7 @@ class FileInfos(DataDict):
         del self[oldName]
         self.table.moveRow(oldName,newName)
         #--Done
-        fileInfo.madeBackup = False
+        fileInfo.madeBackup = False ##: #292
 
     #--Delete
     def delete(self, fileName, **kwargs):
@@ -3264,13 +3263,11 @@ class FileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
+    file_pattern = re.compile(ur'\.ini$', re.I | re.U)
+
     def __init__(self):
         FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
-
-    def rightFileType(self,fileName):
-        """Bool: File is an ini."""
-        return reINIExt.search(fileName.s)
 
     def setBaseIni(self,ini):
         self.ini = ini
@@ -3284,9 +3281,8 @@ class INIInfos(FileInfos):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
-    #--------------------------------------------------------------------------
-    # Load Order stuff is almost all handled in the Plugins class again
-    #--------------------------------------------------------------------------
+    file_pattern = reModExt
+
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'], ModInfo)
         #--MTime resetting
@@ -3789,9 +3785,6 @@ class ModInfos(FileInfos):
         return balt.askWarning(parent, msg, title + name)
 
     #--Mod Specific -----------------------------------------------------------
-    def rightFileType(self,fileName):
-        """Bool: File is a mod."""
-        return reModExt.search(fileName.s)
 
     #--Refresh File
     def refreshFile(self,fileName):
@@ -4201,6 +4194,13 @@ class ModInfos(FileInfos):
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
+    _ext = ur'\.' + bush.game.ess.ext[1:]
+    file_pattern = re.compile(
+        ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...) or
+        _ext + ur'|' + _ext[:-1] + ur'r' + ur'))$', # enabled or disabled save
+        re.I | re.U)
+    del _ext
+    bak_file_pattern = re.compile(ur'(quick|auto)save(\.bak)+', re.I | re.U)
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
@@ -4231,11 +4231,6 @@ class SaveInfos(FileInfos):
         dir_ = FileInfos.getBashDir(self)
         dir_.makedirs()
         return dir_
-
-    #--Right File Type (Used by Refresh)
-    def rightFileType(self,fileName):
-        """Bool: File is a save."""
-        return reSaveExt.search(fileName.s)
 
     def refresh(self):
         self._refreshLocalSave()
@@ -4318,21 +4313,18 @@ class SaveInfos(FileInfos):
                                           re.I | re.U):
             return fileName
         (root,ext) = fileName.rootExt
-        newName = root + ((value and bush.game.ess.ext) or u'.esr')
+        newName = root + (bush.game.ess.ext if value else ext[:-1] + u'r')
         self.rename(fileName,newName)
         return newName
 
 #------------------------------------------------------------------------------
 class BSAInfos(FileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
+    file_pattern = re.compile(ur'\.bsa(.ghost)?$', re.I | re.U)
 
     def __init__(self):
         self.dir = dirs['mods']
         FileInfos.__init__(self,self.dir,BSAInfo)
-
-    #--Right File Type (Used by Refresh)
-    def rightFileType(self,fileName):
-        return reBSAExt.search(fileName.s)
 
     def getBashDir(self):
         """Return directory to save info."""
@@ -5459,7 +5451,8 @@ class InstallerArchive(Installer):
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
-        from archive to self.tempDir.
+        from archive to self.tempDir. progress will be zeroed so pass a
+        SubProgress in.
         fileNames: File names (not paths)."""
         if not fileNames: raise ArgumentError(u'No files to extract for %s.' % archive.s)
         # expand wildcards in fileNames to get actual count of files to extract
@@ -5471,9 +5464,9 @@ class InstallerArchive(Installer):
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
             if progress:
-                numFiles = countFilesInArchive(arch,
-                                listFilePath=self.tempList, recurse=recurse)
                 progress.state = 0
+                progress(0, u'%s\n' %archive + _(u'Counting files...') + u'\n')
+                numFiles = countFilesInArchive(arch, self.tempList, recurse)
                 progress.setFull(numFiles)
             #--Extract files
             args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
@@ -6067,7 +6060,8 @@ class InstallersData(DataDict):
             progress(i,name.s)
             #--Extract the embedded BCF and move it to the Converters folder
             Installer.rmTempDir()
-            installer.unpackToTemp(name,[installer.hasBCF],progress)
+            installer.unpackToTemp(name, [installer.hasBCF],
+                                   SubProgress(progress, i, i + 0.5))
             srcBcfFile = Installer.getTempDir().join(installer.hasBCF)
             bcfFile = dirs['converters'].join(u'temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
@@ -6077,8 +6071,9 @@ class InstallersData(DataDict):
             try:
                 msg = u'%s: ' % destArchive.s + _(
                     u'An error occurred while applying an Embedded BCF.')
-                self.apply_converter(converter, destArchive, progress, msg,
-                                     installer, pending)
+                self.apply_converter(converter, destArchive,
+                                     SubProgress(progress, i + 0.5, i + 1.0),
+                                     msg, installer, pending)
             except StateError:
                 # maybe short circuit further attempts to extract
                 # installer.hasBCF = False
@@ -6387,14 +6382,14 @@ class InstallersData(DataDict):
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
         """Move specified archives to specified position."""
-        moveSet = set(moveList)
-        data = self.data
-        orderKey = lambda p: data[p].order
-        newList = [x for x in sorted(data,key=orderKey) if x not in moveSet]
-        moveList.sort(key=orderKey)
-        newList[newPos:newPos] = moveList
-        for index,archive in enumerate(newList):
-            data[archive].order = index
+        old_ordered = self.sorted_pairs(set(self.data) - set(moveList))
+        new_ordered = self.sorted_pairs(moveList)
+        for index,(archive,installer) in enumerate(old_ordered[:newPos]):
+            installer.order = index
+        for index,(archive,installer) in enumerate(new_ordered):
+            installer.order = newPos + index
+        for index,(archive,installer) in enumerate(old_ordered[newPos:]):
+            installer.order = newPos + len(new_ordered) + index
         self.setChanged()
 
     @staticmethod
@@ -6502,10 +6497,9 @@ class InstallersData(DataDict):
                     mask |= set(installer.data_sizeCrc)
         #--Install archives in turn
         progress.setFull(len(archives))
-        archives.sort(key=lambda x: self[x].order,reverse=True)
-        for index,archive in enumerate(archives):
+        for index, (archive, installer) in enumerate(
+                self.sorted_pairs(archives, reverse=True)):
             progress(index,archive.s)
-            installer = self[archive]
             destFiles = set(installer.data_sizeCrc) - mask
             if not override:
                 destFiles &= installer.missingFiles
@@ -6522,6 +6516,16 @@ class InstallersData(DataDict):
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
         return tweaksCreated
+
+    def sorted_pairs(self, package_keys=None, reverse=False):
+        """Return pairs of key, installer for package_keys in self, sorted by
+        install order.
+        :type package_keys: None | collections.Iterable[Path]
+        :rtype: list[(Path, Installer)]
+        """
+        if package_keys is None: package_keys = self.keys()
+        pairs = [(installer, self[installer]) for installer in package_keys]
+        return sorted(pairs, key=lambda tup: tup[1].order, reverse=reverse)
 
     def bain_install(self, archives, refresh_ui, progress=None, last=False,
                      override=True):
@@ -6627,9 +6631,7 @@ class InstallersData(DataDict):
         removes = set()
         restores = {}
         #--March through archives in reverse order...
-        getArchiveOrder =  lambda tup: tup[1].order
-        for archive, installer in sorted(self.iteritems(), key=getArchiveOrder,
-                                         reverse=True):
+        for archive, installer in self.sorted_pairs(reverse=True):
             #--Uninstall archive?
             if archive in unArchives:
                 for data_sizeCrc in (installer.data_sizeCrc,installer.dirty_sizeCrc):
@@ -6654,14 +6656,11 @@ class InstallersData(DataDict):
             self.irefresh(what='NS')
 
     def _restoreFiles(self, restores, progress, refresh_ui):
-        getArchiveOrder = lambda x: self[x].order
-        restoreArchives = sorted(set(restores.itervalues()),
-                                 key=getArchiveOrder, reverse=True)
+        restoreArchives = self.sorted_pairs(restores.itervalues(),reverse=True)
         if not restoreArchives: return
         progress.setFull(len(restoreArchives))
-        for index, archive in enumerate(restoreArchives):
+        for index, (archive, installer) in enumerate(restoreArchives):
             progress(index, archive.s)
-            installer = self[archive]
             destFiles = set(x for x, y in restores.iteritems() if y == archive)
             if destFiles:
                 installer.install(archive, destFiles, self.data_sizeCrcDate,
@@ -6689,9 +6688,7 @@ class InstallersData(DataDict):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = {}
-        getArchiveOrder =  lambda tup: tup[1].order
-        for archive, installer in sorted(self.iteritems(), key=getArchiveOrder,
-                                         reverse=True):
+        for archive, installer in self.sorted_pairs(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
@@ -6813,8 +6810,7 @@ class InstallersData(DataDict):
                 if curConflicts: bsaConflicts.append((package, bsaPath, curConflicts))
 #        print("BSA Conflicts: {}".format(bsaConflicts))
         # Calculate esp/esm conflicts
-        getArchiveOrder = lambda tup: tup[1].order
-        for package, installer in sorted(self.iteritems(),key=getArchiveOrder):
+        for package, installer in self.sorted_pairs():
             if installer.order == srcOrder: continue
             if not showInactive and not installer.isActive: continue
             if not showLower and installer.order < srcOrder: continue
@@ -6870,18 +6866,18 @@ class InstallersData(DataDict):
         with sio() as out:
             log = bolt.LogFile(out)
             log.setHeader(_(u'Bain Packages:'))
-            orderKey = lambda x: self.data[x].order
-            allPackages = sorted(self.data,key=orderKey)
             #--List
             log(u'[spoiler][xml]\n',False)
-            for package in allPackages:
-                prefix = u'%03d' % self.data[package].order
-                if isinstance(self.data[package],InstallerMarker):
-                    log(u'%s - %s' % (prefix,package.s))
-                elif self.data[package].isActive:
-                    log(u'++ %s - %s (%08X) (Installed)' % (prefix,package.s,self.data[package].crc))
+            for package, installer in self.sorted_pairs():
+                prefix = u'%03d' % installer.order
+                if isinstance(installer, InstallerMarker):
+                    log(u'%s - %s' % (prefix, package.s))
+                elif installer.isActive:
+                    log(u'++ %s - %s (%08X) (Installed)' % (
+                        prefix, package.s, installer.crc))
                 elif showInactive:
-                    log(u'-- %s - %s (%08X) (Not Installed)' % (prefix,package.s,self.data[package].crc))
+                    log(u'-- %s - %s (%08X) (Not Installed)' % (
+                        prefix, package.s, installer.crc))
             log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
 
