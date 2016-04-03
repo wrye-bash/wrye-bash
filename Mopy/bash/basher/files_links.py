@@ -45,11 +45,11 @@ class Files_Open(ItemLink):
 
     def _initData(self, window, selection):
         super(Files_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % window.data.dir.tail
+        self.help = _(u"Open '%s'") % window.data_store.dir.tail
 
     def Execute(self):
         """Handle selection."""
-        dir_ = self.window.data.dir
+        dir_ = self.window.data_store.dir
         dir_.makedirs()
         dir_.start()
 
@@ -81,11 +81,11 @@ class Files_Unhide(ItemLink):
         destDir = None
         if self.files_type == 'mod':
             wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
-            destDir = window.data.dir
+            destDir = window.data_store.dir
         elif self.files_type == 'save':
             wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
-            srcDir = window.data.bashDir.join(u'Hidden')
-            destDir = window.data.dir
+            srcDir = window.data_store.bashDir.join(u'Hidden')
+            destDir = window.data_store.dir
         elif self.files_type == 'installer':
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bass.dirs['installers']
@@ -176,7 +176,7 @@ class File_Duplicate(ItemLink):
         data = self.selected
         for item in data:
             fileName = GPath(item)
-            fileInfos = self.window.data
+            fileInfos = self.window.data_store
             fileInfo = fileInfos[fileName]
             #--Mod with resources?
             #--Warn on rename if file has bsa and/or dialog
@@ -220,8 +220,8 @@ class File_Hide(ItemLink):
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
         #--Do it
-        destRoot = self.window.data.bashDir.join(u'Hidden')
-        fileInfos = self.window.data
+        destRoot = self.window.data_store.bashDir.join(u'Hidden')
+        fileInfos = self.window.data_store
         fileGroups = fileInfos.table.getColumn('group')
         for fileName in self.selected:
             destDir = destRoot
@@ -235,12 +235,12 @@ class File_Hide(ItemLink):
                 groupDir = destRoot.join(fileGroups[fileName])
                 if groupDir.isdir():
                     destDir = groupDir
-            if not self.window.data.moveIsSafe(fileName,destDir):
+            if not self.window.data_store.moveIsSafe(fileName,destDir):
                 message = (_(u'A file named %s already exists in the hidden files directory. Overwrite it?')
                     % fileName.s)
                 if not self._askYes(message, _(u'Hide Files')): continue
             #--Do it
-            self.window.data.move_info(fileName, destDir, doRefresh=False)
+            self.window.data_store.move_info(fileName, destDir, doRefresh=False)
         #--Refresh stuff
         Link.Frame.RefreshData()
 
@@ -256,7 +256,7 @@ class File_ListMasters(OneItemLink):
 
     def Execute(self):
         fileName = GPath(self.selected[0])
-        fileInfo = self.window.data[fileName]
+        fileInfo = self.window.data_store[fileName]
         text = bosh.modInfos.getModList(fileInfo=fileInfo)
         balt.copyToClipboard(text)
         self._showLog(text, title=fileName.s, fixedFont=False,
@@ -272,7 +272,7 @@ class File_Redate(AppendableLink, ItemLink):
     @balt.conversation
     def Execute(self):
         #--Get current start time.
-        modInfos = self.window.data
+        modInfos = self.window.data_store
         #--Ask user for revised time.
         newTimeStr = self._askText(_(u'Redate selected mods starting at...'),
                                    title=_(u'Redate Mods'),
@@ -309,7 +309,7 @@ class File_Snapshot(ItemLink):
         data = self.selected
         for item in data:
             fileName = GPath(item)
-            fileInfo = self.window.data[fileName]
+            fileInfo = self.window.data_store[fileName]
             (destDir,destName,wildcard) = fileInfo.getNextSnapshot()
             destDir.makedirs()
             if len(data) == 1:
@@ -335,7 +335,7 @@ class File_Snapshot(ItemLink):
                 fileInfo.writeDescription(newDescription)
                 self.window.panel.SetDetails(fileName)
             #--Copy file
-            self.window.data.copy_info(fileName, destDir, destName)
+            self.window.data_store.copy_info(fileName, destDir, destName)
 
 class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     """Revert to Snapshot."""
@@ -345,10 +345,10 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     @balt.conversation
     def Execute(self):
         """Revert to Snapshot."""
-        fileInfo = self.window.data[self.selected[0]]
+        fileInfo = self.window.data_store[self.selected[0]]
         fileName = fileInfo.name
         #--Snapshot finder
-        srcDir = self.window.data.bashDir.join(u'Snapshots')
+        srcDir = self.window.data_store.bashDir.join(u'Snapshots')
         wildcard = fileInfo.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
@@ -367,7 +367,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
             snapPath.copyTo(destPath)
             fileInfo.setmtime(current_mtime) # do not change load order
             try:
-                self.window.data.refreshFile(fileName)
+                self.window.data_store.refreshFile(fileName)
             except bosh.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
                 self.window.panel.ClearDetails()
@@ -381,7 +381,7 @@ class File_Backup(ItemLink):
 
     def Execute(self):
         for item in self.selected:
-            fileInfo = self.window.data[item]
+            fileInfo = self.window.data_store[item]
             fileInfo.makeBackup(True)
 
 class File_Open(EnabledLink):
@@ -404,7 +404,7 @@ class File_RevertToBackup(ChoiceLink):
         super(File_RevertToBackup, self)._initData(window, selection)
         #--Backup Files
         singleSelect = len(selection) == 1
-        self.fileInfo = window.data[selection[0]]
+        self.fileInfo = window.data_store[selection[0]]
         backup = self.fileInfo.bashDir.join(u'Backups', self.fileInfo.name)
         firstBackup = backup + u'f'
         #--Backup Item
@@ -436,7 +436,7 @@ class File_RevertToBackup(ChoiceLink):
                 if fileInfo.isEss(): #--Handle CoSave (.pluggy and .obse) files.
                     bosh.CoSaves(backup).copy(dest)
                 try:
-                    self.window.data.refreshFile(fileName)
+                    self.window.data_store.refreshFile(fileName)
                 except bosh.FileError:
                     self._showError(_(u'Old file is corrupt!'))
                 self.window.RefreshUI(files=[fileName], refreshSaves=False)

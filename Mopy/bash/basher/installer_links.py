@@ -1283,7 +1283,7 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
     text = _(u"Open at")
     def _enable(self):
         return super(InstallerOpenAt_MainMenu, self)._enable() and isinstance(
-            self.window.data[self.selected[0]], bosh.InstallerArchive)
+            self.window.data_store[self.selected[0]], bosh.InstallerArchive)
 
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
@@ -1296,7 +1296,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Converters are linked by CRC, not archive name
         #--So, first get all the selected archive CRCs
         selected = self.selected
-        idata = self.window.data # InstallersData singleton
+        idata = self.window.data_store # InstallersData singleton
         selectedCRCs = set(idata[archive].crc for archive in selected)
         crcInstallers = set(idata.crc_installer)
         srcCRCs = set(idata.converters_data.srcCRC_converters)
@@ -1332,6 +1332,6 @@ class InstallerConverter_MainMenu(balt.MenuLink):
     text = _(u"Conversions")
     def _enable(self):
         for item in self.selected:
-            if not isinstance(self.window.data[item], bosh.InstallerArchive):
+            if not isinstance(self.window.data_store[item], bosh.InstallerArchive):
                 return False
         return True

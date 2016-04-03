@@ -317,7 +317,7 @@ class Installers_AutoApplyEmbeddedBCFs(ItemLink):
     def Execute(self):
         with balt.Progress(_(u'Auto-Applying Embedded BCFs...'),
                            message=u'\n' + u' ' * 60) as progress:
-            destinations, converted = self.window.data.applyEmbeddedBCFs(
+            destinations, converted = self.window.data_store.applyEmbeddedBCFs(
                 progress=progress)
             if not destinations: return
         self.window.RefreshUI()

@@ -105,7 +105,7 @@ class INI_FileOpenOrCopy(OneItemLink):
 
     def Execute(self):
         """Handle selection."""
-        dir = self.window.data.dir
+        dir = self.window.data_store.dir
         for file in self.selected:
             if bass.dirs['tweaks'].join(file).isfile():
                 dir.join(file).start()
@@ -176,10 +176,10 @@ class INI_Apply(EnabledLink):
             if bosh.iniInfos[item].status == 20: continue
             needsRefresh = True
             if bass.dirs['tweaks'].join(item).isfile():
-                self.window.data.ini.applyTweakFile(
+                self.window.data_store.ini.applyTweakFile(
                     bass.dirs['tweaks'].join(item))
             else:
-                self.window.data.ini.applyTweakFile(
+                self.window.data_store.ini.applyTweakFile(
                     bass.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
@@ -218,7 +218,7 @@ class INI_CreateNew(OneItemLink):
         bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
         # Now edit it with the values from the target INI
         bosh.iniInfos.refresh()
-        oldTarget = self.window.data.ini
+        oldTarget = self.window.data_store.ini
         target = bosh.BestIniFile(path)
         settings,deleted = target.getSettings()
         new_settings,deleted = oldTarget.getSettings()

@@ -1607,9 +1607,9 @@ class UIList(wx.Panel):
     _dndFiles = _dndList = False
     _dndColumns = ()
 
-    def __init__(self, parent, keyPrefix, data=None, panel=None):
+    def __init__(self, parent, keyPrefix, listData=None, panel=None):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
-        self.data = data # yak, encapsulate (_data)
+        self.data_store = listData # never use as local variable name !
         self.panel = panel
         #--Layout
         sizer = vSizer()
@@ -1911,7 +1911,7 @@ class UIList(wx.Panel):
         return self.GetItem(hitItem)
 
     #-- Item selection --------------------------------------------------------
-    def GetItems(self): return self.data.keys()
+    def GetItems(self): return self.data_store.keys()
 
     def GetSelected(self):
         """Return list of items selected (highlighted) in the interface."""
@@ -1971,7 +1971,7 @@ class UIList(wx.Panel):
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
-        dataDir = self.data.dir
+        dataDir = self.data_store.dir
         selected = selected if selected else self.GetSelected()
         num = len(selected)
         if num > UIList.max_items_open and not askContinue(self,
@@ -2136,14 +2136,14 @@ class UIList(wx.Panel):
             try:
                 if not self.__class__._shellUI: # non shellUI path used to
                     # delete as many as possible, I kept this behavior
-                    self.data.delete(i, doRefresh=False, recycle=recycle)
+                    self.data_store.delete(i, doRefresh=False, recycle=recycle)
                 else: # shellUI path tries to delete all at once
-                    self.data.delete(items, confirm=True, recycle=recycle)
+                    self.data_store.delete(items, confirm=True, recycle=recycle)
             except bolt.BoltError as e: showError(self, u'%r' % e)
             except (AccessDeniedError, CancelError, SkipError): pass
             finally:
                 if self.__class__._shellUI: break # could delete fail mid-way ?
-        else: self.data.delete_Refresh(items)
+        else: self.data_store.delete_Refresh(items)
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def _toDelete(self, items):
@@ -2169,7 +2169,7 @@ class UIList(wx.Panel):
 
     def new_name(self, new_name):
         base_name, count = new_name, 0
-        while new_name in self.data:
+        while new_name in self.data_store:
             new_name, count = self._new_name(base_name, count)
         return new_name
 

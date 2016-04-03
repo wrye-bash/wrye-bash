@@ -255,7 +255,7 @@ class Master_ChangeTo(_Master_EditList):
     @balt.conversation
     def Execute(self):
         itemId = self.selected[0]
-        masterInfo = self.window.data[itemId]
+        masterInfo = self.window.data_store[itemId]
         masterName = masterInfo.name
         #--File Dialog
         wildcard = _(u'%s Mod Files') % bush.game.displayName \
@@ -288,7 +288,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
 
     def Execute(self):
         itemId = self.selected[0]
-        masterInfo = self.window.data[itemId]
+        masterInfo = self.window.data_store[itemId]
         masterName = masterInfo.name
         newName = GPath(re.sub(u'[mM]$','p',u'XX'+masterName.s))
         #--Save Name

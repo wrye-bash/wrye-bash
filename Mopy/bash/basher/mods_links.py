@@ -228,10 +228,10 @@ class Mods_CreateBlank(ItemLink):
     def Execute(self):
         newName = self.window.new_name(GPath(u'New Mod.esp'))
         windowSelected = self.window.GetSelected()
-        self.window.data.create_new_mod(newName, windowSelected,
-                                        masterless=self.masterless)
+        self.window.data_store.create_new_mod(newName, windowSelected,
+                                              masterless=self.masterless)
         if windowSelected: # assign it the group of the first selected mod
-            mod_group = self.window.data.table.getColumn('group')
+            mod_group = self.window.data_store.table.getColumn('group')
             mod_group[newName] = mod_group.get(windowSelected[0], u'')
         bosh.modInfos.refresh()
         self.window.RefreshUI(files=[newName], refreshSaves=False)

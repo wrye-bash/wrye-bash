@@ -158,7 +158,7 @@ class Mod_OrderByName(EnabledLink):
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  _(u'Sort Mods')): return
         #--Get first time from first selected file.
-        modInfos = self.window.data
+        modInfos = self.window.data_store
         fileNames = self.selected
         newTime = min(modInfos[fileName].mtime for fileName in self.selected)
         #--Do it
@@ -470,7 +470,7 @@ class Mod_ShowReadme(OneItemLink):
 
     def Execute(self):
         fileName = GPath(self.selected[0])
-        fileInfo = self.window.data[fileName]
+        fileInfo = self.window.data_store[fileName]
         if not Link.Frame.docBrowser:
             DocBrowser().Show()
             bosh.settings['bash.modDocs.show'] = True
@@ -611,7 +611,7 @@ class Mod_ListDependent(OneItemLink):
     def Execute(self):
         masterName = GPath(self.selected[0])
         ##: HACK - refactor getModList
-        modInfos = self.window.data
+        modInfos = self.window.data_store
         merged, imported = modInfos.merged, modInfos.imported
         head, bul = u'=== ', u'* '
         with bolt.sio() as out:
@@ -1426,7 +1426,7 @@ class Mod_AddMaster(OneItemLink):
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Master')): return
         fileName = GPath(self.selected[0])
-        fileInfo = self.window.data[fileName]
+        fileInfo = self.window.data_store[fileName]
         wildcard = _(u'%s Masters') % bush.game.displayName + \
                    u' (*.esm;*.esp)|*.esm;*.esp'
         masterPaths = self._askOpenMulti(
@@ -1656,7 +1656,7 @@ class Mod_SetVersion(OneItemLink):
 
     def _initData(self, window, selection):
         super(Mod_SetVersion, self)._initData(window, selection)
-        self.fileInfo = window.data[selection[0]]
+        self.fileInfo = window.data_store[selection[0]]
 
     def _enable(self):
         return (super(Mod_SetVersion, self)._enable() and
@@ -1736,7 +1736,7 @@ class Mod_Face_Import(OneItemLink):
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         fileName = GPath(self.selected[0])
-        fileInfo = self.window.data[fileName]
+        fileInfo = self.window.data_store[fileName]
         npc = bosh.faces.PCFaces.mod_addFace(fileInfo,srcFace)
         #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
