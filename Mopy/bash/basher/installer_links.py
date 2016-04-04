@@ -246,20 +246,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             oldRemaps = copy.copy(installer.remaps)
             installer.remaps = {}
             self.iPanel.refreshCurrent(installer)
-            for index in range(self.iPanel.gSubList.GetCount()):
+            for index in xrange(self.iPanel.gSubList.GetCount()):
                 subs.append(self.iPanel.gSubList.GetString(index))
-            saved = bosh.settings['bash.wizard.size']
-            default = settingDefaults['bash.wizard.size']
-            pos = bosh.settings['bash.wizard.pos']
-            # Sanity checks on saved size/position
-            if not isinstance(pos,tuple) or len(pos) != 2:
-                deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), reverting to default position.') % (pos,type(pos)))
-                pos = balt.defPos
-            if not isinstance(saved,tuple) or len(saved) != 2:
-                deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), reverting to default size.') % (saved, type(saved)))
-                pageSize = tuple(default)
-            else:
-                pageSize = (max(saved[0],default[0]),max(saved[1],default[1]))
+            default, pageSize, pos = self._get_size_and_pos()
             try:
                 wizard = InstallerWizard(self.window, self.idata,
                                          self.selected[0], self.bAuto,
@@ -269,15 +258,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 return
             balt.ensureDisplayed(wizard)
         ret = wizard.Run()
-        # Sanity checks on returned size/position
-        if not isinstance(ret.Pos, balt.wxPoint):
-            deprint(_(u'Returned Wizard position (%s) was not a wx.Point (%s), reverting to default position.') % (ret.Pos, type(ret.Pos)))
-            ret.Pos = balt.defPos
-        if not isinstance(ret.PageSize, balt.wxSize):
-            deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), reverting to default size.') % (ret.PageSize, type(ret.PageSize)))
-            ret.PageSize = tuple(default)
-        bosh.settings['bash.wizard.size'] = (ret.PageSize[0],ret.PageSize[1])
-        bosh.settings['bash.wizard.pos'] = (ret.Pos[0],ret.Pos[1])
+        self._save_size_pos(default, ret)
         if ret.Canceled:
             installer.remaps = oldRemaps
             self.iPanel.refreshCurrent(installer)
@@ -364,6 +345,40 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             message += u'\n\n'
             message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
             self._showInfo(message)
+
+    @staticmethod
+    def _save_size_pos(default, ret):
+        # Sanity checks on returned size/position
+        if not isinstance(ret.Pos, balt.wxPoint):
+            deprint(_(
+                u'Returned Wizard position (%s) was not a wx.Point (%s), '
+                u'reverting to default position.') % (ret.Pos, type(ret.Pos)))
+            ret.Pos = balt.defPos
+        if not isinstance(ret.PageSize, balt.wxSize):
+            deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), '
+                      u'reverting to default size.') % (
+                        ret.PageSize, type(ret.PageSize)))
+            ret.PageSize = tuple(default)
+        bosh.settings['bash.wizard.size'] = (ret.PageSize[0], ret.PageSize[1])
+        bosh.settings['bash.wizard.pos'] = (ret.Pos[0], ret.Pos[1])
+
+    @staticmethod
+    def _get_size_and_pos():
+        saved = bosh.settings['bash.wizard.size']
+        default = settingDefaults['bash.wizard.size']
+        pos = bosh.settings['bash.wizard.pos']
+        # Sanity checks on saved size/position
+        if not isinstance(pos, tuple) or len(pos) != 2:
+            deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), '
+                      u'reverting to default position.') % (pos, type(pos)))
+            pos = balt.defPos
+        if not isinstance(saved, tuple) or len(saved) != 2:
+            deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), '
+                      u'reverting to default size.') % (saved, type(saved)))
+            pageSize = tuple(default)
+        else:
+            pageSize = (max(saved[0], default[0]), max(saved[1], default[1]))
+        return default, pageSize, pos
 
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one."""
@@ -847,45 +862,45 @@ class Installer_CopyConflicts(_SingleInstallable):
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
-class Installer_Espm_SelectAll(EnabledLink):
+class _Installer_Details_Link(balt.ItemLink):
+
+    def _initData(self, window, selection):
+        super(_Installer_Details_Link, self)._initData(window, selection)
+        self._installer = self.window.GetDetailsItem()
+
+class Installer_Espm_SelectAll(EnabledLink, _Installer_Details_Link):
     """Select All Esp/ms in installer for installation."""
     text = _(u'Select All')
 
     def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        installer.espmNots = set()
+        self._installer.espmNots = set()
         for i in range(len(self.window.espms)):
             self.window.gEspmList.Check(i, True)
-        self.window.refreshCurrent(installer)
+        self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_DeselectAll(EnabledLink):
+class Installer_Espm_DeselectAll(EnabledLink, _Installer_Details_Link):
     """Deselect All Esp/ms in installer for installation."""
     text = _(u'Deselect All')
 
     def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        espmNots = installer.espmNots = set()
+        espmNots = self._installer.espmNots = set()
         for i in range(len(self.window.espms)):
             self.window.gEspmList.Check(i, False)
             espm =GPath(self.window.gEspmList.GetString(i).replace(u'&&',u'&'))
             espmNots.add(espm)
-        self.window.refreshCurrent(installer)
+        self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_Rename(EnabledLink):
+class Installer_Espm_Rename(EnabledLink, _Installer_Details_Link):
     """Changes the installed name for an Esp/m."""
     text = _(u'Rename...')
 
     def _enable(self): return self.selected != -1
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
         curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*':
@@ -895,49 +910,44 @@ class Installer_Espm_Rename(EnabledLink):
                                 title=_(u"Rename Esp/m"), default=_file.sbody)
         if not newName: return
         if newName in self.window.espms: return
-        installer.setEspmName(curName, newName + _file.cext)
-        self.window.refreshCurrent(installer)
+        self._installer.setEspmName(curName, newName + _file.cext)
+        self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_Reset(EnabledLink):
+class Installer_Espm_Reset(EnabledLink, _Installer_Details_Link):
     """Resets the installed name for an Esp/m."""
     text = _(u'Reset Name')
 
     def _enable(self):
         if self.selected == -1: return False
-        self.installer = installer = self.window.GetDetailsItem()
         curName = self.window.gEspmList.GetString(self.selected).replace(u'&&',
                                                                          u'&')
         if curName[0] == u'*': curName = curName[1:]
         self.curName = curName
-        return installer.isEspmRenamed(curName)
+        return self._installer.isEspmRenamed(curName)
 
     def Execute(self):
-        """Handle selection."""
-        self.installer.resetEspmName(self.curName)
-        self.window.refreshCurrent(self.installer)
+        self._installer.resetEspmName(self.curName)
+        self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_ResetAll(EnabledLink):
+class Installer_Espm_ResetAll(EnabledLink, _Installer_Details_Link):
     """Resets all renamed Esp/ms."""
     text = _(u'Reset All Names')
 
     def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        installer.resetAllEspmNames()
-        self.window.refreshCurrent(installer)
+        self._installer.resetAllEspmNames()
+        self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_List(EnabledLink):
+class Installer_Espm_List(EnabledLink, _Installer_Details_Link):
     """Lists all Esp/ms in installer for user information/w/e."""
     text = _(u'List Esp/ms')
 
     def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
-        """Handle selection."""
-        subs = _(u'Esp/m List for %s:') % self.window.GetDetailsItem(
-                    ).archive + u'\n[spoiler]\n'
+        subs = (_(u'Esp/m List for %s:') % self._installer.archive +
+                u'\n[spoiler]\n')
         espm_list = self.window.gEspmList
         for index in range(espm_list.GetCount()):
             subs += [u'   ',u'** '][espm_list.IsChecked(index)] + \
@@ -950,7 +960,7 @@ class Installer_Espm_List(EnabledLink):
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
-class _Installer_Subs(EnabledLink):
+class _Installer_Subs(EnabledLink, _Installer_Details_Link):
     def _enable(self): return self.window.gSubList.GetCount() > 1
 
 class Installer_Subs_SelectAll(_Installer_Subs):
@@ -958,24 +968,20 @@ class Installer_Subs_SelectAll(_Installer_Subs):
     text = _(u'Select All')
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
         for index in xrange(self.window.gSubList.GetCount()):
             self.window.gSubList.Check(index, True)
-            installer.subActives[index + 1] = True
-        self.window.refreshCurrent(installer)
+            self._installer.subActives[index + 1] = True
+        self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_DeselectAll(_Installer_Subs):
     """Deselect All sub-packages in installer for installation."""
     text = _(u'Deselect All')
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
         for index in xrange(self.window.gSubList.GetCount()):
             self.window.gSubList.Check(index, False)
-            installer.subActives[index + 1] = False
-        self.window.refreshCurrent(installer)
+            self._installer.subActives[index + 1] = False
+        self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ToggleSelection(_Installer_Subs):
     """Toggles selection state of all sub-packages in installer for
@@ -983,22 +989,18 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
     text = _(u'Toggle Selection')
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
         for index in xrange(self.window.gSubList.GetCount()):
-            check = not installer.subActives[index+1]
+            check = not self._installer.subActives[index+1]
             self.window.gSubList.Check(index, check)
-            installer.subActives[index + 1] = check
-        self.window.refreshCurrent(installer)
+            self._installer.subActives[index + 1] = check
+        self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""
     text = _(u'List Sub-packages')
 
     def Execute(self):
-        """Handle selection."""
-        installer = self.window.GetDetailsItem()
-        subs = _(u'Sub-Packages List for %s:') % installer.archive
+        subs = _(u'Sub-Packages List for %s:') % self._installer.archive
         subs += u'\n[spoiler]\n'
         for index in xrange(self.window.gSubList.GetCount()):
             subs += [u'   ', u'** '][self.window.gSubList.IsChecked(
