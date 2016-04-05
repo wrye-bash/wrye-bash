@@ -238,7 +238,7 @@ class Parser(object):
         def __call__(self, *args):
             # Remove commas if necessary, pass values if necessary
             if not self.passCommas or not self.passTokens:
-                args = [(x.data,x)[self.passTokens] for x in args if x.type != COMMA or self.passCommas]
+                args = [(x.tkn,x)[self.passTokens] for x in args if x.type != COMMA or self.passCommas]
             return self.execute(*args)
 
         def execute(self, *args):
@@ -257,7 +257,6 @@ class Parser(object):
                 else:
                     error(ERR_TOO_FEW_ARGS % (self.Type, u'self.text', numArgs, u'min: %s, max: %s' % (self.minArgs, self.maxArgs)))
             return self.function(*args)
-
 
 
     class Operator(Callable):
@@ -322,6 +321,9 @@ class Parser(object):
                 self.numArgs = 0
 
         def GetData(self):
+            """:rtype: Parser.Function | Parser.Keyword | Parser.Operator |
+            basestring | int | float
+            """
             if self.parser:
                 if self.type == FUNCTION: return self.parser.functions[self.text]
                 if self.type == KEYWORD : return self.parser.keywords[self.text]
@@ -331,38 +333,38 @@ class Parser(object):
                 if self.type == DECIMAL : return float(self.text)
                 if self.type == INTEGER : return int(self.text)
             return self.text
-        data = property(GetData)
+        tkn = property(GetData) # did I catch all uses ?
 
         def __cmp__(self, other):
             if isinstance(other, Parser.Token):
-                return cmp(self.data, other.data)
-            return cmp(self.data, other)
-        def __add__(self, other): return Parser.Token(self.data + other.data)
-        def __sub__(self, other): return Parser.Token(self.data - other.data)
-        def __mul__(self, other): return Parser.Token(self.data * other.data)
-        def __div__(self, other): return Parser.Token(self.data / other.data)
-        def __truediv__(self, other): return Parser.Token(self.data / other.data)
-        def __floordiv__(self, other): return Parser.Token(self.data // other.data)
-        def __divmod__(self, other): return Parser.Token(divmod(self.data, other.data))
-        def __pow__(self, other): return Parser.Token(self.data ** other.data)
-        def __lshift__(self, other): return Parser.Token(self.data << other.data)
-        def __rshift__(self, other): return Parser.Token(self.data >> other.data)
-        def __and__(self, other): return Parser.Token(self.data & other.data)
-        def __xor__(self, other): return Parser.Token(self.data ^ other.data)
-        def __or__(self, other): return Parser.Token(self.data | other.data)
-        def __nonzero__(self): return bool(self.data)
-        def __neg__(self): return Parser.Token(-self.data)
-        def __pos__(self): return Parser.Token(+self.data)
-        def __abs__(self): return abs(self.data)
-        def __int__(self): return int(self.data)
-        def __long__(self): return long(self.data)
-        def __float__(self): return float(self.data)
-        def __str__(self): return str(self.data)
+                return cmp(self.tkn, other.tkn)
+            return cmp(self.tkn, other)
+        def __add__(self, other): return Parser.Token(self.tkn + other.tkn)
+        def __sub__(self, other): return Parser.Token(self.tkn - other.tkn)
+        def __mul__(self, other): return Parser.Token(self.tkn * other.tkn)
+        def __div__(self, other): return Parser.Token(self.tkn / other.tkn)
+        def __truediv__(self, other): return Parser.Token(self.tkn / other.tkn)
+        def __floordiv__(self, other): return Parser.Token(self.tkn // other.tkn)
+        def __divmod__(self, other): return Parser.Token(divmod(self.tkn, other.tkn))
+        def __pow__(self, other): return Parser.Token(self.tkn ** other.tkn)
+        def __lshift__(self, other): return Parser.Token(self.tkn << other.tkn)
+        def __rshift__(self, other): return Parser.Token(self.tkn >> other.tkn)
+        def __and__(self, other): return Parser.Token(self.tkn & other.tkn)
+        def __xor__(self, other): return Parser.Token(self.tkn ^ other.tkn)
+        def __or__(self, other): return Parser.Token(self.tkn | other.tkn)
+        def __nonzero__(self): return bool(self.tkn)
+        def __neg__(self): return Parser.Token(-self.tkn)
+        def __pos__(self): return Parser.Token(+self.tkn)
+        def __abs__(self): return abs(self.tkn)
+        def __int__(self): return int(self.tkn)
+        def __long__(self): return long(self.tkn)
+        def __float__(self): return float(self.tkn)
+        def __str__(self): return str(self.tkn)
 
         def __repr__(self): return u'<Token-%s:%s>' % (Types[self.type],self.text)
 
         # Fall through to function/keyword
-        def __call__(self, *args, **kwdargs): return self.data(*args, **kwdargs)
+        def __call__(self, *args, **kwdargs): return self.tkn(*args, **kwdargs)
 
 
     # Now for the Parser class
@@ -512,14 +514,6 @@ class Parser(object):
         tokens = [x for x in tokens if x.type != COMMA]
         return tokens
 
-    # Changes out tokens for their values
-    def ConvertToValues(self, tokens=None):
-        if tokens is None:
-            self.tokens = [x.data for x in self.tokens]
-            return self.tokens
-        tokens = [x.data for x in tokens]
-        return tokens
-
     # Split tokens at commas
     def SplitAtCommas(self, tokens=None):
         tokens = tokens or self.tokens
@@ -622,15 +616,15 @@ class Parser(object):
                         error(_(u"Dot operator: no function to call."))
                     if tokens[idex+1].type != FUNCTION:
                         error(_(u"Dot operator: cannot access non-function '%s'.") % tokens[idex+1].text)
-                    if not tokens[idex+1].data.dotFunction:
+                    if not tokens[idex+1].tkn.dotFunction:
                         error(_(u"Dot operator: cannot access function '%s'.") % tokens[idex+1].text)
                     tokens[idex+1].numArgs += 1
                 # Other operators
                 else:
                     while len(stack) > 0 and stack[-1].type == OPERATOR:
-                        if i.data.association == LEFT and i.data.precedence >= stack[-1].data.precedence:
+                        if i.tkn.association == LEFT and i.tkn.precedence >= stack[-1].tkn.precedence:
                             rpn.append(stack.pop())
-                        elif i.data.association == RIGHT and i.data.precedence > stack[-1].data.precedence:
+                        elif i.tkn.association == RIGHT and i.tkn.precedence > stack[-1].tkn.precedence:
                             rpn.append(stack.pop())
                         else:
                             break
@@ -686,10 +680,10 @@ class Parser(object):
         stack = []
         for i in rpn:
             if i.type == OPERATOR:
-                if len(stack) < i.data.minArgs:
-                    error(ERR_TOO_FEW_ARGS % (u'operator', i.text, len(stack), i.data.minArgs))
+                if len(stack) < i.tkn.minArgs:
+                    error(ERR_TOO_FEW_ARGS % (u'operator', i.text, len(stack), i.tkn.minArgs))
                 args = []
-                while len(args) < i.data.minArgs:
+                while len(args) < i.tkn.minArgs:
                     args.append(stack.pop())
                 args.reverse()
                 ret = i(*args)
@@ -712,7 +706,7 @@ class Parser(object):
             else:
                 stack.append(i)
         if len(stack) == 1:
-            return stack[0].data
+            return stack[0].tkn
         error(_(u'Too many values left at the end of evaluation.'))
 
     def error(self, msg):

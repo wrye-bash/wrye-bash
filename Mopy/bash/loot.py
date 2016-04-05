@@ -387,11 +387,11 @@ def Init(path):
         # ---------------------------------------------------------------------
         # Utility Functions (not added by the API, pure Python)
         # ---------------------------------------------------------------------
-        def FilterDirty(self,plugins,cleanCode=LOOT_NEEDS_CLEANING_YES):
+        def FilterDirty(self, mods, cleanCode=LOOT_NEEDS_CLEANING_YES):
             """Given a list of plugins, returns the subset of that list,
                consisting of plugins that meet the given loot_needs_cleaning_*
                code"""
-            return [x for x in plugins if self.GetDirtyMessage(x)[1] == cleanCode]
+            return [x for x in mods if self.GetDirtyMessage(x)[1] == cleanCode]
 
 # Initialize the LOOT API, assuming that loot32.dll and loot64.dll are in
 # the same directory. Call Init again with the path to these dll's if this

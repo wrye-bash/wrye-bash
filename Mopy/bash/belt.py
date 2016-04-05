@@ -1021,8 +1021,8 @@ class WryeParser(ScriptParser.Parser):
     def Ass(self, l, r):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
             error(_(u'Cannot assign a value to %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
-        self.variables[l.text] = r.data
-        return r.data
+        self.variables[l.text] = r.tkn
+        return r.tkn
     def AssAdd(self, l, r): return self.Ass(l, l+r)
     def AssMin(self, l, r): return self.Ass(l, l-r)
     def AssMul(self, l, r): return self.Ass(l, l*r)
@@ -1081,13 +1081,13 @@ class WryeParser(ScriptParser.Parser):
     def opInc(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
             error(_(u'Cannot increment %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
-        self.variables[l.text] = l.data+1
-        return l.data
+        self.variables[l.text] = l.tkn+1
+        return l.tkn
     def opDec(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
             error(_(u'Cannot decrement %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
-        self.variables[l.text] = l.data-1
-        return l.data
+        self.variables[l.text] = l.tkn-1
+        return l.tkn
     # Math operators
     def opAdd(self, l, r): return l + r
     def opMin(self, l, r): return l - r

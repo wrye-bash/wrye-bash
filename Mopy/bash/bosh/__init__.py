@@ -297,14 +297,14 @@ class PluggyFile:
         self.name = path.tail
         self.tag = None
         self.version = None
-        self.plugins = None
+        self._plugins = None
         self.other = None
         self.valid = False
 
     def mapMasters(self,masterMap):
         """Update plugin names according to masterMap."""
         if not self.valid: raise FileError(self.name,"File not initialized.")
-        self.plugins = [(x,y,masterMap.get(z,z)) for x,y,z in self.plugins]
+        self._plugins = [(x, y, masterMap.get(z,z)) for x,y,z in self._plugins]
 
     def load(self):
         """Read file."""
@@ -327,7 +327,7 @@ class PluggyFile:
             if self.version < 0x01020000:
                 raise FileError(self.name,u'Unsupported file version: %X' % self.version)
             #--Plugins
-            self.plugins = []
+            self._plugins = []
             type, = unpack('=B',1)
             if type != 0:
                 raise FileError(self.name,u'Expected plugins record, but got %d.' % type)
@@ -335,7 +335,7 @@ class PluggyFile:
             for x in range(count):
                 espid,index,modLen = unpack('=2BI',6)
                 modName = GPath(decode(ins.read(modLen)))
-                self.plugins.append((espid,index,modName))
+                self._plugins.append((espid, index, modName))
             #--Other
             self.other = ins.getvalue()[ins.tell():]
         deprint(struct.unpack('I',self.other[-4:]),self.path.size-8)
@@ -355,8 +355,8 @@ class PluggyFile:
             pack('=I',self.version)
             #--Plugins
             pack('=B',0)
-            pack('=I',len(self.plugins))
-            for (espid,index,modName) in self.plugins:
+            pack('=I', len(self._plugins))
+            for (espid,index,modName) in self._plugins:
                 modName = encode(modName.cs)
                 pack('=2BI',espid,index,len(modName))
                 buff.write(modName)
@@ -390,7 +390,7 @@ class ObseFile:
         self.obseVersion = None
         self.obseMinorVersion = None
         self.oblivionVersion = None
-        self.plugins = None
+        self._plugins = None
         self.valid = False
 
     def load(self):
@@ -410,7 +410,7 @@ class ObseFile:
             #   raise FileError(self.name,'Unsupported file version: %I' % self.formatVersion)
             #--Plugins
             numPlugins, = unpack('I',4)
-            self.plugins = []
+            self._plugins = []
             for x in range(numPlugins):
                 opcodeBase,numChunks,pluginLength, = unpack('III',12)
                 pluginBuff = ins.read(pluginLength)
@@ -423,7 +423,7 @@ class ObseFile:
                         chunk = (chunkType, chunkVersion, chunkBuff)
                         chunks.append(chunk)
                 plugin = (opcodeBase,chunks)
-                self.plugins.append(plugin)
+                self._plugins.append(plugin)
         #--Done
         self.valid = True
 
@@ -441,8 +441,8 @@ class ObseFile:
             pack('=H',self.obseMinorVersion)
             pack('=I',self.oblivionVersion)
             #--Plugins
-            pack('=I',len(self.plugins))
-            for (opcodeBase,chunks) in self.plugins:
+            pack('=I', len(self._plugins))
+            for (opcodeBase,chunks) in self._plugins:
                 pack('=I',opcodeBase)
                 pack('=I',len(chunks))
                 pluginLength = 0
@@ -468,7 +468,7 @@ class ObseFile:
         """Update plugin names according to masterMap."""
         if not self.valid: raise FileError(self.name,u"File not initialized.")
         newPlugins = []
-        for (opcodeBase,chunks) in self.plugins:
+        for (opcodeBase,chunks) in self._plugins:
             newChunks = []
             if opcodeBase == 0x2330:
                 for (chunkType,chunkVersion,chunkBuff) in chunks:
@@ -491,7 +491,7 @@ class ObseFile:
             else:
                 newChunks = chunks
             newPlugins.append((opcodeBase,newChunks))
-        self.plugins = newPlugins
+        self._plugins = newPlugins
 
     def safeSave(self):
         """Save data to file safely."""
@@ -979,8 +979,8 @@ class SaveFile:
         log(_(u'  OBSE version:     %u.%u') % (obseFile.obseVersion,obseFile.obseMinorVersion,))
         log(_(u'  Oblivion version: %08X') % (obseFile.oblivionVersion,))
         #--Plugins
-        if obseFile.plugins is not None:
-            for (opcodeBase,chunks) in obseFile.plugins:
+        if obseFile._plugins is not None:
+            for (opcodeBase,chunks) in obseFile._plugins:
                 log.setHeader(_(u'Plugin opcode=%08X chunkNum=%u') % (opcodeBase,len(chunks),))
                 log(u'=' * 80)
                 log(_(u'  Type  Ver   Size'))
