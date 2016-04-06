@@ -204,26 +204,7 @@ class Installer_EditWizard(_SingleInstallable):
         return super(Installer_EditWizard, self)._enable() and bool(
             self.idata[self.selected[0]].hasWizard)
 
-    def Execute(self):
-        path = self.selected[0]
-        if self.isSingleProject():
-            # Project, open for edit
-            self.idata.dir.join(path.s, self.idata[path].hasWizard).start()
-        else:
-            # Archive, open for viewing
-            archive = self.idata[path]
-            with balt.BusyCursor():
-                # This is going to leave junk temp files behind...
-                try:
-                    archive.unpackToTemp(path, [archive.hasWizard])
-                    archive.getTempDir().join(archive.hasWizard).start()
-                except:
-                    # Don't clean up temp dir here.  Sometimes the editor
-                    # That starts to open the wizard.txt file is slower than
-                    # Bash, and the file will be deleted before it opens.
-                    # Just allow Bash's atexit function to clean it when
-                    # quitting.
-                    pass
+    def Execute(self): self.idata[self.selected[0]].open_wizard()
 
 class Installer_Wizard(OneItemLink, _InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
@@ -389,18 +370,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
         isSingle = super(Installer_OpenReadme, self)._enable()
         return isSingle and bool(self.idata[self.selected[0]].hasReadme)
 
-    def Execute(self):
-        installer = self.selected[0]
-        if self.isSingleProject():
-            # Project, open for edit
-            self.idata.dir.join(installer.s, self.idata[installer].hasReadme).start()
-        else:
-            # Archive, open for viewing
-            archive = self.idata[installer]
-            with balt.BusyCursor():
-                # This is going to leave junk temp files behind...
-                archive.unpackToTemp(installer, [archive.hasReadme])
-            archive.getTempDir().join(archive.hasReadme).start()
+    def Execute(self): self.idata[self.selected[0]].open_readme()
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(_InstallerLink):

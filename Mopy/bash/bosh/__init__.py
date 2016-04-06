@@ -5332,6 +5332,9 @@ class Installer(object):
                 return True, bool(mfiles), bool(ifiles)
         return False, False, False
 
+    def open_readme(self): pass
+    def open_wizard(self): pass
+
     #--ABSTRACT ---------------------------------------------------------------
     def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, and modified from source
@@ -5597,6 +5600,25 @@ class InstallerArchive(Installer):
         newName = GPath(root + numStr + archive.ext)
         return self._rename(archive, data, newName)
 
+    def open_readme(self):
+        with balt.BusyCursor():
+            # This is going to leave junk temp files behind...
+            self.unpackToTemp(GPath(self.archive), [self.hasReadme])
+        self.getTempDir().join(self.hasReadme).start()
+
+    def open_wizard(self):
+        with balt.BusyCursor():
+            # This is going to leave junk temp files behind...
+            try:
+                self.unpackToTemp(GPath(self.archive), [self.hasWizard])
+                self.getTempDir().join(self.hasWizard).start()
+            except:
+                # Don't clean up temp dir here.  Sometimes the editor
+                # That starts to open the wizard.txt file is slower than
+                # Bash, and the file will be deleted before it opens.
+                # Just allow Bash's atexit function to clean it when quitting.
+                pass
+
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
@@ -5829,6 +5851,12 @@ class InstallerProject(Installer):
     def renameInstaller(self, archive, root, numStr, data):
         newName = GPath(root + numStr)
         return self._rename(archive, data, newName)
+
+    def open_readme(self):
+        bass.dirs['installers'].join(self.archive, self.hasReadme).start()
+
+    def open_wizard(self):
+        bass.dirs['installers'].join(self.archive, self.hasWizard).start()
 
 #------------------------------------------------------------------------------
 from . import converters
