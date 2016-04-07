@@ -254,17 +254,20 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             installer.setEspmName(oldName, ret.RenameEspms[oldName])
         idetails.refreshCurrent(installer)
         #Install if necessary
-        if ret.Install:
-            if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
-                title, doIt = _(u'Annealing...'), self.idata.bain_anneal
-            else: #Install, if it's not installed
-                title, doIt = _(u'Installing...'), self.idata.bain_install
-            ui_refresh = [False, False]
-            try:
+        ui_refresh = [False, False]
+        try:
+            if ret.Install:
+                if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
+                    title, doIt = _(u'Annealing...'), self.idata.bain_anneal
+                else: #Install, if it's not installed
+                    title, doIt = _(u'Installing...'), self.idata.bain_install
                 with balt.Progress(title, u'\n'+u' '*60) as progress:
                     doIt(self.selected, ui_refresh, progress)
-            finally:
-                self.iPanel.RefreshUIMods(*ui_refresh)
+            self._apply_tweaks(installer, ret, ui_refresh)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+    def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
@@ -277,10 +280,11 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer',
                                         installer.archive)
-            if BashFrame.iniList is not None:
-                BashFrame.iniList.RefreshUI(focus_list=False)
-            if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
-                if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
+            ui_refresh[1] = True
+            if iniFile in installer.data_sizeCrc or any(
+                    [iniFile == x for x in bush.game.iniFiles]):
+                if not ret.Install and not any(
+                        [iniFile == x for x in bush.game.iniFiles]):
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto
                     # install after the wizard, we'll show a message telling
@@ -303,7 +307,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 manuallyApply.append((outFile, iniFile))
         #--Refresh after all the tweaks are applied
         if lastApplied is not None and BashFrame.iniList is not None:
-            BashFrame.iniList.RefreshUIValid(lastApplied)
+            BashFrame.iniList.RefreshUIValid(lastApplied, focus_list=False)
         if len(manuallyApply) > 0:
             message = balt.fill(_(
                 u'The following INI Tweaks were not automatically applied.  '

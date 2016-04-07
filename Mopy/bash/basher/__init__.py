@@ -580,9 +580,9 @@ class INIList(balt.UIList):
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
 
-    def RefreshUIValid(self, tweak=None):
+    def RefreshUIValid(self, tweak, focus_list=True):
         valid = [k for k, v in self.data_store.iteritems() if v.tweak_status >= 0]
-        self.RefreshUI(files=valid)
+        self.RefreshUI(files=valid, focus_list=focus_list)
         if tweak: self.panel.RefreshIniDetails(tweak)
 
     @staticmethod
