@@ -271,34 +271,42 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             installer.setEspmName(oldName, ret.RenameEspms[oldName])
         self.iPanel.refreshCurrent(installer)
         #Install if necessary
-        if ret.Install:
-            if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
-                title, doIt = _(u'Annealing...'), self.idata.bain_anneal
-            else: #Install, if it's not installed
-                title, doIt = _(u'Installing...'), self.idata.bain_install
-            ui_refresh = [False, False]
-            try:
+        ui_refresh = [False, False]
+        try:
+            if ret.Install:
+                if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
+                    title, doIt = _(u'Annealing...'), self.idata.bain_anneal
+                else: #Install, if it's not installed
+                    title, doIt = _(u'Installing...'), self.idata.bain_install
                 with balt.Progress(title, u'\n'+u' '*60) as progress:
                     doIt(self.selected, ui_refresh, progress)
-            finally:
-                self.iPanel.RefreshUIMods(*ui_refresh)
+            self._apply_tweaks(installer, ret, ui_refresh)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+    def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         for iniFile in ret.IniEdits:
-            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
+                (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
-                for line in generateTweakLines(ret.IniEdits[iniFile],iniFile):
-                    out.write(line+u'\n')
+                for line in generateTweakLines(ret.IniEdits[iniFile], iniFile):
+                    out.write(line + u'\n')
             bosh.iniInfos.refresh()
-            bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
-            if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
-                if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
-                    # Can only automatically apply ini tweaks if the ini was actually installed.  Since
-                    # BAIN is setup to not auto install after the wizard, we'll show a message telling the
-                    # User what tweaks to apply manually.
-                    manuallyApply.append((outFile,iniFile))
+            bosh.iniInfos.table.setItem(outFile.tail, 'installer',
+                                        installer.archive)
+            ui_refresh[1] = True
+            if iniFile in installer.data_sizeCrc or any(
+                    [iniFile == x for x in bush.game.iniFiles]):
+                if not ret.Install and not any(
+                        [iniFile == x for x in bush.game.iniFiles]):
+                    # Can only automatically apply ini tweaks if the ini was
+                    # actually installed.  Since BAIN is setup to not auto
+                    # install after the wizard, we'll show a message telling
+                    # the User what tweaks to apply manually.
+                    manuallyApply.append((outFile, iniFile))
                     continue
                 # Editing an INI file from this installer is ok, but editing
                 # Oblivion.ini give a warning message
@@ -311,16 +319,19 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
             else:
-                # We wont automatically apply tweaks to anything other than Oblivion.ini or an ini from
-                # this installer
-                manuallyApply.append((outFile,iniFile))
+                # We wont automatically apply tweaks to anything other than
+                # Oblivion.ini or an ini from this installer
+                manuallyApply.append((outFile, iniFile))
         #--Refresh after all the tweaks are applied
         if lastApplied is not None and BashFrame.iniList is not None:
             BashFrame.iniList.RefreshUIValid(lastApplied)
         if len(manuallyApply) > 0:
-            message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
+            message = balt.fill(_(
+                u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
             message += u'\n\n'
-            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
+            message += u'\n'.join(
+                [u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in
+                 manuallyApply])
             self._showInfo(message)
 
     @staticmethod
