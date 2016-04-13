@@ -102,7 +102,7 @@ load_order = None #--can't import yet as I need bass.dirs to be initialized
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
 
 #--Mod Extensions
-reComment = re.compile(u'#.*',re.U)
+reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
 reExGroup = re.compile(u'(.*?),',re.U)
 reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)

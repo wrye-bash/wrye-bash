@@ -41,6 +41,7 @@ Currently investigating what the liblo calls return to me and monkey
 patching that (see __fix methods).
 Double underscores and dirty comments are no accident - ALPHA
 """
+import re
 import time
 import bass
 import bolt
@@ -97,6 +98,7 @@ _current_lo = __empty # must always be valid (or __empty)
 # liblo calls - they include fixup code (which may or may not be
 # needed/working). __fix methods accept lists as output parameters
 def _getLoFromLiblo():
+    """:rtype: list[bolt.Path]"""
     if usingTxtFile():
         lord = _liblo_handle.GetLoadOrder()
     else:
@@ -121,6 +123,7 @@ def __fixLoadOrder(lord, _selected=None):
     rethinking as save load and active should be an atomic operation -
     complicated by the fact that liblo does not support this. As a consequence
     a lot of hacks are needed (like the _selected parameter).
+    :type lord: list[bolt.Path]
     """
     oldLord = lord[:] ### print
     # game's master might be out of place (if using timestamps for load
@@ -180,8 +183,8 @@ def __fixLoadOrder(lord, _selected=None):
         return True # changes, saved
     return False # no changes, not saved
 
-def _getActiveFromLiblo(lord): # pass a VALID load order in
-    acti = _liblo_handle.GetActivePlugins() # a list
+def _get_active_plugins(lord): # pass a VALID load order in
+    acti = _load_active_plugins() # a list
     __fixActive(acti, lord)
     return acti
 
@@ -271,13 +274,53 @@ def _updateCache(lord=None, actiSorted=None):
             _setLoTxtModTime()
         # got a valid load order - now to active...
         if actiSorted is None:
-            actiSorted = _getActiveFromLiblo(lord)
+            actiSorted = _get_active_plugins(lord)
             _setPluginsTxtModTime()
         _current_lo = LoadOrder(lord, actiSorted)
     except Exception:
         bolt.deprint('Error updating load_order cache from liblo')
         _current_lo = __empty
         raise
+
+rePluginsTxtComment = re.compile(u'#.*', re.U)
+def _load_active_plugins(force=False):
+    """Read data from plugins.txt file.
+    NOTE: modInfos must exist and be up to date."""
+    if not _plugins_txt_path.exists(): return []
+    if not force and _current_lo is not __empty and not _plugins_txt_changed():
+        return list(_current_lo.activeOrdered)
+    #--Read file
+    with _plugins_txt_path.open('r') as ins:
+        #--Load Files
+        modNames = []
+        for line in ins:
+            # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
+            # It wont accept filenames in any other encoding
+            try:
+                modName = rePluginsTxtComment.sub(u'', line).strip()
+                if not modName: continue
+                test = bolt.decode(modName)
+            except UnicodeError: continue
+            if bolt.GPath(test) not in bosh.modInfos:
+                # The automatic encoding detector could have returned
+                # an encoding it actually wasn't.  Luckily, we
+                # have a way to double check: modInfos.data
+                for encoding in bolt.encodingOrder:
+                    try:
+                        test2 = unicode(modName, encoding)
+                        if bolt.GPath(test2) not in bosh.modInfos:
+                            continue
+                        modName = test2
+                        break
+                    except UnicodeError:
+                        pass
+                else:
+                    modName = test
+            else:
+                modName = test
+            modName = bolt.GPath(modName)
+            modNames.append(modName)
+    return modNames
 
 def GetLo(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
@@ -297,12 +340,15 @@ def usingTxtFile(): return _liblo_handle.usingTxtFile()
 
 def haveLoFilesChanged():
     """True if plugins.txt or loadorder.txt file has changed."""
-    if _plugins_txt_path.exists() and (mtimePlugins != _plugins_txt_path.mtime
-                                    or sizePlugins  != _plugins_txt_path.size):
-        return True
+    if _plugins_txt_changed(): return True
     return _loadorder_txt_path.exists() and (
             mtimeOrder != _loadorder_txt_path.mtime or
             sizeOrder  != _loadorder_txt_path.size)
+
+def _plugins_txt_changed():
+    return _plugins_txt_path.exists() and (
+        mtimePlugins != _plugins_txt_path.mtime or sizePlugins !=
+        _plugins_txt_path.size)
 
 def swap(oldPath, newPath):
     """Save current plugins into oldPath directory and load plugins from
