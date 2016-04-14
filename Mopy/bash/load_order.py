@@ -185,6 +185,10 @@ def __fixLoadOrder(lord, _selected=None):
 
 def _get_active_plugins(lord): # pass a VALID load order in
     acti = _load_active_plugins() # a list
+    if not bush.game.deactivate_master_esm:
+        # game master must be always active - check if present in plugins.txt
+        if not bolt.GPath(bush.game.masterFiles[0]) in acti:
+            acti.insert(0, bolt.GPath(bush.game.masterFiles[0]))
     __fixActive(acti, lord)
     return acti
 
@@ -197,16 +201,13 @@ def __fixActive(acti, lord):
               u'in Data/ directory or were corrupted: ' + _pl(_removed) + u'\n'
         bosh.modInfos.selectedBad = _removed
     else: msg = u''
-    # again is below needed ? Apparently not with liblo 4 (acti is [Skyrim.esm,
-    # Update.esm] on empty plugins.txt) - Keep it cause eventually (when liblo
-    # is made to return actual contents of plugins.txt at all times) I may
-    # need to correct this here
+    if not bush.game.deactivate_master_esm:
+        game_master = bolt.GPath(bush.game.masterFiles[0])
+        if not game_master in actiFiltered:
+            actiFiltered.insert(0, game_master)
+            msg += (u'%s not present in active mods' % game_master) + u'\n'
     addUpdateEsm = False
     if bush.game.fsName == u'Skyrim':
-        skyrim = bolt.GPath(u'Skyrim.esm')
-        if not skyrim in actiFiltered:
-            actiFiltered.insert(0, skyrim)
-            msg += u'Skyrim.esm not present in active mods' + u'\n'
         updateEsm = bolt.GPath(u'Update.esm')
         if updateEsm in lord and not updateEsm in actiFiltered:
             msg += (u'Update.esm not present in plugins.txt while present in '

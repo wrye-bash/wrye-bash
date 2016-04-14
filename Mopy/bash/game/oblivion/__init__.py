@@ -54,6 +54,9 @@ exe = u'Oblivion.exe'
 #--Registry keys to read to find the install location
 regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
 
+#--Load order management
+deactivate_master_esm = True # whether master esm is allowed to be deactivated
+
 #--patch information
 patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
 patchTip = u'http://www.elderscrolls.com/'

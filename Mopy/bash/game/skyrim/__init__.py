@@ -59,6 +59,9 @@ exe = u'TESV.exe'
 #--Registry keys to read to find the install location
 regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
 
+#--Load order management
+deactivate_master_esm = False
+
 #--patch information
 patchURL = u'' # Update via steam
 patchTip = u'Update via Steam'

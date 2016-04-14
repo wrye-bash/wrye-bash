@@ -30,7 +30,6 @@ import struct
 from .constants import * # WIP
 from ... import brec
 
-
 #--Name of the game
 ## Example: u'Oblivion'
 name = u''
@@ -51,6 +50,9 @@ exe = u''
 ##  HKCU\Software\Wow6432Node
 ## Example: (u'Bethesda Softworks\\Oblivion', u'Installed Path')
 regInstallKeys = ()
+
+#--Load order management
+deactivate_master_esm = True # whether master esm is allowed to be deactivated
 
 #--Patch information
 ## URL to download patches for the main game.
