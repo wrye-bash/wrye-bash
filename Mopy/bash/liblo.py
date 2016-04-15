@@ -324,9 +324,8 @@ def Init(path):
             _Clo_get_load_order_method(self._DB,byref(method))
             self._LOMethod = method.value
 
-        def usingTxtFile(self):
-            """Should be made private !"""
-            return self._LOMethod == LIBLO_METHOD_TEXTFILE
+        def usingModTimes(self):
+            return self._LOMethod == LIBLO_METHOD_TIMESTAMP
 
         def SetGameMaster(self, plugin):
             _Clo_set_game_master(self._DB,_enc(plugin))

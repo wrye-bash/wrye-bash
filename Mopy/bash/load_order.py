@@ -291,15 +291,22 @@ def _load_active_plugins(force=False):
     if not force and _current_lo is not __empty and not _plugins_txt_changed():
         return list(_current_lo.activeOrdered)
     #--Read file
-    with _plugins_txt_path.open('r') as ins:
+    path = _plugins_txt_path
+    acti, _lo = _parse_plugins_txt(path, _star=bush.game.fsName == u'Fallout4')
+    return acti
+
+def _parse_plugins_txt(path, _star):
+    with path.open('r') as ins:
         #--Load Files
-        modNames = []
+        active, modNames = [], []
         for line in ins:
             # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
             # It wont accept filenames in any other encoding
             try:
                 modName = rePluginsTxtComment.sub(u'', line).strip()
                 if not modName: continue
+                is_active = not _star or modName.startswith(u'*')
+                if _star and is_active: modName = modName[1:]
                 test = bolt.decode(modName)
             except UnicodeError: continue
             if bolt.GPath(test) not in bosh.modInfos:
@@ -311,17 +318,17 @@ def _load_active_plugins(force=False):
                         test2 = unicode(modName, encoding)
                         if bolt.GPath(test2) not in bosh.modInfos:
                             continue
-                        modName = test2
+                        modName = bolt.GPath(test2)
                         break
                     except UnicodeError:
                         pass
                 else:
-                    modName = test
+                    modName = bolt.GPath(test)
             else:
-                modName = test
-            modName = bolt.GPath(modName)
+                modName = bolt.GPath(test)
             modNames.append(modName)
-    return modNames
+            if is_active: active.append(modName)
+    return active, modNames
 
 def GetLo(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
@@ -337,7 +344,7 @@ def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to s
         _updateCache(lord=lord, actiSorted=act)
     return _current_lo
 
-def usingTxtFile(): return _liblo_handle.usingTxtFile()
+def usingTxtFile(): return not _liblo_handle.usingModTimes()
 
 def haveLoFilesChanged():
     """True if plugins.txt or loadorder.txt file has changed."""
