@@ -262,7 +262,9 @@ def SaveLoadOrder(lord, acti=None, _fixed=False):
     saved = False
     if not _fixed: saved = __fixLoadOrder(lord, _selected=actiList)
     if not saved: # __fixLoadOrder may have saved, avoid resaving
-        if bush.game.fsName != u'Fallout4':
+        if not usingTxtFile():
+            __save_timestamps_load_order(lord)
+        elif bush.game.fsName != u'Fallout4':
             _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
             _setLoTxtModTime()
         else:
@@ -273,6 +275,32 @@ def SaveLoadOrder(lord, acti=None, _fixed=False):
     if actiList or wasEmpty: SetActivePlugins(actiList, lord)
     else: _updateCache(lord=lord, actiSorted=_current_lo.active)
     return _current_lo
+
+def __save_timestamps_load_order(lord):
+    """Save timestamps (as few as possible) - modInfos must contain all mods
+    :type lord: list[bolt.Path]
+    """
+    assert set(bosh.modInfos.keys()) == set(lord)
+    if len(lord) == 0: return
+    current = bosh.modInfos.calculateLO()
+    # break conflicts
+    older = bosh.modInfos[current[0]].mtime
+    for i, mod in enumerate(current[1:]):
+        info = bosh.modInfos[mod]
+        if info.mtime == older: break
+        older = info.mtime
+    else: mod = i = None # define i to avoid warning below
+    if mod is not None: # respace all in 60 sec intervals
+        for mod in current[i + 1:]:
+            info = bosh.modInfos[mod]
+            older += 60
+            info.setmtime(older)
+    restamp = []
+    for ordered, mod in zip(lord, current):
+        if ordered == mod: continue
+        restamp.append((ordered, bosh.modInfos[mod].mtime))
+    for ordered, mtime in restamp:
+        bosh.modInfos[ordered].setmtime(mtime)
 
 def _reset_mtimes_cache():
     """Reset the mtimes cache or LockLO feature will revert intentional
