@@ -209,21 +209,21 @@ def __fixActive(acti, lord):
     actiFiltered = [x for x in acti if x in bosh.modInfos] #preserve acti order
     _removed = set(acti) - set(actiFiltered)
     if _removed: # take note as we may need to rewrite plugins txt
-        msg = u'Those mods were present in plugins.txt but were not present ' \
-              u'in Data/ directory or were corrupted: ' + _pl(_removed) + u'\n'
+        msg = u'__fixActive: active list contains mods not present ' \
+              u'in Data/ directory or corrupted: ' + _pl(_removed) + u'\n'
         bosh.modInfos.selectedBad = _removed
     else: msg = u''
     if not bush.game.deactivate_master_esm:
         game_master = bolt.GPath(bush.game.masterFiles[0])
         if not game_master in actiFiltered:
             actiFiltered.insert(0, game_master)
-            msg += (u'%s not present in active mods' % game_master) + u'\n'
+            msg += (u'__fixActive: %s not present in active mods' % game_master) + u'\n'
     addUpdateEsm = False
     if bush.game.fsName == u'Skyrim':
         updateEsm = bolt.GPath(u'Update.esm')
         if updateEsm in lord and not updateEsm in actiFiltered:
-            msg += (u'Update.esm not present in plugins.txt while present in '
-                    u'Data folder') + u'\n'
+            msg += (u'__fixActive: Update.esm not present in active list '
+                    u'while present in Data folder') + u'\n'
             addUpdateEsm = True
     dexDict = {mod:index for index, mod in enumerate(lord)}
     # not needed for oblivion, for skyrim liblo will write plugins.txt in order
@@ -232,20 +232,33 @@ def __fixActive(acti, lord):
         actiSorted = actiFiltered[:]
         actiSorted.sort(key=dexDict.__getitem__) # all present in lord
         if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
-            msg += (u'Plugins.txt order of plugins (%s) differs from current '
-                   u'load order (%s)') % (_pl(actiFiltered), _pl(actiSorted))
+            msg += (u'__fixActive: active list order of plugins (%s) differs '
+                    u'from supplied load order (%s)') % (
+                _pl(actiFiltered), _pl(actiSorted))
     else: actiSorted = sorted(actiFiltered, key=dexDict.__getitem__)
     if addUpdateEsm: # insert after the last master (as does liblo)
         actiSorted.insert(_indexFirstEsp(actiSorted), updateEsm)
     # check if we have more than 256 active mods
     if len(actiSorted) > 255:
-        msg += u'Plugins.txt contains more than 255 plugins - the following ' \
-               u'plugins will be deactivated: '
+        msg += u'__fixActive: active list contains more than 255 plugins' \
+               u' - the following plugins will be deactivated: '
         bosh.modInfos.selectedExtra = actiSorted[255:]
         msg += _pl(bosh.modInfos.selectedExtra)
-    acti[:] = actiSorted[:255] # chop off extra
+    # Check for duplicates
+    mods, duplicates, j = set(), set(), 0
+    for i, mod in enumerate(actiSorted[:]):
+        if mod in mods:
+            del actiSorted[i - j]
+            j += 1
+            duplicates.add(mod)
+        else:
+            mods.add(mod)
+    if duplicates:
+        msg += u'__fixActive: removed duplicate entries from active list : '
+        msg += _pl(duplicates)
+    acti[:] = actiSorted[:255] # chop off extra, and update acti in place
     if msg:
-        ##: Notify user - maybe backup previous plugin txt ?
+        # Notify user - ##: maybe backup previous plugin txt ?
         bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
         SetActivePlugins(acti, lord, _fixed=True)
         return True # changes, saved
