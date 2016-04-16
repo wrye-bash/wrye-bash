@@ -164,22 +164,30 @@ def __fixLoadOrder(lord, _selected=None):
         lord = bosh.modInfos.calculateLO(mods=lord)
     # Save changes if necessary
     if _removedFiles or _addedFiles or _reordered:
+        active_saved = False
         if _removedFiles or _reordered: # must fix the active too
             # If _selected is not None we come from SaveLoadOrder which needs
             # to save _selected too - so fix this list instead of
             # _current_lo.activeOrdered. If fixed and saved, empty it so we do
             # not resave it. If selected was empty to begin with we need extra
             # hacks (wasEmpty in SaveLoadOrder)
+            # fallout 4 adds the further complication that may provide the
+            # active mods from the get_load_order path
             if _selected is None:
                 if _current_lo is not __empty: # else we are on first refresh
                     _selected = list(_current_lo.activeOrdered)
             if _selected is not None and __fixActive(_selected, lord):
                 _selected[:] = [] # avoid resaving
+                active_saved = True
         bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), reordered(%s)'
              % (_pl(_addedFiles) or u'None', _pl(_removedFiles) or u'None',
              u'No' if not _reordered else _pl(oldLord, u'from:\n') +
                                           _pl(lord, u'\nto:\n')))
-        SaveLoadOrder(lord, _fixed=True)
+        if bush.game.fsName != u'Fallout4':
+            SaveLoadOrder(lord, _fixed=True)
+        elif not active_saved:
+            SaveLoadOrder(lord, acti=_selected, _fixed=True)
+            if _selected is not None: _selected[:] = [] # avoid resaving
         return True # changes, saved
     return False # no changes, not saved
 
@@ -250,9 +258,12 @@ def SaveLoadOrder(lord, acti=None, _fixed=False):
     saved = False
     if not _fixed: saved = __fixLoadOrder(lord, _selected=actiList)
     if not saved: # __fixLoadOrder may have saved, avoid resaving
-        _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
+        if bush.game.fsName != u'Fallout4':
+            _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
+            _setLoTxtModTime()
+        else:
+            _write_plugins_txt(_plugins_txt_path, lord, actiList or _current_lo.active, _star=True)
         _reset_mtimes_cache() # Rename this to _notify_modInfos_change_intentional()
-        _setLoTxtModTime()
     # but go on saving active (if __fixLoadOrder > __fixActive saved them
     # condition below should be False)
     if actiList or wasEmpty: SetActivePlugins(actiList, lord)
@@ -330,6 +341,22 @@ def _parse_plugins_txt(path, _star):
             if is_active: active.append(modName)
     return active, modNames
 
+def _write_plugins_txt(path, lord, active, _star=False):
+    with path.open('wb') as out:
+        #--Load Files
+        def asterisk(active_set=set(active)):
+            return '*' if _star and (mod in active_set) else ''
+        for mod in (_star and lord) or active:
+            # Ok, this seems to work for Oblivion, but not Skyrim
+            # Skyrim seems to refuse to have any non-cp1252 named file in
+            # plugins.txt.  Even activating through the SkyrimLauncher
+            # doesn't work.
+            try:
+                out.write(asterisk() + bolt.encode(mod.s))
+                out.write('\r\n')
+            except UnicodeEncodeError:
+                pass
+
 def GetLo(cached=False):
     if not cached or _current_lo is __empty: _updateCache()
     return _current_lo
@@ -339,7 +366,8 @@ def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to s
     if not _fixed: saved = __fixActive(act, lord)
     else: saved =  False
     if not saved:
-        _liblo_handle.SetActivePlugins(act)
+        _write_plugins_txt(_plugins_txt_path, lord, act,
+                           _star=bush.game.fsName == u'Fallout4')
         _setPluginsTxtModTime()
         _updateCache(lord=lord, actiSorted=act)
     return _current_lo
