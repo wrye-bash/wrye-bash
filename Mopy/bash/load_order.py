@@ -267,9 +267,9 @@ def __fixActive(acti, lord):
 def SaveLoadOrder(lord, acti=None, _fixed=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
-    Will update plugins.txt too if using the textfile method (in liblo 4.0 at
-    least) - check lo_set_load_order - to reorder it as loadorder.txt.
-    It 'checks the validity' of lord passed and will raise if invalid."""
+    Will update plugins.txt too if using the textfile method to reorder it
+    as loadorder.txt, and of course rewrite it completely for fallout 4 (
+    asterisk method)."""
     actiList = list(acti) if acti is not None else None
     wasEmpty = acti is not None and actiList == []
     saved = False
@@ -278,7 +278,7 @@ def SaveLoadOrder(lord, acti=None, _fixed=False):
         if not usingTxtFile():
             __save_timestamps_load_order(lord)
         elif bush.game.fsName != u'Fallout4':
-            _liblo_handle.SetLoadOrder(lord) # also rewrite plugins.txt (text file lo method)
+            _write_plugins_txt(_loadorder_txt_path, [], lord, _star=False)
             _setLoTxtModTime()
         else:
             _write_plugins_txt(_plugins_txt_path, lord, actiList or _current_lo.active, _star=True)
@@ -437,7 +437,8 @@ def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to s
         _updateCache(lord=lord, actiSorted=act)
     return _current_lo
 
-def usingTxtFile(): return not _liblo_handle.usingModTimes()
+def usingTxtFile():
+    return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
 
 def haveLoFilesChanged():
     """True if plugins.txt or loadorder.txt file has changed."""
