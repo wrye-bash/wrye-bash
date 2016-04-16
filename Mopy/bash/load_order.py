@@ -97,13 +97,16 @@ _current_lo = __empty # must always be valid (or __empty)
 
 # liblo calls - they include fixup code (which may or may not be
 # needed/working). __fix methods accept lists as output parameters
-def _getLoFromLiblo():
+def _get_load_order():
     """:rtype: list[bolt.Path]"""
-    if usingTxtFile():
-        lord = _liblo_handle.GetLoadOrder()
-    else:
+    acti = None
+    if not usingTxtFile():
         lord = bosh.modInfos.calculateLO()
-    __fixLoadOrder(lord)
+    elif bush.game.fsName != u'Fallout4':
+        lord = _load_textfile_load_order()
+    else:
+        acti, lord = _parse_plugins_txt(_plugins_txt_path, _star=True)
+    __fixLoadOrder(lord, _selected=acti)
     return lord
 
 def _indexFirstEsp(lord):
@@ -118,7 +121,7 @@ def __fixLoadOrder(lord, _selected=None):
     mod files as well as impossible load orders - save the fixed order via
     liblo. We need a refreshed bosh.modInfos reflecting the contents of Data/.
 
-    Called in _getLoFromLiblo() to fix a newly fetched LO and in
+    Called in _get_load_order() to fix a newly fetched LO and in
     SaveLoadOrder() to check if a load order passed in is valid. Needs
     rethinking as save load and active should be an atomic operation -
     complicated by the fact that liblo does not support this. As a consequence
@@ -160,8 +163,9 @@ def __fixLoadOrder(lord, _selected=None):
             lord.insert(indexFirstEsp, mod)
             indexFirstEsp += 1
         else: lord.append(mod)
-    if _addedFiles and not usingTxtFile():
-        lord = bosh.modInfos.calculateLO(mods=lord)
+    if _addedFiles and not usingTxtFile(): # should not occur
+        bolt.deprint(u'Incomplete load order passed in to SaveLoadOrder')
+        lord[:] = bosh.modInfos.calculateLO(mods=lord)
     # Save changes if necessary
     if _removedFiles or _addedFiles or _reordered:
         active_saved = False
@@ -282,7 +286,7 @@ def _updateCache(lord=None, actiSorted=None):
     global _current_lo
     try:
         if lord is None:
-            lord = _getLoFromLiblo()
+            lord = _get_load_order()
             _setLoTxtModTime()
         # got a valid load order - now to active...
         if actiSorted is None:
@@ -305,6 +309,26 @@ def _load_active_plugins(force=False):
     path = _plugins_txt_path
     acti, _lo = _parse_plugins_txt(path, _star=bush.game.fsName == u'Fallout4')
     return acti
+
+def _load_textfile_load_order(force=False):
+    """Read data from loadorder.txt file. If loadorder.txt does not exist
+    create it and try reading plugins.txt so the load order of the user is
+    preserved. Additional mods should be added by caller who should anyway
+    call _fixLoadOrder.
+    NOTE: modInfos must exist and be up to date."""
+    if not _loadorder_txt_path.exists():
+        if _plugins_txt_path.exists():
+            active, _mods = _parse_plugins_txt(_plugins_txt_path, _star=False)
+        else: active = []
+        _write_plugins_txt(_loadorder_txt_path, [], active, _star=False)
+        bolt.deprint(u'Created %s' % _loadorder_txt_path)
+        return active
+    if not force and _current_lo is not __empty and not _loadorder_txt_changed():
+        return list(_current_lo.loadOrder)
+    ##: TODO(ut): handle desync with plugins txt
+    #--Read file
+    _acti, lo = _parse_plugins_txt(_loadorder_txt_path, _star=False)
+    return lo
 
 def _parse_plugins_txt(path, _star):
     with path.open('r') as ins:
@@ -376,7 +400,9 @@ def usingTxtFile(): return not _liblo_handle.usingModTimes()
 
 def haveLoFilesChanged():
     """True if plugins.txt or loadorder.txt file has changed."""
-    if _plugins_txt_changed(): return True
+    return _plugins_txt_changed() or _loadorder_txt_changed()
+
+def _loadorder_txt_changed():
     return _loadorder_txt_path.exists() and (
             mtimeOrder != _loadorder_txt_path.mtime or
             sizeOrder  != _loadorder_txt_path.size)
