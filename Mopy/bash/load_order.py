@@ -21,7 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Wrapper around liblo.py
+"""Load order management, features caching.
 
 Notes:
 - _current_lo is meant to eventually become a cache exported to the rest of
@@ -31,22 +31,16 @@ in to Bash and on setting lo/active from inside Bash.
  - all active mods must be present and have a load order and
  - especially for skyrim the relative order of entries in plugin.txt must be
  the same as their relative load order in loadorder.txt
-- corrupted files do not have a load order (comments suggested that they had
-nevertheless liblo 6.0 checks if plugins are valid and does not add them -
-if however they are loaded from file they are initially added and then
-LoadOrder::CheckValidity() will throw). TODO: Bash valid vs liblo valid - is
-disagreement handled ?
+- corrupted files do not have a load order
 
-Currently investigating what the liblo calls return to me and monkey
-patching that (see __fix methods).
-Double underscores and dirty comments are no accident - ALPHA
+Double underscores and dirty comments are no accident - BETA, I need a Game
+classes hierarchy to handle differences between the games.
 """
 import re
 import time
 import bass
 import bolt
 import bush
-import liblo as _liblo
 import bosh
 
 class LoadOrder(object):
@@ -118,17 +112,16 @@ def _indexFirstEsp(lord):
 
 def __fixLoadOrder(lord, _selected=None):
     """HACK: Fix inconsistencies between given loadorder and actually installed
-    mod files as well as impossible load orders - save the fixed order via
-    liblo. We need a refreshed bosh.modInfos reflecting the contents of Data/.
+    mod files as well as impossible load orders - save the fixed order. We
+    need a refreshed bosh.modInfos reflecting the contents of Data/.
 
     Called in _get_load_order() to fix a newly fetched LO and in
     SaveLoadOrder() to check if a load order passed in is valid. Needs
     rethinking as save load and active should be an atomic operation -
-    complicated by the fact that liblo does not support this. As a consequence
-    a lot of hacks are needed (like the _selected parameter).
+    leads to hacks (like the _selected parameter).
     :type lord: list[bolt.Path]
     """
-    oldLord = lord[:] ### print
+    oldLord = lord[:]
     # game's master might be out of place (if using timestamps for load
     # ordering or a manually edited loadorder.txt) so move it up
     masterName = bosh.modInfos.masterName
@@ -150,8 +143,8 @@ def __fixLoadOrder(lord, _selected=None):
     # Remove non existent plugins from load order
     lord[:] = [x for x in lord if x not in _removedFiles]
     indexFirstEsp = _indexFirstEsp(lord)
-    # Check to see if any esm files are loaded below an esp and reorder as necessary
-    for mod in lord[indexFirstEsp:]: # SEEMS NOT NEEDED, liblo does this
+    # See if any esm files are loaded below an esp and reorder as necessary
+    for mod in lord[indexFirstEsp:]:
         if mod in bosh.modInfos and bosh.modInfos[mod].isEsm():
             lord.remove(mod)
             lord.insert(indexFirstEsp, mod)
@@ -226,9 +219,7 @@ def __fixActive(acti, lord):
                     u'while present in Data folder') + u'\n'
             addUpdateEsm = True
     dexDict = {mod:index for index, mod in enumerate(lord)}
-    # not needed for oblivion, for skyrim liblo will write plugins.txt in order
-    # STILL restore for skyrim to warn on LO change
-    if usingTxtFile():
+    if usingTxtFile(): # unneeded for oblivion (or for fallout 4 really either)
         actiSorted = actiFiltered[:]
         actiSorted.sort(key=dexDict.__getitem__) # all present in lord
         if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
@@ -472,18 +463,7 @@ def swap(oldPath, newPath):
         move.copyTo(_loadorder_txt_path)
         _loadorder_txt_path.mtime = time.time()#update mtime to trigger refresh
 
-#----------------------------------------------------------------------REFACTOR
-_liblo_handle, _liblo_error = _liblo.Init(bass.dirs['compiled'].s)
-# That didn't work - Wrye Bash isn't installed correctly
-if not _liblo.liblo:
-    raise bolt.BoltError(u'The libloadorder API could not be loaded.')
-bolt.deprint(u'Using libloadorder API version:', _liblo.version)
-
-_liblo_handle = _liblo_handle(bass.dirs['app'].s, bush.game.fsName,
-                              bass.dirs['userApp'].s)
-if bush.game.fsName == u'Oblivion' and bass.dirs['mods'].join(
-        u'Nehrim.esm').isfile():
-    _liblo_handle.SetGameMaster(u'Nehrim.esm')
+#------------------------------------------------------------------------------
 
 if bass.dirs['saveBase'] == bass.dirs['app']:
 #--If using the game directory as rather than the appdata dir.
