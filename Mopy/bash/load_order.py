@@ -42,6 +42,16 @@ import bass
 import bolt
 import bush
 import bosh
+# Game instance providing load order operations API
+from games import game_factory
+game_handle = None # type: games.Game # we need the modInfos singleton
+
+def get_game():
+    global  game_handle
+    if game_handle is None:
+        game_handle = game_factory(bush.game.fsName, bosh.modInfos,
+                                   _plugins_txt_path, _loadorder_txt_path)
+    return game_handle
 
 class LoadOrder(object):
     """Immutable class representing a load order."""
@@ -91,17 +101,9 @@ _current_lo = __empty # must always be valid (or __empty)
 
 # liblo calls - they include fixup code (which may or may not be
 # needed/working). __fix methods accept lists as output parameters
-def _get_load_order():
+def _get_load_order(cached_load_order=None, cached_active=None):
     """:rtype: list[bolt.Path]"""
-    acti = None
-    if not usingTxtFile():
-        lord = bosh.modInfos.calculateLO()
-    elif bush.game.fsName != u'Fallout4':
-        lord = _load_textfile_load_order()
-    else:
-        acti, lord = _parse_plugins_txt(_plugins_txt_path, _star=True)
-    __fixLoadOrder(lord, _selected=acti)
-    return lord
+    return get_game().get_load_order(cached_load_order, cached_active)
 
 def _indexFirstEsp(lord):
     indexFirstEsp = 0
@@ -277,7 +279,7 @@ def SaveLoadOrder(lord, acti=None, _fixed=False):
     # but go on saving active (if __fixLoadOrder > __fixActive saved them
     # condition below should be False)
     if actiList or wasEmpty: SetActivePlugins(actiList, lord)
-    else: _updateCache(lord=lord, actiSorted=_current_lo.active)
+    else: _updateCache(lord=lord, actiSorted=_current_lo.activeOrdered)
     return _current_lo
 
 def __save_timestamps_load_order(lord):
@@ -315,15 +317,22 @@ def _reset_mtimes_cache():
         if path.exists(): bosh.modInfos.mtimes[name] = path.mtime
 
 def _updateCache(lord=None, actiSorted=None):
+    """
+    :type lord: tuple[bolt.Path] | list[bolt.Path]
+    :type actiSorted: tuple[bolt.Path] | list[bolt.Path]
+    """
     global _current_lo
     try:
-        if lord is None:
-            lord = _get_load_order()
-            _setLoTxtModTime()
-        # got a valid load order - now to active...
-        if actiSorted is None:
-            actiSorted = _get_active_plugins(lord)
+        if lord is actiSorted is None:
+            lord, actiSorted = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
             _setPluginsTxtModTime()
+            _setLoTxtModTime()
+        elif actiSorted is None: # got a valid load order - now to active...
+            _lo, actiSorted = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
+            _setPluginsTxtModTime()
+        elif lord is None:
+            lord, _act = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
+            _setLoTxtModTime()
         _current_lo = LoadOrder(lord, actiSorted)
     except Exception:
         bolt.deprint('Error updating load_order cache from liblo')
@@ -341,26 +350,6 @@ def _load_active_plugins(force=False):
     path = _plugins_txt_path
     acti, _lo = _parse_plugins_txt(path, _star=bush.game.fsName == u'Fallout4')
     return acti
-
-def _load_textfile_load_order(force=False):
-    """Read data from loadorder.txt file. If loadorder.txt does not exist
-    create it and try reading plugins.txt so the load order of the user is
-    preserved. Additional mods should be added by caller who should anyway
-    call _fixLoadOrder.
-    NOTE: modInfos must exist and be up to date."""
-    if not _loadorder_txt_path.exists():
-        if _plugins_txt_path.exists():
-            active, _mods = _parse_plugins_txt(_plugins_txt_path, _star=False)
-        else: active = []
-        _write_plugins_txt(_loadorder_txt_path, [], active, _star=False)
-        bolt.deprint(u'Created %s' % _loadorder_txt_path)
-        return active
-    if not force and _current_lo is not __empty and not _loadorder_txt_changed():
-        return list(_current_lo.loadOrder)
-    ##: TODO(ut): handle desync with plugins txt
-    #--Read file
-    _acti, lo = _parse_plugins_txt(_loadorder_txt_path, _star=False)
-    return lo
 
 def _parse_plugins_txt(path, _star):
     with path.open('r') as ins:
@@ -414,7 +403,14 @@ def _write_plugins_txt(path, lord, active, _star=False):
                 pass
 
 def GetLo(cached=False):
-    if not cached or _current_lo is __empty: _updateCache()
+    if not cached or _current_lo is __empty:
+        if _current_lo is not __empty:
+            loadOrder = (not get_game().load_order_changed() and
+                            _current_lo.loadOrder) or None
+            active = (not get_game().active_changed() and
+                         _current_lo.activeOrdered) or None
+        else: active = loadOrder = None
+        _updateCache(loadOrder, active)
     return _current_lo
 
 def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to set active

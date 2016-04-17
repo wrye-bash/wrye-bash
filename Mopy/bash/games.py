@@ -103,25 +103,71 @@ class Game(object):
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
         self.mod_infos = mod_infos # type: bosh.ModInfos
         self.master_path = mod_infos.masterName # type: bolt.Path
+        self.mtime_plugins_txt = 0
+        self.size_plugins_txt = 0
+
+    def _plugins_txt_modified(self):
+        exists = self.plugins_txt_path.exists()
+        if not exists and self.mtime_plugins_txt: return True # deleted !
+        return exists and (
+            self.plugins_txt_path.mtime != self.mtime_plugins_txt or
+            self.size_plugins_txt != self.plugins_txt_path.size)
 
     # API ---------------------------------------------------------------------
-    def get_load_order(self, fetch_active):
-        lo, active = self._fetch_load_order(fetch_active)
+    def get_load_order(self, cached_load_order, cached_active_ordered):
+        """Get and validate current load order and active plugins information.
+
+        Meant to fetch at once both load order and active plugins
+        information as validation usually depends on both. If the load order
+        read is invalid (messed up loadorder.txt, game's master redated out
+        of order, etc) it will attempt fixing and saving them before returning.
+        The caller is responsible for passing a valid cached value in. If you
+        pass a cached value for either parameter this value will be returned
+        unchanged, possibly validating the other one based on stale data.
+        NOTE: modInfos must exist and be up to date for validation.
+        :type cached_load_order: tuple[bolt.Path]
+        :type cached_active_ordered: tuple[bolt.Path]
+        :rtype: (list[bolt.Path], list[bolt.Path]) |
+                (tuple[bolt.Path], tuple[bolt.Path])
+        """
+        if cached_load_order is not None and cached_active_ordered is not None:
+            return cached_load_order, cached_active_ordered # NOOP
+        lo, active = self._cached_or_fetch(cached_load_order, cached_active_ordered)
         # for timestamps we use modInfos so we should not get an invalid
-        # load order. For text based games however the fetched order could
-        # be in whatever state, so get this fixed
-        _removedFiles, _addedFiles, _reordered = self._fix_load_order(lo)
-        # now we have a valid load order we may fix active too if fetched
-        fixed_active = fetch_active and self._fix_active_plugins(active, lo)
+        # load order (except redated master). For text based games however
+        # the fetched order could be in whatever state, so get this fixed
+        if cached_load_order is None: ##: if not should we assert is valid ?
+            _removedFiles, _addedFiles, _reordered = self._fix_load_order(lo)
+        else: _removedFiles = _addedFiles = _reordered = set()
+        # now we have a valid load order we may fix active too if we fetched them or a new load order
+        fixed_active = cached_active_ordered is None and self._fix_active_plugins_on_disc(active, lo)
         self._save_fixed_load_order(_removedFiles, _addedFiles, _reordered,
                                     fixed_active, lo, active)
         return lo, active
 
+    def _cached_or_fetch(self, cached_load_order, cached_active):
+        # we need to override this bit for fallout4 to parse the file once
+        if cached_active is None:
+            cached_active = self._fetch_active_plugins()
+        if cached_load_order is None:
+            cached_load_order = self._fetch_load_order(cached_load_order, cached_active)
+        return list(cached_load_order), list(cached_active)
+
     def set_load_order(self, lord, active, _fixed=False):
         raise NotImplementedError
 
+    def active_changed(self): return self._plugins_txt_modified()
+
+    def load_order_changed(self): return True # timestamps, just calculate it
+
     # ABSTRACT ----------------------------------------------------------------
-    def _fetch_load_order(self, fetch_active):
+    def _fetch_load_order(self, cached_load_order, cached_active):
+        """:type cached_load_order: tuple[bolt.Path]
+        :type cached_active: tuple[bolt.Path]"""
+        raise bolt.AbstractError
+
+    def _fetch_active_plugins(self): # no override for AsteriskGame
+        """:rtype: list[bolt.Path]"""
         raise bolt.AbstractError
 
     def _persist_load_order(self, lord, active):
@@ -135,21 +181,28 @@ class Game(object):
         raise bolt.AbstractError
 
     # PLUGINS TXT -------------------------------------------------------------
-    def _parse_plugins_txt(self, path):
+    def _parse_modfile(self, path):
+        """:rtype: (list[bolt.Path], list[bolt.Path])"""
         if not path.exists(): return [], []
-        # #--Read file
+        #--Read file
         acti, _lo = _parse_plugins_txt_(path, self.mod_infos, _star=False)
         return acti, _lo
 
-    def _fetch_active_plugins(self):
-        acti, _lo = self._parse_plugins_txt(self.plugins_txt_path)
-        return acti
+    def _parse_plugins_txt(self):
+        """:rtype: (list[bolt.Path], list[bolt.Path])"""
+        if not self.plugins_txt_path.exists(): return [], []
+        #--Read file
+        acti, _lo = self._parse_modfile(self.plugins_txt_path)
+        #--Update cache info
+        self.mtime_plugins_txt = self.plugins_txt_path.mtime
+        self.size_plugins_txt = self.plugins_txt_path.size
+        return acti, _lo
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord):
         """Fix inconsistencies between given loadorder and actually installed
-        mod files as well as impossible load orders - save the fixed order. We
-        need a refreshed bosh.modInfos reflecting the contents of Data/.
+        mod files as well as impossible load orders. We need a refreshed
+        bosh.modInfos reflecting the contents of Data/.
 
         Called in get_load_order() to fix a newly fetched LO and in
         set_load_order() to check if a load order passed in is valid. Needs
@@ -161,21 +214,26 @@ class Game(object):
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
         masterName = self.mod_infos.masterName
+        masterDex = 0
         try:
             masterDex = lord.index(masterName)
+            _addedFiles = set()
         except ValueError:
-            raise bolt.BoltError(u'%s is missing or corrupted' % masterName)
+            if not masterName in self.mod_infos:
+                raise bolt.BoltError(u'%s is missing or corrupted' % masterName)
+            _addedFiles = {masterName}
         if masterDex > 0:
             bolt.deprint(u'%s has index %d (must be 0)' % (masterName, masterDex))
             lord.remove(masterName)
             lord.insert(0, masterName)
             _reordered = True
         else: _reordered = False
+        # below do not apply to timestamp method (on getting it)
         loadorder_set = set(lord)
         mods_set = set(self.mod_infos.keys())
         _removedFiles = loadorder_set - mods_set # may remove corrupted mods
         # present in text file, we are supposed to take care of that
-        _addedFiles = mods_set - loadorder_set
+        _addedFiles |= mods_set - loadorder_set
         # Remove non existent plugins from load order
         lord[:] = [x for x in lord if x not in _removedFiles]
         indexFirstEsp = self._indexFirstEsp(lord)
@@ -189,9 +247,14 @@ class Game(object):
         # Append new plugins to load order
         for mod in _addedFiles:
             if self.mod_infos[mod].isEsm():
-                lord.insert(indexFirstEsp, mod)
+                if  not mod == masterName:
+                    lord.insert(indexFirstEsp, mod)
+                else:
+                    lord.insert(0, masterName)
+                    bolt.deprint(u'%s inserted to Load order' % masterName)
                 indexFirstEsp += 1
             else: lord.append(mod)
+        # end textfile get
         if _removedFiles or _addedFiles or _reordered:
             bolt.deprint(
                 u'Fixed Load Order: added(%s), removed(%s), reordered(%s)' % (
@@ -200,7 +263,7 @@ class Game(object):
                 u'from:\n', joint=u'\n') + _pl(lord, u'\nto:\n', joint=u'\n')))
         return _removedFiles, _addedFiles, _reordered
 
-    def _fix_active_plugins(self, acti, lord):
+    def _fix_active_plugins_on_disc(self, acti, lord):
         # filter plugins not present in modInfos - this will disable corrupted too!
         actiFiltered = [x for x in acti if x in self.mod_infos] #preserve acti order
         _removed = set(acti) - set(actiFiltered)
@@ -266,9 +329,13 @@ class TimestampGame(Game):
 
     _allow_deactivate_master = True
 
-    def _fetch_load_order(self, fetch_active):
-        active = (fetch_active and self._fetch_active_plugins()) or None
-        return self.mod_infos.calculateLO(), active
+    # Abstract overrides ------------------------------------------------------
+    def _fetch_load_order(self, cached_load_order, cached_active):
+        return self.mod_infos.calculateLO()
+
+    def _fetch_active_plugins(self):
+        active, _lo = self._parse_plugins_txt()
+        return active
 
     def _persist_load_order(self, lord, active):
         assert set(self.mod_infos.keys()) == set(lord)
@@ -302,7 +369,7 @@ class TimestampGame(Game):
                 # so active plugins order is undefined
                 if not fixed_active:
                     active = self._fetch_active_plugins()
-                    self._fix_active_plugins(active, lo)
+                    self._fix_active_plugins_on_disc(active, lo)
             self._persist_load_order(lo, None) # active is not used here
 
     def _fix_load_order(self, lord):
@@ -320,35 +387,48 @@ class TextfileGame(Game):
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
         super(TextfileGame, self).__init__(mod_infos, plugins_txt_path)
         self.loadorder_txt_path = loadorder_txt_path
+        self.mtime_loadorder_txt = 0
+        self.size_loadorder_txt = 0
+
+    def load_order_changed(self):
+        return self.loadorder_txt_path.exists() and (
+            self.mtime_loadorder_txt != self.loadorder_txt_path.mtime or
+            self.size_loadorder_txt != self.loadorder_txt_path.size)
+
+    def __update_lo_cache_info(self):
+        self.mtime_loadorder_txt = self.loadorder_txt_path.mtime
+        self.size_loadorder_txt = self.loadorder_txt_path.size
 
     # Abstract overrides ------------------------------------------------------
-    def _fetch_load_order(self, fetch_active):
-        """Read data from loadorder.txt file. If loadorder.txt does not exist
-        create it and try reading plugins.txt so the load order of the user is
-        preserved. Additional mods should be added by caller who should anyway
-        call _fix_load_order.
-        NOTE: modInfos must exist and be up to date."""
+    def _fetch_load_order(self, cached_load_order, cached_active):
+        """Read data from loadorder.txt file. If loadorder.txt does not
+        exist create it and try reading plugins.txt so the load order of the
+        user is preserved (note it will create the plugins.txt if not
+        existing). Additional mods should be added by caller who should
+        anyway call _fix_load_order. If cached_active is passed, the relative
+        order of mods will be corrected to match their relative order in
+        cached_active."""
         if not self.loadorder_txt_path.exists():
-            if self.plugins_txt_path.exists():
-                active, _mods = _parse_plugins_txt_(self.plugins_txt_path, self.mod_infos, _star=False)
-            else: active = []
-            _write_plugins_txt(self.loadorder_txt_path, active, active, _star=False)
+            mods = cached_active or []
+            if cached_active is None and self.plugins_txt_path.exists(): ##: what if not
+                mods, mods = self._fetch_active_plugins() # will add Skyrim.esm
+            self._persist_load_order(mods, mods)
             bolt.deprint(u'Created %s' % self.loadorder_txt_path)
-            return active, active
-        # if not force and _current_lo is not __empty and not _loadorder_txt_changed():
-        #     return list(_current_lo.loadOrder)
+            return mods
         # ##: TODO(ut): handle desync with plugins txt
         #--Read file
-        if fetch_active:
-            active, _lo = _parse_plugins_txt_(self.plugins_txt_path,
-                                              self.mod_infos, _star=False)
-        else: active = None
-        _acti, lo = _parse_plugins_txt_(self.loadorder_txt_path, self.mod_infos,
-                                        _star=False)
-        return lo, active
+        _acti, lo = self._parse_modfile(self.loadorder_txt_path)
+        return lo
+
+    def _fetch_active_plugins(self):
+        acti, _lo = self._parse_plugins_txt()
+        if not self.master_path not in acti: # TODO(ut): it should not be !
+            acti.insert(0, self.master_path)
+        return acti
 
     def _persist_load_order(self, lord, active):
         _write_plugins_txt(self.loadorder_txt_path, lord, lord, _star=False)
+        self.__update_lo_cache_info()
 
     def _persist_active_plugins(self, active, lord):
         _write_plugins_txt(self.plugins_txt_path, active[1:], active[1:],
@@ -360,9 +440,10 @@ class TextfileGame(Game):
             if _removedFiles or _reordered: # must fix the active too
                 if not fixed_active:
                     active = self._fetch_active_plugins()
-                    self._fix_active_plugins(active, lo)
+                    self._fix_active_plugins_on_disc(active, lo)
             self._persist_load_order(lo, None) # active is not used here
 
+    # Validation overrides ----------------------------------------------------
     @staticmethod
     def _check_active_order(acti, lord):
         dexDict = {mod: index for index, mod in enumerate(lord)}
@@ -375,20 +456,25 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
-    def _fetch_load_order(self, fetch_active=True):
+    def load_order_changed(self): return self._plugins_txt_modified()
+
+    def _cached_or_fetch(self, cached_load_order, cached_active):
+        # read the file once
+        return self._fetch_load_order(cached_load_order, cached_active)
+
+    # Abstract overrides ------------------------------------------------------
+    def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
-        create it - all mods should be added by caller who should anyway
-        call _fix_load_order.
-        NOTE: modInfos must exist and be up to date."""
+        create it. Discards information read if cached is passed in."""
         if not self.plugins_txt_path.exists():
+            ## TODO(ut): preserve cached values
             _write_plugins_txt(self.plugins_txt_path, [], [], _star=True)
             bolt.deprint(u'Created %s' % self.plugins_txt_path)
-            return [], []
-        # if not force and _current_lo is not __empty and not _loadorder_txt_changed():
-        #     return list(_current_lo.loadOrder)
-        active, lo = _parse_plugins_txt_(self.plugins_txt_path, self.mod_infos,
-                                         _star=True)
-        return lo, active
+            active, lo = [], []
+        else: active, lo = self._parse_modfile(self.plugins_txt_path)
+        lo, active = (lo if cached_load_order is None else cached_load_order,
+                      active if cached_active is None else cached_active)
+        return list(lo), list(active)
 
     def _persist_load_order(self, lord, active):
         assert active # must at least contain Fallout4.esm
@@ -403,8 +489,9 @@ class AsteriskGame(Game):
         if _removedFiles or _addedFiles or _reordered:
             self._persist_load_order(lo, active)
 
-    def _parse_plugins_txt(self, path):
-        if not path: return [], []
+    # Modfiles parsing overrides ----------------------------------------------
+    def _parse_modfile(self, path):
+        if not path.exists(): return [], []
         acti, lo = _parse_plugins_txt_(path, self.mod_infos, _star=True)
         return acti, lo
 
