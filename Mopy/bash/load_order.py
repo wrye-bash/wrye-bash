@@ -190,15 +190,6 @@ def __fixLoadOrder(lord, _selected=None):
         return True # changes, saved
     return False # no changes, not saved
 
-def _get_active_plugins(lord): # pass a VALID load order in
-    acti = _load_active_plugins() # a list
-    if not bush.game.deactivate_master_esm:
-        # game master must be always active - check if present in plugins.txt
-        if not bolt.GPath(bush.game.masterFiles[0]) in acti:
-            acti.insert(0, bolt.GPath(bush.game.masterFiles[0]))
-    __fixActive(acti, lord)
-    return acti
-
 def __fixActive(acti, lord):
     # filter plugins not present in modInfos - this will disable corrupted too!
     actiFiltered = [x for x in acti if x in bosh.modInfos] #preserve acti order
@@ -325,11 +316,9 @@ def _updateCache(lord=None, actiSorted=None):
     try:
         if lord is actiSorted is None:
             lord, actiSorted = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
-            _setPluginsTxtModTime()
             _setLoTxtModTime()
         elif actiSorted is None: # got a valid load order - now to active...
             _lo, actiSorted = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
-            _setPluginsTxtModTime()
         elif lord is None:
             lord, _act = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
             _setLoTxtModTime()
@@ -340,17 +329,6 @@ def _updateCache(lord=None, actiSorted=None):
         raise
 
 rePluginsTxtComment = re.compile(u'#.*', re.U)
-def _load_active_plugins(force=False):
-    """Read data from plugins.txt file.
-    NOTE: modInfos must exist and be up to date."""
-    if not _plugins_txt_path.exists(): return []
-    if not force and _current_lo is not __empty and not _plugins_txt_changed():
-        return list(_current_lo.activeOrdered)
-    #--Read file
-    path = _plugins_txt_path
-    acti, _lo = _parse_plugins_txt(path, _star=bush.game.fsName == u'Fallout4')
-    return acti
-
 def _parse_plugins_txt(path, _star):
     with path.open('r') as ins:
         #--Load Files
@@ -405,10 +383,10 @@ def _write_plugins_txt(path, lord, active, _star=False):
 def GetLo(cached=False):
     if not cached or _current_lo is __empty:
         if _current_lo is not __empty:
-            loadOrder = (not get_game().load_order_changed() and
-                            _current_lo.loadOrder) or None
-            active = (not get_game().active_changed() and
-                         _current_lo.activeOrdered) or None
+            loadOrder = _current_lo.loadOrder if not get_game(
+                ).load_order_changed() else None
+            active = _current_lo.activeOrdered if not get_game(
+                ).active_changed() else None
         else: active = loadOrder = None
         _updateCache(loadOrder, active)
     return _current_lo
@@ -420,26 +398,20 @@ def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to s
     if not saved:
         _write_plugins_txt(_plugins_txt_path, lord, act,
                            _star=bush.game.fsName == u'Fallout4')
-        _setPluginsTxtModTime()
         _updateCache(lord=lord, actiSorted=act)
     return _current_lo
 
 def usingTxtFile():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
 
-def haveLoFilesChanged():
+def haveLoFilesChanged(): # YAK !
     """True if plugins.txt or loadorder.txt file has changed."""
-    return _plugins_txt_changed() or _loadorder_txt_changed()
+    return get_game().active_changed() or _loadorder_txt_changed()
 
 def _loadorder_txt_changed():
     return _loadorder_txt_path.exists() and (
             mtimeOrder != _loadorder_txt_path.mtime or
             sizeOrder  != _loadorder_txt_path.size)
-
-def _plugins_txt_changed():
-    return _plugins_txt_path.exists() and (
-        mtimePlugins != _plugins_txt_path.mtime or sizePlugins !=
-        _plugins_txt_path.size)
 
 def swap(oldPath, newPath):
     """Save current plugins into oldPath directory and load plugins from
@@ -468,8 +440,6 @@ else:
     _dir = bass.dirs['userApp']
 _plugins_txt_path = _dir.join(u'plugins.txt')
 _loadorder_txt_path = _dir.join(u'loadorder.txt')
-mtimePlugins = 0
-sizePlugins = 0
 mtimeOrder = 0
 sizeOrder = 0
 
@@ -478,13 +448,6 @@ def _setLoTxtModTime():
         global mtimeOrder, sizeOrder
         mtimeOrder, sizeOrder = _loadorder_txt_path.mtime, \
                                 _loadorder_txt_path.size
-
-def _setPluginsTxtModTime():
-    global mtimePlugins, sizePlugins
-    if  _plugins_txt_path.exists():
-        mtimePlugins, sizePlugins = _plugins_txt_path.mtime, \
-                                    _plugins_txt_path.size
-    else: mtimePlugins, sizePlugins = 0, 0
 
 # helper - print a list
 def _pl(aList, legend=u''):
