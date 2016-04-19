@@ -140,7 +140,8 @@ class Game(object):
             _removedFiles, _addedFiles, _reordered = self._fix_load_order(lo)
         else: _removedFiles = _addedFiles = _reordered = set()
         # now we have a valid load order we may fix active too if we fetched them or a new load order
-        fixed_active = cached_active_ordered is None and self._fix_active_plugins_on_disc(active, lo)
+        fixed_active = cached_active_ordered is None and self._fix_active_plugins_on_disc(
+            active, lo, setting=False)
         self._save_fixed_load_order(_removedFiles, _addedFiles, _reordered,
                                     fixed_active, lo, active)
         return lo, active
@@ -149,6 +150,7 @@ class Game(object):
         # we need to override this bit for fallout4 to parse the file once
         if cached_active is None:
             cached_active = self._fetch_active_plugins()
+        # we need active plugins fetched to check for desync in load order
         if cached_load_order is None:
             cached_load_order = self._fetch_load_order(cached_load_order, cached_active)
         return list(cached_load_order), list(cached_active)
@@ -273,7 +275,7 @@ class Game(object):
                 u'from:\n', joint=u'\n') + _pl(lord, u'\nto:\n', joint=u'\n')))
         return _removedFiles, _addedFiles, _reordered
 
-    def _fix_active_plugins_on_disc(self, acti, lord):
+    def _fix_active_plugins_on_disc(self, acti, lord, setting):
         # filter plugins not present in modInfos - this will disable corrupted too!
         actiFiltered = [x for x in acti if x in self.mod_infos] #preserve acti order
         _removed = set(acti) - set(actiFiltered)
@@ -292,6 +294,8 @@ class Game(object):
                 msg += (u'%s not present in active list '
                         u'while present in Data folder' % path) + u'\n'
                 added_active_paths.append(path)
+        # order - affects which mods are chopped off if > 255 (the ones that
+        # load last) - won't trigger saving but for Skyrim
         msg += self._check_active_order(actiFiltered, lord)
         for path in added_active_paths: # insert after the last master (as does liblo)
             actiFiltered.insert(self._indexFirstEsp(actiFiltered), path)
@@ -316,9 +320,12 @@ class Game(object):
         acti[:] = actiFiltered[:255] # chop off extra, and update acti in place
         if msg:
             # Notify user - ##: maybe backup previous plugin txt ?
-            bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
-            self._persist_active_plugins(acti, lord)
-            return True # changes, saved
+            if not setting:
+                bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
+                self._persist_active_plugins(acti, lord)
+            else:
+                bolt.deprint(u'Invalid active plugins list corrected' + u'\n' + msg)
+            return True # changes, saved if loading an active plugins list
         return False # no changes, not saved
 
     @staticmethod
@@ -379,7 +386,7 @@ class TimestampGame(Game):
                 # so active plugins order is undefined
                 if not fixed_active:
                     active = self._fetch_active_plugins()
-                    self._fix_active_plugins_on_disc(active, lo)
+                    self._fix_active_plugins_on_disc(active, lo, setting=False)
             self._persist_load_order(lo, None) # active is not used here
 
     def _fix_load_order(self, lord):
@@ -401,9 +408,11 @@ class TextfileGame(Game):
         self.size_loadorder_txt = 0
 
     def load_order_changed(self):
-        return self.loadorder_txt_path.exists() and (
+        return (self.loadorder_txt_path.exists() and (
             self.mtime_loadorder_txt != self.loadorder_txt_path.mtime or
-            self.size_loadorder_txt != self.loadorder_txt_path.size)
+            self.size_loadorder_txt != self.loadorder_txt_path.size)) or \
+               self.active_changed() # if active changed externally refetch
+        # load order to check for desync
 
     def __update_lo_cache_info(self):
         self.mtime_loadorder_txt = self.loadorder_txt_path.mtime
@@ -417,7 +426,8 @@ class TextfileGame(Game):
         existing). Additional mods should be added by caller who should
         anyway call _fix_load_order. If cached_active is passed, the relative
         order of mods will be corrected to match their relative order in
-        cached_active."""
+        cached_active.
+        :type cached_active: tuple[bolt.Path] | list[bolt.Path]"""
         if not self.loadorder_txt_path.exists():
             mods = cached_active or []
             if cached_active is not None and not self.plugins_txt_path.exists():
@@ -429,9 +439,21 @@ class TextfileGame(Game):
             self._persist_load_order(mods, mods)
             bolt.deprint(u'Created %s' % self.loadorder_txt_path)
             return mods
-        # ##: TODO(ut): handle desync with plugins txt
         #--Read file
         _acti, lo = self._parse_modfile(self.loadorder_txt_path)
+        # handle desync with plugins txt
+        if cached_active is not None:
+            dct = {x: i for i, x in enumerate(cached_active)}
+            active_in_lo = [x for x in lo if x in dct]
+            active_in_lo.sort(key=dct.get)
+            it = iter(active_in_lo)
+            fetched_lo = lo
+            lo = [next(it) if x in dct else x for x in lo]
+            if lo != fetched_lo:
+                self._persist_load_order(lo, lo)
+                bolt.deprint(u'Corrected %s (order of mods differed from '
+                             u'their order in %s)' % (
+                        self.loadorder_txt_path, self.plugins_txt_path))
         self.__update_lo_cache_info()
         return lo
 
@@ -458,7 +480,7 @@ class TextfileGame(Game):
             if _removedFiles or _reordered: # must fix the active too
                 if not fixed_active:
                     active = self._fetch_active_plugins()
-                    self._fix_active_plugins_on_disc(active, lo)
+                    self._fix_active_plugins_on_disc(active, lo, setting=False)
             self._persist_load_order(lo, None) # active is not used here
 
     # Validation overrides ----------------------------------------------------
