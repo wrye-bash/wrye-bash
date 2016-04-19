@@ -30,7 +30,7 @@ import re
 
 import bolt
 
-def _write_plugins_txt(path, lord, active, _star=False):
+def _write_plugins_txt_(path, lord, active, _star=False):
     with path.open('wb') as out:
         def asterisk(active_set=set(active)):
             return '*' if _star and (mod in active_set) else ''
@@ -180,7 +180,7 @@ class Game(object):
                                fixed_active, lo, active):
         raise bolt.AbstractError
 
-    # PLUGINS TXT -------------------------------------------------------------
+    # MODFILES PARSING --------------------------------------------------------
     def _parse_modfile(self, path):
         """:rtype: (list[bolt.Path], list[bolt.Path])"""
         if not path.exists(): return [], []
@@ -188,6 +188,10 @@ class Game(object):
         acti, _lo = _parse_plugins_txt_(path, self.mod_infos, _star=False)
         return acti, _lo
 
+    def _write_modfile(self, path, lord, active):
+        _write_plugins_txt_(path, lord, active, _star=False)
+
+    # PLUGINS TXT -------------------------------------------------------------
     def _parse_plugins_txt(self):
         """:rtype: (list[bolt.Path], list[bolt.Path])"""
         if not self.plugins_txt_path.exists(): return [], []
@@ -197,6 +201,12 @@ class Game(object):
         self.mtime_plugins_txt = self.plugins_txt_path.mtime
         self.size_plugins_txt = self.plugins_txt_path.size
         return acti, _lo
+
+    def _write_plugins_txt(self, lord, active):
+        self._write_modfile(self.plugins_txt_path, lord, active)
+        #--Update cache info
+        self.mtime_plugins_txt = self.plugins_txt_path.mtime
+        self.size_plugins_txt = self.plugins_txt_path.size
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord):
@@ -361,7 +371,7 @@ class TimestampGame(Game):
             self.mod_infos[ordered].setmtime(mtime)
 
     def _persist_active_plugins(self, active, lord):
-        _write_plugins_txt(self.plugins_txt_path, active, active, _star=False)
+        self._write_plugins_txt(active, active)
 
     def _save_fixed_load_order(self, _removedFiles, _addedFiles, _reordered, fixed_active, lo, active):
         if _removedFiles or _addedFiles or _reordered:
@@ -410,29 +420,37 @@ class TextfileGame(Game):
         cached_active."""
         if not self.loadorder_txt_path.exists():
             mods = cached_active or []
-            if cached_active is None and self.plugins_txt_path.exists(): ##: what if not
-                mods, mods = self._fetch_active_plugins() # will add Skyrim.esm
+            if cached_active is not None and not self.plugins_txt_path.exists():
+                self._write_plugins_txt(cached_active, cached_active)
+                bolt.deprint(
+                    u'Created %s based on cached info' % self.plugins_txt_path)
+            elif cached_active is None and self.plugins_txt_path.exists():
+                mods = self._fetch_active_plugins() # will add Skyrim.esm
             self._persist_load_order(mods, mods)
             bolt.deprint(u'Created %s' % self.loadorder_txt_path)
             return mods
         # ##: TODO(ut): handle desync with plugins txt
         #--Read file
         _acti, lo = self._parse_modfile(self.loadorder_txt_path)
+        self.__update_lo_cache_info()
         return lo
 
     def _fetch_active_plugins(self):
         acti, _lo = self._parse_plugins_txt()
-        if not self.master_path not in acti: # TODO(ut): it should not be !
-            acti.insert(0, self.master_path)
+        if self.master_path in acti:
+            acti.remove(self.master_path)
+            self._write_plugins_txt(acti, acti)
+            bolt.deprint(u'Removed %s from %s' % (
+                self.master_path, self.plugins_txt_path))
+        acti.insert(0, self.master_path)
         return acti
 
     def _persist_load_order(self, lord, active):
-        _write_plugins_txt(self.loadorder_txt_path, lord, lord, _star=False)
+        _write_plugins_txt_(self.loadorder_txt_path, lord, lord, _star=False)
         self.__update_lo_cache_info()
 
     def _persist_active_plugins(self, active, lord):
-        _write_plugins_txt(self.plugins_txt_path, active[1:], active[1:],
-                           _star=False) # we need to chop off Skyrim.esm
+        self._write_plugins_txt(active[1:], active[1:]) # we need to chop off Skyrim.esm
 
     def _save_fixed_load_order(self, _removedFiles, _addedFiles, _reordered,
                                fixed_active, lo, active):
@@ -466,19 +484,18 @@ class AsteriskGame(Game):
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
         create it. Discards information read if cached is passed in."""
-        if not self.plugins_txt_path.exists():
-            ## TODO(ut): preserve cached values
-            _write_plugins_txt(self.plugins_txt_path, [], [], _star=True)
-            bolt.deprint(u'Created %s' % self.plugins_txt_path)
-            active, lo = [], []
-        else: active, lo = self._parse_modfile(self.plugins_txt_path)
+        exists = self.plugins_txt_path.exists()
+        active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
         lo, active = (lo if cached_load_order is None else cached_load_order,
                       active if cached_active is None else cached_active)
+        if not exists:
+            self._write_plugins_txt(lo, active)
+            bolt.deprint(u'Created %s' % self.plugins_txt_path)
         return list(lo), list(active)
 
     def _persist_load_order(self, lord, active):
         assert active # must at least contain Fallout4.esm
-        _write_plugins_txt(self.plugins_txt_path, lord, active, _star=True)
+        self._write_plugins_txt(lord, active)
 
     def _persist_active_plugins(self, active, lord):
         self._persist_load_order(lord, active)
@@ -494,6 +511,9 @@ class AsteriskGame(Game):
         if not path.exists(): return [], []
         acti, lo = _parse_plugins_txt_(path, self.mod_infos, _star=True)
         return acti, lo
+
+    def _write_modfile(self, path, lord, active):
+        _write_plugins_txt_(path, lord, active, _star=True)
 
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
     if name == u'Skyrim':
