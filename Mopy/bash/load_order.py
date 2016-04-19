@@ -36,7 +36,6 @@ in to Bash and on setting lo/active from inside Bash.
 Double underscores and dirty comments are no accident - BETA, I need a Game
 classes hierarchy to handle differences between the games.
 """
-import re
 import time
 import bass
 import bolt
@@ -327,42 +326,6 @@ def _updateCache(lord=None, actiSorted=None):
         bolt.deprint('Error updating load_order cache from liblo')
         _current_lo = __empty
         raise
-
-rePluginsTxtComment = re.compile(u'#.*', re.U)
-def _parse_plugins_txt(path, _star):
-    with path.open('r') as ins:
-        #--Load Files
-        active, modNames = [], []
-        for line in ins:
-            # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
-            # It wont accept filenames in any other encoding
-            try:
-                modName = rePluginsTxtComment.sub(u'', line).strip()
-                if not modName: continue
-                is_active = not _star or modName.startswith(u'*')
-                if _star and is_active: modName = modName[1:]
-                test = bolt.decode(modName)
-            except UnicodeError: continue
-            if bolt.GPath(test) not in bosh.modInfos:
-                # The automatic encoding detector could have returned
-                # an encoding it actually wasn't.  Luckily, we
-                # have a way to double check: modInfos.data
-                for encoding in bolt.encodingOrder:
-                    try:
-                        test2 = unicode(modName, encoding)
-                        if bolt.GPath(test2) not in bosh.modInfos:
-                            continue
-                        modName = bolt.GPath(test2)
-                        break
-                    except UnicodeError:
-                        pass
-                else:
-                    modName = bolt.GPath(test)
-            else:
-                modName = bolt.GPath(test)
-            modNames.append(modName)
-            if is_active: active.append(modName)
-    return active, modNames
 
 def _write_plugins_txt(path, lord, active, _star=False):
     with path.open('wb') as out:
