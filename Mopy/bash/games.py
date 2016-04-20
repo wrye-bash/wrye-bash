@@ -155,8 +155,51 @@ class Game(object):
             cached_load_order = self._fetch_load_order(cached_load_order, cached_active)
         return list(cached_load_order), list(cached_active)
 
-    def set_load_order(self, lord, active, _fixed=False):
-        raise NotImplementedError
+    def set_load_order(self, lord, active, previous_lord=None,
+                       previous_active=None):
+        assert lord is not None or active is not None, \
+            'load order or active must be not None'
+        if lord is not None: self._fix_load_order(lord)
+        if (previous_lord is None or previous_lord != lord) and active is None:
+            # changing load order - must test if active plugins must change too
+            assert previous_active is not None, \
+                'you must pass info on active when setting load order'
+            if previous_lord is not None:
+                prev = set(previous_lord)
+                new = set(lord)
+                deleted = prev - new
+                common = prev & new
+                reordered = any(x != y for x, y in
+                                zip((x for x in previous_lord if x in common),
+                                    (x for x in lord if x in common)))
+                test_active = self._must_update_active(deleted, reordered)
+            else:
+                test_active = True
+            if test_active: active = list(previous_active)
+        if active is not None:
+            assert lord is not None or previous_lord is not None, \
+                'you need to pass a load order in to set active plugins'
+            # a load order is needed for all games to validate active against
+            test = lord if lord is not None else previous_lord
+            self._fix_active_plugins_on_disc(active, test, setting=True)
+        lord = lord if lord is not None else previous_lord
+        active = active if active is not None else previous_active
+        self._persist_order_and_active(active, lord, previous_active,
+                                       previous_lord)
+        assert lord is not None and active is not None, \
+            'returned load order and active must be not None'
+        return lord, active # return what was set or was previously set
+
+    @staticmethod
+    def _must_update_active(deleted, reordered): raise bolt.AbstractError
+
+    def _persist_order_and_active(self, active, lord, previous_active,
+                                  previous_lord):
+        # we need to override this bit for fallout4 to write the file once
+        if previous_lord is None or previous_lord != lord:
+            self._persist_load_order(lord, active)
+        if previous_active is None or previous_active != active:
+            self._persist_active_plugins(active, lord)
 
     def active_changed(self): return self._plugins_txt_modified()
 
@@ -346,6 +389,9 @@ class TimestampGame(Game):
 
     _allow_deactivate_master = True
 
+    @staticmethod
+    def _must_update_active(deleted, reordered): return deleted
+
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
         return self.mod_infos.calculateLO()
@@ -417,6 +463,9 @@ class TextfileGame(Game):
     def __update_lo_cache_info(self):
         self.mtime_loadorder_txt = self.loadorder_txt_path.mtime
         self.size_loadorder_txt = self.loadorder_txt_path.size
+
+    @staticmethod
+    def _must_update_active(deleted, reordered): return deleted or reordered
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
@@ -517,6 +566,15 @@ class AsteriskGame(Game):
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # read the file once
         return self._fetch_load_order(cached_load_order, cached_active)
+
+    @staticmethod
+    def _must_update_active(deleted, reordered): return True
+
+    def _persist_order_and_active(self, active, lord, previous_active,
+                                  previous_lord):
+        if (previous_lord is None or previous_lord != lord) or (
+                previous_active is None or previous_active != active):
+            self._persist_load_order(lord, active)
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):

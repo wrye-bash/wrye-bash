@@ -2214,17 +2214,17 @@ class Plugins:
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        self.lord = load_order.SetActivePlugins(
-            self.lord.lorder(active if active is not None else self.selected),
-            self.lord.loadOrder)
+        self.lord = load_order.SaveLoadOrder(self.lord.loadOrder,
+            self.lord.lorder(active if active is not None else self.selected))
 
     @_cache
-    def saveLoadOrder(self, _selected=None):
-        """Write data to loadorder.txt file (and update plugins.txt too)."""
-        self.lord = load_order.SaveLoadOrder(self.LoadOrder, acti=_selected)
-
     def saveLoadAndActive(self):
-        self.saveLoadOrder(_selected=self.selected)
+        """Write data to loadorder.txt file (and update plugins.txt too)."""
+        if self.selected is not None:
+            dex = {x: i for i, x in enumerate(self.LoadOrder) if
+                   x in set(self.selected)}
+            self.selected.sort(key=dex.__getitem__)
+        self.lord = load_order.SaveLoadOrder(self.LoadOrder,acti=self.selected)
 
     def removeMods(self, plugins, savePlugins=False):
         """Removes the specified mods from the load order."""

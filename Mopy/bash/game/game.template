@@ -51,9 +51,6 @@ exe = u''
 ## Example: (u'Bethesda Softworks\\Oblivion', u'Installed Path')
 regInstallKeys = ()
 
-#--Load order management
-deactivate_master_esm = True # whether master esm is allowed to be deactivated
-
 #--Patch information
 ## URL to download patches for the main game.
 patchURL = u''

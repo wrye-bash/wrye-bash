@@ -807,7 +807,7 @@ class ModList(_ModsUIList):
     def _refreshOnDrop(self):
         #--Save and Refresh
         try:
-            bosh.modInfos.plugins.saveLoadOrder()
+            bosh.modInfos.plugins.saveLoadAndActive()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
         bosh.FileInfos.refresh(bosh.modInfos) # update mtimes conflicts etc

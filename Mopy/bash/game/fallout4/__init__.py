@@ -48,9 +48,6 @@ exe = u'Fallout4.exe'
 #--Registry keys to read to find the install location
 regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
 
-#--Load order management
-deactivate_master_esm = False
-
 #--patch information
 ## URL to download patches for the main game.
 # Update via steam

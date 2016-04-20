@@ -104,172 +104,19 @@ def _get_load_order(cached_load_order=None, cached_active=None):
     """:rtype: list[bolt.Path]"""
     return get_game().get_load_order(cached_load_order, cached_active)
 
-def _indexFirstEsp(lord):
-    indexFirstEsp = 0
-    while indexFirstEsp < len(lord) and bosh.modInfos[
-        lord[indexFirstEsp]].isEsm():
-        indexFirstEsp += 1
-    return indexFirstEsp
-
-def __fixLoadOrder(lord, _selected=None):
-    """HACK: Fix inconsistencies between given loadorder and actually installed
-    mod files as well as impossible load orders - save the fixed order. We
-    need a refreshed bosh.modInfos reflecting the contents of Data/.
-
-    Called in _get_load_order() to fix a newly fetched LO and in
-    SaveLoadOrder() to check if a load order passed in is valid. Needs
-    rethinking as save load and active should be an atomic operation -
-    leads to hacks (like the _selected parameter).
-    :type lord: list[bolt.Path]
-    """
-    oldLord = lord[:]
-    # game's master might be out of place (if using timestamps for load
-    # ordering or a manually edited loadorder.txt) so move it up
-    masterName = bosh.modInfos.masterName
-    try:
-        masterDex = lord.index(masterName)
-    except ValueError:
-        raise bolt.BoltError(u'%s is missing or corrupted' % masterName)
-    if masterDex > 0:
-        bolt.deprint(u'%s has index %d (must be 0)' % (masterName, masterDex))
-        lord.remove(masterName)
-        lord.insert(0, masterName)
-        _reordered = True
-    else: _reordered = False
-    loadOrder = set(lord)
-    modFiles = set(bosh.modInfos.keys())
-    _removedFiles = loadOrder - modFiles # may remove corrupted mods returned
-    # from liblo (text file), we are supposed to take care of that
-    _addedFiles = modFiles - loadOrder
-    # Remove non existent plugins from load order
-    lord[:] = [x for x in lord if x not in _removedFiles]
-    indexFirstEsp = _indexFirstEsp(lord)
-    # See if any esm files are loaded below an esp and reorder as necessary
-    for mod in lord[indexFirstEsp:]:
-        if mod in bosh.modInfos and bosh.modInfos[mod].isEsm():
-            lord.remove(mod)
-            lord.insert(indexFirstEsp, mod)
-            indexFirstEsp += 1
-            _reordered = True
-    # Append new plugins to load order
-    for mod in _addedFiles:
-        if bosh.modInfos[mod].isEsm():
-            lord.insert(indexFirstEsp, mod)
-            indexFirstEsp += 1
-        else: lord.append(mod)
-    if _addedFiles and not usingTxtFile(): # should not occur
-        bolt.deprint(u'Incomplete load order passed in to SaveLoadOrder')
-        lord[:] = bosh.modInfos.calculateLO(mods=lord)
-    # Save changes if necessary
-    if _removedFiles or _addedFiles or _reordered:
-        active_saved = False
-        if _removedFiles or _reordered: # must fix the active too
-            # If _selected is not None we come from SaveLoadOrder which needs
-            # to save _selected too - so fix this list instead of
-            # _current_lo.activeOrdered. If fixed and saved, empty it so we do
-            # not resave it. If selected was empty to begin with we need extra
-            # hacks (wasEmpty in SaveLoadOrder)
-            # fallout 4 adds the further complication that may provide the
-            # active mods from the get_load_order path
-            if _selected is None:
-                if _current_lo is not __empty: # else we are on first refresh
-                    _selected = list(_current_lo.activeOrdered)
-            if _selected is not None and __fixActive(_selected, lord):
-                _selected[:] = [] # avoid resaving
-                active_saved = True
-        bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), reordered(%s)'
-             % (_pl(_addedFiles) or u'None', _pl(_removedFiles) or u'None',
-             u'No' if not _reordered else _pl(oldLord, u'from:\n') +
-                                          _pl(lord, u'\nto:\n')))
-        if bush.game.fsName != u'Fallout4':
-            SaveLoadOrder(lord, _fixed=True)
-        elif not active_saved:
-            SaveLoadOrder(lord, acti=_selected, _fixed=True)
-            if _selected is not None: _selected[:] = [] # avoid resaving
-        return True # changes, saved
-    return False # no changes, not saved
-
-def __fixActive(acti, lord):
-    # filter plugins not present in modInfos - this will disable corrupted too!
-    actiFiltered = [x for x in acti if x in bosh.modInfos] #preserve acti order
-    _removed = set(acti) - set(actiFiltered)
-    if _removed: # take note as we may need to rewrite plugins txt
-        msg = u'__fixActive: active list contains mods not present ' \
-              u'in Data/ directory or corrupted: ' + _pl(_removed) + u'\n'
-        bosh.modInfos.selectedBad = _removed
-    else: msg = u''
-    if not bush.game.deactivate_master_esm:
-        game_master = bolt.GPath(bush.game.masterFiles[0])
-        if not game_master in actiFiltered:
-            actiFiltered.insert(0, game_master)
-            msg += (u'__fixActive: %s not present in active mods' % game_master) + u'\n'
-    addUpdateEsm = False
-    if bush.game.fsName == u'Skyrim':
-        updateEsm = bolt.GPath(u'Update.esm')
-        if updateEsm in lord and not updateEsm in actiFiltered:
-            msg += (u'__fixActive: Update.esm not present in active list '
-                    u'while present in Data folder') + u'\n'
-            addUpdateEsm = True
-    dexDict = {mod:index for index, mod in enumerate(lord)}
-    if usingTxtFile(): # unneeded for oblivion (or for fallout 4 really either)
-        actiSorted = actiFiltered[:]
-        actiSorted.sort(key=dexDict.__getitem__) # all present in lord
-        if actiFiltered != actiSorted: # were mods in an order that disagrees with lord ?
-            msg += (u'__fixActive: active list order of plugins (%s) differs '
-                    u'from supplied load order (%s)') % (
-                _pl(actiFiltered), _pl(actiSorted))
-    else: actiSorted = sorted(actiFiltered, key=dexDict.__getitem__)
-    if addUpdateEsm: # insert after the last master (as does liblo)
-        actiSorted.insert(_indexFirstEsp(actiSorted), updateEsm)
-    # check if we have more than 256 active mods
-    if len(actiSorted) > 255:
-        msg += u'__fixActive: active list contains more than 255 plugins' \
-               u' - the following plugins will be deactivated: '
-        bosh.modInfos.selectedExtra = actiSorted[255:]
-        msg += _pl(bosh.modInfos.selectedExtra)
-    # Check for duplicates
-    mods, duplicates, j = set(), set(), 0
-    for i, mod in enumerate(actiSorted[:]):
-        if mod in mods:
-            del actiSorted[i - j]
-            j += 1
-            duplicates.add(mod)
-        else:
-            mods.add(mod)
-    if duplicates:
-        msg += u'__fixActive: removed duplicate entries from active list : '
-        msg += _pl(duplicates)
-    acti[:] = actiSorted[:255] # chop off extra, and update acti in place
-    if msg:
-        # Notify user - ##: maybe backup previous plugin txt ?
-        bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
-        SetActivePlugins(acti, lord, _fixed=True)
-        return True # changes, saved
-    return False # no changes, not saved
-
-def SaveLoadOrder(lord, acti=None, _fixed=False):
+def SaveLoadOrder(lord, acti=None):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
     as loadorder.txt, and of course rewrite it completely for fallout 4 (
     asterisk method)."""
     actiList = list(acti) if acti is not None else None
-    wasEmpty = acti is not None and actiList == []
-    saved = False
-    if not _fixed: saved = __fixLoadOrder(lord, _selected=actiList)
-    if not saved: # __fixLoadOrder may have saved, avoid resaving
-        if not usingTxtFile():
-            __save_timestamps_load_order(lord)
-        elif bush.game.fsName != u'Fallout4':
-            _write_plugins_txt(_loadorder_txt_path, [], lord, _star=False)
-            _setLoTxtModTime()
-        else:
-            _write_plugins_txt(_plugins_txt_path, lord, actiList or _current_lo.active, _star=True)
-        _reset_mtimes_cache() # Rename this to _notify_modInfos_change_intentional()
-    # but go on saving active (if __fixLoadOrder > __fixActive saved them
-    # condition below should be False)
-    if actiList or wasEmpty: SetActivePlugins(actiList, lord)
-    else: _updateCache(lord=lord, actiSorted=_current_lo.activeOrdered)
+    lordList = list(lord) if lord is not None else None
+    lord, acti = get_game().set_load_order(lordList, actiList,
+                                          list(_current_lo.loadOrder),
+                                          list(_current_lo.activeOrdered))
+    _reset_mtimes_cache()
+    _updateCache(lord=lord, actiSorted=acti)
     return _current_lo
 
 def __save_timestamps_load_order(lord):
@@ -313,17 +160,10 @@ def _updateCache(lord=None, actiSorted=None):
     """
     global _current_lo
     try:
-        if lord is actiSorted is None:
-            lord, actiSorted = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
-            _setLoTxtModTime()
-        elif actiSorted is None: # got a valid load order - now to active...
-            _lo, actiSorted = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
-        elif lord is None:
-            lord, _act = _get_load_order(cached_load_order=lord, cached_active=actiSorted)
-            _setLoTxtModTime()
+        lord, actiSorted = get_game().get_load_order(lord, actiSorted)
         _current_lo = LoadOrder(lord, actiSorted)
     except Exception:
-        bolt.deprint('Error updating load_order cache from liblo')
+        bolt.deprint(u'Error updating load_order cache')
         _current_lo = __empty
         raise
 
@@ -352,16 +192,6 @@ def GetLo(cached=False):
                 ).active_changed() else None
         else: active = loadOrder = None
         _updateCache(loadOrder, active)
-    return _current_lo
-
-def SetActivePlugins(act, lord, _fixed=False): # we need a valid load order to set active
-    act = list(act) # should be ordered to begin with !
-    if not _fixed: saved = __fixActive(act, lord)
-    else: saved =  False
-    if not saved:
-        _write_plugins_txt(_plugins_txt_path, lord, act,
-                           _star=bush.game.fsName == u'Fallout4')
-        _updateCache(lord=lord, actiSorted=act)
     return _current_lo
 
 def usingTxtFile():
@@ -411,7 +241,3 @@ def _setLoTxtModTime():
         global mtimeOrder, sizeOrder
         mtimeOrder, sizeOrder = _loadorder_txt_path.mtime, \
                                 _loadorder_txt_path.size
-
-# helper - print a list
-def _pl(aList, legend=u''):
-    return legend + u', '.join(u'%s' % x for x in aList) # use Path.__unicode__
