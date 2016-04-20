@@ -98,12 +98,6 @@ class LoadOrder(object):
 __empty = LoadOrder()
 _current_lo = __empty # must always be valid (or __empty)
 
-# liblo calls - they include fixup code (which may or may not be
-# needed/working). __fix methods accept lists as output parameters
-def _get_load_order(cached_load_order=None, cached_active=None):
-    """:rtype: list[bolt.Path]"""
-    return get_game().get_load_order(cached_load_order, cached_active)
-
 def SaveLoadOrder(lord, acti=None):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
@@ -118,32 +112,6 @@ def SaveLoadOrder(lord, acti=None):
     _reset_mtimes_cache()
     _updateCache(lord=lord, actiSorted=acti)
     return _current_lo
-
-def __save_timestamps_load_order(lord):
-    """Save timestamps (as few as possible) - modInfos must contain all mods
-    :type lord: list[bolt.Path]
-    """
-    assert set(bosh.modInfos.keys()) == set(lord)
-    if len(lord) == 0: return
-    current = bosh.modInfos.calculateLO()
-    # break conflicts
-    older = bosh.modInfos[current[0]].mtime
-    for i, mod in enumerate(current[1:]):
-        info = bosh.modInfos[mod]
-        if info.mtime == older: break
-        older = info.mtime
-    else: mod = i = None # define i to avoid warning below
-    if mod is not None: # respace all in 60 sec intervals
-        for mod in current[i + 1:]:
-            info = bosh.modInfos[mod]
-            older += 60
-            info.setmtime(older)
-    restamp = []
-    for ordered, mod in zip(lord, current):
-        if ordered == mod: continue
-        restamp.append((ordered, bosh.modInfos[mod].mtime))
-    for ordered, mtime in restamp:
-        bosh.modInfos[ordered].setmtime(mtime)
 
 def _reset_mtimes_cache():
     """Reset the mtimes cache or LockLO feature will revert intentional
@@ -166,22 +134,6 @@ def _updateCache(lord=None, actiSorted=None):
         bolt.deprint(u'Error updating load_order cache')
         _current_lo = __empty
         raise
-
-def _write_plugins_txt(path, lord, active, _star=False):
-    with path.open('wb') as out:
-        #--Load Files
-        def asterisk(active_set=set(active)):
-            return '*' if _star and (mod in active_set) else ''
-        for mod in (_star and lord) or active:
-            # Ok, this seems to work for Oblivion, but not Skyrim
-            # Skyrim seems to refuse to have any non-cp1252 named file in
-            # plugins.txt.  Even activating through the SkyrimLauncher
-            # doesn't work.
-            try:
-                out.write(asterisk() + bolt.encode(mod.s))
-                out.write('\r\n')
-            except UnicodeEncodeError:
-                pass
 
 def GetLo(cached=False):
     if not cached or _current_lo is __empty:
