@@ -2194,7 +2194,7 @@ class Plugins:
        else should access it directly and nothing else should access load_order
        directly - only via this class (except usingTxtFile() for now). Mainly
        exposes _LoadOrder_ and _selected_ caches used by modInfos to manipulate
-       the load order/active and then save at once. May disappear in a later
+       the load order/active and then save at once. Must disappear in a later
        iteration of the load order API."""
     def __init__(self):
         if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
@@ -2242,11 +2242,11 @@ class Plugins:
         self.LoadOrder.insert(oldIndex, newName)
 
     @_cache
-    def refreshLoadOrder(self,forceRefresh=False):
+    def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
         """Reload for plugins.txt or masterlist.txt changes."""
         oldLord = self.lord
-        if forceRefresh or load_order.haveLoFilesChanged():
-            self.lord = load_order.GetLo()
+        self.lord = load_order.GetLo(cached=not forceRefresh,
+                                     cached_active=not forceActive)
         return oldLord != self.lord
 
 #------------------------------------------------------------------------------
@@ -3131,7 +3131,9 @@ class FileInfos(DataDict):
             # items deleted outside Bash
             for d in set(self.table.keys()) &  set(_deleted):
                 del self.table[d]
-        return bool(_added) or bool(_updated) or bool(_deleted)
+        change = bool(_added) or bool(_updated) or bool(_deleted)
+        if not change: return change
+        return _added, _updated, _deleted
 
     #--Right File Type?
     @classmethod
@@ -3410,12 +3412,16 @@ class ModInfos(FileInfos):
         """Update file data for additions, removals and date changes."""
         # TODO: make sure that calling two times this in a row second time
         # ALWAYS returns False - was not true when autoghost run !
-        hasChanged = scanData and FileInfos.refresh(self)
+        hasChanged = deleted = False
+        if scanData:
+            change = FileInfos.refresh(self)
+            if change: _added, _updated, deleted = change
+            hasChanged = bool(change)
         if self.canSetTimes() and hasChanged:
             self._resetMTimes()
         _modTimesChange = _modTimesChange and not load_order.usingTxtFile()
         hasChanged += self.plugins.refreshLoadOrder(
-            forceRefresh=hasChanged or _modTimesChange)
+            forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
         hasGhosted = self.autoGhost(force=False)
         if hasChanged or _modTimesChange: self.refreshInfoLists()
         self.reloadBashTags()

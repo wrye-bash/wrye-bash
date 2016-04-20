@@ -135,28 +135,18 @@ def _updateCache(lord=None, actiSorted=None):
         _current_lo = __empty
         raise
 
-def GetLo(cached=False):
-    if not cached or _current_lo is __empty:
-        if _current_lo is not __empty:
-            loadOrder = _current_lo.loadOrder if not get_game(
-                ).load_order_changed() else None
-            active = _current_lo.activeOrdered if not get_game(
-                ).active_changed() else None
-        else: active = loadOrder = None
-        _updateCache(loadOrder, active)
+def GetLo(cached=False, cached_active=True):
+    if _current_lo is not __empty:
+        loadOrder = _current_lo.loadOrder if (
+            cached and not get_game().load_order_changed()) else None
+        active = _current_lo.activeOrdered if (
+            cached_active and not get_game().active_changed()) else None
+    else: active = loadOrder = None
+    _updateCache(loadOrder, active)
     return _current_lo
 
 def usingTxtFile():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
-
-def haveLoFilesChanged(): # YAK !
-    """True if plugins.txt or loadorder.txt file has changed."""
-    return get_game().active_changed() or _loadorder_txt_changed()
-
-def _loadorder_txt_changed():
-    return _loadorder_txt_path.exists() and (
-            mtimeOrder != _loadorder_txt_path.mtime or
-            sizeOrder  != _loadorder_txt_path.size)
 
 def swap(oldPath, newPath):
     """Save current plugins into oldPath directory and load plugins from
@@ -185,11 +175,3 @@ else:
     _dir = bass.dirs['userApp']
 _plugins_txt_path = _dir.join(u'plugins.txt')
 _loadorder_txt_path = _dir.join(u'loadorder.txt')
-mtimeOrder = 0
-sizeOrder = 0
-
-def _setLoTxtModTime():
-    if usingTxtFile() and _loadorder_txt_path.exists():
-        global mtimeOrder, sizeOrder
-        mtimeOrder, sizeOrder = _loadorder_txt_path.mtime, \
-                                _loadorder_txt_path.size
