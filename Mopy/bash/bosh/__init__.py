@@ -7147,37 +7147,56 @@ class Save_NPCEdits:
 
 # Mergeability ----------------------------------------------------------------
 ##: belong to patcher/patch_files (?) but used in modInfos - cyclic imports
-def isPBashMergeable(modInfo,verbose=True):
-    """Returns True or error message indicating whether specified mod is mergeable."""
-    reasons = u''
-
+def _is_mergeable_no_load(modInfo, verbose):
+    reasons = []
     if modInfo.isEsm():
         if not verbose: return False
-        reasons += u'\n.    '+_(u'Is esm.')
+        reasons.append(u'\n.    '+_(u'Is esm.'))
     #--Bashed Patch
-    if modInfo.header.author == u"BASHED PATCH":
+    if modInfo.header.author == u'BASHED PATCH':
         if not verbose: return False
-        reasons += u'\n.    '+_(u'Is Bashed Patch.')
-
+        reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
     #--Bsa / voice?
     if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
         if not verbose: return False
         hasBsa, hasVoices = modInfo.hasResources()
         if hasBsa:
-            reasons += u'\n.    '+_(u'Has BSA archive.')
+            reasons.append(u'\n.    '+_(u'Has BSA archive.'))
         if hasVoices:
-            reasons += u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s
+            reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
+    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
+    tags = modInfos[modInfo.name].getBashTags()
+    if u'NoMerge' in tags:
+        if not verbose: return False
+        reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
+    if reasons: return reasons
+    return True
 
+def pbash_mergeable_no_load(modInfo, verbose):
+    reasons = _is_mergeable_no_load(modInfo, verbose)
+    if isinstance(reasons, list):
+        reasons = u''.join(reasons)
+    elif not reasons:
+        return False # non verbose mode
+    else: # True
+        reasons = u''
     #--Missing Strings Files?
     if modInfo.isMissingStrings():
         if not verbose: return False
         reasons += u'\n.    '+_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
             modInfo.name.sbody, oblivionIni.getSetting('General','sLanguage',u'English'))
+    if reasons: return reasons
+    return True
 
-    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-    if u'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
-        if not verbose: return False
-        reasons += u'\n.    '+_(u"Has 'NoMerge' tag.")
+def isPBashMergeable(modInfo,verbose=True):
+    """Returns True or error message indicating whether specified mod is mergeable."""
+    reasons = pbash_mergeable_no_load(modInfo, verbose)
+    if isinstance(reasons, unicode):
+        pass
+    elif not reasons:
+        return False # non verbose mode
+    else: # True
+        reasons = u''
     #--Load test
     mergeTypes = set([recClass.classType for recClass in bush.game.mergeClasses])
     modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
@@ -7214,35 +7233,13 @@ def isPBashMergeable(modInfo,verbose=True):
     if reasons: return reasons
     return True
 
-def _modIsMergeableNoLoad(modInfo,verbose):
-    reasons = []
-
-    if modInfo.isEsm():
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is esm.'))
-    #--Bashed Patch
-    if modInfo.header.author == u'BASHED PATCH':
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
-
-    #--Bsa / voice?
-    if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
-        if not verbose: return False
-        hasBsa, hasVoices = modInfo.hasResources()
-        if hasBsa:
-            reasons.append(u'\n.    '+_(u'Has BSA archive.'))
-        if hasVoices:
-            reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
-
-    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-    tags = modInfos[modInfo.name].getBashTags()
-    if u'NoMerge' in tags:
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
-    if reasons: return reasons
-    return True
+def cbash_mergeable_no_load(modInfo, verbose):
+    """Check if mod is mergeable without taking into account the rest of mods"""
+    return _is_mergeable_no_load(modInfo, verbose)
 
 def _modIsMergeableLoad(modInfo,verbose):
+    """Check if mod is mergeable, loading it and taking into account the
+    rest of mods."""
     allowMissingMasters = {u'Filter', u'IIM', u'InventOnly'}
     tags = modInfos[modInfo.name].getBashTags()
     reasons = []
@@ -7295,7 +7292,7 @@ def _modIsMergeableLoad(modInfo,verbose):
 # noinspection PySimplifyBooleanCheck
 def isCBashMergeable(modInfo,verbose=True):
     """Returns True or error message indicating whether specified mod is mergeable."""
-    canmerge = _modIsMergeableNoLoad(modInfo, verbose)
+    canmerge = cbash_mergeable_no_load(modInfo, verbose)
     if verbose:
         loadreasons = _modIsMergeableLoad(modInfo, verbose)
         reasons = []
