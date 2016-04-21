@@ -2219,10 +2219,9 @@ class Plugins:
     @_cache
     def saveLoadAndActive(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
-        if self.selected is not None:
-            dex = {x: i for i, x in enumerate(self.LoadOrder) if
-                   x in set(self.selected)}
-            self.selected.sort(key=dex.__getitem__)
+        dex = {x: i for i, x in enumerate(self.LoadOrder) if
+               x in set(self.selected)}
+        self.selected.sort(key=dex.__getitem__) # order in their load order
         self.lord = load_order.SaveLoadOrder(self.LoadOrder,acti=self.selected)
 
     def removeMods(self, plugins, savePlugins=False):
@@ -4016,9 +4015,6 @@ class ModInfos(FileInfos):
             # noinspection PyUnusedLocal
             def timestamps(p): pass
         return timestamps
-
-    @staticmethod # this belongs to load_order.py !
-    def usingTxtFile(): return load_order.usingTxtFile()
 
     def calculateLO(self, mods=None): # excludes corrupt mods
         if mods is None: mods = self.keys()

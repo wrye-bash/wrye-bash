@@ -267,7 +267,7 @@ class File_Redate(AppendableLink, ItemLink):
     text = _(u'Redate...')
     help = _(u"Move the selected files to start at a specified date.")
 
-    def _append(self, window): return not bosh.modInfos.usingTxtFile()
+    def _append(self, window): return not bosh.load_order.usingTxtFile()
 
     @balt.conversation
     def Execute(self):
