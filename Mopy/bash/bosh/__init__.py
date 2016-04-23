@@ -3561,6 +3561,7 @@ class ModInfos(FileInfos):
         is_mergeable = isCBashMergeable if doCBash else isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
+        result, tagged_no_merge = collections.OrderedDict(), set()
         for i,fileName in enumerate(names):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
@@ -3574,9 +3575,7 @@ class ModInfos(FileInfos):
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
-                #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
-                if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
-                    canMerge = False
+            result[fileName] = canMerge
             # noinspection PySimplifyBooleanCheck
             if canMerge == True:
                 self.mergeable.add(fileName)
@@ -3585,9 +3584,11 @@ class ModInfos(FileInfos):
                 if canMerge == u'\n.    '+_(u"Has 'NoMerge' tag."):
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
                     self.mergeable.add(fileName)
+                    tagged_no_merge.add(fileName)
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
                     self.mergeable.discard(fileName)
+        return result, tagged_no_merge
 
     def reloadBashTags(self):
         """Reloads bash tags for all mods set to receive automatic bash tags."""
@@ -7292,6 +7293,10 @@ def _modIsMergeableLoad(modInfo,verbose):
 # noinspection PySimplifyBooleanCheck
 def isCBashMergeable(modInfo,verbose=True):
     """Returns True or error message indicating whether specified mod is mergeable."""
+    if modInfo.name.s == u"Oscuro's_Oblivion_Overhaul.esp":
+        if verbose: return u'\n.    ' + _(
+            u'Marked non-mergeable at request of mod author.')
+        return False
     canmerge = cbash_mergeable_no_load(modInfo, verbose)
     if verbose:
         loadreasons = _modIsMergeableLoad(modInfo, verbose)

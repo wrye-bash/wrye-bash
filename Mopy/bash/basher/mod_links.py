@@ -776,40 +776,24 @@ class Mod_MarkMergeable(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        yes, no, nopes = [], [], []
-        mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
-        with balt.BusyCursor():
-            for fileName in map(GPath,self.selected):
-                if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
-                fileInfo = bosh.modInfos[fileName]
-                if self.doCBash:
-                    if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
-                        reason = u'\n.    '+_(u'Marked non-mergeable at request of mod author.')
-                    else:
-                        reason = bosh.isCBashMergeable(fileInfo,True)
-                else:
-                    reason = bosh.isPBashMergeable(fileInfo,True)
-
-                if reason == True:
-                    mod_mergeInfo[fileName] = (fileInfo.size,True)
-                    yes.append(fileName)
-                else:
-                    if (u'\n.    '+_(u"Has 'NoMerge' tag.")) in reason:
-                        mod_mergeInfo[fileName] = (fileInfo.size,True)
-                    else:
-                        mod_mergeInfo[fileName] = (fileInfo.size,False)
-                    no.append(u"%s:%s" % (fileName.s,reason))
-                    nopes.append(fileName)
-            message = u'== %s ' % ([u'Python',u'CBash'][self.doCBash])+_(u'Mergeability')+u'\n\n'
-            if yes:
-                message += u'=== ' + _(
-                    u'Mergeable') + u'\n* ' + u'\n\n* '.join(x.s for x in yes)
-            if yes and no:
-                message += u'\n\n'
-            if no:
-                message += u'=== ' + _(
-                    u'Not Mergeable') + u'\n* ' + '\n\n* '.join(no)
-            self.window.RefreshUI(files=yes + nopes, refreshSaves=False)
+        with balt.Progress(self.text + u' ' * 30) as prog:
+            result, tagged_no_merge = bosh.modInfos.rescanMergeable(
+                self.selected, prog, self.doCBash)
+        yes = [x for x in self.selected if
+               x not in tagged_no_merge and x in bosh.modInfos.mergeable]
+        no = set(self.selected) - set(yes)
+        no = [u"%s:%s" % (x, y) for x, y in result.iteritems() if x in no]
+        message = u'== %s ' % ([u'Python', u'CBash'][self.doCBash]) + _(
+            u'Mergeability') + u'\n\n'
+        if yes:
+            message += u'=== ' + _(u'Mergeable') + u'\n* ' + u'\n\n* '.join(
+                x.s for x in yes)
+        if yes and no:
+            message += u'\n\n'
+        if no:
+            message += u'=== ' + _(u'Not Mergeable') + u'\n* ' + '\n\n* '.join(
+                no)
+        self.window.RefreshUI(files=self.selected, refreshSaves=False)
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
