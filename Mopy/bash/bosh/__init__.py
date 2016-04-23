@@ -5393,6 +5393,7 @@ class InstallerMarker(Installer):
         if newName == archive:
             return False
         #--Add the marker to Bash and remove old one
+        installer.archive = newName.s
         data[newName] = installer
         del data[archive]
         return True, False, False
@@ -5923,6 +5924,10 @@ class InstallersData(DataDict):
         self.data = data.get('installers', {})
         self.data_sizeCrcDate = data.get('sizeCrcDate', {})
         self.crc_installer = data.get('crc_installer', {})
+        # fixup: all markers had their archive attribute set to u'===='
+        for key, value in self.iteritems():
+            if isinstance(value, InstallerMarker):
+                value.archive = key.s
         self.loaded = True
         return True
 
@@ -6381,6 +6386,7 @@ class InstallersData(DataDict):
         """Move specified archives to specified position."""
         old_ordered = self.sorted_pairs(set(self.data) - set(moveList))
         new_ordered = self.sorted_pairs(moveList)
+        if newPos >= len(self.keys()): newPos = len(self.keys()) - 1
         for index,(archive,installer) in enumerate(old_ordered[:newPos]):
             installer.order = index
         for index,(archive,installer) in enumerate(new_ordered):

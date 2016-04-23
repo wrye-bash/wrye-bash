@@ -2391,6 +2391,8 @@ class InstallersList(balt.UIList):
         elif event.CmdDown() and code == ord('V'):
             ##Ctrl+V
             balt.clipboardDropFiles(10, self.OnDropFiles)
+        # Enter: Open selected installers
+        elif code in balt.wxReturn: self.OpenSelected()
         else:
             event.Skip()
 
@@ -2426,8 +2428,6 @@ class InstallersList(balt.UIList):
             sel = map(lambda x: bass.dirs['installers'].join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        # Enter: Open selected installers
-        elif code in balt.wxReturn: self.OpenSelected()
         super(InstallersList, self).OnKeyUp(event)
 
     # Installer specific ------------------------------------------------------
@@ -3083,6 +3083,12 @@ class ScreensList(balt.UIList):
             self.SelectItemsNoCallback(newselected)
             event.Veto()
 
+    def OnChar(self,event):
+        # Enter: Open selected screens
+        code = event.GetKeyCode()
+        if code in balt.wxReturn: self.OpenSelected()
+        else: super(ScreensList, self).OnKeyUp(event)
+
     def OnKeyUp(self,event):
         """Char event: Activate selected items, select all items"""
         code = event.GetKeyCode()
@@ -3091,8 +3097,6 @@ class ScreensList(balt.UIList):
             sel = map(lambda x: bosh.screensData.dir.join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
-        # Enter: Open selected screens
-        elif code in balt.wxReturn: self.OpenSelected()
         super(ScreensList, self).OnKeyUp(event)
 
 #------------------------------------------------------------------------------
