@@ -1464,6 +1464,7 @@ class Mod_CopyToEsmp(EnabledLink):
         self.text = _(u'Copy to Esp') if self.isEsm else _(u'Copy to Esm')
 
     def _enable(self):
+        """Disable if selected are mixed esm/p's or inverted mods."""
         for item in self.selected:
             fileInfo = bosh.modInfos[item]
             if fileInfo.isInvertedMod() or fileInfo.isEsm() != self.isEsm:
@@ -1592,8 +1593,10 @@ class Mod_FlipSelf(EnabledLink):
             fileInfo.writeHeader()
         with balt.BusyCursor():
             bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
+            if self.isEsm: # converted to esps - rescan mergeable
+                bosh.modInfos.rescanMergeable(self.selected, bolt.Progress())
             # refreshSaves=True, see Mod_FlipMasters
-            self.window.RefreshUI(files=self.selected, refreshSaves=True)
+        self.window.RefreshUI(files=self.selected, refreshSaves=True)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink):
@@ -1638,10 +1641,12 @@ class Mod_FlipMasters(OneItemLink):
                 updated.append(masterPath)
         with balt.BusyCursor():
             bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # esms
+            if not self.toEsm: # converted to esps - rescan mergeable
+                bosh.modInfos.rescanMergeable(updated, bolt.Progress())
             # will be moved to the top - note that modification times won't
             # change - so mods will revert to their original position once back
             # to esp from esm (Oblivion etc). Refresh saves due to esms move
-            self.window.RefreshUI(files=updated, refreshSaves=True)
+        self.window.RefreshUI(files=updated, refreshSaves=True)
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):

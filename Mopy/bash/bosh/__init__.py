@@ -104,7 +104,7 @@ reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]
 reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
 reExGroup = re.compile(u'(.*?),',re.U)
 reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
-reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
+_reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
@@ -2281,7 +2281,7 @@ class MasterInfo:
         if self.modInfo:
             return self.modInfo.isEsm()
         else:
-            return reEsmExt.search(self.name.s)
+            return _reEsmExt.search(self.name.s)
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -2378,7 +2378,7 @@ class FileInfo(_AFileInfo):
         if self.header:
             return int(self.header.flags1) & 1 == 1
         else:
-            return bool(reEsmExt.search(self.name.s)) and False
+            return bool(_reEsmExt.search(self.name.s)) and False
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         return (self.isMod() and self.header and
@@ -3120,7 +3120,7 @@ class FileInfos(DataDict):
                     self.corrupted.pop(name,None)
                     if isAdded: _added.add(name)
                     elif isUpdated: _updated.add(name)
-            newNames.add(name)
+            newNames.add(name) # will add known corrupted too
         _deleted = oldNames - newNames
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
@@ -3429,7 +3429,7 @@ class ModInfos(FileInfos):
         hasMissingStrings = self._refreshMissingStrings()
         self.setOblivionVersions()
         oldMergeable = set(self.mergeable)
-        scanList = self.refreshMergeable()
+        scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
         if scanList:
             with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
@@ -3533,19 +3533,21 @@ class ModInfos(FileInfos):
         #--Refresh merged/imported lists.
         self.merged,self.imported = self.getSemiActive(set(self.activeCached))
 
-    def refreshMergeable(self):
+    def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
-        #--Mods that need to be refreshed.
+        #--Mods that need to be rescanned - call rescanMergeable !
         newMods = []
         self.mergeable.clear()
         name_mergeInfo = self.table.getColumn('mergeInfo')
         #--Add known/unchanged and esms
         for mpath, modInfo in self.iteritems():
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
-            if size == modInfo.size:
-                if canMerge: self.mergeable.add(mpath)
-            elif reEsmExt.search(mpath.s):
+            # if esm bit was flipped size won't change, so check this first
+            if modInfo.isEsm():
                 name_mergeInfo[mpath] = (modInfo.size, False)
+                self.mergeable.discard(mpath)
+            elif size == modInfo.size:
+                if canMerge: self.mergeable.add(mpath)
             else:
                 newMods.append(mpath)
         return newMods
