@@ -4327,16 +4327,10 @@ class BashApp(wx.App):
                     balt.sizes[key.__name__] = value
                     del balt.sizes[key]
         #--Current Version
-        settings['bash.version'] = 43
         if settings['bash.version'] != GetBashVersion():
             settings['bash.version'] = GetBashVersion()
-            # rescan mergeability
-            if not CBash: #Because it is rescanned on showing of patch dialogue anyways so that would double up in CBash Mode.
-                nullProgress = bolt.Progress()
-                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
-        elif settings['bash.CBashEnabled'] != bool(CBash) and not CBash:
-            nullProgress = bolt.Progress()
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
+            # rescan mergeability on version upgrade to detect new mergeable
+            bosh.modInfos.rescanMergeable(bosh.modInfos.data, bolt.Progress())
         settings['bash.CBashEnabled'] = bool(CBash)
 
 # Initialization --------------------------------------------------------------
