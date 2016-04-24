@@ -883,20 +883,22 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
+            prog = None
             if self.doCBash:
                 CBash_PatchFile.patchTime = fileInfo.mtime
                 CBash_PatchFile.patchName = fileInfo.name
-                nullProgress = bolt.Progress()
-                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
-                self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
+                prog = bolt.Progress()
             else:
                 PatchFile.patchTime = fileInfo.mtime
                 PatchFile.patchName = fileInfo.name
                 if bosh.settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
-                    with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:
-                        bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
-                    self.window.RefreshUI(refreshSaves=False) #rescan mergeable
+                    prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
+            if prog is not None:
+                with prog: # cbash mode had verbose True...
+                    bosh.modInfos.rescanMergeable(bosh.modInfos.data, prog,
+                                                  self.doCBash)
+                self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
 
         #--Check if we should be deactivating some plugins
         def less(modName, dex=bosh.modInfos.loIndexCached):
