@@ -32,7 +32,7 @@ import struct
 from . import BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
-from .. import bass, bosh, bolt, balt, bush, parsers
+from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
@@ -317,7 +317,7 @@ class Save_DiffMasters(EnabledLink):
         oldMasters = set(oldInfo.masterNames)
         if len(self.selected) == 1:
             newName = GPath(_(u'Active Masters'))
-            newMasters = set(bosh.modInfos.activeCached)
+            newMasters = set(load_order.activeCached())
         else:
             newName = oldNew[1]
             newInfo = self.window.data_store[GPath(newName)]
@@ -831,7 +831,7 @@ class Save_UpdateNPCLevels(EnabledLink):
     help = _(u'Update NPC levels from active mods')
 
     def _enable(self):
-        return bool(self.selected and bosh.modInfos.activeCached)
+        return bool(self.selected and load_order.activeCached())
 
     def Execute(self):
         message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
@@ -842,7 +842,7 @@ class Save_UpdateNPCLevels(EnabledLink):
             npc_info = {}
             loadFactory = parsers.LoadFactory(
                     False, bosh.MreRecord.type_class['NPC_'])
-            ordered = list(bosh.modInfos.activeCached)
+            ordered = list(load_order.activeCached())
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):

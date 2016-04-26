@@ -25,6 +25,7 @@ import time
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
+from .. import load_order
 from .. import bass
 from ..bosh import ModInfo
 from ..parsers import LoadFactory, ModFile, MasterSet
@@ -52,7 +53,7 @@ class _PFile:
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
         dex = bosh.modInfos.loIndexCached
-        loadMods = [name for name in bosh.modInfos.activeCached if
+        loadMods = [name for name in load_order.activeCached() if
                     dex(name) < dex(self.__class__.patchName)]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")

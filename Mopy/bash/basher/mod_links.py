@@ -29,7 +29,7 @@ import StringIO
 import collections
 import copy
 import os
-from .. import bass, bosh, bolt, balt, bush, parsers
+from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
@@ -840,7 +840,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
 
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        if not bosh.modInfos.activeCached:
+        if not load_order.activeCached():
             self._showWarning(
                 _(u'That which does not exist cannot be patched.') + u'\n' +
                 _(u'Load some mods and try again.'),
@@ -887,7 +887,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         #--Check if we should be deactivating some plugins
         def less(modName, dex=bosh.modInfos.loIndexCached):
             return dex(modName) < dex(fileName)
-        ActivePriortoPatch = [x for x in bosh.modInfos.activeCached if less(x)]
+        ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
         unfiltered = [x for x in ActivePriortoPatch if
                       u'Filter' in bosh.modInfos[x].getBashTags()]
         merge = [x for x in ActivePriortoPatch if
@@ -958,7 +958,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         previousMods = set()
         missing = collections.defaultdict(list)
         delinquent = collections.defaultdict(list)
-        for mod in bosh.modInfos.activeCached:
+        for mod in load_order.activeCached():
             if mod == fileName: break
             for master in bosh.modInfos[mod].header.masters:
                 if not bosh.modInfos.isActiveCached(master):

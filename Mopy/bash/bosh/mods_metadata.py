@@ -25,7 +25,7 @@ import os
 import re
 import struct
 
-from .. import balt, bolt, bush, bass, loot, libbsa
+from .. import balt, bolt, bush, bass, loot, libbsa, load_order
 from ..bolt import GPath, BoltError, deprint, sio
 from ..brec import ModReader, MreRecord, ModError
 from ..cint import ObBaseRecord, ObCollection
@@ -336,7 +336,7 @@ class ConfigHelpers:
         """Checks currently loaded mods against ruleset.
            scanDirty should be the instance of ModChecker, to scan."""
         from . import modInfos
-        active = set(modInfos.activeCached)
+        active = set(load_order.activeCached())
         merged = modInfos.merged
         imported = modInfos.imported
         activeMerged = active | merged
@@ -448,7 +448,7 @@ class ConfigHelpers:
             else:
                 log.setHeader(warning+_(u'Missing/Delinquent Masters'))
                 previousMods = set()
-                for mod in modInfos.activeCached:
+                for mod in load_order.activeCached():
                     loggedMod = False
                     for master in modInfos[mod].header.masters:
                         if master not in active:

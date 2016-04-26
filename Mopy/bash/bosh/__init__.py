@@ -2967,12 +2967,12 @@ class SaveInfo(FileInfo):
         status = FileInfo.getStatus(self)
         masterOrder = self.masterOrder
         #--File size?
-        if status > 0 or len(masterOrder) > len(modInfos.activeCached):
+        if status > 0 or len(masterOrder) > len(load_order.activeCached()):
             return status
         #--Current ordering?
-        if masterOrder != modInfos.activeCached[:len(masterOrder)]:
+        if masterOrder != load_order.activeCached()[:len(masterOrder)]:
             return status
-        elif masterOrder == modInfos.activeCached:
+        elif masterOrder == load_order.activeCached():
             return -20
         else:
             return -10
@@ -3342,12 +3342,6 @@ class ModInfos(FileInfos):
     def isActiveCached(self, mod):
         """Return true if the mod is in the current active mods cache."""
         return mod in self.plugins.lord.active
-    @property
-    def activeCached(self):
-        """Return the currently cached active mods in load order as a tuple.
-        :rtype : tuple
-        """
-        return self.plugins.lord.activeOrdered
     def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
     def loIndexCachedOrMax(self, mod):
         try: return self.loIndexCached(mod)
@@ -3523,7 +3517,7 @@ class ModInfos(FileInfos):
         mtime_selected = self.mtime_selected
         mtime_selected.clear()
         self.exGroup_mods.clear()
-        for modName in self.activeCached:
+        for modName in load_order.activeCached():
             mtime = modInfos[modName].mtime
             mtime_selected[mtime].append(modName)
             maExGroup = reExGroup.match(modName.s)
@@ -3531,7 +3525,7 @@ class ModInfos(FileInfos):
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(set(self.activeCached))
+        self.merged,self.imported = self.getSemiActive(set(load_order.activeCached()))
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -3701,7 +3695,7 @@ class ModInfos(FileInfos):
                 merged,imported = self.getSemiActive(present)
             else:
                 log.setHeader(head+_(u'Active Mod Files:'))
-                masters = set(self.activeCached)
+                masters = set(load_order.activeCached())
                 merged,imported = self.merged,self.imported
             allMods = masters | merged | imported
             allMods = self.getOrdered([x for x in allMods if x in self])
@@ -3856,7 +3850,7 @@ class ModInfos(FileInfos):
         if doSave: self.plugins.saveActive()
 
     def selectAll(self):
-        toActivate = set(self.activeCached)
+        toActivate = set(load_order.activeCached())
         try:
             def _select(m):
                 if not m in toActivate:
@@ -3941,7 +3935,7 @@ class ModInfos(FileInfos):
 
     def _ini_files(self, descending=False):
         if bush.game.fsName == u'Skyrim':
-            iniPaths = (self[name].getIniPath() for name in self.activeCached)
+            iniPaths = (self[name].getIniPath() for name in load_order.activeCached())
             iniFiles = [IniFile(iniPath) for iniPath in iniPaths if
                         iniPath.exists()]
             if descending: iniFiles.reverse()
@@ -6817,13 +6811,13 @@ class InstallersData(DataDict):
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []
-        getBSAOrder = lambda b: modInfos.activeCached.index(b[1].root + ".esp") ##: why list() ?
+        getBSAOrder = lambda b: load_order.activeCached().index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
             # Create list of active BSA files in srcInstaller
             srcFiles = srcInstaller.data_sizeCrc
             srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
-#            print("Ordered: {}".format(modInfos.activeCached))
+#            print("Ordered: {}".format(load_order.activeCached()))
             activeSrcBSAFiles = [x for x in srcBSAFiles if modInfos.isActiveCached(x.root + ".esp")]
             try:
                 bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]

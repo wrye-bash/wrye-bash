@@ -26,7 +26,7 @@
 points to BashFrame.modList singleton."""
 
 import re as _re
-from .. import bosh, balt, parsers
+from .. import bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
@@ -127,7 +127,7 @@ class Mods_LoadList(ChoiceLink):
                                         editorData)
         class _SaveLink(EnabledLink):
             text = _(u'Save List...')
-            def _enable(self): return bool(bosh.modInfos.activeCached)
+            def _enable(self): return bool(load_order.activeCached())
             def Execute(self):
                 newItem = self._askText(_(u'Save current load list as:'))
                 if not newItem: return
@@ -136,7 +136,7 @@ class Mods_LoadList(ChoiceLink):
                                 u'characters long.')
                     return self._showError(message)
                 Mods_LoadList.loadListsDict[newItem] = list(
-                    bosh.modInfos.activeCached)
+                    load_order.activeCached())
                 bosh.settings.setChanged('bash.loadLists.data')
         self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
                            SeparatorLink()]

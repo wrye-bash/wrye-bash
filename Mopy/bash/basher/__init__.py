@@ -66,7 +66,7 @@ import wx.gizmos
 
 #--Localization
 #..Handled by bosh, so import that.
-from .. import bush, bosh, bolt, bass, env
+from .. import bush, bosh, bolt, bass, env, load_order
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, Path, AbstractError, formatInteger, formatDate, round_size
@@ -308,7 +308,7 @@ class _ModsUIList(balt.UIList):
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            items.sort(key=lambda x: x not in set(bosh.modInfos.activeCached
+            items.sort(key=lambda x: x not in set(load_order.activeCached()
                 ) | bosh.modInfos.imported | bosh.modInfos.merged)
 
     def forceEsmFirst(self): return self.sort in _ModsUIList._esmsFirstCols
@@ -329,8 +329,8 @@ class MasterList(_ModsUIList):
     def _activeModsFirst(self, items):
         if self.selectedFirst:
             items.sort(key=lambda x: self.data_store[x].name not in set(
-                bosh.modInfos.activeCached) | bosh.modInfos.imported
-                                            | bosh.modInfos.merged)
+                load_order.activeCached()) | bosh.modInfos.imported
+                                           | bosh.modInfos.merged)
     _extra_sortings = [_ModsUIList._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
     #--Labels
@@ -415,7 +415,7 @@ class MasterList(_ModsUIList):
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
         loadOrderIndex = self.loadOrderNames.index(masterName)
-        ordered = bosh.modInfos.activeCached
+        ordered = load_order.activeCached()
         if mi != loadOrderIndex: # there are active masters out of order
             return 20  # orange
         elif status > 0:
@@ -978,13 +978,13 @@ class ModList(_ModsUIList):
         refreshNeeded = False
         for item in mods:
             if item in removed or item in notDeactivatable: continue
-            oldFiles = bosh.modInfos.activeCached
+            oldFiles = load_order.activeCached()
             fileName = GPath(item)
             #--Unselect?
             if self.data_store.isActiveCached(fileName):
                 try:
                     self.data_store.unselect(fileName, doSave=True)
-                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
+                    changed = bolt.listSubtract(oldFiles, load_order.activeCached())
                     if len(changed) > (fileName in changed):
                         changed.remove(fileName)
                         changed = [x.s for x in changed]
@@ -1728,7 +1728,7 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
-        len(bosh.modInfos.activeCached), len(bosh.modInfos.data))
+        len(load_order.activeCached()), len(bosh.modInfos.data))
 
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
