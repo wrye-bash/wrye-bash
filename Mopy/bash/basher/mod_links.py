@@ -1548,7 +1548,22 @@ class Mod_DecompileAll(EnabledLink):
                 self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
-class Mod_FlipSelf(EnabledLink):
+class _Esm_Flip(EnabledLink):
+
+    def _esm_flip_refresh(self, espify, updated):
+        with balt.BusyCursor():
+            ##: HACK: forcing active refresh cause mods may be reordered and
+            # we then need to sync order in skyrim's plugins.txt
+            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True,
+                                                   forceActive=True)
+            if espify: # converted to esps - rescan mergeable
+                bosh.modInfos.rescanMergeable(updated, bolt.Progress())
+            # will be moved to the top - note that modification times won't
+            # change - so mods will revert to their original position once back
+            # to esp from esm (Oblivion etc). Refresh saves due to esms move
+        self.window.RefreshUI(files=updated, refreshSaves=True)
+
+class Mod_FlipSelf(_Esm_Flip):
     """Flip an esp(esm) to an esm(esp)."""
 
     def _initData(self, window, selection):
@@ -1577,15 +1592,10 @@ class Mod_FlipSelf(EnabledLink):
             header = fileInfo.header
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
-        with balt.BusyCursor():
-            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
-            if self.isEsm: # converted to esps - rescan mergeable
-                bosh.modInfos.rescanMergeable(self.selected, bolt.Progress())
-            # refreshSaves=True, see Mod_FlipMasters
-        self.window.RefreshUI(files=self.selected, refreshSaves=True)
+        self._esm_flip_refresh(self.isEsm, self.selected)
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(OneItemLink):
+class Mod_FlipMasters(_Esm_Flip):
     """Swaps masters between esp and esm versions."""
     help = _(
         u"Flip esp/esm bit of esp masters to convert them to/from esm state")
@@ -1625,14 +1635,7 @@ class Mod_FlipMasters(OneItemLink):
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        with balt.BusyCursor():
-            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # esms
-            if not self.toEsm: # converted to esps - rescan mergeable
-                bosh.modInfos.rescanMergeable(updated, bolt.Progress())
-            # will be moved to the top - note that modification times won't
-            # change - so mods will revert to their original position once back
-            # to esp from esm (Oblivion etc). Refresh saves due to esms move
-        self.window.RefreshUI(files=updated, refreshSaves=True)
+        self._esm_flip_refresh(not self.toEsm, updated)
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):

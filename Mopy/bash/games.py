@@ -157,6 +157,11 @@ class Game(object):
             cached_load_order = self._fetch_load_order(cached_load_order, cached_active)
         return list(cached_load_order), list(cached_active)
 
+    def _save_fixed_load_order(self, _removedFiles, _addedFiles, _reordered,
+                               fixed_active, lo, active):
+        if _removedFiles or _addedFiles or _reordered:
+            self._persist_load_order(lo, None) # active is not used here
+
     def set_load_order(self, lord, active, previous_lord=None,
                        previous_active=None):
         assert lord is not None or active is not None, \
@@ -208,7 +213,6 @@ class Game(object):
     def load_order_changed(self): return True # timestamps, just calculate it
 
     # Swap plugins and loadorder txt
-
     def swap(self, oldPath, newPath):
         """Save current plugins into oldPath directory and load plugins from
         newPath directory (if present)."""
@@ -235,10 +239,6 @@ class Game(object):
         raise bolt.AbstractError
 
     def _persist_active_plugins(self, active, lord):
-        raise bolt.AbstractError
-
-    def _save_fixed_load_order(self, _removedFiles, _addedFiles, _reordered,
-                               fixed_active, lo, active):
         raise bolt.AbstractError
 
     # MODFILES PARSING --------------------------------------------------------
@@ -442,15 +442,6 @@ class TimestampGame(Game):
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)
 
-    def _save_fixed_load_order(self, _removedFiles, _addedFiles, _reordered, fixed_active, lo, active):
-        if _removedFiles or _addedFiles or _reordered:
-            if _removedFiles: # we don't rewrite plugins.txt if _reordered -
-                # so active plugins order is undefined
-                if not fixed_active:
-                    active = self._fetch_active_plugins()
-                    self._fix_active_plugins_on_disc(active, lo, setting=False)
-            self._persist_load_order(lo, None) # active is not used here
-
     def _fix_load_order(self, lord):
         _removedFiles, _addedFiles, _reordered = super(TimestampGame,
             self)._fix_load_order(lord)
@@ -565,15 +556,6 @@ class TextfileGame(Game):
 
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active[1:], active[1:]) # we need to chop off Skyrim.esm
-
-    def _save_fixed_load_order(self, _removedFiles, _addedFiles, _reordered,
-                               fixed_active, lo, active):
-        if _removedFiles or _addedFiles or _reordered:
-            if _removedFiles or _reordered: # must fix the active too
-                if not fixed_active:
-                    active = self._fetch_active_plugins()
-                    self._fix_active_plugins_on_disc(active, lo, setting=False)
-            self._persist_load_order(lo, None) # active is not used here
 
     # Validation overrides ----------------------------------------------------
     @staticmethod
