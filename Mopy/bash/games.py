@@ -570,6 +570,10 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
+    _must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
+                                  bolt.GPath(u'DLCworkshop01.esm'),
+                                  bolt.GPath(u'DLCCost.esm'),)
+
     def load_order_changed(self): return self._plugins_txt_modified()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
