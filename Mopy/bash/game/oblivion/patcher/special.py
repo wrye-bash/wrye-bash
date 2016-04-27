@@ -30,7 +30,7 @@ from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord, ModReader
 from ....bass import null4
 # from  bush import  genericAVEffects
-from .... import bush, bosh
+from .... import bush, bosh, load_order
 from ....cint import MGEFCode, FormID
 from ....patcher.base import Patcher, CBash_Patcher
 from ....patcher.patchers.base import SpecialPatcher, ListPatcher, \
@@ -568,7 +568,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         super(MFactMarker, self).initPatchFile(patchFile, loadMods)
         self.id_info = {} #--Morphable factions keyed by fid
-        self.isActive = bool(self.srcs) and bosh.modInfos.isActiveCached(
+        self.isActive = bool(self.srcs) and load_order.isActiveCached(
             GPath(u"Cobl Main.esm"))
         self.mFactLong = (GPath(u"Cobl Main.esm"),0x33FB)
 

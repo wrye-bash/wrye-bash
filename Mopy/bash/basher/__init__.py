@@ -442,7 +442,7 @@ class MasterList(_ModsUIList):
                 item_format.text_key = 'mods.text.mergeable'
         #--Text BG
         if bosh.modInfos.isBadFileName(masterName.s):
-            if bosh.modInfos.isActiveCached(masterName):
+            if load_order.isActiveCached(masterName):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -459,7 +459,7 @@ class MasterList(_ModsUIList):
                 item_format.font = Resources.fonts.bold
         #--Image
         status = self.GetMasterStatus(mi)
-        oninc = bosh.modInfos.isActiveCached(masterName) or (
+        oninc = load_order.isActiveCached(masterName) or (
             masterName in bosh.modInfos.merged and 2)
         item_format.icon_key = status, oninc
         self.mouseTexts[mi] = mouseText
@@ -820,7 +820,7 @@ class ModList(_ModsUIList):
         #--Image
         status = modInfo.getStatus()
         checkMark = (
-            1 if bosh.modInfos.isActiveCached(fileName)
+            1 if load_order.isActiveCached(fileName)
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
@@ -857,12 +857,12 @@ class ModList(_ModsUIList):
         if fileName in bosh.modInfos.bad_names:
             item_format.back_key ='mods.bkgd.doubleTime.exists'
         elif fileName in bosh.modInfos.missing_strings:
-            if bosh.modInfos.isActiveCached(fileName):
+            if load_order.isActiveCached(fileName):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif modInfo.hasBadMasterNames():
-            if bosh.modInfos.isActiveCached(fileName):
+            if load_order.isActiveCached(fileName):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -937,7 +937,7 @@ class ModList(_ModsUIList):
         if code == wx.WXK_SPACE:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
-                          not self.data_store.isActiveCached(GPath(item))]
+                          not load_order.isActiveCached(GPath(item))]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
                 self._checkUncheckMod(*selected)
@@ -981,7 +981,7 @@ class ModList(_ModsUIList):
             oldFiles = load_order.activeCached()
             fileName = GPath(item)
             #--Unselect?
-            if self.data_store.isActiveCached(fileName):
+            if load_order.isActiveCached(fileName):
                 try:
                     self.data_store.unselect(fileName, doSave=True)
                     changed = bolt.listSubtract(oldFiles, load_order.activeCached())

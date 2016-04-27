@@ -106,11 +106,16 @@ class LoadOrder(object):
 __empty = LoadOrder()
 _current_lo = __empty # must always be valid (or __empty)
 
+# Load Order utility methods - be sure cache is valid when using them
 def activeCached():
     """Return the currently cached active mods in load order as a tuple.
     :rtype : tuple[bolt.Path]
     """
     return _current_lo.activeOrdered
+
+def isActiveCached(mod):
+    """Return true if the mod is in the current active mods cache."""
+    return mod in _current_lo.active
 
 def SaveLoadOrder(lord, acti=None):
     """Save the Load Order (rewrite loadorder.txt or set modification times).

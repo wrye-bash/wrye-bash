@@ -2557,7 +2557,7 @@ class ModInfo(FileInfo):
         return crc
 
     def txt_status(self):
-        if modInfos.isActiveCached(self.name): return _(u'Active')
+        if load_order.isActiveCached(self.name): return _(u'Active')
         elif self.name in modInfos.merged: return _(u'Merged')
         elif self.name in modInfos.imported: return _(u'Imported')
         else: return _(u'Non-Active')
@@ -2580,7 +2580,7 @@ class ModInfo(FileInfo):
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
         maExGroup = reExGroup.match(self.name.s)
-        if not (modInfos.isActiveCached(self.name) and maExGroup):
+        if not (load_order.isActiveCached(self.name) and maExGroup):
             return False
         else:
             exGroup = maExGroup.group(1)
@@ -3339,9 +3339,6 @@ class ModInfos(FileInfos):
         else: self.mtimes.clear()
 
     #--Load Order utility methods - be sure cache is valid when using them-----
-    def isActiveCached(self, mod):
-        """Return true if the mod is in the current active mods cache."""
-        return mod in self.plugins.lord.active
     def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
     def loIndexCachedOrMax(self, mod):
         try: return self.loIndexCached(mod)
@@ -3350,7 +3347,7 @@ class ModInfos(FileInfos):
     def activeIndexCached(self, mod): return self.plugins.lord.activeIndex(mod)
     def hexIndexString(self, masterName):
         return u'%02X' % (self.activeIndexCached(masterName),) \
-            if self.isActiveCached(masterName) else u''
+            if load_order.isActiveCached(masterName) else u''
 
     def masterWithVersion(self, masterName):
         if masterName == u'Oblivion.esm' and self.voCurrent:
@@ -3441,7 +3438,7 @@ class ModInfos(FileInfos):
         activeBad = self.activeBad = set()
         for fileName in self.data:
             if self.isBadFileName(fileName.s):
-                if self.isActiveCached(fileName):
+                if load_order.isActiveCached(fileName):
                     ## For now, we'll leave them active, until
                     ## we finish testing what the game will support
                     #self.unselect(fileName)
@@ -3493,7 +3490,7 @@ class ModInfos(FileInfos):
         if force or toGhost:
             allowGhosting = self.table.getColumn('allowGhosting')
             for mod, modInfo in self.iteritems():
-                modGhost = toGhost and not self.isActiveCached(mod) \
+                modGhost = toGhost and not load_order.isActiveCached(mod) \
                            and allowGhosting.get(mod, True)
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
@@ -3977,7 +3974,7 @@ class ModInfos(FileInfos):
         """True if there is another mod with the same mtime."""
         if load_order.usingTxtFile():
             return False
-        elif not self.isActiveCached(modName): return False
+        elif not load_order.isActiveCached(modName): return False
         else:
             mtime = self[modName].mtime
             return len(self.mtime_selected[mtime]) > 1
@@ -4037,7 +4034,7 @@ class ModInfos(FileInfos):
     #--Mod move/delete/rename -------------------------------------------------
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
-        isSelected = self.isActiveCached(oldName)
+        isSelected = load_order.isActiveCached(oldName)
         if isSelected: self.unselect(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
         self.plugins.renameInLo(newName, oldName)
@@ -6818,7 +6815,7 @@ class InstallersData(DataDict):
             srcFiles = srcInstaller.data_sizeCrc
             srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
 #            print("Ordered: {}".format(load_order.activeCached()))
-            activeSrcBSAFiles = [x for x in srcBSAFiles if modInfos.isActiveCached(x.root + ".esp")]
+            activeSrcBSAFiles = [x for x in srcBSAFiles if load_order.isActiveCached(x.root + ".esp")]
             try:
                 bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]
 #                print("BSA Paths: {}".format(bsas))
@@ -6838,7 +6835,7 @@ class InstallersData(DataDict):
 #                print("Current Package: {}".format(package))
                 BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
                 activeBSAFiles.extend([(package, x, libbsa.BSAHandle(
-                    dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
+                    dirs['mods'].join(x.s))) for x in BSAFiles if load_order.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
             for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
@@ -7254,7 +7251,7 @@ def _modIsMergeableLoad(modInfo,verbose):
                 if master not in modInfos:
                     if not verbose: return False
                     missingMasters.append(master.s)
-                elif not modInfos.isActiveCached(master):
+                elif not load_order.isActiveCached(master):
                     if not verbose: return False
                     nonActiveMasters.append(master.s)
         #--masters not present in mod list?
