@@ -2458,7 +2458,7 @@ class InstallersList(balt.UIList):
                 dest = set() # installer's destination paths rel to Data/
                 for index, (name, installer) in enumerate(
                         self.data_store.sorted_pairs(toRefresh)):
-                    progress(index, _(u'Refreshing Packages...') + u'\n%s' +
+                    progress(index, _(u'Refreshing Packages...') + u'\n' +
                                     name.s)
                     apath = bass.dirs['installers'].join(name)
                     dest.update(installer.refreshBasic(apath,

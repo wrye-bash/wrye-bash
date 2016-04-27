@@ -5467,10 +5467,9 @@ class InstallerArchive(Installer):
                 numFiles = countFilesInArchive(arch, self.tempList, recurse)
                 progress.setFull(numFiles)
             #--Extract files
-            args = u'"%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
-                arch.s, self.getTempDir().s, self.tempList.s)
-            if recurse: args += u' -r'
-            command = u'"%s" x %s' % (bolt.exe7z, args)
+            command = bolt.extractCommand(arch, self.getTempDir())
+            command += u' @%s' % self.tempList.s
+            if recurse: command += u' -r'
             try:
                 bolt.extract7z(command, archive, progress)
             finally:
@@ -6564,7 +6563,7 @@ class InstallersData(DataDict):
 
     def _removeFiles(self, removes, refresh_ui, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
-           used by 'uninstall' and 'anneal'."""
+           used by 'bain_uninstall' and 'bain_anneal'."""
         modsDirJoin = dirs['mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
@@ -6609,14 +6608,21 @@ class InstallersData(DataDict):
             for relPath in removes:
                 data_sizeCrcDatePop(relPath, None)
 
-    def __filter(self, archive, installer, removes, restores): ##: comments
+    def __restore(self, archive, installer, removes, restores):
+        """Populate restores dict with files to be restored by this
+        installer, removing those from removes.
+
+        Returns all of the files this installer would install. Used by
+        'bain_uninstall' and 'bain_anneal'."""
+        # get all destination files for this installer
         files = set(installer.data_sizeCrc)
+        # keep those to be removed while not restored by a higher order package
         myRestores = (removes & files) - set(restores)
-        for file in myRestores:
-            if installer.data_sizeCrc[file] != \
-                    self.data_sizeCrcDate.get(file,(0, 0, 0))[:2]:
-                restores[file] = archive
-            removes.discard(file)
+        for dest_file in myRestores:
+            if installer.data_sizeCrc[dest_file] != \
+                    self.data_sizeCrcDate.get(dest_file,(0, 0, 0))[:2]:
+                restores[dest_file] = archive
+            removes.discard(dest_file)
         return files
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
@@ -6645,7 +6651,7 @@ class InstallersData(DataDict):
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
-                masked |= self.__filter(archive, installer, removes, restores)
+                masked |= self.__restore(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, refresh_ui, progress)
@@ -6659,13 +6665,18 @@ class InstallersData(DataDict):
             self.irefresh(what='NS')
 
     def _restoreFiles(self, restores, progress, refresh_ui):
-        restoreArchives = self.sorted_pairs(restores.itervalues(),reverse=True)
-        if not restoreArchives: return
-        progress.setFull(len(restoreArchives))
-        for index, (archive, installer) in enumerate(restoreArchives):
+        installer_destinations = {}
+        restores = sorted(restores.items(), key=lambda t: t[1])
+        for key, group in groupby(restores, key=lambda t: t[1]):
+            installer_destinations[key] = set(dest for dest, _key in group)
+        if not installer_destinations: return
+        installer_destinations = sorted(installer_destinations.items(),
+            key=lambda item: self[item[0]].order)
+        progress.setFull(len(installer_destinations))
+        for index, (archive, destFiles) in enumerate(installer_destinations):
             progress(index, archive.s)
-            destFiles = set(x for x, y in restores.iteritems() if y == archive)
             if destFiles:
+                installer = self[archive]
                 installer.install(archive, destFiles, self.data_sizeCrcDate,
                                   SubProgress(progress, index, index + 1))
                 mods_changed, inis_changed = InstallersData.updateTable(
@@ -6695,7 +6706,7 @@ class InstallersData(DataDict):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                self.__filter(archive, installer, removes, restores)
+                self.__restore(archive, installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, refresh_ui, progress)
