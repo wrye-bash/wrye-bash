@@ -885,7 +885,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
 
         #--Check if we should be deactivating some plugins
-        def less(modName, dex=bosh.modInfos.loIndexCached):
+        def less(modName, dex=load_order.loIndexCached):
             return dex(modName) < dex(fileName)
         ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
         unfiltered = [x for x in ActivePriortoPatch if

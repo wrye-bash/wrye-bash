@@ -3339,9 +3339,8 @@ class ModInfos(FileInfos):
         else: self.mtimes.clear()
 
     #--Load Order utility methods - be sure cache is valid when using them-----
-    def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
     def loIndexCachedOrMax(self, mod):
-        try: return self.loIndexCached(mod)
+        try: return load_order.loIndexCached(mod)
         except KeyError:
             return sys.maxint # sort mods that do not have a load order LAST
     def activeIndexCached(self, mod): return self.plugins.lord.activeIndex(mod)
@@ -3759,7 +3758,7 @@ class ModInfos(FileInfos):
                 else: tagList += u'    '+_(u'No tags')
         else:
             # sort output by load order
-            lindex = lambda t: modInfos.loIndexCached(t[0])
+            lindex = lambda t: load_order.loIndexCached(t[0])
             for path, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'

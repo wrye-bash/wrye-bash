@@ -52,7 +52,7 @@ class _PFile:
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        dex = bosh.modInfos.loIndexCached
+        dex = load_order.loIndexCached
         loadMods = [name for name in load_order.activeCached() if
                     dex(name) < dex(self.__class__.patchName)]
         if not loadMods:
@@ -458,7 +458,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
-        dex = infos.loIndexCached
+        dex = load_order.loIndexCached
         def less(mod): return dex(mod) < dex(CBash_PatchFile.patchName)
         for name in self.mergeSet:
             if less(name): self.Current.addMergeMod(infos[name].getPath().stail)

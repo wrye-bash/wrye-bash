@@ -34,6 +34,7 @@ import re
 # Internal
 from ... import bush # for defaultEyes (?)
 from ... import bosh # for modInfos
+from ... import load_order
 from ...bolt import SubProgress, BoltError, GPath, deprint
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
@@ -782,7 +783,7 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = set(self.__class__.autoKey)
-        dex = bosh.modInfos.loIndexCached
+        dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
             name = modInfo.name
             if dex(name) >= dex(PatchFile.patchName): continue
