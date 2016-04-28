@@ -200,6 +200,7 @@ class Game(object):
 
     # Conflicts - only for timestamp games
     def has_load_order_conflict(self, mod_name): return False
+    def has_load_order_conflict_active(self, mod_name, active): return False
 
     @staticmethod
     def _must_update_active(deleted, reordered): raise bolt.AbstractError
@@ -417,6 +418,11 @@ class TimestampGame(Game):
     def has_load_order_conflict(self, mod_name):
         mtime = self.mod_infos[mod_name].mtime
         return mtime in self._mtime_mods and len(self._mtime_mods[mtime]) > 1
+
+    def has_load_order_conflict_active(self, mod_name, active):
+        mtime = self.mod_infos[mod_name].mtime
+        return self.has_load_order_conflict(mod_name) and bool(
+            (self._mtime_mods[mtime] - {mod_name}) & active)
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):

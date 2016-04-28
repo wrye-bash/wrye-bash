@@ -2568,7 +2568,7 @@ class ModInfo(FileInfo):
 
     def hasActiveTimeConflict(self):
         """True if has an active mtime conflict with another mod."""
-        return modInfos.hasActiveTimeConflict(self.name)
+        return load_order.has_load_order_conflict_active(self.name)
 
     def hasBadMasterNames(self):
         """True if has a master with un unencodable name in cp1252."""
@@ -3956,15 +3956,6 @@ class ModInfos(FileInfos):
             return False
         except UnicodeEncodeError:
             return True
-
-    def hasActiveTimeConflict(self,modName):
-        """True if there is another mod with the same mtime."""
-        if load_order.usingTxtFile():
-            return False
-        elif not load_order.isActiveCached(modName): return False
-        else:
-            mtime = self[modName].mtime
-            return len(self.mtime_selected[mtime]) > 1
 
     def getFreeTime(self, startTime, defaultTime='+1'):
         """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""

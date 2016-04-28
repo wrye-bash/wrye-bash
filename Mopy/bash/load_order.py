@@ -184,3 +184,8 @@ def swap(oldPath, newPath): game_handle.swap(oldPath, newPath)
 
 def has_load_order_conflict(mod_name):
     return game_handle.has_load_order_conflict(mod_name)
+
+def has_load_order_conflict_active(mod_name):
+    if not isActiveCached(mod_name): return False
+    return game_handle.has_load_order_conflict_active(mod_name,
+                                                      cached_lord.active)
