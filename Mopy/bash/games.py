@@ -29,6 +29,7 @@ of Bash."""
 import re
 
 import time
+from collections import defaultdict
 
 import bolt
 
@@ -196,6 +197,9 @@ class Game(object):
         assert lord is not None and active is not None, \
             'returned load order and active must be not None'
         return lord, active # return what was set or was previously set
+
+    # Conflicts - only for timestamp games
+    def has_load_order_conflict(self, mod_name): return False
 
     @staticmethod
     def _must_update_active(deleted, reordered): raise bolt.AbstractError
@@ -404,12 +408,19 @@ class Game(object):
 class TimestampGame(Game):
 
     _allow_deactivate_master = True
+    _mod_mtime = {} # type: dict[bolt.Path, int]
+    _mtime_mods = defaultdict(set) # type: dict[int, set[bolt.Path]]
 
     @staticmethod
     def _must_update_active(deleted, reordered): return deleted
 
+    def has_load_order_conflict(self, mod_name):
+        mtime = self.mod_infos[mod_name].mtime
+        return mtime in self._mtime_mods and len(self._mtime_mods[mtime]) > 1
+
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
+        self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
         return self.mod_infos.calculateLO()
 
     def _fetch_active_plugins(self):
@@ -438,6 +449,16 @@ class TimestampGame(Game):
             restamp.append((ordered, self.mod_infos[mod].mtime))
         for ordered, mtime in restamp:
             self.mod_infos[ordered].setmtime(mtime)
+        # rebuild our cache
+        self._rebuild_mtimes_cache()
+
+    def _rebuild_mtimes_cache(self):
+        self._mod_mtime.clear()
+        self._mtime_mods.clear()
+        for mod, info in self.mod_infos.iteritems():
+            mtime = info.mtime
+            self._mod_mtime[mod] = mtime
+            self._mtime_mods[mtime] |= {mod}
 
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)

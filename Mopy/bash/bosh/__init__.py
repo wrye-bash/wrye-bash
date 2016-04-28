@@ -2563,8 +2563,8 @@ class ModInfo(FileInfo):
         else: return _(u'Non-Active')
 
     def hasTimeConflict(self):
-        """True if has an mtime conflict with another mod."""
-        return modInfos.hasTimeConflict(self.name)
+        """True if there is another mod with the same mtime."""
+        return load_order.has_load_order_conflict(self.name)
 
     def hasActiveTimeConflict(self):
         """True if has an active mtime conflict with another mod."""
@@ -3956,14 +3956,6 @@ class ModInfos(FileInfos):
             return False
         except UnicodeEncodeError:
             return True
-
-    def hasTimeConflict(self,modName):
-        """True if there is another mod with the same mtime."""
-        if load_order.usingTxtFile():
-            return False
-        else:
-            mtime = self[modName].mtime
-            return len(self.mtime_mods[mtime]) > 1
 
     def hasActiveTimeConflict(self,modName):
         """True if there is another mod with the same mtime."""

@@ -181,3 +181,6 @@ def usingTxtFile():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
 
 def swap(oldPath, newPath): game_handle.swap(oldPath, newPath)
+
+def has_load_order_conflict(mod_name):
+    return game_handle.has_load_order_conflict(mod_name)
