@@ -763,7 +763,7 @@ class ModList(_ModsUIList):
         'Rating'    : lambda self, a: self._get(a)('rating', u''),
         'Group'     : lambda self, a: self._get(a)('group', u''),
         'Installer' : lambda self, a: self._get(a)('installer', u''),
-        'Load Order': lambda self, a: bosh.modInfos.loIndexCachedOrMax(a),
+        'Load Order': lambda self, a: load_order.loIndexCachedOrMax(a),
         'Modified'  : lambda self, a: self.data_store[a].mtime,
         'Size'      : lambda self, a: self.data_store[a].size,
         'Status'    : lambda self, a: self.data_store[a].getStatus(),

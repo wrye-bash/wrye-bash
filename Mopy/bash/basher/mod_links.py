@@ -617,7 +617,7 @@ class Mod_ListDependent(OneItemLink):
             log = bolt.LogFile(out)
             log(u'[spoiler][xml]')
             log.setHeader(head + self.legend + u': ')
-            loOrder =  lambda tup: modInfos.loIndexCachedOrMax(tup[0])
+            loOrder =  lambda tup: load_order.loIndexCachedOrMax(tup[0])
             text = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
                 if masterName in info.header.masters:

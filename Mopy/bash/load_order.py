@@ -36,6 +36,8 @@ in to Bash and on setting lo/active from inside Bash.
 Double underscores and dirty comments are no accident - BETA, I need a Game
 classes hierarchy to handle differences between the games.
 """
+import sys
+
 import bass
 import bolt
 import bush
@@ -118,6 +120,11 @@ def isActiveCached(mod):
     return mod in _current_lo.active
 
 def loIndexCached(mod): return _current_lo.lindex(mod)
+
+def loIndexCachedOrMax(mod):
+    try: return loIndexCached(mod)
+    except KeyError:
+        return sys.maxint # sort mods that do not have a load order LAST
 
 def SaveLoadOrder(lord, acti=None):
     """Save the Load Order (rewrite loadorder.txt or set modification times).

@@ -3339,10 +3339,6 @@ class ModInfos(FileInfos):
         else: self.mtimes.clear()
 
     #--Load Order utility methods - be sure cache is valid when using them-----
-    def loIndexCachedOrMax(self, mod):
-        try: return load_order.loIndexCached(mod)
-        except KeyError:
-            return sys.maxint # sort mods that do not have a load order LAST
     def activeIndexCached(self, mod): return self.plugins.lord.activeIndex(mod)
     def hexIndexString(self, masterName):
         return u'%02X' % (self.activeIndexCached(masterName),) \
@@ -3607,7 +3603,7 @@ class ModInfos(FileInfos):
         """
         modNames = list(modNames)
         modNames.sort() # resolve time conflicts or no load order
-        modNames.sort(key=self.loIndexCachedOrMax)
+        modNames.sort(key=load_order.loIndexCachedOrMax)
         return modNames
 
     def getSemiActive(self,masters):
