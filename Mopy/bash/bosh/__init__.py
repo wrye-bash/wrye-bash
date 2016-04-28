@@ -3339,9 +3339,9 @@ class ModInfos(FileInfos):
         else: self.mtimes.clear()
 
     #--Load Order utility methods - be sure cache is valid when using them-----
-    def activeIndexCached(self, mod): return self.plugins.lord.activeIndex(mod)
-    def hexIndexString(self, masterName):
-        return u'%02X' % (self.activeIndexCached(masterName),) \
+    @staticmethod
+    def hexIndexString(masterName):
+        return u'%02X' % (load_order.activeIndexCached(masterName),) \
             if load_order.isActiveCached(masterName) else u''
 
     def masterWithVersion(self, masterName):

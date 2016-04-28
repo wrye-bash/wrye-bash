@@ -119,12 +119,16 @@ def isActiveCached(mod):
     """Return true if the mod is in the current active mods cache."""
     return mod in _current_lo.active
 
+# Load order and active indexes
 def loIndexCached(mod): return _current_lo.lindex(mod)
 
 def loIndexCachedOrMax(mod):
-    try: return loIndexCached(mod)
+    try:
+        return loIndexCached(mod)
     except KeyError:
         return sys.maxint # sort mods that do not have a load order LAST
+
+def activeIndexCached(mod): return _current_lo.activeIndex(mod)
 
 def SaveLoadOrder(lord, acti=None):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
