@@ -3304,7 +3304,6 @@ class ModInfos(FileInfos):
                 deprint(_(u'Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
             self.masterName = GPath(bush.game.masterFiles[0])
         self.mtime_mods = collections.defaultdict(list)
-        self.mtime_selected = collections.defaultdict(list)
         self.exGroup_mods = collections.defaultdict(list)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
@@ -3494,9 +3493,9 @@ class ModInfos(FileInfos):
         return changed
 
     def refreshInfoLists(self):
-        """Refreshes various mod info lists (mtime_mods, mtime_selected,
-        exGroup_mods, imported, exported) - call after refreshing from Data
-        AND having latest load order."""
+        """Refreshes various mod info lists (mtime_mods, exGroup_mods,
+        imported, exported) - call after refreshing from Data AND having
+        latest load order."""
         #--Mod mtimes
         mtime_mods = self.mtime_mods
         mtime_mods.clear()
@@ -3506,12 +3505,8 @@ class ModInfos(FileInfos):
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
         #--Selected mtimes and Refresh overLoaded too..
-        mtime_selected = self.mtime_selected
-        mtime_selected.clear()
         self.exGroup_mods.clear()
         for modName in load_order.activeCached():
-            mtime = modInfos[modName].mtime
-            mtime_selected[mtime].append(modName)
             maExGroup = reExGroup.match(modName.s)
             if maExGroup:
                 exGroup = maExGroup.group(1)
