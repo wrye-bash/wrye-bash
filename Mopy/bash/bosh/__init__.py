@@ -2189,12 +2189,11 @@ def _cache(lord_func):
     return _plugins_cache_wrapper
 
 class Plugins:
-    """Singleton wrapper around load_order.py, owned by modInfos - nothing
-       else should access it directly and nothing else should access load_order
-       directly - only via this class (except usingTxtFile() for now). Mainly
-       exposes _LoadOrder_ and _selected_ caches used by modInfos to manipulate
-       the load order/active and then save at once. Must disappear in a later
-       iteration of the load order API."""
+    """DEPRECATED: Singleton wrapper around load_order.py, owned by modInfos
+    - nothing else should access it directly. Exposes "LoadOrder" and
+    "selected" mutable caches used by modInfos to manipulate the load
+    order/active and then save at once. Must disappear in a later iteration
+    of the load order API."""
     def __init__(self):
         if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
             self.dir = dirs['app']
@@ -3966,23 +3965,6 @@ class ModInfos(FileInfos):
                 startTime += 1 # step by one second intervals
             return defaultTime
 
-    __max_time = -1
-    def mod_timestamp(self):
-        """Hack to install mods last in load order (done by liblo when txt
-        method used, when mod times method is used make sure we get the latest
-        mod time). The mod times stuff must be moved to load_order.py."""
-        if not load_order.usingTxtFile():
-            maxi = max(x.mtime for x in self.itervalues())
-            maxi = [max(maxi, self.__max_time) + 60] # a list to be manipulated
-            def timestamps(p):
-                if reModExt.search(p.s):
-                    self.__max_time = p.mtime = maxi[0]
-                    maxi[0] += 60 # space at one minute intervals
-        else:
-            # noinspection PyUnusedLocal
-            def timestamps(p): pass
-        return timestamps
-
     def calculateLO(self, mods=None): # excludes corrupt mods
         if mods is None: mods = self.keys()
         mods = sorted(mods) # sort case insensitive (for time conflicts)
@@ -5488,14 +5470,14 @@ class InstallerArchive(Installer):
         norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = {}
-        timestamps = modInfos.mod_timestamp()
+        timestamps = load_order.install_last()
         count = 0
         for dest,src in  dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = unpackDirJoin(src)
             stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
             if srcFull.exists():
-                timestamps(srcFull)
+                if reModExt.search(srcFull.s): timestamps(srcFull)
                 data_sizeCrcDate_update[dest] = (size,crc,srcFull.mtime)
                 count += 1
                 # Move to staging directory
@@ -5714,7 +5696,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        timestamps = modInfos.mod_timestamp()
+        timestamps = load_order.install_last()
         count = 0
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
@@ -5722,7 +5704,7 @@ class InstallerProject(Installer):
             stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
             if srcFull.exists():
                 srcFull.copyTo(stageFull)
-                timestamps(stageFull)
+                if reModExt.search(srcFull.s): timestamps(srcFull)
                 data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
                 count += 1
                 progressPlus()

@@ -201,6 +201,11 @@ class Game(object):
     # Conflicts - only for timestamp games
     def has_load_order_conflict(self, mod_name): return False
     def has_load_order_conflict_active(self, mod_name, active): return False
+    # force installation last - only for timestamp games
+    def install_last(self):
+        """Install mods last in load order (done by default when txt method
+        used - for mod times method make sure we get the latest mod time)."""
+        return lambda *args: None
 
     @staticmethod
     def _must_update_active(deleted, reordered): raise bolt.AbstractError
@@ -423,6 +428,15 @@ class TimestampGame(Game):
         mtime = self.mod_infos[mod_name].mtime
         return self.has_load_order_conflict(mod_name) and bool(
             (self._mtime_mods[mtime] - {mod_name}) & active)
+
+    __max_time = -1
+    def install_last(self):
+        maxi = max(mtime for mtime in self._mtime_mods.iterkeys())
+        maxi = [max(maxi, self.__max_time) + 60] # a list to be manipulated
+        def timestamps(p):
+            self.__max_time = p.mtime = maxi[0]
+            maxi[0] += 60 # space at one minute intervals
+        return timestamps
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):

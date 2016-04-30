@@ -189,3 +189,5 @@ def has_load_order_conflict_active(mod_name):
     if not isActiveCached(mod_name): return False
     return game_handle.has_load_order_conflict_active(mod_name,
                                                       cached_lord.active)
+
+def install_last(): return game_handle.install_last()
