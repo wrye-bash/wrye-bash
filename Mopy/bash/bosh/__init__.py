@@ -5347,6 +5347,21 @@ class Installer(object):
         """Install specified files to Oblivion\Data directory."""
         raise AbstractError
 
+    def _move(self, count, progress, stageDataDir):
+        # TODO: Find the operation that does not properly close the Oblivion\Data dir.
+        # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
+        # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened
+        # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
+        # install a mod for Oblivion.
+        try:
+            if count:
+                destDir = dirs['mods'].head + u'\\Data'
+                stageDataDir += u'\\*'
+                env.shellMove(stageDataDir, destDir, progress.getParent())
+        finally:
+            #--Clean up staging dir
+            self.rmTempDir()
+
     def listSource(self,archive):
         """Lists the folder structure of the installer."""
         raise AbstractError
@@ -5481,8 +5496,8 @@ class InstallerArchive(Installer):
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
         if not dest_src: return 0
-        #--Extract
         progress = progress if progress else bolt.Progress()
+        #--Extract
         progress(0,archive.s+u'\n'+_(u'Extracting files...'))
         self.unpackToTemp(archive,dest_src.values(),SubProgress(progress,0,0.9))
         #--Rearrange files
@@ -5490,16 +5505,16 @@ class InstallerArchive(Installer):
         unpackDir = self.getTempDir() #--returns directory used by unpackToTemp
         unpackDirJoin = unpackDir.join
         stageDir = self.newTempDir()  #--forgets the old temp dir, creates a new one
-        stageDataDir = stageDir.join(u'Data')
-        stageDataDirJoin = stageDataDir.join
-        count = 0
-        norm_ghost = Installer.getGhosted()
-        norm_ghostGet = norm_ghost.get
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(max(len(dest_src),1))
         subprogressPlus = subprogress.plus
+        stageDataDir = stageDir.join(u'Data')
+        stageDataDirJoin = stageDataDir.join
+        norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
+        norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = {}
         timestamps = modInfos.mod_timestamp()
+        count = 0
         for dest,src in  dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = unpackDirJoin(src)
@@ -5514,19 +5529,7 @@ class InstallerArchive(Installer):
         #--Clean up unpacked dir
         unpackDir.rmtree(safety=unpackDir.stail)
         #--Now Move
-        try:
-            if count:
-                # TODO: Find the operation that does not properly close the Oblivion\Data dir.
-                # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
-                # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened
-                # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
-                # install a mod for Oblivion.
-                destDir = dirs['mods'].head + u'\\Data'
-                stageDataDir += u'\\*'
-                env.shellMove(stageDataDir, destDir, progress.getParent())
-        finally:
-            #--Clean up staging dir
-            self.rmTempDir()
+        self._move(count, progress, stageDataDir)
         #--Update Installers data
         data_sizeCrcDate.update(data_sizeCrcDate_update)
         return count
@@ -5712,7 +5715,7 @@ class InstallerProject(Installer):
         stageDir = self.getTempDir()
         stageDataDir = stageDir.join(u'Data')
         stageDataDirJoin = stageDataDir.join
-        norm_ghost = Installer.getGhosted()
+        norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
@@ -5729,14 +5732,7 @@ class InstallerProject(Installer):
                 data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
                 count += 1
                 progressPlus()
-        try:
-            if count:
-                destDir = dirs['mods'].head + u'\\Data'
-                stageDataDir += u'\\*'
-                env.shellMove(stageDataDir, destDir, progress.getParent())
-        finally:
-            #--Clean out staging dir
-            self.rmTempDir()
+        self._move(count, progress, stageDataDir)
         #--Update Installers data
         data_sizeCrcDate.update(data_sizeCrcDate_update)
         return count
