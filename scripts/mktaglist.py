@@ -105,7 +105,7 @@ if oblivionMlist:
     print u'Getting masterlist from %s' % oblivionMlist
     taglistDir = u'../Mopy/Bash Patches/Oblivion/taglist.yaml'
     if os.path.exists(oblivionMlist):
-        lootDb = loot.LootDb(oblivionDir,loot.loot_game_tes4)
+        lootDb = loot.LootDb(oblivionDir,loot.LOOT_GAME_TES4)
         lootDb.PlainLoad(oblivionMlist)
         lootDb.DumpMinimal(taglistDir,True)
         print u'Oblivion masterlist converted.'
@@ -117,7 +117,7 @@ if skyrimMlist:
     print u'Getting masterlist from %s' % skyrimMlist
     taglistDir = u'../Mopy/Bash Patches/Skyrim/taglist.yaml'
     if os.path.exists(skyrimMlist):
-        lootDb = loot.LootDb(skyrimDir,loot.loot_game_tes5)
+        lootDb = loot.LootDb(skyrimDir,loot.LOOT_GAME_TES5)
         lootDb.PlainLoad(skyrimMlist)
         lootDb.DumpMinimal(taglistDir,True)
         print u'Skyrim masterlist converted.'
@@ -129,7 +129,7 @@ if fallout3Mlist:
     print u'Getting masterlist from %s' % fallout3Mlist
     taglistDir = u'../Mopy/Bash Patches/Fallout 3/taglist.yaml'
     if os.path.exists(fallout3Mlist):
-        lootDb = loot.LootDb(fallout3Dir,loot.loot_game_fo3)
+        lootDb = loot.LootDb(fallout3Dir,loot.LOOT_GAME_FO3)
         lootDb.PlainLoad(fallout3Mlist)
         lootDb.DumpMinimal(taglistDir,True)
         print u'Fallout 3 masterlist converted.'
@@ -141,7 +141,7 @@ if falloutNVMlist:
     print u'Getting masterlist from %s' % falloutNVMlist
     taglistDir = u'../Mopy/Bash Patches/Fallout New Vegas/taglist.yaml'
     if os.path.exists(falloutNVMlist):
-        lootDb = loot.LootDb(falloutNVDir,loot.loot_game_fonv)
+        lootDb = loot.LootDb(falloutNVDir,loot.LOOT_GAME_FONV)
         lootDb.PlainLoad(falloutNVMlist)
         lootDb.DumpMinimal(taglistDir,True)
         print u'Fallout New Vegas masterlist converted.'

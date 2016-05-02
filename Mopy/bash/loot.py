@@ -43,6 +43,8 @@ DebugLevel = 0
 #  0 - (default) no additional feedback
 #  1 - print information about all return codes found
 
+LOOT_GAME_TES4 = LOOT_GAME_TES5 = LOOT_GAME_FO3 = LOOT_GAME_FONV = None
+
 class LootVersionError(Exception):
     """Exception thrown if the LOOT API loaded is not
        compatible with loot.py"""
@@ -156,6 +158,7 @@ def Init(path):
     # =========================================================================
     # API Constants - Games
     # =========================================================================
+    global LOOT_GAME_TES4, LOOT_GAME_TES5, LOOT_GAME_FO3, LOOT_GAME_FONV
     LOOT_GAME_TES4 = _uint('loot_game_tes4')
     LOOT_GAME_TES5 = _uint('loot_game_tes5')
     LOOT_GAME_FO3 = _uint('loot_game_fo3')
