@@ -98,8 +98,8 @@ def _parse_plugins_txt_(path, mod_infos, _star):
 
 class Game(object):
 
-    _allow_deactivate_master = False
-    _must_be_active_if_present = ()
+    allow_deactivate_master = False
+    must_be_active_if_present = ()
 
     def __init__(self, mod_infos, plugins_txt_path):
         super(Game, self).__init__()
@@ -353,12 +353,12 @@ class Game(object):
                   u'in Data/ directory or corrupted: ' + _pl(_removed) + u'\n'
             self.mod_infos.selectedBad = _removed
         else: msg = u''
-        if not self._allow_deactivate_master:
+        if not self.allow_deactivate_master:
             if not self.master_path in actiFiltered:
                 actiFiltered.insert(0, self.master_path)
                 msg += (u'%s not present in active mods' % self.master_path) + u'\n'
         added_active_paths = []
-        for path in self._must_be_active_if_present:
+        for path in self.must_be_active_if_present:
             if path in lord and not path in actiFiltered:
                 msg += (u'%s not present in active list '
                         u'while present in Data folder' % path) + u'\n'
@@ -413,7 +413,7 @@ class Game(object):
 
 class TimestampGame(Game):
 
-    _allow_deactivate_master = True
+    allow_deactivate_master = True
     _mod_mtime = {} # type: dict[bolt.Path, int]
     _mtime_mods = defaultdict(set) # type: dict[int, set[bolt.Path]]
 
@@ -493,7 +493,7 @@ class TimestampGame(Game):
 
 class TextfileGame(Game):
 
-    _must_be_active_if_present = (bolt.GPath(u'Update.esm'),)
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),)
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
         super(TextfileGame, self).__init__(mod_infos, plugins_txt_path)
@@ -611,9 +611,9 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
-    _must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
-                                  bolt.GPath(u'DLCworkshop01.esm'),
-                                  bolt.GPath(u'DLCCost.esm'),)
+    must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
+                                 bolt.GPath(u'DLCworkshop01.esm'),
+                                 bolt.GPath(u'DLCCost.esm'),)
 
     def load_order_changed(self): return self._plugins_txt_modified()
 

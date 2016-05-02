@@ -191,3 +191,8 @@ def has_load_order_conflict_active(mod_name):
                                                       cached_lord.active)
 
 def install_last(): return game_handle.install_last()
+
+def must_be_active_if_present():
+    return set(game_handle.must_be_active_if_present) | (
+        set() if game_handle.allow_deactivate_master else {
+            game_handle.master_path})

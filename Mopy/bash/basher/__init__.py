@@ -69,7 +69,7 @@ import wx.gizmos
 from .. import bush, bosh, bolt, bass, env, load_order
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, Path, AbstractError, formatInteger, formatDate, round_size
+    deprint, AbstractError, formatInteger, formatDate, round_size
 from ..bosh import omods, CoSaves
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
@@ -973,23 +973,23 @@ class ModList(_ModsUIList):
 
     #--Helpers ---------------------------------------------
     def _checkUncheckMod(self, *mods):
-        removed = []
-        notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
+        removed = set()
         refreshNeeded = False
         for item in mods:
-            if item in removed or item in notDeactivatable: continue
+            if item in removed: continue
             oldFiles = load_order.activeCached()
             fileName = GPath(item)
             #--Unselect?
             if load_order.isActiveCached(fileName):
                 try:
-                    self.data_store.unselect(fileName, doSave=True)
-                    changed = bolt.listSubtract(oldFiles, load_order.activeCached())
-                    if len(changed) > (fileName in changed):
-                        changed.remove(fileName)
-                        changed = [x.s for x in changed]
-                        removed += changed
-                        balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
+                    self.data_store.unselect(fileName, doSave=True) ##: False !
+                    changed = set(oldFiles) - set(load_order.activeCached())
+                    if len(changed) > (fileName in changed): # deactivated children
+                        removed |= changed
+                        changed = [x.s for x in changed if x != fileName]
+                        balt.showList(self, u'${count} ' + _(
+                            u'Children deactivated:'),
+                            bosh.modInfos.getOrdered(changed), 10, fileName.s)
                 except BoltError as e:
                     balt.showError(self, u'%s' % e)
             #--Select?
@@ -1000,10 +1000,8 @@ class ModList(_ModsUIList):
                 #if fileName in self.data_store.bad_names: return
                 try:
                     activated = self.data_store.select(fileName, doSave=True)
-                    if len(activated) > ((fileName in activated) + (
-                        GPath(u'Oblivion.esm') in activated)):
-                        activated.remove(fileName)
-                        activated = [x.s for x in activated]
+                    if len(activated) > (fileName in activated):
+                        activated = [x.s for x in activated if x != fileName]
                         balt.showList(self,
                                       u'${count} ' + _(u'Masters activated:'),
                                       activated, 10, fileName.s)

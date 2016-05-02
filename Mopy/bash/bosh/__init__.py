@@ -3619,9 +3619,9 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
-        modsSet, allMods = set(modNames), set(load_order.cached_lord.loadOrder)
+        modsSet, allMods = set(modNames), set(self.keys())
         #--Ensure plugins that cannot be deselected stay selected
-        modsSet.update(map(GPath, bush.game.nonDeactivatableFiles))
+        modsSet.update(load_order.must_be_active_if_present() & allMods)
         #--Deselect/select plugins
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
@@ -3806,7 +3806,8 @@ class ModInfos(FileInfos):
         """Remove mods and their children from selected, can only raise if
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
-        fileNames = set(fileName)
+        notDeactivatable = load_order.must_be_active_if_present()
+        fileNames = set(x for x in fileName if x not in notDeactivatable)
         sel = set(self.plugins.selected)
         diff = sel - fileNames
         if len(diff) == len(sel): return

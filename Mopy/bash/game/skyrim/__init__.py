@@ -269,12 +269,6 @@ masterFiles = [
     u'Update.esm',
     ]
 
-#--Plugin files that can't be deactivated
-nonDeactivatableFiles = [
-    u'Skyrim.esm',
-    u'Update.esm',
-    ]
-
 namesPatcherMaster = re.compile(ur"^Skyrim.esm$",re.I|re.U)
 
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
