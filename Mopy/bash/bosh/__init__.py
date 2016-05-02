@@ -2233,11 +2233,6 @@ class Plugins:
         # Refresh liblo
         if savePlugins: self.saveLoadAndActive()
 
-    def renameInLo(self, newName, oldName):
-        oldIndex = self.LoadOrder.index(oldName)
-        self.removeMods([oldName], savePlugins=False)
-        self.LoadOrder.insert(oldIndex, newName)
-
     @_cache
     def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
         """Reload for plugins.txt or masterlist.txt changes."""
@@ -3992,7 +3987,10 @@ class ModInfos(FileInfos):
         isSelected = load_order.isActiveCached(oldName)
         if isSelected: self.unselect(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
-        self.plugins.renameInLo(newName, oldName)
+        # renameInLo
+        oldIndex = self.plugins.LoadOrder.index(oldName)
+        self.plugins.removeMods([oldName], savePlugins=False)
+        self.plugins.LoadOrder.insert(oldIndex, newName)
         if isSelected: self.select(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.plugins.saveLoadAndActive()
