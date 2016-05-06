@@ -27,7 +27,8 @@
 import os as _os
 import re as _re
 import shutil as _shutil
-from bolt import GPath, BoltError, deprint, CancelError, SkipError, Path
+from bolt import GPath, BoltError, deprint, CancelError, SkipError, Path, \
+    decode
 
 try:
     import _winreg as winreg
@@ -109,8 +110,7 @@ def get_personal_path():
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
         path = _getShellPath('Personal')
-        sErrorInfo = u'\n'.join(
-                u'  %s: %s' % (key, envDefs[key]) for key in sorted(envDefs))
+        sErrorInfo = __get_error_info()
     return GPath(path), sErrorInfo
 
 def get_local_app_data_path():
@@ -119,9 +119,18 @@ def get_local_app_data_path():
         sErrorInfo = _(u"Folder path extracted from win32com.shell.")
     else:
         path = _getShellPath('Local AppData')
-        sErrorInfo = u'\n'.join(
-                u'  %s: %s' % (key, envDefs[key]) for key in sorted(envDefs))
+        sErrorInfo = __get_error_info()
     return GPath(path), sErrorInfo
+
+def __get_error_info():
+    try:
+        sErrorInfo = u'\n'.join(u'  %s: %s' % (key, envDefs[key])
+                                for key in sorted(envDefs))
+    except UnicodeDecodeError:
+        deprint(u'Error decoding _os.environ', traceback=True)
+        sErrorInfo = u'\n'.join(u'  %s: %s' % (key, decode(envDefs[key]))
+                                for key in sorted(envDefs))
+    return sErrorInfo
 
 __folderIcon = None # cached here
 def get_default_app_icon(idex, target):
