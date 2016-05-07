@@ -61,6 +61,7 @@ import time
 from types import ClassType
 from functools import partial
 #--wxPython
+import collections
 import wx
 import wx.gizmos
 
@@ -940,10 +941,10 @@ class ModList(_ModsUIList):
                           not load_order.isActiveCached(GPath(item))]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
-                self._checkUncheckMod(*selected)
+                self._toggle_active_state(*selected)
             else:
                 #--Check all that aren't
-                self._checkUncheckMod(*toActivate)
+                self._toggle_active_state(*toActivate)
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
             sel = map(lambda mod: self.data_store[mod].getPath().s,
@@ -955,7 +956,7 @@ class ModList(_ModsUIList):
         """Left Down: Check/uncheck mods."""
         mod_clicked_on_icon = self._getItemClicked(event, on_icon=True)
         if mod_clicked_on_icon:
-            self._checkUncheckMod(mod_clicked_on_icon)
+            self._toggle_active_state(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
             self.SelectItem(mod_clicked_on_icon, deselectOthers=True)
@@ -972,49 +973,76 @@ class ModList(_ModsUIList):
             Link.Frame.docBrowser.SetMod(modName)
 
     #--Helpers ---------------------------------------------
-    def _checkUncheckMod(self, *mods):
-        removed = set()
+    @balt.conversation
+    def _toggle_active_state(self, *mods):
+        """Toggle active state of mods given - all mods must be either
+        active or inactive."""
         refreshNeeded = False
-        for item in mods:
-            if item in removed: continue
-            oldFiles = load_order.activeCached()
-            fileName = GPath(item)
-            #--Unselect?
-            if load_order.isActiveCached(fileName):
-                try:
-                    self.data_store.unselect(fileName, doSave=True) ##: False !
-                    changed = set(oldFiles) - set(load_order.activeCached())
-                    if len(changed) > (fileName in changed): # deactivated children
-                        removed |= changed
-                        changed = [x.s for x in changed if x != fileName]
-                        balt.showList(self, u'${count} ' + _(
-                            u'Children deactivated:'),
-                            bosh.modInfos.getOrdered(changed), 10, fileName.s)
-                except BoltError as e:
-                    balt.showError(self, u'%s' % e)
-            #--Select?
-            else:
-                ## For now, allow selecting unicode named files, for testing
-                ## I'll leave the warning in place, but maybe we can get the
-                ## game to load these files.s
-                #if fileName in self.data_store.bad_names: return
-                try:
-                    activated = self.data_store.select(fileName, doSave=True)
-                    if len(activated) > (fileName in activated):
-                        activated = [x.s for x in activated if x != fileName]
-                        balt.showList(self,
-                                      u'${count} ' + _(u'Masters activated:'),
-                                      activated, 10, fileName.s)
-                except bolt.BoltError as e:
-                    if refreshNeeded:
-                        bosh.modInfos.refreshInfoLists()
-                        self.RefreshUI(refreshSaves=True)
-                    balt.showError(self, u'%s' % e)
-                    return
-            refreshNeeded = True
+        keys = map(GPath, mods)
+        active = [mod for mod in keys if load_order.isActiveCached(mod)]
+        inactive = [mod for mod in keys if not load_order.isActiveCached(mod)]
+        assert len(active) == len(keys) or len(inactive) == len(keys)
+        changes = collections.defaultdict(dict)
+        # Deactivate ?
+        touched = set()
+        for act in active:
+            if act in touched: continue # already deactivated
+            try:
+                changed = self.data_store.unselect(act, doSave=False)
+                refreshNeeded += len(changed)
+                if len(changed) > (act in changed): # deactivated children
+                    touched |= changed
+                    changed = [x for x in changed if x != act]
+                    changes[self.__deactivated_key][act] = bosh.modInfos.getOrdered(changed)
+            except BoltError as e:
+                balt.showError(self, u'%s' % e)
+        # Activate ?
+        touched = set()
+        for inact in inactive:
+            if inact in touched: continue # already activated
+            ## For now, allow selecting unicode named files, for testing
+            ## I'll leave the warning in place, but maybe we can get the
+            ## game to load these files.s
+            #if fileName in self.data_store.bad_names: return
+            try:
+                activated = self.data_store.select(inact, doSave=False)
+                refreshNeeded += len(activated)
+                if len(activated) > (inact in activated):
+                    touched |= set(activated)
+                    activated = [x for x in activated if x != inact]
+                    changes[self.__activated_key][inact] = activated
+            except bolt.BoltError as e:
+                balt.showError(self, u'%s' % e)
+                break
         #--Refresh
-        bosh.modInfos.refreshInfoLists()
-        self.RefreshUI(refreshSaves=True)
+        if refreshNeeded:
+            bosh.modInfos.plugins.saveActive()
+            self.__toggle_active_msg(changes)
+            bosh.modInfos.refreshInfoLists()
+            self.RefreshUI(refreshSaves=True)
+
+    __activated_key = _(u'Masters activated:')
+    __deactivated_key = _(u'Children deactivated:')
+    def __toggle_active_msg(self, changes_dict):
+        masters_activated = changes_dict[self.__activated_key]
+        children_deactivated = changes_dict[self.__deactivated_key]
+        checklists = []
+        # It's one or the other !
+        if masters_activated:
+            checklists = [self.__activated_key, _(
+            u'Wrye Bash automatically activates the masters of activated '
+            u'plugins.'), masters_activated]
+            msg = _(u'Activating the following plugins caused their masters '
+                    u'to be activated')
+        elif children_deactivated:
+            checklists += [self.__deactivated_key, _(
+                u'Wrye Bash automatically deactivates the children of '
+                u'deactivated plugins.'), children_deactivated]
+            msg = _(u'Deactivating the following plugins caused their '
+                    u'children to be deactivated')
+        if not checklists: return
+        ListBoxes.Display(self, _(u'Masters/Children affected'), msg,
+                          [checklists], liststyle='tree', canCancel=False)
 
     def jump_to_mods_installer(self, modName):
         if not balt.Link.Frame.iPanel or not bosh.settings[

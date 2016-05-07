@@ -3808,9 +3808,9 @@ class ModInfos(FileInfos):
         if not isinstance(fileName, (set, list)): fileName = {fileName}
         notDeactivatable = load_order.must_be_active_if_present()
         fileNames = set(x for x in fileName if x not in notDeactivatable)
-        sel = set(self.plugins.selected)
+        old = sel = set(self.plugins.selected)
         diff = sel - fileNames
-        if len(diff) == len(sel): return
+        if len(diff) == len(sel): return set()
         #--Unselect self
         sel = diff
         #--Unselect children
@@ -3830,6 +3830,7 @@ class ModInfos(FileInfos):
         self.plugins.selected = self.getOrdered(sel)
         #--Save
         if doSave: self.plugins.saveActive()
+        return old - sel # return deselected
 
     def selectAll(self):
         toActivate = set(load_order.activeCached())
