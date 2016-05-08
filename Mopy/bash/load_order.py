@@ -19,22 +19,23 @@
 #
 #  Wrye Bash copyright (C) 2005-2009 Wrye, 2010-2015 Wrye Bash Team
 #  https://github.com/wrye-bash
+#  Mopy/bash/load_order.py copyright (C) 2016 Utumno: Original design
 #
 # =============================================================================
-"""Load order management, features caching.
+"""Load order management, features caching and undo/redo.
 
 Notes:
-- _current_lo is meant to eventually become a cache exported to the rest of
-Bash. Must be valid at all times. Should be updated on tabbing out and back
-in to Bash and on setting lo/active from inside Bash.
+- cached_lord is a cache exported to the next level of the load order API,
+namely ModInfos. Do _not_ use outside of ModInfos. Must be valid at all
+times. Should be updated on tabbing out and back in to Bash and on setting
+lo/active from inside Bash.
 - active mods must always be manipulated having a valid load order at hand:
  - all active mods must be present and have a load order and
  - especially for skyrim the relative order of entries in plugin.txt must be
  the same as their relative load order in loadorder.txt
-- corrupted files do not have a load order
-
-Double underscores and dirty comments are no accident - BETA, I need a Game
-classes hierarchy to handle differences between the games.
+- corrupted files do not have a load order.
+- modInfos singleton must be up to date when calling the API methods that
+delegate to the game_handle.
 """
 import sys
 
@@ -49,7 +50,7 @@ _plugins_txt_path = _loadorder_txt_path = None
 
 def initialize_load_order_files():
     if bass.dirs['saveBase'] == bass.dirs['app']:
-    #--If using the game directory as rather than the appdata dir.
+        #--If using the game directory as rather than the appdata dir.
         _dir = bass.dirs['app']
     else:
         _dir = bass.dirs['userApp']
@@ -91,7 +92,7 @@ class LoadOrder(object):
     def __eq__(self, other):
         return isinstance(other, LoadOrder) and self._active == other._active \
                and self._loadOrder == other._loadOrder
-    def __ne__(self, other): return not self == other
+    def __ne__(self, other): return not (self == other)
     def __hash__(self): return hash((self._loadOrder, self._active))
 
     def lindex(self, path): return self.__mod_loIndex[path] # KeyError
@@ -134,53 +135,53 @@ def loIndexCachedOrMax(mod):
 
 def activeIndexCached(mod): return cached_lord.activeIndex(mod)
 
-def get_ordered(modNames):
+def get_ordered(mod_names):
     """Return a list containing modNames' elements sorted into load order.
 
     If some elements do not have a load order they are appended to the list
     in alphabetical, case insensitive order (used also to resolve
     modification time conflicts).
-    :type modNames: collections.Iterable[bolt.Path]
+    :type mod_names: collections.Iterable[bolt.Path]
     :rtype : list[bolt.Path]
     """
-    modNames = list(modNames)
-    modNames.sort() # resolve time conflicts or no load order
-    modNames.sort(key=loIndexCachedOrMax)
-    return modNames
+    mod_names = list(mod_names)
+    mod_names.sort() # resolve time conflicts or no load order
+    mod_names.sort(key=loIndexCachedOrMax)
+    return mod_names
 
 # Get and set API
-def SaveLoadOrder(lord, acti=None, __index_move=0):
+def save_lo(lord, acti=None, __index_move=0):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
     as loadorder.txt, and of course rewrite it completely for fallout 4 (
     asterisk method)."""
-    actiList = list(acti) if acti is not None else None
-    lordList = list(lord) if lord is not None else None
-    lord, acti = game_handle.set_load_order(lordList, actiList,
+    acti_list = list(acti) if acti is not None else None
+    load_list = list(lord) if lord is not None else None
+    lord, acti = game_handle.set_load_order(load_list, acti_list,
                                             list(cached_lord.loadOrder),
                                             list(cached_lord.activeOrdered))
     _reset_mtimes_cache()
-    _updateCache(lord=lord, actiSorted=acti, __index_move=__index_move)
+    _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
     return cached_lord
 
 def _reset_mtimes_cache():
     """Reset the mtimes cache or LockLO feature will revert intentional
     changes."""
-    if usingTxtFile(): return
+    if using_txt_file(): return
     for name in bosh.modInfos.mtimes:
         path = bosh.modInfos[name].getPath()
         if path.exists(): bosh.modInfos.mtimes[name] = path.mtime
 
-def _updateCache(lord=None, actiSorted=None, __index_move=0):
+def _update_cache(lord=None, acti_sorted=None, __index_move=0):
     """
     :type lord: tuple[bolt.Path] | list[bolt.Path]
-    :type actiSorted: tuple[bolt.Path] | list[bolt.Path]
+    :type acti_sorted: tuple[bolt.Path] | list[bolt.Path]
     """
     global cached_lord
     try:
-        lord, actiSorted = game_handle.get_load_order(lord, actiSorted)
-        cached_lord = LoadOrder(lord, actiSorted)
+        lord, acti_sorted = game_handle.get_load_order(lord, acti_sorted)
+        cached_lord = LoadOrder(lord, acti_sorted)
     except Exception:
         bolt.deprint(u'Error updating load_order cache')
         cached_lord = __empty
@@ -205,14 +206,14 @@ def _updateCache(lord=None, actiSorted=None, __index_move=0):
                     _saved_load_orders[
                         _current_list_index - __index_move] = target
 
-def GetLo(cached=False, cached_active=True):
+def get_lo(cached=False, cached_active=True):
     if cached_lord is not __empty:
-        loadOrder = cached_lord.loadOrder if (
+        lo = cached_lord.loadOrder if (
             cached and not game_handle.load_order_changed()) else None
         active = cached_lord.activeOrdered if (
             cached_active and not game_handle.active_changed()) else None
-    else: active = loadOrder = None
-    _updateCache(loadOrder, active)
+    else: active = lo = None
+    _update_cache(lo, active)
     return cached_lord
 
 def undo_load_order():
@@ -225,16 +226,21 @@ def redo_load_order():
 
 def __restore(index_move):
     previous = _saved_load_orders[_current_list_index + index_move]
-    return SaveLoadOrder(previous.loadOrder, previous.activeOrdered,
-                         __index_move=index_move)
+    return save_lo(previous.loadOrder, previous.activeOrdered,
+                   __index_move=index_move)
 
 # API helpers
-def swap(oldPath, newPath): game_handle.swap(oldPath, newPath)
+def swap(old_path, new_path): game_handle.swap(old_path, new_path)
 
-# Timestamp games helpers
-def usingTxtFile():
+def must_be_active_if_present():
+    return set(game_handle.must_be_active_if_present) | (
+        set() if game_handle.allow_deactivate_master else {
+            game_handle.master_path})
+
+def using_txt_file():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
 
+# Timestamp games helpers
 def has_load_order_conflict(mod_name):
     return game_handle.has_load_order_conflict(mod_name)
 
@@ -247,8 +253,3 @@ def get_free_time(start_time, default_time='+1'):
     return game_handle.get_free_time(start_time, default_time=default_time)
 
 def install_last(): return game_handle.install_last()
-
-def must_be_active_if_present():
-    return set(game_handle.must_be_active_if_present) | (
-        set() if game_handle.allow_deactivate_master else {
-            game_handle.master_path})

@@ -3287,7 +3287,7 @@ class ModInfos(FileInfos):
     # changed methods run a refresh on modInfos data
     @_lo_cache
     def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
-        load_order.GetLo(cached=not forceRefresh,cached_active=not forceActive)
+        load_order.get_lo(cached=not forceRefresh, cached_active=not forceActive)
 
     @_lo_cache
     def cached_lo_save_active(self, active=None):
@@ -3295,8 +3295,8 @@ class ModInfos(FileInfos):
 
         Always call AFTER setting the load order - make sure we unghost
         ourselves so ctime of the unghosted mods is not set."""
-        load_order.SaveLoadOrder(load_order.cached_lord.loadOrder,
-                                 load_order.cached_lord.lorder(
+        load_order.save_lo(load_order.cached_lord.loadOrder,
+                           load_order.cached_lord.lorder(
                         active if active is not None else self._active_wip))
 
     @_lo_cache
@@ -3305,7 +3305,7 @@ class ModInfos(FileInfos):
         dex = {x: i for i, x in enumerate(self._lo_wip) if
                x in set(self._active_wip)}
         self._active_wip.sort(key=dex.__getitem__) # order in their load order
-        load_order.SaveLoadOrder(self._lo_wip, acti=self._active_wip)
+        load_order.save_lo(self._lo_wip, acti=self._active_wip)
 
     @_lo_cache
     def undo_load_order(self): load_order.undo_load_order()
@@ -3367,7 +3367,7 @@ class ModInfos(FileInfos):
         if self._OBMMWarn(): return False
         if not self.lockLO: return False
         if settings.dictFile.readOnly: return False
-        if load_order.usingTxtFile(): return False
+        if load_order.using_txt_file(): return False
         #--Else
         return True
 
@@ -3387,7 +3387,7 @@ class ModInfos(FileInfos):
             hasChanged = bool(change)
         if self.canSetTimes() and hasChanged:
             self._resetMTimes()
-        _modTimesChange = _modTimesChange and not load_order.usingTxtFile()
+        _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
         self.reloadBashTags()
@@ -3496,7 +3496,7 @@ class ModInfos(FileInfos):
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(active_set)
+        self.merged, self.imported = self.getSemiActive(active_set)
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
