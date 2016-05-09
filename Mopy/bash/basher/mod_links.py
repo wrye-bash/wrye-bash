@@ -885,73 +885,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
 
         #--Check if we should be deactivating some plugins
-        def less(modName, dex=load_order.loIndexCached):
-            return dex(modName) < dex(fileName)
-        ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
-        unfiltered = [x for x in ActivePriortoPatch if
-                      u'Filter' in bosh.modInfos[x].getBashTags()]
-        merge = [x for x in ActivePriortoPatch if
-                 u'NoMerge' not in bosh.modInfos[x].getBashTags()
-                 and x in bosh.modInfos.mergeable
-                 and x not in unfiltered]
-        noMerge = [x for x in ActivePriortoPatch if
-                   u'NoMerge' in bosh.modInfos[x].getBashTags()
-                   and x in bosh.modInfos.mergeable
-                   and x not in unfiltered and x not in merge]
-        deactivate = [x for x in ActivePriortoPatch if
-                      u'Deactivate' in bosh.modInfos[x].getBashTags()
-                      and not 'Filter' in bosh.modInfos[x].getBashTags()
-                      and x not in unfiltered and x not in merge
-                      and x not in noMerge]
-
-        checklists = []
-        unfilteredKey = _(u"Tagged 'Filter'")
-        mergeKey = _(u"Mergeable")
-        noMergeKey = _(u"Mergeable, but tagged 'NoMerge'")
-        deactivateKey = _(u"Tagged 'Deactivate'")
-        if unfiltered:
-            group = [unfilteredKey,
-                     _(u"These mods should be deactivated before building the patch, and then merged or imported into the Bashed Patch."),
-                     ]
-            group.extend(unfiltered)
-            checklists.append(group)
-        if merge:
-            group = [mergeKey,
-                     _(u"These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Oblivion maximum esp/esm limit."),
-                     ]
-            group.extend(merge)
-            checklists.append(group)
-        if noMerge:
-            group = [noMergeKey,
-                     _(u"These mods are mergeable, but tagged 'NoMerge'.  They should be deactivated before building the patch and imported into the Bashed Patch."),
-                     ]
-            group.extend(noMerge)
-            checklists.append(group)
-        if deactivate:
-            group = [deactivateKey,
-                     _(u"These mods are tagged 'Deactivate'.  They should be deactivated before building the patch, and merged or imported into the Bashed Patch."),
-                     ]
-            group.extend(deactivate)
-            checklists.append(group)
-        if checklists:
-            dialog = ListBoxes(
-                Link.Frame, _(u"Deactivate these mods prior to patching"),
-                _(u"The following mods should be deactivated prior to building"
-                  u" the patch."), checklists, bCancel=_(u'Skip'))
-            if dialog.askOkModal():
-                deselect = set()
-                for (lst, key) in [(unfiltered, unfilteredKey),
-                                   (merge, mergeKey),
-                                   (noMerge, noMergeKey),
-                                   (deactivate, deactivateKey), ]:
-                    deselect |= set(dialog.getChecked(key, lst))
-                if deselect:
-                    with balt.BusyCursor():
-                        for mod in deselect: bosh.modInfos.lo_deactivate(mod,
-                                                                doSave=False)
-                        bosh.modInfos.cached_lo_save_active()
-                        self.window.RefreshUI(refreshSaves=True)
-            dialog.Destroy()
+        self._ask_deactivate_mergeable(fileName)
 
         previousMods = set()
         missing = collections.defaultdict(list)
@@ -987,6 +921,73 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         with PatchDialog(self.window, fileInfo, self.doCBash,
                          importConfig) as patchDialog: patchDialog.ShowModal()
         return fileName
+
+    def _ask_deactivate_mergeable(self, fileName):
+        def less(modName, dex=load_order.loIndexCached):
+            return dex(modName) < dex(fileName)
+        ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
+        unfiltered = [x for x in ActivePriortoPatch if
+                      u'Filter' in bosh.modInfos[x].getBashTags()]
+        merge = [x for x in ActivePriortoPatch if
+                 u'NoMerge' not in bosh.modInfos[x].getBashTags()
+                 and x in bosh.modInfos.mergeable
+                 and x not in unfiltered]
+        noMerge = [x for x in ActivePriortoPatch if
+                   u'NoMerge' in bosh.modInfos[x].getBashTags()
+                   and x in bosh.modInfos.mergeable
+                   and x not in unfiltered and x not in merge]
+        deactivate = [x for x in ActivePriortoPatch if
+                      u'Deactivate' in bosh.modInfos[x].getBashTags()
+                      and not 'Filter' in bosh.modInfos[x].getBashTags()
+                      and x not in unfiltered and x not in merge
+                      and x not in noMerge]
+        checklists = []
+        unfilteredKey = _(u"Tagged 'Filter'")
+        mergeKey = _(u"Mergeable")
+        noMergeKey = _(u"Mergeable, but tagged 'NoMerge'")
+        deactivateKey = _(u"Tagged 'Deactivate'")
+        if unfiltered:
+            group = [unfilteredKey, _(u"These mods should be deactivated "
+                u"before building the patch, and then merged or imported into "
+                u"the Bashed Patch."), ]
+            group.extend(unfiltered)
+            checklists.append(group)
+        if merge:
+            group = [mergeKey, _(u"These mods are mergeable.  "
+                u"While it is not important to Wrye Bash functionality or "
+                u"the end contents of the Bashed Patch, it is suggested that "
+                u"they be deactivated and merged into the patch.  This helps "
+                u"avoid the Oblivion maximum esp/esm limit."), ]
+            group.extend(merge)
+            checklists.append(group)
+        if noMerge:
+            group = [noMergeKey, _(u"These mods are mergeable, but tagged "
+                u"'NoMerge'.  They should be deactivated before building the "
+                u"patch and imported into the Bashed Patch."), ]
+            group.extend(noMerge)
+            checklists.append(group)
+        if deactivate:
+            group = [deactivateKey, _(u"These mods are tagged 'Deactivate'.  "
+                u"They should be deactivated before building the patch, and "
+                u"merged or imported into the Bashed Patch."), ]
+            group.extend(deactivate)
+            checklists.append(group)
+        if not checklists: return
+        with ListBoxes(Link.Frame,
+            _(u"Deactivate these mods prior to patching"),
+            _(u"The following mods should be deactivated prior to building "
+              u"the patch."), checklists, bCancel=_(u'Skip')) as dialog:
+            if not dialog.askOkModal(): return
+            deselect = set()
+            for (lst, key) in [(unfiltered, unfilteredKey),
+                               (merge, mergeKey),
+                               (noMerge, noMergeKey),
+                               (deactivate, deactivateKey), ]:
+                deselect |= set(dialog.getChecked(key, lst))
+            if not deselect: return
+        with balt.BusyCursor():
+            bosh.modInfos.lo_deactivate(deselect, doSave=True)
+        self.window.RefreshUI(refreshSaves=True)
 
 class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
