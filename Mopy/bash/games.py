@@ -142,16 +142,16 @@ class Game(object):
         if cached_load_order is None: ##: if not should we assert is valid ?
             _removedFiles, _addedFiles, _reordered = self._fix_load_order(lo)
         else: _removedFiles = _addedFiles = _reordered = set()
-        # now we have a valid load order we may fix active too if we fetched them or a new load order
-        fixed_active = cached_active_ordered is None and self._fix_active_plugins_on_disc(
-            active, lo, setting=False)
+        # having a valid load order we may fix active too if we fetched them
+        fixed_active = cached_active_ordered is None and \
+                       self._fix_active_plugins(active, lo, on_disc=True)
         self._save_fixed_load_order(_removedFiles, _addedFiles, _reordered,
                                     fixed_active, lo, active)
         return lo, active
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # we need to override this bit for fallout4 to parse the file once
-        if cached_active is None:
+        if cached_active is None: # first get active plugins
             cached_active = self._fetch_active_plugins()
         # we need active plugins fetched to check for desync in load order
         if cached_load_order is None:
@@ -189,11 +189,10 @@ class Game(object):
                 'you need to pass a load order in to set active plugins'
             # a load order is needed for all games to validate active against
             test = lord if lord is not None else previous_lord
-            self._fix_active_plugins_on_disc(active, test, setting=True)
+            self._fix_active_plugins(active, test, on_disc=False) # don't save!
         lord = lord if lord is not None else previous_lord
         active = active if active is not None else previous_active
-        self._persist_order_and_active(active, lord, previous_active,
-                                       previous_lord)
+        self._persist_if_changed(active, lord, previous_active, previous_lord)
         assert lord is not None and active is not None, \
             'returned load order and active must be not None'
         return lord, active # return what was set or was previously set
@@ -209,14 +208,6 @@ class Game(object):
 
     @staticmethod
     def _must_update_active(deleted, reordered): raise bolt.AbstractError
-
-    def _persist_order_and_active(self, active, lord, previous_active,
-                                  previous_lord):
-        # we need to override this bit for fallout4 to write the file once
-        if previous_lord is None or previous_lord != lord:
-            self._persist_load_order(lord, active)
-        if previous_active is None or previous_active != active:
-            self._persist_active_plugins(active, lord)
 
     def active_changed(self): return self._plugins_txt_modified()
 
@@ -249,6 +240,12 @@ class Game(object):
         raise bolt.AbstractError
 
     def _persist_active_plugins(self, active, lord):
+        raise bolt.AbstractError
+
+    def _persist_if_changed(self, active, lord, previous_active,
+                            previous_lord):
+        # Override for fallout4 to write the file once and oblivion to save
+        # active only if needed. Both active and lord must not be None.
         raise bolt.AbstractError
 
     # MODFILES PARSING --------------------------------------------------------
@@ -342,9 +339,10 @@ class Game(object):
                 _pl(_addedFiles) or u'None', _pl(_removedFiles) or u'None',
                 u'No' if not _reordered else _pl(oldLord,
                 u'from:\n', joint=u'\n') + _pl(lord, u'\nto:\n', joint=u'\n')))
+        ##: test for duplicates ?
         return _removedFiles, _addedFiles, _reordered
 
-    def _fix_active_plugins_on_disc(self, acti, lord, setting):
+    def _fix_active_plugins(self, acti, lord, on_disc):
         # filter plugins not present in modInfos - this will disable corrupted too!
         actiFiltered = [x for x in acti if x in self.mod_infos] #preserve acti order
         _removed = set(acti) - set(actiFiltered)
@@ -388,12 +386,12 @@ class Game(object):
             msg += _pl(duplicates)
         acti[:] = actiFiltered[:255] # chop off extra, and update acti in place
         if msg:
-            # Notify user - ##: maybe backup previous plugin txt ?
-            if not setting:
-                bolt.deprint(u'Invalid Plugin txt corrected' + u'\n' + msg)
+            if on_disc: # used when getting active and found invalid, fix 'em!
+                # Notify user - ##: maybe backup previous plugin txt ?
+                bolt.deprint(u'Invalid Plugin txt corrected:\n' + msg)
                 self._persist_active_plugins(acti, lord)
-            else:
-                bolt.deprint(u'Invalid active plugins list corrected' + u'\n' + msg)
+            else: # active list we passed in when setting load order is invalid
+                bolt.deprint(u'Invalid active plugins list corrected:\n' + msg)
             return True # changes, saved if loading an active plugins list
         return False # no changes, not saved
 
@@ -482,6 +480,13 @@ class TimestampGame(Game):
 
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active, active)
+
+    def _persist_if_changed(self, active, lord, previous_active,
+                            previous_lord):
+        if previous_lord is None or previous_lord != lord:
+            self._persist_load_order(lord, active)
+        if previous_active is None or set(previous_active) != set(active):
+            self._persist_active_plugins(active, lord)
 
     def _fix_load_order(self, lord):
         _removedFiles, _addedFiles, _reordered = super(TimestampGame,
@@ -598,6 +603,13 @@ class TextfileGame(Game):
     def _persist_active_plugins(self, active, lord):
         self._write_plugins_txt(active[1:], active[1:]) # we need to chop off Skyrim.esm
 
+    def _persist_if_changed(self, active, lord, previous_active,
+                            previous_lord):
+        if previous_lord is None or previous_lord != lord:
+            self._persist_load_order(lord, active)
+        if previous_active is None or previous_active != active:
+            self._persist_active_plugins(active, lord)
+
     # Validation overrides ----------------------------------------------------
     @staticmethod
     def _check_active_order(acti, lord):
@@ -624,12 +636,6 @@ class AsteriskGame(Game):
     @staticmethod
     def _must_update_active(deleted, reordered): return True
 
-    def _persist_order_and_active(self, active, lord, previous_active,
-                                  previous_lord):
-        if (previous_lord is None or previous_lord != lord) or (
-                previous_active is None or previous_active != active):
-            self._persist_load_order(lord, active)
-
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
         """Read data from plugins.txt file. If plugins.txt does not exist
@@ -655,6 +661,12 @@ class AsteriskGame(Game):
         if fixed_active: return # plugins.txt already saved
         if _removedFiles or _addedFiles or _reordered:
             self._persist_load_order(lo, active)
+
+    def _persist_if_changed(self, active, lord, previous_active,
+                            previous_lord):
+        if (previous_lord is None or previous_lord != lord) or (
+                previous_active is None or previous_active != active):
+            self._persist_load_order(lord, active)
 
     # Modfiles parsing overrides ----------------------------------------------
     def _parse_modfile(self, path):
