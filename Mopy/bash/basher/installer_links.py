@@ -223,6 +223,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         isSingle = super(Installer_Wizard, self)._enable()
         return isSingle and (self.idata[self.selected[0]]).hasWizard != False
 
+    @balt.conversation
     def Execute(self):
         with balt.BusyCursor():
             installer = self.idata[self.selected[0]]
