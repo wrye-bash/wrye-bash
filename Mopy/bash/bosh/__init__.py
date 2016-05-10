@@ -2323,31 +2323,28 @@ class FileInfo(_AFileInfo):
         else:
             return None
 
-    def getMasterStatus(self,masterName):
-        """Returns status of a master. Called by getStatus."""
-        #--Exists?
-        if masterName not in modInfos:
-            return 30
-        #--Okay?
-        else:
-            return 0
-
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
         0:  Good
-        10: Out of order master
+        20, 22: Out of order master
+        21, 22: Loads after its masters
         30: Missing master(s)."""
         #--Worst status from masters
-        if self.masterNames:
-            status = max([self.getMasterStatus(masterName) for masterName in self.masterNames])
-        else:
-            status = 0
+        status = 30 if any( # if self.masterNames is empty returns False
+            (m not in modInfos) for m in self.masterNames) else 0
         #--Missing files?
         if status == 30:
             return status
         #--Misordered?
         self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        if self.masterOrder != self.masterNames:
+        loads_before_its_masters = self.isMod() and self.masterOrder and \
+                                   load_order.loIndexCached(
+            self.masterOrder[-1]) > load_order.loIndexCached(self.name)
+        if self.masterOrder != self.masterNames and loads_before_its_masters:
+            return 22
+        elif loads_before_its_masters:
+            return 21
+        elif self.masterOrder != self.masterNames:
             return 20
         else:
             return status

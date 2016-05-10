@@ -462,6 +462,16 @@ class MasterList(_ModsUIList):
         status = self.GetMasterStatus(mi)
         oninc = load_order.isActiveCached(masterName) or (
             masterName in bosh.modInfos.merged and 2)
+        on_display = self.detailsPanel.displayed_item
+        if status == 30: # master is missing
+            mouseText += _(u"Missing master of %s.  ") % on_display
+        #--HACK - load order status
+        elif on_display in bosh.modInfos:
+            if status == 20:
+                mouseText += _(u"Reordered relative to other masters.  ")
+            if load_order.loIndexCached(on_display) < load_order.loIndexCached(masterName):
+                mouseText += _(u"Loads after %s.  ") % on_display
+                status = 20 # paint orange
         item_format.icon_key = status, oninc
         self.mouseTexts[mi] = mouseText
 
@@ -590,8 +600,8 @@ class INIList(balt.UIList):
         # from INI_Delete - expensive but I can't allow default tweaks deletion
 
     def set_item_format(self, fileName, item_format):
-        fileInfo = self.data_store[fileName]
-        status = fileInfo.getStatus()
+        iniInfo = self.data_store[fileName]
+        status = iniInfo.getStatus()
         #--Image
         checkMark = 0
         icon = 0    # Ok tweak, not applied
@@ -823,7 +833,8 @@ class ModList(_ModsUIList):
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
-        item_format.icon_key = status, checkMark
+        status_image_key = 20 if 20 <= status < 30 else status
+        item_format.icon_key = status_image_key, checkMark
         #--Default message
         mouseText = u''
         fileBashTags = modInfo.getBashTags()
@@ -845,8 +856,13 @@ class ModList(_ModsUIList):
                 else:
                     mouseText += _(u"Can be merged into Bashed Patch.  ")
         #--Image messages
-        if status == 30:     mouseText += _(u"One or more masters are missing.  ")
-        elif status == 20:   mouseText += _(u"Masters have been re-ordered.  ")
+        if status == 30:
+            mouseText += _(u"One or more masters are missing.  ")
+        else:
+            if status in {21, 22}:
+                mouseText += _(u"Loads before its master(s).  ")
+            if status in {20, 22}:
+                mouseText += _(u"Masters have been re-ordered.  ")
         if checkMark == 1:   mouseText += _(u"Active in load list.  ")
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
         #should mod be deactivated
