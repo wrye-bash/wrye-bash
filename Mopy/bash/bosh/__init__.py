@@ -4381,7 +4381,7 @@ class Installer(object):
     #--Member data
     persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
         'fileSizeCrcs', 'type', 'isActive', 'subNames', 'subActives',
-        'dirty_sizeCrc', 'comments', 'readMe', 'packageDoc', 'packagePic',
+        'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
         'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
     volatile = ('data_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
@@ -4524,11 +4524,11 @@ class Installer(object):
         #--For InstallerProject's, cache if refresh projects is skipped
         self.src_sizeCrcDate = {}
         #--Set by refreshBasic
-        self.fileRootIdex = 0
+        self.fileRootIdex = 0 # unused - just used in setstate
         self.type = 0 #--Package type: 0: unset/invalid; 1: simple; 2: complex
         self.subNames = []
         self.subActives = []
-        self.readMe = None # set by refreshDataSizeCrc (unused for now)
+        self.extras_dict = {} # hack to add more persistent attributes
         #--User Only
         self.skipVoices = False
         self.hasExtraData = False
@@ -4621,10 +4621,22 @@ class Installer(object):
         """Used by unpickler to recreate object."""
         self.initDefault()
         map(self.__setattr__,self.persistent,values)
-        if self.dirty_sizeCrc is None:
-            self.dirty_sizeCrc = {} #--Use empty dict instead.
-        dest_scr = self.refreshDataSizeCrc()
-        if self.overrideSkips:
+        rescan = False
+        if not isinstance(self.extras_dict, dict):
+            self.extras_dict = {}
+            if self.fileRootIdex: # we need to add 'root_path' key
+                rescan = True
+        elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
+            rescan = True ##: for people that used my wip branch, drop on 307
+        package_path = bass.dirs['installers'].join(self.archive)
+        exists = package_path.exists()
+        if not exists: # the pickled package was deleted outside bash
+            pass # don't do anything should be deleted from our data soon
+        elif rescan:
+            dest_scr = self.refreshBasic(
+                package_path, bolt.Progress(), recalculate_project_crc=False)
+        else: dest_scr = self.refreshDataSizeCrc()
+        if exists and self.overrideSkips:
             InstallersData.overridden_skips.update(dest_scr.keys())
 
     def __copy__(self):
@@ -4738,7 +4750,7 @@ class Installer(object):
                         dest = u''.join((docs_, archiveRoot, fileExt))
                     else:
                         dest = u''.join((docs_, file_relative))
-                    self.readMe = dest
+                    # self.extras_dict['readMe'] = dest
                 elif fileLower == u'package.txt':
                     dest = self.packageDoc = u''.join(
                         (docs_, archiveRoot, u'.package.txt'))
@@ -4875,7 +4887,7 @@ class Installer(object):
         type_    = self.type
         #--Init to empty
         self.hasWizard = self.hasBCF = self.hasReadme = False
-        self.readMe = self.packageDoc = self.packagePic = None
+        self.packageDoc = self.packagePic = None # = self.extras_dict['readMe']
         for attr in {'skipExtFiles','skipDirFiles','espms'}:
             object.__getattribute__(self,attr).clear()
         dest_src = {}
@@ -4913,8 +4925,11 @@ class Installer(object):
         reModExtMatch = reModExt.match
         reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
-        rootIdex = self.fileRootIdex
+        root_path = self.extras_dict.get('root_path', u'')
+        rootIdex = len(root_path)
         for full,size,crc in self.fileSizeCrcs:
+            if rootIdex: # exclude all files that are not under root_dir
+                if not full.startswith(root_path): continue
             file = full[rootIdex:]
             fileLower = file.lower()
             if fileLower.startswith( # skip top level '--', 'fomod' etc
@@ -5053,34 +5068,32 @@ class Installer(object):
         #--Done (return dest_src for install operation)
         return dest_src
 
-    @staticmethod
-    def _find_root_index(fileSizeCrcs, _os_sep=os_sep,
-                         skips_start=_silentSkipsStart):
+    def _find_root_index(self, _os_sep=os_sep, skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
         #--Sort file names
         def fscSortKey(fsc):
             dirFile = fsc[0].lower().rsplit(os_sep, 1)
             if len(dirFile) == 1: dirFile.insert(0,u'')
             return dirFile
-        sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
-        fileSizeCrcs.sort(key=sortKeys.__getitem__)
+        sortKeys = dict((x, fscSortKey(x)) for x in self.fileSizeCrcs)
+        self.fileSizeCrcs.sort(key=sortKeys.__getitem__)
         #--Find correct starting point to treat as BAIN package
+        self.extras_dict.clear() # if more keys are added be careful cleaning
+        self.fileRootIdex = 0
         dataDirsPlus = Installer.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
-        for full, size, crc in fileSizeCrcs:
+        for full, size, crc in self.fileSizeCrcs:
             fileLower = full.lower()
             if fileLower.startswith(skips_start): continue
-            frags = fileLower.split(_os_sep)
+            frags = full.split(_os_sep)
             if len(frags) == 1:
                 # Files in the root of the package, start there
-                rootIdex = 0
                 break
             else:
                 dirName = frags[0]
                 if dirName not in layout and layout:
                     # A second directory in the archive root, start in the root
-                    rootIdex = 0
                     break
                 root = layoutSetdefault(dirName,{'dirs':{},'files':False})
                 for frag in frags[1:-1]:
@@ -5088,36 +5101,33 @@ class Installer(object):
                 # the last frag is a file, so its parent dir has files
                 root['files'] = True
         else:
-            if not layout:
-                rootIdex = 0
-            else:
-                rootStr = layout.keys()[0]
-                if rootStr in dataDirsPlus:
-                    rootIdex = 0
+            if not layout: return
+            rootStr = layout.keys()[0]
+            if rootStr.lower() in dataDirsPlus: return
+            root = layout[rootStr]
+            rootStr = u''.join((rootStr, _os_sep))
+            while True:
+                if root['files']:
+                    # There are files in this folder, call it the starting point
+                    break
+                rootDirs = root['dirs']
+                rootDirKeys = rootDirs.keys()
+                if len(rootDirKeys) == 1:
+                    # Only one subfolder, see if it's either 'Data', or an accepted
+                    # Data sub-folder
+                    rootDirKey = rootDirKeys[0]
+                    rootDirKeyL = rootDirKey.lower()
+                    if rootDirKeyL in dataDirsPlus or rootDirKeyL == u'data':
+                        # Found suitable starting point
+                        break
+                    # Keep looking deeper
+                    root = rootDirs[rootDirKey]
+                    rootStr = u''.join((rootStr, rootDirKey, _os_sep))
                 else:
-                    root = layout[rootStr]
-                    rootStr = u''.join((rootStr, _os_sep))
-                    while True:
-                        if root['files']:
-                            # There are files in this folder, call it the starting point
-                            break
-                        rootDirs = root['dirs']
-                        rootDirKeys = rootDirs.keys()
-                        if len(rootDirKeys) == 1:
-                            # Only one subfolder, see if it's either 'Data', or an accepted
-                            # Data sub-folder
-                            rootDirKey = rootDirKeys[0]
-                            if rootDirKey in dataDirsPlus or rootDirKey == u'data':
-                                # Found suitable starting point
-                                break
-                            # Keep looking deeper
-                            root = rootDirs[rootDirKey]
-                            rootStr = u''.join((rootStr, rootDirKey, _os_sep))
-                        else:
-                            # Multiple folders, stop here even if it's no good
-                            break
-                    rootIdex = len(rootStr)
-        return rootIdex
+                    # Multiple folders, stop here even if it's no good
+                    break
+            self.extras_dict['root_path'] = rootStr # keeps case
+            self.fileRootIdex = len(rootStr)
 
     def refreshBasic(self, archive, progress, recalculate_project_crc=True):
         return self._refreshBasic(archive, progress, recalculate_project_crc)
@@ -5127,7 +5137,7 @@ class Installer(object):
                 x.replace(os_sep, u'') for x in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
         self._refreshSource(archive, progress, recalculate_project_crc)
-        self.fileRootIdex = rootIdex = self._find_root_index(self.fileSizeCrcs)
+        self._find_root_index()
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
         type_ = 0
@@ -5135,9 +5145,12 @@ class Installer(object):
         subNameSet.add(u'') # set(u'') == set() (unicode is iterable), so add
         reDataFileSearch = self.reDataFile.search
         dataDirsPlus = self.dataDirsPlus
+        root_path = self.extras_dict.get('root_path', u'')
         for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
-            full = full[rootIdex:]
             frags = full.split(_os_sep)
+            if root_path: # exclude all files that are not under root_dir
+                if frags[0] != root_path[:-1]: continue # chop off os_sep
+                frags = frags[1:]
             nfrags = len(frags)
             f0_lower = frags[0].lower()
             #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
