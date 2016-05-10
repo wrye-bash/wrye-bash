@@ -342,10 +342,10 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     # renameOnCollision - if True auto-rename on moving collision, else ask
     # TODO(241): renameOnCollision NOT IMPLEMENTED
     doIt = _shutil.copytree if operation == FO_COPY else _shutil.move
-    ##: HACK: due to hack in Installer._install we need to deglob
+    ##: HACK: due to hack in Installer._move we need to deglob
     new_source = []
     for i, path in enumerate(source):
-        # just care for the star we feed it in Installer._install
+        # just care for the star we feed it in Installer._move
         if path.s[-1] == u'*':
             base_dir = GPath(source[-1].s[:-1]) # chop off the star
             for j, item in enumerate(_os.listdir(base_dir.s)):

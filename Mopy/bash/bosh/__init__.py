@@ -3604,7 +3604,7 @@ class ModInfos(FileInfos):
         If some elements do not have a load order they are appended to the list
         in alphabetical, case insensitive order (used also to resolve
         modification time conflicts).
-        :param modNames: an iterable containing bolt.Paths
+        :type modNames: collections.Iterable[bolt.Path]
         :rtype : list
         """
         modNames = list(modNames)
@@ -4445,7 +4445,7 @@ class ScreensData(DataDict):
     def delete_Refresh(self, deleted): self.refresh()
 
 #------------------------------------------------------------------------------
-os_sep = os.path.sep
+os_sep = unicode(os.path.sep)
 class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
@@ -5159,6 +5159,7 @@ class Installer(object):
                 root = layoutSetdefault(dirName,{'dirs':{},'files':False})
                 for frag in frags[1:-1]:
                     root = root['dirs'].setdefault(frag,{'dirs':{},'files':False})
+                # the last frag is a file, so its parent dir has files
                 root['files'] = True
         else:
             if not layout:
@@ -5978,6 +5979,7 @@ class InstallersData(DataDict):
         apath.copyTo(destDir.join(destName))
         if destDir == self.dir:
             self.data[destName] = installer = copy.copy(self.data[item])
+            installer.archive = destName.s
             installer.isActive = False
             self.moveArchives([destName],self.data[item].order+1)
 
