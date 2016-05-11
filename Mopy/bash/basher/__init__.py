@@ -910,25 +910,31 @@ class ModList(_ModsUIList):
 
     def OnChar(self,event):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
-        if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
+        code = event.GetKeyCode()
+        if ((event.CmdDown() and code in balt.wxArrows) and
             (self.sort in self._dndColumns)):
-                # Calculate continuous chunks of indexes
-                chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
-                previous = -1
-                for dex in indexes:
-                    if previous != -1 and previous + 1 != dex:
-                        chunk += 1
-                        chunks.append([])
-                    previous = dex
-                    chunks[chunk].append(dex)
-                moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
-                moved = False
-                for chunk in chunks:
-                    newIndex = chunk[0] + moveMod
-                    if chunk[-1] + moveMod == self._gList.GetItemCount():
-                        continue # trying to move last plugin past the list
-                    moved |= self._dropIndexes(chunk, newIndex)
-                if moved: self._refreshOnDrop()
+            # Calculate continuous chunks of indexes
+            chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
+            previous = -1
+            for dex in indexes:
+                if previous != -1 and previous + 1 != dex:
+                    chunk += 1
+                    chunks.append([])
+                previous = dex
+                chunks[chunk].append(dex)
+            moveMod = 1 if code in balt.wxArrowDown else -1
+            moved = False
+            for chunk in chunks:
+                newIndex = chunk[0] + moveMod
+                if chunk[-1] + moveMod == self._gList.GetItemCount():
+                    continue # trying to move last plugin past the list
+                moved |= self._dropIndexes(chunk, newIndex)
+            if moved: self._refreshOnDrop()
+        # Ctrl+Z: Undo last load order or active plugins change
+        # Can't use ord('Z') below - check wx._core.KeyEvent docs
+        elif event.CmdDown() and code == 26:
+            if self.data_store.undo_load_order():
+                self.RefreshUI(refreshSaves=True)
         else: event.Skip() # correctly update the highlight around selected mod
 
     def OnKeyUp(self,event):

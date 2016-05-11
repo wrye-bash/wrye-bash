@@ -2241,6 +2241,12 @@ class Plugins:
                                      cached_active=not forceActive)
         return oldLord != self.lord
 
+    @_cache
+    def undo_load_order(self):
+        oldLord = self.lord
+        self.lord = load_order.undo_load_order()
+        return oldLord != self.lord
+
 #------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
@@ -3644,6 +3650,11 @@ class ModInfos(FileInfos):
             message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
             message += u'\n* '.join(x.s for x in extra)
         return message
+
+    def undo_load_order(self):
+        undid = self.plugins.undo_load_order()
+        if undid: self.refresh(scanData=False)
+        return undid
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
         """Returns mod list as text. If fileInfo is provided will show mod list
