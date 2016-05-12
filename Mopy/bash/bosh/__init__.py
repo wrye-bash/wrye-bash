@@ -3974,7 +3974,7 @@ class ModInfos(FileInfos):
         return mods
 
     def create_new_mod(self, newName, selected=(), masterless=False,
-                       directory=u''):
+                       directory=u'', bashed_patch=False):
         directory = directory or self.dir
         newInfo = self.factory(directory, GPath(newName))
         if directory == self.dir:
@@ -3982,9 +3982,11 @@ class ModInfos(FileInfos):
             newTime = max(x.mtime for x in mods)
             newInfo.mtime = load_order.get_free_time(newTime, newTime)
         else: newInfo.mtime = time.time()
-        newFile = ModFile(newInfo, LoadFactory(True))
+        newFile = ModFile(newInfo)
         if not masterless:
             newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
+        if bashed_patch:
+            newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
 
     #--Mod move/delete/rename -------------------------------------------------

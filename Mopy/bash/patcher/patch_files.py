@@ -27,7 +27,6 @@ from .. import bush # for game etc
 from .. import bosh # for modInfos
 from .. import load_order
 from .. import bass
-from ..bosh import ModInfo
 from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord, ModError
 from ..balt import showWarning
@@ -158,11 +157,8 @@ class PatchFile(_PFile, ModFile):
         for num in xrange(10):
             modName = GPath(u'Bashed Patch, %d.esp' % num)
             if modName not in bosh.modInfos:
-                patchInfo = ModInfo(bosh.modInfos.dir,GPath(modName))
-                patchInfo.mtime = max([time.time()]+[info.mtime for info in bosh.modInfos.values()])
-                patchFile = ModFile(patchInfo)
-                patchFile.tes4.author = u'BASHED PATCH'
-                patchFile.safeSave()
+                bosh.modInfos.create_new_mod(modName, masterless=True,
+                                             bashed_patch=True)
                 bosh.modInfos.refresh()
                 return modName
         else:
