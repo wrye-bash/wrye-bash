@@ -134,7 +134,7 @@ def loIndexCachedOrMax(mod):
 
 def activeIndexCached(mod): return cached_lord.activeIndex(mod)
 
-def SaveLoadOrder(lord, acti=None, __redo=False):
+def SaveLoadOrder(lord, acti=None, __index_move=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
@@ -146,7 +146,7 @@ def SaveLoadOrder(lord, acti=None, __redo=False):
                                             list(cached_lord.loadOrder),
                                             list(cached_lord.activeOrdered))
     _reset_mtimes_cache()
-    _updateCache(lord=lord, actiSorted=acti, __redo=__redo)
+    _updateCache(lord=lord, actiSorted=acti, __index_move=__index_move)
     return cached_lord
 
 def _reset_mtimes_cache():
@@ -157,7 +157,7 @@ def _reset_mtimes_cache():
         path = bosh.modInfos[name].getPath()
         if path.exists(): bosh.modInfos.mtimes[name] = path.mtime
 
-def _updateCache(lord=None, actiSorted=None, __redo=False):
+def _updateCache(lord=None, actiSorted=None, __index_move=False):
     """
     :type lord: tuple[bolt.Path] | list[bolt.Path]
     :type actiSorted: tuple[bolt.Path] | list[bolt.Path]
@@ -171,18 +171,24 @@ def _updateCache(lord=None, actiSorted=None, __redo=False):
         cached_lord = __empty
         raise
     finally:
-        if cached_lord is not __empty and (
-                _current_list_index < 0 or cached_lord != _saved_load_orders[
-            _current_list_index]):
+        if cached_lord is not __empty:
             global _current_list_index
-            if not __redo: # either getting or setting
+            if _current_list_index < 0 or (not __index_move and
+                cached_lord != _saved_load_orders[_current_list_index]):
+                # either getting or setting
                 del _saved_load_orders[_current_list_index + 1:]
                 _saved_load_orders.append(cached_lord)
                 _current_list_index += 1
-            else:
-                 _saved_load_orders[_current_list_index] = cached_lord
-                 ##: maybe warn if not managed to redo (_saved_load_orders[
-                 # _current_deque_index] != cached_lord)
+            else: # attempted to undo/redo
+                _current_list_index += __index_move
+                target = _saved_load_orders[_current_list_index]
+                if target != cached_lord: # we failed to redo/undo
+                    bolt.deprint(u'Failed to revert load order change')
+                    # keep the invalid load order - for instance due to an esm
+                    # flip - but move it in the list so we can retry undo/redo
+                    _saved_load_orders[_current_list_index] = cached_lord
+                    _saved_load_orders[
+                        _current_list_index - __index_move] = target
 
 def GetLo(cached=False, cached_active=True):
     if cached_lord is not __empty:
@@ -195,15 +201,17 @@ def GetLo(cached=False, cached_active=True):
     return cached_lord
 
 def undo_load_order():
-    global _current_list_index
     if _current_list_index <= 0: return cached_lord
-    _current_list_index -= 1
-    return __restore()
+    return __restore(-1)
 
-def __restore():
-    previous = _saved_load_orders[_current_list_index]
+def redo_load_order():
+    if _current_list_index == len(_saved_load_orders) - 1: return cached_lord
+    return __restore(1)
+
+def __restore(index_move):
+    previous = _saved_load_orders[_current_list_index + index_move]
     return SaveLoadOrder(previous.loadOrder, previous.activeOrdered,
-                         __redo=True)
+                         __index_move=index_move)
 
 def usingTxtFile():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'

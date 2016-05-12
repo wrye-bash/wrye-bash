@@ -2247,6 +2247,12 @@ class Plugins:
         self.lord = load_order.undo_load_order()
         return oldLord != self.lord
 
+    @_cache
+    def redo_load_order(self):
+        oldLord = self.lord
+        self.lord = load_order.redo_load_order()
+        return oldLord != self.lord
+
 #------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
@@ -3653,6 +3659,11 @@ class ModInfos(FileInfos):
 
     def undo_load_order(self):
         undid = self.plugins.undo_load_order()
+        if undid: self.refresh(scanData=False)
+        return undid
+
+    def redo_load_order(self):
+        undid = self.plugins.redo_load_order()
         if undid: self.refresh(scanData=False)
         return undid
 

@@ -935,6 +935,9 @@ class ModList(_ModsUIList):
         elif event.CmdDown() and code == 26:
             if self.data_store.undo_load_order():
                 self.RefreshUI(refreshSaves=True)
+        elif event.CmdDown() and code == 25:
+            if self.data_store.redo_load_order():
+                self.RefreshUI(refreshSaves=True)
         else: event.Skip() # correctly update the highlight around selected mod
 
     def OnKeyUp(self,event):
