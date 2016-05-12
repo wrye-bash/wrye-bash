@@ -119,7 +119,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(modInfo.dir,master)
-            newInfo.mtime = bosh.modInfos.getFreeTime(lastTime, lastTime)
+            newInfo.mtime = load_order.get_free_time(lastTime, lastTime)
             refresh.append(master)
             if doCBash:
                 # TODO: CBash doesn't handle unicode.  Make this make temp unicode safe
@@ -1473,7 +1473,7 @@ class Mod_CopyToEsmp(EnabledLink):
                 timeSource = newName
             #--New Time
             newTime = modInfos[timeSource].mtime if timeSource else \
-                bosh.modInfos.getFreeTime(fileInfo.mtime)
+                load_order.get_free_time(fileInfo.mtime)
             #--Copy, set type, update mtime - will use ghosted path if needed
             modInfos.copy_info(curName, fileInfo.dir, newName,
                                set_mtime=newTime)

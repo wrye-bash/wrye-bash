@@ -213,10 +213,12 @@ def __restore(index_move):
     return SaveLoadOrder(previous.loadOrder, previous.activeOrdered,
                          __index_move=index_move)
 
+# API helpers
+def swap(oldPath, newPath): game_handle.swap(oldPath, newPath)
+
+# Timestamp games helpers
 def usingTxtFile():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
-
-def swap(oldPath, newPath): game_handle.swap(oldPath, newPath)
 
 def has_load_order_conflict(mod_name):
     return game_handle.has_load_order_conflict(mod_name)
@@ -225,6 +227,9 @@ def has_load_order_conflict_active(mod_name):
     if not isActiveCached(mod_name): return False
     return game_handle.has_load_order_conflict_active(mod_name,
                                                       cached_lord.active)
+
+def get_free_time(start_time, default_time='+1'):
+    return game_handle.get_free_time(start_time, default_time=default_time)
 
 def install_last(): return game_handle.install_last()
 

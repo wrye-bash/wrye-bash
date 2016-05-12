@@ -25,7 +25,7 @@
 from operator import attrgetter
 import re
 import time
-from .. import bass, balt, bosh, bush, bolt, env
+from .. import bass, balt, bosh, bush, bolt, env, load_order
 from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
     ChoiceLink, Link, OneItemLink
@@ -199,7 +199,7 @@ class File_Duplicate(ItemLink):
                     _(u"Files cannot be duplicated to themselves!"))
                 continue
             if fileInfo.isMod():
-                newTime = bosh.modInfos.getFreeTime(fileInfo.getPath().mtime)
+                newTime = load_order.get_free_time(fileInfo.getPath().mtime)
             else:
                 newTime = None # for bsas and saves leave mtime alone
             fileInfos.copy_info(fileName, destDir, destName, set_mtime=newTime)

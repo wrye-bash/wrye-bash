@@ -205,6 +205,7 @@ class Game(object):
         """Install mods last in load order (done by default when txt method
         used - for mod times method make sure we get the latest mod time)."""
         return lambda *args: None
+    def get_free_time(self, start_time, default_time='+1'): return time.time()
 
     @staticmethod
     def _must_update_active(deleted, reordered): raise bolt.AbstractError
@@ -414,6 +415,7 @@ class TimestampGame(Game):
     allow_deactivate_master = True
     _mod_mtime = {} # type: dict[bolt.Path, int]
     _mtime_mods = defaultdict(set) # type: dict[int, set[bolt.Path]]
+    _get_free_time_step = 1 # step by one second intervals
 
     @staticmethod
     def _must_update_active(deleted, reordered): return deleted
@@ -435,6 +437,15 @@ class TimestampGame(Game):
             self.__max_time = p.mtime = maxi[0]
             maxi[0] += 60 # space at one minute intervals
         return timestamps
+
+    def get_free_time(self, start_time, default_time='+1'):
+        haskey = self._mtime_mods.has_key
+        endTime = start_time + 1000 # 1000 (seconds) is an arbitrary limit
+        while start_time < endTime:
+            if not haskey(start_time):
+                return start_time
+            start_time += self._get_free_time_step
+        return default_time
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):

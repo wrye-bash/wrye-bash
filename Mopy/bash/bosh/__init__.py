@@ -3309,7 +3309,6 @@ class ModInfos(FileInfos):
                 msg += u' or ' + bush.game.masterFiles[-1]
                 deprint(_(u'Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
             self.masterName = GPath(bush.game.masterFiles[0])
-        self.mtime_mods = collections.defaultdict(list)
         self.exGroup_mods = collections.defaultdict(list)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
@@ -3499,15 +3498,12 @@ class ModInfos(FileInfos):
         return changed
 
     def refreshInfoLists(self):
-        """Refreshes various mod info lists (mtime_mods, exGroup_mods,
-        imported, exported) - call after refreshing from Data AND having
-        latest load order."""
+        """Refreshes various mod info lists (exGroup_mods, imported,
+        exported) - call after refreshing from Data AND having latest load
+        order."""
         #--Mod mtimes
-        mtime_mods = self.mtime_mods
-        mtime_mods.clear()
         self.bashed_patches.clear()
         for modName, modInfo in self.iteritems():
-            mtime_mods[modInfo.mtime].append(modName)
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
         #--Selected mtimes and Refresh overLoaded too..
@@ -3970,20 +3966,6 @@ class ModInfos(FileInfos):
         except UnicodeEncodeError:
             return True
 
-    def getFreeTime(self, startTime, defaultTime='+1'):
-        """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
-        if load_order.usingTxtFile():
-            # Doesn't matter - LO isn't determined by mtime
-            return time.time()
-        else:
-            haskey = self.mtime_mods.has_key
-            endTime = startTime + 1000 # 1000 (seconds) is an arbitrary limit
-            while startTime < endTime:
-                if not haskey(startTime):
-                    return startTime
-                startTime += 1 # step by one second intervals
-            return defaultTime
-
     def calculateLO(self, mods=None): # excludes corrupt mods
         if mods is None: mods = self.keys()
         mods = sorted(mods) # sort case insensitive (for time conflicts)
@@ -3998,7 +3980,7 @@ class ModInfos(FileInfos):
         if directory == self.dir:
             mods = (self[x] for x in selected) if selected else self.itervalues()
             newTime = max(x.mtime for x in mods)
-            newInfo.mtime = self.getFreeTime(newTime, newTime)
+            newInfo.mtime = load_order.get_free_time(newTime, newTime)
         else: newInfo.mtime = time.time()
         newFile = ModFile(newInfo, LoadFactory(True))
         if not masterless:
