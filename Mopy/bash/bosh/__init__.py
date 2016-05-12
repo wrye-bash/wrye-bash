@@ -2185,7 +2185,8 @@ def _cache(lord_func):
                 args[0].LoadOrder, args[0].selected = list(
                     args[0].lord.loadOrder), list(args[0].lord.activeOrdered)
             except AttributeError: # lord is None, exception thrown in init
-                raise e[0], e[1], e[2]
+                if e: raise e[0], e[1], e[2]
+                raise # should never happen, lord must never be None after init
     return _plugins_cache_wrapper
 
 class Plugins:
@@ -3419,7 +3420,8 @@ class ModInfos(FileInfos):
         if hasChanged or _modTimesChange: self.refreshInfoLists()
         self.reloadBashTags()
         hasNewBad = self.refreshBadNames()
-        hasMissingStrings = self.refreshMissingStrings()
+        # we need a load order below: in skyrim it reads inis in active order
+        hasMissingStrings = self._refreshMissingStrings()
         self.setOblivionVersions()
         oldMergeable = set(self.mergeable)
         scanList = self.refreshMergeable()
@@ -3449,14 +3451,12 @@ class ModInfos(FileInfos):
                     bad.add(fileName)
         return bool(activeBad)
 
-    def refreshMissingStrings(self):
-        """Refreshes which mods are supposed to have strings files,
-           but are missing them (=CTD)."""
+    def _refreshMissingStrings(self):
+        """Refreshes which mods are supposed to have strings files, but are
+        missing them (=CTD). For Skyrim you need to have a valid load order."""
         oldBad = self.missing_strings
-        bad = set()
-        for fileName, fileInfo in self.iteritems():
-            if fileInfo.isMissingStrings():
-                bad.add(fileName)
+        bad = set(fileName for fileName, fileInfo in self.iteritems() if
+                  fileInfo.isMissingStrings())
         new = bad - oldBad
         self.missing_strings = bad
         self.new_missing_strings = new
@@ -5142,9 +5142,9 @@ class Installer(object):
         dataDirsPlus = Installer.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
-        for file,size,crc in fileSizeCrcs:
-            if file.startswith(skips_start): continue
-            fileLower = file.lower()
+        for full, size, crc in fileSizeCrcs:
+            fileLower = full.lower()
+            if fileLower.startswith(skips_start): continue
             frags = fileLower.split(_os_sep)
             if len(frags) == 1:
                 # Files in the root of the package, start there
@@ -5210,21 +5210,20 @@ class Installer(object):
         subNameSetAdd(u'')
         reDataFileSearch = self.reDataFile.search
         dataDirsPlus = self.dataDirsPlus
-        for file, size, crc in self.fileSizeCrcs:
-            file = file[rootIdex:]
-            if type_ != 1:
-                frags = file.split(_os_sep)
+        for full, size, crc in self.fileSizeCrcs:
+            full = full.lower()[rootIdex:]
+            if type_ != 1: # for type 2 will scan ALL filenames - can avoid ?
+                frags = full.split(_os_sep)
                 nfrags = len(frags)
                 #--Type 1?
                 if (nfrags == 1 and reDataFileSearch(frags[0]) or
-                    nfrags > 1 and frags[0].lower() in dataDirsPlus):
+                    nfrags > 1 and frags[0] in dataDirsPlus):
                     type_ = 1
                     break
                 #--Type 2?
-                elif nfrags > 2 and not frags[0].startswith(skips_start) and \
-                                frags[1].lower() in dataDirsPlus \
-                 or nfrags == 2 and not frags[0].startswith(skips_start) and \
-                                reDataFileSearch(frags[1]):
+                elif not frags[0].startswith(skips_start) and (
+                    (nfrags > 2 and frags[1] in dataDirsPlus) or
+                    (nfrags == 2 and reDataFileSearch(frags[1]))):
                     subNameSetAdd(frags[0])
                     type_ = 2
         self.type = type_
@@ -5233,7 +5232,7 @@ class Installer(object):
             self.subNames = sorted(subNameSet,key=unicode.lower)
             actives = set(x for x,y in zip(self.subNames,self.subActives) if (y or x == u''))
             if len(self.subNames) == 2: #--If only one subinstall, then make it active.
-                self.subActives = [True,True]
+                self.subActives = [True,True] # that's a complex/simple package
             else:
                 self.subActives = [(x in actives) for x in self.subNames]
         else:
@@ -6350,15 +6349,15 @@ class InstallersData(DataDict):
                 root_files.append((bass.dirs['mods'].s, name.s))
             else:
                 root_files.append((bass.dirs['mods'].join(sp[0]).s, sp[1]))
-        root_files.sort()
         root_dirs_files = []
+        root_files.sort(key=lambda t: t[0]) # must sort on same key as groupby
         for key, val in groupby(root_files, key=lambda t: t[0]):
             root_dirs_files.append((key, [], [j for i, j in val]))
         progress = progress or bolt.Progress()
         new_sizeCrcDate, pending, pending_size = self._process_data_dir(
             root_dirs_files, progress)
-        deleted = set(dest_paths) - set(new_sizeCrcDate)
-        for d in deleted: self.data_sizeCrcDate.pop(d, None)
+        deleted_or_pending = set(dest_paths) - set(new_sizeCrcDate)
+        for d in deleted_or_pending: self.data_sizeCrcDate.pop(d, None)
         Installer.calc_crcs(pending, pending_size, bass.dirs['mods'].stail,
                             new_sizeCrcDate, progress)
         for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():

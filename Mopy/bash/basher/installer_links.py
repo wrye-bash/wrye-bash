@@ -835,7 +835,9 @@ class Installer_CopyConflicts(_SingleInstallable):
             g_path = GPath(package.s)
             curFile = _copy_conflicts(curFile)
             for order,package,curConflicts in packConflicts:
-                g_path = GPath(u"%03d - %s" % (order, package.s))
+                g_path = GPath(u"%03d - %s" % (
+                    order if order < srcInstaller.order else order + 1,
+                    package.s))
                 curFile = _copy_conflicts(curFile)
             project = destDir.root
         self._get_refreshed(project, srcInstaller)
