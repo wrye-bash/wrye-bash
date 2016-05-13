@@ -443,12 +443,28 @@ class TextfileGame(Game):
         _acti, lo = self._parse_modfile(self.loadorder_txt_path)
         # handle desync with plugins txt
         if cached_active is not None:
-            dct = {x: i for i, x in enumerate(cached_active)}
-            active_in_lo = [x for x in lo if x in dct]
-            active_in_lo.sort(key=dct.get)
-            it = iter(active_in_lo)
-            fetched_lo = lo
-            lo = [next(it) if x in dct else x for x in lo]
+            cached_active_copy = cached_active[:]
+            active_in_lo = [x for x in lo if x in set(cached_active)]
+            w = dict((x, i) for i, x in enumerate(lo))
+            while active_in_lo:
+                for i, (ordered, current) in enumerate(
+                        zip(cached_active_copy, active_in_lo)):
+                    if ordered != current:
+                        for j, x in enumerate(active_in_lo[i:]):
+                            if x == ordered: break
+                            # x should be above ordered
+                            to = w[ordered] + 1 + j
+                            # make room
+                            w = dict((x, i if i < to else i + 1) for x, i in
+                                     w.iteritems())
+                            w[x] = to # bubble them up !
+                        active_in_lo.remove(ordered)
+                        cached_active_copy = cached_active_copy[i + 1:]
+                        active_in_lo = active_in_lo[i:]
+                        break
+                else: break
+            fetched_lo = lo[:]
+            lo.sort(key=w.get)
             if lo != fetched_lo:
                 self._persist_load_order(lo, lo)
                 bolt.deprint(u'Corrected %s (order of mods differed from '
