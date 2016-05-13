@@ -106,21 +106,21 @@ class LoadOrder(object):
 
 # Module level cache
 __empty = LoadOrder()
-_current_lo = __empty # must always be valid (or __empty)
+cached_lord = __empty # must always be valid (or __empty)
 
 # Load Order utility methods - be sure cache is valid when using them
 def activeCached():
     """Return the currently cached active mods in load order as a tuple.
     :rtype : tuple[bolt.Path]
     """
-    return _current_lo.activeOrdered
+    return cached_lord.activeOrdered
 
 def isActiveCached(mod):
     """Return true if the mod is in the current active mods cache."""
-    return mod in _current_lo.active
+    return mod in cached_lord.active
 
 # Load order and active indexes
-def loIndexCached(mod): return _current_lo.lindex(mod)
+def loIndexCached(mod): return cached_lord.lindex(mod)
 
 def loIndexCachedOrMax(mod):
     try:
@@ -128,7 +128,7 @@ def loIndexCachedOrMax(mod):
     except KeyError:
         return sys.maxint # sort mods that do not have a load order LAST
 
-def activeIndexCached(mod): return _current_lo.activeIndex(mod)
+def activeIndexCached(mod): return cached_lord.activeIndex(mod)
 
 def SaveLoadOrder(lord, acti=None):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
@@ -139,11 +139,11 @@ def SaveLoadOrder(lord, acti=None):
     actiList = list(acti) if acti is not None else None
     lordList = list(lord) if lord is not None else None
     lord, acti = game_handle.set_load_order(lordList, actiList,
-                                            list(_current_lo.loadOrder),
-                                            list(_current_lo.activeOrdered))
+                                            list(cached_lord.loadOrder),
+                                            list(cached_lord.activeOrdered))
     _reset_mtimes_cache()
     _updateCache(lord=lord, actiSorted=acti)
-    return _current_lo
+    return cached_lord
 
 def _reset_mtimes_cache():
     """Reset the mtimes cache or LockLO feature will revert intentional
@@ -158,24 +158,24 @@ def _updateCache(lord=None, actiSorted=None):
     :type lord: tuple[bolt.Path] | list[bolt.Path]
     :type actiSorted: tuple[bolt.Path] | list[bolt.Path]
     """
-    global _current_lo
+    global cached_lord
     try:
         lord, actiSorted = game_handle.get_load_order(lord, actiSorted)
-        _current_lo = LoadOrder(lord, actiSorted)
+        cached_lord = LoadOrder(lord, actiSorted)
     except Exception:
         bolt.deprint(u'Error updating load_order cache')
-        _current_lo = __empty
+        cached_lord = __empty
         raise
 
 def GetLo(cached=False, cached_active=True):
-    if _current_lo is not __empty:
-        loadOrder = _current_lo.loadOrder if (
+    if cached_lord is not __empty:
+        loadOrder = cached_lord.loadOrder if (
             cached and not game_handle.load_order_changed()) else None
-        active = _current_lo.activeOrdered if (
+        active = cached_lord.activeOrdered if (
             cached_active and not game_handle.active_changed()) else None
     else: active = loadOrder = None
     _updateCache(loadOrder, active)
-    return _current_lo
+    return cached_lord
 
 def usingTxtFile():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'

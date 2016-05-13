@@ -3630,7 +3630,7 @@ class ModInfos(FileInfos):
 
     def selectExact(self,modNames):
         """Selects exactly the specified set of mods."""
-        modsSet, allMods = set(modNames), set(self.plugins.LoadOrder)
+        modsSet, allMods = set(modNames), set(load_order.cached_lord.loadOrder)
         #--Ensure plugins that cannot be deselected stay selected
         modsSet.update(map(GPath, bush.game.nonDeactivatableFiles))
         #--Deselect/select plugins
@@ -3639,10 +3639,10 @@ class ModInfos(FileInfos):
         listToSelect = self.getOrdered(toSelect)
         extra = listToSelect[255:]
         #--Save
-        self.plugins.selected = listToSelect[:255]
+        final_selection = listToSelect[:255]
         # we should unghost ourselves so that ctime is properly set
-        for s in toSelect: self[s].setGhost(False)
-        self.plugins.saveActive()
+        for s in final_selection: self[s].setGhost(False)
+        self.plugins.saveActive(active=final_selection)
         self.refreshInfoLists()
         self.autoGhost(force=False) # ghost inactive
         #--Done/Error Message
