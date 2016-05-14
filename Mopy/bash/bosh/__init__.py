@@ -5206,26 +5206,26 @@ class Installer(object):
         #--Type, subNames
         type_ = 0
         subNameSet = set()
-        subNameSetAdd = subNameSet.add
-        subNameSetAdd(u'')
+        subNameSet.add(u'') # set(u'') == set() (unicode is iterable), so add
         reDataFileSearch = self.reDataFile.search
         dataDirsPlus = self.dataDirsPlus
-        for full, size, crc in self.fileSizeCrcs:
-            full = full.lower()[rootIdex:]
-            if type_ != 1: # for type 2 will scan ALL filenames - can avoid ?
-                frags = full.split(_os_sep)
-                nfrags = len(frags)
-                #--Type 1?
-                if (nfrags == 1 and reDataFileSearch(frags[0]) or
-                    nfrags > 1 and frags[0] in dataDirsPlus):
-                    type_ = 1
-                    break
-                #--Type 2?
-                elif not frags[0].startswith(skips_start) and (
-                    (nfrags > 2 and frags[1] in dataDirsPlus) or
-                    (nfrags == 2 and reDataFileSearch(frags[1]))):
-                    subNameSetAdd(frags[0])
-                    type_ = 2
+        for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
+            full = full[rootIdex:]
+            frags = full.split(_os_sep)
+            nfrags = len(frags)
+            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
+            f0_lower = frags[0].lower()
+            if (nfrags == 1 and reDataFileSearch(f0_lower) or
+                nfrags > 1 and f0_lower in dataDirsPlus):
+                type_ = 1
+                break
+            #--Else churn on to see if we have a Type 2 package
+            elif not frags[0] in subNameSet and not \
+                    f0_lower.startswith(skips_start) and (
+                (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
+                (nfrags == 2 and reDataFileSearch(frags[1]))):
+                subNameSet.add(frags[0])
+                type_ = 2
         self.type = type_
         #--SubNames, SubActives
         if type_ == 2:
