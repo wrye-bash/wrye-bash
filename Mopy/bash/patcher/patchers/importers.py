@@ -2433,16 +2433,16 @@ class NamesPatcher(ImportPatcher):
         if not self.isActive: return
         id_full = self.id_full
         mapper = modFile.getLongMapper()
-        for type in self.activeTypes:
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            if type == 'CELL':
+        for active_type in self.activeTypes:
+            if active_type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile, active_type)
+            if active_type == 'CELL':
                 id_records = patchBlock.id_cellBlock
                 activeRecords = (cellBlock.cell for cellBlock in
                                  modFile.CELL.cellBlocks if
                                  not cellBlock.cell.flags1.ignored)
                 setter = patchBlock.setCell
-            elif type == 'WRLD':
+            elif active_type == 'WRLD':
                 id_records = patchBlock.id_worldBlocks
                 activeRecords = (worldBlock.world for worldBlock in
                                  modFile.WRLD.worldBlocks if
@@ -2450,13 +2450,13 @@ class NamesPatcher(ImportPatcher):
                 setter = patchBlock.setWorld
             else:
                 id_records = patchBlock.id_records
-                activeRecords = modFile.tops[type].getActiveRecords()
+                activeRecords = modFile.tops[active_type].getActiveRecords()
                 setter = patchBlock.setRecord
             for record in activeRecords:
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid in id_records: continue
-                if fid not in id_full: continue
+                if fid not in id_full: continue # not a name
                 if record.full != id_full[fid]:
                     setter(record.getTypeCopy(mapper))
 
@@ -2467,23 +2467,23 @@ class NamesPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_full = self.id_full
         type_count = {}
-        for type in self.activeTypes:
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            if type == 'CELL':
+        for act_type in self.activeTypes:
+            if act_type not in modFile.tops: continue
+            type_count[act_type] = 0
+            if act_type == 'CELL':
                 records = (cellBlock.cell for cellBlock in
                            modFile.CELL.cellBlocks)
-            elif type == 'WRLD':
+            elif act_type == 'WRLD':
                 records = (worldBlock.world for worldBlock in
                            modFile.WRLD.worldBlocks)
             else:
-                records = modFile.tops[type].records
+                records = modFile.tops[act_type].records
             for record in records:
                 fid = record.fid
                 if fid in id_full and record.full != id_full[fid]:
                     record.full = id_full[fid]
                     keep(fid)
-                    type_count[type] += 1
+                    type_count[act_type] += 1
         self._patchLog(log,type_count)
 
 class CBash_NamesPatcher(CBash_ImportPatcher):

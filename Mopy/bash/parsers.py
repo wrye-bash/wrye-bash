@@ -3916,12 +3916,14 @@ class LoadFactory:
             (self.recTypes & {'REFR', 'ACHR', 'ACRE', 'PGRD', 'LAND'}) or
             (topType == 'WRLD' and 'LAND' in self.recTypes))
 
-    def getTopClass(self,type):
-        """Returns top block class for top block type, or None."""
-        if type in self.topTypes:
-            if   type == 'DIAL': return MobDials
-            elif type == 'CELL': return MobICells
-            elif type == 'WRLD': return MobWorlds
+    def getTopClass(self, top_rec_type):
+        """Return top block class for top block type, or None.
+        :rtype: type[record_groups.MobBase]
+        """
+        if top_rec_type in self.topTypes:
+            if   top_rec_type == 'DIAL': return MobDials
+            elif top_rec_type == 'CELL': return MobICells
+            elif top_rec_type == 'WRLD': return MobWorlds
             else: return MobObjects
         elif self.keepAll:
             return MobBase
