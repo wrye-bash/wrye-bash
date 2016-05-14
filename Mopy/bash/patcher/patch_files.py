@@ -307,7 +307,7 @@ class PatchFile(_PFile, ModFile):
     def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
         #--Keep all MGEFs
-        modFile.convertToLongFids('MGEF')
+        modFile.convertToLongFids(('MGEF',))
         if 'MGEF' in modFile.tops:
             for record in modFile.MGEF.getActiveRecords():
                 self.MGEF.setRecord(record.getTypeCopy())
