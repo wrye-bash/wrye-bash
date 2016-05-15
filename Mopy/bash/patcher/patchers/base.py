@@ -491,6 +491,28 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
+    # helpers WIP
+    def _parse_sources(self, progress, parser):
+        if not self.isActive: return None
+        fullNames = parser(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcs))
+        patches_list = None
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            if reModExt.search(srcPath.s):
+                if srcPath not in bosh.modInfos: continue
+                srcInfo = bosh.modInfos[srcPath]
+                fullNames.readFromMod(srcInfo)
+            else:
+                if patches_list is None: patches_list = getPatchesList()
+                if srcPath not in patches_list: continue
+                try:
+                    fullNames.readFromText(getPatchesPath(srcFile))
+                except UnicodeError as e: # originally in NamesPatcher, keep ?
+                    print srcPath.stail, u'is not saved in UTF-8 format:', e
+            progress.plus()
+        return fullNames
+
 class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False

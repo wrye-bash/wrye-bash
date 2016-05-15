@@ -1431,20 +1431,8 @@ class ImportFactions(ImportPatcher):
 
     def initData(self,progress):
         """Get names from source files."""
-        if not self.isActive: return
-        actorFactions = ActorFactions(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                actorFactions.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                actorFactions.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        actorFactions = self._parse_sources(progress, parser=ActorFactions)
+        if not actorFactions: return
         #--Finish
         id_factions= self.id_data
         for type,aFid_factions in actorFactions.type_id_factions.iteritems():
@@ -1636,20 +1624,8 @@ class ImportRelations(ImportPatcher):
 
     def initData(self,progress):
         """Get names from source files."""
-        if not self.isActive: return
-        factionRelations = FactionRelations(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                factionRelations.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                factionRelations.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        factionRelations = self._parse_sources(progress, parser=FactionRelations)
+        if not factionRelations: return
         #--Finish
         for fid, relations in factionRelations.id_relations.iteritems():
             if fid and (
@@ -2390,23 +2366,8 @@ class NamesPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get names from source files."""
-        if not self.isActive: return
-        fullNames = FullNames(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                fullNames.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                try:
-                    fullNames.readFromText(getPatchesPath(srcFile))
-                except UnicodeError as e:
-                    print srcFile.stail,u'is not saved in UTF-8 format:', e
-            progress.plus()
+        fullNames = self._parse_sources(progress, parser=FullNames)
+        if not fullNames: return
         #--Finish
         id_full = self.id_full
         knownTypes = set(MreRecord.type_class.keys())
@@ -3044,21 +3005,8 @@ class StatsPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get stats from source files."""
-        if not self.isActive: return
-        itemStats = ItemStats(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                itemStats.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                itemStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
-
+        itemStats = self._parse_sources(progress, parser=ItemStats)
+        if not itemStats: return
         #--Finish
         for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
             self.activeTypes.append(group)
@@ -3066,7 +3014,6 @@ class StatsPatcher(ImportPatcher):
                 del attr_value['eid']
             self.fid_attr_value.update(nId_attr_value)
             self.class_attrs[group] = itemStats.class_attrs[group][1:]
-
         self.isActive = bool(self.activeTypes)
 
     def getReadClasses(self):
@@ -3230,21 +3177,9 @@ class SpellsPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get stats from source files."""
-        if not self.isActive: return
-        spellStats = SpellRecords(aliases=self.patchFile.aliases)
+        spellStats = self._parse_sources(progress, parser=SpellRecords)
+        if not spellStats: return
         self.attrs = spellStats.attrs
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                spellStats.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                spellStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
         #--Finish
         self.id_stat.update(spellStats.fid_stats)
         self.isActive = bool(self.id_stat)
