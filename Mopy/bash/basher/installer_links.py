@@ -70,9 +70,6 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
 class _InstallerLink(Installers_Link, EnabledLink):
     """Common functions for installer links..."""
 
-    def filterInstallables(self):
-        return self.idata.filterInstallables(self.selected)
-
     def hasMarker(self):
         if len(self.selected) > 0:
             for i in self.selected:
@@ -175,7 +172,7 @@ class _SingleInstallable(OneItemLink, _InstallerLink):
 
     def _enable(self):
         return super(_SingleInstallable, self)._enable() and bool(
-            self.filterInstallables())
+            self.idata.filterInstallables(self.selected))
 
 class _RefreshingLink(_SingleInstallable):
     _overrides_skips = False
@@ -189,6 +186,12 @@ class _RefreshingLink(_SingleInstallable):
                 self.idata.update_for_overridden_skips(set(dest_src), progress)
             self.idata.irefresh(what='NS', progress=progress)
         self.window.RefreshUI()
+
+class _InstallLink(_InstallerLink):
+
+    def _enable(self):
+        self._installables = self.idata.filterInstallables(self.selected)
+        return bool(self._installables)
 
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_SingleInstallable):
@@ -373,18 +376,16 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
     def Execute(self): self.idata[self.selected[0]].open_readme()
 
 #------------------------------------------------------------------------------
-class Installer_Anneal(_InstallerLink):
+class Installer_Anneal(_InstallLink):
     """Anneal all packages."""
     text = _(u'Anneal')
     help = _(u"Anneal all packages.")
-
-    def _enable(self): return bool(self.filterInstallables())
 
     def Execute(self):
         ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Annealing..."),u'\n'+u' '*60) as progress:
-                self.idata.bain_anneal(self.filterInstallables(), ui_refresh,
+                self.idata.bain_anneal(self._installables, ui_refresh,
                                        progress)
         except (CancelError,SkipError):
             pass
@@ -539,7 +540,7 @@ class Installer_SkipRefresh(CheckLink, _InstallerLink):
             self.idata.irefresh(what='N')
             self.window.RefreshUI()
 
-class Installer_Install(_InstallerLink):
+class Installer_Install(_InstallLink):
     """Install selected packages."""
     mode_title = {'DEFAULT': _(u'Install'), 'LAST': _(u'Install Last'),
                   'MISSING': _(u'Install Missing')}
@@ -549,8 +550,6 @@ class Installer_Install(_InstallerLink):
         self.mode = mode
         self.text = self.mode_title[self.mode]
 
-    def _enable(self): return len(self.filterInstallables())
-
     @balt.conversation
     def Execute(self):
         ui_refresh = [False, False]
@@ -559,7 +558,7 @@ class Installer_Install(_InstallerLink):
                 last = (self.mode == 'LAST')
                 override = (self.mode != 'MISSING')
                 try:
-                    tweaks = self.idata.bain_install(self.filterInstallables(),
+                    tweaks = self.idata.bain_install(self._installables,
                         ui_refresh, progress, last, override)
                     ui_refresh[1] |= bool(tweaks)
                 except (CancelError,SkipError):
@@ -709,7 +708,7 @@ class Installer_Refresh(_InstallerLink):
                 u'Ignores skip refresh flag on projects') + u'.  ' + _(
             u'Will not recalculate cached crcs of files in a project')
 
-    def _enable(self): return bool(self.filterInstallables())
+    def _enable(self): return bool(self.idata.filterPackages(self.selected))
 
     @balt.conversation
     def Execute(self):
@@ -732,12 +731,10 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
         self.idata[self.selected[0]].skipVoices ^= True
         super(Installer_SkipVoices, self).Execute()
 
-class Installer_Uninstall(_InstallerLink):
+class Installer_Uninstall(_InstallLink):
     """Uninstall selected Installers."""
     text = _(u'Uninstall')
     help = _(u'Uninstall selected Installer(s)')
-
-    def _enable(self): return len(self.filterInstallables())
 
     @balt.conversation
     def Execute(self):
@@ -745,8 +742,8 @@ class Installer_Uninstall(_InstallerLink):
         ui_refresh = [False, False]
         try:
             with balt.Progress(_(u"Uninstalling..."),u'\n'+u' '*60) as progress:
-                self.idata.bain_uninstall(self.filterInstallables(),
-                                          ui_refresh, progress)
+                self.idata.bain_uninstall(self._installables, ui_refresh,
+                                          progress)
         except (CancelError,SkipError): # now where could this be raised from ?
             pass
         finally:

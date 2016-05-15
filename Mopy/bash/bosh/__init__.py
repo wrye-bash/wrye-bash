@@ -5335,6 +5335,9 @@ class Installer(object):
     def open_readme(self): pass
     def open_wizard(self): pass
 
+    def __repr__(self):
+        return self.__class__.__name__ + u"<" + repr(self.archive) + u">"
+
     #--ABSTRACT ---------------------------------------------------------------
     def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, and modified from source
@@ -6928,6 +6931,15 @@ class InstallersData(DataDict):
             return self[x].type in (1, 2) and isinstance(self[x],
                 (InstallerArchive, InstallerProject))
         return filter(installable, installerKeys)
+
+    def filterPackages(self, installerKeys):
+        """Remove markers from installerKeys.
+        :type installerKeys: collections.Iterable[bolt.Path]
+        :rtype: list[bolt.Path]
+        """
+        def _package(x):
+            return isinstance(self[x], (InstallerArchive, InstallerProject))
+        return filter(_package, installerKeys)
 
 #------------------------------------------------------------------------------
 class ModGroups:
