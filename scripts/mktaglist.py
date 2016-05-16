@@ -32,6 +32,7 @@ oblivionDir = None
 skyrimDir = None
 fallout3Dir = None
 falloutNVDir = None
+fallout4Dir = None
 
 # Detect Oblivion.
 try:
@@ -72,11 +73,22 @@ try:
 except:
     pass
 
+#Detect Fallout4.
+try:
+    key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, u'Software\\Bethesda Softworks\\Fallout4', 0, _winreg.KEY_READ|_winreg.KEY_WOW64_32KEY)
+    value = _winreg.QueryValueEx(key,u'Installed Path')
+    if value[1] == _winreg.REG_SZ and os.path.exists(value[0]):
+        fallout4Dir = value[0]
+        print u'Found Fallout4.'
+except:
+    pass
+
 # Masterlist paths
 oblivionMlist = None
 skyrimMlist = None
 fallout3Mlist = None
 falloutNVMlist = None
+fallout4Mlist = None
 
 # Detect a LOOT install.
 localAppData = os.path.join(os.environ["LOCALAPPDATA"], 'LOOT')
@@ -89,6 +101,8 @@ if os.path.exists(localAppData):
         fallout3Mlist = os.path.join(localAppData, 'Fallout3', 'masterlist.yaml')
     if falloutNVDir and os.path.exists(os.path.join(localAppData, 'FalloutNV')):
         falloutNVMlist = os.path.join(localAppData, 'FalloutNV', 'masterlist.yaml')
+    if fallout4Dir and os.path.exists(os.path.join(localAppData, 'Fallout4')):
+        fallout4Mlist = os.path.join(localAppData, 'Fallout4', 'masterlist.yaml')
 else:
     raise Exception("No LOOT install found.")
 
@@ -127,7 +141,7 @@ if skyrimMlist:
 if fallout3Mlist:
     # Convert Fallout 3 masterlist.
     print u'Getting masterlist from %s' % fallout3Mlist
-    taglistDir = u'../Mopy/Bash Patches/Fallout 3/taglist.yaml'
+    taglistDir = u'../Mopy/Bash Patches/Fallout3/taglist.yaml'
     if os.path.exists(fallout3Mlist):
         lootDb = loot.LootDb(fallout3Dir,loot.LOOT_GAME_FO3)
         lootDb.PlainLoad(fallout3Mlist)
@@ -139,7 +153,7 @@ if fallout3Mlist:
 if falloutNVMlist:
     # Convert Fallout New Vegas masterlist.
     print u'Getting masterlist from %s' % falloutNVMlist
-    taglistDir = u'../Mopy/Bash Patches/Fallout New Vegas/taglist.yaml'
+    taglistDir = u'../Mopy/Bash Patches/FalloutNV/taglist.yaml'
     if os.path.exists(falloutNVMlist):
         lootDb = loot.LootDb(falloutNVDir,loot.LOOT_GAME_FONV)
         lootDb.PlainLoad(falloutNVMlist)
@@ -147,5 +161,17 @@ if falloutNVMlist:
         print u'Fallout New Vegas masterlist converted.'
     else:
         print u'Error: Fallout New Vegas masterlist not found.'
+
+if fallout4Mlist:
+    # Convert Fallout New Vegas masterlist.
+    print u'Getting masterlist from %s' % fallout4Mlist
+    taglistDir = u'../Mopy/Bash Patches/Fallout4/taglist.yaml'
+    if os.path.exists(fallout4Mlist):
+        lootDb = loot.LootDb(fallout4Dir,loot.LOOT_GAME_FO4)
+        lootDb.PlainLoad(fallout4Mlist)
+        lootDb.DumpMinimal(taglistDir,True)
+        print u'Fallout 4 masterlist converted.'
+    else:
+        print u'Error: Fallout 4 masterlist not found.'
 
 print u'Taglist generator finished.'

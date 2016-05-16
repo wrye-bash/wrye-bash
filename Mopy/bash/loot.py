@@ -158,10 +158,11 @@ def Init(path):
     # =========================================================================
     # API Constants - Games
     # =========================================================================
-    global LOOT_GAME_TES4, LOOT_GAME_TES5, LOOT_GAME_FO3, LOOT_GAME_FONV
+    global LOOT_GAME_TES4, LOOT_GAME_TES5, LOOT_GAME_FO3, LOOT_GAME_FONV, LOOT_GAME_FO4
     LOOT_GAME_TES4 = _uint('loot_game_tes4')
     LOOT_GAME_TES5 = _uint('loot_game_tes5')
     LOOT_GAME_FO3 = _uint('loot_game_fo3')
+    LOOT_GAME_FO4 = _uint('loot_game_fo4')
     LOOT_GAME_FONV = _uint('loot_game_fonv')
     games = {
         'Oblivion': LOOT_GAME_TES4,
@@ -170,6 +171,8 @@ def Init(path):
         LOOT_GAME_TES5: LOOT_GAME_TES5,
         'Fallout3': LOOT_GAME_FO3,
         LOOT_GAME_FO3: LOOT_GAME_FO3,
+        'Fallout4': LOOT_GAME_FO4,
+        LOOT_GAME_FO4: LOOT_GAME_FO4,
         'FalloutNV': LOOT_GAME_FONV,
         LOOT_GAME_FONV: LOOT_GAME_FONV,
     }
@@ -262,7 +265,7 @@ def Init(path):
     #                               const char * const gamePath)
     _CCreateLootDb = LootApi.loot_create_db
     _CCreateLootDb.restype = LootErrorCheck
-    _CCreateLootDb.argtypes = [loot_db_p, c_uint, c_char_p]
+    _CCreateLootDb.argtypes = [loot_db_p, c_uint, c_char_p, c_char_p]
     ## void loot_destroy_db(loot_db db)
     _CDestroyLootDb = LootApi.loot_destroy_db
     _CDestroyLootDb.restype = None
@@ -327,7 +330,7 @@ def Init(path):
             self.tags = {}   # BashTag map
             self._DB = loot_db()
             # print gamePath
-            _CCreateLootDb(byref(self._DB),game,_enc(gamePath))
+            _CCreateLootDb(byref(self._DB),game,_enc(gamePath), None)
 
         def __del__(self):
             if self._DB is not None:
