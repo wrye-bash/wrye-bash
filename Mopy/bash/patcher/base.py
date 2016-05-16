@@ -95,7 +95,6 @@ class _Abstract_Patcher(object):
 class Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    # would make any sense to make getRead/WriteClasses() into classmethods
     # would it make any sense to make getRead/WriteClasses() into classmethods
     # and just define an attribute in the classes - so getReadClasses(cls):
     # return cls.READ and have in subclasses just READ = 'AMMO' (say)

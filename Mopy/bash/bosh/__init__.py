@@ -88,14 +88,15 @@ undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 oiMask = 0xFFFFFFL
 
 #--Singletons
-gameInis = None
-oblivionIni = None
-modInfos  = None  # type: ModInfos
-saveInfos = None  # type: SaveInfos
-iniInfos = None   # type: INIInfos
-bsaInfos = None   # type: BSAInfos
+gameInis = None    # type: tuple[OblivionIni]
+oblivionIni = None # type: OblivionIni
+modInfos  = None   # type: ModInfos
+saveInfos = None   # type: SaveInfos
+iniInfos = None    # type: INIInfos
+bsaInfos = None    # type: BSAInfos
 screensData = None # type: ScreensData
-configHelpers = None #--Config Helper files (LOOT Master List, etc.)
+#--Config Helper files (LOOT Master List, etc.)
+configHelpers = None # type: mods_metadata.ConfigHelpers
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
@@ -3583,8 +3584,8 @@ class ModInfos(FileInfos):
         it merges or imports."""
         merged,imported = set(),set()
         patches = masters & self.bashed_patches
-        for patchName in patches:
-            patchConfigs = self.table.getItem(patchName, 'bash.patch.configs')
+        for patch in patches:
+            patchConfigs = self.table.getItem(patch, 'bash.patch.configs')
             if not patchConfigs: continue
             patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(
                 patchConfigs) else 'PatchMerger'
@@ -3938,7 +3939,7 @@ class ModInfos(FileInfos):
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
-        """Removes the specified mods from the load order."""
+        """Remove the specified mods from _lo_wip and _active_wip caches."""
         # Use set to remove any duplicates
         to_remove = set(to_remove, )
         # Remove mods from cache
@@ -4429,15 +4430,6 @@ class Installer(object):
     def getTempDir():
         """Returns current Temp Dir, generating one if needed."""
         return Installer._tempDir if Installer._tempDir is not None else Installer.newTempDir()
-
-    @staticmethod
-    def clearTemp():
-        """Clear the current Temp Dir, but leave it as the current Temp dir still."""
-        if Installer._tempDir is not None and Installer._tempDir.exists():
-            try:
-                Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
-            except:
-                Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
 
     tempList = Path.baseTempDir().join(u'WryeBash_InstallerTempList.txt')
 
@@ -5124,8 +5116,8 @@ class Installer(object):
             full = full[rootIdex:]
             frags = full.split(_os_sep)
             nfrags = len(frags)
-            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
             f0_lower = frags[0].lower()
+            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
             if (nfrags == 1 and reDataFileSearch(f0_lower) or
                 nfrags > 1 and f0_lower in dataDirsPlus):
                 type_ = 1
@@ -6241,10 +6233,10 @@ class InstallersData(DataDict):
     def _skips_in_data_dir(sDirs):
         """Skip some top level directories based on global settings - EVEN
         on a fullRefresh."""
+        log = None
         if inisettings['KeepLog'] > 1:
             try: log = inisettings['LogFile'].open('a', encoding='utf-8-sig')
-            except: log = None
-        else: log = None
+            except: pass
         setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
         setSkipDocs = settings['bash.installers.skipDocs']
         setSkipImages = settings['bash.installers.skipImages']

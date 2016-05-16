@@ -222,6 +222,7 @@ class Save_ImportFace(OneItemLink):
     text = _(u'Import Face...')
     help = _(u'Import a face from another save')
 
+    @balt.conversation
     def Execute(self):
         #--File Info
         fileName = GPath(self.selected[0])

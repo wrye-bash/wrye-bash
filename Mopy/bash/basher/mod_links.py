@@ -1116,7 +1116,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         #--Config
         config = bosh.modInfos.table.getItem(self.selected[0],
                                              'bash.patch.configs', {})
-        exportConfig(patchName=self.selected[0].s, config=config,
+        exportConfig(patch_name=self.selected[0].s, config=config,
                      isCBash=configIsCBash(config), win=self.window,
                      outDir=bass.dirs['patches'])
 

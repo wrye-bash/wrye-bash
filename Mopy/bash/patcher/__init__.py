@@ -32,8 +32,8 @@ def configIsCBash(patchConfigs): ##: belongs to basher but used also in bosh
             return True
     return False
 
-def exportConfig(patchName, config, isCBash, win, outDir):
-    outFile = patchName + u'_Configuration.dat'
+def exportConfig(patch_name, config, isCBash, win, outDir):
+    outFile = patch_name + u'_Configuration.dat'
     outDir.makedirs()
     #--File dialog
     outPath = balt.askSave(win,

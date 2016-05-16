@@ -1238,7 +1238,7 @@ class MelSet:
         # fullLoad = self.full0.loadData
         while not insAtEnd(endPos,recType):
             (Type,size) = insSubHeader(recType)
-            if _debug: print type,size
+            if _debug: print Type,size
             readId = recType + '.' + Type
             try:
                 if Type not in loaders:

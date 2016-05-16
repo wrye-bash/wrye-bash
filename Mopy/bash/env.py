@@ -319,6 +319,12 @@ class AccessDeniedError(FileOperationError):
         self.errno = 5
         Exception.__init__(self, u'FileOperationError: Access Denied')
 
+class _InvalidPathsError(FileOperationError):
+    def __init__(self, source, target):
+        self.errno = 124
+        Exception.__init__(self, u'FileOperationError: Invalid paths:'
+                u'\nsource: %s\ntarget: %s' % (source, target))
+
 class _DirectoryFileCollisionError(FileOperationError):
     def __init__(self, source, dest):
         self.errno = -1
@@ -431,6 +437,9 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             # Delete failed because file didnt exist
             return dict(mapping)
         else:
+            if result == 124:
+                raise _InvalidPathsError(source.replace(u'\x00', u'\n'),
+                                         target.replace(u'\x00', u'\n'))
             raise FileOperationErrorMap.get(result, FileOperationError(result))
     else: # Use custom dialogs and such
         import balt # TODO(ut): local import, env should be above balt...

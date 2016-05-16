@@ -4334,7 +4334,7 @@ class BashApp(wx.App):
     def InitData(self,progress):
         """Initialize all data. Called by Init()."""
         progress.Update(5,_(u'Initializing ModInfos'))
-        bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
+        bosh.gameInis = tuple(bosh.OblivionIni(x) for x in bush.game.iniFiles)
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
