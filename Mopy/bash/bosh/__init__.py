@@ -2165,95 +2165,6 @@ class PluginsFullError(BoltError):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
-def _cache(lord_func):
-    """Decorator to make sure I sync Plugins cache with load_order cache
-    whenever I change (or attempt to change) the latter.
-
-    All this syncing is error prone. WIP !
-    """
-    @wraps(lord_func)
-    def _plugins_cache_wrapper(*args, **kwargs):
-        e = None
-        try:
-            return lord_func(*args, **kwargs)
-        except:
-            e = sys.exc_info()
-            raise
-        finally:
-            try:
-                args[0].LoadOrder, args[0].selected = list(
-                    args[0].lord.loadOrder), list(args[0].lord.activeOrdered)
-            except AttributeError: # lord is None, exception thrown in init
-                if e: raise e[0], e[1], e[2]
-                raise # should never happen, lord must never be None after init
-    return _plugins_cache_wrapper
-
-class Plugins:
-    """DEPRECATED: Singleton wrapper around load_order.py, owned by modInfos
-    - nothing else should access it directly. Exposes "LoadOrder" and
-    "selected" mutable caches used by modInfos to manipulate the load
-    order/active and then save at once. Must disappear in a later iteration
-    of the load order API."""
-    def __init__(self):
-        if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
-            self.dir = dirs['app']
-        else:
-            self.dir = dirs['userApp']
-        # Plugins cache, manipulated by code which changes load order/active
-        self.LoadOrder = [] # the masterlist load order (always sorted)
-        self.selected = []  # list of the currently active plugins (not always in order)
-        self.lord = None    # WIP: valid LoadOrder object, must be kept in sync with load_order._current_load_order
-        #--Create dirs/files if necessary
-        self.dir.makedirs()
-
-    @_cache
-    def saveActive(self, active=None):
-        """Write data to Plugins.txt file.
-
-        Always call AFTER setting the load order - make sure we unghost
-        ourselves so ctime of the unghosted mods is not set."""
-        self.lord = load_order.SaveLoadOrder(self.lord.loadOrder,
-            self.lord.lorder(active if active is not None else self.selected))
-
-    @_cache
-    def saveLoadAndActive(self):
-        """Write data to loadorder.txt file (and update plugins.txt too)."""
-        dex = {x: i for i, x in enumerate(self.LoadOrder) if
-               x in set(self.selected)}
-        self.selected.sort(key=dex.__getitem__) # order in their load order
-        self.lord = load_order.SaveLoadOrder(self.LoadOrder,acti=self.selected)
-
-    def removeMods(self, plugins, savePlugins=False):
-        """Removes the specified mods from the load order."""
-        # Use set to remove any duplicates
-        plugins = set(plugins,)
-        # Remove mods from cache
-        self.LoadOrder = [x for x in self.LoadOrder if x not in plugins]
-        self.selected  = [x for x in self.selected  if x not in plugins]
-        # Refresh liblo
-        if savePlugins: self.saveLoadAndActive()
-
-    @_cache
-    def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
-        """Reload for plugins.txt or masterlist.txt changes."""
-        oldLord = self.lord
-        self.lord = load_order.GetLo(cached=not forceRefresh,
-                                     cached_active=not forceActive)
-        return oldLord != self.lord
-
-    @_cache
-    def undo_load_order(self):
-        oldLord = self.lord
-        self.lord = load_order.undo_load_order()
-        return oldLord != self.lord
-
-    @_cache
-    def redo_load_order(self):
-        oldLord = self.lord
-        self.lord = load_order.redo_load_order()
-        return oldLord != self.lord
-
-#------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
         self.oldName = self.name = GPath(name)
@@ -3280,6 +3191,42 @@ class INIInfos(FileInfos):
         dir_.makedirs()
         return dir_
 
+def _lo_cache(lord_func):
+    """Decorator to make sure I sync modInfos cache with load_order cache
+    whenever I change (or attempt to change) the latter."""
+    @wraps(lord_func)
+    def _modinfos_cache_wrapper(self, *args, **kwargs):
+        """Sync the ModInfos load order and active caches and refresh for
+        load order or active changes.
+
+        :type self: ModInfos
+        :return: 1 if only load order changed, 2 if only active changed,
+        3 if both changed else 0
+        """
+        try:
+            old_lo, old_active = load_order.cached_lord.loadOrder, \
+                                 load_order.cached_lord.activeOrdered
+            lord_func(self, *args, **kwargs)
+            lo, active = load_order.cached_lord.loadOrder, \
+                         load_order.cached_lord.activeOrdered
+            lo_changed = lo != old_lo
+            active_changed = active != old_active
+            active_set_changed = active_changed and (
+                set(active) != set(old_active))
+            if active_changed:
+                self._refreshBadNames()
+                self._refreshInfoLists()
+                self._refreshMissingStrings()
+            #if lo changed (including additions/removals) let refresh handle it
+            if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
+                self.autoGhost(force=False)
+            return (lo_changed and 1) + (active_changed and 2)
+        finally:
+            self._lo_wip, self._active_wip = list(
+                load_order.cached_lord.loadOrder), list(
+                load_order.cached_lord.activeOrdered)
+    return _modinfos_cache_wrapper
+
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
@@ -3292,7 +3239,6 @@ class ModInfos(FileInfos):
         self.mtimesReset = [] #--Files whose mtimes have been reset.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         #--Selection state (merged, imported)
-        self.plugins = Plugins()
         self.bashed_patches = set()
         #--Info lists/sets
         for fname in bush.game.masterFiles:
@@ -3333,6 +3279,39 @@ class ModInfos(FileInfos):
         self.selectedBad = set()
         self.selectedExtra = []
         load_order.initialize_load_order_handle(self)
+        # Load order caches to manipulate, then call our save methods - avoid !
+        self._active_wip = []
+        self._lo_wip = []
+
+    # Load order API for the rest of Bash to use - if load order or active
+    # changed methods run a refresh on modInfos data
+    @_lo_cache
+    def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
+        load_order.GetLo(cached=not forceRefresh,cached_active=not forceActive)
+
+    @_lo_cache
+    def cached_lo_save_active(self, active=None):
+        """Write data to Plugins.txt file.
+
+        Always call AFTER setting the load order - make sure we unghost
+        ourselves so ctime of the unghosted mods is not set."""
+        load_order.SaveLoadOrder(load_order.cached_lord.loadOrder,
+                                 load_order.cached_lord.lorder(
+                        active if active is not None else self._active_wip))
+
+    @_lo_cache
+    def cached_lo_save_all(self):
+        """Write data to loadorder.txt file (and update plugins.txt too)."""
+        dex = {x: i for i, x in enumerate(self._lo_wip) if
+               x in set(self._active_wip)}
+        self._active_wip.sort(key=dex.__getitem__) # order in their load order
+        load_order.SaveLoadOrder(self._lo_wip, acti=self._active_wip)
+
+    @_lo_cache
+    def undo_load_order(self): load_order.undo_load_order()
+
+    @_lo_cache
+    def redo_load_order(self): load_order.redo_load_order()
 
     @property
     def lockLO(self):
@@ -3356,7 +3335,7 @@ class ModInfos(FileInfos):
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
         # Calculating indexes through order.index() cause we may be called in
         # a row before saving the modified load order
-        order = self.plugins.LoadOrder
+        order = self._lo_wip
         newPos = order.index(dropItem)
         if newPos <= 0: return False
         start = order.index(firstItem)
@@ -3409,14 +3388,16 @@ class ModInfos(FileInfos):
         if self.canSetTimes() and hasChanged:
             self._resetMTimes()
         _modTimesChange = _modTimesChange and not load_order.usingTxtFile()
-        hasChanged += self.plugins.refreshLoadOrder(
+        lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
-        hasGhosted = self.autoGhost(force=False)
-        if hasChanged or _modTimesChange: self.refreshInfoLists()
         self.reloadBashTags()
-        hasNewBad = self.refreshBadNames()
-        # we need a load order below: in skyrim it reads inis in active order
-        hasMissingStrings = self._refreshMissingStrings()
+        # if active did not change, we must perform the refreshes below
+        if lo_changed < 2 and hasChanged:
+            self._refreshBadNames()
+            self._refreshInfoLists()
+        elif lo_changed < 2: # maybe string files were deleted...
+            #we need a load order below: in skyrim we read inis in active order
+            hasChanged += self._refreshMissingStrings()
         self.setOblivionVersions()
         oldMergeable = set(self.mergeable)
         scanList = self._refreshMergeable()
@@ -3426,9 +3407,9 @@ class ModInfos(FileInfos):
                 progress.setFull(len(scanList))
                 self.rescanMergeable(scanList,progress)
         hasChanged += bool(scanList or difMergeable)
-        return bool(hasChanged) or hasGhosted or hasNewBad or hasMissingStrings
+        return bool(hasChanged) or lo_changed
 
-    def refreshBadNames(self):
+    def _refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
         It seems that Skyrim and Oblivion read plugins.txt as a cp1252
         encoded file, and any filename that doesn't decode to cp1252 will
@@ -3440,7 +3421,7 @@ class ModInfos(FileInfos):
                 if load_order.isActiveCached(fileName):
                     ## For now, we'll leave them active, until
                     ## we finish testing what the game will support
-                    #self.unselect(fileName)
+                    #self.lo_deactivate(fileName)
                     activeBad.add(fileName)
                 else:
                     bad.add(fileName)
@@ -3497,7 +3478,7 @@ class ModInfos(FileInfos):
                     changed.append(mod)
         return changed
 
-    def refreshInfoLists(self):
+    def _refreshInfoLists(self):
         """Refreshes various mod info lists (exGroup_mods, imported,
         exported) - call after refreshing from Data AND having latest load
         order."""
@@ -3508,13 +3489,14 @@ class ModInfos(FileInfos):
                 self.bashed_patches.add(modName)
         #--Selected mtimes and Refresh overLoaded too..
         self.exGroup_mods.clear()
-        for modName in load_order.activeCached():
+        active_set = set(load_order.activeCached())
+        for modName in active_set:
             maExGroup = reExGroup.match(modName.s)
             if maExGroup:
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(set(load_order.activeCached()))
+        self.merged,self.imported = self.getSemiActive(active_set)
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -3588,6 +3570,13 @@ class ModInfos(FileInfos):
             if autoTag:
                 mod.reloadBashTags()
 
+    #--Refresh File
+    def refreshFile(self,fileName):
+        try:
+            FileInfos.refreshFile(self,fileName)
+        finally:
+            self._refreshInfoLists() # not sure if needed here - track usages !
+
     #--Mod selection ----------------------------------------------------------
     def getOrdered(self, modNames):
         """Return a list containing modNames' elements sorted into load order.
@@ -3624,44 +3613,6 @@ class ModInfos(FileInfos):
             imported.update(filter(lambda x: x in self,
                                    patchConfigs.get('ImportedMods', tuple())))
         return merged,imported
-
-    def selectExact(self,modNames):
-        """Selects exactly the specified set of mods."""
-        modsSet, allMods = set(modNames), set(self.keys())
-        #--Ensure plugins that cannot be deselected stay selected
-        modsSet.update(load_order.must_be_active_if_present() & allMods)
-        #--Deselect/select plugins
-        missingSet = modsSet - allMods
-        toSelect = modsSet - missingSet
-        listToSelect = self.getOrdered(toSelect)
-        extra = listToSelect[255:]
-        #--Save
-        final_selection = listToSelect[:255]
-        # we should unghost ourselves so that ctime is properly set
-        for s in final_selection: self[s].setGhost(False)
-        self.plugins.saveActive(active=final_selection)
-        self.refreshInfoLists()
-        self.autoGhost(force=False) # ghost inactive
-        #--Done/Error Message
-        message = u''
-        if missingSet:
-            message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
-            message += u'\n* '.join(x.s for x in missingSet)
-        if extra:
-            if missingSet: message += u'\n'
-            message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-            message += u'\n* '.join(x.s for x in extra)
-        return message
-
-    def undo_load_order(self):
-        undid = self.plugins.undo_load_order()
-        if undid: self.refresh(scanData=False)
-        return undid
-
-    def redo_load_order(self):
-        undid = self.plugins.redo_load_order()
-        if undid: self.refresh(scanData=False)
-        return undid
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
         """Returns mod list as text. If fileInfo is provided will show mod list
@@ -3780,23 +3731,13 @@ class ModInfos(FileInfos):
         else: msg = voice % name # hasVoices
         return balt.askWarning(parent, msg, title + name)
 
-    #--Mod Specific -----------------------------------------------------------
-
-    #--Refresh File
-    def refreshFile(self,fileName):
-        try:
-            FileInfos.refreshFile(self,fileName)
-        finally:
-            self.refreshInfoLists()
-
     #--Active mods management -------------------------------------------------
-    def select(self, fileName, doSave=True, modSet=None, children=None,
-               _activated=None):
-        """Adds file to selected."""
-        plugins = self.plugins
+    def lo_activate(self, fileName, doSave=True, modSet=None, children=None,
+                    _activated=None):
+        """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
-            if len(plugins.selected) == 255:
+            if len(self._active_wip) == 255:
                 raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
             children = (children or tuple()) + (fileName,)
             if fileName in children[:-1]:
@@ -3809,24 +3750,24 @@ class ModInfos(FileInfos):
             ##    return
             for master in self[fileName].header.masters:
                 if master in modSet:
-                    self.select(master, False, modSet, children, _activated)
+                    self.lo_activate(master, False, modSet, children, _activated)
             # Unghost
             self[fileName].setGhost(False)
             #--Select in plugins
-            if fileName not in plugins.selected:
-                plugins.selected.append(fileName)
+            if fileName not in self._active_wip:
+                self._active_wip.append(fileName)
                 _activated.add(fileName)
             return self.getOrdered(_activated or [])
         finally:
-            if doSave: plugins.saveActive()
+            if doSave: self.cached_lo_save_active()
 
-    def unselect(self,fileName,doSave=True):
+    def lo_deactivate(self, fileName, doSave=True):
         """Remove mods and their children from selected, can only raise if
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
         notDeactivatable = load_order.must_be_active_if_present()
         fileNames = set(x for x in fileName if x not in notDeactivatable)
-        old = sel = set(self.plugins.selected)
+        old = sel = set(self._active_wip)
         diff = sel - fileNames
         if len(diff) == len(sel): return set()
         #--Unselect self
@@ -3845,17 +3786,17 @@ class ModInfos(FileInfos):
             child = children.pop()
             sel.remove(child)
             _children(child)
-        self.plugins.selected = self.getOrdered(sel)
+        self._active_wip = self.getOrdered(sel)
         #--Save
-        if doSave: self.plugins.saveActive()
+        if doSave: self.cached_lo_save_active()
         return old - sel # return deselected
 
-    def selectAll(self):
+    def lo_activate_all(self):
         toActivate = set(load_order.activeCached())
         try:
             def _select(m):
                 if not m in toActivate:
-                    self.select(m, doSave=False)
+                    self.lo_activate(m, doSave=False)
                     toActivate.add(m)
             mods = self.keys()
             # first select the bashed patch(es) and their masters
@@ -3872,18 +3813,41 @@ class ModInfos(FileInfos):
             # then activate as many of the remaining mods as we can
             for mod in mods:
                 if mod in mergeable: _select(mod)
-            self.plugins.saveActive(active=toActivate)
         except PluginsFullError:
             deprint(u'select All: 255 mods activated', traceback=True)
-            self.plugins.saveActive(active=toActivate)
             raise
         except BoltError:
             toActivate.clear()
-            deprint(u'select All: saveActive failed', traceback=True)
+            deprint(u'select All: cached_lo_save_active failed',traceback=True)
             raise
         finally:
-            if toActivate:
-                self.refreshInfoLists() # no modtimes changes, just active
+            if toActivate: self.cached_lo_save_active(active=toActivate)
+
+    def lo_activate_exact(self, modNames):
+        """Selects exactly the specified set of mods."""
+        modsSet, allMods = set(modNames), set(self.keys())
+        #--Ensure plugins that cannot be deselected stay selected
+        modsSet.update(load_order.must_be_active_if_present() & allMods)
+        #--Deselect/select plugins
+        missingSet = modsSet - allMods
+        toSelect = modsSet - missingSet
+        listToSelect = self.getOrdered(toSelect)
+        extra = listToSelect[255:]
+        #--Save
+        final_selection = listToSelect[:255]
+        # we should unghost ourselves so that ctime is properly set
+        for s in final_selection: self[s].setGhost(False)
+        self.cached_lo_save_active(active=final_selection)
+        #--Done/Error Message
+        message = u''
+        if missingSet:
+            message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
+            message += u'\n* '.join(x.s for x in missingSet)
+        if extra:
+            if missingSet: message += u'\n'
+            message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
+            message += u'\n* '.join(x.s for x in extra)
+        return message
 
     #-- Helpers ---------------------------------------------------------------
     def isBP(self, modName): return self[modName].header.author in (
@@ -3900,7 +3864,7 @@ class ModInfos(FileInfos):
 
     def isMissingStrings(self,modName):
         """True if the mod says it has .STRINGS files, but the files are missing."""
-        modInfo = self.data[modName]
+        modInfo = self[modName]
         if modInfo.header.flags1.hasStrings:
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
@@ -3990,19 +3954,26 @@ class ModInfos(FileInfos):
         newFile.safeSave()
 
     #--Mod move/delete/rename -------------------------------------------------
+    def _lo_caches_remove_mods(self, to_remove):
+        """Removes the specified mods from the load order."""
+        # Use set to remove any duplicates
+        to_remove = set(to_remove, )
+        # Remove mods from cache
+        self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
+        self._active_wip  = [x for x in self._active_wip if x not in to_remove]
+
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
         isSelected = load_order.isActiveCached(oldName)
-        if isSelected: self.unselect(oldName, doSave=False) # will save later
+        if isSelected: self.lo_deactivate(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
-        # renameInLo
-        oldIndex = self.plugins.LoadOrder.index(oldName)
-        self.plugins.removeMods([oldName], savePlugins=False)
-        self.plugins.LoadOrder.insert(oldIndex, newName)
-        if isSelected: self.select(newName, doSave=False)
+        # rename in load order caches
+        oldIndex = self._lo_wip.index(oldName)
+        self._lo_caches_remove_mods([oldName])
+        self._lo_wip.insert(oldIndex, newName)
+        if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
-        self.plugins.saveLoadAndActive()
-        self.refreshInfoLists()
+        self.cached_lo_save_all()
 
     def delete(self, fileName, **kwargs):
         """Delete member file."""
@@ -4010,7 +3981,7 @@ class ModInfos(FileInfos):
         for f in fileName:
             if f.s in bush.game.masterFiles: raise bolt.BoltError(
                 u"Cannot delete the game's master file(s).")
-        self.unselect(fileName, doSave=False)
+        self.lo_deactivate(fileName, doSave=False)
         deleted = FileInfos.delete(self, fileName, **kwargs)
         # temporarily track deleted mods so BAIN can update its UI
         for d in map(self.dir.join, deleted): # we need absolute paths
@@ -4022,8 +3993,8 @@ class ModInfos(FileInfos):
         if not deleted: return
         for name in deleted:
             self.pop(name, None)
-        self.plugins.removeMods(deleted, savePlugins=True)
-        self.refreshInfoLists()
+        self._lo_caches_remove_mods(deleted)
+        self.cached_lo_save_all()
 
     def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
                   doRefresh=True):
@@ -4037,7 +4008,7 @@ class ModInfos(FileInfos):
 
     def move_info(self, fileName, destDir, doRefresh=True):
         """Moves member file to destDir."""
-        self.unselect(fileName, doSave=True)
+        self.lo_deactivate(fileName, doSave=True)
         FileInfos.move_info(self, fileName, destDir, doRefresh)
 
     #--Mod info/modify --------------------------------------------------------

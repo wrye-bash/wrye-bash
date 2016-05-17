@@ -93,7 +93,7 @@ class Mods_LoadList(ChoiceLink):
             """Common methods used by Links de/activating mods."""
             def _refresh(self): self.window.RefreshUI(refreshSaves=True)
             def _selectExact(self, mods):
-                errorMessage = bosh.modInfos.selectExact(mods)
+                errorMessage = bosh.modInfos.lo_activate_exact(mods)
                 self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
         class _All(__Activate):
@@ -102,7 +102,7 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self):
                 """Select all mods."""
                 try:
-                    bosh.modInfos.selectAll()
+                    bosh.modInfos.lo_activate_all()
                 except bosh.PluginsFullError:
                     self._showError(
                         _(u"Mod list is full, so some mods were skipped"),

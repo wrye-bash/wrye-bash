@@ -212,7 +212,7 @@ class Save_LoadMasters(OneItemLink):
     def Execute(self):
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data_store[fileName]
-        errorMessage = bosh.modInfos.selectExact(fileInfo.masterNames)
+        errorMessage = bosh.modInfos.lo_activate_exact(fileInfo.masterNames)
         BashFrame.modList.RefreshUI(refreshSaves=True)
         if errorMessage: self._showError(errorMessage, fileName.s)
 

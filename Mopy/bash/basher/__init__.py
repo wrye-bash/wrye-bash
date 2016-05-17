@@ -808,11 +808,9 @@ class ModList(_ModsUIList):
     def _refreshOnDrop(self):
         #--Save and Refresh
         try:
-            bosh.modInfos.plugins.saveLoadAndActive()
+            bosh.modInfos.cached_lo_save_all()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
-        bosh.FileInfos.refresh(bosh.modInfos) # update mtimes conflicts etc
-        bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
@@ -997,7 +995,7 @@ class ModList(_ModsUIList):
         for act in active:
             if act in touched: continue # already deactivated
             try:
-                changed = self.data_store.unselect(act, doSave=False)
+                changed = self.data_store.lo_deactivate(act, doSave=False)
                 refreshNeeded += len(changed)
                 if len(changed) > (act in changed): # deactivated children
                     touched |= changed
@@ -1014,7 +1012,7 @@ class ModList(_ModsUIList):
             ## game to load these files.s
             #if fileName in self.data_store.bad_names: return
             try:
-                activated = self.data_store.select(inact, doSave=False)
+                activated = self.data_store.lo_activate(inact, doSave=False)
                 refreshNeeded += len(activated)
                 if len(activated) > (inact in activated):
                     touched |= set(activated)
@@ -1025,9 +1023,8 @@ class ModList(_ModsUIList):
                 break
         #--Refresh
         if refreshNeeded:
-            bosh.modInfos.plugins.saveActive()
+            bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)
-            bosh.modInfos.refreshInfoLists()
             self.RefreshUI(refreshSaves=True)
 
     __activated_key = _(u'Masters activated:')

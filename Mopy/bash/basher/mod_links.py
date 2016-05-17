@@ -947,12 +947,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     deselect |= set(dialog.getChecked(key, lst))
                 if deselect:
                     with balt.BusyCursor():
-                        for mod in deselect:
-                            bosh.modInfos.unselect(mod, doSave=False)
-                        bosh.modInfos.plugins.saveActive()
-                        # just active mods (no modtimes changes), still needed:
-                        bosh.modInfos.refreshInfoLists()
-                        self.window.RefreshUI(refreshSaves=True) # True ?
+                        for mod in deselect: bosh.modInfos.lo_deactivate(mod,
+                                                                doSave=False)
+                        bosh.modInfos.cached_lo_save_active()
+                        self.window.RefreshUI(refreshSaves=True)
             dialog.Destroy()
 
         previousMods = set()
@@ -1554,8 +1552,7 @@ class _Esm_Flip(EnabledLink):
         with balt.BusyCursor():
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
-            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True,
-                                                   forceActive=True)
+            bosh.modInfos.refreshLoadOrder(forceRefresh=True, forceActive=True)
             if espify: # converted to esps - rescan mergeable
                 bosh.modInfos.rescanMergeable(updated, bolt.Progress())
             # will be moved to the top - note that modification times won't

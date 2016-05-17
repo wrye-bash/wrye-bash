@@ -283,7 +283,8 @@ class PatchDialog(balt.Dialog):
                         bass.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patchName.s)):
                 try:
-                    changedFiles = bosh.modInfos.select(patchName, doSave=True)
+                    changedFiles = bosh.modInfos.lo_activate(patchName,
+                                                             doSave=True)
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
