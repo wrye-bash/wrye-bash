@@ -134,7 +134,22 @@ def loIndexCachedOrMax(mod):
 
 def activeIndexCached(mod): return cached_lord.activeIndex(mod)
 
-def SaveLoadOrder(lord, acti=None, __index_move=False):
+def get_ordered(modNames):
+    """Return a list containing modNames' elements sorted into load order.
+
+    If some elements do not have a load order they are appended to the list
+    in alphabetical, case insensitive order (used also to resolve
+    modification time conflicts).
+    :type modNames: collections.Iterable[bolt.Path]
+    :rtype : list[bolt.Path]
+    """
+    modNames = list(modNames)
+    modNames.sort() # resolve time conflicts or no load order
+    modNames.sort(key=loIndexCachedOrMax)
+    return modNames
+
+# Get and set API
+def SaveLoadOrder(lord, acti=None, __index_move=0):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
@@ -157,7 +172,7 @@ def _reset_mtimes_cache():
         path = bosh.modInfos[name].getPath()
         if path.exists(): bosh.modInfos.mtimes[name] = path.mtime
 
-def _updateCache(lord=None, actiSorted=None, __index_move=False):
+def _updateCache(lord=None, actiSorted=None, __index_move=0):
     """
     :type lord: tuple[bolt.Path] | list[bolt.Path]
     :type actiSorted: tuple[bolt.Path] | list[bolt.Path]

@@ -361,7 +361,7 @@ class _ACoblExhaustion(SpecialPatcher):
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self.__class__.name)
         log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class CoblExhaustion(_ACoblExhaustion,ListPatcher):
@@ -558,7 +558,7 @@ class _AMFactMarker(SpecialPatcher):
         log.setHeader(u'= ' + self.__class__.name)
         self._srcMods(log)
         log(u'\n=== ' + _(u'Morphable Factions'))
-        for mod in bosh.modInfos.getOrdered(changed):
+        for mod in load_order.get_ordered(changed):
             log(u'* %s: %d' % (mod.s, changed[mod]))
 
 class MFactMarker(_AMFactMarker,ListPatcher):

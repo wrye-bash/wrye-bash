@@ -24,8 +24,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
-
-from ... import bosh # for modInfos
+from ... import load_order
 from ...patcher.base import AMultiTweakItem, AMultiTweaker
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
@@ -133,7 +132,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         maxWeight = self.choiceValues[self.chosen][0]
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(mod_count.values()))
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: [%4.2f]: %d' % (
                 srcMod.s, maxWeight, mod_count[srcMod]))
         self.mod_count = {}

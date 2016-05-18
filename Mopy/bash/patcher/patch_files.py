@@ -66,7 +66,7 @@ class _PFile:
         if mergeMods is not None: self.mergeMods = mergeMods
         self.loadSet = set(self.loadMods)
         self.mergeSet = set(self.mergeMods)
-        self.allMods = bosh.modInfos.getOrdered(self.loadSet|self.mergeSet)
+        self.allMods = load_order.get_ordered(self.loadSet | self.mergeSet)
         self.allSet = set(self.allMods)
 
     def _log_header(self, log, patch_name):
@@ -509,7 +509,7 @@ class CBash_PatchFile(_PFile, ObModFile):
                         mgefId_hostile[mgefId] = record.IsHostile
                     record.UnloadRecord()
             self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
-        self.completeMods = bosh.modInfos.getOrdered(self.allSet|self.scanSet)
+        self.completeMods = load_order.get_ordered(self.allSet | self.scanSet)
         group_patchers = self.group_patchers
 
         mod_patchers = group_patchers.get('MOD')

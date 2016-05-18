@@ -26,7 +26,7 @@
 import struct
 from operator import itemgetter
 # Internal
-from ... import bosh, bass # for bosh.modInfos, bass.dirs
+from ... import bosh, bass, load_order # for bosh.modInfos, bass.dirs
 from ...bosh import reModExt
 from .. import getPatchesPath, getPatchesList
 from ...bolt import GPath, CsvReader
@@ -369,7 +369,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         log.setHeader(u'= '+self.__class__.name)
         self._srcMods(log)
         log(u'\n=== '+_(u'Records Patched'))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 from ...parsers import CBash_FidReplacer
@@ -441,7 +441,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         log.setHeader(u'= ' +self.__class__.name)
         self._srcMods(log)
         log(u'\n')
-        for mod in bosh.modInfos.getOrdered(mod_count_old_new.keys()):
+        for mod in load_order.get_ordered(mod_count_old_new.keys()):
             entries = mod_count_old_new[mod]
             log(u'\n=== %s' % mod.s)
             entries.sort(key=itemgetter(1))
@@ -487,7 +487,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
 
     def _plog1(self,log,mod_count): # common logging variation
         log(self.__class__.logMsg % sum(mod_count.values()))
-        for mod in bosh.modInfos.getOrdered(mod_count):
+        for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
 class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
@@ -525,7 +525,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
         """
         mod_count = self.mod_count
         log(self.__class__.logMsg % sum(mod_count.values()))
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 

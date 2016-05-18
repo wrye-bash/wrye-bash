@@ -281,7 +281,7 @@ class Mods_CleanDummyMasters(EnabledLink):
         for fileName, fileInfo in bosh.modInfos.items():
             if fileInfo.header.author == u'BASHED DUMMY':
                 remove.append(fileName)
-        remove = bosh.modInfos.getOrdered(remove)
+        remove = load_order.get_ordered(remove)
         self.window.DeleteItems(items=remove, order=False,
                                 dialogTitle=_(u'Delete Dummy Masters'))
         # Link.Frame.RefreshData() ##: why ?

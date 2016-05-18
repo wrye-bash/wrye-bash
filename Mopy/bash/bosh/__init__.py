@@ -2346,7 +2346,7 @@ class FileInfo(_AFileInfo):
         if status == 30:
             return status
         #--Misordered?
-        self.masterOrder = tuple(modInfos.getOrdered(self.masterNames))
+        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
         if self.masterOrder != self.masterNames:
             return 20
         else:
@@ -3578,20 +3578,6 @@ class ModInfos(FileInfos):
             self._refreshInfoLists() # not sure if needed here - track usages !
 
     #--Mod selection ----------------------------------------------------------
-    def getOrdered(self, modNames):
-        """Return a list containing modNames' elements sorted into load order.
-
-        If some elements do not have a load order they are appended to the list
-        in alphabetical, case insensitive order (used also to resolve
-        modification time conflicts).
-        :type modNames: collections.Iterable[bolt.Path]
-        :rtype : list
-        """
-        modNames = list(modNames)
-        modNames.sort() # resolve time conflicts or no load order
-        modNames.sort(key=load_order.loIndexCachedOrMax)
-        return modNames
-
     def getSemiActive(self,masters):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
@@ -3648,7 +3634,7 @@ class ModInfos(FileInfos):
                 masters = set(load_order.activeCached())
                 merged,imported = self.merged,self.imported
             allMods = masters | merged | imported
-            allMods = self.getOrdered([x for x in allMods if x in self])
+            allMods = load_order.get_ordered([x for x in allMods if x in self])
             #--List
             modIndex = 0
             if not wtxt: log(u'[spoiler][xml]\n', appendNewline=False)
@@ -3671,7 +3657,7 @@ class ModInfos(FileInfos):
                     for master2 in self[name].header.masters:
                         if master2 not in self:
                             log(sMissing+master2.s)
-                        elif self.getOrdered((name,master2))[1] == master2:
+                        elif load_order.get_ordered((name, master2))[1] == master2:
                             log(sDelinquent+master2.s)
             if not wtxt: log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
@@ -3757,7 +3743,7 @@ class ModInfos(FileInfos):
             if fileName not in self._active_wip:
                 self._active_wip.append(fileName)
                 _activated.add(fileName)
-            return self.getOrdered(_activated or [])
+            return load_order.get_ordered(_activated or [])
         finally:
             if doSave: self.cached_lo_save_active()
 
@@ -3786,7 +3772,7 @@ class ModInfos(FileInfos):
             child = children.pop()
             sel.remove(child)
             _children(child)
-        self._active_wip = self.getOrdered(sel)
+        self._active_wip = load_order.get_ordered(sel)
         #--Save
         if doSave: self.cached_lo_save_active()
         return old - sel # return deselected
@@ -3831,7 +3817,7 @@ class ModInfos(FileInfos):
         #--Deselect/select plugins
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
-        listToSelect = self.getOrdered(toSelect)
+        listToSelect = load_order.get_ordered(toSelect)
         extra = listToSelect[255:]
         #--Save
         final_selection = listToSelect[:255]

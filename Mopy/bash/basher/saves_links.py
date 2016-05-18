@@ -331,11 +331,11 @@ class Save_DiffMasters(EnabledLink):
             message = u''
             if missing:
                 message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName.s
-                message += u'\n* '.join(x.s for x in bosh.modInfos.getOrdered(missing))
+                message += u'\n* '.join(x.s for x in load_order.get_ordered(missing))
                 if extra: message += u'\n\n'
             if extra:
                 message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName.s
-                message += u'\n* '.join(x.s for x in bosh.modInfos.getOrdered(extra))
+                message += u'\n* '.join(x.s for x in load_order.get_ordered(extra))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------

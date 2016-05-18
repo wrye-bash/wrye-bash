@@ -27,7 +27,7 @@ to the Names Multitweaker - as well as the NamesTweaker itself."""
 
 import re
 # Internal
-from ... import bosh # for modInfos
+from ... import load_order
 from ...patcher.base import AMultiTweakItem, AMultiTweaker
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
@@ -41,7 +41,7 @@ class _AMultiTweakItem_Names(MultiTweakItem):
         # CBash implementations which _do_ use it produce different logs. TODO:
         # unify C/P logs by using self.logMsg (mind the classes mentioned)
         log(u'* %s: %d' % (self.label,sum(count.values())))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 # Patchers: 30 ----------------------------------------------------------------

@@ -253,7 +253,7 @@ class AListPatcher(_Abstract_Patcher):
     def sortConfig(self,items):
         """Return sorted items. Default assumes mods and sorts by load
         order."""
-        return bosh.modInfos.getOrdered(items)
+        return load_order.get_ordered(items)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -354,7 +354,7 @@ class AMultiTweakItem(object):
         """Log - must define self.logMsg in subclasses"""
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
     #--Config Phase -----------------------------------------------------------

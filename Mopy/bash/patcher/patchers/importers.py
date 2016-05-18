@@ -28,6 +28,7 @@ import operator
 import re
 # Internal
 from ... import bosh # for modInfos
+from ... import load_order
 from ...bush import game # for Name patcher
 from ...bolt import GPath, MemorySet
 from ...bosh import reModExt
@@ -136,7 +137,7 @@ def _clog(self, log,
     for type in mod_count.keys():
         log(logModRecs % {'type': u'%s ' % type,
                           'count': sum(mod_count[type].values())})
-        for srcMod in bosh.modInfos.getOrdered(mod_count[type].keys()):
+        for srcMod in load_order.get_ordered(mod_count[type].keys()):
             log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
     self.mod_count = {}
 
@@ -385,7 +386,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
 
     def _plog(self,log,count): # type 1 but for logMsg % sum(count.values())...
         log(self.__class__.logMsg)
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'* %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):

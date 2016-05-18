@@ -468,7 +468,7 @@ class MasterList(_ModsUIList):
     #--Relist
     def _reList(self):
         fileOrderNames = [v.name for v in self.data_store.values()]
-        self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames)
+        self.loadOrderNames = load_order.get_ordered(fileOrderNames)
 
     #--InitEdit
     def InitEdit(self):
@@ -1000,7 +1000,7 @@ class ModList(_ModsUIList):
                 if len(changed) > (act in changed): # deactivated children
                     touched |= changed
                     changed = [x for x in changed if x != act]
-                    changes[self.__deactivated_key][act] = bosh.modInfos.getOrdered(changed)
+                    changes[self.__deactivated_key][act] = load_order.get_ordered(changed)
             except BoltError as e:
                 balt.showError(self, u'%s' % e)
         # Activate ?

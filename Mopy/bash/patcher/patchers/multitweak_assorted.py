@@ -30,7 +30,7 @@ import re
 # Internal
 from ...bolt import GPath
 from ...brec import MreRecord
-from ... import bosh # for modInfos
+from ... import load_order
 from ... import bush # from ....bush import game ? # should be set by now !
 from ...cint import MGEFCode
 from ...patcher.base import AMultiTweakItem
@@ -752,7 +752,7 @@ class AAssortedTweak_FogFix(AMultiTweakItem):
 
     def _patchLog(self, log, count):
         log.setHeader(self.logHeader)
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
@@ -904,7 +904,7 @@ class AMultiTweakItem_Weight(AMultiTweakItem):
         log.setHeader(self.logHeader)
         log(self.logWeightValue % self.weight)
         log(self.logMsg % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s,count[srcMod]))
 
 class CBash_MultiTweakItem_Weight(CBash_MultiTweakItem,
