@@ -359,8 +359,7 @@ def main():
         bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
         import bosh
         env.isUAC = env.testUAC(bush.gamePath.join(u'Data'))
-        bosh.initBosh(opts.personalPath, opts.localAppDataPath,
-                      opts.oblivionPath, bashIni)
+        bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
 
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:

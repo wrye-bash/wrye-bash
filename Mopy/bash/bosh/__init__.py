@@ -52,7 +52,7 @@ from binascii import crc32
 from itertools import groupby
 
 #--Local
-from .. import bass, bolt, balt, bush, env
+from .. import bass, bolt, balt, bush, env, load_order
 from .mods_metadata import ConfigHelpers, libbsa
 from ..bass import dirs, inisettings, tooldirs
 from .. import patcher # for configIsCBash()
@@ -96,7 +96,6 @@ iniInfos = None   # type: INIInfos
 bsaInfos = None   # type: BSAInfos
 screensData = None # type: ScreensData
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
-load_order = None #--can't import yet as I need bass.dirs to be initialized
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
@@ -3330,6 +3329,7 @@ class ModInfos(FileInfos):
         # used in RefreshData
         self.selectedBad = set()
         self.selectedExtra = []
+        load_order.initialize_load_order_handle(self)
 
     @property
     def lockLO(self):
@@ -7395,7 +7395,7 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
         return oldPath, oldSrc
 
 from ..env import test_permissions # CURRENTLY DOES NOTHING !
-def initDirs(bashIni, personal, localAppData, oblivionPath):
+def initDirs(bashIni, personal, localAppData):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
     dirs['bash'] = dirs['mopy'].join(u'bash')
@@ -7726,13 +7726,11 @@ def initLogFile():
                     u'initialized.') % (
                   bolt.timestamp(), inisettings['KeepLog']) + u'\r\n')
 
-def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
+def initBosh(personal='', localAppData='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
-    initDirs(bashIni,personal,localAppData, oblivionPath)
-    global load_order
-    from .. import load_order ##: move it from here - also called from restore settings
-    load_order = load_order
+    initDirs(bashIni, personal, localAppData)
+    load_order.initialize_load_order_files()
     initOptions(bashIni)
     try:
         initLogFile()

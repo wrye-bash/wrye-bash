@@ -28,6 +28,8 @@ eventually to wrap the bush.game module to a class API to be used in the rest
 of Bash."""
 import re
 
+import time
+
 import bolt
 
 def _write_plugins_txt_(path, lord, active, _star=False):
@@ -204,6 +206,20 @@ class Game(object):
     def active_changed(self): return self._plugins_txt_modified()
 
     def load_order_changed(self): return True # timestamps, just calculate it
+
+    # Swap plugins and loadorder txt
+
+    def swap(self, oldPath, newPath):
+        """Save current plugins into oldPath directory and load plugins from
+        newPath directory (if present)."""
+        # Save plugins.txt inside the old (saves) directory
+        if self.plugins_txt_path.exists():
+            self.plugins_txt_path.copyTo(oldPath.join(u'plugins.txt'))
+        # Move the new plugins.txt here for use
+        move = newPath.join(u'plugins.txt')
+        if move.exists():
+            move.copyTo(self.plugins_txt_path)
+            self.plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
 
     # ABSTRACT ----------------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
@@ -466,6 +482,17 @@ class TextfileGame(Game):
 
     @staticmethod
     def _must_update_active(deleted, reordered): return deleted or reordered
+
+    def swap(self, oldPath, newPath):
+        super(TextfileGame, self).swap(oldPath, newPath)
+        # Save loadorder.txt inside the old (saves) directory
+        if self.loadorder_txt_path.exists():
+            self.loadorder_txt_path.copyTo(oldPath.join(u'loadorder.txt'))
+        # Move the new loadorder.txt here for use
+        move = newPath.join(u'loadorder.txt')
+        if move.exists():
+            move.copyTo(self.loadorder_txt_path)
+            self.loadorder_txt_path.mtime = time.time() # update mtime to trigger refresh
 
     # Abstract overrides ------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):

@@ -284,8 +284,7 @@ class RestoreSettings(BaseBackupSettings):
         bash.SetUserPath(tmpBash.s,opts.userPath)
 
         bashIni = bass.GetBashIni(tmpBash.s, reload_=True)
-        bosh.initBosh(opts.personalPath, opts.localAppDataPath,
-                      opts.oblivionPath, bashIni)
+        bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
 
         # restore all the settings files
         restore_paths = (

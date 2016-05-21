@@ -36,21 +36,29 @@ in to Bash and on setting lo/active from inside Bash.
 Double underscores and dirty comments are no accident - BETA, I need a Game
 classes hierarchy to handle differences between the games.
 """
-import time
 import bass
 import bolt
 import bush
 import bosh
 # Game instance providing load order operations API
-from games import game_factory
-game_handle = None # type: games.Game # we need the modInfos singleton
+import games
+game_handle = None # type: games.Game
+_plugins_txt_path = _loadorder_txt_path = None
 
-def get_game():
-    global  game_handle
-    if game_handle is None:
-        game_handle = game_factory(bush.game.fsName, bosh.modInfos,
-                                   _plugins_txt_path, _loadorder_txt_path)
-    return game_handle
+def initialize_load_order_files():
+    if bass.dirs['saveBase'] == bass.dirs['app']:
+    #--If using the game directory as rather than the appdata dir.
+        _dir = bass.dirs['app']
+    else:
+        _dir = bass.dirs['userApp']
+    global _plugins_txt_path, _loadorder_txt_path
+    _plugins_txt_path = _dir.join(u'plugins.txt')
+    _loadorder_txt_path = _dir.join(u'loadorder.txt')
+
+def initialize_load_order_handle(mod_infos):
+    global game_handle
+    game_handle = games.game_factory(bush.game.fsName, mod_infos,
+                                     _plugins_txt_path, _loadorder_txt_path)
 
 class LoadOrder(object):
     """Immutable class representing a load order."""
@@ -106,9 +114,9 @@ def SaveLoadOrder(lord, acti=None):
     asterisk method)."""
     actiList = list(acti) if acti is not None else None
     lordList = list(lord) if lord is not None else None
-    lord, acti = get_game().set_load_order(lordList, actiList,
-                                          list(_current_lo.loadOrder),
-                                          list(_current_lo.activeOrdered))
+    lord, acti = game_handle.set_load_order(lordList, actiList,
+                                            list(_current_lo.loadOrder),
+                                            list(_current_lo.activeOrdered))
     _reset_mtimes_cache()
     _updateCache(lord=lord, actiSorted=acti)
     return _current_lo
@@ -128,7 +136,7 @@ def _updateCache(lord=None, actiSorted=None):
     """
     global _current_lo
     try:
-        lord, actiSorted = get_game().get_load_order(lord, actiSorted)
+        lord, actiSorted = game_handle.get_load_order(lord, actiSorted)
         _current_lo = LoadOrder(lord, actiSorted)
     except Exception:
         bolt.deprint(u'Error updating load_order cache')
@@ -138,9 +146,9 @@ def _updateCache(lord=None, actiSorted=None):
 def GetLo(cached=False, cached_active=True):
     if _current_lo is not __empty:
         loadOrder = _current_lo.loadOrder if (
-            cached and not get_game().load_order_changed()) else None
+            cached and not game_handle.load_order_changed()) else None
         active = _current_lo.activeOrdered if (
-            cached_active and not get_game().active_changed()) else None
+            cached_active and not game_handle.active_changed()) else None
     else: active = loadOrder = None
     _updateCache(loadOrder, active)
     return _current_lo
@@ -148,30 +156,4 @@ def GetLo(cached=False, cached_active=True):
 def usingTxtFile():
     return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
 
-def swap(oldPath, newPath):
-    """Save current plugins into oldPath directory and load plugins from
-    newPath directory (if present)."""
-    # Save plugins.txt and loadorder.txt inside the old (saves) directory
-    if _plugins_txt_path.exists():
-        _plugins_txt_path.copyTo(oldPath.join(u'plugins.txt'))
-    if _loadorder_txt_path.exists():
-        _loadorder_txt_path.copyTo(oldPath.join(u'loadorder.txt'))
-    # Move the new plugins.txt and loadorder.txt here for use
-    move = newPath.join(u'plugins.txt')
-    if move.exists():
-        move.copyTo(_plugins_txt_path)
-        _plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
-    move = newPath.join(u'loadorder.txt')
-    if move.exists():
-        move.copyTo(_loadorder_txt_path)
-        _loadorder_txt_path.mtime = time.time()#update mtime to trigger refresh
-
-#------------------------------------------------------------------------------
-
-if bass.dirs['saveBase'] == bass.dirs['app']:
-#--If using the game directory as rather than the appdata dir.
-    _dir = bass.dirs['app']
-else:
-    _dir = bass.dirs['userApp']
-_plugins_txt_path = _dir.join(u'plugins.txt')
-_loadorder_txt_path = _dir.join(u'loadorder.txt')
+def swap(oldPath, newPath): game_handle.swap(oldPath, newPath)
