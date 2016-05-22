@@ -52,7 +52,7 @@ from binascii import crc32
 from itertools import groupby
 
 #--Local
-from .. import bass, bolt, balt, bush, env
+from .. import bass, bolt, balt, bush, env, load_order
 from .mods_metadata import ConfigHelpers, libbsa
 from ..bass import dirs, inisettings, tooldirs
 from .. import patcher # for configIsCBash()
@@ -96,16 +96,15 @@ iniInfos = None   # type: INIInfos
 bsaInfos = None   # type: BSAInfos
 screensData = None # type: ScreensData
 configHelpers = None #--Config Helper files (LOOT Master List, etc.)
-load_order = None #--can't import yet as I need bass.dirs to be initialized
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
 
 #--Mod Extensions
-reComment = re.compile(u'#.*',re.U)
+reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
 reExGroup = re.compile(u'(.*?),',re.U)
 reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
-reEsmExt  = re.compile(ur'\.esm(.ghost)?$',re.I|re.U)
+_reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
@@ -2166,90 +2165,6 @@ class PluginsFullError(BoltError):
         BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
-def _cache(lord_func):
-    """Decorator to make sure I sync Plugins cache with load_order cache
-    whenever I change (or attempt to change) the latter.
-
-    All this syncing is error prone. WIP !
-    """
-    @wraps(lord_func)
-    def _plugins_cache_wrapper(*args, **kwargs):
-        e = None
-        try:
-            return lord_func(*args, **kwargs)
-        except:
-            e = sys.exc_info()
-            raise
-        finally:
-            try:
-                args[0].LoadOrder, args[0].selected = list(
-                    args[0].lord.loadOrder), list(args[0].lord.activeOrdered)
-            except AttributeError: # lord is None, exception thrown in init
-                if e: raise e[0], e[1], e[2]
-                raise # should never happen, lord must never be None after init
-    return _plugins_cache_wrapper
-
-class Plugins:
-    """Singleton wrapper around load_order.py, owned by modInfos - nothing
-       else should access it directly and nothing else should access load_order
-       directly - only via this class (except usingTxtFile() for now). Mainly
-       exposes _LoadOrder_ and _selected_ caches used by modInfos to manipulate
-       the load order/active and then save at once. May disappear in a later
-       iteration of the load order API."""
-    def __init__(self):
-        if dirs['saveBase'] == dirs['app']: #--If using the game directory as rather than the appdata dir.
-            self.dir = dirs['app']
-        else:
-            self.dir = dirs['userApp']
-        # Plugins cache, manipulated by code which changes load order/active
-        self.LoadOrder = [] # the masterlist load order (always sorted)
-        self.selected = []  # list of the currently active plugins (not always in order)
-        self.lord = None    # WIP: valid LoadOrder object, must be kept in sync with load_order._current_load_order
-        #--Create dirs/files if necessary
-        self.dir.makedirs()
-
-    @_cache
-    def saveActive(self, active=None):
-        """Write data to Plugins.txt file.
-
-        Always call AFTER setting the load order - make sure we unghost
-        ourselves so ctime of the unghosted mods is not set."""
-        self.lord = load_order.SetActivePlugins(
-            self.lord.lorder(active if active is not None else self.selected),
-            self.lord.loadOrder)
-
-    @_cache
-    def saveLoadOrder(self, _selected=None):
-        """Write data to loadorder.txt file (and update plugins.txt too)."""
-        self.lord = load_order.SaveLoadOrder(self.LoadOrder, acti=_selected)
-
-    def saveLoadAndActive(self):
-        self.saveLoadOrder(_selected=self.selected)
-
-    def removeMods(self, plugins, savePlugins=False):
-        """Removes the specified mods from the load order."""
-        # Use set to remove any duplicates
-        plugins = set(plugins,)
-        # Remove mods from cache
-        self.LoadOrder = [x for x in self.LoadOrder if x not in plugins]
-        self.selected  = [x for x in self.selected  if x not in plugins]
-        # Refresh liblo
-        if savePlugins: self.saveLoadAndActive()
-
-    def renameInLo(self, newName, oldName):
-        oldIndex = self.LoadOrder.index(oldName)
-        self.removeMods([oldName], savePlugins=False)
-        self.LoadOrder.insert(oldIndex, newName)
-
-    @_cache
-    def refreshLoadOrder(self,forceRefresh=False):
-        """Reload for plugins.txt or masterlist.txt changes."""
-        oldLord = self.lord
-        if forceRefresh or load_order.haveLoFilesChanged():
-            self.lord = load_order.GetLo()
-        return oldLord != self.lord
-
-#------------------------------------------------------------------------------
 class MasterInfo:
     def __init__(self,name,size):
         self.oldName = self.name = GPath(name)
@@ -2283,7 +2198,7 @@ class MasterInfo:
         if self.modInfo:
             return self.modInfo.isEsm()
         else:
-            return reEsmExt.search(self.name.s)
+            return _reEsmExt.search(self.name.s)
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -2380,7 +2295,7 @@ class FileInfo(_AFileInfo):
         if self.header:
             return int(self.header.flags1) & 1 == 1
         else:
-            return bool(reEsmExt.search(self.name.s)) and False
+            return bool(_reEsmExt.search(self.name.s)) and False
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         return (self.isMod() and self.header and
@@ -2431,7 +2346,7 @@ class FileInfo(_AFileInfo):
         if status == 30:
             return status
         #--Misordered?
-        self.masterOrder = tuple(modInfos.getOrdered(self.masterNames))
+        self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
         if self.masterOrder != self.masterNames:
             return 20
         else:
@@ -2559,18 +2474,18 @@ class ModInfo(FileInfo):
         return crc
 
     def txt_status(self):
-        if modInfos.isActiveCached(self.name): return _(u'Active')
+        if load_order.isActiveCached(self.name): return _(u'Active')
         elif self.name in modInfos.merged: return _(u'Merged')
         elif self.name in modInfos.imported: return _(u'Imported')
         else: return _(u'Non-Active')
 
     def hasTimeConflict(self):
-        """True if has an mtime conflict with another mod."""
-        return modInfos.hasTimeConflict(self.name)
+        """True if there is another mod with the same mtime."""
+        return load_order.has_load_order_conflict(self.name)
 
     def hasActiveTimeConflict(self):
         """True if has an active mtime conflict with another mod."""
-        return modInfos.hasActiveTimeConflict(self.name)
+        return load_order.has_load_order_conflict_active(self.name)
 
     def hasBadMasterNames(self):
         """True if has a master with un unencodable name in cp1252."""
@@ -2582,7 +2497,7 @@ class ModInfo(FileInfo):
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
         maExGroup = reExGroup.match(self.name.s)
-        if not (modInfos.isActiveCached(self.name) and maExGroup):
+        if not (load_order.isActiveCached(self.name) and maExGroup):
             return False
         else:
             exGroup = maExGroup.group(1)
@@ -2969,12 +2884,12 @@ class SaveInfo(FileInfo):
         status = FileInfo.getStatus(self)
         masterOrder = self.masterOrder
         #--File size?
-        if status > 0 or len(masterOrder) > len(modInfos.activeCached):
+        if status > 0 or len(masterOrder) > len(load_order.activeCached()):
             return status
         #--Current ordering?
-        if masterOrder != modInfos.activeCached[:len(masterOrder)]:
+        if masterOrder != load_order.activeCached()[:len(masterOrder)]:
             return status
-        elif masterOrder == modInfos.activeCached:
+        elif masterOrder == load_order.activeCached():
             return -20
         else:
             return -10
@@ -3122,7 +3037,7 @@ class FileInfos(DataDict):
                     self.corrupted.pop(name,None)
                     if isAdded: _added.add(name)
                     elif isUpdated: _updated.add(name)
-            newNames.add(name)
+            newNames.add(name) # will add known corrupted too
         _deleted = oldNames - newNames
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
@@ -3131,7 +3046,9 @@ class FileInfos(DataDict):
             # items deleted outside Bash
             for d in set(self.table.keys()) &  set(_deleted):
                 del self.table[d]
-        return bool(_added) or bool(_updated) or bool(_deleted)
+        change = bool(_added) or bool(_updated) or bool(_deleted)
+        if not change: return change
+        return _added, _updated, _deleted
 
     #--Right File Type?
     @classmethod
@@ -3274,6 +3191,42 @@ class INIInfos(FileInfos):
         dir_.makedirs()
         return dir_
 
+def _lo_cache(lord_func):
+    """Decorator to make sure I sync modInfos cache with load_order cache
+    whenever I change (or attempt to change) the latter."""
+    @wraps(lord_func)
+    def _modinfos_cache_wrapper(self, *args, **kwargs):
+        """Sync the ModInfos load order and active caches and refresh for
+        load order or active changes.
+
+        :type self: ModInfos
+        :return: 1 if only load order changed, 2 if only active changed,
+        3 if both changed else 0
+        """
+        try:
+            old_lo, old_active = load_order.cached_lord.loadOrder, \
+                                 load_order.cached_lord.activeOrdered
+            lord_func(self, *args, **kwargs)
+            lo, active = load_order.cached_lord.loadOrder, \
+                         load_order.cached_lord.activeOrdered
+            lo_changed = lo != old_lo
+            active_changed = active != old_active
+            active_set_changed = active_changed and (
+                set(active) != set(old_active))
+            if active_changed:
+                self._refreshBadNames()
+                self._refreshInfoLists()
+                self._refreshMissingStrings()
+            #if lo changed (including additions/removals) let refresh handle it
+            if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
+                self.autoGhost(force=False)
+            return (lo_changed and 1) + (active_changed and 2)
+        finally:
+            self._lo_wip, self._active_wip = list(
+                load_order.cached_lord.loadOrder), list(
+                load_order.cached_lord.activeOrdered)
+    return _modinfos_cache_wrapper
+
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
@@ -3286,7 +3239,6 @@ class ModInfos(FileInfos):
         self.mtimesReset = [] #--Files whose mtimes have been reset.
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         #--Selection state (merged, imported)
-        self.plugins = Plugins()
         self.bashed_patches = set()
         #--Info lists/sets
         for fname in bush.game.masterFiles:
@@ -3303,8 +3255,6 @@ class ModInfos(FileInfos):
                 msg += u' or ' + bush.game.masterFiles[-1]
                 deprint(_(u'Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
             self.masterName = GPath(bush.game.masterFiles[0])
-        self.mtime_mods = collections.defaultdict(list)
-        self.mtime_selected = collections.defaultdict(list)
         self.exGroup_mods = collections.defaultdict(list)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
@@ -3328,6 +3278,40 @@ class ModInfos(FileInfos):
         # used in RefreshData
         self.selectedBad = set()
         self.selectedExtra = []
+        load_order.initialize_load_order_handle(self)
+        # Load order caches to manipulate, then call our save methods - avoid !
+        self._active_wip = []
+        self._lo_wip = []
+
+    # Load order API for the rest of Bash to use - if load order or active
+    # changed methods run a refresh on modInfos data
+    @_lo_cache
+    def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
+        load_order.get_lo(cached=not forceRefresh, cached_active=not forceActive)
+
+    @_lo_cache
+    def cached_lo_save_active(self, active=None):
+        """Write data to Plugins.txt file.
+
+        Always call AFTER setting the load order - make sure we unghost
+        ourselves so ctime of the unghosted mods is not set."""
+        load_order.save_lo(load_order.cached_lord.loadOrder,
+                           load_order.cached_lord.lorder(
+                        active if active is not None else self._active_wip))
+
+    @_lo_cache
+    def cached_lo_save_all(self):
+        """Write data to loadorder.txt file (and update plugins.txt too)."""
+        dex = {x: i for i, x in enumerate(self._lo_wip) if
+               x in set(self._active_wip)}
+        self._active_wip.sort(key=dex.__getitem__) # order in their load order
+        load_order.save_lo(self._lo_wip, acti=self._active_wip)
+
+    @_lo_cache
+    def undo_load_order(self): load_order.undo_load_order()
+
+    @_lo_cache
+    def redo_load_order(self): load_order.redo_load_order()
 
     @property
     def lockLO(self):
@@ -3338,24 +3322,10 @@ class ModInfos(FileInfos):
         else: self.mtimes.clear()
 
     #--Load Order utility methods - be sure cache is valid when using them-----
-    def isActiveCached(self, mod):
-        """Return true if the mod is in the current active mods cache."""
-        return mod in self.plugins.lord.active
-    @property
-    def activeCached(self):
-        """Return the currently cached active mods in load order as a tuple.
-        :rtype : tuple
-        """
-        return self.plugins.lord.activeOrdered
-    def loIndexCached(self, mod): return self.plugins.lord.lindex(mod)
-    def loIndexCachedOrMax(self, mod):
-        try: return self.loIndexCached(mod)
-        except KeyError:
-            return sys.maxint # sort mods that do not have a load order LAST
-    def activeIndexCached(self, mod): return self.plugins.lord.activeIndex(mod)
-    def hexIndexString(self, masterName):
-        return u'%02X' % (self.activeIndexCached(masterName),) \
-            if self.isActiveCached(masterName) else u''
+    @staticmethod
+    def hexIndexString(masterName):
+        return u'%02X' % (load_order.activeIndexCached(masterName),) \
+            if load_order.isActiveCached(masterName) else u''
 
     def masterWithVersion(self, masterName):
         if masterName == u'Oblivion.esm' and self.voCurrent:
@@ -3365,7 +3335,7 @@ class ModInfos(FileInfos):
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
         # Calculating indexes through order.index() cause we may be called in
         # a row before saving the modified load order
-        order = self.plugins.LoadOrder
+        order = self._lo_wip
         newPos = order.index(dropItem)
         if newPos <= 0: return False
         start = order.index(firstItem)
@@ -3397,7 +3367,7 @@ class ModInfos(FileInfos):
         if self._OBMMWarn(): return False
         if not self.lockLO: return False
         if settings.dictFile.readOnly: return False
-        if load_order.usingTxtFile(): return False
+        if load_order.using_txt_file(): return False
         #--Else
         return True
 
@@ -3410,30 +3380,36 @@ class ModInfos(FileInfos):
         """Update file data for additions, removals and date changes."""
         # TODO: make sure that calling two times this in a row second time
         # ALWAYS returns False - was not true when autoghost run !
-        hasChanged = scanData and FileInfos.refresh(self)
+        hasChanged = deleted = False
+        if scanData:
+            change = FileInfos.refresh(self)
+            if change: _added, _updated, deleted = change
+            hasChanged = bool(change)
         if self.canSetTimes() and hasChanged:
             self._resetMTimes()
-        _modTimesChange = _modTimesChange and not load_order.usingTxtFile()
-        hasChanged += self.plugins.refreshLoadOrder(
-            forceRefresh=hasChanged or _modTimesChange)
-        hasGhosted = self.autoGhost(force=False)
-        if hasChanged or _modTimesChange: self.refreshInfoLists()
+        _modTimesChange = _modTimesChange and not load_order.using_txt_file()
+        lo_changed = self.refreshLoadOrder(
+            forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
         self.reloadBashTags()
-        hasNewBad = self.refreshBadNames()
-        # we need a load order below: in skyrim it reads inis in active order
-        hasMissingStrings = self._refreshMissingStrings()
+        # if active did not change, we must perform the refreshes below
+        if lo_changed < 2 and hasChanged:
+            self._refreshBadNames()
+            self._refreshInfoLists()
+        elif lo_changed < 2: # maybe string files were deleted...
+            #we need a load order below: in skyrim we read inis in active order
+            hasChanged += self._refreshMissingStrings()
         self.setOblivionVersions()
         oldMergeable = set(self.mergeable)
-        scanList = self.refreshMergeable()
+        scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
         if scanList:
             with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
                 progress.setFull(len(scanList))
                 self.rescanMergeable(scanList,progress)
         hasChanged += bool(scanList or difMergeable)
-        return bool(hasChanged) or hasGhosted or hasNewBad or hasMissingStrings
+        return bool(hasChanged) or lo_changed
 
-    def refreshBadNames(self):
+    def _refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
         It seems that Skyrim and Oblivion read plugins.txt as a cp1252
         encoded file, and any filename that doesn't decode to cp1252 will
@@ -3442,10 +3418,10 @@ class ModInfos(FileInfos):
         activeBad = self.activeBad = set()
         for fileName in self.data:
             if self.isBadFileName(fileName.s):
-                if self.isActiveCached(fileName):
+                if load_order.isActiveCached(fileName):
                     ## For now, we'll leave them active, until
                     ## we finish testing what the game will support
-                    #self.unselect(fileName)
+                    #self.lo_deactivate(fileName)
                     activeBad.add(fileName)
                 else:
                     bad.add(fileName)
@@ -3494,7 +3470,7 @@ class ModInfos(FileInfos):
         if force or toGhost:
             allowGhosting = self.table.getColumn('allowGhosting')
             for mod, modInfo in self.iteritems():
-                modGhost = toGhost and not self.isActiveCached(mod) \
+                modGhost = toGhost and not load_order.isActiveCached(mod) \
                            and allowGhosting.get(mod, True)
                 oldGhost = modInfo.isGhost
                 newGhost = modInfo.setGhost(modGhost)
@@ -3502,45 +3478,41 @@ class ModInfos(FileInfos):
                     changed.append(mod)
         return changed
 
-    def refreshInfoLists(self):
-        """Refreshes various mod info lists (mtime_mods, mtime_selected,
-        exGroup_mods, imported, exported) - call after refreshing from Data
-        AND having latest load order."""
+    def _refreshInfoLists(self):
+        """Refreshes various mod info lists (exGroup_mods, imported,
+        exported) - call after refreshing from Data AND having latest load
+        order."""
         #--Mod mtimes
-        mtime_mods = self.mtime_mods
-        mtime_mods.clear()
         self.bashed_patches.clear()
         for modName, modInfo in self.iteritems():
-            mtime_mods[modInfo.mtime].append(modName)
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
         #--Selected mtimes and Refresh overLoaded too..
-        mtime_selected = self.mtime_selected
-        mtime_selected.clear()
         self.exGroup_mods.clear()
-        for modName in self.activeCached:
-            mtime = modInfos[modName].mtime
-            mtime_selected[mtime].append(modName)
+        active_set = set(load_order.activeCached())
+        for modName in active_set:
             maExGroup = reExGroup.match(modName.s)
             if maExGroup:
                 exGroup = maExGroup.group(1)
                 self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
-        self.merged,self.imported = self.getSemiActive(set(self.activeCached))
+        self.merged, self.imported = self.getSemiActive(active_set)
 
-    def refreshMergeable(self):
+    def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
-        #--Mods that need to be refreshed.
+        #--Mods that need to be rescanned - call rescanMergeable !
         newMods = []
         self.mergeable.clear()
         name_mergeInfo = self.table.getColumn('mergeInfo')
         #--Add known/unchanged and esms
         for mpath, modInfo in self.iteritems():
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
-            if size == modInfo.size:
-                if canMerge: self.mergeable.add(mpath)
-            elif reEsmExt.search(mpath.s):
+            # if esm bit was flipped size won't change, so check this first
+            if modInfo.isEsm():
                 name_mergeInfo[mpath] = (modInfo.size, False)
+                self.mergeable.discard(mpath)
+            elif size == modInfo.size:
+                if canMerge: self.mergeable.add(mpath)
             else:
                 newMods.append(mpath)
         return newMods
@@ -3554,6 +3526,7 @@ class ModInfos(FileInfos):
         is_mergeable = isCBashMergeable if doCBash else isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
+        result, tagged_no_merge = collections.OrderedDict(), set()
         for i,fileName in enumerate(names):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
@@ -3567,9 +3540,7 @@ class ModInfos(FileInfos):
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
-                #can't be above because otherwise if the mergeability had already been set true this wouldn't unset it.
-                if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
-                    canMerge = False
+            result[fileName] = canMerge
             # noinspection PySimplifyBooleanCheck
             if canMerge == True:
                 self.mergeable.add(fileName)
@@ -3578,9 +3549,11 @@ class ModInfos(FileInfos):
                 if canMerge == u'\n.    '+_(u"Has 'NoMerge' tag."):
                     mod_mergeInfo[fileName] = (fileInfo.size,True)
                     self.mergeable.add(fileName)
+                    tagged_no_merge.add(fileName)
                 else:
                     mod_mergeInfo[fileName] = (fileInfo.size,False)
                     self.mergeable.discard(fileName)
+        return result, tagged_no_merge
 
     def reloadBashTags(self):
         """Reloads bash tags for all mods set to receive automatic bash tags."""
@@ -3597,21 +3570,14 @@ class ModInfos(FileInfos):
             if autoTag:
                 mod.reloadBashTags()
 
+    #--Refresh File
+    def refreshFile(self,fileName):
+        try:
+            FileInfos.refreshFile(self,fileName)
+        finally:
+            self._refreshInfoLists() # not sure if needed here - track usages !
+
     #--Mod selection ----------------------------------------------------------
-    def getOrdered(self, modNames):
-        """Return a list containing modNames' elements sorted into load order.
-
-        If some elements do not have a load order they are appended to the list
-        in alphabetical, case insensitive order (used also to resolve
-        modification time conflicts).
-        :type modNames: collections.Iterable[bolt.Path]
-        :rtype : list
-        """
-        modNames = list(modNames)
-        modNames.sort() # resolve time conflicts or no load order
-        modNames.sort(key=self.loIndexCachedOrMax)
-        return modNames
-
     def getSemiActive(self,masters):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
@@ -3633,34 +3599,6 @@ class ModInfos(FileInfos):
             imported.update(filter(lambda x: x in self,
                                    patchConfigs.get('ImportedMods', tuple())))
         return merged,imported
-
-    def selectExact(self,modNames):
-        """Selects exactly the specified set of mods."""
-        modsSet, allMods = set(modNames), set(self.plugins.LoadOrder)
-        #--Ensure plugins that cannot be deselected stay selected
-        modsSet.update(map(GPath, bush.game.nonDeactivatableFiles))
-        #--Deselect/select plugins
-        missingSet = modsSet - allMods
-        toSelect = modsSet - missingSet
-        listToSelect = self.getOrdered(toSelect)
-        extra = listToSelect[255:]
-        #--Save
-        self.plugins.selected = listToSelect[:255]
-        # we should unghost ourselves so that ctime is properly set
-        for s in toSelect: self[s].setGhost(False)
-        self.plugins.saveActive()
-        self.refreshInfoLists()
-        self.autoGhost(force=False) # ghost inactive
-        #--Done/Error Message
-        message = u''
-        if missingSet:
-            message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
-            message += u'\n* '.join(x.s for x in missingSet)
-        if extra:
-            if missingSet: message += u'\n'
-            message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-            message += u'\n* '.join(x.s for x in extra)
-        return message
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
         """Returns mod list as text. If fileInfo is provided will show mod list
@@ -3693,10 +3631,10 @@ class ModInfos(FileInfos):
                 merged,imported = self.getSemiActive(present)
             else:
                 log.setHeader(head+_(u'Active Mod Files:'))
-                masters = set(self.activeCached)
+                masters = set(load_order.activeCached())
                 merged,imported = self.merged,self.imported
             allMods = masters | merged | imported
-            allMods = self.getOrdered([x for x in allMods if x in self])
+            allMods = load_order.get_ordered([x for x in allMods if x in self])
             #--List
             modIndex = 0
             if not wtxt: log(u'[spoiler][xml]\n', appendNewline=False)
@@ -3719,7 +3657,7 @@ class ModInfos(FileInfos):
                     for master2 in self[name].header.masters:
                         if master2 not in self:
                             log(sMissing+master2.s)
-                        elif self.getOrdered((name,master2))[1] == master2:
+                        elif load_order.get_ordered((name, master2))[1] == master2:
                             log(sDelinquent+master2.s)
             if not wtxt: log(u'[/xml][/spoiler]')
             return bolt.winNewLines(log.out.getvalue())
@@ -3760,7 +3698,7 @@ class ModInfos(FileInfos):
                 else: tagList += u'    '+_(u'No tags')
         else:
             # sort output by load order
-            lindex = lambda t: modInfos.loIndexCached(t[0])
+            lindex = lambda t: load_order.loIndexCached(t[0])
             for path, modInfo in sorted(modInfos.iteritems(), key=lindex):
                 if modInfo.getBashTags():
                     tagList += u'\n* ' + modInfo.name.s + u'\n'
@@ -3779,23 +3717,13 @@ class ModInfos(FileInfos):
         else: msg = voice % name # hasVoices
         return balt.askWarning(parent, msg, title + name)
 
-    #--Mod Specific -----------------------------------------------------------
-
-    #--Refresh File
-    def refreshFile(self,fileName):
-        try:
-            FileInfos.refreshFile(self,fileName)
-        finally:
-            self.refreshInfoLists()
-
     #--Active mods management -------------------------------------------------
-    def select(self, fileName, doSave=True, modSet=None, children=None,
-               _activated=None):
-        """Adds file to selected."""
-        plugins = self.plugins
+    def lo_activate(self, fileName, doSave=True, modSet=None, children=None,
+                    _activated=None):
+        """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
-            if len(plugins.selected) == 255:
+            if len(self._active_wip) == 255:
                 raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
             children = (children or tuple()) + (fileName,)
             if fileName in children[:-1]:
@@ -3808,25 +3736,26 @@ class ModInfos(FileInfos):
             ##    return
             for master in self[fileName].header.masters:
                 if master in modSet:
-                    self.select(master, False, modSet, children, _activated)
+                    self.lo_activate(master, False, modSet, children, _activated)
             # Unghost
             self[fileName].setGhost(False)
             #--Select in plugins
-            if fileName not in plugins.selected:
-                plugins.selected.append(fileName)
+            if fileName not in self._active_wip:
+                self._active_wip.append(fileName)
                 _activated.add(fileName)
-            return self.getOrdered(_activated or [])
+            return load_order.get_ordered(_activated or [])
         finally:
-            if doSave: plugins.saveActive()
+            if doSave: self.cached_lo_save_active()
 
-    def unselect(self,fileName,doSave=True):
+    def lo_deactivate(self, fileName, doSave=True):
         """Remove mods and their children from selected, can only raise if
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
-        fileNames = set(fileName)
-        sel = set(self.plugins.selected)
+        notDeactivatable = load_order.must_be_active_if_present()
+        fileNames = set(x for x in fileName if x not in notDeactivatable)
+        old = sel = set(self._active_wip)
         diff = sel - fileNames
-        if len(diff) == len(sel): return
+        if len(diff) == len(sel): return set()
         #--Unselect self
         sel = diff
         #--Unselect children
@@ -3843,16 +3772,17 @@ class ModInfos(FileInfos):
             child = children.pop()
             sel.remove(child)
             _children(child)
-        self.plugins.selected = self.getOrdered(sel)
+        self._active_wip = load_order.get_ordered(sel)
         #--Save
-        if doSave: self.plugins.saveActive()
+        if doSave: self.cached_lo_save_active()
+        return old - sel # return deselected
 
-    def selectAll(self):
-        toActivate = set(self.activeCached)
+    def lo_activate_all(self):
+        toActivate = set(load_order.activeCached())
         try:
             def _select(m):
                 if not m in toActivate:
-                    self.select(m, doSave=False)
+                    self.lo_activate(m, doSave=False)
                     toActivate.add(m)
             mods = self.keys()
             # first select the bashed patch(es) and their masters
@@ -3869,18 +3799,41 @@ class ModInfos(FileInfos):
             # then activate as many of the remaining mods as we can
             for mod in mods:
                 if mod in mergeable: _select(mod)
-            self.plugins.saveActive(active=toActivate)
         except PluginsFullError:
             deprint(u'select All: 255 mods activated', traceback=True)
-            self.plugins.saveActive(active=toActivate)
             raise
         except BoltError:
             toActivate.clear()
-            deprint(u'select All: saveActive failed', traceback=True)
+            deprint(u'select All: cached_lo_save_active failed',traceback=True)
             raise
         finally:
-            if toActivate:
-                self.refreshInfoLists() # no modtimes changes, just active
+            if toActivate: self.cached_lo_save_active(active=toActivate)
+
+    def lo_activate_exact(self, modNames):
+        """Selects exactly the specified set of mods."""
+        modsSet, allMods = set(modNames), set(self.keys())
+        #--Ensure plugins that cannot be deselected stay selected
+        modsSet.update(load_order.must_be_active_if_present() & allMods)
+        #--Deselect/select plugins
+        missingSet = modsSet - allMods
+        toSelect = modsSet - missingSet
+        listToSelect = load_order.get_ordered(toSelect)
+        extra = listToSelect[255:]
+        #--Save
+        final_selection = listToSelect[:255]
+        # we should unghost ourselves so that ctime is properly set
+        for s in final_selection: self[s].setGhost(False)
+        self.cached_lo_save_active(active=final_selection)
+        #--Done/Error Message
+        message = u''
+        if missingSet:
+            message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
+            message += u'\n* '.join(x.s for x in missingSet)
+        if extra:
+            if missingSet: message += u'\n'
+            message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
+            message += u'\n* '.join(x.s for x in extra)
+        return message
 
     #-- Helpers ---------------------------------------------------------------
     def isBP(self, modName): return self[modName].header.author in (
@@ -3897,7 +3850,7 @@ class ModInfos(FileInfos):
 
     def isMissingStrings(self,modName):
         """True if the mod says it has .STRINGS files, but the files are missing."""
-        modInfo = self.data[modName]
+        modInfo = self[modName]
         if modInfo.header.flags1.hasStrings:
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
@@ -3933,7 +3886,7 @@ class ModInfos(FileInfos):
 
     def _ini_files(self, descending=False):
         if bush.game.fsName == u'Skyrim':
-            iniPaths = (self[name].getIniPath() for name in self.activeCached)
+            iniPaths = (self[name].getIniPath() for name in load_order.activeCached())
             iniFiles = [IniFile(iniPath) for iniPath in iniPaths if
                         iniPath.exists()]
             if descending: iniFiles.reverse()
@@ -3963,57 +3916,6 @@ class ModInfos(FileInfos):
         except UnicodeEncodeError:
             return True
 
-    def hasTimeConflict(self,modName):
-        """True if there is another mod with the same mtime."""
-        if load_order.usingTxtFile():
-            return False
-        else:
-            mtime = self[modName].mtime
-            return len(self.mtime_mods[mtime]) > 1
-
-    def hasActiveTimeConflict(self,modName):
-        """True if there is another mod with the same mtime."""
-        if load_order.usingTxtFile():
-            return False
-        elif not self.isActiveCached(modName): return False
-        else:
-            mtime = self[modName].mtime
-            return len(self.mtime_selected[mtime]) > 1
-
-    def getFreeTime(self, startTime, defaultTime='+1'):
-        """Tries to return a mtime that doesn't conflict with a mod. Returns defaultTime if it fails."""
-        if load_order.usingTxtFile():
-            # Doesn't matter - LO isn't determined by mtime
-            return time.time()
-        else:
-            haskey = self.mtime_mods.has_key
-            endTime = startTime + 1000 # 1000 (seconds) is an arbitrary limit
-            while startTime < endTime:
-                if not haskey(startTime):
-                    return startTime
-                startTime += 1 # step by one second intervals
-            return defaultTime
-
-    __max_time = -1
-    def mod_timestamp(self):
-        """Hack to install mods last in load order (done by liblo when txt
-        method used, when mod times method is used make sure we get the latest
-        mod time). The mod times stuff must be moved to load_order.py."""
-        if not load_order.usingTxtFile():
-            maxi = max(x.mtime for x in self.itervalues())
-            maxi = [max(maxi, self.__max_time) + 60] # a list to be manipulated
-            def timestamps(p):
-                if reModExt.search(p.s):
-                    self.__max_time = p.mtime = maxi[0]
-                    maxi[0] += 60 # space at one minute intervals
-        else:
-            # noinspection PyUnusedLocal
-            def timestamps(p): pass
-        return timestamps
-
-    @staticmethod # this belongs to load_order.py !
-    def usingTxtFile(): return load_order.usingTxtFile()
-
     def calculateLO(self, mods=None): # excludes corrupt mods
         if mods is None: mods = self.keys()
         mods = sorted(mods) # sort case insensitive (for time conflicts)
@@ -4022,30 +3924,42 @@ class ModInfos(FileInfos):
         return mods
 
     def create_new_mod(self, newName, selected=(), masterless=False,
-                       directory=u''):
+                       directory=u'', bashed_patch=False):
         directory = directory or self.dir
         newInfo = self.factory(directory, GPath(newName))
         if directory == self.dir:
             mods = (self[x] for x in selected) if selected else self.itervalues()
             newTime = max(x.mtime for x in mods)
-            newInfo.mtime = self.getFreeTime(newTime, newTime)
+            newInfo.mtime = load_order.get_free_time(newTime, newTime)
         else: newInfo.mtime = time.time()
-        newFile = ModFile(newInfo, LoadFactory(True))
+        newFile = ModFile(newInfo)
         if not masterless:
             newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
+        if bashed_patch:
+            newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
 
     #--Mod move/delete/rename -------------------------------------------------
+    def _lo_caches_remove_mods(self, to_remove):
+        """Removes the specified mods from the load order."""
+        # Use set to remove any duplicates
+        to_remove = set(to_remove, )
+        # Remove mods from cache
+        self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
+        self._active_wip  = [x for x in self._active_wip if x not in to_remove]
+
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
-        isSelected = self.isActiveCached(oldName)
-        if isSelected: self.unselect(oldName, doSave=False) # will save later
+        isSelected = load_order.isActiveCached(oldName)
+        if isSelected: self.lo_deactivate(oldName, doSave=False) # will save later
         FileInfos.rename(self,oldName,newName)
-        self.plugins.renameInLo(newName, oldName)
-        if isSelected: self.select(newName, doSave=False)
+        # rename in load order caches
+        oldIndex = self._lo_wip.index(oldName)
+        self._lo_caches_remove_mods([oldName])
+        self._lo_wip.insert(oldIndex, newName)
+        if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
-        self.plugins.saveLoadAndActive()
-        self.refreshInfoLists()
+        self.cached_lo_save_all()
 
     def delete(self, fileName, **kwargs):
         """Delete member file."""
@@ -4053,7 +3967,7 @@ class ModInfos(FileInfos):
         for f in fileName:
             if f.s in bush.game.masterFiles: raise bolt.BoltError(
                 u"Cannot delete the game's master file(s).")
-        self.unselect(fileName, doSave=False)
+        self.lo_deactivate(fileName, doSave=False)
         deleted = FileInfos.delete(self, fileName, **kwargs)
         # temporarily track deleted mods so BAIN can update its UI
         for d in map(self.dir.join, deleted): # we need absolute paths
@@ -4065,8 +3979,8 @@ class ModInfos(FileInfos):
         if not deleted: return
         for name in deleted:
             self.pop(name, None)
-        self.plugins.removeMods(deleted, savePlugins=True)
-        self.refreshInfoLists()
+        self._lo_caches_remove_mods(deleted)
+        self.cached_lo_save_all()
 
     def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
                   doRefresh=True):
@@ -4080,7 +3994,7 @@ class ModInfos(FileInfos):
 
     def move_info(self, fileName, destDir, doRefresh=True):
         """Moves member file to destDir."""
-        self.unselect(fileName, doSave=True)
+        self.lo_deactivate(fileName, doSave=True)
         FileInfos.move_info(self, fileName, destDir, doRefresh)
 
     #--Mod info/modify --------------------------------------------------------
@@ -5519,14 +5433,14 @@ class InstallerArchive(Installer):
         norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = {}
-        timestamps = modInfos.mod_timestamp()
+        timestamps = load_order.install_last()
         count = 0
         for dest,src in  dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = unpackDirJoin(src)
             stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
             if srcFull.exists():
-                timestamps(srcFull)
+                if reModExt.search(srcFull.s): timestamps(srcFull)
                 data_sizeCrcDate_update[dest] = (size,crc,srcFull.mtime)
                 count += 1
                 # Move to staging directory
@@ -5745,7 +5659,7 @@ class InstallerProject(Installer):
         srcDir = dirs['installers'].join(name)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
-        timestamps = modInfos.mod_timestamp()
+        timestamps = load_order.install_last()
         count = 0
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
@@ -5753,7 +5667,7 @@ class InstallerProject(Installer):
             stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
             if srcFull.exists():
                 srcFull.copyTo(stageFull)
-                timestamps(stageFull)
+                if reModExt.search(srcFull.s): timestamps(srcFull)
                 data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
                 count += 1
                 progressPlus()
@@ -6812,14 +6726,14 @@ class InstallersData(DataDict):
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []
-        getBSAOrder = lambda b: modInfos.activeCached.index(b[1].root + ".esp") ##: why list() ?
+        getBSAOrder = lambda b: load_order.activeCached().index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
             # Create list of active BSA files in srcInstaller
             srcFiles = srcInstaller.data_sizeCrc
             srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
-#            print("Ordered: {}".format(modInfos.activeCached))
-            activeSrcBSAFiles = [x for x in srcBSAFiles if modInfos.isActiveCached(x.root + ".esp")]
+#            print("Ordered: {}".format(load_order.activeCached()))
+            activeSrcBSAFiles = [x for x in srcBSAFiles if load_order.isActiveCached(x.root + ".esp")]
             try:
                 bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]
 #                print("BSA Paths: {}".format(bsas))
@@ -6839,7 +6753,7 @@ class InstallersData(DataDict):
 #                print("Current Package: {}".format(package))
                 BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
                 activeBSAFiles.extend([(package, x, libbsa.BSAHandle(
-                    dirs['mods'].join(x.s))) for x in BSAFiles if modInfos.isActiveCached(x.root + ".esp")])
+                    dirs['mods'].join(x.s))) for x in BSAFiles if load_order.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
             for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
@@ -7143,37 +7057,56 @@ class Save_NPCEdits:
 
 # Mergeability ----------------------------------------------------------------
 ##: belong to patcher/patch_files (?) but used in modInfos - cyclic imports
-def isPBashMergeable(modInfo,verbose=True):
-    """Returns True or error message indicating whether specified mod is mergeable."""
-    reasons = u''
-
+def _is_mergeable_no_load(modInfo, verbose):
+    reasons = []
     if modInfo.isEsm():
         if not verbose: return False
-        reasons += u'\n.    '+_(u'Is esm.')
+        reasons.append(u'\n.    '+_(u'Is esm.'))
     #--Bashed Patch
-    if modInfo.header.author == u"BASHED PATCH":
+    if modInfo.header.author == u'BASHED PATCH':
         if not verbose: return False
-        reasons += u'\n.    '+_(u'Is Bashed Patch.')
-
+        reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
     #--Bsa / voice?
     if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
         if not verbose: return False
         hasBsa, hasVoices = modInfo.hasResources()
         if hasBsa:
-            reasons += u'\n.    '+_(u'Has BSA archive.')
+            reasons.append(u'\n.    '+_(u'Has BSA archive.'))
         if hasVoices:
-            reasons += u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s
+            reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
+    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
+    tags = modInfos[modInfo.name].getBashTags()
+    if u'NoMerge' in tags:
+        if not verbose: return False
+        reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
+    if reasons: return reasons
+    return True
 
+def pbash_mergeable_no_load(modInfo, verbose):
+    reasons = _is_mergeable_no_load(modInfo, verbose)
+    if isinstance(reasons, list):
+        reasons = u''.join(reasons)
+    elif not reasons:
+        return False # non verbose mode
+    else: # True
+        reasons = u''
     #--Missing Strings Files?
     if modInfo.isMissingStrings():
         if not verbose: return False
         reasons += u'\n.    '+_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
             modInfo.name.sbody, oblivionIni.getSetting('General','sLanguage',u'English'))
+    if reasons: return reasons
+    return True
 
-    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-    if u'NoMerge' in modInfos[GPath(modInfo.name.s)].getBashTags():
-        if not verbose: return False
-        reasons += u'\n.    '+_(u"Has 'NoMerge' tag.")
+def isPBashMergeable(modInfo,verbose=True):
+    """Returns True or error message indicating whether specified mod is mergeable."""
+    reasons = pbash_mergeable_no_load(modInfo, verbose)
+    if isinstance(reasons, unicode):
+        pass
+    elif not reasons:
+        return False # non verbose mode
+    else: # True
+        reasons = u''
     #--Load test
     mergeTypes = set([recClass.classType for recClass in bush.game.mergeClasses])
     modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
@@ -7210,35 +7143,13 @@ def isPBashMergeable(modInfo,verbose=True):
     if reasons: return reasons
     return True
 
-def _modIsMergeableNoLoad(modInfo,verbose):
-    reasons = []
-
-    if modInfo.isEsm():
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is esm.'))
-    #--Bashed Patch
-    if modInfo.header.author == u'BASHED PATCH':
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
-
-    #--Bsa / voice?
-    if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
-        if not verbose: return False
-        hasBsa, hasVoices = modInfo.hasResources()
-        if hasBsa:
-            reasons.append(u'\n.    '+_(u'Has BSA archive.'))
-        if hasVoices:
-            reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
-
-    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-    tags = modInfos[modInfo.name].getBashTags()
-    if u'NoMerge' in tags:
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
-    if reasons: return reasons
-    return True
+def cbash_mergeable_no_load(modInfo, verbose):
+    """Check if mod is mergeable without taking into account the rest of mods"""
+    return _is_mergeable_no_load(modInfo, verbose)
 
 def _modIsMergeableLoad(modInfo,verbose):
+    """Check if mod is mergeable, loading it and taking into account the
+    rest of mods."""
     allowMissingMasters = {u'Filter', u'IIM', u'InventOnly'}
     tags = modInfos[modInfo.name].getBashTags()
     reasons = []
@@ -7258,7 +7169,7 @@ def _modIsMergeableLoad(modInfo,verbose):
                 if master not in modInfos:
                     if not verbose: return False
                     missingMasters.append(master.s)
-                elif not modInfos.isActiveCached(master):
+                elif not load_order.isActiveCached(master):
                     if not verbose: return False
                     nonActiveMasters.append(master.s)
         #--masters not present in mod list?
@@ -7291,7 +7202,11 @@ def _modIsMergeableLoad(modInfo,verbose):
 # noinspection PySimplifyBooleanCheck
 def isCBashMergeable(modInfo,verbose=True):
     """Returns True or error message indicating whether specified mod is mergeable."""
-    canmerge = _modIsMergeableNoLoad(modInfo, verbose)
+    if modInfo.name.s == u"Oscuro's_Oblivion_Overhaul.esp":
+        if verbose: return u'\n.    ' + _(
+            u'Marked non-mergeable at request of mod author.')
+        return False
+    canmerge = cbash_mergeable_no_load(modInfo, verbose)
     if verbose:
         loadreasons = _modIsMergeableLoad(modInfo, verbose)
         reasons = []
@@ -7389,7 +7304,7 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
         return oldPath, oldSrc
 
 from ..env import test_permissions # CURRENTLY DOES NOTHING !
-def initDirs(bashIni, personal, localAppData, oblivionPath):
+def initDirs(bashIni, personal, localAppData):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
     dirs['bash'] = dirs['mopy'].join(u'bash')
@@ -7720,13 +7635,11 @@ def initLogFile():
                     u'initialized.') % (
                   bolt.timestamp(), inisettings['KeepLog']) + u'\r\n')
 
-def initBosh(personal='', localAppData='', oblivionPath='', bashIni=None):
+def initBosh(personal='', localAppData='', bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
-    initDirs(bashIni,personal,localAppData, oblivionPath)
-    global load_order
-    from .. import load_order ##: move it from here - also called from restore settings
-    load_order = load_order
+    initDirs(bashIni, personal, localAppData)
+    load_order.initialize_load_order_files()
     initOptions(bashIni)
     try:
         initLogFile()

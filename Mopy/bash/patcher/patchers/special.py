@@ -25,7 +25,7 @@ import copy
 from operator import itemgetter, attrgetter
 import string
 # Internal
-from ... import bosh # for modInfos
+from ... import bosh, load_order # for modInfos
 from ...bolt import GPath, SubProgress, CsvReader, Path
 from .. import getPatchesPath
 from ... import bush
@@ -561,7 +561,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         mod_count = self.mod_count
         log.setHeader(u'= ' +self.__class__.name)
         log(u'* '+_(u'Modified LVL') + u': %d' % (sum(mod_count.values()),))
-        for srcMod in bosh.modInfos.getOrdered(mod_count.keys()):
+        for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 

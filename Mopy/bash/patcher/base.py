@@ -37,6 +37,7 @@ from . import getPatchesList
 from ..bolt import AbstractError, GPath, Path
 from ..bosh import reModExt
 from .. import bosh # for modInfos
+from .. import load_order
 
 reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
@@ -196,7 +197,7 @@ class AListPatcher(_Abstract_Patcher):
             autoKey = {autoKey}
         autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
-        dex = bosh.modInfos.loIndexCached
+        dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
             name = modInfo.name
             if dex(name) >= dex(self._patchFile().patchName): continue
@@ -252,7 +253,7 @@ class AListPatcher(_Abstract_Patcher):
     def sortConfig(self,items):
         """Return sorted items. Default assumes mods and sorts by load
         order."""
-        return bosh.modInfos.getOrdered(items)
+        return load_order.get_ordered(items)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -353,7 +354,7 @@ class AMultiTweakItem(object):
         """Log - must define self.logMsg in subclasses"""
         log.setHeader(self.logHeader)
         log(self.logMsg % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
     #--Config Phase -----------------------------------------------------------
@@ -447,7 +448,7 @@ class APatchMerger(AListPatcher):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        dex = bosh.modInfos.loIndexCached
+        dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
             if dex(modInfo.name) >= dex(self._patchFile().patchName): continue
             if (modInfo.name in bosh.modInfos.mergeable and

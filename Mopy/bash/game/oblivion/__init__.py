@@ -219,8 +219,6 @@ masterFiles = [
     u'Oblivion.esm',
     u'Nehrim.esm',
     ]
-#--Plugin files that can't be deactivated
-nonDeactivatableFiles = []
 
 namesPatcherMaster = re.compile(ur"^Oblivion.esm$",re.I|re.U)
 

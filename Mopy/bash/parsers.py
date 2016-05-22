@@ -36,6 +36,7 @@ import bolt
 import bush # for game and actorValues
 import bosh # for modInfos
 import env
+import load_order
 from balt import Progress
 from bolt import GPath, decode, deprint, CsvReader, csvFormat, ArgumentError, \
     SubProgress, StateError, BoltError
@@ -3853,7 +3854,7 @@ class MasterSet(set):
 
     def getOrdered(self):
         """Returns masters in proper load order."""
-        return bosh.modInfos.getOrdered(self)
+        return load_order.get_ordered(self)
 
 class LoadFactory:
     """Factory for mod representation objects."""
@@ -4078,7 +4079,7 @@ class ModFile:
     def getShortMapper(self):
         """Returns a mapping function to map long fids to short fids."""
         masters = self.tes4.masters+[self.fileInfo.name]
-        indices = dict([(name,index) for index,name in enumerate(masters)])
+        indices = dict((name, index) for index, name in enumerate(masters))
         gLong = self.getLongMapper()
         def mapper(fid):
             if fid is None: return None

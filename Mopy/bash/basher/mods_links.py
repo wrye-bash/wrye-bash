@@ -26,7 +26,7 @@
 points to BashFrame.modList singleton."""
 
 import re as _re
-from .. import bosh, balt, parsers
+from .. import bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
@@ -93,7 +93,7 @@ class Mods_LoadList(ChoiceLink):
             """Common methods used by Links de/activating mods."""
             def _refresh(self): self.window.RefreshUI(refreshSaves=True)
             def _selectExact(self, mods):
-                errorMessage = bosh.modInfos.selectExact(mods)
+                errorMessage = bosh.modInfos.lo_activate_exact(mods)
                 self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
         class _All(__Activate):
@@ -102,7 +102,7 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self):
                 """Select all mods."""
                 try:
-                    bosh.modInfos.selectAll()
+                    bosh.modInfos.lo_activate_all()
                 except bosh.PluginsFullError:
                     self._showError(
                         _(u"Mod list is full, so some mods were skipped"),
@@ -127,7 +127,7 @@ class Mods_LoadList(ChoiceLink):
                                         editorData)
         class _SaveLink(EnabledLink):
             text = _(u'Save List...')
-            def _enable(self): return bool(bosh.modInfos.activeCached)
+            def _enable(self): return bool(load_order.activeCached())
             def Execute(self):
                 newItem = self._askText(_(u'Save current load list as:'))
                 if not newItem: return
@@ -136,7 +136,7 @@ class Mods_LoadList(ChoiceLink):
                                 u'characters long.')
                     return self._showError(message)
                 Mods_LoadList.loadListsDict[newItem] = list(
-                    bosh.modInfos.activeCached)
+                    load_order.activeCached())
                 bosh.settings.setChanged('bash.loadLists.data')
         self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
                            SeparatorLink()]
@@ -281,7 +281,7 @@ class Mods_CleanDummyMasters(EnabledLink):
         for fileName, fileInfo in bosh.modInfos.items():
             if fileInfo.header.author == u'BASHED DUMMY':
                 remove.append(fileName)
-        remove = bosh.modInfos.getOrdered(remove)
+        remove = load_order.get_ordered(remove)
         self.window.DeleteItems(items=remove, order=False,
                                 dialogTitle=_(u'Delete Dummy Masters'))
         # Link.Frame.RefreshData() ##: why ?

@@ -266,11 +266,6 @@ masterFiles = [
     u'Fallout4.esm',
     ]
 
-#--Plugin files that can't be deactivated
-nonDeactivatableFiles = [
-    u'Fallout4.esm',
-    ]
-
 namesPatcherMaster = re.compile(ur"^Fallout4.esm$",re.I|re.U)
 
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.

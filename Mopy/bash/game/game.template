@@ -30,7 +30,6 @@ import struct
 from .constants import * # WIP
 from ... import brec
 
-
 #--Name of the game
 ## Example: u'Oblivion'
 name = u''

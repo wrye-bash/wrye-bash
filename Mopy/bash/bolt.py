@@ -2177,6 +2177,10 @@ class Progress:
         """Default doProgress does nothing."""
         pass
 
+    # __enter__ and __exit__ for use with the 'with' statement
+    def __enter__(self): return self
+    def __exit__(self,type,value,traceback): pass
+
 #------------------------------------------------------------------------------
 class SubProgress(Progress):
     """Sub progress goes from base to ceiling."""

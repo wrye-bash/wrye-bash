@@ -25,8 +25,8 @@ import time
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
+from .. import load_order
 from .. import bass
-from ..bosh import ModInfo
 from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord, ModError
 from ..balt import showWarning
@@ -51,8 +51,8 @@ class _PFile:
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        dex = bosh.modInfos.loIndexCached
-        loadMods = [name for name in bosh.modInfos.activeCached if
+        dex = load_order.loIndexCached
+        loadMods = [name for name in load_order.activeCached() if
                     dex(name) < dex(self.__class__.patchName)]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")
@@ -66,7 +66,7 @@ class _PFile:
         if mergeMods is not None: self.mergeMods = mergeMods
         self.loadSet = set(self.loadMods)
         self.mergeSet = set(self.mergeMods)
-        self.allMods = bosh.modInfos.getOrdered(self.loadSet|self.mergeSet)
+        self.allMods = load_order.get_ordered(self.loadSet | self.mergeSet)
         self.allSet = set(self.allMods)
 
     def _log_header(self, log, patch_name):
@@ -157,11 +157,8 @@ class PatchFile(_PFile, ModFile):
         for num in xrange(10):
             modName = GPath(u'Bashed Patch, %d.esp' % num)
             if modName not in bosh.modInfos:
-                patchInfo = ModInfo(bosh.modInfos.dir,GPath(modName))
-                patchInfo.mtime = max([time.time()]+[info.mtime for info in bosh.modInfos.values()])
-                patchFile = ModFile(patchInfo)
-                patchFile.tes4.author = u'BASHED PATCH'
-                patchFile.safeSave()
+                bosh.modInfos.create_new_mod(modName, masterless=True,
+                                             bashed_patch=True)
                 bosh.modInfos.refresh()
                 return modName
         else:
@@ -457,7 +454,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
-        dex = infos.loIndexCached
+        dex = load_order.loIndexCached
         def less(mod): return dex(mod) < dex(CBash_PatchFile.patchName)
         for name in self.mergeSet:
             if less(name): self.Current.addMergeMod(infos[name].getPath().stail)
@@ -512,7 +509,7 @@ class CBash_PatchFile(_PFile, ObModFile):
                         mgefId_hostile[mgefId] = record.IsHostile
                     record.UnloadRecord()
             self.hostileEffects = set([mgefId for mgefId, hostile in mgefId_hostile.iteritems() if hostile])
-        self.completeMods = bosh.modInfos.getOrdered(self.allSet|self.scanSet)
+        self.completeMods = load_order.get_ordered(self.allSet | self.scanSet)
         group_patchers = self.group_patchers
 
         mod_patchers = group_patchers.get('MOD')

@@ -30,7 +30,7 @@ import time
 import wx
 from datetime import timedelta
 from . import SetUAC, BashFrame
-from .. import bass, bosh, bolt, balt, env
+from .. import bass, bosh, bolt, balt, env, load_order
 from ..bass import Resources
 from ..balt import StaticText, vSizer, hSizer, spacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
@@ -279,11 +279,12 @@ class PatchDialog(balt.Dialog):
             balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patchName.s
-            if bosh.modInfos.isActiveCached(patchName) or (
+            if load_order.isActiveCached(patchName) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patchName.s)):
                 try:
-                    changedFiles = bosh.modInfos.select(patchName, doSave=True)
+                    changedFiles = bosh.modInfos.lo_activate(patchName,
+                                                             doSave=True)
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))

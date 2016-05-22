@@ -26,7 +26,7 @@ import StringIO
 import re
 import string
 import wx
-from .. import bass, balt, bosh, bolt
+from .. import bass, balt, bosh, bolt, load_order
 from ..bass import Resources
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, spacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
@@ -498,7 +498,7 @@ class ModChecker(wx.Frame):
         bosh.settings[
             'bash.modChecker.showVersion'] = self.gShowVersion.GetValue()
         #--Cache info from modinfos to support auto-update.
-        self.orderedActive = bosh.modInfos.activeCached
+        self.orderedActive = load_order.activeCached()
         self.merged = bosh.modInfos.merged.copy()
         self.imported = bosh.modInfos.imported.copy()
         #--Do it
@@ -525,7 +525,7 @@ class ModChecker(wx.Frame):
     def OnActivate(self,event):
         """Handle window activate/deactivate. Use for auto-updating list."""
         if (event.GetActive() and (
-            self.orderedActive != bosh.modInfos.activeCached or
+            self.orderedActive != load_order.activeCached() or
             self.merged != bosh.modInfos.merged or
             self.imported != bosh.modInfos.imported)
             ):

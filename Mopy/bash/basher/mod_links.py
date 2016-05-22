@@ -29,7 +29,7 @@ import StringIO
 import collections
 import copy
 import os
-from .. import bass, bosh, bolt, balt, bush, parsers
+from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
@@ -119,7 +119,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(modInfo.dir,master)
-            newInfo.mtime = bosh.modInfos.getFreeTime(lastTime, lastTime)
+            newInfo.mtime = load_order.get_free_time(lastTime, lastTime)
             refresh.append(master)
             if doCBash:
                 # TODO: CBash doesn't handle unicode.  Make this make temp unicode safe
@@ -617,7 +617,7 @@ class Mod_ListDependent(OneItemLink):
             log = bolt.LogFile(out)
             log(u'[spoiler][xml]')
             log.setHeader(head + self.legend + u': ')
-            loOrder =  lambda tup: modInfos.loIndexCachedOrMax(tup[0])
+            loOrder =  lambda tup: load_order.loIndexCachedOrMax(tup[0])
             text = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
                 if masterName in info.header.masters:
@@ -666,7 +666,7 @@ class _GhostLink(ItemLink):
     def setAllow(filename): return not _GhostLink.getAllow(filename)
     @staticmethod
     def toGhost(filename): return _GhostLink.getAllow(filename) and \
-        not bosh.modInfos.isActiveCached(filename) # cannot ghost active mods
+        not load_order.isActiveCached(filename) # cannot ghost active mods
     @staticmethod
     def getAllow(filename):
         return bosh.modInfos.table.getItem(filename, 'allowGhosting', True)
@@ -691,7 +691,7 @@ class _GhostLink(ItemLink):
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     text, help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda name: not bosh.modInfos.isActiveCached(name))
+    toGhost = staticmethod(lambda name: not load_order.isActiveCached(name))
 
 #------------------------------------------------------------------------------
 class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
@@ -703,7 +703,7 @@ class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
 #------------------------------------------------------------------------------
 class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda name: not bosh.modInfos.isActiveCached(name))
+    toGhost = staticmethod(lambda name: not load_order.isActiveCached(name))
 
     def _initData(self, window, selection):
         super(Mod_Ghost, self)._initData(window, selection)
@@ -720,7 +720,7 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     def _enable(self):
         # only enable ghosting for one item if not active
         if len(self.selected) == 1 and not self.isGhost:
-            return not bosh.modInfos.isActiveCached(self.path)
+            return not load_order.isActiveCached(self.path)
         return True
 
     def Execute(self):
@@ -776,40 +776,24 @@ class Mod_MarkMergeable(EnabledLink):
 
     @balt.conversation
     def Execute(self):
-        yes, no, nopes = [], [], []
-        mod_mergeInfo = bosh.modInfos.table.getColumn('mergeInfo')
-        with balt.BusyCursor():
-            for fileName in map(GPath,self.selected):
-                if not self.doCBash and bosh.reOblivion.match(fileName.s): continue
-                fileInfo = bosh.modInfos[fileName]
-                if self.doCBash:
-                    if fileName == u"Oscuro's_Oblivion_Overhaul.esp":
-                        reason = u'\n.    '+_(u'Marked non-mergeable at request of mod author.')
-                    else:
-                        reason = bosh.isCBashMergeable(fileInfo,True)
-                else:
-                    reason = bosh.isPBashMergeable(fileInfo,True)
-
-                if reason == True:
-                    mod_mergeInfo[fileName] = (fileInfo.size,True)
-                    yes.append(fileName)
-                else:
-                    if (u'\n.    '+_(u"Has 'NoMerge' tag.")) in reason:
-                        mod_mergeInfo[fileName] = (fileInfo.size,True)
-                    else:
-                        mod_mergeInfo[fileName] = (fileInfo.size,False)
-                    no.append(u"%s:%s" % (fileName.s,reason))
-                    nopes.append(fileName)
-            message = u'== %s ' % ([u'Python',u'CBash'][self.doCBash])+_(u'Mergeability')+u'\n\n'
-            if yes:
-                message += u'=== ' + _(
-                    u'Mergeable') + u'\n* ' + u'\n\n* '.join(x.s for x in yes)
-            if yes and no:
-                message += u'\n\n'
-            if no:
-                message += u'=== ' + _(
-                    u'Not Mergeable') + u'\n* ' + '\n\n* '.join(no)
-            self.window.RefreshUI(files=yes + nopes, refreshSaves=False)
+        with balt.Progress(self.text + u' ' * 30) as prog:
+            result, tagged_no_merge = bosh.modInfos.rescanMergeable(
+                self.selected, prog, self.doCBash)
+        yes = [x for x in self.selected if
+               x not in tagged_no_merge and x in bosh.modInfos.mergeable]
+        no = set(self.selected) - set(yes)
+        no = [u"%s:%s" % (x, y) for x, y in result.iteritems() if x in no]
+        message = u'== %s ' % ([u'Python', u'CBash'][self.doCBash]) + _(
+            u'Mergeability') + u'\n\n'
+        if yes:
+            message += u'=== ' + _(u'Mergeable') + u'\n* ' + u'\n\n* '.join(
+                x.s for x in yes)
+        if yes and no:
+            message += u'\n\n'
+        if no:
+            message += u'=== ' + _(u'Not Mergeable') + u'\n* ' + '\n\n* '.join(
+                no)
+        self.window.RefreshUI(files=self.selected, refreshSaves=False)
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
@@ -856,7 +840,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
 
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        if not bosh.modInfos.activeCached:
+        if not load_order.activeCached():
             self._showWarning(
                 _(u'That which does not exist cannot be patched.') + u'\n' +
                 _(u'Load some mods and try again.'),
@@ -883,25 +867,27 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
+            prog = None
             if self.doCBash:
                 CBash_PatchFile.patchTime = fileInfo.mtime
                 CBash_PatchFile.patchName = fileInfo.name
-                nullProgress = bolt.Progress()
-                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress,True)
-                self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
+                prog = bolt.Progress()
             else:
                 PatchFile.patchTime = fileInfo.mtime
                 PatchFile.patchName = fileInfo.name
                 if bosh.settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
-                    with balt.Progress(_(u"Mark Mergeable")+u' '*30) as progress:
-                        bosh.modInfos.rescanMergeable(bosh.modInfos.data,progress,False)
-                    self.window.RefreshUI(refreshSaves=False) #rescan mergeable
+                    prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
+            if prog is not None:
+                with prog: # cbash mode had verbose True...
+                    bosh.modInfos.rescanMergeable(bosh.modInfos.data, prog,
+                                                  self.doCBash)
+                self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
 
         #--Check if we should be deactivating some plugins
-        def less(modName, dex=bosh.modInfos.loIndexCached):
+        def less(modName, dex=load_order.loIndexCached):
             return dex(modName) < dex(fileName)
-        ActivePriortoPatch = [x for x in bosh.modInfos.activeCached if less(x)]
+        ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
         unfiltered = [x for x in ActivePriortoPatch if
                       u'Filter' in bosh.modInfos[x].getBashTags()]
         merge = [x for x in ActivePriortoPatch if
@@ -961,21 +947,19 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                     deselect |= set(dialog.getChecked(key, lst))
                 if deselect:
                     with balt.BusyCursor():
-                        for mod in deselect:
-                            bosh.modInfos.unselect(mod, doSave=False)
-                        bosh.modInfos.plugins.saveActive()
-                        # just active mods (no modtimes changes), still needed:
-                        bosh.modInfos.refreshInfoLists()
-                        self.window.RefreshUI(refreshSaves=True) # True ?
+                        for mod in deselect: bosh.modInfos.lo_deactivate(mod,
+                                                                doSave=False)
+                        bosh.modInfos.cached_lo_save_active()
+                        self.window.RefreshUI(refreshSaves=True)
             dialog.Destroy()
 
         previousMods = set()
         missing = collections.defaultdict(list)
         delinquent = collections.defaultdict(list)
-        for mod in bosh.modInfos.activeCached:
+        for mod in load_order.activeCached():
             if mod == fileName: break
             for master in bosh.modInfos[mod].header.masters:
-                if not bosh.modInfos.isActiveCached(master):
+                if not load_order.isActiveCached(master):
                     missing[mod].append(master)
                 elif master not in previousMods:
                     delinquent[mod].append(master)
@@ -1443,7 +1427,7 @@ class Mod_AddMaster(OneItemLink):
                 return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
-        for masterName in bosh.modInfos.getOrdered(names):
+        for masterName in load_order.get_ordered(names):
             if masterName in bosh.modInfos:
                 #--Avoid capitalization errors by getting the actual name from modinfos.
                 masterName = bosh.modInfos[masterName].name
@@ -1464,6 +1448,7 @@ class Mod_CopyToEsmp(EnabledLink):
         self.text = _(u'Copy to Esp') if self.isEsm else _(u'Copy to Esm')
 
     def _enable(self):
+        """Disable if selected are mixed esm/p's or inverted mods."""
         for item in self.selected:
             fileInfo = bosh.modInfos[item]
             if fileInfo.isInvertedMod() or fileInfo.isEsm() != self.isEsm:
@@ -1486,7 +1471,7 @@ class Mod_CopyToEsmp(EnabledLink):
                 timeSource = newName
             #--New Time
             newTime = modInfos[timeSource].mtime if timeSource else \
-                bosh.modInfos.getFreeTime(fileInfo.mtime)
+                load_order.get_free_time(fileInfo.mtime)
             #--Copy, set type, update mtime - will use ghosted path if needed
             modInfos.copy_info(curName, fileInfo.dir, newName,
                                set_mtime=newTime)
@@ -1561,7 +1546,21 @@ class Mod_DecompileAll(EnabledLink):
                 self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
-class Mod_FlipSelf(EnabledLink):
+class _Esm_Flip(EnabledLink):
+
+    def _esm_flip_refresh(self, espify, updated):
+        with balt.BusyCursor():
+            ##: HACK: forcing active refresh cause mods may be reordered and
+            # we then need to sync order in skyrim's plugins.txt
+            bosh.modInfos.refreshLoadOrder(forceRefresh=True, forceActive=True)
+            if espify: # converted to esps - rescan mergeable
+                bosh.modInfos.rescanMergeable(updated, bolt.Progress())
+            # will be moved to the top - note that modification times won't
+            # change - so mods will revert to their original position once back
+            # to esp from esm (Oblivion etc). Refresh saves due to esms move
+        self.window.RefreshUI(files=updated, refreshSaves=True)
+
+class Mod_FlipSelf(_Esm_Flip):
     """Flip an esp(esm) to an esm(esp)."""
 
     def _initData(self, window, selection):
@@ -1590,13 +1589,10 @@ class Mod_FlipSelf(EnabledLink):
             header = fileInfo.header
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
-        with balt.BusyCursor():
-            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True)
-            # refreshSaves=True, see Mod_FlipMasters
-            self.window.RefreshUI(files=self.selected, refreshSaves=True)
+        self._esm_flip_refresh(self.isEsm, self.selected)
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(OneItemLink):
+class Mod_FlipMasters(_Esm_Flip):
     """Swaps masters between esp and esm versions."""
     help = _(
         u"Flip esp/esm bit of esp masters to convert them to/from esm state")
@@ -1636,12 +1632,7 @@ class Mod_FlipMasters(OneItemLink):
                 masterInfo.header.flags1.esm = self.toEsm
                 masterInfo.writeHeader()
                 updated.append(masterPath)
-        with balt.BusyCursor():
-            bosh.modInfos.plugins.refreshLoadOrder(forceRefresh=True) # esms
-            # will be moved to the top - note that modification times won't
-            # change - so mods will revert to their original position once back
-            # to esp from esm (Oblivion etc). Refresh saves due to esms move
-            self.window.RefreshUI(files=updated, refreshSaves=True)
+        self._esm_flip_refresh(not self.toEsm, updated)
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):
@@ -2749,7 +2740,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
                 return self._showError(
                     name.s + u' ' + _(u"is already a master."))
             names.append(name)
-        for masterName in bosh.modInfos.getOrdered(names):
+        for masterName in load_order.get_ordered(names):
             if masterName in bosh.modInfos:
                 masterName = bosh.modInfos[masterName].name
             modInfo.header.masters.append(masterName)

@@ -30,7 +30,7 @@ from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord, ModReader
 from ....bass import null4
 # from  bush import  genericAVEffects
-from .... import bush, bosh
+from .... import bush, bosh, load_order
 from ....cint import MGEFCode, FormID
 from ....patcher.base import Patcher, CBash_Patcher
 from ....patcher.patchers.base import SpecialPatcher, ListPatcher, \
@@ -361,7 +361,7 @@ class _ACoblExhaustion(SpecialPatcher):
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self.__class__.name)
         log(u'* ' + _(u'Powers Tweaked') + u': %d' % sum(count.values()))
-        for srcMod in bosh.modInfos.getOrdered(count.keys()):
+        for srcMod in load_order.get_ordered(count.keys()):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class CoblExhaustion(_ACoblExhaustion,ListPatcher):
@@ -558,7 +558,7 @@ class _AMFactMarker(SpecialPatcher):
         log.setHeader(u'= ' + self.__class__.name)
         self._srcMods(log)
         log(u'\n=== ' + _(u'Morphable Factions'))
-        for mod in bosh.modInfos.getOrdered(changed):
+        for mod in load_order.get_ordered(changed):
             log(u'* %s: %d' % (mod.s, changed[mod]))
 
 class MFactMarker(_AMFactMarker,ListPatcher):
@@ -568,7 +568,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
     def initPatchFile(self,patchFile,loadMods):
         super(MFactMarker, self).initPatchFile(patchFile, loadMods)
         self.id_info = {} #--Morphable factions keyed by fid
-        self.isActive = bool(self.srcs) and bosh.modInfos.isActiveCached(
+        self.isActive = bool(self.srcs) and load_order.isActiveCached(
             GPath(u"Cobl Main.esm"))
         self.mFactLong = (GPath(u"Cobl Main.esm"),0x33FB)
 

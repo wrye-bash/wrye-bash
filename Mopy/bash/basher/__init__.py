@@ -61,15 +61,16 @@ import time
 from types import ClassType
 from functools import partial
 #--wxPython
+import collections
 import wx
 import wx.gizmos
 
 #--Localization
 #..Handled by bosh, so import that.
-from .. import bush, bosh, bolt, bass, env
+from .. import bush, bosh, bolt, bass, env, load_order
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, Path, AbstractError, formatInteger, formatDate, round_size
+    deprint, AbstractError, formatInteger, formatDate, round_size
 from ..bosh import omods, CoSaves
 from ..cint import CBash
 from ..patcher.patch_files import PatchFile
@@ -308,7 +309,7 @@ class _ModsUIList(balt.UIList):
 
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            items.sort(key=lambda x: x not in set(bosh.modInfos.activeCached
+            items.sort(key=lambda x: x not in set(load_order.activeCached()
                 ) | bosh.modInfos.imported | bosh.modInfos.merged)
 
     def forceEsmFirst(self): return self.sort in _ModsUIList._esmsFirstCols
@@ -329,8 +330,8 @@ class MasterList(_ModsUIList):
     def _activeModsFirst(self, items):
         if self.selectedFirst:
             items.sort(key=lambda x: self.data_store[x].name not in set(
-                bosh.modInfos.activeCached) | bosh.modInfos.imported
-                                            | bosh.modInfos.merged)
+                load_order.activeCached()) | bosh.modInfos.imported
+                                           | bosh.modInfos.merged)
     _extra_sortings = [_ModsUIList._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
     #--Labels
@@ -415,7 +416,7 @@ class MasterList(_ModsUIList):
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
         loadOrderIndex = self.loadOrderNames.index(masterName)
-        ordered = bosh.modInfos.activeCached
+        ordered = load_order.activeCached()
         if mi != loadOrderIndex: # there are active masters out of order
             return 20  # orange
         elif status > 0:
@@ -442,7 +443,7 @@ class MasterList(_ModsUIList):
                 item_format.text_key = 'mods.text.mergeable'
         #--Text BG
         if bosh.modInfos.isBadFileName(masterName.s):
-            if bosh.modInfos.isActiveCached(masterName):
+            if load_order.isActiveCached(masterName):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -459,7 +460,7 @@ class MasterList(_ModsUIList):
                 item_format.font = Resources.fonts.bold
         #--Image
         status = self.GetMasterStatus(mi)
-        oninc = bosh.modInfos.isActiveCached(masterName) or (
+        oninc = load_order.isActiveCached(masterName) or (
             masterName in bosh.modInfos.merged and 2)
         item_format.icon_key = status, oninc
         self.mouseTexts[mi] = mouseText
@@ -467,7 +468,7 @@ class MasterList(_ModsUIList):
     #--Relist
     def _reList(self):
         fileOrderNames = [v.name for v in self.data_store.values()]
-        self.loadOrderNames = bosh.modInfos.getOrdered(fileOrderNames)
+        self.loadOrderNames = load_order.get_ordered(fileOrderNames)
 
     #--InitEdit
     def InitEdit(self):
@@ -763,7 +764,7 @@ class ModList(_ModsUIList):
         'Rating'    : lambda self, a: self._get(a)('rating', u''),
         'Group'     : lambda self, a: self._get(a)('group', u''),
         'Installer' : lambda self, a: self._get(a)('installer', u''),
-        'Load Order': lambda self, a: bosh.modInfos.loIndexCachedOrMax(a),
+        'Load Order': lambda self, a: load_order.loIndexCachedOrMax(a),
         'Modified'  : lambda self, a: self.data_store[a].mtime,
         'Size'      : lambda self, a: self.data_store[a].size,
         'Status'    : lambda self, a: self.data_store[a].getStatus(),
@@ -807,11 +808,9 @@ class ModList(_ModsUIList):
     def _refreshOnDrop(self):
         #--Save and Refresh
         try:
-            bosh.modInfos.plugins.saveLoadOrder()
+            bosh.modInfos.cached_lo_save_all()
         except bolt.BoltError as e:
             balt.showError(self, u'%s' % e)
-        bosh.FileInfos.refresh(bosh.modInfos) # update mtimes conflicts etc
-        bosh.modInfos.refreshInfoLists()
         self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
@@ -820,7 +819,7 @@ class ModList(_ModsUIList):
         #--Image
         status = modInfo.getStatus()
         checkMark = (
-            1 if bosh.modInfos.isActiveCached(fileName)
+            1 if load_order.isActiveCached(fileName)
             else 2 if fileName in bosh.modInfos.merged
             else 3 if fileName in bosh.modInfos.imported
             else 0)
@@ -857,12 +856,12 @@ class ModList(_ModsUIList):
         if fileName in bosh.modInfos.bad_names:
             item_format.back_key ='mods.bkgd.doubleTime.exists'
         elif fileName in bosh.modInfos.missing_strings:
-            if bosh.modInfos.isActiveCached(fileName):
+            if load_order.isActiveCached(fileName):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif modInfo.hasBadMasterNames():
-            if bosh.modInfos.isActiveCached(fileName):
+            if load_order.isActiveCached(fileName):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -909,25 +908,34 @@ class ModList(_ModsUIList):
 
     def OnChar(self,event):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
-        if ((event.CmdDown() and event.GetKeyCode() in balt.wxArrows) and
+        code = event.GetKeyCode()
+        if ((event.CmdDown() and code in balt.wxArrows) and
             (self.sort in self._dndColumns)):
-                # Calculate continuous chunks of indexes
-                chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
-                previous = -1
-                for dex in indexes:
-                    if previous != -1 and previous + 1 != dex:
-                        chunk += 1
-                        chunks.append([])
-                    previous = dex
-                    chunks[chunk].append(dex)
-                moveMod = 1 if event.GetKeyCode() in balt.wxArrowDown else -1
-                moved = False
-                for chunk in chunks:
-                    newIndex = chunk[0] + moveMod
-                    if chunk[-1] + moveMod == self._gList.GetItemCount():
-                        continue # trying to move last plugin past the list
-                    moved |= self._dropIndexes(chunk, newIndex)
-                if moved: self._refreshOnDrop()
+            # Calculate continuous chunks of indexes
+            chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
+            previous = -1
+            for dex in indexes:
+                if previous != -1 and previous + 1 != dex:
+                    chunk += 1
+                    chunks.append([])
+                previous = dex
+                chunks[chunk].append(dex)
+            moveMod = 1 if code in balt.wxArrowDown else -1
+            moved = False
+            for chunk in chunks:
+                newIndex = chunk[0] + moveMod
+                if chunk[-1] + moveMod == self._gList.GetItemCount():
+                    continue # trying to move last plugin past the list
+                moved |= self._dropIndexes(chunk, newIndex)
+            if moved: self._refreshOnDrop()
+        # Ctrl+Z: Undo last load order or active plugins change
+        # Can't use ord('Z') below - check wx._core.KeyEvent docs
+        elif event.CmdDown() and code == 26:
+            if self.data_store.undo_load_order():
+                self.RefreshUI(refreshSaves=True)
+        elif event.CmdDown() and code == 25:
+            if self.data_store.redo_load_order():
+                self.RefreshUI(refreshSaves=True)
         else: event.Skip() # correctly update the highlight around selected mod
 
     def OnKeyUp(self,event):
@@ -937,13 +945,13 @@ class ModList(_ModsUIList):
         if code == wx.WXK_SPACE:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
-                          not self.data_store.isActiveCached(GPath(item))]
+                          not load_order.isActiveCached(GPath(item))]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
-                self._checkUncheckMod(*selected)
+                self._toggle_active_state(*selected)
             else:
                 #--Check all that aren't
-                self._checkUncheckMod(*toActivate)
+                self._toggle_active_state(*toActivate)
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
             sel = map(lambda mod: self.data_store[mod].getPath().s,
@@ -955,7 +963,7 @@ class ModList(_ModsUIList):
         """Left Down: Check/uncheck mods."""
         mod_clicked_on_icon = self._getItemClicked(event, on_icon=True)
         if mod_clicked_on_icon:
-            self._checkUncheckMod(mod_clicked_on_icon)
+            self._toggle_active_state(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
             self.SelectItem(mod_clicked_on_icon, deselectOthers=True)
@@ -972,51 +980,75 @@ class ModList(_ModsUIList):
             Link.Frame.docBrowser.SetMod(modName)
 
     #--Helpers ---------------------------------------------
-    def _checkUncheckMod(self, *mods):
-        removed = []
-        notDeactivatable = [ Path(x) for x in bush.game.nonDeactivatableFiles ]
+    @balt.conversation
+    def _toggle_active_state(self, *mods):
+        """Toggle active state of mods given - all mods must be either
+        active or inactive."""
         refreshNeeded = False
-        for item in mods:
-            if item in removed or item in notDeactivatable: continue
-            oldFiles = bosh.modInfos.activeCached
-            fileName = GPath(item)
-            #--Unselect?
-            if self.data_store.isActiveCached(fileName):
-                try:
-                    self.data_store.unselect(fileName, doSave=True)
-                    changed = bolt.listSubtract(oldFiles, bosh.modInfos.activeCached)
-                    if len(changed) > (fileName in changed):
-                        changed.remove(fileName)
-                        changed = [x.s for x in changed]
-                        removed += changed
-                        balt.showList(self,u'${count} '+_(u'Children deactivated:'),changed,10,fileName.s)
-                except BoltError as e:
-                    balt.showError(self, u'%s' % e)
-            #--Select?
-            else:
-                ## For now, allow selecting unicode named files, for testing
-                ## I'll leave the warning in place, but maybe we can get the
-                ## game to load these files.s
-                #if fileName in self.data_store.bad_names: return
-                try:
-                    activated = self.data_store.select(fileName, doSave=True)
-                    if len(activated) > ((fileName in activated) + (
-                        GPath(u'Oblivion.esm') in activated)):
-                        activated.remove(fileName)
-                        activated = [x.s for x in activated]
-                        balt.showList(self,
-                                      u'${count} ' + _(u'Masters activated:'),
-                                      activated, 10, fileName.s)
-                except bolt.BoltError as e:
-                    if refreshNeeded:
-                        bosh.modInfos.refreshInfoLists()
-                        self.RefreshUI(refreshSaves=True)
-                    balt.showError(self, u'%s' % e)
-                    return
-            refreshNeeded = True
+        keys = map(GPath, mods)
+        active = [mod for mod in keys if load_order.isActiveCached(mod)]
+        inactive = [mod for mod in keys if not load_order.isActiveCached(mod)]
+        assert len(active) == len(keys) or len(inactive) == len(keys)
+        changes = collections.defaultdict(dict)
+        # Deactivate ?
+        touched = set()
+        for act in active:
+            if act in touched: continue # already deactivated
+            try:
+                changed = self.data_store.lo_deactivate(act, doSave=False)
+                refreshNeeded += len(changed)
+                if len(changed) > (act in changed): # deactivated children
+                    touched |= changed
+                    changed = [x for x in changed if x != act]
+                    changes[self.__deactivated_key][act] = load_order.get_ordered(changed)
+            except BoltError as e:
+                balt.showError(self, u'%s' % e)
+        # Activate ?
+        touched = set()
+        for inact in inactive:
+            if inact in touched: continue # already activated
+            ## For now, allow selecting unicode named files, for testing
+            ## I'll leave the warning in place, but maybe we can get the
+            ## game to load these files.s
+            #if fileName in self.data_store.bad_names: return
+            try:
+                activated = self.data_store.lo_activate(inact, doSave=False)
+                refreshNeeded += len(activated)
+                if len(activated) > (inact in activated):
+                    touched |= set(activated)
+                    activated = [x for x in activated if x != inact]
+                    changes[self.__activated_key][inact] = activated
+            except bolt.BoltError as e:
+                balt.showError(self, u'%s' % e)
+                break
         #--Refresh
-        bosh.modInfos.refreshInfoLists()
-        self.RefreshUI(refreshSaves=True)
+        if refreshNeeded:
+            bosh.modInfos.cached_lo_save_active()
+            self.__toggle_active_msg(changes)
+            self.RefreshUI(refreshSaves=True)
+
+    __activated_key = _(u'Masters activated:')
+    __deactivated_key = _(u'Children deactivated:')
+    def __toggle_active_msg(self, changes_dict):
+        masters_activated = changes_dict[self.__activated_key]
+        children_deactivated = changes_dict[self.__deactivated_key]
+        checklists = []
+        # It's one or the other !
+        if masters_activated:
+            checklists = [self.__activated_key, _(
+            u'Wrye Bash automatically activates the masters of activated '
+            u'plugins.'), masters_activated]
+            msg = _(u'Activating the following plugins caused their masters '
+                    u'to be activated')
+        elif children_deactivated:
+            checklists += [self.__deactivated_key, _(
+                u'Wrye Bash automatically deactivates the children of '
+                u'deactivated plugins.'), children_deactivated]
+            msg = _(u'Deactivating the following plugins caused their '
+                    u'children to be deactivated')
+        if not checklists: return
+        ListBoxes.Display(self, _(u'Masters/Children affected'), msg,
+                          [checklists], liststyle='tree', canCancel=False)
 
     def jump_to_mods_installer(self, modName):
         if not balt.Link.Frame.iPanel or not bosh.settings[
@@ -1728,7 +1760,7 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
-        len(bosh.modInfos.activeCached), len(bosh.modInfos.data))
+        len(load_order.activeCached()), len(bosh.modInfos.data))
 
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
@@ -4327,16 +4359,10 @@ class BashApp(wx.App):
                     balt.sizes[key.__name__] = value
                     del balt.sizes[key]
         #--Current Version
-        settings['bash.version'] = 43
         if settings['bash.version'] != GetBashVersion():
             settings['bash.version'] = GetBashVersion()
-            # rescan mergeability
-            if not CBash: #Because it is rescanned on showing of patch dialogue anyways so that would double up in CBash Mode.
-                nullProgress = bolt.Progress()
-                bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
-        elif settings['bash.CBashEnabled'] != bool(CBash) and not CBash:
-            nullProgress = bolt.Progress()
-            bosh.modInfos.rescanMergeable(bosh.modInfos.data,nullProgress)
+            # rescan mergeability on version upgrade to detect new mergeable
+            bosh.modInfos.rescanMergeable(bosh.modInfos.data, bolt.Progress())
         settings['bash.CBashEnabled'] = bool(CBash)
 
 # Initialization --------------------------------------------------------------

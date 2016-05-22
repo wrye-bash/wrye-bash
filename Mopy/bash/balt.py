@@ -1301,10 +1301,7 @@ class Progress(bolt.Progress):
         self.prevTime = 0
 
     # __enter__ and __exit__ for use with the 'with' statement
-    def __enter__(self):
-        return self
-    def __exit__(self,type,value,traceback):
-        self.Destroy()
+    def __exit__(self,type,value,traceback): self.Destroy()
 
     def getParent(self):
         return self.dialog.GetParent()
