@@ -31,7 +31,7 @@ from .. import bass
 from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord, ModError
 from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
-    Progress, StateError
+    Progress, StateError, AbstractError
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..record_groups import MobObjects
 
@@ -151,6 +151,8 @@ class _PFile(object):
             for key, value in sorted(self.aliases.iteritems()):
                 log(u'* %s >> %s' % (key.s, value.s))
 
+    def init_patchers_data(self, progress): raise AbstractError
+
 class PatchFile(_PFile, ModFile):
     """Defines and executes patcher configuration."""
 
@@ -171,7 +173,7 @@ class PatchFile(_PFile, ModFile):
             return fid
         return keep
 
-    def initData(self,progress):
+    def init_patchers_data(self, progress):
         """Gives each patcher a chance to get its source data."""
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))
@@ -208,13 +210,13 @@ class PatchFile(_PFile, ModFile):
         nullProgress = Progress()
         progress = progress.setFull(len(self.allMods))
         for index,modName in enumerate(self.allMods):
-            bashTags = bosh.modInfos[modName].getBashTags()
+            modInfo = bosh.modInfos[modName]
+            bashTags = modInfo.getBashTags()
             if modName in self.loadMods and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
                 progress(index,modName.s+u'\n'+_(u'Loading...'))
-                modInfo = bosh.modInfos[GPath(modName)]
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))
             except ModError as e:
@@ -240,7 +242,7 @@ class PatchFile(_PFile, ModFile):
                     self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
                 else:
                     progress(pstate,modName.s+u'\n'+_(u'Scanning...'))
-                    self.scanModFile(modFile,nullProgress)
+                    self.update_patch_records_from_mod(modFile)
                 for patcher in sorted(self.patchers,key=attrgetter('scanOrder')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate,u'%s\n%s' % (modName.s,patcher.name))
@@ -302,7 +304,7 @@ class PatchFile(_PFile, ModFile):
             block.records = filtered
             block.indexRecords()
 
-    def scanModFile(self,modFile,progress):
+    def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
         #--Keep all MGEFs
         modFile.convertToLongFids('MGEF')
@@ -360,7 +362,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.races_data = {'EYES': [], 'HAIR': []}
         _PFile.__init__(self, patchers, patch_name)
 
-    def initData(self,progress):
+    def init_patchers_data(self, progress):
         """Gives each patcher a chance to get its source data."""
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))

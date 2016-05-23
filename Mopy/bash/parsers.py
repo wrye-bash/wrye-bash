@@ -3967,9 +3967,10 @@ class ModFile(object):
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
-        #--Header
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
-            header = ins.unpackRecHeader()
+            insRecHeader = ins.unpackRecHeader
+            #--TES4 Header of the mod file
+            header = insRecHeader()
             self.tes4 = bush.game.MreHeader(header,ins,True)
             #--Strings
             self.strings.clear()
@@ -3989,13 +3990,8 @@ class ModFile(object):
             #--Raw data read
             subProgress.setFull(ins.size)
             insAtEnd = ins.atEnd
-            insRecHeader = ins.unpackRecHeader
-            selfGetTopClass = self.loadFactory.getTopClass
-            selfTopsSkipAdd = self.topsSkipped.add
             insSeek = ins.seek
             insTell = ins.tell
-            selfLoadFactory = self.loadFactory
-            selfTops = self.tops
             while not insAtEnd():
                 #--Get record info and handle it
                 header = insRecHeader()
@@ -4003,13 +3999,13 @@ class ModFile(object):
                 if type != 'GRUP' or header.groupType != 0:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
                 label,size = header.label,header.size
-                topClass = selfGetTopClass(label)
+                topClass = self.loadFactory.getTopClass(label)
                 try:
                     if topClass:
-                        selfTops[label] = topClass(header,selfLoadFactory)
-                        selfTops[label].load(ins,unpack and (topClass != MobBase))
+                        self.tops[label] = topClass(header, self.loadFactory)
+                        self.tops[label].load(ins, unpack and (topClass != MobBase))
                     else:
-                        selfTopsSkipAdd(label)
+                        self.topsSkipped.add(label)
                         insSeek(size-header.__class__.size,1,type + '.' + label)
                 except:
                     print u'Error in',self.fileInfo.name.s

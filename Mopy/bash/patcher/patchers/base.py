@@ -23,6 +23,7 @@
 # =============================================================================
 
 """This module contains base patcher classes."""
+import collections
 import struct
 from operator import itemgetter
 # Internal
@@ -317,7 +318,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         masters = self.patchFile
         keep = self.patchFile.getKeeper()
-        count = CountDict()
+        count = collections.defaultdict(int)
         def swapper(oldId):
             newId = old_new.get(oldId,None)
             return newId if newId else oldId
@@ -333,14 +334,14 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
             for record in cellBlock.temp:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count.increment(cellBlock.cell.fid[0])
+                    count[cellBlock.cell.fid[0]] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
             for record in cellBlock.persistent:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count.increment(cellBlock.cell.fid[0])
+                    count[cellBlock.cell.fid[0]] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
@@ -350,7 +351,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                 for record in cellBlock.temp:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count.increment(cellBlock.cell.fid[0])
+                        count[cellBlock.cell.fid[0]] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -358,7 +359,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                 for record in cellBlock.persistent:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count.increment(cellBlock.cell.fid[0])
+                        count[cellBlock.cell.fid[0]] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -548,12 +549,3 @@ class SpecialPatcher(object):
                     tags = bosh.modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
             else: return
-
-# Util Classes ----------------------------------------------------------------
-class CountDict(dict):
-    """Used for storing counts. Just adds an increment function."""
-    def increment(self,key,inc=1):
-        """Increment specified key by 1, after initializing to zero if necessary."""
-        if not inc: return
-        if not key in self: self[key] = 0
-        self[key] += inc

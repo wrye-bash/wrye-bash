@@ -23,7 +23,7 @@
 # =============================================================================
 
 """This module contains the oblivion importer patcher classes."""
-
+import collections
 import operator
 import re
 # Internal
@@ -40,7 +40,7 @@ from ..base import AImportPatcher
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
-from .base import ImportPatcher, CBash_ImportPatcher, CountDict
+from .base import ImportPatcher, CBash_ImportPatcher
 
 # Functions -------------------------------------------------------------------
 # Factor out common code in the patchers. Serve as a document on the patcher
@@ -362,16 +362,16 @@ class CellImporter(_ACellImporter, ImportPatcher):
             return modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        cellData,count = self.cellData, CountDict()
+        cellData, count = self.cellData, collections.defaultdict(int)
         for cellBlock in self.patchFile.CELL.cellBlocks:
             if cellBlock.cell.fid in cellData and handleCellBlock(cellBlock):
-                count.increment(cellBlock.cell.fid[0])
+                count[cellBlock.cell.fid[0]] += 1
         for worldBlock in self.patchFile.WRLD.worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
                 if cellBlock.cell.fid in cellData and handleCellBlock(
                         cellBlock):
-                    count.increment(cellBlock.cell.fid[0])
+                    count[cellBlock.cell.fid[0]] += 1
                     keepWorld = True
             # if worldBlock.world.fid in cellData['Maps']:
                 # if worldBlock.world.mapPath != cellData['Maps'][worldBlock.world.fid]:

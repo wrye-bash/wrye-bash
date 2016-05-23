@@ -187,7 +187,7 @@ class PatchDialog(balt.Dialog):
             patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
             patchFile = CBash_PatchFile(patch_name, patchers) if self.doCBash \
                    else PatchFile(self.patchInfo, patchers)
-            patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+            patchFile.init_patchers_data(SubProgress(progress, 0, 0.1)) #try to speed this up!
             if self.doCBash:
                 #try to speed this up!
                 patchFile.buildPatch(SubProgress(progress,0.1,0.9))
