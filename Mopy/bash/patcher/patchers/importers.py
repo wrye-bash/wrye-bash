@@ -218,7 +218,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(CellImporter, self).initPatchFile(patchFile,loadMods)
-        self.cellData = {}
+        self.cellData = collections.defaultdict(dict)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
         self.recAttrs = game.cellRecAttrs
@@ -238,9 +238,6 @@ class CellImporter(_ACellImporter, ImportPatcher):
         def importCellBlockData(cellBlock):
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
-                if fid not in tempCellData:
-                    tempCellData[fid] = {}
-                    tempCellData[fid+('flags',)] = {}
                 for attr in attrs:
                     tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
                         attr)
@@ -251,16 +248,13 @@ class CellImporter(_ACellImporter, ImportPatcher):
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
                 if fid not in tempCellData: return
-                if fid not in cellData:
-                    cellData[fid] = {}
-                    cellData[fid+('flags',)] = {}
                 for attr in attrs:
-                    if tempCellData[fid][
-                        attr] != cellBlock.cell.__getattribute__(attr):
+                    master_attr = cellBlock.cell.__getattribute__(attr)
+                    if tempCellData[fid][attr] != master_attr:
                         cellData[fid][attr] = tempCellData[fid][attr]
                 for flag in flags:
-                    if tempCellData[fid + ('flags',)][flag] != \
-                            cellBlock.cell.flags.__getattr__(flag):
+                    master_flag = cellBlock.cell.flags.__getattr__(flag)
+                    if tempCellData[fid + ('flags',)][flag] != master_flag:
                         cellData[fid + ('flags',)][flag] = \
                             tempCellData[fid + ('flags',)][flag]
         cellData = self.cellData
@@ -271,21 +265,26 @@ class CellImporter(_ACellImporter, ImportPatcher):
         cachedMasters = {}
         for srcMod in self.srcs:
             if srcMod not in bosh.modInfos: continue
-            tempCellData = {'Maps':{}}
+            # tempCellData maps long fids for cells in srcMod to dicts of
+            # (attributes (among attrs) -> their values for this mod). It is
+            # used to update cellData with cells that change those attributes'
+            # values from the value in any of srcMod's masters.
+            tempCellData = collections.defaultdict(dict)
+            tempCellData['Maps'] = {} # unused !
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
+            cachedMasters[srcMod] = srcFile
             masters = srcInfo.header.masters
             bashTags = srcInfo.getBashTags()
             # print bashTags
-            try:
-                attrs = set(reduce(operator.add,
-                                   (self.recAttrs[bashKey] for bashKey in
-                                    bashTags if bashKey in self.recAttrs)))
-            except: attrs = set()
-            flags = tuple(self.recFlags[bashKey] for bashKey in bashTags if
-                bashKey in self.recAttrs and self.recFlags[bashKey] != u'')
+            tags = bashTags & set(self.recAttrs)
+            if not tags: continue
+            attrs = set(reduce(# adds tuples together, then takes the set
+                operator.add, (self.recAttrs[bashKey] for bashKey in tags)))
+            flags = tuple(self.recFlags[bashKey] for bashKey in tags if
+                          self.recFlags[bashKey] != u'')
             if 'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
                     importCellBlockData(cellBlock)
@@ -345,31 +344,31 @@ class CellImporter(_ACellImporter, ImportPatcher):
 
     def buildPatch(self,log,progress): # buildPatch0
         """Adds merged lists to patchfile."""
-        def handleCellBlock(cellBlock):
+        def handlePatchCellBlock(patchCellBlock):
             modified=False
-            for attr,value in cellData[cellBlock.cell.fid].iteritems():
-                if cellBlock.cell.__getattribute__(attr) != value:
-                    cellBlock.cell.__setattr__(attr,value)
+            for attr,value in cellData[patchCellBlock.cell.fid].iteritems():
+                if patchCellBlock.cell.__getattribute__(attr) != value:
+                    patchCellBlock.cell.__setattr__(attr, value)
                     modified=True
             for flag, value in cellData[
-                        cellBlock.cell.fid + ('flags',)].iteritems():
-                if cellBlock.cell.flags.__getattr__(flag) != value:
-                    cellBlock.cell.flags.__setattr__(flag,value)
+                        patchCellBlock.cell.fid + ('flags',)].iteritems():
+                if patchCellBlock.cell.flags.__getattr__(flag) != value:
+                    patchCellBlock.cell.flags.__setattr__(flag, value)
                     modified=True
             if modified:
-                cellBlock.cell.setChanged()
-                keep(cellBlock.cell.fid)
+                patchCellBlock.cell.setChanged()
+                keep(patchCellBlock.cell.fid)
             return modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         cellData, count = self.cellData, collections.defaultdict(int)
         for cellBlock in self.patchFile.CELL.cellBlocks:
-            if cellBlock.cell.fid in cellData and handleCellBlock(cellBlock):
+            if cellBlock.cell.fid in cellData and handlePatchCellBlock(cellBlock):
                 count[cellBlock.cell.fid[0]] += 1
         for worldBlock in self.patchFile.WRLD.worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
-                if cellBlock.cell.fid in cellData and handleCellBlock(
+                if cellBlock.cell.fid in cellData and handlePatchCellBlock(
                         cellBlock):
                     count[cellBlock.cell.fid[0]] += 1
                     keepWorld = True
