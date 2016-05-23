@@ -3936,6 +3936,22 @@ class ModInfos(FileInfos):
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
+        if directory == self.dir:
+            self[newInfo.name] = newInfo
+            newInfo.readHeader()
+            self.refresh(scanData=False)
+
+    def generateNextBashedPatch(self):
+        """Attempt to create a new bashed patch, numbered from 0 to 9.  If
+        a lowered number bashed patch exists, will create the next in the
+        sequence."""
+        for num in xrange(10):
+            modName = GPath(u'Bashed Patch, %d.esp' % num)
+            if modName not in self:
+                self.create_new_mod(modName, masterless=True,
+                                    bashed_patch=True)
+                return modName
+        return None
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):

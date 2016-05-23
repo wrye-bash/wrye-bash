@@ -73,7 +73,6 @@ from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
 from ..bosh import omods, CoSaves
 from ..cint import CBash
-from ..patcher.patch_files import PatchFile
 
 startupinfo = bolt.startupinfo
 
@@ -4351,7 +4350,7 @@ class BashApp(wx.App):
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress.Update(68,_(u'Generating Blank Bashed Patch'))
-                PatchFile.generateNextBashedPatch()
+                bosh.modInfos.generateNextBashedPatch()
 
     def InitVersion(self):
         """Perform any version to version conversion. Called by Init()."""

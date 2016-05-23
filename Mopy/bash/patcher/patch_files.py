@@ -30,7 +30,6 @@ from .. import load_order
 from .. import bass
 from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord, ModError
-from ..balt import showWarning
 from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
     Progress, StateError
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
@@ -154,23 +153,6 @@ class _PFile(object):
 
 class PatchFile(_PFile, ModFile):
     """Defines and executes patcher configuration."""
-
-    @staticmethod
-    def generateNextBashedPatch(wxParent=None):
-        """Attempts to create a new bashed patch, numbered from 0 to 9.  If a lowered number bashed patch exists,
-           will create the next in the sequence.  if wxParent is not None and we are unable to create a patch,
-           displays a dialog error"""
-        for num in xrange(10):
-            modName = GPath(u'Bashed Patch, %d.esp' % num)
-            if modName not in bosh.modInfos:
-                bosh.modInfos.create_new_mod(modName, masterless=True,
-                                             bashed_patch=True)
-                bosh.modInfos.refresh()
-                return modName
-        else:
-            if wxParent is not None:
-                showWarning(wxParent, u"Unable to create new bashed patch: 10 bashed patches already exist!")
-        return None
 
     #--Instance
     def __init__(self,modInfo,patchers):
