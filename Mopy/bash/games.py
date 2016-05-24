@@ -165,7 +165,7 @@ class Game(object):
             self._persist_load_order(lo, None) # active is not used here
 
     def set_load_order(self, lord, active, previous_lord=None,
-                       previous_active=None):
+                       previous_active=None, dry_run=False):
         assert lord is not None or active is not None, \
             'load order or active must be not None'
         if lord is not None: self._fix_load_order(lord)
@@ -193,9 +193,11 @@ class Game(object):
             self._fix_active_plugins(active, test, on_disc=False) # don't save!
         lord = lord if lord is not None else previous_lord
         active = active if active is not None else previous_active
-        self._persist_if_changed(active, lord, previous_active, previous_lord)
         assert lord is not None and active is not None, \
             'returned load order and active must be not None'
+        if not dry_run: # else just return the (possibly fixed) lists
+            self._persist_if_changed(active, lord, previous_active,
+                                     previous_lord)
         return lord, active # return what was set or was previously set
 
     # Conflicts - only for timestamp games
