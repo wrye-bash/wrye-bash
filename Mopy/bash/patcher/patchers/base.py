@@ -26,7 +26,7 @@
 import collections
 from operator import itemgetter
 # Internal
-from ... import bosh, load_order, bass # for bosh.modInfos
+from ... import bosh, load_order, bass, bush # for bosh.modInfos
 from .. import getPatchesPath
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
@@ -482,6 +482,15 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         log(self.__class__.logMsg % sum(mod_count.values()))
         for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
+
+    def _plog2(self,log,allCounts):
+        log(self.__class__.logMsg)
+        for top_rec_type, count, counts in allCounts:
+            if not count: continue
+            typeName = bush.game.record_type_name[top_rec_type]
+            log(u'* %s: %d' % (typeName, count))
+            for modName in sorted(counts):
+                log(u'  * %s: %d' % (modName.s, counts[modName]))
 
     # helpers WIP
     def _parse_sources(self, progress, parser):

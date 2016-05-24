@@ -17353,5 +17353,6 @@ record_type_name = {
     'LIGH': _(u'Lights'),
     'MISC': _(u'Misc'),
     'SLGM': _(u'Soulgems'),
+    'SPEL': _(u'Spells'),
     'WEAP': _(u'Weapons'),
 }

@@ -147,7 +147,7 @@ class _SimpleImporter(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
-    def _inner_loop(self, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, top_mod_rec, type_count):
         """Most common pattern for the internal buildPatch() loop.
 
         In:
@@ -163,7 +163,7 @@ class _SimpleImporter(ImportPatcher):
             for attr, value in id_data[fid].iteritems():
                 record.__setattr__(attr, value)
             keep(fid)
-            type_count[type] += 1
+            type_count[top_mod_rec] += 1
 
     def buildPatch(self, log, progress, types=None):
         """Common buildPatch() pattern of:
@@ -178,13 +178,12 @@ class _SimpleImporter(ImportPatcher):
         if not self.isActive: return
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
-        type_count = {}
+        type_count = collections.defaultdict(int)
         types = filter(lambda x: x in modFileTops,
                    types if types else map(lambda x: x.classType, self.srcClasses))
-        for type in types:
-            type_count[type] = 0
-            records = modFileTops[type].records
-            self._inner_loop(keep, records, type, type_count)
+        for top_mod_rec in types:
+            records = modFileTops[top_mod_rec].records
+            self._inner_loop(keep, records, top_mod_rec, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
         self._patchLog(log,type_count)
@@ -536,7 +535,7 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
                 temp_id_data[fid] = dict(
                     (attr, record.__getattribute__(attr)) for attr in recAttrs)
 
-    def _inner_loop(self, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, top_mod_rec, type_count):
         id_data = self.id_data
         for record in records:
             fid = record.fid
@@ -560,7 +559,7 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
             for attr, value in id_data[fid].iteritems():
                 record.__setattr__(attr, value)
             keep(fid)
-            type_count[type] += 1
+            type_count[top_mod_rec] += 1
 
 class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
 
@@ -812,7 +811,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
-    def _inner_loop(self, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, top_mod_rec, type_count):
         id_data, set_id_data = self.id_data, set(self.id_data)
         for record in records:
             fid = record.fid
@@ -825,7 +824,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                 setattr(reduce(getattr, attr.split('.')[:-1], record),
                         attr.split('.')[-1], value)
             keep(fid)
-            type_count[type] += 1
+            type_count[top_mod_rec] += 1
 
 class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
 
@@ -1313,7 +1312,7 @@ class ImportFactions(_SimpleImporter, _AImportFactions):
                 if fid not in id_factions: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def _inner_loop(self, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, top_mod_rec, type_count):
         id_data, set_id_data = self.id_data, set(self.id_data)
         for record in records:
             fid = record.fid
@@ -1340,7 +1339,7 @@ class ImportFactions(_SimpleImporter, _AImportFactions):
                     doKeep = True
             if doKeep:
                 record.factions = [x for x in record.factions if x.rank != -1]
-                type_count[type] += 1
+                type_count[top_mod_rec] += 1
                 keep(fid)
 
     def buildPatch(self, log, progress, types=None):
@@ -1491,7 +1490,7 @@ class ImportRelations(_SimpleImporter, _AImportRelations):
                 if fid not in id_relations: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    def _inner_loop(self, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, top_mod_rec, type_count):
         id_data, set_id_data = self.id_data, set(self.id_data)
         for record in records:
             fid = record.fid
@@ -1517,7 +1516,7 @@ class ImportRelations(_SimpleImporter, _AImportRelations):
                         record.relations.append(entry)
                         doKeep = True
                 if doKeep:
-                    type_count[type] += 1
+                    type_count[top_mod_rec] += 1
                     keep(fid)
 
     def buildPatch(self, log, progress, types=None):
@@ -2192,10 +2191,9 @@ class NamesPatcher(_ANamesPatcher, ImportPatcher):
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
         id_full = self.id_full
-        type_count = {}
+        type_count = collections.defaultdict(int)
         for act_type in self.activeTypes:
             if act_type not in modFile.tops: continue
-            type_count[act_type] = 0
             if act_type == 'CELL':
                 records = (cellBlock.cell for cellBlock in
                            modFile.CELL.cellBlocks)
@@ -2400,8 +2398,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         self.faceData.clear()
         self._patchLog(log,count)
 
-    def _plog(self,log,count):
-        log(self.__class__.logMsg % count)
+    def _plog(self, log, count): log(self.__class__.logMsg % count)
 
 class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
     logMsg = u'* '+_(u'Faces Patched') + u': %d'
@@ -2759,14 +2756,7 @@ class StatsPatcher(_AStatsPatcher, ImportPatcher):
         self.fid_attr_value.clear()
         self._patchLog(log, allCounts)
 
-    def _plog(self,log,allCounts):
-        log(self.__class__.logMsg)
-        for type,count,counts in allCounts:
-            if not count: continue
-            typeName = game.record_type_name[type]
-            log(u'* %s: %d' % (typeName,count))
-            for modName in sorted(counts):
-                log(u'  * %s: %d' % (modName.s,counts[modName]))
+    def _plog(self, log, allCounts): self._plog2(log, allCounts)
 
 class CBash_StatsPatcher(_AStatsPatcher, _RecTypeModLogging):
 
@@ -2894,14 +2884,7 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
         allCounts.append(('SPEL',count,counts))
         self._patchLog(log, allCounts)
 
-    def _plog(self,log,allCounts):
-        log(self.__class__.logMsg)
-        for type,count,counts in allCounts:
-            if not count: continue
-            typeName = {'SPEL':_(u'Spells'),}[type] #TODO: typeName=u'Spells' ?
-            log(u'* %s: %d' % (typeName,count))
-            for modName in sorted(counts):
-                log(u'  * %s: %d' % (modName.s,counts[modName]))
+    def _plog(self, log, allCounts): self._plog2(log, allCounts)
 
 class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
     logMsg = u'* ' + _(u'Modified SPEL Stats') + u': %d'

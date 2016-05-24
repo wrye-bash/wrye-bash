@@ -1648,5 +1648,6 @@ record_type_name = {
     'MISC': _(u'Misc'),
     'SGST': _(u'Sigil Stones'),
     'SLGM': _(u'Soulgems'),
+    'SPEL': _(u'Spells'),
     'WEAP': _(u'Weapons'),
 }
