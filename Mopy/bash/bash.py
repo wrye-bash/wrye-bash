@@ -374,6 +374,7 @@ def main(opts):
         import basher
         import barb
         import balt
+        barb.opts = opts
     except (exception.PermissionError,
             exception.BoltError, ImportError) as e:
         _showErrorInGui(e, _wx=wx, bolt=bolt)
