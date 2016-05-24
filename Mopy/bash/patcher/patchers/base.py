@@ -552,6 +552,19 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
+    # helpers WIP
+    def _parse_texts(self, parser_class, progress):
+        actorFactions = parser_class(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcs)) ##: make sure self.srcs are paths, drop GPath call below
+        patchesList = getPatchesList()
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            if not reModExt.search(srcFile.s):
+                if srcPath not in patchesList: continue
+                actorFactions.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+        return actorFactions
+
 # Patchers: 40 ----------------------------------------------------------------
 class SpecialPatcher(object):
     """Provides default group, scan and edit orders."""

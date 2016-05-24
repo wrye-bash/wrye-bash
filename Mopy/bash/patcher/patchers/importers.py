@@ -31,8 +31,6 @@ from ... import bosh # for modInfos
 from ... import load_order
 from ...bush import game # for Name patcher
 from ...bolt import GPath, MemorySet
-from ...bosh import reModExt
-from .. import getPatchesPath, getPatchesList
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
@@ -1519,15 +1517,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        actorFactions = CBash_ActorFactions(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                actorFactions.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        actorFactions = self._parse_texts(CBash_ActorFactions, progress)
         #--Finish
         csvId_factions = self.csvId_factions
         for group, aFid_factions in \
@@ -1716,16 +1706,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        factionRelations = CBash_FactionRelations(
-            aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                factionRelations.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        factionRelations = self._parse_texts(CBash_FactionRelations, progress)
         #--Finish
         self.csvFid_faction_mod.update(factionRelations.fid_faction_mod)
 
@@ -2467,16 +2448,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                fullNames.readFromText(getPatchesPath(srcFile))
-            progress.plus()
-
+        fullNames = self._parse_texts(CBash_FullNames, progress)
         #--Finish
         csvId_full = self.csvId_full
         for group,fid_name in fullNames.group_fid_name.iteritems():
@@ -3102,15 +3074,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        itemStats = CBash_ItemStats(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            if not reModExt.search(srcFile.s):
-                if srcFile not in patchesList: continue
-                itemStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
-
+        itemStats = self._parse_texts(CBash_ItemStats, progress)
         #--Finish
         for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
             if group not in validTypes: continue
@@ -3264,16 +3228,8 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        spellStats = CBash_SpellRecords(aliases=self.patchFile.aliases)
+        spellStats = self._parse_texts(CBash_SpellRecords, progress)
         self.attrs = spellStats.attrs
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                spellStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
         #--Finish
         self.csvId_stats.update(spellStats.fid_stats)
 
