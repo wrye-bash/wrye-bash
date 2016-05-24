@@ -519,14 +519,14 @@ class TaskDialog(object):
         conf.pszMainInstruction = self._heading
         conf.pszContent = self._content
 
-        attrs = dir(self) # FIXME(ut): unpythonic, as the builder pattern above
+        attributes = dir(self) # FIXME(ut): unpythonic, as the builder pattern above
 
-        if '_width' in attrs:
+        if '_width' in attributes:
             conf.cxWidth = self._width
 
         if self._footer:
             conf.pszFooter = self._footer
-        if '_footer_icon' in attrs:
+        if '_footer_icon' in attributes:
             if self._footer_is_stock:
                 conf.uFooterIcon.pszFooterIcon = self._footer_icon
             else:
@@ -539,7 +539,7 @@ class TaskDialog(object):
                 conf.uMainIcon.hMainIcon = self._main_icon
                 flags |= USE_HICON_MAIN
 
-        if '_buttons' in attrs:
+        if '_buttons' in attributes:
             custom_buttons = []
             # Enumerate through button list
             for i, button in enumerate(self._buttons):
@@ -571,7 +571,7 @@ class TaskDialog(object):
             conf.pButtons = c_array
             self.__custom_buttons = custom_buttons
 
-        if '_radio_buttons' in attrs:
+        if '_radio_buttons' in attributes:
             conf.cRadioButtons = len(self._radio_buttons)
             array_type = ARRAY(TASKDIALOG_BUTTON, conf.cRadioButtons)
             c_array = array_type()
@@ -584,7 +584,7 @@ class TaskDialog(object):
             else:
                 conf.nDefaultRadioButton = self._default_radio
 
-        if '_expander_data' in attrs:
+        if '_expander_data' in attributes:
             conf.pszCollapsedControlText = self._expander_data[0]
             conf.pszExpandedControlText = self._expander_data[1]
             conf.pszExpandedInformation = self._expander_data[2]
@@ -594,16 +594,16 @@ class TaskDialog(object):
             if self._expands_at_footer:
                 flags |= EXPAND_FOOTER_AREA
 
-        if '_cbox_label' in attrs:
+        if '_cbox_label' in attributes:
             conf.pszVerificationText = self._cbox_label
             if self._cbox_checked:
                 flags |= VERIFICATION_FLAG_CHECKED
 
-        if '_marquee_progress_bar' in attrs:
+        if '_marquee_progress_bar' in attributes:
             flags |= SHOW_MARQUEE_PROGRESS_BAR
             flags |= CALLBACK_TIMER
 
-        if '_progress_bar' in attrs:
+        if '_progress_bar' in attributes:
             flags |= SHOW_PROGRESS_BAR
             flags |= CALLBACK_TIMER
 

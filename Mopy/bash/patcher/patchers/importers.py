@@ -3137,13 +3137,13 @@ class SpellsPatcher(ImportPatcher):
         super(SpellsPatcher, self).initPatchFile(patchFile, loadMods)
         #--To be filled by initData
         self.id_stat = {} #--Stats keyed by long fid.
-        self.attrs = None #set in initData
+        self.spell_attrs = None #set in initData
 
     def initData(self,progress):
         """Get stats from source files."""
         spellStats = self._parse_sources(progress, parser=SpellRecords)
         if not spellStats: return
-        self.attrs = spellStats.attrs
+        self.spell_attrs = spellStats.attrs
         #--Finish
         self.id_stat.update(spellStats.fid_stats)
         self.isActive = bool(self.id_stat)
@@ -3162,7 +3162,7 @@ class SpellsPatcher(ImportPatcher):
             return
         id_stat = self.id_stat
         mapper = modFile.getLongMapper()
-        attrs = self.attrs
+        spell_attrs = self.spell_attrs
         patchBlock = self.patchFile.SPEL
         id_records = patchBlock.id_records
         for record in modFile.SPEL.getActiveRecords():
@@ -3171,7 +3171,7 @@ class SpellsPatcher(ImportPatcher):
             if fid in id_records: continue
             spellStats = id_stat.get(fid)
             if not spellStats: continue
-            oldValues = [getattr_deep(record, attr) for attr in attrs]
+            oldValues = [getattr_deep(record, attr) for attr in spell_attrs]
             if oldValues != spellStats:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
@@ -3182,15 +3182,15 @@ class SpellsPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_stat = self.id_stat
         allCounts = []
-        attrs = self.attrs
+        spell_attrs = self.spell_attrs
         count,counts = 0,{}
         for record in patchFile.SPEL.records:
             fid = record.fid
             spellStats = id_stat.get(fid)
             if not spellStats: continue
-            oldValues = [getattr_deep(record, attr) for attr in attrs]
+            oldValues = [getattr_deep(record, attr) for attr in spell_attrs]
             if oldValues == spellStats: continue
-            for attr,value in zip(attrs,spellStats):
+            for attr,value in zip(spell_attrs,spellStats):
                 setattr_deep(record,attr,value)
             keep(fid)
             count += 1
@@ -3223,13 +3223,13 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         self.id_stats = {}
         self.csvId_stats = {}
         self.mod_count = {}
-        self.attrs = None #set in initData
+        self.spell_attrs = None #set in initData
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
         spellStats = self._parse_texts(CBash_SpellRecords, progress)
-        self.attrs = spellStats.attrs
+        self.spell_attrs = spellStats.attrs
         #--Finish
         self.csvId_stats.update(spellStats.fid_stats)
 
@@ -3239,7 +3239,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        conflicts = record.ConflictDetails(self.attrs)
+        conflicts = record.ConflictDetails(self.spell_attrs)
         if conflicts:
             if ValidateDict(conflicts, self.patchFile):
                 self.id_stats.setdefault(record.fid,{}).update(conflicts)

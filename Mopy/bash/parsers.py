@@ -2308,13 +2308,15 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
                 outWrite(output)
 
 #------------------------------------------------------------------------------
-class ItemPrices:
+class _ItemPrices(object):
+    item_prices_attrs = ('value', 'eid', 'full')
+
+class ItemPrices(_ItemPrices):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
         self.class_fid_stats = bush.game.pricesTypes
-        self.attrs = ('value', 'eid', 'full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -2325,7 +2327,7 @@ class ItemPrices:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        attrs = self.attrs
+        attrs = self.item_prices_attrs
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
                 fid_stats[mapper(record.fid)] = map(record.__getattribute__,
@@ -2384,7 +2386,7 @@ class ItemPrices:
                     out.write(
                         format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
 
-class CBash_ItemPrices:
+class CBash_ItemPrices(_ItemPrices):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
 
@@ -2393,12 +2395,11 @@ class CBash_ItemPrices:
                                 'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},
                                 'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},
                                 'WEAP':{}}
-        self.attrs = ('value','eid','full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats, attrs = self.class_fid_stats, self.item_prices_attrs
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
