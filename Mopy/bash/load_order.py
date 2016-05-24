@@ -46,7 +46,10 @@ import bosh
 # Game instance providing load order operations API
 import games
 game_handle = None # type: games.Game
-_plugins_txt_path = _loadorder_txt_path = None
+_plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
+# Load order locking
+__locked = False
+_lords_pickle = None # type: bolt.PickleDict
 
 def initialize_load_order_files():
     if bass.dirs['saveBase'] == bass.dirs['app']:
@@ -54,9 +57,10 @@ def initialize_load_order_files():
         _dir = bass.dirs['app']
     else:
         _dir = bass.dirs['userApp']
-    global _plugins_txt_path, _loadorder_txt_path
+    global _plugins_txt_path, _loadorder_txt_path, _lord_pickle_path
     _plugins_txt_path = _dir.join(u'plugins.txt')
     _loadorder_txt_path = _dir.join(u'loadorder.txt')
+    _lord_pickle_path = bass.dirs['saveBase'].join(u'BashLoadOrders.dat')
 
 def initialize_load_order_handle(mod_infos):
     global game_handle
@@ -191,10 +195,10 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
             global _current_list_index
             if _current_list_index < 0 or (not __index_move and
                 cached_lord != _saved_load_orders[_current_list_index]):
-                # either getting or setting
-                del _saved_load_orders[_current_list_index + 1:]
-                _saved_load_orders.append(cached_lord)
+                # either getting or setting, plant the new load order in
                 _current_list_index += 1
+                _saved_load_orders[_current_list_index:_current_list_index] = [
+                    cached_lord]
             elif __index_move: # attempted to undo/redo
                 _current_list_index += __index_move
                 target = _saved_load_orders[_current_list_index]
@@ -207,13 +211,32 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
                         _current_list_index - __index_move] = target
 
 def get_lo(cached=False, cached_active=True):
+    global _lords_pickle, _saved_load_orders, _current_list_index
+    if _lords_pickle is None:
+        _lords_pickle = bolt.PickleDict(_lord_pickle_path)
+        _lords_pickle.load()
+        _lords_pickle.vdata['_lords_pickle_version'] = 1
+        _saved_load_orders = _lords_pickle.data.get('_saved_load_orders', [])
+        _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
+        if __locked and _saved_load_orders:
+            saved = _saved_load_orders[_current_list_index] # type: LoadOrder
+            lord, acti = game_handle.set_load_order( # pickle may need fixing
+                list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
+            _update_cache(lord, acti)
     if cached_lord is not __empty:
         lo = cached_lord.loadOrder if (
             cached and not game_handle.load_order_changed()) else None
         active = cached_lord.activeOrdered if (
             cached_active and not game_handle.active_changed()) else None
-    else: active = lo = None
+        old_lord = cached_lord.loadOrder
+    else: active = lo = old_lord = None
     _update_cache(lo, active)
+    if __locked and old_lord is not None:
+        common_mods = set(lo) & set(old_lord)
+        new_order = [x for x in lo if x in common_mods]
+        cached_order = [x for x in old_lord if x in common_mods]
+        if new_order != cached_order: ##: warn !
+            save_lo(old_lord)
     return cached_lord
 
 def undo_load_order():
@@ -253,3 +276,8 @@ def get_free_time(start_time, default_time='+1'):
     return game_handle.get_free_time(start_time, default_time=default_time)
 
 def install_last(): return game_handle.install_last()
+
+# Lock load order
+def lock_load_order(lock=True):
+    global __locked
+    __locked = lock
