@@ -219,8 +219,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
         self.cellData = collections.defaultdict(dict)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
-        self.recAttrs = game.cellRecAttrs
-        self.recFlags = game.cellRecFlags
+        self.recAttrs = game.cellRecAttrs # type : dict[unicode, tuple[str]]
+        self.recFlags = game.cellRecFlags # type : dict[unicode, str]
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -233,6 +233,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
     def initData(self,progress):
         """Get cells from source files."""
         if not self.isActive: return
+        cellData = self.cellData
+        # cellData['Maps'] = {}
         def importCellBlockData(cellBlock):
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
@@ -255,8 +257,6 @@ class CellImporter(_ACellImporter, ImportPatcher):
                     if tempCellData[fid + ('flags',)][flag] != master_flag:
                         cellData[fid + ('flags',)][flag] = \
                             tempCellData[fid + ('flags',)][flag]
-        cellData = self.cellData
-        # cellData['Maps'] = {}
         loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
                                         MreRecord.type_class['WRLD'])
         progress.setFull(len(self.srcs))
