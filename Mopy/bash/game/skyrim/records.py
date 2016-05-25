@@ -1890,6 +1890,23 @@ class MreCell(MelRecord):
             if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     class MelWaterHeight(MelOptStruct):
+        default_heights = {4294953216.0, -2147483648.0,
+            -3.4028234663852886e+38, 3.4028234663852886e+38} # unused, see #302
+
+        def loadData(self, record, ins, sub_type, size, readId,
+                     __default_heights=default_heights):
+            # from brec.MelStruct#loadData - formatLen is 0 for MelWaterHeight
+            waterHeight = ins.unpack(self.format, size, readId)
+            # print u' ', zip(self.attrs, waterHeight)
+            # if len(waterHeight) != len(self.attrs):
+            #     print u' ', waterHeight
+            if not record.flags.isInterior: # drop interior cells for Skyrim
+                attr,value = self.attrs[0],waterHeight[0]
+                # if value in __default_heights:
+                #     value = 3.4028234663852886e+38 # normalize values
+                record.__setattr__(attr, value)
+                # print u'SET %s' % record.__getattribute__(attr)
+
         def dumpData(self,record,out):
             if not record.flags.isInterior:
                 MelOptStruct.dumpData(self,record,out)
