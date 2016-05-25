@@ -757,6 +757,10 @@ class Path(object):
             deprint(u'Unable to set modified time of %s - probably a unicode error' % self._s)
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
 
+    def size_mtime(self):
+        lstat = os.lstat(self._s)
+        return lstat.st_size, int(lstat.st_mtime)
+
     @property
     def stat(self):
         """File stats"""

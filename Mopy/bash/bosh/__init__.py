@@ -5209,9 +5209,8 @@ class Installer(object):
     def match_valid_name(self, newName):
         return self.reValidNamePattern.match(newName)
 
-    def size_or_mtime_changed(self, apath, _lstat=os.lstat):
-        stat = _lstat(apath.s)
-        return self.size != stat.st_size or self.modified != int(stat.st_mtime)
+    def size_or_mtime_changed(self, apath):
+        return (self.size, self.modified) != apath.size_mtime()
 
     @staticmethod
     def _rename(archive, data, newName):
@@ -5348,8 +5347,7 @@ class InstallerArchive(Installer):
     def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.modified = archive.mtime
-        self.size = archive.size
+        self.size, self.modified = archive.size_mtime()
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         reList = Installer.reList
