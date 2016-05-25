@@ -4387,7 +4387,7 @@ class Installer(object):
     volatile = ('data_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
         'missingFiles', 'mismatchedFiles', 'project_refreshed',
         'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
-        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles')
+        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files')
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
@@ -4543,6 +4543,7 @@ class Installer(object):
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific
         self.project_refreshed = False
+        self._dir_dirs_files = None
         #--Volatile: set by refreshDataSizeCrc
         self.hasWizard = False
         self.hasBCF = False
@@ -5563,7 +5564,8 @@ class InstallerProject(Installer):
         pending, pending_size = {}, 0
         new_sizeCrcDate = {}
         oldGet = self.src_sizeCrcDate.get
-        for asDir, __sDirs, sFiles in os.walk(asRoot):
+        walk = self._dir_dirs_files if self._dir_dirs_files is not None else os.walk(asRoot)
+        for asDir, __sDirs, sFiles in walk:
             progress(0.05, progress_msg + (u'\n%s' % asDir[relPos:]))
             get_mtime = os.path.getmtime(asDir)
             max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
@@ -5595,11 +5597,13 @@ class InstallerProject(Installer):
         getM, join = os.path.getmtime, os.path.join
         c, size = [], 0
         cExtend, cAppend = c.extend, c.append
+        self._dir_dirs_files = []
         for root, d, files in os.walk(apath.s):
             cAppend(getM(root))
             stats = [_lstat(join(root, fi)) for fi in files]
             cExtend(fi.st_mtime for fi in stats)
             size += sum(fi.st_size for fi in stats)
+            self._dir_dirs_files.append((root, [], files)) # dirs is unused
         if self.size != size: return True
         # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
         # c.sort() # is this needed or os.walk will return the same order during program run
@@ -5783,6 +5787,24 @@ from .converters import InstallerConverter
 # noinspection PyRedeclaration
 class InstallerConverter(InstallerConverter): pass
 
+def projects_walk_cache(func): ##: HACK ! Profile
+    """Decorator to make sure I dont leak self._dir_dirs_files project cache.
+    Must decorate all methods that may call size_or_mtime_changed (only
+    called in scan_installers_dir). For self._dir_dirs_files to be of any use
+    the call to scan_installers_dir must be followed by refreshBasic calls
+    on the projects."""
+    @wraps(func)
+    def _projects_walk_cache_wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            it = self.itervalues() if isinstance(self, InstallersData) else \
+                self.listData.itervalues()
+            for project in it:
+                if isinstance(project, InstallerProject):
+                    project._dir_dirs_files = None
+    return _projects_walk_cache_wrapper
+
 class InstallersData(_DataStore):
     """Installers tank data. This is the data source for the InstallersList."""
     # hack to track changes in installed mod inis etc _in the Data/ dir_ and
@@ -5938,6 +5960,7 @@ class InstallersData(_DataStore):
         def refresh_needed(self):
             return bool(self.deleted or self.pending)
 
+    @projects_walk_cache
     def _refreshInstallers(self, progress, fullRefresh, refresh_info, deleted,
                            pending, projects):
         """Update given installers or scan the installers' directory. Any of
