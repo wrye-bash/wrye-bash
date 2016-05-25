@@ -357,7 +357,7 @@ def InitModLinks():
     """Initialize Mods tab menus."""
     #--ModList: Column Links
     if True: #--Load
-        loadMenu = MenuLink(_(u"Load"))
+        loadMenu = MenuLink(_(u"Active Mods"))
         loadMenu.links.append(Mods_LoadList())
         ModList.mainMenu.append(loadMenu)
     if True: #--Sort by

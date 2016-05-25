@@ -3806,7 +3806,7 @@ class ModInfos(FileInfos):
                 if not m in toActivate:
                     self.lo_activate(m, doSave=False)
                     toActivate.add(m)
-            mods = self.keys()
+            mods = load_order.get_ordered(self.keys())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
                 if self.isBP(mod): _select(mod)

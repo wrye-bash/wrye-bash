@@ -588,12 +588,16 @@ tab. The directories skipped are:
         <tr><th colspan="3">Column Header Context Menu
         <tr><th colspan="2">Command<th>Description
     <tbody>
-        <tr><td rowspan="5">Load<td id="modsLoadAll">All<td>Activates all the plugins in the mod list.
-        <tr><td>None<td>Deactivates all the plugins in the mod list.
-        <tr><td>Selected<td>Activate only the mods selected in the mod list - warning: their masters won't be activated !
-        <tr><td>Save List...<td>Saves the current load order to a new load list.
-        <tr><td>Edit Lists...<td>Allows the deletion and renaming of load lists.
-        <tr><td>[Load List]<td>[Load List] is the name of a load list, which are listed below the separator in the Load submenu. Clicking a load list will apply it, deactivating any plugins that are not listed as active in it.
+        <tr><td rowspan="5">Active Mods<td id="modsLoadAll">Activate All<td>Activates all the plugins in the mod list. If more than 255 mods are
+            present Bash will activate all it can from the bashed patches, then non mergeable and then mergeable mods then will display an
+            error message. Bash will try to activate mods in their load order.
+        <tr><td>De-activate All<td>Deactivates all the plugins in the mod list. Some plugins will not be deactivated (for instance Fallout 4
+        DLCs) as the game force loads them when present.
+        <tr><td>Activate Selected<td>Activate only the mods selected in the mod list interface - warning: their masters won't be activated !
+        <tr><td>Save Active Mods List<td>Saves the currently active mods to a new list.
+        <tr><td>Edit Active Mods Lists...<td>Allows the deletion and renaming of active mods lists.
+        <tr><td>[Active Mods List]<td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
+            list name will apply the list, trying to activate exactly the plugins that are listed in it.
         <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
         <tr><td colspan="2">Oblivion.esm<td><i>Oblivion only.</i> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
         <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
