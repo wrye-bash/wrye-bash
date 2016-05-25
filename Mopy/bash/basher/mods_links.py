@@ -96,8 +96,8 @@ class Mods_LoadList(ChoiceLink):
                 self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
         class _All(__Activate):
-            text = _(u'All')
-            help = _(u'Activate all mods')
+            text = _(u'Activate All')
+            help = _(u'Activate all mods') +u'.  ' + _(u'If more than 255 mods are present ')
             def Execute(self):
                 """Select all mods."""
                 try:
@@ -113,26 +113,26 @@ class Mods_LoadList(ChoiceLink):
             text = _(u'None')
             def Execute(self): self._selectExact([])
         class _Selected(__Activate):
-            text = _(u'Selected')
+            text = _(u'Activate Selected')
             help = _(u'Activate only the mods selected in the list')
             def Execute(self):
                 self._selectExact(self.window.GetSelected())
         class _Edit(ItemLink):
-            text = _(u'Edit Lists...')
+            text = _(u'Edit Active Mods Lists...')
             def Execute(self):
                 editorData = _Mods_LoadListData(self.window,
                                                 Mods_LoadList.loadListsDict)
-                balt.ListEditor.Display(self.window, _(u'Load Lists'),
+                balt.ListEditor.Display(self.window, _(u'Active Mods Lists'),
                                         editorData)
         class _SaveLink(EnabledLink):
-            text = _(u'Save List...')
+            text = _(u'Save Active Mods List...')
             def _enable(self): return bool(load_order.activeCached())
             def Execute(self):
-                newItem = self._askText(_(u'Save current load list as:'))
+                newItem = self._askText(_(u'Save current active list as:'))
                 if not newItem: return
                 if len(newItem) > 64:
-                    message = _(u'Load list name must be between 1 and 64 '
-                                u'characters long.')
+                    message = _(u'Active Mods list name must be between '
+                                u'1 and 64 characters long.')
                     return self._showError(message)
                 Mods_LoadList.loadListsDict[newItem] = list(
                     load_order.activeCached())
