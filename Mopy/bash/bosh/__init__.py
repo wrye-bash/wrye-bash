@@ -4401,8 +4401,6 @@ class Installer(object):
     reReadMe = re.compile(
         ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
         ur'(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
-    reList = re.compile(
-        u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
     reValidNamePattern = re.compile(ur'^([^/\\:*?"<>|]+?)(\d*)$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
@@ -5354,33 +5352,30 @@ class InstallerArchive(Installer):
         self.size, self.modified = archive.size_mtime()
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
-        reList = Installer.reList
-        file = size = crc = isdir = 0
         self.isSolid = False
+        class _li(object): # line info - we really want python's 3 'nonlocal'
+            filepath = size = crc = isdir = cumCRC = 0
+            __slots__ = ()
+        def _parse_archive_line(key, value):
+            if   key == u'Solid': self.isSolid = (value[0] == u'+')
+            elif key == u'Path': _li.filepath = value.decode('utf8')
+            elif key == u'Size': _li.size = int(value)
+            elif key == u'Attributes': _li.isdir = (value[0] == u'D')
+            elif key == u'CRC' and value: _li.crc = int(value,16)
+            elif key == u'Method':
+                if _li.filepath and not _li.isdir and _li.filepath != \
+                        tempArch.s:
+                    fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
+                    _li.cumCRC += _li.crc
+                _li.filepath = _li.size = _li.crc = _li.isdir = 0
         with archive.unicodeSafe() as tempArch:
-            ins = bolt.listArchiveContents(tempArch.s)
             try:
-                cumCRC = 0
-                for line in ins.splitlines(True):
-                    maList = reList.match(line)
-                    if maList:
-                        key,value = maList.groups()
-                        if key == u'Solid': self.isSolid = (value[0] == u'+')
-                        elif key == u'Path':
-                            file = value.decode('utf8')
-                        elif key == u'Size': size = int(value)
-                        elif key == u'Attributes': isdir = (value[0] == u'D')
-                        elif key == u'CRC' and value:
-                            crc = int(value,16)
-                        elif key == u'Method':
-                            if file and not isdir and file != tempArch.s:
-                                fileSizeCrcs.append((file,size,crc))
-                                cumCRC += crc
-                            file = size = crc = isdir = 0
-                self.crc = cumCRC & 0xFFFFFFFFL
+                bolt.list_archive(tempArch, _parse_archive_line)
+                self.crc = _li.cumCRC & 0xFFFFFFFFL
             except:
-                deprint(u'error:',traceback=True)
-                raise InstallerArchiveError(u"Unable to read archive '%s'." % archive.s)
+                archive_msg = u"Unable to read archive '%s'." % archive.s
+                deprint(archive_msg, traceback=True)
+                raise InstallerArchiveError(archive_msg)
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
@@ -5489,24 +5484,18 @@ class InstallerArchive(Installer):
             log = bolt.LogFile(out)
             log.setHeader(_(u'Package Structure:'))
             log(u'[spoiler][xml]\n', False)
-            reList = Installer.reList
-            file = u''
+            filepath = [u'']
+            text = []
+            def _parse_archive_line(key, value):
+                if key == u'Path':
+                    filepath[0] = value.decode('utf8')
+                elif key == u'Attributes':
+                    text.append((u'%s' % filepath[0], (value[0] == u'D')))
+                elif key == u'Method':
+                    filepath[0] = u''
             apath = dirs['installers'].join(archive)
             with apath.unicodeSafe() as tempArch:
-                ins = bolt.listArchiveContents(tempArch.s)
-                #--Parse
-                text = []
-                for line in ins.splitlines(True):
-                    maList = reList.match(line)
-                    if maList:
-                        key,value = maList.groups()
-                        if key == u'Path':
-                            file = value.decode('utf8')
-                        elif key == u'Attributes':
-                            isdir = (value[0] == u'D')
-                            text.append((u'%s' % file, isdir))
-                        elif key == u'Method':
-                            file = u''
+                bolt.list_archive(tempArch, _parse_archive_line)
             text.sort()
             #--Output
             for node, isdir in text:
