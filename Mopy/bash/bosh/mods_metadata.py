@@ -25,7 +25,7 @@ import os
 import re
 import struct
 
-from .. import balt, bolt, bush, bass, loot, libbsa, load_order
+from .. import balt, bolt, bush, bass, loot, load_order
 from ..bolt import GPath, BoltError, deprint, sio
 from ..brec import ModReader, MreRecord, ModError
 from ..cint import ObBaseRecord, ObCollection
@@ -212,12 +212,6 @@ class ConfigHelpers:
 
     def __init__(self):
         #--LOOT masterlist or if that doesn't exist use the taglist
-        libbsa.Init(bass.dirs['compiled'].s)
-        # That didn't work - Wrye Bash isn't installed correctly
-        if not libbsa.libbsa:
-            raise bolt.BoltError(u'The libbsa API could not be loaded.')
-        deprint(u'Using libbsa API version:', libbsa.version)
-
         loot.Init(bass.dirs['compiled'].s)
         # That didn't work - Wrye Bash isn't installed correctly
         if not loot.LootApi:

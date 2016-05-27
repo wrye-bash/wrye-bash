@@ -24,6 +24,8 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
+import itertools
+
 from ... import load_order
 from ...patcher.base import AMultiTweakItem, AMultiTweaker
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
@@ -242,9 +244,10 @@ class _AClothesTweaker(AMultiTweaker):
     text = _(u"Tweak clothing weight and blocking.")
 
 class ClothesTweaker(_AClothesTweaker,MultiTweaker):
-    tweaks = sorted(
-        [ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock] + [
-            ClothesTweak_MaxWeight(*x) for x in _AClothesTweaker._max_weight],
+
+    tweaks = sorted(itertools.chain(
+        (ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock),
+        (ClothesTweak_MaxWeight(*x) for x in _AClothesTweaker._max_weight)),
         key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
@@ -279,10 +282,10 @@ class ClothesTweaker(_AClothesTweaker,MultiTweaker):
 
 class CBash_ClothesTweaker(_AClothesTweaker,CBash_MultiTweaker):
 
-    tweaks = sorted(
-        [CBash_ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock] + [
-            CBash_ClothesTweak_MaxWeight(*x) for x in
-            _AClothesTweaker._max_weight], key=lambda a: a.label.lower())
+    tweaks = sorted(itertools.chain(
+     (CBash_ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock),
+     (CBash_ClothesTweak_MaxWeight(*x) for x in _AClothesTweaker._max_weight)),
+        key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):

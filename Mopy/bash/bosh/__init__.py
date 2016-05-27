@@ -52,8 +52,8 @@ from binascii import crc32
 from itertools import groupby
 
 #--Local
-from .. import bass, bolt, balt, bush, env, load_order
-from .mods_metadata import ConfigHelpers, libbsa
+from .. import bass, bolt, balt, bush, env, load_order, libbsa
+from .mods_metadata import ConfigHelpers
 from ..bass import dirs, inisettings, tooldirs
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
@@ -7403,8 +7403,8 @@ def initDirs(bashIni, personal, localAppData):
                 badKeys.add(key)
         # Now, work back from those to determine which setting created those
         msg = _(u'Error creating required Wrye Bash directories.') + u'  ' + _(
-                u'Please check the settings for the following paths in your '
-                u'bash.ini, the drive does not exist') + u':\n\n'
+            u'Please check the settings for the following paths in your '
+            u'bash.ini, the drive does not exist') + u':\n\n'
         relativePathError = []
         if 'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
@@ -7432,13 +7432,18 @@ def initDirs(bashIni, personal, localAppData):
         if relativePathError:
             msg += u'\n' + _(u'A path error was the result of relative paths.')
             msg += u'  ' + _(u'The following paths are causing the errors, '
-                   u'however usually a relative path should be fine.')
+                             u'however usually a relative path should be fine.')
             msg += u'  ' + _(u'Check your setup to see if you are using '
-                   u'symbolic links or NTFS Junctions') + u':\n\n'
+                             u'symbolic links or NTFS Junctions') + u':\n\n'
             msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
 
-    # Setup LOOT API, needs to be done after the dirs are initialized
+    #Setup libbsa and LOOT API, needs to be done after the dirs are initialized
+    libbsa.Init(bass.dirs['compiled'].s)
+    # That didn't work - Wrye Bash isn't installed correctly
+    if libbsa.BSAHandle is None:
+        raise bolt.BoltError(u'The libbsa API could not be loaded.')
+    deprint(u'Using libbsa API version:', libbsa.version)
     global configHelpers
     configHelpers = ConfigHelpers()
 
