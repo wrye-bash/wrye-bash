@@ -192,7 +192,7 @@ class PatchDialog(balt.Dialog):
                 #try to speed this up!
                 patchFile.buildPatch(SubProgress(progress,0.1,0.9))
                 #no speeding needed/really possible (less than 1/4 second even with large LO)
-                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))
+                patchFile.buildPatchLog(log, SubProgress(progress, 0.95, 0.99))
                 #--Save
                 progress.setCancel(False)
                 progress(1.0,patchName.s+u'\n'+_(u'Saving...'))

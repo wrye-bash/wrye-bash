@@ -89,7 +89,8 @@ class _Abstract_Patcher(object):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called
-        after this."""
+        after this. Base implementation sets the patchFile to the actively
+        executing patch - be sure to call super."""
         self.patchFile = patchFile
 
 class Patcher(_Abstract_Patcher):
