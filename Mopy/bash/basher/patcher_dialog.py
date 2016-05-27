@@ -196,22 +196,7 @@ class PatchDialog(balt.Dialog):
                 #--Save
                 progress.setCancel(False)
                 progress(1.0,patch_name.s+u'\n'+_(u'Saving...'))
-                patchFile.save()
-                fullName = self.patchInfo.getPath().tail
-                patchTime = fullName.mtime
-                try:
-                    patch_name.untemp()
-                except WindowsError as werr:
-                    while werr.winerror == 32 and self._retry(patch_name.temp.s,
-                                                              patch_name.s):
-                        try:
-                            patch_name.untemp()
-                        except WindowsError as werr:
-                            continue
-                        break
-                    else:
-                        raise
-                patch_name.mtime = patchTime
+                self._save_cbash(patchFile, patch_name)
             else:
                 patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
                 patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
@@ -219,23 +204,7 @@ class PatchDialog(balt.Dialog):
                 #--Save
                 progress.setCancel(False)
                 progress(0.9,patch_name.s+u'\n'+_(u'Saving...'))
-                message = (_(u'Bash encountered and error when saving %(patch_name)s.')
-                           + u'\n\n' +
-                           _(u'Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as TES4Edit.')
-                           + u'\n' +
-                           _(u'Please close any program that is accessing %(patch_name)s, and provide Administrator Privileges if prompted to do so.')
-                           + u'\n\n' +
-                           _(u'Try again?')) % {'patch_name':patch_name.s}
-                while True:
-                    try:
-                        patchFile.safeSave()
-                    except (CancelError,SkipError,WindowsError) as error:
-                        if isinstance(error,WindowsError) and error.winerror != 32:
-                            raise
-                        if balt.askYes(self,message,_(u'Bash Patch - Save Error')):
-                            continue
-                        raise
-                    break
+                self._save_pbash(patchFile, patch_name)
             #--Cleanup
             self.patchInfo.refresh()
             #--Done
@@ -311,13 +280,55 @@ class PatchDialog(balt.Dialog):
                 except: pass
             if progress: progress.Destroy()
 
-    def _retry(self, old, new):
-        return balt.askYes(self,
+    def _save_pbash(self, patchFile, patch_name):
+        while True:
+            try:
+                # FIXME will keep displaying a bogus UAC prompt if file is
+                # locked - aborting bogus UAC dialog raises SkipError() in
+                # shellMove, not sure if ever a Windows or Cancel are raised
+                patchFile.safeSave()
+                return
+            except (CancelError, SkipError, WindowsError) as error:
+                if isinstance(error, WindowsError) and error.winerror != 32:
+                    raise
+                if self._pretry(patch_name):
+                    continue
+                raise # will raise the SkipError which is correctly processed
+
+    def _save_cbash(self, patchFile, patch_name):
+        patchFile.save()
+        patchTime = self.patchInfo.mtime
+        while True:
+            try:
+                patch_name.untemp()
+                patch_name.mtime = patchTime
+                return
+            except WindowsError as werr:
+                if werr.winerror == 32:
+                    if not self._cretry(patch_name):
+                        raise SkipError() # caught - Processing error displayed
+                    continue
+                raise
+
+    def _pretry(self, patch_name):
+        return balt.askYes(self, (
+            _(u'Bash encountered and error when saving %(patch_name)s.') +
+            u'\n\n' + _(u'Either Bash needs Administrator Privileges to '
+            u'save the file, or the file is in use by another process '
+            u'such as TES4Edit.') + u'\n' + _(u'Please close any program '
+            u'that is accessing %(patch_name)s, and provide Administrator '
+            u'Privileges if prompted to do so.') + u'\n\n' +
+            _(u'Try again?')) % {'patch_name': patch_name.s},
+                           _(u'Bash Patch - Save Error'))
+
+    def _cretry(self, patch_name):
+        return balt.askYes(self, (
             _(u'Bash encountered an error when renaming %s to %s.') + u'\n\n' +
             _(u'The file is in use by another process such as TES4Edit.') +
             u'\n' + _(u'Please close the other program that is accessing %s.')
-            + u'\n\n' + _(u'Try again?') % (old.s, new.s, new.s),
-             _(u'Bash Patch - Save Error'))
+            + u'\n\n' + _(u'Try again?')) % (
+                               patch_name.temp.s, patch_name.s, patch_name.s),
+                           _(u'Bash Patch - Save Error'))
 
     def __config(self):
         config = {'ImportedMods': set()}

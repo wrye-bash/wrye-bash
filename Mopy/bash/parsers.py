@@ -4049,7 +4049,9 @@ class ModFile(object):
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
         filePath.temp.mtime = self.fileInfo.mtime
-        env.shellMove(filePath.temp, filePath, parent=None)
+        # FIXME If saving a locked (by TES4Edit f.i.) bashed patch a bogus UAC
+        # permissions dialog is displayed (should display file in use)
+        env.shellMove(filePath.temp, filePath, parent=None) # silent=True just returns - no error!
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
