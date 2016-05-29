@@ -34,7 +34,6 @@ import locale
 locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
-import time
 
 # Imports ---------------------------------------------------------------------
 #--Python
@@ -46,7 +45,8 @@ import re
 import string
 import struct
 import sys
-from operator import attrgetter
+import time
+from operator import attrgetter, itemgetter
 from functools import wraps, partial
 from binascii import crc32
 from itertools import groupby
@@ -6087,7 +6087,7 @@ class InstallersData(_DataStore):
         """Refresh installer status."""
         inOrder, pending = [], []
         # not specifying the key below results in double time
-        for archive, installer in sorted(self.iteritems(), key=lambda x: x[0]):
+        for archive, installer in sorted(self.iteritems(), key=itemgetter(0)):
             if installer.order >= 0:
                 inOrder.append((archive, installer))
             else:
@@ -6286,8 +6286,8 @@ class InstallersData(_DataStore):
             else:
                 root_files.append((bass.dirs['mods'].join(sp[0]).s, sp[1]))
         root_dirs_files = []
-        root_files.sort(key=lambda t: t[0]) # must sort on same key as groupby
-        for key, val in groupby(root_files, key=lambda t: t[0]):
+        root_files.sort(key=itemgetter(0)) # must sort on same key as groupby
+        for key, val in groupby(root_files, key=itemgetter(0)):
             root_dirs_files.append((key, [], [j for i, j in val]))
         progress = progress or bolt.Progress()
         new_sizeCrcDate, pending, pending_size = self._process_data_dir(
@@ -6597,8 +6597,8 @@ class InstallersData(_DataStore):
 
     def _restoreFiles(self, restores, progress, refresh_ui):
         installer_destinations = {}
-        restores = sorted(restores.items(), key=lambda t: t[1])
-        for key, group in groupby(restores, key=lambda t: t[1]):
+        restores = sorted(restores.items(), key=itemgetter(1))
+        for key, group in groupby(restores, key=itemgetter(1)):
             installer_destinations[key] = set(dest for dest, _key in group)
         if not installer_destinations: return
         installer_destinations = sorted(installer_destinations.items(),
