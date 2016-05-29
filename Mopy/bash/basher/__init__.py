@@ -597,8 +597,8 @@ class INIList(balt.UIList):
         return self.filterOutDefaultTweaks(items) # will refilter if coming
         # from INI_Delete - expensive but I can't allow default tweaks deletion
 
-    def set_item_format(self, fileName, item_format):
-        iniInfo = self.data_store[fileName]
+    def set_item_format(self, ini_name, item_format):
+        iniInfo = self.data_store[ini_name]
         status = iniInfo.getStatus()
         #--Image
         checkMark = 0
@@ -623,7 +623,7 @@ class INIList(balt.UIList):
             if not settings['bash.ini.allowNewLines']: icon = 20
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
-        self.mouseTexts[fileName] = mousetext
+        self.mouseTexts[ini_name] = mousetext
         item_format.icon_key = icon, checkMark
         #--Font/BG Color
         if status < 0:
@@ -822,28 +822,30 @@ class ModList(_ModsUIList):
         self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
-    def set_item_format(self, fileName, item_format):
-        modInfo = self.data_store[fileName]
+    def set_item_format(self, mod_name, item_format):
+        modInfo = self.data_store[mod_name]
         #--Image
         status = modInfo.getStatus()
         checkMark = (
-            1 if load_order.isActiveCached(fileName)
-            else 2 if fileName in bosh.modInfos.merged
-            else 3 if fileName in bosh.modInfos.imported
+            1 if load_order.isActiveCached(mod_name)
+            else 2 if mod_name in bosh.modInfos.merged
+            else 3 if mod_name in bosh.modInfos.imported
             else 0)
         status_image_key = 20 if 20 <= status < 30 else status
         item_format.icon_key = status_image_key, checkMark
         #--Default message
         mouseText = u''
         fileBashTags = modInfo.getBashTags()
-        if fileName in bosh.modInfos.bad_names:
+        if mod_name in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
-        if fileName in bosh.modInfos.missing_strings:
+        if mod_name in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
         if modInfo.isEsm():
             item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
-        elif fileName in bosh.modInfos.mergeable:
+        elif mod_name in bosh.modInfos.bashed_patches:
+            item_format.text_key = 'mods.text.bashedPatch'
+        elif mod_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags:
                 item_format.text_key = 'mods.text.noMerge'
                 mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
@@ -867,15 +869,15 @@ class ModList(_ModsUIList):
         if u'Deactivate' in fileBashTags:
             item_format.font = Resources.fonts.italic
         #--Text BG
-        if fileName in bosh.modInfos.bad_names:
+        if mod_name in bosh.modInfos.bad_names:
             item_format.back_key ='mods.bkgd.doubleTime.exists'
-        elif fileName in bosh.modInfos.missing_strings:
-            if load_order.isActiveCached(fileName):
+        elif mod_name in bosh.modInfos.missing_strings:
+            if load_order.isActiveCached(mod_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif modInfo.hasBadMasterNames():
-            if load_order.isActiveCached(fileName):
+            if load_order.isActiveCached(mod_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -899,7 +901,7 @@ class ModList(_ModsUIList):
             message = modInfo.getDirtyMessage()
             mouseText += message[1]
             if message[0]: item_format.underline = True
-        self.mouseTexts[fileName] = mouseText
+        self.mouseTexts[mod_name] = mouseText
 
     def RefreshUI(self, **kwargs):
         """Refresh UI for modList - always specify refreshSaves explicitly."""
