@@ -479,8 +479,8 @@ def GPath(name):
     :rtype: Path
     """
     if name is None: return None
-    elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
+    elif not name: norm = name # empty string - bin this if ?
     elif isinstance(name,unicode): norm = os.path.normpath(name)
     else: norm = os.path.normpath(decode(name))
     path = _gpaths.get(norm)
@@ -535,11 +535,10 @@ class Path(object):
         return os.path.normpath(name)
 
     @staticmethod
-    def getCase(name):
+    def __getCase(name):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
-        if isinstance(name,Path): return name._cs
-        elif isinstance(name,str): name = decode(name)
+        if isinstance(name, str): name = decode(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
@@ -1013,14 +1012,27 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to strings
+    # directly compare to basestring and Path and will blow for anything else
     def __hash__(self):
         return hash(self._cs)
-    def __cmp__(self, other):
-        if isinstance(other,Path):
-            return cmp(self._cs, other._cs)
+    def __eq__(self, other):
+        if isinstance(other, Path):
+            return self._cs == other._cs
         else:
-            return cmp(self._cs, Path.getCase(other))
+            return self._cs == Path.__getCase(other)
+    def __ne__(self, other): return not (self == other)
+    def __lt__(self, other):
+        if isinstance(other, Path):
+            return self._cs < other._cs
+        else:
+            return self._cs < Path.__getCase(other)
+    def __ge__(self, other): return not (self < other)
+    def __gt__(self, other):
+        if isinstance(other, Path):
+            return self._cs > other._cs
+        else:
+            return self._cs > Path.__getCase(other)
+    def __le__(self, other): return not (self > other)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
