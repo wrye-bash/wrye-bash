@@ -39,6 +39,7 @@ from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
+from ..patcher.base import AListPatcher
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
@@ -60,6 +61,7 @@ class PatchDialog(balt.Dialog):
         super(PatchDialog, self).__init__(parent, title=title, size=size)
         self.SetSizeHints(400,300)
         #--Data
+        AListPatcher.list_patches_dir()
         groupOrder = dict([(group,index) for index,group in
             enumerate((_(u'General'),_(u'Importers'),_(u'Tweakers'),_(u'Special')))])
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
@@ -78,7 +80,7 @@ class PatchDialog(balt.Dialog):
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            if u'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
+            if u'UNDEFINED' in (patcher.__class__.name, patcher.__class__.group):
                 raise UncodedError(u'Name or group not defined for: %s' % patcher.__class__.__name__)
             patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
             patcher.SetIsFirstLoad(isFirstLoad)

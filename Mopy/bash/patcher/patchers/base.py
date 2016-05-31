@@ -27,9 +27,9 @@ import collections
 import struct
 from operator import itemgetter
 # Internal
-from ... import bosh, bass, load_order # for bosh.modInfos, bass.dirs
+from ... import bosh, load_order # for bosh.modInfos
 from ...bosh import reModExt
-from .. import getPatchesPath, getPatchesList
+from .. import getPatchesPath
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
@@ -40,9 +40,6 @@ from ..patch_files import PatchFile, CBash_PatchFile
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher):
 
-    def _patchesList(self):
-        return bass.dirs['patches'].list()
-
     def _patchFile(self):
         return PatchFile
 
@@ -51,9 +48,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
                              u' following list will be IGNORED.')
 
     #--Config Phase -----------------------------------------------------------
-    def _patchesList(self):
-        return getPatchesList()
-
     def _patchFile(self):
         return CBash_PatchFile
 
@@ -210,10 +204,9 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         """Get names from source files."""
         if not self.isActive: return
         progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            if srcPath not in patchesList: continue
+            if srcPath not in self.patches_set: continue
             if getPatchesPath(srcFile).isfile():
                 self.readFromText(getPatchesPath(srcFile))
             progress.plus()
@@ -391,10 +384,9 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         if not self.isActive: return
         fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
         for srcFile in self.srcs:
             if not reModExt.search(srcFile.s):
-                if srcFile not in patchesList: continue
+                if srcFile not in self.patches_set: continue
                 if getPatchesPath(srcFile).isfile():
                     fidReplacer.readFromText(getPatchesPath(srcFile))
             progress.plus()
@@ -496,7 +488,6 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         if not self.isActive: return None
         fullNames = parser(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
-        patches_list = None
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if reModExt.search(srcPath.s):
@@ -504,8 +495,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
                 srcInfo = bosh.modInfos[srcPath]
                 fullNames.readFromMod(srcInfo)
             else:
-                if patches_list is None: patches_list = getPatchesList()
-                if srcPath not in patches_list: continue
+                if srcPath not in self.patches_set: continue
                 try:
                     fullNames.readFromText(getPatchesPath(srcFile))
                 except UnicodeError as e: # originally in NamesPatcher, keep ?
@@ -556,11 +546,10 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     def _parse_texts(self, parser_class, progress):
         actorFactions = parser_class(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs)) ##: make sure self.srcs are paths, drop GPath call below
-        patchesList = getPatchesList()
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
             if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
+                if srcPath not in self.patches_set: continue
                 actorFactions.readFromText(getPatchesPath(srcFile))
             progress.plus()
         return actorFactions

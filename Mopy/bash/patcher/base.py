@@ -171,6 +171,15 @@ class AListPatcher(_Abstract_Patcher):
     forceAuto = True
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
+    _patches_set = None # type: set[bolt.Path]
+
+    @staticmethod
+    def list_patches_dir(): AListPatcher._patches_set = getPatchesList()
+
+    @property
+    def patches_set(self): # ONLY use in patchers config phase or initData
+        if self._patches_set is None: self.list_patches_dir()
+        return self._patches_set
 
     def initPatchFile(self, patchFile, loadMods):
         super(AListPatcher, self).initPatchFile(patchFile, loadMods)
@@ -205,7 +214,7 @@ class AListPatcher(_Abstract_Patcher):
                 autoItems.append(name)
                 if self.choiceMenu: self.getChoice(name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(getPatchesList()):
+        for fileName in sorted(self.patches_set):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
         return autoItems
@@ -217,10 +226,9 @@ class AListPatcher(_Abstract_Patcher):
             self.autoIsChecked = True
         #--Verify file existence
         newConfigItems = []
-        patchesDir = self._patchesList()
         for srcPath in self.configItems:
             if ((reModExt.search(srcPath.s) and srcPath in bosh.modInfos) or
-                        reCsvExt.search(srcPath.s) and srcPath in patchesDir):
+                 reCsvExt.search(srcPath.s) and srcPath in self.patches_set):
                 newConfigItems.append(srcPath)
         self.configItems = newConfigItems
         if self.__class__.forceItemCheck:
@@ -234,9 +242,7 @@ class AListPatcher(_Abstract_Patcher):
         if self.autoIsChecked:
             self.getAutoItems()
 
-    def _patchesList(self): raise AbstractError # TODO(ut) why different overrides ?
-
-    def _patchFile(self): raise AbstractError
+    def _patchFile(self): raise AbstractError # TODO(ut) _PFile.class.patchName
 
     def getChoice(self,item):
         """Get default config choice."""
