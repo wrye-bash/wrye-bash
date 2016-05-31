@@ -26,6 +26,7 @@ from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
 from .. import bolt # for type hints
+from ..balt import readme_url
 from .. import load_order
 from .. import bass
 from ..parsers import LoadFactory, ModFile, MasterSet
@@ -82,6 +83,9 @@ class _PFile(object):
         log.setHeader(u'=== ' + _(u'Date/Time'))
         log(u'* ' + bolt.formatDate(time.time()))
         log(u'* ' + _(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
+        def _link(link_id):
+            return (readme_url(mopy=bass.dirs['mopy'], advanced=True),
+                    u'#%s' % link_id)
         if self.patcher_mod_skipcount:
             log.setHeader(u'=== ' + _(u'Skipped Imports'))
             log(_(u"The following import patchers skipped records because the "
@@ -102,8 +106,7 @@ class _PFile(object):
             log(_(u"The following mods were active when the patch was built. "
                   u"For the mods to work properly, you should deactivate the "
                   u"mods and then rebuild the patch with the mods [["
-                  u"http://wrye.ufrealms.net/Wrye%20Bash.html#MergeFiltering"
-                  u"|Merged]] in."))
+                  u"%s%s|Merged]] in.") % _link(u'patch-filter'))
             for mod in self.unFilteredMods: log(u'* ' + mod.s)
         if self.loadErrorMods:
             log.setHeader(u'=== ' + _(u'Load Error Mods'))
@@ -118,9 +121,8 @@ class _PFile(object):
             log.setHeader(u'=== ' + _(u'World Orphans'))
             log(_(u"The following mods had orphaned world groups, which were "
                   u"skipped. This is not a major problem, but you might want "
-                  u"to use Bash's [[http://wrye.ufrealms.net/Wrye%20Bash.html"
-                  u"#RemoveWorldOrphans|Remove World Orphans]] command to "
-                  u"repair the mods."))
+                  u"to use Bash's [[%s%s|Remove World Orphans]] command to "
+                  u"repair the mods.") % _link(u'modsRemoveWorldOrphans'))
             for mod in self.worldOrphanMods: log(u'* ' + mod.s)
         if self.compiledAllMods:
             log.setHeader(u'=== ' + _(u'Compiled All'))
@@ -130,8 +132,8 @@ class _PFile(object):
                 u"may interfere with the behavior of other mods that "
                 u"intentionally modify scripts from Oblivion.esm. (E.g. Cobl "
                 u"and Unofficial Oblivion Patch.) You can use Bash's [["
-                u"http://wrye.ufrealms.net/Wrye%20Bash.html#DecompileAll"
-                u"|Decompile All]] command to repair the mods."))
+                u"%s%s|Decompile All]] command to repair the mods."
+                  ) % _link(u'modsDecompileAll'))
             for mod in self.compiledAllMods: log(u'* ' + mod.s)
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
         for name in self.allMods:
@@ -227,8 +229,9 @@ class PatchFile(_PFile, ModFile):
                 #--Error checks
                 if 'WRLD' in modFile.tops and modFile.WRLD.orphansSkipped:
                     self.worldOrphanMods.append(modName)
-                # What game mode is this for exactly?
-                if 'SCPT' in modFile.tops and modName != u'Oblivion.esm':
+                # TODO adapt for other games
+                if bush.game.fsName == u'Oblivion' and 'SCPT' in \
+                        modFile.tops and modName != GPath(u'Oblivion.esm'):
                     gls = modFile.SCPT.getRecord(0x00025811)
                     if gls and gls.compiledSize == 4 and gls.lastIndex == 0:
                         self.compiledAllMods.append(modName)
@@ -516,9 +519,11 @@ class CBash_PatchFile(_PFile, ObModFile):
             #--Error checks
             if modName in self.loadMods and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
-            gls = modFile.LookupRecord(FormID(0x00025811))
-            if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and modName != GPath(u'Oblivion.esm'):
-                self.compiledAllMods.append(modName)
+            if bush.game.fsName == u'Oblivion':
+                gls = modFile.LookupRecord(FormID(0x00025811))
+                if gls and gls.compiledSize == 4 and gls.lastIndex == 0 and \
+                                modName != GPath(u'Oblivion.esm'):
+                    self.compiledAllMods.append(modName)
             isScanned = modName in self.scanSet and modName not in self.loadSet and modName not in self.mergeSet
             if not isScanned:
                 for patcher in mod_apply:

@@ -2697,7 +2697,7 @@ def ask_uac_restart(message, title, mopy):
         return askYes(None, message + u'\n\n' + _(
                 u'Start Wrye Bash with Administrator Privileges?'), title)
     admin = _(u'Run with Administrator Privileges')
-    readme = _readme_url(mopy)
+    readme = readme_url(mopy)
     readme += '#trouble-permissions'
     return vistaDialog(None, message=message,
         buttons=[(True, u'+' + admin), (False, _(u'Run normally')), ],
@@ -2709,8 +2709,10 @@ def ask_uac_restart(message, title, mopy):
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
                 u'for more information.') % {'readmePath': readme}])
 
-def _readme_url(mopy):
-    readme = mopy.join(u'Docs', u'Wrye Bash General Readme.html')
+def readme_url(mopy, advanced=False):
+    readme = mopy.join(u'Docs',
+                       u'Wrye Bash Advanced Readme.html' if advanced else
+                       u'Wrye Bash General Readme.html')
     if readme.exists():
         readme = u'file:///' + readme.s.replace(u'\\', u'/').replace(u' ',
                                                                      u'%20')
