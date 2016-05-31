@@ -62,8 +62,8 @@ class DocBrowser(wx.Frame):
         #--Singleton
         Link.Frame.docBrowser = self
         #--Window
-        pos = bosh.settings['bash.modDocs.pos']
-        size = bosh.settings['bash.modDocs.size']
+        pos = bass.settings['bash.modDocs.pos']
+        size = bass.settings['bash.modDocs.size']
         wx.Frame.__init__(self, Link.Frame, title=_(u'Doc Browser'), pos=pos,
                           size=size)
         self.SetBackgroundColour(wx.NullColour)
@@ -208,13 +208,13 @@ class DocBrowser(wx.Frame):
         if modName in self.docs:
             (docsDir,fileName) = self.docs[modName].headTail
         else:
-            docsDir = bosh.settings['bash.modDocs.dir'] or bass.dirs['mods']
+            docsDir = bass.settings['bash.modDocs.dir'] or bass.dirs['mods']
             fileName = GPath(u'')
         #--Dialog
         path = balt.askOpen(self,_(u'Select doc for %s:') % modName.s,
             docsDir,fileName, u'*.*',mustExist=True)
         if not path: return
-        bosh.settings['bash.modDocs.dir'] = path.head
+        bass.settings['bash.modDocs.dir'] = path.head
         if modName not in self.docs:
             self.modNameList.Append(modName.s)
         self.docs[modName] = path
@@ -364,10 +364,10 @@ class DocBrowser(wx.Frame):
         """Handle window close event.
         Remember window size, position, etc."""
         self.DoSave()
-        bosh.settings['bash.modDocs.show'] = False
+        bass.settings['bash.modDocs.show'] = False
         if not self.IsIconized() and not self.IsMaximized():
-            bosh.settings['bash.modDocs.pos'] = tuple(self.GetPosition())
-            bosh.settings['bash.modDocs.size'] = tuple(self.GetSize())
+            bass.settings['bash.modDocs.pos'] = tuple(self.GetPosition())
+            bass.settings['bash.modDocs.size'] = tuple(self.GetSize())
         Link.Frame.docBrowser = None
         self.Destroy()
 
@@ -379,8 +379,8 @@ class ModChecker(wx.Frame):
         #--Singleton
         Link.Frame.modChecker = self
         #--Window
-        pos = bosh.settings.get('bash.modChecker.pos',balt.defPos)
-        size = bosh.settings.get('bash.modChecker.size',(475,500))
+        pos = bass.settings.get('bash.modChecker.pos',balt.defPos)
+        size = bass.settings.get('bash.modChecker.size',(475,500))
         wx.Frame.__init__(self, Link.Frame, title=_(u'Mod Checker'), pos=pos,
                           size=size)
         self.SetBackgroundColour(wx.NullColour)
@@ -422,7 +422,7 @@ class ModChecker(wx.Frame):
                                      onClickToggle=self.CheckMods)
         self.gShowVersion = toggleButton(self, _(u'Version Numbers'),
                                          onClickToggle=self.CheckMods)
-        if bosh.settings['bash.CBashEnabled']:
+        if bass.settings['bash.CBashEnabled']:
             self.gScanDirty = toggleButton(self, _(u'Scan for Dirty Edits'),
                                            onClickToggle=self.CheckMods)
         else:
@@ -431,17 +431,17 @@ class ModChecker(wx.Frame):
         self.gCopyText = Button(self, _(u'Copy Text'),
                                 onButClick=self.OnCopyText)
         self.gShowModList.SetValue(
-            bosh.settings.get('bash.modChecker.showModList', False))
+            bass.settings.get('bash.modChecker.showModList', False))
         self.gShowNotes.SetValue(
-            bosh.settings.get('bash.modChecker.showNotes', True))
+            bass.settings.get('bash.modChecker.showNotes', True))
         self.gShowConfig.SetValue(
-            bosh.settings.get('bash.modChecker.showConfig', True))
+            bass.settings.get('bash.modChecker.showConfig', True))
         self.gShowSuggest.SetValue(
-            bosh.settings.get('bash.modChecker.showSuggest', True))
+            bass.settings.get('bash.modChecker.showSuggest', True))
         self.gShowCRC.SetValue(
-            bosh.settings.get('bash.modChecker.showCRC', False))
+            bass.settings.get('bash.modChecker.showCRC', False))
         self.gShowVersion.SetValue(
-            bosh.settings.get('bash.modChecker.showVersion', True))
+            bass.settings.get('bash.modChecker.showVersion', True))
         #--Events
         self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
@@ -481,21 +481,21 @@ class ModChecker(wx.Frame):
 
     def CheckMods(self):
         """Do mod check."""
-        bosh.settings[
+        bass.settings[
             'bash.modChecker.showModList'] = self.gShowModList.GetValue()
-        bosh.settings[
+        bass.settings[
             'bash.modChecker.showRuleSets'] = self.gShowRuleSets.GetValue()
-        if not bosh.settings['bash.modChecker.showRuleSets']:
+        if not bass.settings['bash.modChecker.showRuleSets']:
             self.gShowNotes.SetValue(False)
             self.gShowConfig.SetValue(False)
             self.gShowSuggest.SetValue(False)
-        bosh.settings['bash.modChecker.showNotes'] = self.gShowNotes.GetValue()
-        bosh.settings[
+        bass.settings['bash.modChecker.showNotes'] = self.gShowNotes.GetValue()
+        bass.settings[
             'bash.modChecker.showConfig'] = self.gShowConfig.GetValue()
-        bosh.settings[
+        bass.settings[
             'bash.modChecker.showSuggest'] = self.gShowSuggest.GetValue()
-        bosh.settings['bash.modChecker.showCRC'] = self.gShowCRC.GetValue()
-        bosh.settings[
+        bass.settings['bash.modChecker.showCRC'] = self.gShowCRC.GetValue()
+        bass.settings[
             'bash.modChecker.showVersion'] = self.gShowVersion.GetValue()
         #--Cache info from modinfos to support auto-update.
         self.orderedActive = load_order.activeCached()
@@ -503,18 +503,18 @@ class ModChecker(wx.Frame):
         self.imported = bosh.modInfos.imported.copy()
         #--Do it
         self.text = bosh.configHelpers.checkMods(
-            bosh.settings['bash.modChecker.showModList'],
-            bosh.settings['bash.modChecker.showRuleSets'],
-            bosh.settings['bash.modChecker.showNotes'],
-            bosh.settings['bash.modChecker.showConfig'],
-            bosh.settings['bash.modChecker.showSuggest'],
-            bosh.settings['bash.modChecker.showCRC'],
-            bosh.settings['bash.modChecker.showVersion'],
+            bass.settings['bash.modChecker.showModList'],
+            bass.settings['bash.modChecker.showRuleSets'],
+            bass.settings['bash.modChecker.showNotes'],
+            bass.settings['bash.modChecker.showConfig'],
+            bass.settings['bash.modChecker.showSuggest'],
+            bass.settings['bash.modChecker.showCRC'],
+            bass.settings['bash.modChecker.showVersion'],
             scanDirty=(None, self)[self.gScanDirty.GetValue()]
             )
         if bHaveComTypes:
             logPath = bass.dirs['saveBase'].join(u'ModChecker.html')
-            cssDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u''))
+            cssDir = bass.settings.get('balt.WryeLog.cssDir', GPath(u''))
             ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
             with logPath.open('w',encoding='utf-8-sig') as out:
                 bolt.WryeText.genHtml(ins,out,cssDir)
@@ -536,8 +536,8 @@ class ModChecker(wx.Frame):
         Remember window size, position, etc."""
         # TODO(ut): maybe set Link.Frame.modChecker = None (compare with DocBrowser)
         if not self.IsIconized() and not self.IsMaximized():
-            bosh.settings['bash.modChecker.pos'] = tuple(self.GetPosition())
-            bosh.settings['bash.modChecker.size'] = tuple(self.GetSize())
+            bass.settings['bash.modChecker.pos'] = tuple(self.GetPosition())
+            bass.settings['bash.modChecker.size'] = tuple(self.GetSize())
         self.Destroy()
 
 #------------------------------------------------------------------------------

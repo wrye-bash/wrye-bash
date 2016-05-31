@@ -57,7 +57,7 @@ class Files_SortBy(RadioLink):
     def __init__(self, sortCol):
         super(Files_SortBy, self).__init__()
         self.sortCol = sortCol
-        self.text = bosh.settings['bash.colNames'][sortCol]
+        self.text = bass.settings['bash.colNames'][sortCol]
         self.help = _(u'Sort by %s') % self.text
 
     def _check(self): return self.window.sort == self.sortCol

@@ -26,7 +26,7 @@
 points to BashFrame.modList singleton."""
 
 import re as _re
-from .. import bosh, balt, load_order
+from .. import bosh, balt, bass, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
@@ -41,7 +41,7 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
 
 # "Load" submenu --------------------------------------------------------------
 def _getLoadListsDict():
-    loadListData = bosh.settings['bash.loadLists.data']
+    loadListData = bass.settings['bash.loadLists.data']
     loadListData['Bethesda ESMs'] = [GPath(x) for x in bush.game.bethDataFiles
         if x.endswith(u'.esm') # but avoid activating modding esms for oblivion
     and (not _re.match(bosh.reOblivion.pattern, x, _re.IGNORECASE)
@@ -69,14 +69,14 @@ class _Mods_LoadListData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        bosh.settings.setChanged('bash.loadLists.data')
+        bass.settings.setChanged('bash.loadLists.data')
         self.loadListDict[newName] = self.loadListDict[oldName]
         del self.loadListDict[oldName]
         return newName
 
     def remove(self,item):
         """Removes load list."""
-        bosh.settings.setChanged('bash.loadLists.data')
+        bass.settings.setChanged('bash.loadLists.data')
         del self.loadListDict[item]
         return True
 
@@ -136,7 +136,7 @@ class Mods_LoadList(ChoiceLink):
                     return self._showError(message)
                 Mods_LoadList.loadListsDict[newItem] = list(
                     load_order.activeCached())
-                bosh.settings.setChanged('bash.loadLists.data')
+                bass.settings.setChanged('bash.loadLists.data')
         self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
                            SeparatorLink()]
         class _LoListLink(__Activate):

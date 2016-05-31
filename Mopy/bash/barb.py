@@ -48,7 +48,7 @@ class BaseBackupSettings:
     def __init__(self, parent=None, path=None, do_quit=False):
         if path is not None and path.ext == u'' and not path.exists():
             path = None
-        if path is None: path = bosh.settings['bash.backupPath']
+        if path is None: path = bass.settings['bash.backupPath']
         if path is None: path = bass.dirs['modsBash']
         self.quit = do_quit
         self._dir = path
@@ -57,7 +57,7 @@ class BaseBackupSettings:
             self._dir = path.head
             self.archive = path.tail
         self.parent = parent
-        self.verDat = bosh.settings['bash.version']
+        self.verDat = bass.settings['bash.version']
         self.files = {}
         self.tmp = None
 
@@ -83,14 +83,14 @@ class BaseBackupSettings:
         raise AbstractError
 
     def CmpDataVersion(self):
-        return cmp(self.verDat, bosh.settings['bash.version'])
+        return cmp(self.verDat, bass.settings['bash.version'])
 
     def SameDataVersion(self):
         return not self.CmpDataVersion()
 
     @staticmethod
     def SameAppVersion():
-        return not cmp(bass.AppVersion, bosh.settings['bash.version'])
+        return not cmp(bass.AppVersion, bass.settings['bash.version'])
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
@@ -189,7 +189,7 @@ class BackupSettings(BaseBackupSettings):
             # may raise StateError
             command = bolt.compressCommand(self.archive, self._dir, self.tmp)
             bolt.compress7z(command, self._dir, self.archive, self.tmp)
-            bosh.settings['bash.backupPath'] = self._dir
+            bass.settings['bash.backupPath'] = self._dir
         self.InfoSuccess()
 
     def PromptFile(self):
@@ -217,10 +217,10 @@ class BackupSettings(BaseBackupSettings):
     @staticmethod
     def PromptMismatch():
         #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
-        if bosh.settings['bash.version'] == 0: return False
+        if bass.settings['bash.version'] == 0: return False
         return not BaseBackupSettings.SameAppVersion() and BackupSettings.PromptConfirm(
             _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
-            _(u'Previous Version: ')+(u'%s\n' % bosh.settings['bash.version']) +
+            _(u'Previous Version: ')+(u'%s\n' % bass.settings['bash.version']) +
             _(u'Current Version: ')+(u'%s\n' % bass.AppVersion) +
             _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
 
@@ -360,7 +360,7 @@ class RestoreSettings(BaseBackupSettings):
         # return True if same app version or user confirms
         return BaseBackupSettings.SameAppVersion() or askWarning(self.parent,
               _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
-              _(u'Backup v%s does not match v%s') % (self.verApp, bosh.settings['bash.version']) + u'\n' +
+              _(u'Backup v%s does not match v%s') % (self.verApp, bass.settings['bash.version']) + u'\n' +
               u'\n' +
               _(u'Do you want to restore this backup anyway?'),
               _(u'Warning: Version Mismatch!'))
@@ -370,7 +370,7 @@ class RestoreSettings(BaseBackupSettings):
         if self.CmpDataVersion() > 0:
             showError(self.parent,
                   _(u'The data format of the selected backup file is newer than the current Bash version!')+u'\n' +
-                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, bosh.settings['bash.version']) + u'\n' +
+                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, bass.settings['bash.version']) + u'\n' +
                   u'\n' +
                   _(u'You cannot use this backup with this version of Bash.'),
                   _(u'Error: Version Conflict!'))

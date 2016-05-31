@@ -371,7 +371,7 @@ class MasterList(_ModsUIList):
                       keyPrefix=keyPrefix, panel=panel)
 
     @property
-    def allowEdit(self): return bosh.settings.get(self._allowEditKey, False)
+    def allowEdit(self): return bass.settings.get(self._allowEditKey, False)
     @allowEdit.setter
     def allowEdit(self, val):
         if val and (not self.detailsPanel.allowDetailsEdit or not
@@ -379,7 +379,7 @@ class MasterList(_ModsUIList):
                    self, self.message, self.keyPrefix + '.update.continue',
                    _(u'Update Masters') + u' ' + _(u'BETA'))):
             return
-        bosh.settings[self._allowEditKey] = val
+        bass.settings[self._allowEditKey] = val
         if val:
             self.InitEdit()
         else:
@@ -1068,7 +1068,7 @@ class ModList(_ModsUIList):
                           [checklists], liststyle='tree', canCancel=False)
 
     def jump_to_mods_installer(self, modName):
-        if not balt.Link.Frame.iPanel or not bosh.settings[
+        if not balt.Link.Frame.iPanel or not bass.settings[
             'bash.installers.enabled']: return False
         installer = self.data_store.table.getColumn('installer').get(modName)
         if installer is None:
@@ -3479,10 +3479,10 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
 
     def _enable(self): return self.enabled
 
-    def _check(self): return bosh.settings['bash.tabs.order'][self.tabKey]
+    def _check(self): return bass.settings['bash.tabs.order'][self.tabKey]
 
     def Execute(self):
-        if bosh.settings['bash.tabs.order'][self.tabKey]:
+        if bass.settings['bash.tabs.order'][self.tabKey]:
             # It was enabled, disable it.
             iMods = None
             iInstallers = None
@@ -3510,9 +3510,9 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         else:
             # It was disabled, enable it
             insertAt = 0
-            for i,key in enumerate(bosh.settings['bash.tabs.order']):
+            for i,key in enumerate(bass.settings['bash.tabs.order']):
                 if key == self.tabKey: break
-                if bosh.settings['bash.tabs.order'][key]:
+                if bass.settings['bash.tabs.order'][key]:
                     insertAt = i+1
             className,title,panel = tabInfo[self.tabKey]
             if not panel:
@@ -3522,7 +3522,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
                 Link.Frame.notebook.AddPage(panel,title)
             else:
                 Link.Frame.notebook.InsertPage(insertAt,panel,title)
-        bosh.settings['bash.tabs.order'][self.tabKey] ^= True
+        bass.settings['bash.tabs.order'][self.tabKey] ^= True
 
 class BashNotebook(wx.Notebook, balt.TabDragMixin):
 
@@ -4219,7 +4219,7 @@ class BashFrame(wx.Frame):
         #--Clean rename dictionary.
         modNames = set(bosh.modInfos.keys())
         modNames.update(bosh.modInfos.table.keys())
-        renames = bosh.settings.getChanged('bash.mods.renames')
+        renames = bass.settings.getChanged('bash.mods.renames')
         for key,value in renames.items():
             if value not in modNames:
                 del renames[key]
@@ -4392,9 +4392,9 @@ def InitSettings(): # this must run first !
     """Initializes settings dictionary for bosh and basher."""
     bosh.initSettings()
     global settings
-    balt._settings = bosh.settings
-    balt.sizes = bosh.settings.getChanged('bash.window.sizes',{})
-    settings = bosh.settings
+    balt._settings = bass.settings
+    balt.sizes = bass.settings.getChanged('bash.window.sizes',{})
+    settings = bass.settings
     settings.loadDefaults(settingDefaults)
     bosh.Installer.init_global_skips() # must be after loadDefaults - grr #178
     bosh.Installer.init_attributes_process()

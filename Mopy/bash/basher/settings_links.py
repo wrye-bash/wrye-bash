@@ -28,7 +28,7 @@ import wx
 from ..balt import ItemLink, vSizer, hSizer, spacer, Button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
     StaticText, tooltip, Link, staticBitmap
-from .. import barb, bosh, bush, balt, bass, bolt, env
+from .. import barb, bush, balt, bass, bolt, env
 from ..bolt import deprint, GPath
 from . import BashFrame, BashStatusBar
 from .dialogs import ColorDialog
@@ -143,17 +143,17 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
         if not textPath: return
         with textPath.open('w',encoding='utf-8-sig') as out:
             out.write(u'goodDlls '+_(u'(those dlls that you have chosen to allow to be installed)')+u'\r\n')
-            if bosh.settings['bash.installers.goodDlls']:
-                for dll in bosh.settings['bash.installers.goodDlls']:
+            if bass.settings['bash.installers.goodDlls']:
+                for dll in bass.settings['bash.installers.goodDlls']:
                     out.write(u'dll:'+dll+u':\r\n')
-                    for index, version in enumerate(bosh.settings['bash.installers.goodDlls'][dll]):
+                    for index, version in enumerate(bass.settings['bash.installers.goodDlls'][dll]):
                         out.write(u'version %02d: %s\r\n' % (index, version))
             else: out.write(u'None\r\n')
             out.write(u'badDlls '+_(u'(those dlls that you have chosen to NOT allow to be installed)')+u'\r\n')
-            if bosh.settings['bash.installers.badDlls']:
-                for dll in bosh.settings['bash.installers.badDlls']:
+            if bass.settings['bash.installers.badDlls']:
+                for dll in bass.settings['bash.installers.badDlls']:
                     out.write(u'dll:'+dll+u':\r\n')
-                    for index, version in enumerate(bosh.settings['bash.installers.badDlls'][dll]):
+                    for index, version in enumerate(bass.settings['bash.installers.badDlls'][dll]):
                         out.write(u'version %02d: %s\r\n' % (index, version))
             else: out.write(u'None\r\n')
 
@@ -203,10 +203,10 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
                         current[dll].append(ver)
                         print dll,':',ver
             if not replace:
-                bosh.settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
-                bosh.settings['bash.installers.badDlls'].update(Dlls['badDlls'])
+                bass.settings['bash.installers.goodDlls'].update(Dlls['goodDlls'])
+                bass.settings['bash.installers.badDlls'].update(Dlls['badDlls'])
             else:
-                bosh.settings['bash.installers.goodDlls'], bosh.settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
+                bass.settings['bash.installers.goodDlls'], bass.settings['bash.installers.badDlls'] = Dlls['goodDlls'], Dlls['badDlls']
         except UnicodeError:
             self._showError(_(u'Wrye Bash could not load %s, because it is not'
                               u' saved in UTF-8 format.  Please resave it in '
@@ -235,10 +235,10 @@ class Settings_IconSize(RadioLink):
             {'size': unicode(size)})
 
     def _check(self):
-        return self.size == bosh.settings['bash.statusbar.iconSize']
+        return self.size == bass.settings['bash.statusbar.iconSize']
 
     def Execute(self):
-        bosh.settings['bash.statusbar.iconSize'] = self.size
+        bass.settings['bash.statusbar.iconSize'] = self.size
         Link.Frame.statusBar.UpdateIconSizes()
 
 #------------------------------------------------------------------------------
@@ -247,15 +247,15 @@ class Settings_StatusBar_ShowVersions(CheckLink):
     text = _(u'Show App Version')
     help = _(u"Show/hide version numbers for buttons on the status bar.")
 
-    def _check(self): return bosh.settings['bash.statusbar.showversion']
+    def _check(self): return bass.settings['bash.statusbar.showversion']
 
     def Execute(self):
-        bosh.settings['bash.statusbar.showversion'] ^= True
+        bass.settings['bash.statusbar.showversion'] ^= True
         for button in BashStatusBar.buttons:
             if isinstance(button, App_Button):
                 if button.gButton:
                     button.gButton.SetToolTip(tooltip(button.tip))
-        if bosh.settings['bash.obse.on']:
+        if bass.settings['bash.obse.on']:
             for button in App_Button.obseButtons:
                 button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
 
@@ -334,7 +334,7 @@ class Settings_PluginEncodings(MenuLink):
         }
     def __init__(self):
         super(Settings_PluginEncodings, self).__init__(_(u'Plugin Encoding'))
-        bolt.pluginEncoding = bosh.settings['bash.pluginEncoding'] # TODO(ut): why is this init here ??
+        bolt.pluginEncoding = bass.settings['bash.pluginEncoding'] # TODO(ut): why is this init here ??
         self.links.append(Settings_PluginEncoding(_(u'Automatic'),None))
         # self.links.append(SeparatorLink())
         enc_name = sorted(Settings_PluginEncodings.encodings.items(),key=lambda x: x[1])
@@ -350,11 +350,11 @@ class Settings_PluginEncoding(RadioLink):
         self.help = _(u"Select %(encodingname)s encoding for Wrye Bash to use."
             ) % ({'encodingname': self.text})
 
-    def _check(self): return self.encoding == bosh.settings[
+    def _check(self): return self.encoding == bass.settings[
         'bash.pluginEncoding']
 
     def Execute(self):
-        bosh.settings['bash.pluginEncoding'] = self.encoding
+        bass.settings['bash.pluginEncoding'] = self.encoding
         bolt.pluginEncoding = self.encoding
 
 #------------------------------------------------------------------------------
@@ -384,7 +384,7 @@ class Settings_UnHideButtons(TransLink):
     """Menu to unhide a StatusBar button."""
 
     def _decide(self, window, selection):
-        hide = bosh.settings['bash.statusbar.hide']
+        hide = bass.settings['bash.statusbar.hide']
         hidden = []
         for link in BashStatusBar.buttons:
             if link.uid in hide:

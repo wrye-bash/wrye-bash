@@ -166,8 +166,8 @@ class ColorDialog(balt.Dialog):
         choice = self.GetChoice()
         newColor = self.changes[choice]
         #--Update settings and colors
-        bosh.settings['bash.colors'][choice] = newColor
-        bosh.settings.setChanged('bash.colors')
+        bass.settings['bash.colors'][choice] = newColor
+        bass.settings.setChanged('bash.colors')
         colors[choice] = newColor
         self.UpdateUIButtons()
         self.UpdateUIColors()
@@ -175,9 +175,9 @@ class ColorDialog(balt.Dialog):
     def OnApplyAll(self,event):
         event.Skip()
         for key,newColor in self.changes.iteritems():
-            bosh.settings['bash.colors'][key] = newColor
+            bass.settings['bash.colors'][key] = newColor
             colors[key] = newColor
-        bosh.settings.setChanged('bash.colors')
+        bass.settings.setChanged('bash.colors')
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
@@ -275,7 +275,7 @@ class ImportFaceDialog(balt.Dialog):
                                     onSelect=self.EvtListBox)
         self.listBox.SetSizeHints(175,150)
         #--Name,Race,Gender Checkboxes
-        flags = bosh.faces.PCFaces.flags(bosh.settings.get('bash.faceImport.flags', 0x4))
+        flags = bosh.faces.PCFaces.flags(bass.settings.get('bash.faceImport.flags', 0x4))
         self.nameCheck = checkBox(self, _(u'Name'), checked=flags.name)
         self.raceCheck = checkBox(self, _(u'Race'), checked=flags.race)
         self.genderCheck = checkBox(self, _(u'Gender'), checked=flags.gender)
@@ -358,7 +358,7 @@ class ImportFaceDialog(balt.Dialog):
         flags.stats = self.statsCheck.GetValue()
         flags.iclass = self.classCheck.GetValue()
         #deprint(flags.getTrueAttrs())
-        bosh.settings['bash.faceImport.flags'] = int(flags)
+        bass.settings['bash.faceImport.flags'] = int(flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],flags)
         balt.showOk(self,_(u'Face imported.'),self.fileInfo.name.s)
         self.EndModalOK()

@@ -7747,6 +7747,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
             else: raise
     # No longer pulling version out of the readme, but still need the old
     # cached value for upgrade check! (!)
+    bass.settings = settings
     if 'bash.readme' in settings:
         settings['bash.version'] = _(settings['bash.readme'][1])
         del settings['bash.readme']

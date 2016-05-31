@@ -105,7 +105,7 @@ class Screen_ConvertTo(EnabledLink):
                     srcPath = srcDir.join(fileName)
                     destPath = srcPath.root+u'.'+self.ext
                     if srcPath == destPath or destPath.exists(): continue
-                    bitmap = Image.Load(srcPath, quality=bosh.settings[
+                    bitmap = Image.Load(srcPath, quality=bass.settings[
                         'bash.screens.jpgQuality'])
                     result = bitmap.SaveFile(destPath.s,self.imageType)
                     if not result: continue
@@ -125,17 +125,17 @@ class Screen_JpgQuality(RadioLink):
         self.text = u'%i' % self.quality
 
     def _check(self):
-        return self.quality == bosh.settings['bash.screens.jpgQuality']
+        return self.quality == bass.settings['bash.screens.jpgQuality']
 
     def Execute(self):
-        bosh.settings['bash.screens.jpgQuality'] = self.quality
+        bass.settings['bash.screens.jpgQuality'] = self.quality
 
 #------------------------------------------------------------------------------
 class Screen_JpgQualityCustom(Screen_JpgQuality):
     """Sets a custom JPG quality."""
     def __init__(self):
         super(Screen_JpgQualityCustom, self).__init__(
-            bosh.settings['bash.screens.jpgCustomQuality'])
+            bass.settings['bash.screens.jpgCustomQuality'])
         self.text = _(u'Custom [%i]') % self.quality
 
     def Execute(self):
@@ -143,7 +143,7 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
                                   min=0, max=100)
         if quality is None: return
         self.quality = quality
-        bosh.settings['bash.screens.jpgCustomQuality'] = self.quality
+        bass.settings['bash.screens.jpgCustomQuality'] = self.quality
         self.text = _(u'Custom [%i]') % quality
         super(Screen_JpgQualityCustom, self).Execute()
 
@@ -178,13 +178,13 @@ class People_Export(ItemLink, People_Link):
     help = _(u'Export people to text archive')
 
     def Execute(self):
-        textDir = bosh.settings.get('bash.workDir', bass.dirs['app'])
+        textDir = bass.settings.get('bash.workDir', bass.dirs['app'])
         #--File dialog
         path = self._askSave(title=_(u'Export people to text file:'),
                              defaultDir=textDir, defaultFile=u'People.txt',
                              wildcard=u'*.txt')
         if not path: return
-        bosh.settings['bash.workDir'] = path.head
+        bass.settings['bash.workDir'] = path.head
         self.pdata.dumpText(path,self.selected)
         self._showInfo(_(u'Records exported: %d.') % len(self.selected),
                        title=self.dialogTitle)
@@ -197,13 +197,13 @@ class People_Import(ItemLink, People_Link):
     help = _(u'Import people from text archive')
 
     def Execute(self):
-        textDir = bosh.settings.get('bash.workDir', bass.dirs['app'])
+        textDir = bass.settings.get('bash.workDir', bass.dirs['app'])
         #--File dialog
         path = self._askOpen(title=_(u'Import people from text file:'),
                              defaultDir=textDir, wildcard=u'*.txt',
                              mustExist=True)
         if not path: return
-        bosh.settings['bash.workDir'] = path.head
+        bass.settings['bash.workDir'] = path.head
         newNames = self.pdata.loadText(path)
         self._showInfo(_(u"People imported: %d") % len(newNames),
                        title=self.dialogTitle)
@@ -242,7 +242,7 @@ class Master_ClearRenames(ItemLink):
     help = _(u'Clear internal Bash renames dictionary')
 
     def Execute(self):
-        bosh.settings['bash.mods.renames'].clear()
+        bass.settings['bash.mods.renames'].clear()
         self.window.RefreshUI()
 
 class _Master_EditList(EnabledLink):
@@ -283,7 +283,7 @@ class Master_ChangeTo(_Master_EditList):
             return
         #--Save Name
         masterInfo.setName(newName)
-        bosh.settings.getChanged('bash.mods.renames')[masterName] = newName
+        bass.settings.getChanged('bash.mods.renames')[masterName] = newName
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
@@ -310,7 +310,7 @@ class _Column(CheckLink, EnabledLink):
     def __init__(self, _text='COLKEY'): # not really the link text in this case
         super(_Column, self).__init__()
         self.colName = _text
-        self.text = bosh.settings['bash.colNames'][self.colName]
+        self.text = bass.settings['bash.colNames'][self.colName]
         self.help = _(u"Show/Hide '%(colname)s' column.") % {
             'colname': self.text}
 

@@ -62,3 +62,6 @@ dirs = {}
 inisettings = {}
 # dirs where various apps may be located - populated in initDefaultTools()
 tooldirs = {}
+
+# settings dictionary - belongs to a dedicated settings module below bolt - WIP !
+settings = None # bolt.Settings !

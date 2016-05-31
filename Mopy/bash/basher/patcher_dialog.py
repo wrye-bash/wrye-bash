@@ -50,7 +50,7 @@ class PatchDialog(balt.Dialog):
 
     def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
         self.parent = parent
-        if (doCBash or doCBash is None) and bosh.settings['bash.CBashEnabled']:
+        if (doCBash or doCBash is None) and bass.settings['bash.CBashEnabled']:
             doCBash = True
         else:
             doCBash = False
@@ -218,7 +218,7 @@ class PatchDialog(balt.Dialog):
             timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
             readme = bosh.modInfos.dir.join(u'Docs',patch_name.sroot+u'.txt')
-            docsDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u''))
+            docsDir = bass.settings.get('balt.WryeLog.cssDir', GPath(u''))
             if self.doCBash: ##: eliminate this if/else
                 with readme.open('w',encoding='utf-8') as file:
                     file.write(logValue)

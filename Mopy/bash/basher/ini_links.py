@@ -151,7 +151,7 @@ class INI_Apply(EnabledLink):
             'ini': ini}
 
     def _enable(self):
-        if not bosh.settings['bash.ini.allowNewLines']:
+        if not bass.settings['bash.ini.allowNewLines']:
             for i in self.selected:
                 iniInfo = bosh.iniInfos[i]
                 if iniInfo.status < 0:

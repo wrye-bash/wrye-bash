@@ -344,14 +344,14 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                       u'reverting to default size.') % (
                         ret.PageSize, type(ret.PageSize)))
             ret.PageSize = tuple(default)
-        bosh.settings['bash.wizard.size'] = (ret.PageSize[0], ret.PageSize[1])
-        bosh.settings['bash.wizard.pos'] = (ret.Pos[0], ret.Pos[1])
+        bass.settings['bash.wizard.size'] = (ret.PageSize[0], ret.PageSize[1])
+        bass.settings['bash.wizard.pos'] = (ret.Pos[0], ret.Pos[1])
 
     @staticmethod
     def _get_size_and_pos():
-        saved = bosh.settings['bash.wizard.size']
+        saved = bass.settings['bash.wizard.size']
         default = settingDefaults['bash.wizard.size']
-        pos = bosh.settings['bash.wizard.pos']
+        pos = bass.settings['bash.wizard.pos']
         # Sanity checks on saved size/position
         if not isinstance(pos, tuple) or len(pos) != 2:
             deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), '

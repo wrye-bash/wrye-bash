@@ -921,7 +921,7 @@ def renameArchives(root=r'C:\Program Files\Bethesda Softworks\Oblivion\Downloads
 def uncontinue():
     """Clears continue settings from settings."""
     init(0)
-    settings = bosh.settings
+    settings = bass.settings
     for key in settings.keys():
         if re.search(r'\.continue$',key):
             print key

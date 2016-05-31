@@ -701,7 +701,7 @@ class Save_ReweighPotions(OneItemLink):
 
     def Execute(self):
         #--Query value
-        default = u'%0.2f' % (bosh.settings.get(
+        default = u'%0.2f' % (bass.settings.get(
             'bash.reweighPotions.newWeight', 0.2),)
         newWeight = self._askText(_(u"Set weight of all player potions to..."),
                                   title=_(u"Reweigh Potions"), default=default)
@@ -712,7 +712,7 @@ class Save_ReweighPotions(OneItemLink):
         except ValueError:
             self._showOk(_(u'Invalid weight: %s') % newWeight)
             return
-        bosh.settings['bash.reweighPotions.newWeight'] = newWeight
+        bass.settings['bash.reweighPotions.newWeight'] = newWeight
         #--Do it
         fileName = GPath(self.selected[0])
         fileInfo = self.window.data_store[fileName]

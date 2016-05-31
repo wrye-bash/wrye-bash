@@ -215,7 +215,7 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.setKey = modLabels.setKey
         self.addPrompt = modLabels.addPrompt
         #--Key/type
-        self.mod_labels = bosh.settings[self.setKey]
+        self.mod_labels = bass.settings[self.setKey]
         #--GUI
         balt.ListEditorData.__init__(self,parent)
         self.showAdd = True
@@ -238,7 +238,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             balt.showError(self.parent,
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
-        bosh.settings.setChanged(self.setKey)
+        bass.settings.setChanged(self.setKey)
         self.mod_labels.append(newName)
         self.mod_labels.sort()
         return newName
@@ -254,7 +254,7 @@ class _Mod_LabelsData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        bosh.settings.setChanged(self.setKey)
+        bass.settings.setChanged(self.setKey)
         self.mod_labels.remove(oldName)
         self.mod_labels.append(newName)
         self.mod_labels.sort()
@@ -271,7 +271,7 @@ class _Mod_LabelsData(balt.ListEditorData):
 
     def remove(self,item):
         """Removes group."""
-        bosh.settings.setChanged(self.setKey)
+        bass.settings.setChanged(self.setKey)
         self.mod_labels.remove(item)
         #--Edit table entries.
         colGroup = bosh.modInfos.table.getColumn(self.column)
@@ -291,7 +291,7 @@ class _Mod_LabelsData(balt.ListEditorData):
         """
         items.sort(key=lambda a: a.lower())
         if self.mod_labels == items: return False
-        bosh.settings.setChanged(self.setKey)
+        bass.settings.setChanged(self.setKey)
         # do not reassign self.mod_labels! points to settings[self.setKey]
         self.mod_labels[:] = items
         return True
@@ -305,7 +305,7 @@ class _Mod_Labels(ChoiceLink):
 
     def __init__(self):
         super(_Mod_Labels, self).__init__()
-        self.mod_labels = bosh.settings[self.setKey]
+        self.mod_labels = bass.settings[self.setKey]
         #-- Links
         _self = self
         class _Edit(ItemLink):
@@ -429,7 +429,7 @@ class Mod_Groups(_Mod_Labels):
 
     def _doRefresh(self):
         """Add to the list of groups groups currently assigned to mods."""
-        self.listEditor.SetItemsTo(list(set(bosh.settings[
+        self.listEditor.SetItemsTo(list(set(bass.settings[
             'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
 
     def _doSync(self):
@@ -506,7 +506,7 @@ class Mod_ShowReadme(OneItemLink):
         fileInfo = self.window.data_store[fileName]
         if not Link.Frame.docBrowser:
             DocBrowser().Show()
-            bosh.settings['bash.modDocs.show'] = True
+            bass.settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
         Link.Frame.docBrowser.SetMod(fileInfo.name)
         Link.Frame.docBrowser.Raise()
@@ -580,7 +580,7 @@ class Mod_CreateBOSSReport(EnabledLink):
             if udr_itm_fog:
                 udrs,itms,fogs = udr_itm_fog[i]
                 if udrs or itms:
-                    if bosh.settings['bash.CBashEnabled']:
+                    if bass.settings['bash.CBashEnabled']:
                         text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
                     else:
                         text += (u'\nUDR: %i, ITM not scanned '+_(u'(via Wrye Bash)')) % len(udrs)
@@ -683,7 +683,7 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
         self._installer = bosh.modInfos.table.getColumn('installer').get(
                 selection[0])
 
-    def _append(self, window): return balt.Link.Frame.iPanel and bosh.settings[
+    def _append(self, window): return balt.Link.Frame.iPanel and bass.settings[
         'bash.installers.enabled']
 
     def _enable(self):
@@ -909,7 +909,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             else:
                 PatchFile.patchTime = fileInfo.mtime
                 PatchFile.patchName = fileInfo.name
-                if bosh.settings['bash.CBashEnabled']:
+                if bass.settings['bash.CBashEnabled']:
                     # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                     prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
             if prog is not None:
@@ -1029,7 +1029,7 @@ class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
         """Return a radio button if CBash is enabled a simple item
         otherwise."""
         enable = len(selection) == 1 and bosh.modInfos.isBP(selection[0])
-        if enable and bosh.settings['bash.CBashEnabled']:
+        if enable and bass.settings['bash.CBashEnabled']:
             class _RadioLink(RadioLink, _Mod_Patch_Update):
                 def _check(self): return not self.CBashMismatch
             return _RadioLink(self.doCBash)
@@ -1067,7 +1067,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         log.setHeader(u'== '+_(u'Patch Mode'))
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
         if doCBash:
-            if bosh.settings['bash.CBashEnabled']:
+            if bass.settings['bash.CBashEnabled']:
                 msg = u'CBash v%u.%u.%u' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision())
             else:
                 # It's a CBash patch config, but CBash.dll is unavailable (either by -P command line, or it's not there)
@@ -1225,7 +1225,7 @@ class Mod_ScanDirty(ItemLink):
         super(Mod_ScanDirty, self)._initData(window, selection)
         # settings['bash.CBashEnabled'] is set once in BashApp.Init() AFTER
         # InitLinks() is called in bash.py
-        self.text = _(u'Scan for Dirty Edits') if bosh.settings[
+        self.text = _(u'Scan for Dirty Edits') if bass.settings[
             'bash.CBashEnabled'] else _(u"Scan for UDR's")
 
     def Execute(self):
@@ -1241,7 +1241,7 @@ class Mod_ScanDirty(ItemLink):
         log(_(u'This is a report of records that were detected as either Identical To Master (ITM) or a deleted reference (UDR).')
             + u'\n')
         # Change a FID to something more usefull for displaying
-        if bosh.settings['bash.CBashEnabled']:
+        if bass.settings['bash.CBashEnabled']:
             def strFid(fid):
                 return u'%s: %06X' % (fid[0],fid[1])
         else:
@@ -1257,7 +1257,7 @@ class Mod_ScanDirty(ItemLink):
             udrs,itms,fog = ret[i]
             if modInfo.name == GPath(u'Unofficial Oblivion Patch.esp'):
                 # Record for non-SI users, shows up as ITM if SI is installed (OK)
-                if bosh.settings['bash.CBashEnabled']:
+                if bass.settings['bash.CBashEnabled']:
                     itms.discard(FormID(GPath(u'Oblivion.esm'),0x00AA3C))
                 else:
                     itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
@@ -1288,7 +1288,7 @@ class Mod_ScanDirty(ItemLink):
                         item = u'%s - %s attached to Exterior CELL (%s), attached to WRLD (%s)%s' % (
                             strFid(udr.fid),udr.type,parentStr,parentParentStr,atPos)
                     dirty[pos] += u'    * %s\n' % item
-                if not bosh.settings['bash.CBashEnabled']: continue
+                if not bass.settings['bash.CBashEnabled']: continue
                 if itms:
                     dirty[pos] += u'  * %s: %i\n' % (_(u'ITM'),len(itms))
                 for fid in sorted(itms):
@@ -2000,9 +2000,9 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
             dialog.EndModal(1)
-            bosh.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
-            bosh.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
-            bosh.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
+            bass.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
+            bass.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
+            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
         okButton = OkButton(dialog, onButClick=OnOk)
@@ -2010,9 +2010,9 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         gdeprefix = TextCtrl(dialog)
         gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
             tip=_(u"If active doesn't export comments in the scripts"))
-        gskip.SetValue(bosh.settings['bash.mods.export.skip'])
-        gdeprefix.SetValue(bosh.settings['bash.mods.export.deprefix'])
-        gskipcomments.SetValue(bosh.settings['bash.mods.export.skipcomments'])
+        gskip.SetValue(bass.settings['bash.mods.export.skip'])
+        gdeprefix.SetValue(bass.settings['bash.mods.export.deprefix'])
+        gskipcomments.SetValue(bass.settings['bash.mods.export.skipcomments'])
         sizer = vSizer(
             StaticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
             gskip,
@@ -2045,7 +2045,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         #try:
         scriptText = self._parser()
         scriptText.readFromMod(fileInfo,fileName.s)
-        exportedScripts = scriptText.writeToText(fileInfo,bosh.settings['bash.mods.export.skip'],textDir,bosh.settings['bash.mods.export.deprefix'],fileName.s,bosh.settings['bash.mods.export.skipcomments'])
+        exportedScripts = scriptText.writeToText(fileInfo,bass.settings['bash.mods.export.skip'],textDir,bass.settings['bash.mods.export.deprefix'],fileName.s,bass.settings['bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
                       asDialog=True, icons=Resources.bashBlue)
@@ -2590,7 +2590,7 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
     """Remove unneeded masters."""
     text, help = _(u'Clean Masters...'), _(u'Remove unneeded masters')
 
-    def _append(self, window): return bosh.settings['bash.CBashEnabled']
+    def _append(self, window): return bass.settings['bash.CBashEnabled']
 
     def Execute(self):
         message = _(u"WARNING!  For advanced modders only!  Removes masters that are not referenced in any records.")

@@ -242,7 +242,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
             u"CRCs.  This can take 5-15 minutes.") if self.full_refresh else _(
             u"Rescan the Data directory and all project directories.")
 
-    def _append(self, window): return bosh.settings['bash.installers.enabled']
+    def _append(self, window): return bass.settings['bash.installers.enabled']
 
     @balt.conversation
     def Execute(self):
@@ -338,10 +338,10 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
 
     @balt.conversation
     def Execute(self):
-        if not bosh.settings[self.key] and not self._askYes(self.message):
+        if not bass.settings[self.key] and not self._askYes(self.message):
             return
         super(Installers_AutoRefreshBethsoft, self).Execute()
-        if bosh.settings[self.key]:
+        if bass.settings[self.key]:
             # Refresh Data - only if we are now including Bethsoft files
             with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
                                message=u'\n' + u' ' * 60) as progress:
@@ -365,10 +365,10 @@ class Installers_Enabled(BoolLink):
     @balt.conversation
     def Execute(self):
         """Enable/Disable the installers tab."""
-        enabled = bosh.settings[self.key]
+        enabled = bass.settings[self.key]
         if not enabled and not self._askYes(self.message,
                                             title=self.dialogTitle): return
-        enabled = bosh.settings[self.key] = not enabled
+        enabled = bass.settings[self.key] = not enabled
         if enabled:
             self.window.panel.ShowPanel(scan_data_dir=True)
         else:
@@ -387,14 +387,14 @@ class Installers_BsaRedirection(AppendableLink, BoolLink):
     def Execute(self):
         """Handle selection."""
         super(Installers_BsaRedirection, self).Execute()
-        if bosh.settings[self.key]:
+        if bass.settings[self.key]:
             bsaPath = bosh.modInfos.dir.join(
                     bass.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()
             resetCount = bsaFile.reset()
             #balt.showOk(self,_(u"BSA Hashes reset: %d") % (resetCount,))
-        bosh.oblivionIni.setBsaRedirection(bosh.settings[self.key])
+        bosh.oblivionIni.setBsaRedirection(bass.settings[self.key])
 
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
@@ -529,7 +529,7 @@ class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'
     def _append(self, window): return bool(bush.game.se_sd)
-    def _check(self): return not bosh.settings[self.key]
+    def _check(self): return not bass.settings[self.key]
 
 class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
     """Toggle auto-renaming of .STRINGS files"""
