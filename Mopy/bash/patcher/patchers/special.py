@@ -31,10 +31,10 @@ from .. import getPatchesPath
 from ... import bush
 from ...cint import FormID
 from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
-    CBash_ListPatcher
+    CBash_ListPatcher, AListPatcher
 
 # Patchers: 40 ----------------------------------------------------------------
-class _AListsMerger(SpecialPatcher):
+class _AListsMerger(SpecialPatcher, AListPatcher):
     """Merged leveled lists mod file."""
     scanOrder = 45
     editOrder = 45
@@ -47,6 +47,7 @@ class _AListsMerger(SpecialPatcher):
     tip = _(u"Merges changes to leveled lists from all active mods.")
     choiceMenu = (u'Auto', u'----', u'Delev', u'Relev')  #--List of possible
     # choices for each config item. Item 0 is default.
+    autoKey = {u'Delev', u'Relev'}
     forceAuto = False
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
@@ -60,8 +61,6 @@ class _AListsMerger(SpecialPatcher):
     def getDefaultTags():
         tags = {}
         for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
-            # TODO: P version: textPath = bass.dirs['patches'].join(fileName)
-            # Does it make a difference ?
             textPath = getPatchesPath(fileName)
             if textPath.exists():
                 with CsvReader(textPath) as reader:
@@ -72,9 +71,6 @@ class _AListsMerger(SpecialPatcher):
                         tags[GPath(fields[0])] = fields[1]
         return tags
 
-class ListsMerger(_AListsMerger,ListPatcher):
-    autoKey = (u'Delev',u'Relev')
-
     #--Config Phase -----------------------------------------------------------
     def getChoice(self,item):
         """Get default config choice."""
@@ -83,10 +79,13 @@ class ListsMerger(_AListsMerger,ListPatcher):
         if u'Auto' in choice:
             if item in bosh.modInfos:
                 bashTags = bosh.modInfos[item].getBashTags()
-                choice = {u'Auto'} | ({u'Delev', u'Relev'} & bashTags)
+                choice = {u'Auto'} | (self.autoKey & bashTags)
         self.configChoices[item] = choice
         return choice
 
+class ListsMerger(_AListsMerger, ListPatcher):
+
+    #--Config Phase -----------------------------------------------------------
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
         choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
@@ -290,25 +289,11 @@ class ListsMerger(_AListsMerger,ListPatcher):
                 log(u'* '+eid)
 
 class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
-    autoKey = {u'Delev', u'Relev'}
     allowUnloaded = False
     scanRequiresChecked = False
     applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def getChoice(self,item):
-        """Get default config choice."""
-        choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = {u'Auto'}
-        if u'Auto' in choice:
-            if item in bosh.modInfos:
-                choice = {u'Auto'}
-                bashTags = bosh.modInfos[item].getBashTags()
-                for key in (u'Delev',u'Relev'):
-                    if key in bashTags: choice.add(key)
-        self.configChoices[item] = choice
-        return choice
-
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
         choice = map(itemgetter(0),self.configChoices.get(item,tuple()))

@@ -132,11 +132,11 @@ def _clog(self, log,
     if listSrcs:
         self._srcMods(log)
         log(self.__class__.logMsg)
-    for type in mod_count.keys():
-        log(logModRecs % {'type': u'%s ' % type,
-                          'count': sum(mod_count[type].values())})
-        for srcMod in load_order.get_ordered(mod_count[type].keys()):
-            log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+    for top_rec_type in sorted(mod_count.keys()):
+        log(logModRecs % {'type': u'%s ' % top_rec_type,
+                          'count': sum(mod_count[top_rec_type].values())})
+        for srcMod in load_order.get_ordered(mod_count[top_rec_type].keys()):
+            log(u'  * %s: %d' % (srcMod.s, mod_count[top_rec_type][srcMod]))
     self.mod_count = {}
 
 # Common initData pattern -----------------------------------------------------

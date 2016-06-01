@@ -761,9 +761,6 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         u'R.Attributes-F',u'R.Attributes-M',u'R.Skills',u'R.Description',
         u'R.AddSpells',u'R.ChangeSpells',)
     forceAuto = True
-    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
-                     'configItems': [], 'configChecks': {},
-                     'configChoices': {}}
     subLabel = _(u'Race Tweaks')
     races_data = {'EYES':[],'HAIR':[]}
     tweaks = sorted([
@@ -1820,9 +1817,6 @@ class CBash_RacePatcher(SpecialPatcher, CBash_DoublePatcher):
         CBash_RacePatcher_Spells(),
         CBash_RacePatcher_Eyes(),
         ]
-    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
-                     'configItems': [], 'configChecks': {},
-                     'configChoices': {}}
     subLabel = _(u'Race Tweaks')
     tweaks = sorted([
         CBash_RaceTweaker_BiggerOrcsAndNords(),

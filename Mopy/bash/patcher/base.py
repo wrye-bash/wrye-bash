@@ -405,6 +405,10 @@ class AMultiTweakItem(object):
 # AListPatcher subclasses------------------------------------------------------
 #------------------------------------------------------------------------------
 class ADoublePatcher(AListPatcher):
+    """Only used in Race Patcher which features a double panel. Enabled by
+    default."""
+    defaultConfig = copy.deepcopy(AListPatcher.defaultConfig)
+    defaultConfig['isEnabled'] = True # override AListPatcher default, enabled
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
