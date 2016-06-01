@@ -31,15 +31,12 @@ from this module outside of the patcher package."""
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
 
-import copy
 import re
 from . import getPatchesList
-from ..bolt import AbstractError, GPath, Path
+from ..bolt import AbstractError, Path
 from ..bosh import reModExt
 from .. import bosh # for modInfos
 from .. import load_order
-
-reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
@@ -73,20 +70,6 @@ class _Abstract_Patcher(object):
         self.isEnabled = False #--Patcher is enabled.
         self.gConfigPanel = None
         # super(Abstract_Patcher, self).__init__()#UNNEEDED (ALWAYS BEFORE obj)
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,{})
-        self.isEnabled = config.get('isEnabled',
-                                    self.__class__.default_isEnabled)
-        # return the config dict for this patcher to read additional values
-        return config
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        config['isEnabled'] = self.isEnabled
-        return config # return the config dict for this patcher to further edit
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -172,11 +155,6 @@ class AListPatcher(_Abstract_Patcher):
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
     _patches_set = None # type: set[bolt.Path]
-    # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
-    default_autoIsChecked = True
-    default_configItems   = []
-    default_configChecks  = {}
-    default_configChoices = {}
 
     @staticmethod
     def list_patches_dir(): AListPatcher._patches_set = getPatchesList()
@@ -224,36 +202,6 @@ class AListPatcher(_Abstract_Patcher):
                 autoItems.append(fileName)
         return autoItems
 
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super(AListPatcher,self).getConfig(configs)
-        self.autoIsChecked = self.forceAuto or config.get(
-            'autoIsChecked', self.__class__.default_autoIsChecked)
-        self.configItems = copy.deepcopy(
-            config.get('configItems', self.__class__.default_configItems))
-        self.configChecks = copy.deepcopy(
-            config.get('configChecks', self.__class__.default_configChecks))
-        self.configChoices = copy.deepcopy(
-            config.get('configChoices', self.__class__.default_configChoices))
-        #--Verify file existence
-        newConfigItems = []
-        for srcPath in self.configItems:
-            if ((reModExt.search(srcPath.s) and srcPath in bosh.modInfos) or
-                 reCsvExt.search(srcPath.s) and srcPath in self.patches_set):
-                newConfigItems.append(srcPath)
-        self.configItems = newConfigItems
-        if self.__class__.forceItemCheck:
-            for item in self.configItems:
-                self.configChecks[item] = True
-        #--Make sure configChoices are set (if choiceMenu exists).
-        if self.choiceMenu:
-            for item in self.configItems:
-                self.getChoice(item)
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems()
-        return config
-
     def _patchFile(self): raise AbstractError # TODO(ut) _PFile.class.patchName
 
     def getChoice(self,item):
@@ -273,21 +221,6 @@ class AListPatcher(_Abstract_Patcher):
         order."""
         return load_order.get_ordered(items)
 
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        config = super(AListPatcher,self).saveConfig(configs)
-        listSet = set(self.configItems)
-        self.configChecks = config['configChecks'] = dict(
-            [(key,value) for key,value in self.configChecks.iteritems() if
-             key in listSet])
-        self.configChoices = config['configChoices'] = dict(
-            [(key,value) for key,value in self.configChoices.iteritems() if
-             key in listSet])
-        config['configItems'] = self.configItems
-        config['autoIsChecked'] = self.autoIsChecked
-        return config
-
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
         """Returns checked config items in list order."""
@@ -300,25 +233,6 @@ class AMultiTweaker(_Abstract_Patcher):
     scanOrder = 20
     editOrder = 20
 
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self, configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super(AMultiTweaker, self).getConfig(configs)
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        for tweak in self.tweaks:
-            tweak.get_tweak_config(config)
-        return config
-
-    def saveConfig(self, configs):
-        """Save config to configs dictionary."""
-        config = super(AMultiTweaker, self).saveConfig(configs)
-        for tweak in self.tweaks:
-            tweak.save_tweak_config(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if
-                              tweak.isEnabled]
-        self.isActive = len(self.enabledTweaks) > 0
-        return config
-
 class AAliasesPatcher(_Abstract_Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
@@ -327,25 +241,6 @@ class AAliasesPatcher(_Abstract_Patcher):
     name = _(u"Alias Mod Names")
     text = _(u"Specify mod aliases for reading CSV source files.")
     tip = None
-    # CONFIG DEFAULTS
-    default_aliases = {}
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super(AAliasesPatcher, self).getConfig(configs)
-        #--Update old configs to use Paths instead of strings.
-        self.aliases = dict(# map(GPath, item) gives a list (item is a tuple)
-            map(GPath, item) for item in
-            config.get('aliases', self.__class__.default_aliases).iteritems())
-        return config
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        config = super(AAliasesPatcher, self).saveConfig(configs)
-        config['aliases'] = self.aliases
-        return config
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -428,27 +323,6 @@ class AMultiTweakItem(object):
 #------------------------------------------------------------------------------
 # AListPatcher subclasses------------------------------------------------------
 #------------------------------------------------------------------------------
-class ADoublePatcher(AListPatcher):
-    """Only used in Race Patcher which features a double panel. Enabled by
-    default."""
-    # CONFIG DEFAULTS
-    default_isEnabled = True
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = super(ADoublePatcher, self).getConfig(configs)
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        for tweak in self.tweaks:
-            tweak.get_tweak_config(config)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        config = super(ADoublePatcher, self).saveConfig(configs)
-        for tweak in self.tweaks:
-            tweak.save_tweak_config(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
-
 class AImportPatcher(AListPatcher):
     """Subclass for patchers in group Importer."""
     group = _(u'Importers')

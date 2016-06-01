@@ -41,7 +41,7 @@ from ...cint import ValidateDict, FormID
 from ...patcher.base import AMultiTweakItem
 from ...patcher.patch_files import PatchFile
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
-    DoublePatcher, CBash_DoublePatcher
+    ListPatcher, CBash_ListPatcher
 from ...parsers import LoadFactory, ModFile
 
 # Patchers: 40 ----------------------------------------------------------------
@@ -742,7 +742,7 @@ class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,
                 record._RecordID = override._RecordID
                 return
 
-class RacePatcher(SpecialPatcher,DoublePatcher):
+class RacePatcher(SpecialPatcher, ListPatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
     text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"
@@ -1792,7 +1792,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 npc.UnloadRecord()
             pstate += 1
 
-class CBash_RacePatcher(SpecialPatcher, CBash_DoublePatcher):
+class CBash_RacePatcher(SpecialPatcher, CBash_ListPatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
     text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"

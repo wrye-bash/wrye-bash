@@ -32,8 +32,8 @@ from .. import getPatchesPath
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
-    CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher, \
-    AImportPatcher, APatchMerger, AUpdateReferences
+    CBash_Patcher, AAliasesPatcher, AListPatcher, AImportPatcher, \
+    APatchMerger, AUpdateReferences
 from ..patch_files import PatchFile, CBash_PatchFile
 
 # Patchers 1 ------------------------------------------------------------------
@@ -138,10 +138,6 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
         log.setHeader(u'= '+self.__class__.name,True)
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
-
-class DoublePatcher(ADoublePatcher, ListPatcher): pass
-
-class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
 
 # Patchers: 10 ----------------------------------------------------------------
 class AliasesPatcher(AAliasesPatcher,Patcher): pass
