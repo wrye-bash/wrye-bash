@@ -57,7 +57,8 @@ class _AAlchemicalCatalogs(SpecialPatcher):
     name = _(u'Cobl Catalogs')
     text = (_(u"Update COBL's catalogs of alchemical ingredients and effects.")
             + u'\n\n' + _(u'Will only run if Cobl Main.esm is loaded.'))
-    defaultConfig = {'isEnabled':True}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
 class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
 
@@ -787,7 +788,8 @@ class _ASEWorldEnforcer(SpecialPatcher):
     name = _(u'SEWorld Tests')
     text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. "
              u"re-instates GetPlayerInSEWorld tests as necessary.")
-    defaultConfig = {'isEnabled': True}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
 class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
     #--Patch Phase ------------------------------------------------------------

@@ -53,9 +53,10 @@ class _Abstract_Patcher(object):
     name = u'UNDEFINED'
     text = u"UNDEFINED."
     tip = None
-    defaultConfig = {'isEnabled':False}
     iiMode = False
     selectCommands = True
+    # CONFIG DEFAULTS
+    default_isEnabled = False
 
     def getName(self):
         """Returns patcher name."""
@@ -76,15 +77,16 @@ class _Abstract_Patcher(object):
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
         config = configs.setdefault(self.__class__.__name__,{})
-        for attr,default in self.__class__.defaultConfig.iteritems():
-            value = copy.deepcopy(config.get(attr,default))
-            setattr(self,attr,value)
+        self.isEnabled = config.get('isEnabled',
+                                    self.__class__.default_isEnabled)
+        # return the config dict for this patcher to read additional values
+        return config
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
         config = configs[self.__class__.__name__] = {}
-        for attr in self.__class__.defaultConfig:
-            config[attr] = copy.deepcopy(getattr(self,attr))
+        config['isEnabled'] = self.isEnabled
+        return config # return the config dict for this patcher to further edit
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -160,8 +162,6 @@ class AListPatcher(_Abstract_Patcher):
     #--Get/Save Config
     choiceMenu = None #--List of possible choices for each config item. Item
     #  0 is default.
-    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],
-                     'configChecks':{},'configChoices':{}}
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     forceItemCheck = False #--Force configChecked to True for all items
     autoRe = re.compile(u'^UNDEFINED$',re.U)#--Compiled re used by getAutoItems
@@ -172,6 +172,11 @@ class AListPatcher(_Abstract_Patcher):
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
     _patches_set = None # type: set[bolt.Path]
+    # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
+    default_autoIsChecked = True
+    default_configItems   = []
+    default_configChecks  = {}
+    default_configChoices = {}
 
     @staticmethod
     def list_patches_dir(): AListPatcher._patches_set = getPatchesList()
@@ -221,9 +226,15 @@ class AListPatcher(_Abstract_Patcher):
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        super(AListPatcher,self).getConfig(configs)
-        if self.forceAuto:
-            self.autoIsChecked = True
+        config = super(AListPatcher,self).getConfig(configs)
+        self.autoIsChecked = self.forceAuto or config.get(
+            'autoIsChecked', self.__class__.default_autoIsChecked)
+        self.configItems = copy.deepcopy(
+            config.get('configItems', self.__class__.default_configItems))
+        self.configChecks = copy.deepcopy(
+            config.get('configChecks', self.__class__.default_configChecks))
+        self.configChoices = copy.deepcopy(
+            config.get('configChoices', self.__class__.default_configChoices))
         #--Verify file existence
         newConfigItems = []
         for srcPath in self.configItems:
@@ -241,6 +252,7 @@ class AListPatcher(_Abstract_Patcher):
         #--AutoItems?
         if self.autoIsChecked:
             self.getAutoItems()
+        return config
 
     def _patchFile(self): raise AbstractError # TODO(ut) _PFile.class.patchName
 
@@ -264,14 +276,17 @@ class AListPatcher(_Abstract_Patcher):
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
         #--Toss outdated configCheck data.
+        config = super(AListPatcher,self).saveConfig(configs)
         listSet = set(self.configItems)
-        self.configChecks = dict(
+        self.configChecks = config['configChecks'] = dict(
             [(key,value) for key,value in self.configChecks.iteritems() if
              key in listSet])
-        self.configChoices = dict(
+        self.configChoices = config['configChoices'] = dict(
             [(key,value) for key,value in self.configChoices.iteritems() if
              key in listSet])
-        super(AListPatcher,self).saveConfig(configs)
+        config['configItems'] = self.configItems
+        config['autoIsChecked'] = self.autoIsChecked
+        return config
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
@@ -286,24 +301,23 @@ class AMultiTweaker(_Abstract_Patcher):
     editOrder = 20
 
     #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
+    def getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,
-                                    self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
+        config = super(AMultiTweaker, self).getConfig(configs)
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
         for tweak in self.tweaks:
             tweak.get_tweak_config(config)
+        return config
 
-    def saveConfig(self,configs):
+    def saveConfig(self, configs):
         """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        config['isEnabled'] = self.isEnabled
+        config = super(AMultiTweaker, self).saveConfig(configs)
         for tweak in self.tweaks:
             tweak.save_tweak_config(config)
         self.enabledTweaks = [tweak for tweak in self.tweaks if
                               tweak.isEnabled]
         self.isActive = len(self.enabledTweaks) > 0
+        return config
 
 class AAliasesPatcher(_Abstract_Patcher):
     """Specify mod aliases for patch files."""
@@ -313,15 +327,25 @@ class AAliasesPatcher(_Abstract_Patcher):
     name = _(u"Alias Mod Names")
     text = _(u"Specify mod aliases for reading CSV source files.")
     tip = None
-    defaultConfig = {'isEnabled':False,'aliases':{}}
+    # CONFIG DEFAULTS
+    default_aliases = {}
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        super(AAliasesPatcher, self).getConfig(configs)
+        config = super(AAliasesPatcher, self).getConfig(configs)
         #--Update old configs to use Paths instead of strings.
-        self.aliases = dict( # map(GPath, item) gives a list (item is a tuple)
-            map(GPath, item) for item in self.aliases.iteritems())
+        self.aliases = dict(# map(GPath, item) gives a list (item is a tuple)
+            map(GPath, item) for item in
+            config.get('aliases', self.__class__.default_aliases).iteritems())
+        return config
+
+    def saveConfig(self,configs):
+        """Save config to configs dictionary."""
+        #--Toss outdated configCheck data.
+        config = super(AAliasesPatcher, self).saveConfig(configs)
+        config['aliases'] = self.aliases
+        return config
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -407,22 +431,20 @@ class AMultiTweakItem(object):
 class ADoublePatcher(AListPatcher):
     """Only used in Race Patcher which features a double panel. Enabled by
     default."""
-    defaultConfig = copy.deepcopy(AListPatcher.defaultConfig)
-    defaultConfig['isEnabled'] = True # override AListPatcher default, enabled
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        super(ADoublePatcher, self).getConfig(configs)
+        config = super(ADoublePatcher, self).getConfig(configs)
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
         for tweak in self.tweaks:
             tweak.get_tweak_config(config)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
         #--Toss outdated configCheck data.
-        super(ADoublePatcher, self).saveConfig(configs)
-        config = configs[self.__class__.__name__]
+        config = super(ADoublePatcher, self).saveConfig(configs)
         for tweak in self.tweaks:
             tweak.save_tweak_config(config)
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]

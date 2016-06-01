@@ -201,18 +201,16 @@ class _AGmstTweaker(AMultiTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
     name = _(u'Tweak Settings')
     text = _(u"Tweak game settings.")
-    defaultConfig = {'isEnabled':True}
     tweaks = []
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,
-                                    self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
+        config = super(_AGmstTweaker, self).getConfig(configs)
         # Load game specific tweaks
-        self.tweaks = []
-        tweaksAppend = self.tweaks.append
+        tweaksAppend = self.tweaks.append # self.tweaks defined in super, empty
         for cls,tweaks in self.__class__.class_tweaks:
             for tweak in tweaks:
                 if isinstance(tweak,tuple):
@@ -224,6 +222,7 @@ class _AGmstTweaker(AMultiTweaker):
         self.tweaks.sort(key=lambda a: a.label.lower())
         for tweak in self.tweaks:
             tweak.get_tweak_config(config)
+        return config
 
 class GmstTweaker(MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""

@@ -2408,7 +2408,9 @@ class AssortedTweaker(MultiTweaker):
     editOrder = 32
     name = _(u'Tweak Assorted')
     text = _(u"Tweak various records in miscellaneous ways.")
-    defaultConfig = {'isEnabled':True}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
+
     if bush.game.fsName == u'Oblivion':
         tweaks = sorted([
             AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
@@ -2477,7 +2479,9 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
     editOrder = 32
     name = _(u'Tweak Assorted')
     text = _(u"Tweak various records in miscellaneous ways.")
-    defaultConfig = {'isEnabled':True}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
+
     tweaks = sorted([
         CBash_AssortedTweak_ArmorShows(_(u"Armor Shows Amulets"),
             _(u"Prevents armor from hiding amulets."),

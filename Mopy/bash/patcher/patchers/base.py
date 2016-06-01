@@ -150,9 +150,10 @@ class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
     #--Config Phase -----------------------------------------------------------
     def getConfig(self,configs):
         """Get config from configs dictionary and/or set to default."""
-        super(CBash_AliasesPatcher,self).getConfig(configs)
+        config = super(CBash_AliasesPatcher,self).getConfig(configs)
         self.srcs = [] #so as not to fail screaming when determining load
         # mods - but with the least processing required.
+        return config
 
 class PatchMerger(APatchMerger, ListPatcher):
     autoKey = u'Merge'

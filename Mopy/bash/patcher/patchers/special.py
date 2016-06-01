@@ -52,9 +52,8 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
     forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
     selectCommands = False
-    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
-                     'configItems': [], 'configChecks': {},
-                     'configChoices': {}}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
     #--Static------------------------------------------------------------------
     @staticmethod
@@ -559,7 +558,8 @@ class _AContentsChecker(SpecialPatcher):
     name = _(u'Contents Checker')
     text = _(u"Checks contents of leveled lists, inventories and containers"
              u" for correct types.")
-    defaultConfig = {'isEnabled': True}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
 class ContentsChecker(_AContentsChecker,Patcher):
     #--Patch Phase ------------------------------------------------------------
