@@ -333,15 +333,6 @@ class AImportPatcher(AListPatcher):
     # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
     # ImportRelations, ImportFactions
 
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        super(AImportPatcher, self).saveConfig(configs)
-        if self.isEnabled:
-            importedMods = [item for item,value in
-                            self.configChecks.iteritems() if
-                            value and reModExt.search(item.s)]
-            configs['ImportedMods'].update(importedMods)
-
 class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""
     scanOrder = 10

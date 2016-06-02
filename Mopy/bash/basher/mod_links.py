@@ -1085,6 +1085,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             log.setHeader(u'== '+humanName)
             clip.write(u'\n')
             clip.write(u'== '+humanName+u'\n')
+            # TODO(ut): move this logic to gui_patchers.py (config phase)
             if isinstance(patcher, (base.CBash_MultiTweaker,
                                     base.MultiTweaker)):
                 # Tweak patcher
