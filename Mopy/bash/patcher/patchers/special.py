@@ -26,7 +26,7 @@ from operator import itemgetter, attrgetter
 import string
 # Internal
 from ... import bosh, load_order # for modInfos
-from ...bolt import GPath, SubProgress, CsvReader, Path
+from ...bolt import GPath, SubProgress, CsvReader
 from .. import getPatchesPath
 from ... import bush
 from ...cint import FormID
@@ -45,15 +45,8 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
         u'Advanced users may override Relev/Delev tags for any mod (active '
         u'or inactive) using the list below.'))
     tip = _(u"Merges changes to leveled lists from all active mods.")
-    choiceMenu = (u'Auto', u'----', u'Delev', u'Relev')  #--List of possible
-    # choices for each config item. Item 0 is default.
     autoKey = {u'Delev', u'Relev'}
-    forceAuto = False
-    forceItemCheck = True #--Force configChecked to True for all items
     iiMode = True
-    selectCommands = False
-    # CONFIG DEFAULTS
-    default_isEnabled = True
 
     #--Static------------------------------------------------------------------
     @staticmethod
@@ -70,29 +63,7 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
                         tags[GPath(fields[0])] = fields[1]
         return tags
 
-    #--Config Phase -----------------------------------------------------------
-    def getChoice(self,item):
-        """Get default config choice."""
-        choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = {u'Auto'}
-        if u'Auto' in choice:
-            if item in bosh.modInfos:
-                bashTags = bosh.modInfos[item].getBashTags()
-                choice = {u'Auto'} | (self.autoKey & bashTags)
-        self.configChoices[item] = choice
-        return choice
-
 class ListsMerger(_AListsMerger, ListPatcher):
-
-    #--Config Phase -----------------------------------------------------------
-    def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
-        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
-        if isinstance(item,Path): item = item.s
-        if choice:
-            return u'%s [%s]' % (item,u''.join(sorted(choice)))
-        else:
-            return item
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -292,16 +263,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     scanRequiresChecked = False
     applyRequiresChecked = False
 
-    #--Config Phase -----------------------------------------------------------
-    def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
-        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
-        if isinstance(item,Path): item = item.s
-        if choice:
-            return u'%s [%s]' % (item,u''.join(sorted(choice)))
-        else:
-            return item
-
+    #--Patch Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(CBash_ListsMerger, self).initPatchFile(patchFile, loadMods)
         self.isActive = True

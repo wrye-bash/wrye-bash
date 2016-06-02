@@ -31,11 +31,9 @@ from this module outside of the patcher package."""
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
 
-import re
 from . import getPatchesList
-from ..bolt import AbstractError, Path
+from ..bolt import AbstractError
 from ..bosh import reModExt
-from .. import bosh # for modInfos
 from .. import load_order
 
 #------------------------------------------------------------------------------
@@ -51,9 +49,6 @@ class _Abstract_Patcher(object):
     text = u"UNDEFINED."
     tip = None
     iiMode = False
-    selectCommands = True
-    # CONFIG DEFAULTS
-    default_isEnabled = False
 
     def getName(self):
         """Returns patcher name."""
@@ -84,6 +79,7 @@ class Patcher(_Abstract_Patcher):
     # would it make any sense to make getRead/WriteClasses() into classmethods
     # and just define an attribute in the classes - so getReadClasses(cls):
     # return cls.READ and have in subclasses just READ = 'AMMO' (say)
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -143,15 +139,7 @@ class CBash_Patcher(_Abstract_Patcher):
 class AListPatcher(_Abstract_Patcher):
     """Subclass for patchers that have GUI lists of objects."""
     #--Get/Save Config
-    choiceMenu = None #--List of possible choices for each config item. Item
-    #  0 is default.
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default
-    forceItemCheck = False #--Force configChecked to True for all items
-    autoRe = re.compile(u'^UNDEFINED$',re.U)#--Compiled re used by getAutoItems
-    # all subclasses override this with re.compile(ur"^UNDEFINED$",re.I|re.U)
-    # except DoublePatcher and UpdateReference ones
     autoKey = None
-    forceAuto = True
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
     _patches_set = None # type: set[bolt.Path]
@@ -180,46 +168,7 @@ class AListPatcher(_Abstract_Patcher):
                 log(u"* " +srcFile.s)
 
     #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
-        if isinstance(autoKey,basestring):
-            autoKey = {autoKey}
-        autoKey = set(autoKey)
-        self.choiceMenu = self.__class__.choiceMenu
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(self._patchFile().patchName): continue
-            if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
-                autoItems.append(name)
-                if self.choiceMenu: self.getChoice(name)
-        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(self.patches_set):
-            if reFile.search(fileName.s):
-                autoItems.append(fileName)
-        return autoItems
-
     def _patchFile(self): raise AbstractError # TODO(ut) _PFile.class.patchName
-
-    def getChoice(self,item):
-        """Get default config choice."""
-        return self.configChoices.setdefault(item,self.choiceMenu[0])
-
-    def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
-        if isinstance(item,Path): item = item.s
-        if self.choiceMenu:
-            return u'%s [%s]' % (item,self.getChoice(item))
-        else:
-            return item
-
-    def sortConfig(self,items):
-        """Return sorted items. Default assumes mods and sorts by load
-        order."""
-        return load_order.get_ordered(items)
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
@@ -329,9 +278,6 @@ class AImportPatcher(AListPatcher):
     scanOrder = 20
     editOrder = 20
     masters = {}
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U) # overridden by
-    # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
-    # ImportRelations, ImportFactions
 
 class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""
@@ -340,18 +286,6 @@ class APatchMerger(AListPatcher):
     group = _(u'General')
     name = _(u'Merge Patches')
     text = _(u"Merge patch mods into Bashed Patch.")
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            if dex(modInfo.name) >= dex(self._patchFile().patchName): continue
-            if (modInfo.name in bosh.modInfos.mergeable and
-                u'NoMerge' not in modInfo.getBashTags()):
-                autoItems.append(modInfo.name)
-        return autoItems
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -370,4 +304,3 @@ class AUpdateReferences(AListPatcher):
     group = _(u'General')
     name = _(u'Replace Form IDs')
     text = _(u"Imports Form Id replacers from csv files into the Bashed Patch.")
-    canAutoItemCheck = False #--GUI: Whether new items are checked by default.

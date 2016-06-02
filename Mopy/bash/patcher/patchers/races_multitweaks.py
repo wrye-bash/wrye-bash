@@ -34,12 +34,10 @@ import re
 # Internal
 from ... import bush # for defaultEyes (?)
 from ... import bosh # for modInfos
-from ... import load_order
 from ...bolt import SubProgress, BoltError, GPath, deprint
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
 from ...patcher.base import AMultiTweakItem
-from ...patcher.patch_files import PatchFile
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
     ListPatcher, CBash_ListPatcher
 from ...parsers import LoadFactory, ModFile
@@ -754,13 +752,11 @@ class RacePatcher(SpecialPatcher, ListPatcher):
               u" npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(r'^UNDEFINED$',re.I)
     autoKey = (u'Hair',u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes',u'Body-M',
         u'Body-F',u'Body-Size-M',u'Body-Size-F',u'Voice-M',u'Voice-F',
         u'R.Relations',u'R.Teeth',u'R.Mouth',u'R.Ears',u'R.Head',
         u'R.Attributes-F',u'R.Attributes-M',u'R.Skills',u'R.Description',
         u'R.AddSpells',u'R.ChangeSpells',)
-    forceAuto = True
     subLabel = _(u'Race Tweaks')
     races_data = {'EYES':[],'HAIR':[]}
     tweaks = sorted([
@@ -773,20 +769,6 @@ class RacePatcher(SpecialPatcher, ListPatcher):
         RaceTweaker_AllEyes(),
         RaceTweaker_AllHairs(),
         ],key=lambda a: a.label.lower())
-
-    #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = set(self.__class__.autoKey)
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(PatchFile.patchName): continue
-            if autoRe.match(name.s) or (autoKey & set(modInfo.getBashTags())):
-                autoItems.append(name)
-        return autoItems
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1810,7 +1792,6 @@ class CBash_RacePatcher(SpecialPatcher, CBash_ListPatcher):
                'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
                'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells',
                'R.ChangeSpells', 'Body-Size-M', 'Body-Size-F'}
-    forceAuto = True
     tweakers = [
         CBash_RacePatcher_Relations(),
         CBash_RacePatcher_Imports(),
