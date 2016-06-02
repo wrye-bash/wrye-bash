@@ -25,12 +25,12 @@
 """This module contains oblivion multitweak item patcher classes that belong
 to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings."""
-
 from ... import bush # for game
 from ...bolt import SubProgress, StateError, deprint
 from ...brec import MreRecord, ModReader
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
+from ...patcher.base import AMultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class GlobalsTweak(MultiTweakItem):
@@ -197,10 +197,8 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
             log(u'  * ' + self.label)
 
 #------------------------------------------------------------------------------
-class GmstTweaker(MultiTweaker):
+class _AGmstTweaker(AMultiTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    scanOrder = 29
-    editOrder = 29
     name = _(u'Tweak Settings')
     text = _(u"Tweak game settings.")
     defaultConfig = {'isEnabled':True}
@@ -215,8 +213,7 @@ class GmstTweaker(MultiTweaker):
         # Load game specific tweaks
         self.tweaks = []
         tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(GlobalsTweak,bush.game.GlobalsTweaks),
-                           (GmstTweak,bush.game.GmstTweaks)]:
+        for cls,tweaks in self.__class__.class_tweaks:
             for tweak in tweaks:
                 if isinstance(tweak,tuple):
                     tweaksAppend(cls(*tweak))
@@ -226,7 +223,14 @@ class GmstTweaker(MultiTweaker):
                     tweaksAppend(cls(*args,**kwdargs))
         self.tweaks.sort(key=lambda a: a.label.lower())
         for tweak in self.tweaks:
-            tweak.getConfig(config)
+            tweak.get_tweak_config(config)
+
+class GmstTweaker(MultiTweaker, _AGmstTweaker):
+    """Tweaks miscellaneous gmsts in miscellaneous ways."""
+    scanOrder = 29
+    editOrder = 29
+    class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
+                    (GmstTweak, bush.game.GmstTweaks)]
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -258,36 +262,12 @@ class GmstTweaker(MultiTweaker):
         for tweak in self.enabledTweaks:
             tweak.buildPatch(self.patchFile,keep,log)
 
-class CBash_GmstTweaker(CBash_MultiTweaker):
+class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    name = _(u'Tweak Settings')
-    text = _(u"Tweak game settings.")
-    defaultConfig = {'isEnabled':True}
-    tweaks = []
+    class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
+                    (CBash_GmstTweak, bush.game.GmstTweaks)]
 
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,
-                                    self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        CBash_MultiTweaker.getConfig(self,configs)
-        # Load game specific tweaks
-        self.tweaks = []
-        tweaksAppend = self.tweaks.append
-        for cls,tweaks in [(CBash_GlobalsTweak,bush.game.GlobalsTweaks),
-                           (CBash_GmstTweak,bush.game.GmstTweaks)]:
-            for tweak in tweaks:
-                if isinstance(tweak,tuple):
-                    tweaksAppend(cls(*tweak))
-                elif isinstance(tweak,list):
-                    args = tweak[0]
-                    kwdargs = tweak[1]
-                    tweaksAppend(cls(*args,**kwdargs))
-        self.tweaks.sort(key=lambda a: a.label.lower())
-        for tweak in self.tweaks:
-            tweak.getConfig(config)
-
+    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         self.patchFile = patchFile
         for tweak in self.tweaks:

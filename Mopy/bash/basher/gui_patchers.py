@@ -756,7 +756,8 @@ class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel): pass
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------
 #------------------------------------------------------------------------------
-from .patcher_dialog import gui_patchers, CBash_gui_patchers, otherPatcherDict
+from .patcher_dialog import PBash_gui_patchers, CBash_gui_patchers, \
+    otherPatcherDict
 # Dynamically create game specific UI patcher classes and add them to module's
 # scope
 from importlib import import_module
@@ -775,5 +776,5 @@ del import_module
 
 # Init Patchers
 def initPatchers():
-    gui_patchers.extend((globals()[x]() for x in bush.game.patchers))
+    PBash_gui_patchers.extend((globals()[x]() for x in bush.game.patchers))
     CBash_gui_patchers.extend((globals()[x]() for x in bush.game.CBash_patchers))

@@ -41,7 +41,7 @@ from ..patcher import configIsCBash, exportConfig
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..cint import CBash, FormID ##: CBash should be in bosh
-from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
+from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from ..patcher.patchers import base
 from ..patcher.patchers import special
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
@@ -1019,7 +1019,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
         patchers = [copy.deepcopy(x) for x in
-                     (CBash_gui_patchers if doCBash else gui_patchers)]
+                    (CBash_gui_patchers if doCBash else PBash_gui_patchers)]
         patchers.sort(key=lambda a: a.__class__.name)
         patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         #--Log & Clipboard text

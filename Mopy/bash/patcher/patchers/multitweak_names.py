@@ -322,9 +322,9 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
             )
         self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
-    def saveConfig(self,configs):
+    def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
-        super(ANamesTweak_Scrolls,self).saveConfig(configs)
+        super(ANamesTweak_Scrolls,self).save_tweak_config(configs)
         rawFormat = self.choiceValues[self.chosen][0]
         self.orderFormat = (u'~.',u'.~')[rawFormat[0] == u'~']
         self.magicFormat = rawFormat[1:]
@@ -522,9 +522,9 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
     def getTypes(self):
         return ['SPEL']
 
-    def saveConfig(self,configs):
+    def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
-        super(CBash_NamesTweak_Spells, self).saveConfig(configs)
+        super(CBash_NamesTweak_Spells, self).save_tweak_config(configs)
         self.format = self.choiceValues[self.chosen][0]
         self.removeTags = u'%s' not in self.format
         self.showLevel = u'%d' in self.format
@@ -637,9 +637,9 @@ class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
     def getTypes(self):
         return ['AMMO','WEAP']
 
-    def saveConfig(self,configs):
+    def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
-        super(CBash_NamesTweak_Weapons, self).saveConfig(configs)
+        super(CBash_NamesTweak_Weapons, self).save_tweak_config(configs)
         self.format = self.choiceValues[self.chosen][0]
         self.showStat = u'%02d' in self.format
 
@@ -824,9 +824,9 @@ class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
                 'MISC','NPC_','QUST','RACE','SCPT','SGST',
                 'SKIL','SLGM','SPEL','WEAP']
 
-    def saveConfig(self,configs):
+    def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
-        CBash_MultiTweakItem.saveConfig(self,configs)
+        super(CBash_TextReplacer, self).save_tweak_config(configs)
         self.format = self.choiceValues[self.chosen][0]
         self.showStat = u'%02d' in self.format
 

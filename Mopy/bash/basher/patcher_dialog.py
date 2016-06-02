@@ -42,8 +42,8 @@ from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
-gui_patchers = []       #--All patchers.
-CBash_gui_patchers = [] #--All patchers (CBash mode).
+PBash_gui_patchers = [] #--All gui patchers classes for this game
+CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
 
 class PatchDialog(balt.Dialog):
     """Bash Patch update dialog."""
@@ -72,8 +72,8 @@ class PatchDialog(balt.Dialog):
                 patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
-        self.patchers = [copy.deepcopy(p) for p in
-                         (CBash_gui_patchers if doCBash else gui_patchers)]
+        self.patchers = [copy.deepcopy(p) for p in (
+            CBash_gui_patchers if doCBash else PBash_gui_patchers)]
         self.patchers.sort(key=lambda a: a.__class__.name)
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:

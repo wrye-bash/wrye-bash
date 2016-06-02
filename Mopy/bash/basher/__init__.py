@@ -1868,7 +1868,7 @@ class SaveList(balt.UIList):
         save_info = self.data_store[fileName]
         #--Image
         status = save_info.getStatus()
-        on = bosh.SaveInfos.isEnabled(save_info.getPath()) # yak
+        on = bosh.SaveInfos.is_save_enabled(save_info.getPath()) # yak
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
@@ -1892,7 +1892,7 @@ class SaveList(balt.UIList):
                  % {'ess': bush.game.ess.ext})
         if not balt.askContinue(self, msg, 'bash.saves.askDisable.continue'):
             return
-        newEnabled = not bosh.SaveInfos.isEnabled(hitItem)
+        newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
         newName = self.data_store.enable(hitItem, newEnabled)
         if newName != hitItem: self.RefreshUI() ##: files=[fileName]
 

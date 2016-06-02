@@ -3597,9 +3597,9 @@ class ModInfos(FileInfos):
             patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(
                 patchConfigs) else 'PatchMerger'
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
-                configChecks = patchConfigs[patcherstr]['configChecks']
-                for modName in configChecks:
-                    if configChecks[modName] and modName in self:
+                config_checked = patchConfigs[patcherstr]['configChecks']
+                for modName in config_checked:
+                    if config_checked[modName] and modName in self:
                         merged.add(modName)
             imported.update(filter(lambda x: x in self,
                                    patchConfigs.get('ImportedMods', tuple())))
@@ -4232,14 +4232,14 @@ class SaveInfos(FileInfos):
 
     #--Enabled ----------------------------------------------------------------
     @staticmethod
-    def isEnabled(fileName):
-        """True if fileName is enabled)."""
+    def is_save_enabled(fileName):
+        """True if fileName is enabled."""
         return fileName.cext == bush.game.ess.ext
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
-        isEnabled = self.isEnabled(fileName)
-        if value == isEnabled or re.match(u'(autosave|quicksave)', fileName.s,
+        enabled = self.is_save_enabled(fileName)
+        if value == enabled or re.match(u'(autosave|quicksave)', fileName.s,
                                           re.I | re.U):
             return fileName
         (root,ext) = fileName.rootExt
