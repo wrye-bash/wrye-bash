@@ -150,24 +150,24 @@ class File_Duplicate(ItemLink):
         self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(selection) == 1]
         self.help = _(u"Make a copy of '%s'") % (selection[0])
 
-    bsaAndVoice = _(u"This mod has an associated archive (%s.bsa) and an "
+    _bsaAndVoice = _(u"This mod has an associated archive (%s.bsa) and an "
         u"associated voice directory (Sound\\Voices\\%s), which will not be "
         u"attached to the duplicate mod.") + u'\n\n' + _(u'Note that the BSA '
         u'archive may also contain a voice directory (Sound\\Voices\\%s), '
         u'which would remain detached even if a duplicate archive were also '
         u'created.')
-    bsa = _(u'This mod has an associated archive (%s.bsa), which will not be '
+    _bsa = _(u'This mod has an associated archive (%s.bsa), which will not be '
         u'attached to the duplicate mod.') + u'\n\n' + _(u'Note that this BSA '
         u'archive may contain a voice directory (Sound\\Voices\\%s), which '
         u'would remain detached even if a duplicate archive were also created.'
     )
-    voice = _(u'This mod has an associated voice directory (Sound\\Voice\\%s),'
+    _voice = _(ur'This mod has an associated voice directory (Sound\Voice\%s),'
         u' which will not be attached to the duplicate mod.')
 
     def _askResourcesOk(self, fileInfo):
         return bosh.modInfos.askResourcesOk(fileInfo, parent=self.window,
-            title=_(u'Duplicate '), bsaAndVoice=self.bsaAndVoice, bsa=self.bsa,
-            voice=self.voice)
+          title=_(u'Duplicate '), bsaAndVoice=self._bsaAndVoice, bsa=self._bsa,
+          voice=self._voice)
 
     @balt.conversation
     def Execute(self):
@@ -180,9 +180,9 @@ class File_Duplicate(ItemLink):
             #--Warn on rename if file has bsa and/or dialog
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
-            (root,ext) = fileName.rootExt
+            (root, ext) = fileName.rootExt
             if ext.lower() == u'.bak': ext = bush.game.ess.ext
-            (destDir,wildcard) = (fileInfo.dir, u'*'+ext)
+            (destDir, wildcard) = (fileInfo.dir, u'*' + ext)
             destName = self.window.new_path(GPath(root + u' Copy' + ext),
                                             destDir)
             destDir.makedirs()
@@ -191,7 +191,7 @@ class File_Duplicate(ItemLink):
                     title=_(u'Duplicate as:'), defaultDir=destDir,
                     defaultFile=destName.s, wildcard=wildcard)
                 if not destPath: return
-                destDir,destName = destPath.headTail
+                destDir, destName = destPath.headTail
             if (destDir == fileInfo.dir) and (destName == fileName):
                 self._showError(
                     _(u"Files cannot be duplicated to themselves!"))
@@ -205,6 +205,8 @@ class File_Duplicate(ItemLink):
         if dests:
             fileInfos.refresh(scanData=False)
             self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
+            self.window.SelectItemsNoCallback(dests)
+            self.window.SelectAndShowItem(dests[-1])
 
 class File_Hide(ItemLink):
     """Hide the file. (Move it to Bash/Hidden directory.)"""
