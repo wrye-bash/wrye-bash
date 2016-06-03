@@ -75,6 +75,7 @@ reOblivion = re.compile(
     u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
+empty_path = GPath(u'')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 # Singletons, Constants -------------------------------------------------------
@@ -3134,7 +3135,7 @@ class FileInfos(_DataStore):
         srcPath.moveTo(destPath)
 
     #--Copy
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
+    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies member file to destDir. Will overwrite! Will update
         internal self.data for the file if copied inside self.dir but the
         client is responsible for calling the final refresh of the data store.
@@ -3144,7 +3145,6 @@ class FileInfos(_DataStore):
         """
         destDir.makedirs()
         if not destName: destName = fileName
-        destName = GPath(destName)
         srcPath = self[fileName].getPath()
         if destDir == self.dir and destName in self.data:
             destPath = self[destName].getPath()
@@ -3312,7 +3312,23 @@ class ModInfos(FileInfos):
     @_lo_cache
     def redo_load_order(self): load_order.redo_load_order()
 
-    #--Load Order utility methods - be sure cache is valid when using them-----
+    #--Load Order utility methods - be sure cache is valid when using them
+    def cached_lo_insert_after(self, previous, new_mod):
+        previous_index = self._lo_wip.index(previous)
+        if not load_order.using_txt_file():
+            # set the mtime to avoid reordering all subsequent mods
+            try:
+                next_mod = self._lo_wip[previous_index + 1]
+            except IndexError: # last mod
+                next_mod = None
+            end_time = self[next_mod].mtime if next_mod else None
+            start_time  = self[previous].mtime
+            if end_time <= start_time: # can happen on esm/esp boundary
+                start_time = end_time - 60
+            set_time = load_order.get_free_time(start_time, end_time=end_time)
+            self[new_mod].setmtime(set_time)
+        self._lo_wip[previous_index + 1:previous_index + 1] = [new_mod]
+
     @staticmethod
     def hexIndexString(mod):
         return u'%02X' % (load_order.activeIndexCached(mod),) \
@@ -4131,7 +4147,7 @@ class SaveInfos(FileInfos):
         FileInfos.rename(self,oldName,newName)
         CoSaves(self.dir,oldName).move(self.dir,newName)
 
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
+    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated pluggy file."""
         FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
         CoSaves(self.dir,fileName).copy(destDir,destName or fileName)

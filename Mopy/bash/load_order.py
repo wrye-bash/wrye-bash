@@ -315,8 +315,8 @@ def has_load_order_conflict_active(mod_name):
     return game_handle.has_load_order_conflict_active(mod_name,
                                                       cached_lord.active)
 
-def get_free_time(start_time, default_time='+1'):
-    return game_handle.get_free_time(start_time, default_time=default_time)
+def get_free_time(start_time, default_time='+1', end_time=None):
+    return game_handle.get_free_time(start_time, default_time, end_time)
 
 def install_last(): return game_handle.install_last()
 
