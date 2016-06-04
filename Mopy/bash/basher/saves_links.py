@@ -632,11 +632,11 @@ class Save_Move(ChoiceLink):
                 if not result: continue
                 elif result == 2: ask = False #so don't warn for rest of operation
             if self.copyMode:
-                bosh.saveInfos.copy_info(fileName, destDir, doRefresh=False)
+                bosh.saveInfos.copy_info(fileName, destDir)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable[fileName]
             else:
-                bosh.saveInfos.move_info(fileName, destDir, doRefresh=False)
+                bosh.saveInfos.move_info(fileName, destDir)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable.pop(fileName)
             count += 1
@@ -645,7 +645,7 @@ class Save_Move(ChoiceLink):
             self._showInfo(_(u'%d files copied to %s.') % (count, profile),
                            title=_(u'Copy File'))
         elif count: # files moved to other profile, refresh
-            bosh.saveInfos.refresh()
+            bosh.saveInfos.delete_Refresh(self.selected)
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------

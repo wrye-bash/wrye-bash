@@ -1514,8 +1514,10 @@ class Mod_CopyToEsmp(EnabledLink):
             newInfo.setType(newType)
             added.append(newName)
         #--Repopulate
-        self.window.RefreshUI(refreshSaves=True) # True ?
-        self.window.SelectItemsNoCallback(added)
+        if added:
+            modInfos.refresh(scanData=False)
+            self.window.RefreshUI(refreshSaves=True) # True ?
+            self.window.SelectItemsNoCallback(added)
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):

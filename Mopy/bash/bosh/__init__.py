@@ -3010,7 +3010,7 @@ class FileInfos(_DataStore):
                       self.dir.join(x).isfile() and self.rightFileType(x)}
         return list(names)
 
-    def refresh(self):
+    def refresh(self, scanData=True):
         """Refresh from file directory."""
         data = self.data
         oldNames = set(data) | set(self.corrupted)
@@ -3136,21 +3136,31 @@ class FileInfos(_DataStore):
                 self.delete_Refresh(tableUpdate.values())
             return tableUpdate.values()
 
-    def delete_Refresh(self, deleted): self.refresh()
+    def delete_Refresh(self, deleted):
+        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        if not deleted: return deleted
+        for name in deleted:
+            self.pop(name, None); self.corrupted.pop(name, None)
+        for d in set(self.table.keys()) & deleted:
+            del self.table[d]
+        return deleted
 
     #--Move
-    def move_info(self, fileName, destDir, doRefresh=True):
-        """Moves member file to destDir. Will overwrite!"""
+    def move_info(self, fileName, destDir):
+        """Moves member file to destDir. Will overwrite! The client is
+        responsible for calling delete_Refresh of the data store."""
         destDir.makedirs()
         srcPath = self[fileName].getPath()
         destPath = destDir.join(fileName)
         srcPath.moveTo(destPath)
-        if doRefresh: self.refresh()
 
     #--Copy
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
-                  doRefresh=True):
-        """Copies member file to destDir. Will overwrite!
+    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
+        """Copies member file to destDir. Will overwrite! Will update
+        internal self.data for the file if copied inside self.dir but the
+        client is responsible for calling the final refresh of the data store.
+        See usages.
+
         :param set_mtime: if None self[fileName].mtime is copied to destination
         """
         destDir.makedirs()
@@ -3162,13 +3172,13 @@ class FileInfos(_DataStore):
         else:
             destPath = destDir.join(destName)
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
-        if set_mtime is not None:
-            if set_mtime == '+1':
-                set_mtime = srcPath.mtime + 1
-            destPath.mtime = set_mtime
-        if doRefresh: self.refresh() ##: maybe avoid it (add copied info manually)
         if destDir == self.dir:
+            self.refreshFile(destName)
             self.table.copyRow(fileName, destName)
+            if set_mtime is not None:
+                if set_mtime == '+1':
+                    set_mtime = srcPath.mtime + 1
+                self[destName].setmtime(set_mtime) # correctly update table
         return set_mtime
 
     #--Move Exists
@@ -3997,27 +4007,19 @@ class ModInfos(FileInfos):
 
     def delete_Refresh(self, deleted):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        deleted = FileInfos.delete_Refresh(self, deleted)
         if not deleted: return
-        for name in deleted:
-            self.pop(name, None)
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
+        self._refreshBadNames()
+        self._refreshInfoLists()
+        self._refreshMissingStrings()
+        self._refreshMergeable()
 
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
-                  doRefresh=True):
-        """Copies modfile and updates mtime table column - not sure why."""
-        set_mtime = FileInfos.copy_info(self, fileName, destDir, destName,
-                                        set_mtime, doRefresh=doRefresh)
-        if destDir == self.dir:
-            if set_mtime is None:
-                raise BoltError("Always specify mtime when copying to Data/")
-            self.mtimes[GPath(destName)] = set_mtime
-
-    def move_info(self, fileName, destDir, doRefresh=True):
+    def move_info(self, fileName, destDir):
         """Moves member file to destDir."""
-        self.lo_deactivate(fileName, doSave=True)
-        FileInfos.move_info(self, fileName, destDir, doRefresh)
+        self.lo_deactivate(fileName, doSave=False)
+        FileInfos.move_info(self, fileName, destDir)
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -4163,9 +4165,9 @@ class SaveInfos(FileInfos):
         dir_.makedirs()
         return dir_
 
-    def refresh(self):
+    def refresh(self, scanData=True):
         self._refreshLocalSave()
-        return FileInfos.refresh(self)
+        return scanData and FileInfos.refresh(self)
 
     def delete(self, fileName, **kwargs):
         """Deletes savefile and associated pluggy file."""
@@ -4179,16 +4181,14 @@ class SaveInfos(FileInfos):
         FileInfos.rename(self,oldName,newName)
         CoSaves(self.dir,oldName).move(self.dir,newName)
 
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
-                  doRefresh=True):
+    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
         """Copies savefile and associated pluggy file."""
-        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime,
-                            doRefresh=doRefresh)
+        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
         CoSaves(self.dir,fileName).copy(destDir,destName or fileName)
 
-    def move_info(self, fileName, destDir, doRefresh=True):
+    def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite!"""
-        FileInfos.move_info(self, fileName, destDir, doRefresh)
+        FileInfos.move_info(self, fileName, destDir)
         CoSaves(self.dir,fileName).move(destDir,fileName)
 
     #--Local Saves ------------------------------------------------------------
