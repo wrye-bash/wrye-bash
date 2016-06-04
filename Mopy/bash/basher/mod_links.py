@@ -29,13 +29,15 @@ import StringIO
 import collections
 import copy
 import os
+import time
+from operator import attrgetter
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
     OkButton
-from ..bolt import GPath, SubProgress, AbstractError, CancelError
+from ..bolt import GPath, SubProgress, AbstractError, CancelError, formatDate
 from ..bosh import faces
 from ..patcher import configIsCBash, exportConfig
 from .frames import DocBrowser
@@ -53,7 +55,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
            'CBash_Mod_CellBlockInfo_Export', 'Mod_EditorIds_Export',
            'Mod_FullNames_Export', 'Mod_Prices_Export', 'Mod_Stats_Export',
-           'Mod_Factions_Export', 'Mod_ActorLevels_Export',
+           'Mod_Factions_Export', 'Mod_ActorLevels_Export', 'Mod_Redate',
            'CBash_Mod_MapMarkers_Export', 'Mod_FactionRelations_Export',
            'Mod_IngredientDetails_Export', 'Mod_Scripts_Export',
            'Mod_SigilStoneDetails_Export', 'Mod_SpellRecords_Export',
@@ -165,6 +167,38 @@ class Mod_OrderByName(EnabledLink):
         fileNames.sort(key=lambda a: a.cext)
         for fileName in fileNames:
             modInfos[fileName].setmtime(newTime)
+            newTime += 60
+        #--Refresh
+        modInfos.refresh(scanData=False, _modTimesChange=True)
+        self.window.RefreshUI(refreshSaves=True)
+
+class Mod_Redate(AppendableLink, ItemLink):
+    """Move the selected files to start at a specified date."""
+    text = _(u'Redate...')
+    help = _(u"Move the selected files to start at a specified date.")
+
+    def _append(self, window): return not load_order.using_txt_file()
+
+    @balt.conversation
+    def Execute(self):
+        #--Get current start time.
+        modInfos = self.window.data_store
+        #--Ask user for revised time.
+        newTimeStr = self._askText(
+            _(u'Redate selected mods starting at...'),
+            title=_(u'Redate Mods'), default=formatDate(int(time.time())))
+        if not newTimeStr: return
+        try:
+            newTimeTup = bolt.unformatDate(newTimeStr, u'%c')
+            newTime = int(time.mktime(newTimeTup))
+        except ValueError:
+            self._showError(_(u'Unrecognized date: ') + newTimeStr)
+            return
+        #--Do it
+        selInfos = [modInfos[fileName] for fileName in self.selected]
+        selInfos.sort(key=attrgetter('mtime'))
+        for fileInfo in selInfos:
+            fileInfo.setmtime(newTime)
             newTime += 60
         #--Refresh
         modInfos.refresh(scanData=False, _modTimesChange=True)
