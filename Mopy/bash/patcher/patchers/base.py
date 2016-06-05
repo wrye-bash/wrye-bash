@@ -23,6 +23,7 @@
 # =============================================================================
 
 """This module contains base patcher classes."""
+import collections
 import struct
 from operator import itemgetter
 # Internal
@@ -317,7 +318,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         masters = self.patchFile
         keep = self.patchFile.getKeeper()
-        count = CountDict()
+        count = collections.defaultdict(int)
         def swapper(oldId):
             newId = old_new.get(oldId,None)
             return newId if newId else oldId
@@ -333,14 +334,14 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
             for record in cellBlock.temp:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count.increment(cellBlock.cell.fid[0])
+                    count[cellBlock.cell.fid[0]] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
             for record in cellBlock.persistent:
                 if record.base in self.old_new:
                     record.base = swapper(record.base)
-                    count.increment(cellBlock.cell.fid[0])
+                    count[cellBlock.cell.fid[0]] += 1
 ##                    record.mapFids(swapper,True)
                     record.setChanged()
                     keep(record.fid)
@@ -350,7 +351,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                 for record in cellBlock.temp:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count.increment(cellBlock.cell.fid[0])
+                        count[cellBlock.cell.fid[0]] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -358,7 +359,7 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
                 for record in cellBlock.persistent:
                     if record.base in self.old_new:
                         record.base = swapper(record.base)
-                        count.increment(cellBlock.cell.fid[0])
+                        count[cellBlock.cell.fid[0]] += 1
 ##                        record.mapFids(swapper,True)
                         record.setChanged()
                         keep(record.fid)
@@ -490,6 +491,28 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         for mod in load_order.get_ordered(mod_count):
             log(u'* %s: %3d' % (mod.s,mod_count[mod]))
 
+    # helpers WIP
+    def _parse_sources(self, progress, parser):
+        if not self.isActive: return None
+        fullNames = parser(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcs))
+        patches_list = None
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            if reModExt.search(srcPath.s):
+                if srcPath not in bosh.modInfos: continue
+                srcInfo = bosh.modInfos[srcPath]
+                fullNames.readFromMod(srcInfo)
+            else:
+                if patches_list is None: patches_list = getPatchesList()
+                if srcPath not in patches_list: continue
+                try:
+                    fullNames.readFromText(getPatchesPath(srcFile))
+                except UnicodeError as e: # originally in NamesPatcher, keep ?
+                    print srcPath.stail, u'is not saved in UTF-8 format:', e
+            progress.plus()
+        return fullNames
+
 class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
@@ -529,6 +552,19 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
         self.mod_count = {}
 
+    # helpers WIP
+    def _parse_texts(self, parser_class, progress):
+        actorFactions = parser_class(aliases=self.patchFile.aliases)
+        progress.setFull(len(self.srcs)) ##: make sure self.srcs are paths, drop GPath call below
+        patchesList = getPatchesList()
+        for srcFile in self.srcs:
+            srcPath = GPath(srcFile)
+            if not reModExt.search(srcFile.s):
+                if srcPath not in patchesList: continue
+                actorFactions.readFromText(getPatchesPath(srcFile))
+            progress.plus()
+        return actorFactions
+
 # Patchers: 40 ----------------------------------------------------------------
 class SpecialPatcher(object):
     """Provides default group, scan and edit orders."""
@@ -548,12 +584,3 @@ class SpecialPatcher(object):
                     tags = bosh.modInfos[mod.GName].getBashTags()
                     self.scan(mod,conflict,tags)
             else: return
-
-# Util Classes ----------------------------------------------------------------
-class CountDict(dict):
-    """Used for storing counts. Just adds an increment function."""
-    def increment(self,key,inc=1):
-        """Increment specified key by 1, after initializing to zero if necessary."""
-        if not inc: return
-        if not key in self: self[key] = 0
-        self[key] += inc

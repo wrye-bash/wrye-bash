@@ -73,7 +73,6 @@ from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
 from ..bosh import omods, CoSaves
 from ..cint import CBash
-from ..patcher.patch_files import PatchFile
 
 startupinfo = bolt.startupinfo
 
@@ -162,6 +161,7 @@ class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
     # UI settings keys prefix - used for sashPos and uiList gui settings
     keyPrefix = 'OVERRIDE'
+    _status_str = u'OVERRIDE:' + u' %d'
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
@@ -171,7 +171,7 @@ class NotebookPanel(wx.Panel):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def _sbCount(self): return u''
+    def _sbCount(self): return self.__class__._status_str % len(self.listData)
 
     def SetStatusCount(self):
         """Sets status bar count field."""
@@ -196,9 +196,7 @@ class NotebookPanel(wx.Panel):
     def ClosePanel(self):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc."""
-        # ScreensPanel is not backed up by a pickle file
-        if isinstance(self, ScreensPanel): return
-        if hasattr(self, 'listData'):
+        if hasattr(self, 'listData'): # must be a _DataStore instance
         # the only SashPanels that do not have this attribute are ModDetails
         # and SaveDetails that use a MasterList whose data is initially {}
             self.listData.save()
@@ -462,6 +460,16 @@ class MasterList(_ModsUIList):
         status = self.GetMasterStatus(mi)
         oninc = load_order.isActiveCached(masterName) or (
             masterName in bosh.modInfos.merged and 2)
+        on_display = self.detailsPanel.displayed_item
+        if status == 30: # master is missing
+            mouseText += _(u"Missing master of %s.  ") % on_display
+        #--HACK - load order status
+        elif on_display in bosh.modInfos:
+            if status == 20:
+                mouseText += _(u"Reordered relative to other masters.  ")
+            if load_order.loIndexCached(on_display) < load_order.loIndexCached(masterName):
+                mouseText += _(u"Loads after %s.  ") % on_display
+                status = 20 # paint orange
         item_format.icon_key = status, oninc
         self.mouseTexts[mi] = mouseText
 
@@ -589,9 +597,9 @@ class INIList(balt.UIList):
         return self.filterOutDefaultTweaks(items) # will refilter if coming
         # from INI_Delete - expensive but I can't allow default tweaks deletion
 
-    def set_item_format(self, fileName, item_format):
-        fileInfo = self.data_store[fileName]
-        status = fileInfo.getStatus()
+    def set_item_format(self, ini_name, item_format):
+        iniInfo = self.data_store[ini_name]
+        status = iniInfo.getStatus()
         #--Image
         checkMark = 0
         icon = 0    # Ok tweak, not applied
@@ -615,7 +623,7 @@ class INIList(balt.UIList):
             if not settings['bash.ini.allowNewLines']: icon = 20
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
-        self.mouseTexts[fileName] = mousetext
+        self.mouseTexts[ini_name] = mousetext
         item_format.icon_key = icon, checkMark
         #--Font/BG Color
         if status < 0:
@@ -742,14 +750,15 @@ class INILineCtrl(wx.ListCtrl):
                     self.DeleteItem(len(lines))
         except IOError:
             warn = True
-            if hasattr(Link.Frame,'notebook'): ##: why all this fuss ?
+            if hasattr(Link.Frame, 'notebook'): # we may be called before
+                # the notebook is build, in INIPanel.__init__ > SetBaseIni
                 page = Link.Frame.notebook.currentPage
                 if page != self.GetParent().GetParent().GetParent():
                     warn = False
-            if warn:
-                balt.showWarning(self, _(u"%(ini)s does not exist yet.  %(game)s will create this file on first run.  INI tweaks will not be usable until then.")
-                                 % {'ini':bosh.iniInfos.ini.path,
-                                    'game':bush.game.displayName})
+            else: warn = False # we are booting - queue the warning cause it
+            # interrupts building of the UI !
+            Link.Frame.queue_game_ini_missing()
+            if warn: Link.Frame.warn_game_ini()
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
@@ -814,27 +823,30 @@ class ModList(_ModsUIList):
         self.RefreshUI(refreshSaves=True)
 
     #--Populate Item
-    def set_item_format(self, fileName, item_format):
-        modInfo = self.data_store[fileName]
+    def set_item_format(self, mod_name, item_format):
+        modInfo = self.data_store[mod_name]
         #--Image
         status = modInfo.getStatus()
         checkMark = (
-            1 if load_order.isActiveCached(fileName)
-            else 2 if fileName in bosh.modInfos.merged
-            else 3 if fileName in bosh.modInfos.imported
+            1 if load_order.isActiveCached(mod_name)
+            else 2 if mod_name in bosh.modInfos.merged
+            else 3 if mod_name in bosh.modInfos.imported
             else 0)
-        item_format.icon_key = status, checkMark
+        status_image_key = 20 if 20 <= status < 30 else status
+        item_format.icon_key = status_image_key, checkMark
         #--Default message
         mouseText = u''
         fileBashTags = modInfo.getBashTags()
-        if fileName in bosh.modInfos.bad_names:
+        if mod_name in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
-        if fileName in bosh.modInfos.missing_strings:
+        if mod_name in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
         if modInfo.isEsm():
             item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
-        elif fileName in bosh.modInfos.mergeable:
+        elif mod_name in bosh.modInfos.bashed_patches:
+            item_format.text_key = 'mods.text.bashedPatch'
+        elif mod_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags:
                 item_format.text_key = 'mods.text.noMerge'
                 mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
@@ -845,23 +857,28 @@ class ModList(_ModsUIList):
                 else:
                     mouseText += _(u"Can be merged into Bashed Patch.  ")
         #--Image messages
-        if status == 30:     mouseText += _(u"One or more masters are missing.  ")
-        elif status == 20:   mouseText += _(u"Masters have been re-ordered.  ")
+        if status == 30:
+            mouseText += _(u"One or more masters are missing.  ")
+        else:
+            if status in {21, 22}:
+                mouseText += _(u"Loads before its master(s).  ")
+            if status in {20, 22}:
+                mouseText += _(u"Masters have been re-ordered.  ")
         if checkMark == 1:   mouseText += _(u"Active in load list.  ")
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
         #should mod be deactivated
         if u'Deactivate' in fileBashTags:
             item_format.font = Resources.fonts.italic
         #--Text BG
-        if fileName in bosh.modInfos.bad_names:
+        if mod_name in bosh.modInfos.bad_names:
             item_format.back_key ='mods.bkgd.doubleTime.exists'
-        elif fileName in bosh.modInfos.missing_strings:
-            if load_order.isActiveCached(fileName):
+        elif mod_name in bosh.modInfos.missing_strings:
+            if load_order.isActiveCached(mod_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif modInfo.hasBadMasterNames():
-            if load_order.isActiveCached(fileName):
+            if load_order.isActiveCached(mod_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -885,7 +902,7 @@ class ModList(_ModsUIList):
             message = modInfo.getDirtyMessage()
             mouseText += message[1]
             if message[0]: item_format.underline = True
-        self.mouseTexts[fileName] = mouseText
+        self.mouseTexts[mod_name] = mouseText
 
     def RefreshUI(self, **kwargs):
         """Refresh UI for modList - always specify refreshSaves explicitly."""
@@ -1854,7 +1871,7 @@ class SaveList(balt.UIList):
         save_info = self.data_store[fileName]
         #--Image
         status = save_info.getStatus()
-        on = bosh.SaveInfos.isEnabled(save_info.getPath()) # yak
+        on = bosh.SaveInfos.is_save_enabled(save_info.getPath()) # yak
         item_format.icon_key = status, on
 
     #--Events ---------------------------------------------
@@ -1878,7 +1895,7 @@ class SaveList(balt.UIList):
                  % {'ess': bush.game.ess.ext})
         if not balt.askContinue(self, msg, 'bash.saves.askDisable.continue'):
             return
-        newEnabled = not bosh.SaveInfos.isEnabled(hitItem)
+        newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
         newName = self.data_store.enable(hitItem, newEnabled)
         if newName != hitItem: self.RefreshUI() ##: files=[fileName]
 
@@ -2071,6 +2088,7 @@ class SaveDetails(_SashDetailsPanel):
 class SavePanel(SashPanel):
     """Savegames tab."""
     keyPrefix = 'bash.saves'
+    _status_str = _(u'Saves:') + u' %d'
 
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
@@ -2089,8 +2107,6 @@ class SavePanel(SashPanel):
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
         super(SavePanel, self).RefreshUIColors()
-
-    def _sbCount(self): return _(u"Saves: %d") % (len(bosh.saveInfos.data))
 
     def ClosePanel(self):
         bosh.saveInfos.profiles.save()
@@ -2787,8 +2803,7 @@ class InstallersPanel(SashTankPanel):
 
     def _sbCount(self):
         active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
-        text = _(u'Packages:') + u' %d/%d' % (active, len(self.listData.data))
-        return text
+        return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
 
     def ClosePanel(self):
         if not hasattr(self, '_firstShow'): # save comments text box size
@@ -3167,6 +3182,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 class ScreensPanel(SashPanel):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
+    _status_str = _(u'Screens:') + u' %d'
 
     def __init__(self,parent):
         """Initialize."""
@@ -3180,9 +3196,6 @@ class ScreensPanel(SashPanel):
         #--Layout
         left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self,right)
-
-    def _sbCount(self):
-        return _(u'Screens:') + u' %d' % (len(self.listData.data),)
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -3332,6 +3345,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
 class BSAPanel(SashPanel):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
+    _status_str = _(u'BSAs:') + u' %d'
 
     def __init__(self,parent):
         super(BSAPanel, self).__init__(parent)
@@ -3345,8 +3359,6 @@ class BSAPanel(SashPanel):
         right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
         self.detailsPanel.Fit()
-
-    def _sbCount(self): return _(u'BSAs:') + u' %d' % (len(bosh.bsaInfos.data))
 
     def ClosePanel(self):
         super(BSAPanel, self).ClosePanel()
@@ -3383,6 +3395,7 @@ class PeopleList(balt.UIList):
 class PeoplePanel(SashTankPanel):
     """Panel for PeopleTank."""
     keyPrefix = 'bash.people'
+    _status_str = _(u'People:') + u' %d'
 
     def __init__(self,parent):
         """Initialize."""
@@ -3407,8 +3420,6 @@ class PeoplePanel(SashTankPanel):
             ))
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
-
-    def _sbCount(self): return _(u'People:') + u' %d' % len(self.listData.data)
 
     def ShowPanel(self):
         if self.listData.refresh(): self.uiList.RefreshUI()
@@ -3894,6 +3905,8 @@ class BashFrame(wx.Frame):
         #--Status Bar
         self.SetStatusBar(BashStatusBar(self))
         #--Notebook panel
+        # attributes used when ini panel is created (warn for missing game ini)
+        self.oblivionIniCorrupted = self.oblivionIniMissing = False
         self.notebook = notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
@@ -3903,7 +3916,6 @@ class BashFrame(wx.Frame):
         self.booting = True #--Prevent calling refresh on fileInfos twice when booting
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
-        self.oblivionIniCorrupted = False
         self.incompleteInstallError = False
         #--Layout
         sizer = vSizer((notebook,1,wx.GROW))
@@ -3927,6 +3939,8 @@ class BashFrame(wx.Frame):
                     u" under auto-ghost for more details. ") % \
                           bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
+
+    def queue_game_ini_missing(self): self.oblivionIniMissing = True
 
     def BindRefresh(self, bind=True, __event=wx.EVT_ACTIVATE):
         self.Bind(__event, self.RefreshData) if bind else self.Unbind(__event)
@@ -4051,7 +4065,7 @@ class BashFrame(wx.Frame):
         #--WARNINGS----------------------------------------
         self.warn_load_order()
         self.warn_corrupted()
-        self._corruptedGameIni()
+        self.warn_game_ini()
         self._obmmWarn()
         self._missingDocsDir()
         #--Done (end recursion blocker)
@@ -4122,7 +4136,9 @@ class BashFrame(wx.Frame):
               _(u'Some files have corrupted headers or TES4 header versions:'),
               message, liststyle='list', canCancel=False)
 
-    def _corruptedGameIni(self):
+    _ini_missing = _(u"%(ini)s does not exist yet.  %(game)s will create this "
+        u"file on first run.  INI tweaks will not be usable until then.")
+    def warn_game_ini(self):
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
@@ -4131,6 +4147,10 @@ class BashFrame(wx.Frame):
                         u'(e.g. "[General]"), but does not. You should edit '
                         u'the file to correct this.') % bush.game.iniFiles[0]
                 balt.showWarning(self, fill(msg))
+        elif self.oblivionIniMissing:
+            self.oblivionIniMissing = False
+            balt.showWarning(self, self._ini_missing % {
+                'ini': bosh.oblivionIni.path, 'game': bush.game.displayName})
 
     def _obmmWarn(self):
         #--OBMM Warning?
@@ -4318,7 +4338,7 @@ class BashApp(wx.App):
     def InitData(self,progress):
         """Initialize all data. Called by Init()."""
         progress.Update(5,_(u'Initializing ModInfos'))
-        bosh.gameInis = [bosh.OblivionIni(x) for x in bush.game.iniFiles]
+        bosh.gameInis = tuple(bosh.OblivionIni(x) for x in bush.game.iniFiles)
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
@@ -4335,7 +4355,7 @@ class BashApp(wx.App):
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress.Update(68,_(u'Generating Blank Bashed Patch'))
-                PatchFile.generateNextBashedPatch()
+                bosh.modInfos.generateNextBashedPatch()
 
     def InitVersion(self):
         """Perform any version to version conversion. Called by Init()."""

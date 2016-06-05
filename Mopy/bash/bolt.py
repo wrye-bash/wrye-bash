@@ -479,8 +479,8 @@ def GPath(name):
     :rtype: Path
     """
     if name is None: return None
-    elif not name: norm = name
     elif isinstance(name,Path): norm = name._s
+    elif not name: norm = name # empty string - bin this if ?
     elif isinstance(name,unicode): norm = os.path.normpath(name)
     else: norm = os.path.normpath(decode(name))
     path = _gpaths.get(norm)
@@ -535,11 +535,10 @@ class Path(object):
         return os.path.normpath(name)
 
     @staticmethod
-    def getCase(name):
+    def __getCase(name):
         """Return the normpath+normcase for specified name/path object."""
         if not name: return name
-        if isinstance(name,Path): return name._cs
-        elif isinstance(name,str): name = decode(name)
+        if isinstance(name, str): name = decode(name)
         return os.path.normcase(os.path.normpath(name))
 
     @staticmethod
@@ -756,6 +755,10 @@ class Path(object):
             if werr.winerror != 123: raise
             deprint(u'Unable to set modified time of %s - probably a unicode error' % self._s)
     mtime = property(getmtime,setmtime,doc="Time file was last modified.")
+
+    def size_mtime(self):
+        lstat = os.lstat(self._s)
+        return lstat.st_size, int(lstat.st_mtime)
 
     @property
     def stat(self):
@@ -1009,14 +1012,27 @@ class Path(object):
                     pass
 
     #--Hash/Compare, based on the _cs attribute so case insensitive. NB: Paths
-    # directly compare to strings
+    # directly compare to basestring and Path and will blow for anything else
     def __hash__(self):
         return hash(self._cs)
-    def __cmp__(self, other):
-        if isinstance(other,Path):
-            return cmp(self._cs, other._cs)
+    def __eq__(self, other):
+        if isinstance(other, Path):
+            return self._cs == other._cs
         else:
-            return cmp(self._cs, Path.getCase(other))
+            return self._cs == Path.__getCase(other)
+    def __ne__(self, other): return not (self == other)
+    def __lt__(self, other):
+        if isinstance(other, Path):
+            return self._cs < other._cs
+        else:
+            return self._cs < Path.__getCase(other)
+    def __ge__(self, other): return not (self < other)
+    def __gt__(self, other):
+        if isinstance(other, Path):
+            return self._cs > other._cs
+        else:
+            return self._cs > Path.__getCase(other)
+    def __le__(self, other): return not (self > other)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
@@ -1218,11 +1234,6 @@ class DataDict:
         return self.data.iterkeys()
     def itervalues(self):
         return self.data.itervalues()
-
-    def delete(self, itemOrItems, **kwargs):
-        raise NotImplementedError('Only use in UIList data stores.')
-    def delete_Refresh(self, deleted):
-        raise NotImplementedError('Only use in UIList data stores.')
 
 #------------------------------------------------------------------------------
 from collections import MutableSet
@@ -1930,6 +1941,8 @@ regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
 regErrMatch = re.compile(
     u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',re.U).match
+reListArchive = re.compile(
+    u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
 
 def compress7z(command, outDir, destArchive, srcDir, progress=None):
     outFile = outDir.join(destArchive)
@@ -1998,13 +2011,6 @@ def wrapPopenOut(command, wrapper, errorMsg):
     returncode = proc.returncode
     if returncode:
         raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
-
-def listArchiveContents(fileName):
-    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, fileName)
-    ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
-                                stdin=subprocess.PIPE,
-                                startupinfo=startupinfo).communicate()
-    return ins
 
 #  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
 def compressionSettings(archive, blockSize, isSolid):
@@ -2079,6 +2085,18 @@ def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
     # number of files is reported in the last line - example:
     #                                3534900       325332  75 files, 29 folders
     return int(re.search(ur'(\d+)\s+files,\s+\d+\s+folders', line).group(1))
+
+def list_archive(archive, parse_archive_line, __reList=reListArchive):
+    """Client is responsible for closing the file ! See uses for
+    _parse_archive_line examples."""
+    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, archive.s)
+    ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                stdin=subprocess.PIPE,
+                                startupinfo=startupinfo).communicate()
+    for line in ins.splitlines(True):
+        maList = __reList.match(line)
+        if maList:
+            parse_archive_line(*(maList.groups()))
 
 # Log/Progress ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2399,7 +2417,7 @@ class WryeText:
         headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
         headFormatNA = u"<h%d>%s</h%d>\n"
         #--List
-        reList = re.compile(ur'( *)([-x!?\.\+\*o])(.*)',re.U)
+        reWryeList = re.compile(ur'( *)([-x!?\.\+\*o])(.*)',re.U)
         #--Code
         reCode = re.compile(ur'\[code\](.*?)\[/code\]',re.I|re.U)
         reCodeStart = re.compile(ur'(.*?)\[code\](.*?)$',re.I|re.U)
@@ -2567,7 +2585,7 @@ class WryeText:
             maAnchorHeaders = reAnchorHeadersTag.match(line)
             maCss = reCssTag.match(line)
             maHead = reHead.match(line)
-            maList  = reList.match(line)
+            maList  = reWryeList.match(line)
             maPar   = rePar.match(line)
             maEmpty = reEmpty.match(line)
             #--Contents

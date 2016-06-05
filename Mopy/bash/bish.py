@@ -1512,7 +1512,7 @@ class Archive:
     def refresh(self):
         """Refreshes file list from archive."""
         files = {}
-        reList = re.compile('(Path|Size|CRC|Attributes) = (.+)')
+        reListArchive = re.compile('(Path|Size|CRC|Attributes) = (.+)')
         path = size = isDir = 0
 
         cmd = '"%s" l "%s"' % (bolt.exe7z, self.path.s)
@@ -1521,7 +1521,7 @@ class Archive:
         out = proc.stdout
         for line in out:
             print line,
-            maList = reList.match(line)
+            maList = reListArchive.match(line)
             if maList:
                 key,value = maList.groups()
                 if key == 'Path':

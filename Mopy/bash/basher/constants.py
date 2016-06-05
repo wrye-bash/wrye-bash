@@ -51,6 +51,10 @@ colorInfo = {
         _(u"This is the text color used for a mergeable plugin that is "
           u"tagged 'NoMerge'."),
     ),
+    'mods.text.bashedPatch': (_(u"Bashed Patch"),
+        _(u'Tabs: Mods') + u'\n\n' +
+        _(u"This is the text color used for Bashed Patches."),
+    ),
     'mods.bkgd.doubleTime.exists': (_(u'Inactive Time Conflict'),
         _(u'Tabs: Mods') + u'\n\n' +
         _(u'This is the background color used for a plugin with an inactive '
@@ -169,6 +173,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
         'mods.bkgd.exOverload':         (0xFF, 0x99, 0x00),
         'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
+        'mods.text.bashedPatch':        (30, 157, 251),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (0xDF, 0xDF, 0xDF),
         'tweak.bkgd.invalid':           (0xFF, 0xD5, 0xAA),

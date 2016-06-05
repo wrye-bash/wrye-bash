@@ -42,8 +42,8 @@ from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
-gui_patchers = []       #--All patchers.
-CBash_gui_patchers = [] #--All patchers (CBash mode).
+PBash_gui_patchers = [] #--All gui patchers classes for this game
+CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
 
 class PatchDialog(balt.Dialog):
     """Bash Patch update dialog."""
@@ -72,8 +72,8 @@ class PatchDialog(balt.Dialog):
                 patchConfigs = {}
         isFirstLoad = 0 == len(patchConfigs)
         self.patchInfo = patchInfo
-        self.patchers = [copy.deepcopy(p) for p in
-                         (CBash_gui_patchers if doCBash else gui_patchers)]
+        self.patchers = [copy.deepcopy(p) for p in (
+            CBash_gui_patchers if doCBash else PBash_gui_patchers)]
         self.patchers.sort(key=lambda a: a.__class__.name)
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:
@@ -177,65 +177,34 @@ class PatchDialog(balt.Dialog):
         self.EndModalOK()
         patchFile = progress = None
         try:
-            patchName = self.patchInfo.name
-            progress = balt.Progress(patchName.s,(u' '*60+u'\n'), abort=True)
+            patch_name = self.patchInfo.name
+            progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
             #--Save configs
-            self._saveConfig(patchName)
+            self._saveConfig(patch_name)
             #--Do it
             log = bolt.LogFile(StringIO.StringIO())
             patchers = [patcher for patcher in self.patchers if patcher.isEnabled]
-            patchFile = CBash_PatchFile(patchName, patchers) if self.doCBash \
+            patchFile = CBash_PatchFile(patch_name, patchers) if self.doCBash \
                    else PatchFile(self.patchInfo, patchers)
-            patchFile.initData(SubProgress(progress,0,0.1)) #try to speed this up!
+            patchFile.init_patchers_data(SubProgress(progress, 0, 0.1)) #try to speed this up!
             if self.doCBash:
                 #try to speed this up!
                 patchFile.buildPatch(SubProgress(progress,0.1,0.9))
                 #no speeding needed/really possible (less than 1/4 second even with large LO)
-                patchFile.buildPatchLog(patchName,log,SubProgress(progress,0.95,0.99))
+                patchFile.buildPatchLog(log, SubProgress(progress, 0.95, 0.99))
                 #--Save
                 progress.setCancel(False)
-                progress(1.0,patchName.s+u'\n'+_(u'Saving...'))
-                patchFile.save()
-                fullName = self.patchInfo.getPath().tail
-                patchTime = fullName.mtime
-                try:
-                    patchName.untemp()
-                except WindowsError as werr:
-                    while werr.winerror == 32 and self._retry(patchName.temp.s,
-                                                              patchName.s):
-                        try:
-                            patchName.untemp()
-                        except WindowsError as werr:
-                            continue
-                        break
-                    else:
-                        raise
-                patchName.mtime = patchTime
+                progress(1.0,patch_name.s+u'\n'+_(u'Saving...'))
+                self._save_cbash(patchFile, patch_name)
             else:
                 patchFile.initFactories(SubProgress(progress,0.1,0.2)) #no speeding needed/really possible (less than 1/4 second even with large LO)
                 patchFile.scanLoadMods(SubProgress(progress,0.2,0.8)) #try to speed this up!
                 patchFile.buildPatch(log,SubProgress(progress,0.8,0.9))#no speeding needed/really possible (less than 1/4 second even with large LO)
                 #--Save
                 progress.setCancel(False)
-                progress(0.9,patchName.s+u'\n'+_(u'Saving...'))
-                message = (_(u'Bash encountered and error when saving %(patchName)s.')
-                           + u'\n\n' +
-                           _(u'Either Bash needs Administrator Privileges to save the file, or the file is in use by another process such as TES4Edit.')
-                           + u'\n' +
-                           _(u'Please close any program that is accessing %(patchName)s, and provide Administrator Privileges if prompted to do so.')
-                           + u'\n\n' +
-                           _(u'Try again?')) % {'patchName':patchName.s}
-                while True:
-                    try:
-                        patchFile.safeSave()
-                    except (CancelError,SkipError,WindowsError) as error:
-                        if isinstance(error,WindowsError) and error.winerror != 32:
-                            raise
-                        if balt.askYes(self,message,_(u'Bash Patch - Save Error')):
-                            continue
-                        raise
-                    break
+                progress(0.9,patch_name.s+u'\n'+_(u'Saving...'))
+                self._save_pbash(patchFile, patch_name)
             #--Cleanup
             self.patchInfo.refresh()
             #--Done
@@ -248,7 +217,7 @@ class PatchDialog(balt.Dialog):
             log.out.close()
             timerString = unicode(timedelta(seconds=round(timer2 - timer1, 3))).rstrip(u'0')
             logValue = re.sub(u'TIMEPLACEHOLDER', timerString, logValue, 1)
-            readme = bosh.modInfos.dir.join(u'Docs',patchName.sroot+u'.txt')
+            readme = bosh.modInfos.dir.join(u'Docs',patch_name.sroot+u'.txt')
             docsDir = bosh.settings.get('balt.WryeLog.cssDir', GPath(u''))
             if self.doCBash: ##: eliminate this if/else
                 with readme.open('w',encoding='utf-8') as file:
@@ -257,7 +226,7 @@ class PatchDialog(balt.Dialog):
                 bolt.WryeText.genHtml(readme,None,docsDir)
             else:
                 tempReadmeDir = Path.tempDir().join(u'Docs')
-                tempReadme = tempReadmeDir.join(patchName.sroot+u'.txt')
+                tempReadme = tempReadmeDir.join(patch_name.sroot+u'.txt')
                 #--Write log/readme to temp dir first
                 with tempReadme.open('w',encoding='utf-8-sig') as file:
                     file.write(logValue)
@@ -274,16 +243,16 @@ class PatchDialog(balt.Dialog):
                     readme = bass.dirs['saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
-            bosh.modInfos.table.setItem(patchName,'doc',readme)
+            bosh.modInfos.table.setItem(patch_name,'doc',readme)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
-            balt.showWryeLog(self.parent,readme.root+u'.html',patchName.s,icons=Resources.bashBlue)
+            balt.showWryeLog(self.parent,readme.root+u'.html',patch_name.s,icons=Resources.bashBlue)
             #--Select?
-            count, message = 0, _(u'Activate %s?') % patchName.s
-            if load_order.isActiveCached(patchName) or (
+            count, message = 0, _(u'Activate %s?') % patch_name.s
+            if load_order.isActiveCached(patch_name) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
-                        balt.askYes(self.parent, message, patchName.s)):
+                        balt.askYes(self.parent, message, patch_name.s)):
                 try:
-                    changedFiles = bosh.modInfos.lo_activate(patchName,
+                    changedFiles = bosh.modInfos.lo_activate(patch_name,
                                                              doSave=True)
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
@@ -291,8 +260,8 @@ class PatchDialog(balt.Dialog):
                 except bosh.PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
-                                   % patchName.s)
-            bosh.modInfos.refreshFile(patchName) # (ut) not sure if needed
+                                   % patch_name.s)
+            bosh.modInfos.refreshFile(patch_name) # (ut) not sure if needed
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except bolt.FileEditError as error:
             balt.playSound(self.parent, bass.inisettings['SoundError'].s)
@@ -311,38 +280,80 @@ class PatchDialog(balt.Dialog):
                 except: pass
             if progress: progress.Destroy()
 
-    def _retry(self, old, new):
-        return balt.askYes(self,
+    def _save_pbash(self, patchFile, patch_name):
+        while True:
+            try:
+                # FIXME will keep displaying a bogus UAC prompt if file is
+                # locked - aborting bogus UAC dialog raises SkipError() in
+                # shellMove, not sure if ever a Windows or Cancel are raised
+                patchFile.safeSave()
+                return
+            except (CancelError, SkipError, WindowsError) as error:
+                if isinstance(error, WindowsError) and error.winerror != 32:
+                    raise
+                if self._pretry(patch_name):
+                    continue
+                raise # will raise the SkipError which is correctly processed
+
+    def _save_cbash(self, patchFile, patch_name):
+        patchFile.save()
+        patchTime = self.patchInfo.mtime
+        while True:
+            try:
+                patch_name.untemp()
+                patch_name.mtime = patchTime
+                return
+            except WindowsError as werr:
+                if werr.winerror == 32:
+                    if not self._cretry(patch_name):
+                        raise SkipError() # caught - Processing error displayed
+                    continue
+                raise
+
+    def _pretry(self, patch_name):
+        return balt.askYes(self, (
+            _(u'Bash encountered and error when saving %(patch_name)s.') +
+            u'\n\n' + _(u'Either Bash needs Administrator Privileges to '
+            u'save the file, or the file is in use by another process '
+            u'such as TES4Edit.') + u'\n' + _(u'Please close any program '
+            u'that is accessing %(patch_name)s, and provide Administrator '
+            u'Privileges if prompted to do so.') + u'\n\n' +
+            _(u'Try again?')) % {'patch_name': patch_name.s},
+                           _(u'Bash Patch - Save Error'))
+
+    def _cretry(self, patch_name):
+        return balt.askYes(self, (
             _(u'Bash encountered an error when renaming %s to %s.') + u'\n\n' +
             _(u'The file is in use by another process such as TES4Edit.') +
             u'\n' + _(u'Please close the other program that is accessing %s.')
-            + u'\n\n' + _(u'Try again?') % (old.s, new.s, new.s),
-             _(u'Bash Patch - Save Error'))
+            + u'\n\n' + _(u'Try again?')) % (
+                               patch_name.temp.s, patch_name.s, patch_name.s),
+                           _(u'Bash Patch - Save Error'))
 
     def __config(self):
         config = {'ImportedMods': set()}
         for patcher in self.patchers: patcher.saveConfig(config)
         return config
 
-    def _saveConfig(self, patchName):
+    def _saveConfig(self, patch_name):
         """Save the configuration"""
         config = self.__config()
-        bosh.modInfos.table.setItem(patchName, 'bash.patch.configs', config)
+        bosh.modInfos.table.setItem(patch_name, 'bash.patch.configs', config)
 
     def ExportConfig(self):
         """Export the configuration to a user selected dat file."""
         config = self.__config()
-        exportConfig(patchName=self.patchInfo.name, config=config,
+        exportConfig(patch_name=self.patchInfo.name, config=config,
                      isCBash=self.doCBash, win=self.parent,
                      outDir=bass.dirs['patches'])
 
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
-        patchName = self.patchInfo.name + _(u'_Configuration.dat')
+        config_dat = self.patchInfo.name + _(u'_Configuration.dat')
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.parent,_(u'Import Bashed Patch configuration from:'),textDir,patchName, u'*.dat',mustExist=True)
+        textPath = balt.askOpen(self.parent, _(u'Import Bashed Patch configuration from:'), textDir, config_dat, u'*.dat', mustExist=True)
         if not textPath: return
         table = bolt.Table(bolt.PickleDict(textPath))
         #try the current Bashed Patch mode.

@@ -38,11 +38,19 @@ __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
 
 # Screen Links ----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Screens_NextScreenShot(ItemLink):
+class Screens_NextScreenShot(EnabledLink):
     """Sets screenshot base name and number."""
     text = _(u'Next Shot...')
-    help = _(u'Set screenshot base name and number')
     rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
+
+    def _enable(self): return bosh.oblivionIni.path.exists()
+
+    def _initData(self, window, selection):
+        super(Screens_NextScreenShot, self)._initData(window, selection)
+        self.help = _(u'Set screenshot base name and number')
+        if not self._enable():
+            self.help += u'.  ' + _(u'%(ini)s must exist') % {
+                'ini': bush.game.iniFiles[0]}
 
     def Execute(self):
         oblivionIni = bosh.oblivionIni

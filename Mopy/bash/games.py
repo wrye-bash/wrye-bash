@@ -112,9 +112,8 @@ class Game(object):
     def _plugins_txt_modified(self):
         exists = self.plugins_txt_path.exists()
         if not exists and self.mtime_plugins_txt: return True # deleted !
-        return exists and (
-            self.plugins_txt_path.mtime != self.mtime_plugins_txt or
-            self.size_plugins_txt != self.plugins_txt_path.size)
+        return exists and ((self.size_plugins_txt, self.mtime_plugins_txt) !=
+                           self.plugins_txt_path.size_mtime())
 
     # API ---------------------------------------------------------------------
     def get_load_order(self, cached_load_order, cached_active_ordered):
@@ -270,16 +269,16 @@ class Game(object):
         if not self.plugins_txt_path.exists(): return [], []
         #--Read file
         acti, _lo = self._parse_modfile(self.plugins_txt_path)
-        #--Update cache info
-        self.mtime_plugins_txt = self.plugins_txt_path.mtime
-        self.size_plugins_txt = self.plugins_txt_path.size
+        self.__update_plugins_txt_cache_info()
         return acti, _lo
 
     def _write_plugins_txt(self, lord, active):
         self._write_modfile(self.plugins_txt_path, lord, active)
-        #--Update cache info
-        self.mtime_plugins_txt = self.plugins_txt_path.mtime
-        self.size_plugins_txt = self.plugins_txt_path.size
+        self.__update_plugins_txt_cache_info()
+
+    def __update_plugins_txt_cache_info(self):
+        self.size_plugins_txt, self.mtime_plugins_txt = \
+            self.plugins_txt_path.size_mtime()
 
     # VALIDATION --------------------------------------------------------------
     def _fix_load_order(self, lord):
@@ -522,15 +521,14 @@ class TextfileGame(Game):
         self.size_loadorder_txt = 0
 
     def load_order_changed(self):
-        return (self.loadorder_txt_path.exists() and (
-            self.mtime_loadorder_txt != self.loadorder_txt_path.mtime or
-            self.size_loadorder_txt != self.loadorder_txt_path.size)) or \
-               self.active_changed() # if active changed externally refetch
-        # load order to check for desync
+        # if active changed externally refetch load order to check for desync
+        return self.active_changed() or (self.loadorder_txt_path.exists() and (
+            (self.size_loadorder_txt, self.mtime_loadorder_txt) !=
+            self.loadorder_txt_path.size_mtime()))
 
     def __update_lo_cache_info(self):
-        self.mtime_loadorder_txt = self.loadorder_txt_path.mtime
-        self.size_loadorder_txt = self.loadorder_txt_path.size
+        self.size_loadorder_txt, self.mtime_loadorder_txt = \
+            self.loadorder_txt_path.size_mtime()
 
     @staticmethod
     def _must_update_active(deleted, reordered): return deleted or reordered

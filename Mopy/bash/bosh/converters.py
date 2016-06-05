@@ -83,8 +83,7 @@ class ConvertersData(DataDict):
             return True
         for archive in scanned:
             size, crc, modified = converterGet(archive, (None, None, None))
-            if crc is None or (size, modified) != (
-                    archive.size, archive.mtime):
+            if crc is None or (size, modified) != archive.size_mtime():
                 return True
             archivesAdd(archive)
         #--Added/removed packages?
@@ -113,10 +112,10 @@ class ConvertersData(DataDict):
             if self.validConverterName(archive):
                 size, crc, modified = self.bcfPath_sizeCrcDate.get(bcfPath, (
                     None, None, None))
-                if crc is None or (size, modified) != (
-                        bcfPath.size, bcfPath.mtime):
+                size_mtime = bcfPath.size_mtime()
+                if crc is None or (size, modified) != size_mtime:
                     crc = bcfPath.crc
-                    (size, modified) = (bcfPath.size, bcfPath.mtime)
+                    (size, modified) = size_mtime
                     if crc in bcfCRC_converter and bcfPath != bcfCRC_converter[
                         crc].fullPath:
                         self.bcfPath_sizeCrcDate.pop(bcfPath, None)
@@ -180,9 +179,9 @@ class ConvertersData(DataDict):
          newConverter.srcCRCs if srcCRC_converters.setdefault(
                 srcCRC, [newConverter]) != [newConverter]]
         self.bcfCRC_converter[newConverter.crc] = newConverter
+        s, m = newConverter.fullPath.size_mtime()
         self.bcfPath_sizeCrcDate[newConverter.fullPath] = (
-            newConverter.fullPath.size, newConverter.crc,
-            newConverter.fullPath.mtime)
+            s, newConverter.crc, m)
         return True
 
     def removeConverter(self, converter):

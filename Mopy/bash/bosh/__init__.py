@@ -34,7 +34,6 @@ import locale
 locale.setlocale(locale.LC_ALL,u'')
 #locale.setlocale(locale.LC_ALL,'German')
 #locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
-import time
 
 # Imports ---------------------------------------------------------------------
 #--Python
@@ -46,14 +45,15 @@ import re
 import string
 import struct
 import sys
-from operator import attrgetter
+import time
+from operator import attrgetter, itemgetter
 from functools import wraps, partial
 from binascii import crc32
 from itertools import groupby
 
 #--Local
-from .. import bass, bolt, balt, bush, env, load_order
-from .mods_metadata import ConfigHelpers, libbsa
+from .. import bass, bolt, balt, bush, env, load_order, libbsa
+from .mods_metadata import ConfigHelpers
 from ..bass import dirs, inisettings, tooldirs
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
@@ -88,14 +88,15 @@ undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 oiMask = 0xFFFFFFL
 
 #--Singletons
-gameInis = None
-oblivionIni = None
-modInfos  = None  # type: ModInfos
-saveInfos = None  # type: SaveInfos
-iniInfos = None   # type: INIInfos
-bsaInfos = None   # type: BSAInfos
+gameInis = None    # type: tuple[OblivionIni]
+oblivionIni = None # type: OblivionIni
+modInfos  = None   # type: ModInfos
+saveInfos = None   # type: SaveInfos
+iniInfos = None    # type: INIInfos
+bsaInfos = None    # type: BSAInfos
 screensData = None # type: ScreensData
-configHelpers = None #--Config Helper files (LOOT Master List, etc.)
+#--Config Helper files (LOOT Master List, etc.)
+configHelpers = None # type: mods_metadata.ConfigHelpers
 
 #--Header tags
 reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
@@ -2101,7 +2102,8 @@ class OblivionIni(IniFile):
         # default to user profile directory"""
         IniFile.__init__(self, dirs['saveBase'].join(name), u'General')
 
-    def ensureExists(self):
+    def __ensureExists(self): ##: YAK - track down call graph - we should avoid
+        # creating the ini and if we must (bsa redirection ?) warn the user !!!
         """Ensures that Oblivion.ini file exists. Copies from default
         oblivion.ini if necessary."""
         if self.path.exists(): return
@@ -2113,13 +2115,13 @@ class OblivionIni(IniFile):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
         full key=value line ending in newline char."""
-        self.ensureExists()
+        self.__ensureExists()
         IniFile.saveSettings(self,settings,deleted_settings)
 
     def applyTweakFile(self,tweakPath):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        self.ensureExists()
+        self.__ensureExists()
         IniFile.applyTweakFile(self,tweakPath)
 
     #--BSA Redirection --------------------------------------------------------
@@ -2127,7 +2129,7 @@ class OblivionIni(IniFile):
         """Returns True if BSA redirection is active."""
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return False
-        self.ensureExists()
+        self.__ensureExists()
         sArchives = self.getSetting(section,key,u'')
         return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
 
@@ -2323,31 +2325,28 @@ class FileInfo(_AFileInfo):
         else:
             return None
 
-    def getMasterStatus(self,masterName):
-        """Returns status of a master. Called by getStatus."""
-        #--Exists?
-        if masterName not in modInfos:
-            return 30
-        #--Okay?
-        else:
-            return 0
-
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
         0:  Good
-        10: Out of order master
+        20, 22: Out of order master
+        21, 22: Loads after its masters
         30: Missing master(s)."""
         #--Worst status from masters
-        if self.masterNames:
-            status = max([self.getMasterStatus(masterName) for masterName in self.masterNames])
-        else:
-            status = 0
+        status = 30 if any( # if self.masterNames is empty returns False
+            (m not in modInfos) for m in self.masterNames) else 0
         #--Missing files?
         if status == 30:
             return status
         #--Misordered?
         self.masterOrder = tuple(load_order.get_ordered(self.masterNames))
-        if self.masterOrder != self.masterNames:
+        loads_before_its_masters = self.isMod() and self.masterOrder and \
+                                   load_order.loIndexCached(
+            self.masterOrder[-1]) > load_order.loIndexCached(self.name)
+        if self.masterOrder != self.masterNames and loads_before_its_masters:
+            return 22
+        elif loads_before_its_masters:
+            return 21
+        elif self.masterOrder != self.masterNames:
             return 20
         else:
             return status
@@ -2956,7 +2955,14 @@ class TrackedFileInfos(DataDict):
         self[absPath] = fileInfo
 
 #------------------------------------------------------------------------------
-class FileInfos(DataDict):
+class _DataStore(DataDict):
+
+    def delete(self, itemOrItems, **kwargs): raise AbstractError
+    def delete_Refresh(self, deleted): raise AbstractError # Yak - absorb in refresh - add deleted parameter
+    def refresh(self): raise AbstractError
+    def save(self): pass # for Screenshots
+
+class FileInfos(_DataStore):
     """Common superclass for mod, ini, saves and bsa infos."""
     ##: we need a common API for this and TankData...
     file_pattern = None # subclasses must define this !
@@ -3004,7 +3010,7 @@ class FileInfos(DataDict):
                       self.dir.join(x).isfile() and self.rightFileType(x)}
         return list(names)
 
-    def refresh(self):
+    def refresh(self, scanData=True):
         """Refresh from file directory."""
         data = self.data
         oldNames = set(data) | set(self.corrupted)
@@ -3130,21 +3136,31 @@ class FileInfos(DataDict):
                 self.delete_Refresh(tableUpdate.values())
             return tableUpdate.values()
 
-    def delete_Refresh(self, deleted): self.refresh()
+    def delete_Refresh(self, deleted):
+        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        if not deleted: return deleted
+        for name in deleted:
+            self.pop(name, None); self.corrupted.pop(name, None)
+        for d in set(self.table.keys()) & deleted:
+            del self.table[d]
+        return deleted
 
     #--Move
-    def move_info(self, fileName, destDir, doRefresh=True):
-        """Moves member file to destDir. Will overwrite!"""
+    def move_info(self, fileName, destDir):
+        """Moves member file to destDir. Will overwrite! The client is
+        responsible for calling delete_Refresh of the data store."""
         destDir.makedirs()
         srcPath = self[fileName].getPath()
         destPath = destDir.join(fileName)
         srcPath.moveTo(destPath)
-        if doRefresh: self.refresh()
 
     #--Copy
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
-                  doRefresh=True):
-        """Copies member file to destDir. Will overwrite!
+    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
+        """Copies member file to destDir. Will overwrite! Will update
+        internal self.data for the file if copied inside self.dir but the
+        client is responsible for calling the final refresh of the data store.
+        See usages.
+
         :param set_mtime: if None self[fileName].mtime is copied to destination
         """
         destDir.makedirs()
@@ -3156,13 +3172,13 @@ class FileInfos(DataDict):
         else:
             destPath = destDir.join(destName)
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
-        if set_mtime is not None:
-            if set_mtime == '+1':
-                set_mtime = srcPath.mtime + 1
-            destPath.mtime = set_mtime
-        if doRefresh: self.refresh() ##: maybe avoid it (add copied info manually)
         if destDir == self.dir:
+            self.refreshFile(destName)
             self.table.copyRow(fileName, destName)
+            if set_mtime is not None:
+                if set_mtime == '+1':
+                    set_mtime = srcPath.mtime + 1
+                self[destName].setmtime(set_mtime) # correctly update table
         return set_mtime
 
     #--Move Exists
@@ -3586,15 +3602,15 @@ class ModInfos(FileInfos):
         it merges or imports."""
         merged,imported = set(),set()
         patches = masters & self.bashed_patches
-        for patchName in patches:
-            patchConfigs = self.table.getItem(patchName, 'bash.patch.configs')
+        for patch in patches:
+            patchConfigs = self.table.getItem(patch, 'bash.patch.configs')
             if not patchConfigs: continue
             patcherstr = 'CBash_PatchMerger' if patcher.configIsCBash(
                 patchConfigs) else 'PatchMerger'
             if patchConfigs.get(patcherstr,{}).get('isEnabled'):
-                configChecks = patchConfigs[patcherstr]['configChecks']
-                for modName in configChecks:
-                    if configChecks[modName] and modName in self:
+                config_checked = patchConfigs[patcherstr]['configChecks']
+                for modName in config_checked:
+                    if config_checked[modName] and modName in self:
                         merged.add(modName)
             imported.update(filter(lambda x: x in self,
                                    patchConfigs.get('ImportedMods', tuple())))
@@ -3938,10 +3954,26 @@ class ModInfos(FileInfos):
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
+        if directory == self.dir:
+            self[newInfo.name] = newInfo
+            newInfo.readHeader()
+            self.refresh(scanData=False)
+
+    def generateNextBashedPatch(self):
+        """Attempt to create a new bashed patch, numbered from 0 to 9.  If
+        a lowered number bashed patch exists, will create the next in the
+        sequence."""
+        for num in xrange(10):
+            modName = GPath(u'Bashed Patch, %d.esp' % num)
+            if modName not in self:
+                self.create_new_mod(modName, masterless=True,
+                                    bashed_patch=True)
+                return modName
+        return None
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
-        """Removes the specified mods from the load order."""
+        """Remove the specified mods from _lo_wip and _active_wip caches."""
         # Use set to remove any duplicates
         to_remove = set(to_remove, )
         # Remove mods from cache
@@ -3975,27 +4007,19 @@ class ModInfos(FileInfos):
 
     def delete_Refresh(self, deleted):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+        deleted = FileInfos.delete_Refresh(self, deleted)
         if not deleted: return
-        for name in deleted:
-            self.pop(name, None)
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
+        self._refreshBadNames()
+        self._refreshInfoLists()
+        self._refreshMissingStrings()
+        self._refreshMergeable()
 
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
-                  doRefresh=True):
-        """Copies modfile and updates mtime table column - not sure why."""
-        set_mtime = FileInfos.copy_info(self, fileName, destDir, destName,
-                                        set_mtime, doRefresh=doRefresh)
-        if destDir == self.dir:
-            if set_mtime is None:
-                raise BoltError("Always specify mtime when copying to Data/")
-            self.mtimes[GPath(destName)] = set_mtime
-
-    def move_info(self, fileName, destDir, doRefresh=True):
+    def move_info(self, fileName, destDir):
         """Moves member file to destDir."""
-        self.lo_deactivate(fileName, doSave=True)
-        FileInfos.move_info(self, fileName, destDir, doRefresh)
+        self.lo_deactivate(fileName, doSave=False)
+        FileInfos.move_info(self, fileName, destDir)
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -4141,9 +4165,9 @@ class SaveInfos(FileInfos):
         dir_.makedirs()
         return dir_
 
-    def refresh(self):
+    def refresh(self, scanData=True):
         self._refreshLocalSave()
-        return FileInfos.refresh(self)
+        return scanData and FileInfos.refresh(self)
 
     def delete(self, fileName, **kwargs):
         """Deletes savefile and associated pluggy file."""
@@ -4157,16 +4181,14 @@ class SaveInfos(FileInfos):
         FileInfos.rename(self,oldName,newName)
         CoSaves(self.dir,oldName).move(self.dir,newName)
 
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None,
-                  doRefresh=True):
+    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
         """Copies savefile and associated pluggy file."""
-        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime,
-                            doRefresh=doRefresh)
+        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
         CoSaves(self.dir,fileName).copy(destDir,destName or fileName)
 
-    def move_info(self, fileName, destDir, doRefresh=True):
+    def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite!"""
-        FileInfos.move_info(self, fileName, destDir, doRefresh)
+        FileInfos.move_info(self, fileName, destDir)
         CoSaves(self.dir,fileName).move(destDir,fileName)
 
     #--Local Saves ------------------------------------------------------------
@@ -4211,14 +4233,14 @@ class SaveInfos(FileInfos):
 
     #--Enabled ----------------------------------------------------------------
     @staticmethod
-    def isEnabled(fileName):
-        """True if fileName is enabled)."""
+    def is_save_enabled(fileName):
+        """True if fileName is enabled."""
         return fileName.cext == bush.game.ess.ext
 
     def enable(self,fileName,value=True):
         """Enables file by changing extension to 'ess' (True) or 'esr' (False)."""
-        isEnabled = self.isEnabled(fileName)
-        if value == isEnabled or re.match(u'(autosave|quicksave)', fileName.s,
+        enabled = self.is_save_enabled(fileName)
+        if value == enabled or re.match(u'(autosave|quicksave)', fileName.s,
                                           re.I | re.U):
             return fileName
         (root,ext) = fileName.rootExt
@@ -4248,13 +4270,11 @@ class BSAInfos(FileInfos):
             if bsaInfos.refresh():
                 bsaInfos.resetBSAMTimes()
 
-# TankDatas -------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class PickleTankData:
-    """Mix in class for tank datas built on PickleDicts."""
-    def __init__(self,path):
-        """Initialize. Definite data from pickledict."""
-        self.dictFile = bolt.PickleDict(path)
+class PeopleData(_DataStore):
+    """Data for a People UIList. Built on a PickleDict."""
+    def __init__(self):
+        self.dictFile = bolt.PickleDict(dirs['saveBase'].join(u'People.dat'))
         self.data = self.dictFile.data
         self.hasChanged = False ##: move to bolt.PickleDict
         self.loaded = False
@@ -4278,13 +4298,7 @@ class PickleTankData:
             self.dictFile.save()
             self.hasChanged = False
 
-#------------------------------------------------------------------------------
-class PeopleData(PickleTankData, DataDict):
-    """Data for a People UIList."""
-    def __init__(self):
-        PickleTankData.__init__(self, dirs['saveBase'].join(u'People.dat'))
-
-    def delete(self, key, **kwargs): ##: ripped from MesageData - move to DataDict ?
+    def delete(self, key, **kwargs):
         """Delete entry."""
         del self.data[key]
         self.hasChanged = True
@@ -4321,7 +4335,7 @@ class PeopleData(PickleTankData, DataDict):
                 out.write(u'\n\n')
 
 #------------------------------------------------------------------------------
-class ScreensData(DataDict):
+class ScreensData(_DataStore):
     reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
 
     def __init__(self):
@@ -4388,8 +4402,6 @@ class Installer(object):
     reReadMe = re.compile(
         ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
         ur'(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
-    reList = re.compile(
-        u'(Solid|Path|Size|CRC|Attributes|Method) = (.*?)(?:\r\n|\n)')
     reValidNamePattern = re.compile(ur'^([^/\\:*?"<>|]+?)(\d*)$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
@@ -4432,15 +4444,6 @@ class Installer(object):
     def getTempDir():
         """Returns current Temp Dir, generating one if needed."""
         return Installer._tempDir if Installer._tempDir is not None else Installer.newTempDir()
-
-    @staticmethod
-    def clearTemp():
-        """Clear the current Temp Dir, but leave it as the current Temp dir still."""
-        if Installer._tempDir is not None and Installer._tempDir.exists():
-            try:
-                Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
-            except:
-                Installer._tempDir.rmtree(safety=Installer._tempDir.stail)
 
     tempList = Path.baseTempDir().join(u'WryeBash_InstallerTempList.txt')
 
@@ -5127,8 +5130,8 @@ class Installer(object):
             full = full[rootIdex:]
             frags = full.split(_os_sep)
             nfrags = len(frags)
-            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
             f0_lower = frags[0].lower()
+            #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
             if (nfrags == 1 and reDataFileSearch(f0_lower) or
                 nfrags > 1 and f0_lower in dataDirsPlus):
                 type_ = 1
@@ -5209,9 +5212,8 @@ class Installer(object):
     def match_valid_name(self, newName):
         return self.reValidNamePattern.match(newName)
 
-    def size_or_mtime_changed(self, apath, _lstat=os.lstat):
-        stat = _lstat(apath.s)
-        return self.size != stat.st_size or self.modified != int(stat.st_mtime)
+    def size_or_mtime_changed(self, apath):
+        return (self.size, self.modified) != apath.size_mtime()
 
     @staticmethod
     def _rename(archive, data, newName):
@@ -5348,37 +5350,33 @@ class InstallerArchive(Installer):
     def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.modified = archive.mtime
-        self.size = archive.size
+        self.size, self.modified = archive.size_mtime()
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
-        reList = Installer.reList
-        file = size = crc = isdir = 0
         self.isSolid = False
+        class _li(object): # line info - we really want python's 3 'nonlocal'
+            filepath = size = crc = isdir = cumCRC = 0
+            __slots__ = ()
+        def _parse_archive_line(key, value):
+            if   key == u'Solid': self.isSolid = (value[0] == u'+')
+            elif key == u'Path': _li.filepath = value.decode('utf8')
+            elif key == u'Size': _li.size = int(value)
+            elif key == u'Attributes': _li.isdir = (value[0] == u'D')
+            elif key == u'CRC' and value: _li.crc = int(value,16)
+            elif key == u'Method':
+                if _li.filepath and not _li.isdir and _li.filepath != \
+                        tempArch.s:
+                    fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
+                    _li.cumCRC += _li.crc
+                _li.filepath = _li.size = _li.crc = _li.isdir = 0
         with archive.unicodeSafe() as tempArch:
-            ins = bolt.listArchiveContents(tempArch.s)
             try:
-                cumCRC = 0
-                for line in ins.splitlines(True):
-                    maList = reList.match(line)
-                    if maList:
-                        key,value = maList.groups()
-                        if key == u'Solid': self.isSolid = (value[0] == u'+')
-                        elif key == u'Path':
-                            file = value.decode('utf8')
-                        elif key == u'Size': size = int(value)
-                        elif key == u'Attributes': isdir = (value[0] == u'D')
-                        elif key == u'CRC' and value:
-                            crc = int(value,16)
-                        elif key == u'Method':
-                            if file and not isdir and file != tempArch.s:
-                                fileSizeCrcs.append((file,size,crc))
-                                cumCRC += crc
-                            file = size = crc = isdir = 0
-                self.crc = cumCRC & 0xFFFFFFFFL
+                bolt.list_archive(tempArch, _parse_archive_line)
+                self.crc = _li.cumCRC & 0xFFFFFFFFL
             except:
-                deprint(u'error:',traceback=True)
-                raise InstallerArchiveError(u"Unable to read archive '%s'." % archive.s)
+                archive_msg = u"Unable to read archive '%s'." % archive.s
+                deprint(archive_msg, traceback=True)
+                raise InstallerArchiveError(archive_msg)
 
     def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
@@ -5487,24 +5485,18 @@ class InstallerArchive(Installer):
             log = bolt.LogFile(out)
             log.setHeader(_(u'Package Structure:'))
             log(u'[spoiler][xml]\n', False)
-            reList = Installer.reList
-            file = u''
+            filepath = [u'']
+            text = []
+            def _parse_archive_line(key, value):
+                if key == u'Path':
+                    filepath[0] = value.decode('utf8')
+                elif key == u'Attributes':
+                    text.append((u'%s' % filepath[0], (value[0] == u'D')))
+                elif key == u'Method':
+                    filepath[0] = u''
             apath = dirs['installers'].join(archive)
             with apath.unicodeSafe() as tempArch:
-                ins = bolt.listArchiveContents(tempArch.s)
-                #--Parse
-                text = []
-                for line in ins.splitlines(True):
-                    maList = reList.match(line)
-                    if maList:
-                        key,value = maList.groups()
-                        if key == u'Path':
-                            file = value.decode('utf8')
-                        elif key == u'Attributes':
-                            isdir = (value[0] == u'D')
-                            text.append((u'%s' % file, isdir))
-                        elif key == u'Method':
-                            file = u''
+                bolt.list_archive(tempArch, _parse_archive_line)
             text.sort()
             #--Output
             for node, isdir in text:
@@ -5783,7 +5775,7 @@ from .converters import InstallerConverter
 # noinspection PyRedeclaration
 class InstallerConverter(InstallerConverter): pass
 
-class InstallersData(DataDict):
+class InstallersData(_DataStore):
     """Installers tank data. This is the data source for the InstallersList."""
     # hack to track changes in installed mod inis etc _in the Data/ dir_ and
     # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track
@@ -6096,7 +6088,7 @@ class InstallersData(DataDict):
         """Refresh installer status."""
         inOrder, pending = [], []
         # not specifying the key below results in double time
-        for archive, installer in sorted(self.iteritems(), key=lambda x: x[0]):
+        for archive, installer in sorted(self.iteritems(), key=itemgetter(0)):
             if installer.order >= 0:
                 inOrder.append((archive, installer))
             else:
@@ -6246,10 +6238,10 @@ class InstallersData(DataDict):
     def _skips_in_data_dir(sDirs):
         """Skip some top level directories based on global settings - EVEN
         on a fullRefresh."""
+        log = None
         if inisettings['KeepLog'] > 1:
             try: log = inisettings['LogFile'].open('a', encoding='utf-8-sig')
-            except: log = None
-        else: log = None
+            except: pass
         setSkipOBSE = not settings['bash.installers.allowOBSEPlugins']
         setSkipDocs = settings['bash.installers.skipDocs']
         setSkipImages = settings['bash.installers.skipImages']
@@ -6295,8 +6287,8 @@ class InstallersData(DataDict):
             else:
                 root_files.append((bass.dirs['mods'].join(sp[0]).s, sp[1]))
         root_dirs_files = []
-        root_files.sort(key=lambda t: t[0]) # must sort on same key as groupby
-        for key, val in groupby(root_files, key=lambda t: t[0]):
+        root_files.sort(key=itemgetter(0)) # must sort on same key as groupby
+        for key, val in groupby(root_files, key=itemgetter(0)):
             root_dirs_files.append((key, [], [j for i, j in val]))
         progress = progress or bolt.Progress()
         new_sizeCrcDate, pending, pending_size = self._process_data_dir(
@@ -6606,8 +6598,8 @@ class InstallersData(DataDict):
 
     def _restoreFiles(self, restores, progress, refresh_ui):
         installer_destinations = {}
-        restores = sorted(restores.items(), key=lambda t: t[1])
-        for key, group in groupby(restores, key=lambda t: t[1]):
+        restores = sorted(restores.items(), key=itemgetter(1))
+        for key, group in groupby(restores, key=itemgetter(1)):
             installer_destinations[key] = set(dest for dest, _key in group)
         if not installer_destinations: return
         installer_destinations = sorted(installer_destinations.items(),
@@ -7401,8 +7393,8 @@ def initDirs(bashIni, personal, localAppData):
                 badKeys.add(key)
         # Now, work back from those to determine which setting created those
         msg = _(u'Error creating required Wrye Bash directories.') + u'  ' + _(
-                u'Please check the settings for the following paths in your '
-                u'bash.ini, the drive does not exist') + u':\n\n'
+            u'Please check the settings for the following paths in your '
+            u'bash.ini, the drive does not exist') + u':\n\n'
         relativePathError = []
         if 'modsBash' in badKeys:
             if isinstance(modsBashSrc, list):
@@ -7430,13 +7422,18 @@ def initDirs(bashIni, personal, localAppData):
         if relativePathError:
             msg += u'\n' + _(u'A path error was the result of relative paths.')
             msg += u'  ' + _(u'The following paths are causing the errors, '
-                   u'however usually a relative path should be fine.')
+                             u'however usually a relative path should be fine.')
             msg += u'  ' + _(u'Check your setup to see if you are using '
-                   u'symbolic links or NTFS Junctions') + u':\n\n'
+                             u'symbolic links or NTFS Junctions') + u':\n\n'
             msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
 
-    # Setup LOOT API, needs to be done after the dirs are initialized
+    #Setup libbsa and LOOT API, needs to be done after the dirs are initialized
+    libbsa.Init(bass.dirs['compiled'].s)
+    # That didn't work - Wrye Bash isn't installed correctly
+    if libbsa.BSAHandle is None:
+        raise bolt.BoltError(u'The libbsa API could not be loaded.')
+    deprint(u'Using libbsa API version:', libbsa.version)
     global configHelpers
     configHelpers = ConfigHelpers()
 

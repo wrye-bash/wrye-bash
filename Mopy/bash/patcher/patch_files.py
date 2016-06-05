@@ -25,21 +25,26 @@ import time
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
+from .. import bolt # for type hints
 from .. import load_order
 from .. import bass
 from ..parsers import LoadFactory, ModFile, MasterSet
 from ..brec import MreRecord, ModError
-from ..balt import showWarning
 from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
-    Progress, StateError, formatDate
+    Progress, StateError, AbstractError
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..record_groups import MobObjects
 
-class _PFile:
-# TODO(ut): ugly (C/P diffs) 'patchName' class variable and bush imports
-    def __init__(self, patchers):
+class _PFile(object):
+    """Base class of patch files - factoring out common code __WIP__. Wraps an
+    executing bashed Patch."""
+    # TODO(ut): code is using class variable patchName - eradicate ! used
+    # in config phase before the _PFile is instantiated
+    def __init__(self, patchers, patch_path):
+        """:type patch_path: bolt.Path"""
         #--New attrs
         self.patchers = patchers
+        self.patchName = patch_path # the bashed Patch
         # Aliases from one mod name to another. Used by text file patchers.
         self.aliases = {}
         self.mergeIds = set()
@@ -53,7 +58,7 @@ class _PFile:
         #--Mods
         dex = load_order.loIndexCached
         loadMods = [name for name in load_order.activeCached() if
-                    dex(name) < dex(self.__class__.patchName)]
+                    dex(name) < dex(self.patchName)]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods, [])
@@ -75,7 +80,7 @@ class _PFile:
         #--Load Mods and error mods
         log.setHeader(u'= ' + _(u'Overview'), True)
         log.setHeader(u'=== ' + _(u'Date/Time'))
-        log(u'* ' + formatDate(time.time()))
+        log(u'* ' + bolt.formatDate(time.time()))
         log(u'* ' + _(u'Elapsed Time: ') + 'TIMEPLACEHOLDER')
         if self.patcher_mod_skipcount:
             log.setHeader(u'=== ' + _(u'Skipped Imports'))
@@ -146,25 +151,10 @@ class _PFile:
             for key, value in sorted(self.aliases.iteritems()):
                 log(u'* %s >> %s' % (key.s, value.s))
 
+    def init_patchers_data(self, progress): raise AbstractError
+
 class PatchFile(_PFile, ModFile):
     """Defines and executes patcher configuration."""
-
-    @staticmethod
-    def generateNextBashedPatch(wxParent=None):
-        """Attempts to create a new bashed patch, numbered from 0 to 9.  If a lowered number bashed patch exists,
-           will create the next in the sequence.  if wxParent is not None and we are unable to create a patch,
-           displays a dialog error"""
-        for num in xrange(10):
-            modName = GPath(u'Bashed Patch, %d.esp' % num)
-            if modName not in bosh.modInfos:
-                bosh.modInfos.create_new_mod(modName, masterless=True,
-                                             bashed_patch=True)
-                bosh.modInfos.refresh()
-                return modName
-        else:
-            if wxParent is not None:
-                showWarning(wxParent, u"Unable to create new bashed patch: 10 bashed patches already exist!")
-        return None
 
     #--Instance
     def __init__(self,modInfo,patchers):
@@ -174,7 +164,7 @@ class PatchFile(_PFile, ModFile):
         self.tes4.masters = [bosh.modInfos.masterName]
         self.longFids = True
         self.keepIds = set()
-        _PFile.__init__(self, patchers)
+        _PFile.__init__(self, patchers, modInfo.name)
 
     def getKeeper(self):
         """Returns a function to add fids to self.keepIds."""
@@ -183,7 +173,7 @@ class PatchFile(_PFile, ModFile):
             return fid
         return keep
 
-    def initData(self,progress):
+    def init_patchers_data(self, progress):
         """Gives each patcher a chance to get its source data."""
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))
@@ -220,13 +210,13 @@ class PatchFile(_PFile, ModFile):
         nullProgress = Progress()
         progress = progress.setFull(len(self.allMods))
         for index,modName in enumerate(self.allMods):
-            bashTags = bosh.modInfos[modName].getBashTags()
+            modInfo = bosh.modInfos[modName]
+            bashTags = modInfo.getBashTags()
             if modName in self.loadMods and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
                 progress(index,modName.s+u'\n'+_(u'Loading...'))
-                modInfo = bosh.modInfos[GPath(modName)]
                 modFile = ModFile(modInfo,loadFactory)
                 modFile.load(True,SubProgress(progress,index,index+0.5))
             except ModError as e:
@@ -252,7 +242,7 @@ class PatchFile(_PFile, ModFile):
                     self.mergeModFile(modFile,nullProgress,doFilter,iiMode)
                 else:
                     progress(pstate,modName.s+u'\n'+_(u'Scanning...'))
-                    self.scanModFile(modFile,nullProgress)
+                    self.update_patch_records_from_mod(modFile)
                 for patcher in sorted(self.patchers,key=attrgetter('scanOrder')):
                     if iiMode and not patcher.iiMode: continue
                     progress(pstate,u'%s\n%s' % (modName.s,patcher.name))
@@ -314,10 +304,10 @@ class PatchFile(_PFile, ModFile):
             block.records = filtered
             block.indexRecords()
 
-    def scanModFile(self,modFile,progress):
+    def update_patch_records_from_mod(self, modFile):
         """Scans file and overwrites own records with modfile records."""
         #--Keep all MGEFs
-        modFile.convertToLongFids('MGEF')
+        modFile.convertToLongFids(('MGEF',))
         if 'MGEF' in modFile.tops:
             for record in modFile.MGEF.getActiveRecords():
                 self.MGEF.setRecord(record.getTypeCopy())
@@ -349,18 +339,16 @@ class PatchFile(_PFile, ModFile):
         progress(1.0,_(u"Compiled."))
         #--Description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
-        self.tes4.description = (_(u'Updated: ')+formatDate(time.time())
-                                 + u'\n\n' +
-                                 _(u'Records Changed') + u': %d' % numRecords
-                                 )
+        self.tes4.description = (
+            _(u'Updated: ') + bolt.formatDate(time.time()) + u'\n\n' + _(
+                u'Records Changed') + u': %d' % numRecords)
 
 class CBash_PatchFile(_PFile, ObModFile):
     """Defines and executes patcher configuration."""
 
     #--Instance
-    def __init__(self, patchName, patchers):
+    def __init__(self, patch_name, patchers):
         """Initialization."""
-        self.patchName = patchName
         self.group_patchers = {}
         self.indexMGEFs = False
         self.mgef_school = bush.mgef_school.copy()
@@ -372,9 +360,9 @@ class CBash_PatchFile(_PFile, ObModFile):
                               'imperial', 'khajiit', 'nord', 'orc', 'redguard',
                               'wood elf']
         self.races_data = {'EYES': [], 'HAIR': []}
-        _PFile.__init__(self, patchers)
+        _PFile.__init__(self, patchers, patch_name)
 
-    def initData(self,progress):
+    def init_patchers_data(self, progress):
         """Gives each patcher a chance to get its source data."""
         if not len(self.patchers): return
         progress = progress.setFull(len(self.patchers))
@@ -455,7 +443,7 @@ class CBash_PatchFile(_PFile, ObModFile):
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
         dex = load_order.loIndexCached
-        def less(mod): return dex(mod) < dex(CBash_PatchFile.patchName)
+        def less(mod): return dex(mod) < dex(self.patchName)
         for name in self.mergeSet:
             if less(name): self.Current.addMergeMod(infos[name].getPath().stail)
         for name in self.loadSet:
@@ -649,10 +637,10 @@ class CBash_PatchFile(_PFile, ObModFile):
         progress(progress.full,_(u'Patchers applied.'))
         self.ScanCollection = None
 
-    def buildPatchLog(self,patchName,log,progress):
+    def buildPatchLog(self, log, progress):
         """Completes merge process. Use this when finished using buildPatch."""
         if not len(self.patchers): return
-        self._log_header(log, patchName)
+        self._log_header(log, self.patchName)
         #--Patchers
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
@@ -661,7 +649,6 @@ class CBash_PatchFile(_PFile, ObModFile):
         progress(1.0,_(u"Compiled."))
         #--Description
         numRecords = sum([len(x) for x in self.aggregates.values()])
-        self.TES4.description = (_(u"Updated: %s") % formatDate(time.time()) +
-                                 u'\n\n' +
-                                 _(u'Records Changed') + u': %d' % numRecords
-                                 )
+        self.TES4.description = (
+            _(u"Updated: %s") % bolt.formatDate(time.time()) + u'\n\n' + _(
+                u'Records Changed') + u': %d' % numRecords)

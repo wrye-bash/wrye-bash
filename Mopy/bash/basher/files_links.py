@@ -22,17 +22,15 @@
 #
 # =============================================================================
 
-from operator import attrgetter
 import re
-import time
 from .. import bass, balt, bosh, bush, bolt, env, load_order
 from ..bass import Resources
-from ..balt import ItemLink, RadioLink, EnabledLink, AppendableLink, \
-    ChoiceLink, Link, OneItemLink
+from ..balt import ItemLink, RadioLink, EnabledLink, ChoiceLink, Link, \
+    OneItemLink
 from ..bolt import CancelError, SkipError, GPath, formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
-           'File_Duplicate', 'File_Snapshot', 'File_Hide', 'File_Redate',
+           'File_Duplicate', 'File_Snapshot', 'File_Hide',
            'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
            'File_Open']
 
@@ -173,10 +171,10 @@ class File_Duplicate(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        data = self.selected
-        for item in data:
+        dests = []
+        fileInfos = self.window.data_store
+        for item in self.selected:
             fileName = GPath(item)
-            fileInfos = self.window.data_store
             fileInfo = fileInfos[fileName]
             #--Mod with resources?
             #--Warn on rename if file has bsa and/or dialog
@@ -188,7 +186,7 @@ class File_Duplicate(ItemLink):
             destName = self.window.new_path(GPath(root + u' Copy' + ext),
                                             destDir)
             destDir.makedirs()
-            if len(data) == 1:
+            if len(self.selected) == 1:
                 destPath = self._askSave(
                     title=_(u'Duplicate as:'), defaultDir=destDir,
                     defaultFile=destName.s, wildcard=wildcard)
@@ -203,6 +201,9 @@ class File_Duplicate(ItemLink):
             else:
                 newTime = None # for bsas and saves leave mtime alone
             fileInfos.copy_info(fileName, destDir, destName, set_mtime=newTime)
+            dests.append(destName)
+        if dests:
+            fileInfos.refresh(scanData=False)
             self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
 
 class File_Hide(ItemLink):
@@ -236,13 +237,14 @@ class File_Hide(ItemLink):
                 if groupDir.isdir():
                     destDir = groupDir
             if not self.window.data_store.moveIsSafe(fileName,destDir):
-                message = (_(u'A file named %s already exists in the hidden files directory. Overwrite it?')
-                    % fileName.s)
+                message = (_(u'A file named %s already exists in the hidden '
+                             u'files directory. Overwrite it?') % fileName.s)
                 if not self._askYes(message, _(u'Hide Files')): continue
             #--Do it
-            self.window.data_store.move_info(fileName, destDir, doRefresh=False)
+            fileInfos.move_info(fileName, destDir)
         #--Refresh stuff
-        Link.Frame.RefreshData()
+        fileInfos.delete_Refresh(self.selected)
+        self.window.RefreshUI(refreshSaves=True)
 
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
@@ -261,41 +263,6 @@ class File_ListMasters(OneItemLink):
         balt.copyToClipboard(text)
         self._showLog(text, title=fileName.s, fixedFont=False,
                       icons=Resources.bashBlue)
-
-class File_Redate(AppendableLink, ItemLink):
-    """Move the selected files to start at a specified date."""
-    text = _(u'Redate...')
-    help = _(u"Move the selected files to start at a specified date.")
-
-    def _append(self, window): return not bosh.load_order.using_txt_file()
-
-    @balt.conversation
-    def Execute(self):
-        #--Get current start time.
-        modInfos = self.window.data_store
-        #--Ask user for revised time.
-        newTimeStr = self._askText(_(u'Redate selected mods starting at...'),
-                                   title=_(u'Redate Mods'),
-                                   default=formatDate(int(time.time())))
-        if not newTimeStr: return
-        try:
-            newTimeTup = bolt.unformatDate(newTimeStr, u'%c')
-            newTime = int(time.mktime(newTimeTup))
-        except ValueError:
-            self._showError(_(u'Unrecognized date: ') + newTimeStr)
-            return
-        except OverflowError:
-            balt.showError(self,_(u'Bash cannot handle dates greater than January 19, 2038.)'))
-            return
-        #--Do it
-        selInfos = [modInfos[fileName] for fileName in self.selected]
-        selInfos.sort(key=attrgetter('mtime'))
-        for fileInfo in selInfos:
-            fileInfo.setmtime(newTime)
-            newTime += 60
-        #--Refresh
-        modInfos.refresh(scanData=False, _modTimesChange=True)
-        self.window.RefreshUI(refreshSaves=True)
 
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""

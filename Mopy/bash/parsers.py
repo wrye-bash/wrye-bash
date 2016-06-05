@@ -2308,13 +2308,15 @@ class CBash_SigilStoneDetails(_UsesEffectsMixin):
                 outWrite(output)
 
 #------------------------------------------------------------------------------
-class ItemPrices:
+class _ItemPrices(object):
+    item_prices_attrs = ('value', 'eid', 'full')
+
+class ItemPrices(_ItemPrices):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
         self.class_fid_stats = bush.game.pricesTypes
-        self.attrs = ('value', 'eid', 'full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -2325,7 +2327,7 @@ class ItemPrices:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        attrs = self.attrs
+        attrs = self.item_prices_attrs
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
                 fid_stats[mapper(record.fid)] = map(record.__getattribute__,
@@ -2384,7 +2386,7 @@ class ItemPrices:
                     out.write(
                         format_ % tuple(fid_stats[fid]) + u',%s\n' % group)
 
-class CBash_ItemPrices:
+class CBash_ItemPrices(_ItemPrices):
     """Function for importing/exporting from/to mod/text file only the
     value, name and eid of records."""
 
@@ -2393,12 +2395,11 @@ class CBash_ItemPrices:
                                 'BOOK':{},'CLOT':{},'INGR':{},'KEYM':{},
                                 'LIGH':{},'MISC':{},'SGST':{},'SLGM':{},
                                 'WEAP':{}}
-        self.attrs = ('value','eid','full')
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
         """Reads data from specified mod."""
-        class_fid_stats, attrs = self.class_fid_stats, self.attrs
+        class_fid_stats, attrs = self.class_fid_stats, self.item_prices_attrs
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
@@ -3916,20 +3917,26 @@ class LoadFactory:
             (self.recTypes & {'REFR', 'ACHR', 'ACRE', 'PGRD', 'LAND'}) or
             (topType == 'WRLD' and 'LAND' in self.recTypes))
 
-    def getTopClass(self,type):
-        """Returns top block class for top block type, or None."""
-        if type in self.topTypes:
-            if   type == 'DIAL': return MobDials
-            elif type == 'CELL': return MobICells
-            elif type == 'WRLD': return MobWorlds
+    def getTopClass(self, top_rec_type):
+        """Return top block class for top block type, or None.
+        :rtype: type[record_groups.MobBase]
+        """
+        if top_rec_type in self.topTypes:
+            if   top_rec_type == 'DIAL': return MobDials
+            elif top_rec_type == 'CELL': return MobICells
+            elif top_rec_type == 'WRLD': return MobWorlds
             else: return MobObjects
         elif self.keepAll:
             return MobBase
         else:
             return None
 
-class ModFile:
-    """TES4 file representation."""
+class ModFile(object):
+    """TES4 file representation.
+
+    Will load only the top record types specified in its LoadFactory. Overrides
+    __getattr__ to return its collection of records for a top record type.
+    """
     def __init__(self, fileInfo,loadFactory=None):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
@@ -3963,9 +3970,10 @@ class ModFile:
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
-        #--Header
         with ModReader(self.fileInfo.name,self.fileInfo.getPath().open('rb')) as ins:
-            header = ins.unpackRecHeader()
+            insRecHeader = ins.unpackRecHeader
+            #--TES4 Header of the mod file
+            header = insRecHeader()
             self.tes4 = bush.game.MreHeader(header,ins,True)
             #--Strings
             self.strings.clear()
@@ -3985,13 +3993,8 @@ class ModFile:
             #--Raw data read
             subProgress.setFull(ins.size)
             insAtEnd = ins.atEnd
-            insRecHeader = ins.unpackRecHeader
-            selfGetTopClass = self.loadFactory.getTopClass
-            selfTopsSkipAdd = self.topsSkipped.add
             insSeek = ins.seek
             insTell = ins.tell
-            selfLoadFactory = self.loadFactory
-            selfTops = self.tops
             while not insAtEnd():
                 #--Get record info and handle it
                 header = insRecHeader()
@@ -3999,13 +4002,13 @@ class ModFile:
                 if type != 'GRUP' or header.groupType != 0:
                     raise ModError(self.fileInfo.name,u'Improperly grouped file.')
                 label,size = header.label,header.size
-                topClass = selfGetTopClass(label)
+                topClass = self.loadFactory.getTopClass(label)
                 try:
                     if topClass:
-                        selfTops[label] = topClass(header,selfLoadFactory)
-                        selfTops[label].load(ins,unpack and (topClass != MobBase))
+                        self.tops[label] = topClass(header, self.loadFactory)
+                        self.tops[label].load(ins, unpack and (topClass != MobBase))
                     else:
-                        selfTopsSkipAdd(label)
+                        self.topsSkipped.add(label)
                         insSeek(size-header.__class__.size,1,type + '.' + label)
                 except:
                     print u'Error in',self.fileInfo.name.s
@@ -4045,7 +4048,9 @@ class ModFile:
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
         filePath.temp.mtime = self.fileInfo.mtime
-        env.shellMove(filePath.temp, filePath, parent=None)
+        # FIXME If saving a locked (by TES4Edit f.i.) bashed patch a bogus UAC
+        # permissions dialog is displayed (should display file in use)
+        env.shellMove(filePath.temp, filePath, parent=None) # silent=True just returns - no error!
         self.fileInfo.extras.clear()
 
     def save(self,outPath=None):
@@ -4091,9 +4096,12 @@ class ModFile:
         return mapper
 
     def convertToLongFids(self,types=None):
-        """Convert fids to long format (modname,objectindex)."""
+        """Convert fids to long format (modname,objectindex).
+        :type types: list[str] | tuple[str] | set[str]
+        """
         mapper = self.getLongMapper()
         if types is None: types = self.tops.keys()
+        else: assert isinstance(types, (list, tuple, set))
         selfTops = self.tops
         for type in types:
             if type in selfTops:

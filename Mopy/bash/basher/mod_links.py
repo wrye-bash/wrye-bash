@@ -29,19 +29,21 @@ import StringIO
 import collections
 import copy
 import os
+import time
+from operator import attrgetter
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
     OkButton
-from ..bolt import GPath, SubProgress, AbstractError, CancelError
+from ..bolt import GPath, SubProgress, AbstractError, CancelError, formatDate
 from ..bosh import faces
 from ..patcher import configIsCBash, exportConfig
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..cint import CBash, FormID ##: CBash should be in bosh
-from .patcher_dialog import PatchDialog, CBash_gui_patchers, gui_patchers
+from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from ..patcher.patchers import base
 from ..patcher.patchers import special
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
@@ -53,7 +55,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_Patch_Update', 'Mod_ListPatchConfig', 'Mod_ExportPatchConfig',
            'CBash_Mod_CellBlockInfo_Export', 'Mod_EditorIds_Export',
            'Mod_FullNames_Export', 'Mod_Prices_Export', 'Mod_Stats_Export',
-           'Mod_Factions_Export', 'Mod_ActorLevels_Export',
+           'Mod_Factions_Export', 'Mod_ActorLevels_Export', 'Mod_Redate',
            'CBash_Mod_MapMarkers_Export', 'Mod_FactionRelations_Export',
            'Mod_IngredientDetails_Export', 'Mod_Scripts_Export',
            'Mod_SigilStoneDetails_Export', 'Mod_SpellRecords_Export',
@@ -165,6 +167,38 @@ class Mod_OrderByName(EnabledLink):
         fileNames.sort(key=lambda a: a.cext)
         for fileName in fileNames:
             modInfos[fileName].setmtime(newTime)
+            newTime += 60
+        #--Refresh
+        modInfos.refresh(scanData=False, _modTimesChange=True)
+        self.window.RefreshUI(refreshSaves=True)
+
+class Mod_Redate(AppendableLink, ItemLink):
+    """Move the selected files to start at a specified date."""
+    text = _(u'Redate...')
+    help = _(u"Move the selected files to start at a specified date.")
+
+    def _append(self, window): return not load_order.using_txt_file()
+
+    @balt.conversation
+    def Execute(self):
+        #--Get current start time.
+        modInfos = self.window.data_store
+        #--Ask user for revised time.
+        newTimeStr = self._askText(
+            _(u'Redate selected mods starting at...'),
+            title=_(u'Redate Mods'), default=formatDate(int(time.time())))
+        if not newTimeStr: return
+        try:
+            newTimeTup = bolt.unformatDate(newTimeStr, u'%c')
+            newTime = int(time.mktime(newTimeTup))
+        except ValueError:
+            self._showError(_(u'Unrecognized date: ') + newTimeStr)
+            return
+        #--Do it
+        selInfos = [modInfos[fileName] for fileName in self.selected]
+        selInfos.sort(key=attrgetter('mtime'))
+        for fileInfo in selInfos:
+            fileInfo.setmtime(newTime)
             newTime += 60
         #--Refresh
         modInfos.refresh(scanData=False, _modTimesChange=True)
@@ -885,73 +919,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
 
         #--Check if we should be deactivating some plugins
-        def less(modName, dex=load_order.loIndexCached):
-            return dex(modName) < dex(fileName)
-        ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
-        unfiltered = [x for x in ActivePriortoPatch if
-                      u'Filter' in bosh.modInfos[x].getBashTags()]
-        merge = [x for x in ActivePriortoPatch if
-                 u'NoMerge' not in bosh.modInfos[x].getBashTags()
-                 and x in bosh.modInfos.mergeable
-                 and x not in unfiltered]
-        noMerge = [x for x in ActivePriortoPatch if
-                   u'NoMerge' in bosh.modInfos[x].getBashTags()
-                   and x in bosh.modInfos.mergeable
-                   and x not in unfiltered and x not in merge]
-        deactivate = [x for x in ActivePriortoPatch if
-                      u'Deactivate' in bosh.modInfos[x].getBashTags()
-                      and not 'Filter' in bosh.modInfos[x].getBashTags()
-                      and x not in unfiltered and x not in merge
-                      and x not in noMerge]
-
-        checklists = []
-        unfilteredKey = _(u"Tagged 'Filter'")
-        mergeKey = _(u"Mergeable")
-        noMergeKey = _(u"Mergeable, but tagged 'NoMerge'")
-        deactivateKey = _(u"Tagged 'Deactivate'")
-        if unfiltered:
-            group = [unfilteredKey,
-                     _(u"These mods should be deactivated before building the patch, and then merged or imported into the Bashed Patch."),
-                     ]
-            group.extend(unfiltered)
-            checklists.append(group)
-        if merge:
-            group = [mergeKey,
-                     _(u"These mods are mergeable.  While it is not important to Wrye Bash functionality or the end contents of the Bashed Patch, it is suggested that they be deactivated and merged into the patch.  This helps avoid the Oblivion maximum esp/esm limit."),
-                     ]
-            group.extend(merge)
-            checklists.append(group)
-        if noMerge:
-            group = [noMergeKey,
-                     _(u"These mods are mergeable, but tagged 'NoMerge'.  They should be deactivated before building the patch and imported into the Bashed Patch."),
-                     ]
-            group.extend(noMerge)
-            checklists.append(group)
-        if deactivate:
-            group = [deactivateKey,
-                     _(u"These mods are tagged 'Deactivate'.  They should be deactivated before building the patch, and merged or imported into the Bashed Patch."),
-                     ]
-            group.extend(deactivate)
-            checklists.append(group)
-        if checklists:
-            dialog = ListBoxes(
-                Link.Frame, _(u"Deactivate these mods prior to patching"),
-                _(u"The following mods should be deactivated prior to building"
-                  u" the patch."), checklists, bCancel=_(u'Skip'))
-            if dialog.askOkModal():
-                deselect = set()
-                for (lst, key) in [(unfiltered, unfilteredKey),
-                                   (merge, mergeKey),
-                                   (noMerge, noMergeKey),
-                                   (deactivate, deactivateKey), ]:
-                    deselect |= set(dialog.getChecked(key, lst))
-                if deselect:
-                    with balt.BusyCursor():
-                        for mod in deselect: bosh.modInfos.lo_deactivate(mod,
-                                                                doSave=False)
-                        bosh.modInfos.cached_lo_save_active()
-                        self.window.RefreshUI(refreshSaves=True)
-            dialog.Destroy()
+        self._ask_deactivate_mergeable(fileName)
 
         previousMods = set()
         missing = collections.defaultdict(list)
@@ -988,6 +956,73 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                          importConfig) as patchDialog: patchDialog.ShowModal()
         return fileName
 
+    def _ask_deactivate_mergeable(self, fileName):
+        def less(modName, dex=load_order.loIndexCached):
+            return dex(modName) < dex(fileName)
+        ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
+        unfiltered = [x for x in ActivePriortoPatch if
+                      u'Filter' in bosh.modInfos[x].getBashTags()]
+        merge = [x for x in ActivePriortoPatch if
+                 u'NoMerge' not in bosh.modInfos[x].getBashTags()
+                 and x in bosh.modInfos.mergeable
+                 and x not in unfiltered]
+        noMerge = [x for x in ActivePriortoPatch if
+                   u'NoMerge' in bosh.modInfos[x].getBashTags()
+                   and x in bosh.modInfos.mergeable
+                   and x not in unfiltered and x not in merge]
+        deactivate = [x for x in ActivePriortoPatch if
+                      u'Deactivate' in bosh.modInfos[x].getBashTags()
+                      and not 'Filter' in bosh.modInfos[x].getBashTags()
+                      and x not in unfiltered and x not in merge
+                      and x not in noMerge]
+        checklists = []
+        unfilteredKey = _(u"Tagged 'Filter'")
+        mergeKey = _(u"Mergeable")
+        noMergeKey = _(u"Mergeable, but tagged 'NoMerge'")
+        deactivateKey = _(u"Tagged 'Deactivate'")
+        if unfiltered:
+            group = [unfilteredKey, _(u"These mods should be deactivated "
+                u"before building the patch, and then merged or imported into "
+                u"the Bashed Patch."), ]
+            group.extend(unfiltered)
+            checklists.append(group)
+        if merge:
+            group = [mergeKey, _(u"These mods are mergeable.  "
+                u"While it is not important to Wrye Bash functionality or "
+                u"the end contents of the Bashed Patch, it is suggested that "
+                u"they be deactivated and merged into the patch.  This helps "
+                u"avoid the Oblivion maximum esp/esm limit."), ]
+            group.extend(merge)
+            checklists.append(group)
+        if noMerge:
+            group = [noMergeKey, _(u"These mods are mergeable, but tagged "
+                u"'NoMerge'.  They should be deactivated before building the "
+                u"patch and imported into the Bashed Patch."), ]
+            group.extend(noMerge)
+            checklists.append(group)
+        if deactivate:
+            group = [deactivateKey, _(u"These mods are tagged 'Deactivate'.  "
+                u"They should be deactivated before building the patch, and "
+                u"merged or imported into the Bashed Patch."), ]
+            group.extend(deactivate)
+            checklists.append(group)
+        if not checklists: return
+        with ListBoxes(Link.Frame,
+            _(u"Deactivate these mods prior to patching"),
+            _(u"The following mods should be deactivated prior to building "
+              u"the patch."), checklists, bCancel=_(u'Skip')) as dialog:
+            if not dialog.askOkModal(): return
+            deselect = set()
+            for (lst, key) in [(unfiltered, unfilteredKey),
+                               (merge, mergeKey),
+                               (noMerge, noMergeKey),
+                               (deactivate, deactivateKey), ]:
+                deselect |= set(dialog.getChecked(key, lst))
+            if not deselect: return
+        with balt.BusyCursor():
+            bosh.modInfos.lo_deactivate(deselect, doSave=True)
+        self.window.RefreshUI(refreshSaves=True)
+
 class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
     def _decide(self, window, selection):
@@ -1018,7 +1053,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
         patchers = [copy.deepcopy(x) for x in
-                     (CBash_gui_patchers if doCBash else gui_patchers)]
+                    (CBash_gui_patchers if doCBash else PBash_gui_patchers)]
         patchers.sort(key=lambda a: a.__class__.name)
         patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         #--Log & Clipboard text
@@ -1116,7 +1151,7 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
         #--Config
         config = bosh.modInfos.table.getItem(self.selected[0],
                                              'bash.patch.configs', {})
-        exportConfig(patchName=self.selected[0].s, config=config,
+        exportConfig(patch_name=self.selected[0].s, config=config,
                      isCBash=configIsCBash(config), win=self.window,
                      outDir=bass.dirs['patches'])
 
@@ -1479,8 +1514,10 @@ class Mod_CopyToEsmp(EnabledLink):
             newInfo.setType(newType)
             added.append(newName)
         #--Repopulate
-        self.window.RefreshUI(refreshSaves=True) # True ?
-        self.window.SelectItemsNoCallback(added)
+        if added:
+            modInfos.refresh(scanData=False)
+            self.window.RefreshUI(refreshSaves=True) # True ?
+            self.window.SelectItemsNoCallback(added)
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):

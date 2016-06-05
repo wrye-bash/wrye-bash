@@ -38,26 +38,34 @@ class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
     title = _(u'Color Configuration')
 
+    _keys_to_tabs = {
+        'mods': _(u'[Mods] '),
+        'screens': _(u'[Saves, Screens] '),
+        'installers': _(u'[Installers] '),
+        'ini': _(u'[INI Edits] '),
+        'tweak': _(u'[INI Edits] '),
+        'default': _(u'[All] '),
+    }
+
     def __init__(self):
         super(ColorDialog, self).__init__(parent=Link.Frame, resize=False)
         self.changes = dict()
         #--ComboBox
         keys = [x for x in colors]
-        keys.sort()
-        choices = [colorInfo[x][0] for x in keys]
+        def _display_text(k):
+            return _(self._keys_to_tabs[k.split('.')[0]]) + colorInfo[k][0]
+        self.text_key = dict((_display_text(x), x) for x in keys)
+        choices = self.text_key.keys()
+        choices.sort(key=unicode.lower)
         choice = choices[0]
-        self.text_key = dict()
-        for key in keys:
-            text = colorInfo[key][0]
-            self.text_key[text] = key
         choiceKey = self.text_key[choice]
         self.comboBox = balt.ComboBox(self, value=choice, choices=choices)
         #--Color Picker
         self.picker = wx.ColourPickerCtrl(self)
         self.picker.SetColour(colors[choiceKey])
         #--Description
-        help = colorInfo[choiceKey][1]
-        self.textCtrl = RoTextCtrl(self, help)
+        help_ = colorInfo[choiceKey][1]
+        self.textCtrl = RoTextCtrl(self, help_)
         #--Buttons
         self.default = Button(self, _(u'Default'),
                               onButClickEventful=self.OnDefault)

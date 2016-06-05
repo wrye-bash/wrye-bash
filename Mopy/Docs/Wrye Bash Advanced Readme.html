@@ -136,7 +136,10 @@
     <li>Many, many more features
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
-<p>A companion to the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, this document details those features that were omitted from the aforementioned readme. These features are often more specialised, advanced or complicated, and many area geared more towards mod authors than mod users. This readme is also more technical and goes into more depth on how Wrye Bash functions. It assumes the reader has previously read the General Readme.
+<p>A companion to the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, this document details those features
+    that were omitted from the aforementioned readme. These features are often more specialised, advanced or complicated, and
+    many are geared more towards mod authors than mod users. This readme is also more technical and goes into more depth on
+    how Wrye Bash functions. It assumes the reader has previously read the General Readme.
 <p>Note that the <a href="#people">People</a> tab is hidden by default. You can toggle the visibility of the tabs in Wrye Bash's main tab bar by right-clicking the tab bar and checking or unchecking the options in the context menu displayed.
 
 <h3 id="intro-title">Title Bar Info</h3>
@@ -531,15 +534,27 @@ tab. The directories skipped are:
 </table>
 
 <h3 id="mod-masters-symbols">Color scheme for Plugin Masters (MI &amp; Current LO)</h3>
+
+<p>In the table below suppose you see details for displayed_mod.esp which depends on [Oblivion.esm, displayed_mod.esm, some_other.esp, some_other2.esp]
+    in this order. So the MIs displayed in the master list for Oblivion.esm, displayed_mod.esm, some_other.esp, some_other2.esp are 0, 1, 2, 3.
 <table>
     <thead>
         <tr><th>Checkbox Colour<th>Meaning
     <tbody>
         <tr><td><img src="../bash/images/checkbox_blue_on.png" alt="Blue"/><td>Good. Matches the Master Index of the the Current load order.
-        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but the Master Index is not in sync with the Current load order.
-        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>Master Index differs from the Current load order. Masters of this plugin still exist in the Data folder but plugins are out of order compared to the order of its masters when the mod was saved.<br />
+        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green"/><td>Good, but the Master Index is not in sync with the Current
+            load order.<br />
+            <br />So for instance if you have a load order with active mods (in this order) [Oblivion.esm, displayed_mod.esm, yet_some-other.esp,
+            some_other.esp, some_other2.esp, displayed_mod.esp], some_other.esp will display in green as its current load order is 3 while its
+            master index is 2. Note that the <em>relative load order of masters</em> is the same as it is in the MI list.
+        <tr><td><img src="../bash/images/checkbox_orange_on.png" alt="Orange"/><td>The plugin loads in a different order compared to its order in
+            the master array of displayed_mod.esp<br />
+            <br />So for instance if you have a load order with active mods (in this order) [Oblivion.esm, displayed_mod.esm, some_other2.esp,
+            some_other.esp, displayed_mod.esp], some_other.esp and some_other2.esp will display in orange as they load in different
+            <em>relative order</em> than they are recorded in the master array of displayed_mod.esp.<br />
         <br />If a plugin has two masters that are siblings (one doesn't have the other as a master, so they can load in either order) and they are overriding the same record from an earlier master (e.g. both are overriding a record from the main game master file), then loading them in a different order will result in a different version of the overridden record being the "winner". But the plugin might depend on the winner being the one indicated by the order in which it references the masters. The plugin should be examined in xEdit (meaning any version) to see if it is best to alter the load order or if Sort Masters should be used to correct the issue.
-        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A Master is missing. If unintended then you should check to make sure that you have not inadvertently renamed or removed the plugin.
+        <tr><td><img src="../bash/images/checkbox_red_on.png" alt="Red"/><td>A Master that is missing. If unintended then you should check to make
+            sure that you have not inadvertently renamed or removed the plugin.
 </table>
 
 <h3 id="mods-csv">CSV Files</h3>
@@ -783,14 +798,26 @@ tab. The directories skipped are:
 <p>As the Bashed Patch commonly has .esp files as masters, viewing and editing it can be more complicated than for the average plugin. If you wish to view its contents, it is easiest to use <a href="http://oblivion.nexusmods.com/mods/11536">TES4Edit</a>, which can also be used to edit most types of data in plugins. To edit it using the Construction Set or Creation Kit (required when editing scripts), you'll need to first use the <a href="#modsEsmifyMasters">Esmify Masters</a> command on it. Be sure to use <q>Espify Masters</q> before attempting to play the game.
 
 <h3 id="patch-tags">Bash Tags</h3>
-<p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, or are applied using data from three sources:
-<ul>
-    <li>BOSS's masterlist and userlist files. If BOSS is installed, then Wrye Bash will apply its Bash Tag suggestions. You do not need to use BOSS to benefit from this, it just needs to be installed. REPLACE lines in the userlist will replace Bash Tags suggested in the masterlist, but will not affect Bash Tags specified in plugin description fields.
-    <li>The <code>Bash Patches\Leveled Lists.csv</code> file. This file contains a small list that is useful if BOSS is not installed.
-    <li>The <code>Bash Patches\taglist.txt</code> file. This is a stripped-down version of the BOSS masterlist as it was when the version of Wrye Bash installed was released.
-</ul>
+<p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, or are applied using data from LOOT's masterlist and userlist files.
+In decreasing priority the Bash tags sources are:
+
+<ol>
+    <li>Manual Bash tags set by user in the Bash mod list
+    <li>Header of ESP or ESM file (also can be edited in bash)
+    <li>userlist.yaml (LOOT)
+    <li>masterlist.yaml (LOOT)
+    <li>taglist.yaml (LOOT)
+</ol>
+
+<p>Bash comes with LOOT bundled, currently version 6. It will try and parse the masterlist and userlist files, if it finds them in
+    <code>C:\Users\USER\AppData\Local\LOOT\GAME</code> directory. If that fails (the files are not there or come from a different LOOT version than
+    the one Bash bundles) it will fallback to the <code>Mopy\Bash Patches\GAME\taglist.yaml</code> file, also bundled, keep it there. For userlist
+and masterlist relative priority and role see the LOOT docs.
+
 <p>Bash Tags may also be set manually, by right-clicking a plugin's Bash Tags field in the Mods Tab sidebar and checking or unchecking tags in the list displayed. If you wish to revert to automatic tagging, choose <q>Automatic</q> in the right-click list. If you are a mod author, you may wish to use <q>Copy to Description</q> for your mod's plugins before releasing it to ensure that users have the tags applied automatically.
+
 <p><b>Note:</b> A Bash Tag should only be applied when it is <b>important</b> that the plugin's change to whatever the Tag relates to is preserved. If a change your plugin makes is not important to the functioning of your mod, do not add a Bash Tag for it. Doing otherwise negates the purpose of the Bash Tag system.
+
 <table>
     <thead>
         <tr><th colspan="3">Bash Tags Available For All Games

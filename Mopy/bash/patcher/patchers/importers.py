@@ -23,7 +23,7 @@
 # =============================================================================
 
 """This module contains the oblivion importer patcher classes."""
-
+import collections
 import operator
 import re
 # Internal
@@ -31,8 +31,6 @@ from ... import bosh # for modInfos
 from ... import load_order
 from ...bush import game # for Name patcher
 from ...bolt import GPath, MemorySet
-from ...bosh import reModExt
-from .. import getPatchesPath, getPatchesList
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
     getattr_deep, setattr_deep
@@ -40,7 +38,7 @@ from ..base import AImportPatcher
 from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_FactionRelations, FullNames, CBash_FullNames, ItemStats, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
-from .base import ImportPatcher, CBash_ImportPatcher, CountDict
+from .base import ImportPatcher, CBash_ImportPatcher
 
 # Functions -------------------------------------------------------------------
 # Factor out common code in the patchers. Serve as a document on the patcher
@@ -218,7 +216,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(CellImporter, self).initPatchFile(patchFile,loadMods)
-        self.cellData = {}
+        self.cellData = collections.defaultdict(dict)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
         self.recAttrs = game.cellRecAttrs
@@ -238,9 +236,6 @@ class CellImporter(_ACellImporter, ImportPatcher):
         def importCellBlockData(cellBlock):
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
-                if fid not in tempCellData:
-                    tempCellData[fid] = {}
-                    tempCellData[fid+('flags',)] = {}
                 for attr in attrs:
                     tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
                         attr)
@@ -251,16 +246,13 @@ class CellImporter(_ACellImporter, ImportPatcher):
             if not cellBlock.cell.flags1.ignored:
                 fid = cellBlock.cell.fid
                 if fid not in tempCellData: return
-                if fid not in cellData:
-                    cellData[fid] = {}
-                    cellData[fid+('flags',)] = {}
                 for attr in attrs:
-                    if tempCellData[fid][
-                        attr] != cellBlock.cell.__getattribute__(attr):
+                    master_attr = cellBlock.cell.__getattribute__(attr)
+                    if tempCellData[fid][attr] != master_attr:
                         cellData[fid][attr] = tempCellData[fid][attr]
                 for flag in flags:
-                    if tempCellData[fid + ('flags',)][flag] != \
-                            cellBlock.cell.flags.__getattr__(flag):
+                    master_flag = cellBlock.cell.flags.__getattr__(flag)
+                    if tempCellData[fid + ('flags',)][flag] != master_flag:
                         cellData[fid + ('flags',)][flag] = \
                             tempCellData[fid + ('flags',)][flag]
         cellData = self.cellData
@@ -271,21 +263,26 @@ class CellImporter(_ACellImporter, ImportPatcher):
         cachedMasters = {}
         for srcMod in self.srcs:
             if srcMod not in bosh.modInfos: continue
-            tempCellData = {'Maps':{}}
+            # tempCellData maps long fids for cells in srcMod to dicts of
+            # (attributes (among attrs) -> their values for this mod). It is
+            # used to update cellData with cells that change those attributes'
+            # values from the value in any of srcMod's masters.
+            tempCellData = collections.defaultdict(dict)
+            tempCellData['Maps'] = {} # unused !
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
+            cachedMasters[srcMod] = srcFile
             masters = srcInfo.header.masters
             bashTags = srcInfo.getBashTags()
             # print bashTags
-            try:
-                attrs = set(reduce(operator.add,
-                                   (self.recAttrs[bashKey] for bashKey in
-                                    bashTags if bashKey in self.recAttrs)))
-            except: attrs = set()
-            flags = tuple(self.recFlags[bashKey] for bashKey in bashTags if
-                bashKey in self.recAttrs and self.recFlags[bashKey] != u'')
+            tags = bashTags & set(self.recAttrs)
+            if not tags: continue
+            attrs = set(reduce(# adds tuples together, then takes the set
+                operator.add, (self.recAttrs[bashKey] for bashKey in tags)))
+            flags = tuple(self.recFlags[bashKey] for bashKey in tags if
+                          self.recFlags[bashKey] != u'')
             if 'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:
                     importCellBlockData(cellBlock)
@@ -345,33 +342,33 @@ class CellImporter(_ACellImporter, ImportPatcher):
 
     def buildPatch(self,log,progress): # buildPatch0
         """Adds merged lists to patchfile."""
-        def handleCellBlock(cellBlock):
+        def handlePatchCellBlock(patchCellBlock):
             modified=False
-            for attr,value in cellData[cellBlock.cell.fid].iteritems():
-                if cellBlock.cell.__getattribute__(attr) != value:
-                    cellBlock.cell.__setattr__(attr,value)
+            for attr,value in cellData[patchCellBlock.cell.fid].iteritems():
+                if patchCellBlock.cell.__getattribute__(attr) != value:
+                    patchCellBlock.cell.__setattr__(attr, value)
                     modified=True
             for flag, value in cellData[
-                        cellBlock.cell.fid + ('flags',)].iteritems():
-                if cellBlock.cell.flags.__getattr__(flag) != value:
-                    cellBlock.cell.flags.__setattr__(flag,value)
+                        patchCellBlock.cell.fid + ('flags',)].iteritems():
+                if patchCellBlock.cell.flags.__getattr__(flag) != value:
+                    patchCellBlock.cell.flags.__setattr__(flag, value)
                     modified=True
             if modified:
-                cellBlock.cell.setChanged()
-                keep(cellBlock.cell.fid)
+                patchCellBlock.cell.setChanged()
+                keep(patchCellBlock.cell.fid)
             return modified
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        cellData,count = self.cellData, CountDict()
+        cellData, count = self.cellData, collections.defaultdict(int)
         for cellBlock in self.patchFile.CELL.cellBlocks:
-            if cellBlock.cell.fid in cellData and handleCellBlock(cellBlock):
-                count.increment(cellBlock.cell.fid[0])
+            if cellBlock.cell.fid in cellData and handlePatchCellBlock(cellBlock):
+                count[cellBlock.cell.fid[0]] += 1
         for worldBlock in self.patchFile.WRLD.worldBlocks:
             keepWorld = False
             for cellBlock in worldBlock.cellBlocks:
-                if cellBlock.cell.fid in cellData and handleCellBlock(
+                if cellBlock.cell.fid in cellData and handlePatchCellBlock(
                         cellBlock):
-                    count.increment(cellBlock.cell.fid[0])
+                    count[cellBlock.cell.fid[0]] += 1
                     keepWorld = True
             # if worldBlock.world.fid in cellData['Maps']:
                 # if worldBlock.world.mapPath != cellData['Maps'][worldBlock.world.fid]:
@@ -1432,20 +1429,8 @@ class ImportFactions(ImportPatcher):
 
     def initData(self,progress):
         """Get names from source files."""
-        if not self.isActive: return
-        actorFactions = ActorFactions(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                actorFactions.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                actorFactions.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        actorFactions = self._parse_sources(progress, parser=ActorFactions)
+        if not actorFactions: return
         #--Finish
         id_factions= self.id_data
         for type,aFid_factions in actorFactions.type_id_factions.iteritems():
@@ -1532,15 +1517,7 @@ class CBash_ImportFactions(CBash_ImportPatcher):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        actorFactions = CBash_ActorFactions(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                actorFactions.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        actorFactions = self._parse_texts(CBash_ActorFactions, progress)
         #--Finish
         csvId_factions = self.csvId_factions
         for group, aFid_factions in \
@@ -1637,20 +1614,8 @@ class ImportRelations(ImportPatcher):
 
     def initData(self,progress):
         """Get names from source files."""
-        if not self.isActive: return
-        factionRelations = FactionRelations(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                factionRelations.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                factionRelations.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        factionRelations = self._parse_sources(progress, parser=FactionRelations)
+        if not factionRelations: return
         #--Finish
         for fid, relations in factionRelations.id_relations.iteritems():
             if fid and (
@@ -1741,16 +1706,7 @@ class CBash_ImportRelations(CBash_ImportPatcher):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        factionRelations = CBash_FactionRelations(
-            aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                factionRelations.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        factionRelations = self._parse_texts(CBash_FactionRelations, progress)
         #--Finish
         self.csvFid_faction_mod.update(factionRelations.fid_faction_mod)
 
@@ -2391,23 +2347,8 @@ class NamesPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get names from source files."""
-        if not self.isActive: return
-        fullNames = FullNames(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                fullNames.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                try:
-                    fullNames.readFromText(getPatchesPath(srcFile))
-                except UnicodeError as e:
-                    print srcFile.stail,u'is not saved in UTF-8 format:', e
-            progress.plus()
+        fullNames = self._parse_sources(progress, parser=FullNames)
+        if not fullNames: return
         #--Finish
         id_full = self.id_full
         knownTypes = set(MreRecord.type_class.keys())
@@ -2434,16 +2375,16 @@ class NamesPatcher(ImportPatcher):
         if not self.isActive: return
         id_full = self.id_full
         mapper = modFile.getLongMapper()
-        for type in self.activeTypes:
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            if type == 'CELL':
+        for active_type in self.activeTypes:
+            if active_type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile, active_type)
+            if active_type == 'CELL':
                 id_records = patchBlock.id_cellBlock
                 activeRecords = (cellBlock.cell for cellBlock in
                                  modFile.CELL.cellBlocks if
                                  not cellBlock.cell.flags1.ignored)
                 setter = patchBlock.setCell
-            elif type == 'WRLD':
+            elif active_type == 'WRLD':
                 id_records = patchBlock.id_worldBlocks
                 activeRecords = (worldBlock.world for worldBlock in
                                  modFile.WRLD.worldBlocks if
@@ -2451,13 +2392,13 @@ class NamesPatcher(ImportPatcher):
                 setter = patchBlock.setWorld
             else:
                 id_records = patchBlock.id_records
-                activeRecords = modFile.tops[type].getActiveRecords()
+                activeRecords = modFile.tops[active_type].getActiveRecords()
                 setter = patchBlock.setRecord
             for record in activeRecords:
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid in id_records: continue
-                if fid not in id_full: continue
+                if fid not in id_full: continue # not a name
                 if record.full != id_full[fid]:
                     setter(record.getTypeCopy(mapper))
 
@@ -2468,23 +2409,23 @@ class NamesPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_full = self.id_full
         type_count = {}
-        for type in self.activeTypes:
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            if type == 'CELL':
+        for act_type in self.activeTypes:
+            if act_type not in modFile.tops: continue
+            type_count[act_type] = 0
+            if act_type == 'CELL':
                 records = (cellBlock.cell for cellBlock in
                            modFile.CELL.cellBlocks)
-            elif type == 'WRLD':
+            elif act_type == 'WRLD':
                 records = (worldBlock.world for worldBlock in
                            modFile.WRLD.worldBlocks)
             else:
-                records = modFile.tops[type].records
+                records = modFile.tops[act_type].records
             for record in records:
                 fid = record.fid
                 if fid in id_full and record.full != id_full[fid]:
                     record.full = id_full[fid]
                     keep(fid)
-                    type_count[type] += 1
+                    type_count[act_type] += 1
         self._patchLog(log,type_count)
 
 class CBash_NamesPatcher(CBash_ImportPatcher):
@@ -2507,16 +2448,7 @@ class CBash_NamesPatcher(CBash_ImportPatcher):
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        fullNames = CBash_FullNames(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                fullNames.readFromText(getPatchesPath(srcFile))
-            progress.plus()
-
+        fullNames = self._parse_texts(CBash_FullNames, progress)
         #--Finish
         csvId_full = self.csvId_full
         for group,fid_name in fullNames.group_fid_name.iteritems():
@@ -3045,21 +2977,8 @@ class StatsPatcher(ImportPatcher):
 
     def initData(self,progress):
         """Get stats from source files."""
-        if not self.isActive: return
-        itemStats = ItemStats(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                itemStats.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                itemStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
-
+        itemStats = self._parse_sources(progress, parser=ItemStats)
+        if not itemStats: return
         #--Finish
         for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
             self.activeTypes.append(group)
@@ -3067,7 +2986,6 @@ class StatsPatcher(ImportPatcher):
                 del attr_value['eid']
             self.fid_attr_value.update(nId_attr_value)
             self.class_attrs[group] = itemStats.class_attrs[group][1:]
-
         self.isActive = bool(self.activeTypes)
 
     def getReadClasses(self):
@@ -3156,15 +3074,7 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        itemStats = CBash_ItemStats(aliases=self.patchFile.aliases)
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            if not reModExt.search(srcFile.s):
-                if srcFile not in patchesList: continue
-                itemStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
-
+        itemStats = self._parse_texts(CBash_ItemStats, progress)
         #--Finish
         for group,nId_attr_value in itemStats.class_fid_attr_value.iteritems():
             if group not in validTypes: continue
@@ -3227,25 +3137,13 @@ class SpellsPatcher(ImportPatcher):
         super(SpellsPatcher, self).initPatchFile(patchFile, loadMods)
         #--To be filled by initData
         self.id_stat = {} #--Stats keyed by long fid.
-        self.attrs = None #set in initData
+        self.spell_attrs = None #set in initData
 
     def initData(self,progress):
         """Get stats from source files."""
-        if not self.isActive: return
-        spellStats = SpellRecords(aliases=self.patchFile.aliases)
-        self.attrs = spellStats.attrs
-        progress.setFull(len(self.srcs))
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if reModExt.search(srcFile.s):
-                if srcPath not in bosh.modInfos: continue
-                srcInfo = bosh.modInfos[GPath(srcFile)]
-                spellStats.readFromMod(srcInfo)
-            else:
-                if srcPath not in patchesList: continue
-                spellStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        spellStats = self._parse_sources(progress, parser=SpellRecords)
+        if not spellStats: return
+        self.spell_attrs = spellStats.attrs
         #--Finish
         self.id_stat.update(spellStats.fid_stats)
         self.isActive = bool(self.id_stat)
@@ -3264,7 +3162,7 @@ class SpellsPatcher(ImportPatcher):
             return
         id_stat = self.id_stat
         mapper = modFile.getLongMapper()
-        attrs = self.attrs
+        spell_attrs = self.spell_attrs
         patchBlock = self.patchFile.SPEL
         id_records = patchBlock.id_records
         for record in modFile.SPEL.getActiveRecords():
@@ -3273,7 +3171,7 @@ class SpellsPatcher(ImportPatcher):
             if fid in id_records: continue
             spellStats = id_stat.get(fid)
             if not spellStats: continue
-            oldValues = [getattr_deep(record, attr) for attr in attrs]
+            oldValues = [getattr_deep(record, attr) for attr in spell_attrs]
             if oldValues != spellStats:
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
@@ -3284,15 +3182,15 @@ class SpellsPatcher(ImportPatcher):
         keep = self.patchFile.getKeeper()
         id_stat = self.id_stat
         allCounts = []
-        attrs = self.attrs
+        spell_attrs = self.spell_attrs
         count,counts = 0,{}
         for record in patchFile.SPEL.records:
             fid = record.fid
             spellStats = id_stat.get(fid)
             if not spellStats: continue
-            oldValues = [getattr_deep(record, attr) for attr in attrs]
+            oldValues = [getattr_deep(record, attr) for attr in spell_attrs]
             if oldValues == spellStats: continue
-            for attr,value in zip(attrs,spellStats):
+            for attr,value in zip(spell_attrs,spellStats):
                 setattr_deep(record,attr,value)
             keep(fid)
             count += 1
@@ -3325,21 +3223,13 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
         self.id_stats = {}
         self.csvId_stats = {}
         self.mod_count = {}
-        self.attrs = None #set in initData
+        self.spell_attrs = None #set in initData
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
         CBash_ImportPatcher.initData(self,group_patchers,progress)
-        spellStats = CBash_SpellRecords(aliases=self.patchFile.aliases)
-        self.attrs = spellStats.attrs
-        progress.setFull(len(self.srcs))
-        patchesList = getPatchesList()
-        for srcFile in self.srcs:
-            srcPath = GPath(srcFile)
-            if not reModExt.search(srcFile.s):
-                if srcPath not in patchesList: continue
-                spellStats.readFromText(getPatchesPath(srcFile))
-            progress.plus()
+        spellStats = self._parse_texts(CBash_SpellRecords, progress)
+        self.spell_attrs = spellStats.attrs
         #--Finish
         self.csvId_stats.update(spellStats.fid_stats)
 
@@ -3349,7 +3239,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        conflicts = record.ConflictDetails(self.attrs)
+        conflicts = record.ConflictDetails(self.spell_attrs)
         if conflicts:
             if ValidateDict(conflicts, self.patchFile):
                 self.id_stats.setdefault(record.fid,{}).update(conflicts)

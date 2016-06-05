@@ -584,7 +584,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
         return isSingle and not isinstance(self.idata[self.selected[0]],
                                                   bosh.InstallerMarker)
 
-    @balt.conversation
+    @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
         archive = self.selected[0]
         installer = self.idata[archive]

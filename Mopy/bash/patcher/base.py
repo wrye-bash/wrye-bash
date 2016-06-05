@@ -89,13 +89,13 @@ class _Abstract_Patcher(object):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called
-        after this."""
+        after this. Base implementation sets the patchFile to the actively
+        executing patch - be sure to call super."""
         self.patchFile = patchFile
 
 class Patcher(_Abstract_Patcher):
     """Abstract base class for patcher elements performing a PBash patch - must
     be just before Abstract_Patcher in MRO.""" ##: "performing" ? how ?
-    # would make any sense to make getRead/WriteClasses() into classmethods
     # would it make any sense to make getRead/WriteClasses() into classmethods
     # and just define an attribute in the classes - so getReadClasses(cls):
     # return cls.READ and have in subclasses just READ = 'AMMO' (say)
@@ -287,14 +287,14 @@ class AMultiTweaker(_Abstract_Patcher):
         self.isEnabled = config.get('isEnabled',False)
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
         for tweak in self.tweaks:
-            tweak.getConfig(config)
+            tweak.get_tweak_config(config)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
         config = configs[self.__class__.__name__] = {}
         config['isEnabled'] = self.isEnabled
         for tweak in self.tweaks:
-            tweak.saveConfig(config)
+            tweak.save_tweak_config(config)
         self.enabledTweaks = [tweak for tweak in self.tweaks if
                               tweak.isEnabled]
         self.isActive = len(self.enabledTweaks) > 0
@@ -359,7 +359,7 @@ class AMultiTweakItem(object):
 
     #--Config Phase -----------------------------------------------------------
     # Methods present in _Abstract_Patcher too
-    def getConfig(self,configs):
+    def get_tweak_config(self, configs):
         """Get config from configs dictionary and/or set to default."""
         self.isEnabled,self.chosen = self.defaultEnabled,0
         self._isNew = not (self.key in configs)
@@ -376,7 +376,7 @@ class AMultiTweakItem(object):
             if self.default:
                 self.chosen = self.default
 
-    def saveConfig(self,configs):
+    def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
         if self.choiceValues: value = self.choiceValues[self.chosen]
         else: value = None
@@ -406,7 +406,7 @@ class ADoublePatcher(AListPatcher):
         self.tweaks = copy.deepcopy(self.__class__.tweaks)
         config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
         for tweak in self.tweaks:
-            tweak.getConfig(config)
+            tweak.get_tweak_config(config)
 
     def saveConfig(self,configs):
         """Save config to configs dictionary."""
@@ -414,7 +414,7 @@ class ADoublePatcher(AListPatcher):
         super(ADoublePatcher, self).saveConfig(configs)
         config = configs[self.__class__.__name__]
         for tweak in self.tweaks:
-            tweak.saveConfig(config)
+            tweak.save_tweak_config(config)
         self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
 
 class AImportPatcher(AListPatcher):

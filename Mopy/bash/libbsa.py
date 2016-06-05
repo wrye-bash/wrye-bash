@@ -32,7 +32,7 @@ import os
 import platform
 from bolt import Path, GPath
 
-libbsa = None
+_libbsa = None
 version = None
 BSAHandle, LibbsaError = None, None
 
@@ -51,9 +51,7 @@ class LibbsaVersionError(Exception):
     pass
 
 def Init(path):
-    """Called automatically by importing libbsa.  Can also be called manually
-       by the user to reload libbsa, pointing to a different path to the dll.
-   """
+    """Call to reload libbsa, pointing to a different path to the dll."""
 
     # If path is a directory, auto choose DLL based on platform
     if os.path.isdir(path):
@@ -62,11 +60,11 @@ def Init(path):
         else:
             path = os.path.join(path,u'libbsa32.dll')
 
-    global libbsa, BSAHandle, LibbsaError
+    global _libbsa, BSAHandle, LibbsaError
 
     # First unload any libbsa dll previously loaded
-    del libbsa, BSAHandle, LibbsaError
-    libbsa = None
+    del _libbsa, BSAHandle, LibbsaError
+    _libbsa = None
 
     if not os.path.exists(path):
         BSAHandle, LibbsaError = None, None
@@ -79,9 +77,9 @@ def Init(path):
         if isinstance(path,unicode) and os.name in ('nt','ce'):
             LoadLibrary = windll.kernel32.LoadLibraryW
             handle = LoadLibrary(path)
-        libbsa = CDLL(path,handle=handle)
+        _libbsa = CDLL(path, handle=handle)
     except Exception as e:
-        libbsa = BSAHandle = LibbsaError = None
+        _libbsa = BSAHandle = LibbsaError = None
         raise
 
     # Some types
@@ -101,7 +99,7 @@ def Init(path):
     bsa_asset_p_p = POINTER(bsa_asset_p)
 
     # helpers
-    def _uint(const): return c_uint.in_dll(libbsa, const).value
+    def _uint(const): return c_uint.in_dll(_libbsa, const).value
 
     # utility unicode functions
     def _enc(x): return (x.encode('utf8') if isinstance(x,unicode)
@@ -114,7 +112,7 @@ def Init(path):
     ## bool bsa_is_compatible(const unsigned int versionMajor,
     #                         const unsigned int versionMinor,
     #                         const unsigned int versionPatch)
-    _Cbsa_is_compatible = libbsa.bsa_is_compatible
+    _Cbsa_is_compatible = _libbsa.bsa_is_compatible
     _Cbsa_is_compatible.restype = c_bool
     _Cbsa_is_compatible.argtypes = [c_uint, c_uint, c_uint]
     def IsCompatibleVersion(majorVersion, minorVersion, patchVersion=0):
@@ -125,7 +123,7 @@ def Init(path):
         verMinor = c_uint()
         verPatch = c_uint()
         try:
-            libbsa.bsa_get_version(byref(verMajor), byref(verMinor), byref(verPatch))
+            _libbsa.bsa_get_version(byref(verMajor), byref(verMinor), byref(verPatch))
         except:
             raise LibbsaVersionError(
                 'libbsa.py is not compatible with the specified libbsa DLL ('
@@ -181,7 +179,7 @@ def Init(path):
     # API Functions - Error Handling
     # =========================================================================
     ## unsigned int bsa_get_error_message(const uint8_t ** const details)
-    _Cbsa_get_error_message = libbsa.bsa_get_error_message
+    _Cbsa_get_error_message = _libbsa.bsa_get_error_message
     _Cbsa_get_error_message.restype = c_uint
     _Cbsa_get_error_message.argtypes = [c_char_p_p]
     def GetLastErrorDetails():
@@ -222,7 +220,7 @@ def Init(path):
     ## unsigned int bsa_get_version(unsigned int * const versionMajor,
     #                               unsigned int * const versionMinor,
     #                               unsigned int * const versionPatch)
-    _Cbsa_get_version = libbsa.bsa_get_version
+    _Cbsa_get_version = _libbsa.bsa_get_version
     _Cbsa_get_version.argtypes = [c_uint_p, c_uint_p, c_uint_p]
     global version
     version = c_char_p()
@@ -240,16 +238,16 @@ def Init(path):
     # API Functions - Lifecycle Management
     # =========================================================================
     ## unsigned int bsa_open(bsa_handle * bh, const char * const path)
-    _Cbsa_open = libbsa.bsa_open
+    _Cbsa_open = _libbsa.bsa_open
     _Cbsa_open.restype = LibbsaErrorCheck
     _Cbsa_open.argtypes = [bsa_handle_p, c_char_p]
     ## unsigned int bsa_save(bsa_handle bh, const char * const path,
     #                        const unsigned int flags)
-    _Cbsa_save = libbsa.bsa_save
+    _Cbsa_save = _libbsa.bsa_save
     _Cbsa_save.restype = LibbsaErrorCheck
     _Cbsa_save.argtypes = [bsa_handle, c_char_p, c_uint]
     ## void bsa_close(bsa_handle bh)
-    _Cbsa_close = libbsa.bsa_close
+    _Cbsa_close = _libbsa.bsa_close
     _Cbsa_close.restype = None
     _Cbsa_close.argtypes = [bsa_handle]
 
@@ -260,13 +258,13 @@ def Init(path):
     #                              const char * const contentPath,
     #                              char *** const assetPaths,
     #                              size_t * const numAssets)
-    _Cbsa_get_assets = libbsa.bsa_get_assets
+    _Cbsa_get_assets = _libbsa.bsa_get_assets
     _Cbsa_get_assets.restype = LibbsaErrorCheck
     _Cbsa_get_assets.argtypes = [bsa_handle, c_char_p, c_char_p_p_p, c_size_t_p]
     ## unsigned int bsa_contains_asset(bsa_handle bh,
     #                                  const char * const assetPath,
     #                                  bool * const result)
-    _Cbsa_contains_asset = libbsa.bsa_contains_asset
+    _Cbsa_contains_asset = _libbsa.bsa_contains_asset
     _Cbsa_contains_asset.restype = LibbsaErrorCheck
     _Cbsa_contains_asset.argtypes = [bsa_handle, c_char_p, c_bool_p]
 
@@ -284,13 +282,13 @@ def Init(path):
     #                                  const char * const destPath,
     #                                  char *** const assetPaths,
     #                                  size_t * const numAssets)
-    _Cbsa_extract_assets = libbsa.bsa_extract_assets
+    _Cbsa_extract_assets = _libbsa.bsa_extract_assets
     _Cbsa_extract_assets.restype = LibbsaErrorCheck
     _Cbsa_extract_assets.argtypes = [bsa_handle, c_char_p, c_char_p,
                                      c_char_p_p_p, c_size_t_p, c_bool]
     ## unsigned int bsa_extract_asset(bsa_handle bh, const char * assetPath,
     #                                 const char * destPath)
-    _Cbsa_extract_asset = libbsa.bsa_extract_asset
+    _Cbsa_extract_asset = _libbsa.bsa_extract_asset
     _Cbsa_extract_asset.restype = LibbsaErrorCheck
     _Cbsa_extract_asset.argtypes = [bsa_handle, c_char_p, c_char_p, c_bool]
 
@@ -338,12 +336,3 @@ def Init(path):
         def ExtractAsset(self, assetPath, destPath):
             _Cbsa_extract_asset(self._handle, _enc(assetPath), _enc(destPath),
                                 True)
-
-
-# Initialize libbsa, assuming that libbsa32.dll and libbsa64.dll are in the
-# same directory. Call Init again with the path to these dll's if this
-# assumption is incorrect. libbsa will be None if this is the case.
-try:
-    Init(os.getcwdu())
-except LibbsaVersionError:
-    BSAHandle, LibbsaError = None, None

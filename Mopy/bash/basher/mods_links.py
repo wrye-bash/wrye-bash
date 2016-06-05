@@ -32,7 +32,6 @@ from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
 from ..bolt import GPath, BoltError
-from ..patcher.patch_files import PatchFile
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
@@ -209,10 +208,14 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     text, help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
 
     def Execute(self):
-        newPatchName = PatchFile.generateNextBashedPatch(self.window)
+        newPatchName = bosh.modInfos.generateNextBashedPatch()
         if newPatchName is not None:
             self.window.RefreshUI(files=[newPatchName], refreshSaves=False)
             self.window.SelectAndShowItem(newPatchName, deselectOthers=True)
+        else:
+            self._showWarning(u"Unable to create new bashed patch: "
+                              u"10 bashed patches already exist!")
+
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
@@ -233,7 +236,6 @@ class Mods_CreateBlank(ItemLink):
         if windowSelected: # assign it the group of the first selected mod
             mod_group = self.window.data_store.table.getColumn('group')
             mod_group[newName] = mod_group.get(windowSelected[0], u'')
-        bosh.modInfos.refresh()
         self.window.RefreshUI(files=[newName], refreshSaves=False)
         self.window.SelectAndShowItem(newName, deselectOthers=True)
 
