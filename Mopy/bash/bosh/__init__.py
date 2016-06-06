@@ -2992,7 +2992,7 @@ class FileInfos(_DataStore):
         self.dir = dir_ #--Path
         self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
-        self.bashDir = self.getBashDir() # should be a property
+        self.bashDir = self.get_bash_dir() # should be a property
         # the type of the table keys is always bolt.Path
         self.table = bolt.Table(
             bolt.PickleDict(self.bashDir.join(u'Table.dat')))
@@ -3003,7 +3003,7 @@ class FileInfos(_DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Returns Bash data storage directory."""
         return self.dir.join(u'Bash')
 
@@ -3121,7 +3121,7 @@ class FileInfos(_DataStore):
         #--Cache table updates
         tableUpdate = {}
         #--Backups
-        backBase = self.getBashDir().join(u'Backups')
+        backBase = self.get_bash_dir().join(u'Backups')
         #--Go through each file
         for fileName in fileNames:
             fileInfo = self[fileName]
@@ -3221,7 +3221,7 @@ class INIInfos(FileInfos):
         FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Return directory to save info."""
         dir_ = dirs['modsBash'].join(u'INI Data')
         dir_.makedirs()
@@ -3385,7 +3385,7 @@ class ModInfos(FileInfos):
         order[newPos:newPos] = toMove
         return True
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']
 
@@ -4178,10 +4178,10 @@ class SaveInfos(FileInfos):
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Return the Bash save settings directory, creating it if it does
         not exist."""
-        dir_ = FileInfos.getBashDir(self)
+        dir_ = FileInfos.get_bash_dir(self)
         dir_.makedirs()
         return dir_
 
@@ -4193,7 +4193,7 @@ class SaveInfos(FileInfos):
         """Deletes savefile and associated pluggy file."""
         FileInfos.delete(self, fileName, **kwargs)
         kwargs['confirm'] = False # ask only on save deletion
-        kwargs['backupDir'] = self.getBashDir().join('Backups')
+        kwargs['backupDir'] = self.get_bash_dir().join('Backups')
         CoSaves(self.dir,fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):
@@ -4279,7 +4279,7 @@ class BSAInfos(FileInfos):
         self.dir = dirs['mods']
         FileInfos.__init__(self,self.dir,BSAInfo)
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Return directory to save info."""
         return dirs['modsBash'].join(u'BSA Data')
 
