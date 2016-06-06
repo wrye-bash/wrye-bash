@@ -4030,7 +4030,7 @@ class BashFrame(wx.Frame):
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
             goodRoots = set(path.root for path in fileInfos.keys())
-            backupDir = fileInfos.bashDir.join(u'Backups')
+            backupDir = fileInfos.bash_dir.join(u'Backups')
             if not backupDir.isdir(): continue
             for name in backupDir.list():
                 path = backupDir.join(name)

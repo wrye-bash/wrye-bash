@@ -82,7 +82,7 @@ class Files_Unhide(ItemLink):
             destDir = window.data_store.dir
         elif self.files_type == 'save':
             wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
-            srcDir = window.data_store.bashDir.join(u'Hidden')
+            srcDir = window.data_store.bash_dir.join(u'Hidden')
             destDir = window.data_store.dir
         elif self.files_type == 'installer':
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
@@ -221,7 +221,7 @@ class File_Hide(ItemLink):
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
         #--Do it
-        destRoot = self.window.data_store.bashDir.join(u'Hidden')
+        destRoot = self.window.data_store.bash_dir.join(u'Hidden')
         fileInfos = self.window.data_store
         fileGroups = fileInfos.table.getColumn('group')
         for fileName in self.selected:
@@ -311,7 +311,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
         """Revert to Snapshot."""
         fileName = self._selected_item
         #--Snapshot finder
-        srcDir = self.window.data_store.bashDir.join(u'Snapshots')
+        srcDir = self.window.data_store.bash_dir.join(u'Snapshots')
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()

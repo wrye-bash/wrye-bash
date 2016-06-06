@@ -1432,7 +1432,7 @@ class BsaFile:
 
     def firstBackup(self,progress):
         """Make first backup, just in case!"""
-        backupDir = modInfos.bashDir.join(u'Backups')
+        backupDir = modInfos.bash_dir.join(u'Backups')
         backupDir.makedirs()
         backup = backupDir.join(self.path.tail)+u'f'
         if not backup.exists():
@@ -2290,7 +2290,7 @@ class FileInfo(_AFileInfo):
 
     def __init__(self, dir, name):
         _AFileInfo.__init__(self, dir, name)
-        self.bashDir = self.getFileInfos().bashDir
+        self.bashDir = self.getFileInfos().bash_dir
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
@@ -2943,28 +2943,30 @@ class _DataStore(DataDict):
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
+    @property
+    def bash_dir(self):
+        """Return the folder where Bash persists its data - create it on init!
+        :rtype: bolt.Path"""
+        raise AbstractError
+
 class FileInfos(_DataStore):
     """Common superclass for mod, ini, saves and bsa infos."""
     ##: we need a common API for this and TankData...
     file_pattern = None # subclasses must define this !
     def _initDB(self, dir_):
         self.dir = dir_ #--Path
+        self.bash_dir.makedirs() # self.dir may need be set
         self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
-        self.bashDir = self.getBashDir() # should be a property
         # the type of the table keys is always bolt.Path
         self.table = bolt.Table(
-            bolt.PickleDict(self.bashDir.join(u'Table.dat')))
+            bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
 
     def __init__(self, dir_, factory=FileInfo, dirdef=None):
         """Init with specified directory and specified factory type."""
         self.dirdef = dirdef
         self.factory=factory
         self._initDB(dir_)
-
-    def getBashDir(self):
-        """Returns Bash data storage directory."""
-        return self.dir.join(u'Bash')
 
     #--Refresh File
     def refreshFile(self,fileName):
@@ -3080,7 +3082,7 @@ class FileInfos(_DataStore):
         #--Cache table updates
         tableUpdate = {}
         #--Backups
-        backBase = self.getBashDir().join(u'Backups')
+        backBase = self.bash_dir.join(u'Backups')
         #--Go through each file
         for fileName in fileNames:
             fileInfo = self[fileName]
@@ -3180,11 +3182,8 @@ class INIInfos(FileInfos):
         FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
 
-    def getBashDir(self):
-        """Return directory to save info."""
-        dir_ = dirs['modsBash'].join(u'INI Data')
-        dir_.makedirs()
-        return dir_
+    @property
+    def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
 
     def delete_Refresh(self, deleted, check_existence=False):
         deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
@@ -3379,9 +3378,8 @@ class ModInfos(FileInfos):
         order[newPos:newPos] = toMove
         return True
 
-    def getBashDir(self):
-        """Returns Bash data storage directory."""
-        return dirs['modsBash']
+    @property
+    def bash_dir(self): return dirs['modsBash']
 
     #--Refresh-----------------------------------------------------------------
     def _names(self):
@@ -4148,12 +4146,8 @@ class SaveInfos(FileInfos):
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
 
-    def getBashDir(self):
-        """Return the Bash save settings directory, creating it if it does
-        not exist."""
-        dir_ = FileInfos.getBashDir(self)
-        dir_.makedirs()
-        return dir_
+    @property
+    def bash_dir(self): return self.dir.join(u'Bash')
 
     def refresh(self, scanData=True):
         self._refreshLocalSave()
@@ -4163,7 +4157,7 @@ class SaveInfos(FileInfos):
         """Deletes savefile and associated pluggy file."""
         FileInfos.delete(self, fileName, **kwargs)
         kwargs['confirm'] = False # ask only on save deletion
-        kwargs['backupDir'] = self.getBashDir().join('Backups')
+        kwargs['backupDir'] = self.bash_dir.join('Backups')
         CoSaves(self.dir,fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):
@@ -4249,9 +4243,8 @@ class BSAInfos(FileInfos):
         self.dir = dirs['mods']
         FileInfos.__init__(self,self.dir,BSAInfo)
 
-    def getBashDir(self):
-        """Return directory to save info."""
-        return dirs['modsBash'].join(u'BSA Data')
+    @property
+    def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
 
     def resetBSAMTimes(self):
         for bsa in self.itervalues(): bsa.resetMTime()
@@ -5847,9 +5840,9 @@ class InstallersData(_DataStore):
 
     def __init__(self):
         self.dir = dirs['installers']
-        self.bashDir = dirs['bainData']
+        self.bash_dir.makedirs()
         #--Persistent data
-        self.dictFile = bolt.PickleDict(self.bashDir.join(u'Installers.dat'))
+        self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
         self.data = {}
         self.data_sizeCrcDate = {}
         self.crc_installer = {}
@@ -5862,6 +5855,9 @@ class InstallersData(_DataStore):
         self.hasChanged = False
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
+
+    @property
+    def bash_dir(self): return dirs['bainData']
 
     def add_marker(self, name, order):
         path = GPath(name)
@@ -5879,8 +5875,6 @@ class InstallersData(_DataStore):
     def irefresh(self, progress=None, what='DIONSC', fullRefresh=False,
                  refresh_info=None, deleted=None, pending=None, projects=None):
         progress = progress or bolt.Progress()
-        #--MakeDirs
-        self.bashDir.makedirs()
         #--Archive invalidation
         if settings.get('bash.bsaRedirection') and oblivionIni.path.exists():
             oblivionIni.setBsaRedirection(True)
