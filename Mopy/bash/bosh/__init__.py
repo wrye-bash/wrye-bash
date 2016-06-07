@@ -2592,7 +2592,6 @@ class ModInfo(FileInfo):
     def setmtime(self,mtime=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
         mtime = FileInfo.setmtime(self,mtime)
-        modInfos.mtimes[self.name] = mtime
         # Prevent re-calculating the File CRC
         modInfos.table.setItem(self.name,'crc_mtime',mtime)
 
@@ -3270,13 +3269,9 @@ class ModInfos(FileInfos):
 
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'], ModInfo)
-        #--MTime resetting
-        self.mtimes = self.table.getColumn('mtime')
-        self.mtimesReset = [] #--Files whose mtimes have been reset.
-        self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        #--Selection state (merged, imported)
-        self.bashed_patches = set()
         #--Info lists/sets
+        self.mergeScanned = [] #--Files that have been scanned for mergeability.
+        self.bashed_patches = set()
         for fname in bush.game.masterFiles:
             if dirs['mods'].join(fname).exists():
                 self.masterName = GPath(fname)
@@ -3349,14 +3344,6 @@ class ModInfos(FileInfos):
     @_lo_cache
     def redo_load_order(self): load_order.redo_load_order()
 
-    @property
-    def lockLO(self):
-        return settings.getChanged('bosh.modInfos.resetMTimes', True)
-    def lockLOSet(self, val):
-        settings['bosh.modInfos.resetMTimes'] = val
-        if val: self._resetMTimes()
-        else: self.mtimes.clear()
-
     #--Load Order utility methods - be sure cache is valid when using them-----
     @staticmethod
     def hexIndexString(mod):
@@ -3390,23 +3377,6 @@ class ModInfos(FileInfos):
         return dirs['modsBash']
 
     #--Refresh-----------------------------------------------------------------
-    def _OBMMWarn(self):
-        obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn', 0)
-        if self.lockLO and obmmWarn == 0 and dirs['app'].join(
-                u'obmm').exists(): settings['bosh.modInfos.obmmWarn'] = 1
-        return settings['bosh.modInfos.obmmWarn'] == 1 # must warn
-
-    def canSetTimes(self):
-        """Returns a boolean indicating if mtime setting is allowed."""
-        ##: canSetTimes() will trigger a prompt if OBMM is installed so I keep
-        # it in refresh(): bin the OBMM warn and instead add a warn In lockLO
-        if self._OBMMWarn(): return False
-        if not self.lockLO: return False
-        if settings.dictFile.readOnly: return False
-        if load_order.using_txt_file(): return False
-        #--Else
-        return True
-
     def _names(self):
         names = FileInfos._names(self)
         names.sort(key=lambda x: x.cext == u'.ghost')
@@ -3421,8 +3391,6 @@ class ModInfos(FileInfos):
             change = FileInfos.refresh(self)
             if change: _added, _updated, deleted = change
             hasChanged = bool(change)
-        if self.canSetTimes() and hasChanged:
-            self._resetMTimes()
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
@@ -3474,21 +3442,6 @@ class ModInfos(FileInfos):
         self.new_missing_strings = new
         return bool(new)
 
-    def _resetMTimes(self):
-        """Remember/reset mtimes of member files."""
-        if not self.canSetTimes(): return
-        del self.mtimesReset[:]
-        try:
-            for fileName, fileInfo in sorted(self.iteritems(),key=lambda x: x[1].mtime):
-                oldMTime = int(self.mtimes.get(fileName,fileInfo.mtime))
-                self.mtimes[fileName] = oldMTime
-                if fileInfo.mtime != oldMTime and oldMTime  > 0:
-                    #deprint(fileInfo.name, oldMTime - fileInfo.mtime)
-                    fileInfo.setmtime(oldMTime)
-                    self.mtimesReset.append(fileName)
-        except:
-            self.mtimesReset = [u'FAILED',fileName]
-
     def autoGhost(self,force=False):
         """Automatically turn inactive files to ghosts.
 
@@ -3518,12 +3471,12 @@ class ModInfos(FileInfos):
         """Refreshes various mod info lists (exGroup_mods, imported,
         exported) - call after refreshing from Data AND having latest load
         order."""
-        #--Mod mtimes
+        #--Bashed patches
         self.bashed_patches.clear()
         for modName, modInfo in self.iteritems():
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
-        #--Selected mtimes and Refresh overLoaded too..
+        #--Refresh overLoaded
         self.exGroup_mods.clear()
         active_set = set(load_order.activeCached())
         for modName in active_set:
@@ -4131,7 +4084,6 @@ class ModInfos(FileInfos):
                 raise
         basePath.mtime = baseInfo.mtime
         oldPath.mtime = newInfo.mtime
-        self.mtimes[oldName] = newInfo.mtime
         if newInfo.isGhost:
             oldInfo = ModInfo(self.dir,oldName)
             oldInfo.setGhost(True)

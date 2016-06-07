@@ -312,6 +312,6 @@ class Mods_LockTimes(CheckLink):
     help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
              u" them whenever Wrye Bash refreshes data/starts up.")
 
-    def _check(self): return bosh.modInfos.lockLO
+    def _check(self): return load_order.locked
 
-    def Execute(self): bosh.modInfos.lockLOSet(not bosh.modInfos.lockLO)
+    def Execute(self): load_order.toggle_lock_load_order()
