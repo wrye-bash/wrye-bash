@@ -406,8 +406,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_CleanDummyMasters())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
-    if bush.game.fsName != u'Skyrim':
-        ModList.mainMenu.append(Mods_LockTimes())
+    ModList.mainMenu.append(Mods_LockLoadOrder())
     ModList.mainMenu.append(Mods_ScanDirty())
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools']:

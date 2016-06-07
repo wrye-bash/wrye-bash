@@ -36,7 +36,7 @@ from ..bolt import GPath, BoltError
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
-           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockTimes',
+           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
            'Mods_ScanDirty']
 
 # "Load" submenu --------------------------------------------------------------
@@ -310,12 +310,12 @@ class Mods_ScanDirty(BoolLink):
         super(Mods_ScanDirty, self).Execute()
         self.window.RefreshUI(refreshSaves=False)
 
-class Mods_LockTimes(CheckLink):
+class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""
     text = _(u'Lock Load Order')
     help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
              u" them whenever Wrye Bash refreshes data/starts up.")
 
-    def _check(self): return bosh.modInfos.lockLO
+    def _check(self): return load_order.locked
 
-    def Execute(self): bosh.modInfos.lockLOSet(not bosh.modInfos.lockLO)
+    def Execute(self): load_order.toggle_lock_load_order()

@@ -25,7 +25,7 @@ import subprocess
 import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
-from .. import bass, bosh, bolt, balt, bush, parsers
+from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..balt import ItemLink, Link, Links, bitmapButton, images, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
@@ -454,12 +454,16 @@ class App_BOSS(App_Button):
         super(App_BOSS, self).Execute()
         if bass.settings['BOSS.ClearLockTimes']:
             # Clear the saved times from before
-            bosh.modInfos.mtimes.clear()
-            # And refresh to get the new times so WB will keep the order that BOSS specifies
-            # if on timestamp method scan the data dir, if not loadorder.txt
-            # should have changed, plugins refreshLoadOrder should detect that
-            bosh.modInfos.refresh(scanData=not bosh.load_order.using_txt_file())
-            # Refresh UI, so WB is made aware of the changes to loadorder.txt
+            locked = load_order.locked
+            try:
+                load_order.locked = False
+                # Refresh to get the new load order that BOSS specified. If
+                # on timestamp method scan the data dir, if not loadorder.txt
+                # should have changed, refreshLoadOrder should detect that
+                bosh.modInfos.refresh(scanData=not bosh.load_order.using_txt_file())
+            finally:
+                load_order.locked = locked
+            # Refresh UI, so WB is made aware of the changes to load order
             BashFrame.modList.RefreshUI(refreshSaves=True)
 
 #------------------------------------------------------------------------------
