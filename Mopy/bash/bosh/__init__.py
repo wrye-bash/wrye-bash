@@ -4381,21 +4381,20 @@ class Installer(object):
     #--Member data
     persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
         'fileSizeCrcs', 'type', 'isActive', 'subNames', 'subActives',
-        'dirty_sizeCrc', 'comments', 'readMe', 'packageDoc', 'packagePic',
+        'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
         'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
     volatile = ('data_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
         'missingFiles', 'mismatchedFiles', 'project_refreshed',
         'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
-        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles')
+        'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files')
     __slots__ = persistent + volatile
     #--Package analysis/porting.
     docDirs = {u'screenshots'}
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
-    reDataFile = re.compile(
-        ur'(masterlist.txt|dlclist.txt|\.(esp|esm|bsa|ini))$', re.I | re.U)
+    reDataFile = re.compile(ur'(\.(esp|esm|bsa|ini))$', re.I | re.U)
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
@@ -4525,11 +4524,11 @@ class Installer(object):
         #--For InstallerProject's, cache if refresh projects is skipped
         self.src_sizeCrcDate = {}
         #--Set by refreshBasic
-        self.fileRootIdex = 0
+        self.fileRootIdex = 0 # unused - just used in setstate
         self.type = 0 #--Package type: 0: unset/invalid; 1: simple; 2: complex
         self.subNames = []
         self.subActives = []
-        self.readMe = None # set by refreshDataSizeCrc (unused for now)
+        self.extras_dict = {} # hack to add more persistent attributes
         #--User Only
         self.skipVoices = False
         self.hasExtraData = False
@@ -4544,6 +4543,7 @@ class Installer(object):
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific
         self.project_refreshed = False
+        self._dir_dirs_files = None
         #--Volatile: set by refreshDataSizeCrc
         self.hasWizard = False
         self.hasBCF = False
@@ -4621,10 +4621,22 @@ class Installer(object):
         """Used by unpickler to recreate object."""
         self.initDefault()
         map(self.__setattr__,self.persistent,values)
-        if self.dirty_sizeCrc is None:
-            self.dirty_sizeCrc = {} #--Use empty dict instead.
-        dest_scr = self.refreshDataSizeCrc()
-        if self.overrideSkips:
+        rescan = False
+        if not isinstance(self.extras_dict, dict):
+            self.extras_dict = {}
+            if self.fileRootIdex: # we need to add 'root_path' key
+                rescan = True
+        elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
+            rescan = True ##: for people that used my wip branch, drop on 307
+        package_path = bass.dirs['installers'].join(self.archive)
+        exists = package_path.exists()
+        if not exists: # the pickled package was deleted outside bash
+            pass # don't do anything should be deleted from our data soon
+        elif rescan:
+            dest_scr = self.refreshBasic(
+                package_path, bolt.Progress(), recalculate_project_crc=False)
+        else: dest_scr = self.refreshDataSizeCrc()
+        if exists and self.overrideSkips:
             InstallersData.overridden_skips.update(dest_scr.keys())
 
     def __copy__(self):
@@ -4684,23 +4696,25 @@ class Installer(object):
         if settings['bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')
         if settings['bash.installers.skipLandscapeLODMeshes']:
-            Installer._global_start_skips.append(u'meshes\\landscape\\lod')
+            meshes_lod = os_sep.join((u'meshes', u'landscape', u'lod'))
+            Installer._global_start_skips.append(meshes_lod)
         if settings['bash.installers.skipScreenshots']:
             Installer._global_start_skips.append(u'screenshots')
         # LOD textures
         skipLODTextures = settings['bash.installers.skipLandscapeLODTextures']
         skipLODNormals = settings['bash.installers.skipLandscapeLODNormals']
         skipAllTextures = skipLODTextures and skipLODNormals
+        tex_gen = os_sep.join((u'textures', u'landscapelod', u'generated'))
         if skipAllTextures:
-            Installer._global_start_skips.append(u'textures\\landscapelod\\generated')
-        elif skipLODTextures: Installer._global_skips.append(lambda f:  f.startswith(
-            u'textures\\landscapelod\\generated') and not f.endswith(u'_fn.dds'))
-        elif skipLODNormals: Installer._global_skips.append(lambda f:  f.startswith(
-            u'textures\\landscapelod\\generated') and f.endswith(u'_fn.dds'))
+            Installer._global_start_skips.append(tex_gen)
+        elif skipLODTextures: Installer._global_skips.append(
+            lambda f: f.startswith(tex_gen) and not f.endswith(u'_fn.dds'))
+        elif skipLODNormals: Installer._global_skips.append(
+            lambda f: f.startswith(tex_gen) and f.endswith(u'_fn.dds'))
         # Skipped extensions
         skipObse = not settings['bash.installers.allowOBSEPlugins']
         if skipObse:
-            Installer._global_start_skips.append(bush.game.se.shortName.lower() + u'\\')
+            Installer._global_start_skips.append(bush.game.se.shortName.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if settings['bash.installers.skipImages']:
             Installer._global_skip_extensions |= Installer.imageExts
@@ -4712,34 +4726,68 @@ class Installer(object):
         file is to be skipped while at the same time update self hasReadme,
         hasWizard, hasBCF attributes."""
         reReadMeMatch = Installer.reReadMe.match
-        sep = os.path.sep
-        def _process_docs(self, fileLower, full, fileExt):
-            if reReadMeMatch(fileLower): self.hasReadme = full
+        docs_ = u'Docs' + os_sep
+        def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
+            maReadMe = reReadMeMatch(fileLower)
+            if maReadMe: self.hasReadme = full
             # let's hope there is no trailing separator - Linux: test fileLower, full are os agnostic
-            rsplit = fileLower.rsplit(sep, 1)
+            rsplit = fileLower.rsplit(os_sep, 1)
             parentDir, fname = (u'', rsplit[0]) if len(rsplit) == 1 else rsplit
-            return not self.overrideSkips and settings[
+            if not self.overrideSkips and settings[
                 'bash.installers.skipDocs'] and not (
                 fname in bush.game.dontSkip) and not (
-                fileExt in bush.game.dontSkipDirs.get(parentDir, []))
+                fileExt in bush.game.dontSkipDirs.get(parentDir, [])):
+                return None # skip
+            dest = file_relative
+            if not parentDir:
+                archiveRoot = GPath(self.archive).sroot if isinstance(self,
+                        InstallerArchive) else self.archive
+                if fileLower in {u'masterlist.txt', u'dlclist.txt'}:
+                    self.skipDirFiles.add(full)
+                    return None # we dont want to install those files
+                elif maReadMe:
+                    if not (maReadMe.group(1) or maReadMe.group(3)):
+                        dest = u''.join((docs_, archiveRoot, fileExt))
+                    else:
+                        dest = u''.join((docs_, file_relative))
+                    # self.extras_dict['readMe'] = dest
+                elif fileLower == u'package.txt':
+                    dest = self.packageDoc = u''.join(
+                        (docs_, archiveRoot, u'.package.txt'))
+                else:
+                    dest = u''.join((docs_, file_relative))
+            return dest
         for ext in Installer.docExts:
             Installer._attributes_process[ext] = _process_docs
-        def _process_BCF(self, fileLower, full, fileExt):
+        def _process_BCF(self, fileLower, full, fileExt, file_relative, sub):
             if fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower: # DOCS !
                 self.hasBCF = full
-                return True
-            return False
+                return None # skip
+            return file_relative
         Installer._attributes_process[defaultExt] = _process_BCF # .7z
-        def _process_txt(self, fileLower, full, fileExt):
+        def _process_txt(self, fileLower, full, fileExt, file_relative, sub):
             if fileLower == u'wizard.txt': # first check if it's the wizard.txt
                 self.hasWizard = full
-                return True
-            return _process_docs(self, fileLower, full, fileExt)
+                return None # skip
+            return _process_docs(self, fileLower, full, fileExt, file_relative, sub)
         Installer._attributes_process[u'.txt'] = _process_txt
+        def _remap_espms(self, fileLower, full, fileExt, file_relative, sub):
+            rootLower = file_relative.split(os_sep, 1)
+            if len(rootLower) > 1: return file_relative ##: maybe skip ??
+            file_relative = self.remaps.get(file_relative, file_relative)
+            if file_relative not in self.espmMap[sub]: self.espmMap[
+                sub].append(file_relative)
+            pFile = GPath(file_relative)
+            self.espms.add(pFile)
+            if pFile in self.espmNots: return None # skip
+            return file_relative
+        Installer._attributes_process[u'.esm'] = \
+        Installer._attributes_process[u'.esp'] = _remap_espms
         Installer._extensions_to_process = set(Installer._attributes_process)
 
     def _init_skips(self):
-        start = [u'sound\\voice'] if self.skipVoices else []
+        voice_dir = os_sep.join((u'sound', u'voice')) + os_sep
+        start = [voice_dir] if self.skipVoices else []
         skips, skip_ext = [], set()
         if not self.overrideSkips:
             skips = list(Installer._global_skips)
@@ -4750,8 +4798,8 @@ class Installer(object):
                 x.cs for x in self.espmNots)
         if skipEspmVoices:
             def _skip_espm_voices(fileLower):
-                farPos = fileLower.startswith(
-                    u'sound\\voice\\') and fileLower.find(u'\\', 12)
+                farPos = fileLower.startswith( # u'sound\\voice\\', 12 chars
+                    voice_dir) and fileLower.find(os_sep, 12)
                 return farPos > 12 and fileLower[12:farPos] in skipEspmVoices
             skips.append(_skip_espm_voices)
         return skips, skip_ext
@@ -4780,7 +4828,7 @@ class Installer(object):
             _obse = partial(__skipExecutable,
                     desc=_(u'%s plugin DLL') % bush.game.se.shortName,
                     ext=(_(u'a dll')),
-                    exeDir=(bush.game.se.shortName.lower() + u'\\'),
+                    exeDir=(bush.game.se.shortName.lower() + os_sep),
                     dialogTitle=bush.game.se.shortName + _(u' DLL Warning'))
             Installer._executables_process[u'.dll'] = \
             Installer._executables_process[u'.dlx'] = _obse
@@ -4788,14 +4836,14 @@ class Installer(object):
             _asi = partial(__skipExecutable,
                    desc=_(u'%s plugin ASI') % bush.game.sd.longName,
                    ext=(_(u'an asi')),
-                   exeDir=(bush.game.sd.installDir.lower() + u'\\'),
+                   exeDir=(bush.game.sd.installDir.lower() + os_sep),
                    dialogTitle=bush.game.sd.longName + _(u' ASI Warning'))
             Installer._executables_process[u'.asi'] = _asi
         if bush.game.sp.shortName:
             _jar = partial(__skipExecutable,
                    desc=_(u'%s patcher JAR') % bush.game.sp.longName,
                    ext=(_(u'a jar')),
-                   exeDir=(bush.game.sp.installDir.lower() + u'\\'),
+                   exeDir=(bush.game.sp.installDir.lower() + os_sep),
                    dialogTitle=bush.game.sp.longName + _(u' JAR Warning'))
             Installer._executables_process[u'.jar'] = _jar
 
@@ -4839,7 +4887,7 @@ class Installer(object):
         type_    = self.type
         #--Init to empty
         self.hasWizard = self.hasBCF = self.hasReadme = False
-        self.readMe = self.packageDoc = self.packagePic = None
+        self.packageDoc = self.packagePic = None # = self.extras_dict['readMe']
         for attr in {'skipExtFiles','skipDirFiles','espms'}:
             object.__getattribute__(self,attr).clear()
         dest_src = {}
@@ -4854,7 +4902,6 @@ class Installer(object):
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
         unSize = 0
-        espmNots = self.espmNots
         bethFiles = bush.game.bethDataFiles
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
@@ -4866,23 +4913,23 @@ class Installer(object):
         language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
         languageLower = language.lower()
         hasExtraData = self.hasExtraData
-        if type_ == 2:
-            allSubs = set(self.subNames[1:])
+        if type_ == 2: # exclude u'' from active subpackages
             activeSubs = set(x for x,y in zip(self.subNames[1:],self.subActives[1:]) if y)
         data_sizeCrc = {}
-        remaps = self.remaps
         skipDirFiles = self.skipDirFiles
         skipDirFilesAdd = skipDirFiles.add
         skipDirFilesDiscard = skipDirFiles.discard
         skipExtFilesAdd = self.skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
-        espmsAdd = self.espms.add
         espmMap = self.espmMap = collections.defaultdict(list)
         reModExtMatch = reModExt.match
         reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
-        rootIdex = self.fileRootIdex
+        root_path = self.extras_dict.get('root_path', u'')
+        rootIdex = len(root_path)
         for full,size,crc in self.fileSizeCrcs:
+            if rootIdex: # exclude all files that are not under root_dir
+                if not full.startswith(root_path): continue
             file = full[rootIdex:]
             fileLower = file.lower()
             if fileLower.startswith( # skip top level '--', 'fomod' etc
@@ -4890,27 +4937,25 @@ class Installer(object):
                     Installer._silentSkipsEnd): continue
             sub = u''
             if type_ == 2: #--Complex archive
-                sub = file.split(u'\\',1)
-                if len(sub) == 1:
-                    sub = u''
-                else: # redefine file, excluding the subpackage directory
-                    sub,file = sub
+                split = file.split(os_sep, 1)
+                if len(split) > 1:
+                    # redefine file, excluding the subpackage directory
+                    sub,file = split
                     fileLower = file.lower()
                     if fileLower.startswith(Installer._silentSkipsStart):
                         continue # skip subpackage level '--', 'fomod' etc
                 if sub not in activeSubs:
-                    if sub not in allSubs:
+                    if sub == u'':
                         skipDirFilesAdd(file)
                     # Run a modified version of the normal checks, just
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
                     rootLower,fileExt = splitExt(fileLower)
-                    rootLower = rootLower.split(u'\\',1)
+                    rootLower = rootLower.split(os_sep, 1)
                     if len(rootLower) == 1: rootLower = u''
                     else: rootLower = rootLower[0]
                     skip = True
-                    subList = espmMap[sub]
-                    subListAppend = subList.append
+                    sub_esps = espmMap[sub] # add sub key to the espmMap
                     if fileLower == u'wizard.txt':
                         self.hasWizard = full
                         skipDirFilesDiscard(file)
@@ -4928,26 +4973,19 @@ class Installer(object):
                     elif fileLower in bethFiles:
                         self.hasBethFiles = True
                         skipDirFilesDiscard(file)
-                        skipDirFilesAdd(file + u' ' + _(u'[Bethesda Content]'))
-                        continue
-                    elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
-                        continue
-                    elif hasExtraData and rootLower and rootLower in dataDirsMinus:
-                        continue
-                    elif fileExt in skipExts:
+                        skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + file)
                         continue
                     elif not rootLower and reModExtMatch(fileExt):
                         #--Remap espms as defined by the user
                         if file in self.remaps:
                             file = self.remaps[file]
                             # fileLower = file.lower() # not needed will skip
-                        if file not in subList: subListAppend(file)
+                        if file not in sub_esps: sub_esps.append(file)
                     if skip:
                         continue
-            subList = espmMap[sub]
-            subListAppend = subList.append
+            sub_esps = espmMap[sub] # add sub key to the espmMap
             rootLower,fileExt = splitExt(fileLower)
-            rootLower = rootLower.split(u'\\',1)
+            rootLower = rootLower.split(os_sep, 1)
             if len(rootLower) == 1: rootLower = u''
             else: rootLower = rootLower[0]
             fileStartsWith = fileLower.startswith
@@ -4958,10 +4996,13 @@ class Installer(object):
                     break
             else: _out = False
             if _out: continue
-            if fileExt in Installer._extensions_to_process: # process attributes
-                if Installer._attributes_process[fileExt](self, fileLower,
-                                                          full, fileExt):
-                    continue
+            dest = None # destination of the file relative to the Data/ dir
+            # process attributes and define destination for docs and images
+            # (if not skipped globally)
+            if fileExt in Installer._extensions_to_process:
+                dest = Installer._attributes_process[fileExt](self, fileLower,
+                                                          full, fileExt, file, sub)
+                if dest is None: continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
                 if Installer._executables_process[fileExt](
@@ -4971,7 +5012,10 @@ class Installer(object):
             if fileLower in bethFiles:
                 self.hasBethFiles = True
                 if bethFilesSkip:
-                    skipDirFilesAdd(full + u' ' + _(u'[Bethesda Content]'))
+                    skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + full)
+                    if sub_esps and sub_esps[-1].lower() == fileLower:
+                        del sub_esps[-1] # added in extensions processing
+                        self.espms.discard(GPath(file)) #dont show in espm list
                     continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                 skipDirFilesAdd(full)
@@ -4982,19 +5026,11 @@ class Installer(object):
             elif fileExt in skipExts:
                 skipExtFilesAdd(full)
                 continue
-            #--Esps
-            if not rootLower and reModExtMatch(fileExt):
-                #--Remap espms as defined by the user
-                file = remaps.get(file,file)
-                if file not in subList: subListAppend(file)
-                pFile = GPath(file)
-                espmsAdd(pFile)
-                if pFile in espmNots: continue
             #--Remap docs, strings
-            dest = file
+            if dest is None: dest = file
             if rootLower in docDirs:
-                dest = u'\\'.join((u'Docs',file[len(rootLower)+1:]))
-            elif (renameStrings and fileStartsWith(u'strings\\') and
+                dest = os_sep.join((u'Docs', file[len(rootLower) + 1:]))
+            elif (renameStrings and fileStartsWith(u'strings' + os_sep) and
                   fileExt in {u'.strings',u'.dlstrings',u'.ilstrings'}):
                 langSep = fileLower.rfind(u'_')
                 extSep = fileLower.rfind(u'.')
@@ -5009,24 +5045,12 @@ class Installer(object):
             elif rootLower in dataDirsPlus:
                 pass
             elif not rootLower:
-                maReadMe = reReadMeMatch(file)
-                if fileLower in {u'masterlist.txt',u'dlclist.txt'}:
-                    pass
-                elif maReadMe:
-                    if not (maReadMe.group(1) or maReadMe.group(3)):
-                        dest = u''.join((u'Docs\\',archiveRoot,fileExt))
-                    else:
-                        dest = u''.join((u'Docs\\',file))
-                    self.readMe = dest
-                elif fileLower == u'package.txt':
-                    dest = self.packageDoc = u''.join((u'Docs\\',archiveRoot,u'.package.txt'))
-                elif fileLower == u'package.jpg':
-                    dest = self.packagePic = u''.join((u'Docs\\',archiveRoot,u'.package.jpg'))
-                elif fileExt in docExts:
-                    dest = u''.join((u'Docs\\',file))
+                if fileLower == u'package.jpg':
+                    dest = self.packagePic = u''.join(
+                        (u'Docs' + os_sep, archiveRoot, u'.package.jpg'))
                 elif fileExt in imageExts:
-                    dest = u''.join((u'Docs\\',file))
-            if fileExt in commonlyEditedExts:
+                    dest = os_sep.join((u'Docs', file))
+            if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
                 InstallersData.miscTrackedFiles.track(dirs['mods'].join(dest))
             #--Save
             key = GPath(dest)
@@ -5044,34 +5068,32 @@ class Installer(object):
         #--Done (return dest_src for install operation)
         return dest_src
 
-    @staticmethod
-    def _find_root_index(fileSizeCrcs, _os_sep=os_sep,
-                         skips_start=_silentSkipsStart):
+    def _find_root_index(self, _os_sep=os_sep, skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
         #--Sort file names
         def fscSortKey(fsc):
-            dirFile = fsc[0].lower().rsplit(u'\\',1)
+            dirFile = fsc[0].lower().rsplit(os_sep, 1)
             if len(dirFile) == 1: dirFile.insert(0,u'')
             return dirFile
-        sortKeys = dict((x,fscSortKey(x)) for x in fileSizeCrcs)
-        fileSizeCrcs.sort(key=sortKeys.__getitem__)
+        sortKeys = dict((x, fscSortKey(x)) for x in self.fileSizeCrcs)
+        self.fileSizeCrcs.sort(key=sortKeys.__getitem__)
         #--Find correct starting point to treat as BAIN package
+        self.extras_dict.clear() # if more keys are added be careful cleaning
+        self.fileRootIdex = 0
         dataDirsPlus = Installer.dataDirsPlus
         layout = {}
         layoutSetdefault = layout.setdefault
-        for full, size, crc in fileSizeCrcs:
+        for full, size, crc in self.fileSizeCrcs:
             fileLower = full.lower()
             if fileLower.startswith(skips_start): continue
-            frags = fileLower.split(_os_sep)
+            frags = full.split(_os_sep)
             if len(frags) == 1:
                 # Files in the root of the package, start there
-                rootIdex = 0
                 break
             else:
                 dirName = frags[0]
                 if dirName not in layout and layout:
                     # A second directory in the archive root, start in the root
-                    rootIdex = 0
                     break
                 root = layoutSetdefault(dirName,{'dirs':{},'files':False})
                 for frag in frags[1:-1]:
@@ -5079,36 +5101,33 @@ class Installer(object):
                 # the last frag is a file, so its parent dir has files
                 root['files'] = True
         else:
-            if not layout:
-                rootIdex = 0
-            else:
-                rootStr = layout.keys()[0]
-                if rootStr in dataDirsPlus:
-                    rootIdex = 0
+            if not layout: return
+            rootStr = layout.keys()[0]
+            if rootStr.lower() in dataDirsPlus: return
+            root = layout[rootStr]
+            rootStr = u''.join((rootStr, _os_sep))
+            while True:
+                if root['files']:
+                    # There are files in this folder, call it the starting point
+                    break
+                rootDirs = root['dirs']
+                rootDirKeys = rootDirs.keys()
+                if len(rootDirKeys) == 1:
+                    # Only one subfolder, see if it's either 'Data', or an accepted
+                    # Data sub-folder
+                    rootDirKey = rootDirKeys[0]
+                    rootDirKeyL = rootDirKey.lower()
+                    if rootDirKeyL in dataDirsPlus or rootDirKeyL == u'data':
+                        # Found suitable starting point
+                        break
+                    # Keep looking deeper
+                    root = rootDirs[rootDirKey]
+                    rootStr = u''.join((rootStr, rootDirKey, _os_sep))
                 else:
-                    root = layout[rootStr]
-                    rootStr = u''.join((rootStr, _os_sep))
-                    while True:
-                        if root['files']:
-                            # There are files in this folder, call it the starting point
-                            break
-                        rootDirs = root['dirs']
-                        rootDirKeys = rootDirs.keys()
-                        if len(rootDirKeys) == 1:
-                            # Only one subfolder, see if it's either 'Data', or an accepted
-                            # Data sub-folder
-                            rootDirKey = rootDirKeys[0]
-                            if rootDirKey in dataDirsPlus or rootDirKey == u'data':
-                                # Found suitable starting point
-                                break
-                            # Keep looking deeper
-                            root = rootDirs[rootDirKey]
-                            rootStr = u''.join((rootStr, rootDirKey, _os_sep))
-                        else:
-                            # Multiple folders, stop here even if it's no good
-                            break
-                    rootIdex = len(rootStr)
-        return rootIdex
+                    # Multiple folders, stop here even if it's no good
+                    break
+            self.extras_dict['root_path'] = rootStr # keeps case
+            self.fileRootIdex = len(rootStr)
 
     def refreshBasic(self, archive, progress, recalculate_project_crc=True):
         return self._refreshBasic(archive, progress, recalculate_project_crc)
@@ -5118,7 +5137,7 @@ class Installer(object):
                 x.replace(os_sep, u'') for x in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
         self._refreshSource(archive, progress, recalculate_project_crc)
-        self.fileRootIdex = rootIdex = self._find_root_index(self.fileSizeCrcs)
+        self._find_root_index()
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
         type_ = 0
@@ -5126,9 +5145,12 @@ class Installer(object):
         subNameSet.add(u'') # set(u'') == set() (unicode is iterable), so add
         reDataFileSearch = self.reDataFile.search
         dataDirsPlus = self.dataDirsPlus
+        root_path = self.extras_dict.get('root_path', u'')
         for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
-            full = full[rootIdex:]
             frags = full.split(_os_sep)
+            if root_path: # exclude all files that are not under root_dir
+                if frags[0] != root_path[:-1]: continue # chop off os_sep
+                frags = frags[1:]
             nfrags = len(frags)
             f0_lower = frags[0].lower()
             #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
@@ -5555,7 +5577,8 @@ class InstallerProject(Installer):
         pending, pending_size = {}, 0
         new_sizeCrcDate = {}
         oldGet = self.src_sizeCrcDate.get
-        for asDir, __sDirs, sFiles in os.walk(asRoot):
+        walk = self._dir_dirs_files if self._dir_dirs_files is not None else os.walk(asRoot)
+        for asDir, __sDirs, sFiles in walk:
             progress(0.05, progress_msg + (u'\n%s' % asDir[relPos:]))
             get_mtime = os.path.getmtime(asDir)
             max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
@@ -5587,11 +5610,13 @@ class InstallerProject(Installer):
         getM, join = os.path.getmtime, os.path.join
         c, size = [], 0
         cExtend, cAppend = c.extend, c.append
+        self._dir_dirs_files = []
         for root, d, files in os.walk(apath.s):
             cAppend(getM(root))
             stats = [_lstat(join(root, fi)) for fi in files]
             cExtend(fi.st_mtime for fi in stats)
             size += sum(fi.st_size for fi in stats)
+            self._dir_dirs_files.append((root, [], files)) # dirs is unused
         if self.size != size: return True
         # below is for the fix me - we need to add mtimes_str_crc extra persistent attribute to Installer
         # c.sort() # is this needed or os.walk will return the same order during program run
@@ -5775,6 +5800,24 @@ from .converters import InstallerConverter
 # noinspection PyRedeclaration
 class InstallerConverter(InstallerConverter): pass
 
+def projects_walk_cache(func): ##: HACK ! Profile
+    """Decorator to make sure I dont leak self._dir_dirs_files project cache.
+    Must decorate all methods that may call size_or_mtime_changed (only
+    called in scan_installers_dir). For self._dir_dirs_files to be of any use
+    the call to scan_installers_dir must be followed by refreshBasic calls
+    on the projects."""
+    @wraps(func)
+    def _projects_walk_cache_wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        finally:
+            it = self.itervalues() if isinstance(self, InstallersData) else \
+                self.listData.itervalues()
+            for project in it:
+                if isinstance(project, InstallerProject):
+                    project._dir_dirs_files = None
+    return _projects_walk_cache_wrapper
+
 class InstallersData(_DataStore):
     """Installers tank data. This is the data source for the InstallersList."""
     # hack to track changes in installed mod inis etc _in the Data/ dir_ and
@@ -5930,6 +5973,7 @@ class InstallersData(_DataStore):
         def refresh_needed(self):
             return bool(self.deleted or self.pending)
 
+    @projects_walk_cache
     def _refreshInstallers(self, progress, fullRefresh, refresh_info, deleted,
                            pending, projects):
         """Update given installers or scan the installers' directory. Any of
@@ -6249,14 +6293,15 @@ class InstallersData(_DataStore):
         if settings['bash.installers.skipDistantLOD']:
             newSDirs = (x for x in newSDirs if x.lower() != u'distantlod')
         if settings['bash.installers.skipLandscapeLODMeshes']:
-            newSDirs = (x for x in newSDirs if x.lower() != u'meshes\\landscape\\lod')
+            newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
+                u'meshes', u'landscape', u'lod'))
         if settings['bash.installers.skipScreenshots']:
             newSDirs = (x for x in newSDirs if x.lower() != u'screenshots')
         # LOD textures
         if settings['bash.installers.skipLandscapeLODTextures'] and settings[
             'bash.installers.skipLandscapeLODNormals']:
-            newSDirs = (x for x in newSDirs if
-                        x.lower() != u'textures\\landscapelod\\generated')
+            newSDirs = (x for x in newSDirs if x.lower() != os.path.join(
+                u'textures', u'landscapelod', u'generated'))
         if setSkipOBSE:
             newSDirs = (x for x in newSDirs if
                         x.lower() != bush.game.se.shortName.lower())

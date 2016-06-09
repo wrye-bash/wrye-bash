@@ -780,7 +780,10 @@ class WryeParser(ScriptParser.Parser):
             self.parent = parent
             self.installer = installer
             self.bArchive = bArchive
-            self.path = path
+            self._path = path
+            if installer.fileRootIdex:
+                root_path = installer.extras_dict.get('root_path', u'')
+                self._path = self._path.join(root_path)
             self.bAuto = bAuto
             self.page = None
 
@@ -902,6 +905,8 @@ class WryeParser(ScriptParser.Parser):
         self.SetKeyword(u'Cancel', self.kwdCancel, 0, 1)
         self.SetKeyword(u'RequireVersions', self.kwdRequireVersions, 1, 4)
 
+    @property
+    def path(self): return self._path
 
     def Begin(self, file):
         self.variables.clear()
@@ -1383,15 +1388,15 @@ class WryeParser(ScriptParser.Parser):
                     error(_(u"SubPackage '%s' does not exist.") % name)
                 List = []
                 if isinstance(self.installer,bosh.InstallerProject):
-                    dir = bass.dirs['installers'].join(self.path, subpackage)
-                    for root,dirs,files in dir.walk():
-                        for file in files:
-                            rel = root.join(file).relpath(dir)
+                    sub = bass.dirs['installers'].join(self.path, subpackage)
+                    for root, dirs, files in sub.walk():
+                        for file_ in files:
+                            rel = root.join(file_).relpath(sub)
                             List.append(rel.s)
                 else:
                     # Archive
-                    for file in self.installer.fileSizeCrcs:
-                        rel = bolt.Path(file[0]).relpath(subpackage)
+                    for file_, _size, _crc in self.installer.fileSizeCrcs:
+                        rel = bolt.Path(file_).relpath(subpackage)
                         if not rel.s.startswith(u'..'):
                             List.append(rel.s)
                 List.sort()

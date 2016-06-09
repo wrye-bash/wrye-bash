@@ -71,7 +71,7 @@ from .. import bush, bosh, bolt, bass, env, load_order
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods, CoSaves
+from ..bosh import omods, CoSaves, projects_walk_cache
 from ..cint import CBash
 
 startupinfo = bolt.startupinfo
@@ -2668,6 +2668,7 @@ class InstallersPanel(SashTankPanel):
             self.refreshing = False
 
     @balt.conversation
+    @projects_walk_cache
     def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
                                       scan_data_dir):
         data = self.listData
