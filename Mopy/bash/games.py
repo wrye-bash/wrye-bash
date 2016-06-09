@@ -342,9 +342,9 @@ class Game(object):
                 index_first_esp += 1
             else: lord.append(mod)
         # end textfile get
-        ##: test for duplicates ?
+        duplicates = self._check_for_duplicates(lord)
         if not quiet: warn_lo_fixed(_addedFiles, _removedFiles, _reordered,
-                                    lord, old_lord)
+                                    duplicates, lord, old_lord)
         return _removedFiles, _addedFiles, _reordered
 
     def _fix_active_plugins(self, acti, lord, on_disc, quiet=False):
@@ -379,14 +379,7 @@ class Game(object):
             self.mod_infos.selectedExtra = acti_filtered[255:]
             msg += _pl(self.mod_infos.selectedExtra)
         # Check for duplicates
-        mods, duplicates, j = set(), set(), 0
-        for i, mod in enumerate(acti_filtered[:]):
-            if mod in mods:
-                del acti_filtered[i - j]
-                j += 1
-                duplicates.add(mod)
-            else:
-                mods.add(mod)
+        duplicates = self._check_for_duplicates(acti_filtered)
         if duplicates:
             msg += u'Removed duplicate entries from active list : '
             msg += _pl(duplicates)
@@ -415,6 +408,19 @@ class Game(object):
             lord[index_of_first_esp]].isEsm():
             index_of_first_esp += 1
         return index_of_first_esp
+
+    @staticmethod
+    def _check_for_duplicates(plugins_list):
+        """:type plugins_list: list[bolt.Path]"""
+        mods, duplicates, j = set(), set(), 0
+        for i, mod in enumerate(plugins_list[:]):
+            if mod in mods:
+                del plugins_list[i - j]
+                j += 1
+                duplicates.add(mod)
+            else:
+                mods.add(mod)
+        return duplicates
 
 class TimestampGame(Game):
 
@@ -704,10 +710,12 @@ def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
         return TimestampGame(mod_infos, plugins_txt_path)
 
 # Print helpers
-def warn_lo_fixed(_addedFiles, _removedFiles, _reordered, lord, old_lord):
+def warn_lo_fixed(_addedFiles, _removedFiles, _reordered, duplicates,
+                  lord, old_lord):
     if not (_removedFiles or _addedFiles or _reordered): return
-    bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), reordered %s'
+    bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), %sreordered %s'
              % (_pl(_addedFiles) or u'None', _pl(_removedFiles) or u'None',
+                u'duplicates(%s), ' % (_pl(duplicates) if duplicates else u''),
                 u'(No)' if not _reordered else _pl(old_lord, u'from:\n',
                             joint=u'\n') + _pl(lord, u'\nto:\n', joint=u'\n')))
 
