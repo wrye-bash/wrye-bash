@@ -515,16 +515,7 @@ class Path(object):
      May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
-    norm_path = {} #--Dictionary of paths
     sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
-
-    @staticmethod
-    def get(name):
-        """Returns path object for specified name/path."""
-        if isinstance(name,Path): norm = name._s
-        elif isinstance(name,str): norm = os.path.normpath(decode(name))
-        else: norm = os.path.normpath(name)
-        return Path.norm_path.setdefault(norm,Path(norm))
 
     @staticmethod
     def getNorm(name):
