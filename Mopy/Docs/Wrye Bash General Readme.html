@@ -61,6 +61,7 @@
 	<ol>
 		<li><a href="#load-overview">Overview</a>
 		<li><a href="#load-set">Setting The Load Order</a>
+		<li><a href="#load-undo">Undo and redo Load Order changes</a>
 		<li><a href="#load-symbols">What Symbols &amp; Colours Mean</a>
 		<li><a href="#load-commands">Useful Context Menu Commands</a>
 	</ol>
@@ -432,11 +433,21 @@ from other packages previously overridden by the uninstalled package's
 <figcaption>Wrye Bash's Mods tab.</figcaption>
 </figure>
 <h3 id="load-overview">Overview</h3>
-<p>Wrye Bash displays your installed plugins in its <q>Mods</q> tab. Your load order consists of active installed plugins, which Wrye Bash marks with a ticked checkbox. The load order is important as it decides what plugin 'wins' any conflict between plugins, with later loading plugins overriding those that change the same thing. <b>Load order is not the same thing as install order!</b> Install order determines which mods' files overwrite other mods' files when they conflict. Load order determines which plugins' effects override other plugins' effects in-game when they conflict.
-<p>Plugins may be activated by clicking their checkbox so that the checkbox is ticked, or by selecting a plugin or group of plugins and pressing the space bar on your keyboard. Plugins may be deactivated by again clicking their checkbox or pressing the spacebar. If a group of selected plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
+<p>Wrye Bash displays your installed plugins in its <q>Mods</q> tab. Your load order of active installed plugins, which Wrye Bash marks with a
+	ticked checkbox, is important as it decides what plugin 'wins' any conflict between plugins, with later loading plugins overriding those
+	that change the same thing. <b>Load order is not the same thing as BAIN install order!</b> Install order determines which mods' files overwrite
+	other mods' files when they conflict. Load order determines which plugins' effects override other plugins' effects in-game when they conflict.
+<p>Although in general "Load Order" stands for the load order of the <i>active</i> plugins, all installed plugins have a load order assigned
+	to them. In Oblivion this is based on the modification time of the plugin, in Skyrim based to an agreed upon text-file based standard,
+	while Fallout 4 finally dumps all installed plugins in its plugins.txt, marking active ones with an asterisk. Bash needs plugins load
+	order even for inactive plugins to correctly merge inactive mods in the bashed patch, among others.
+<p>Plugins may be activated by clicking their checkbox so that it is ticked, or by selecting a plugin or group of plugins and pressing the
+	space bar on your keyboard. Plugins may be deactivated by again clicking their checkbox or pressing the spacebar. If a group of selected
+	plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
 <p>Some plugins are explicitly dependent on other plugins - they have these plugins as <q>masters</q>. When a plugin is activated, its masters are also activated. Conversely, when a plugin upon which other plugins depend is deactivated, those plugins are also deactivated.</p>
 <p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FE, which is 0 to 254 in decimal. (This number also forms the first two digits of a record's Form ID.)
-<p>Note that you can only have a maximum of 255 plugins, including your game's master file (eg. Oblivion.esm, Skyrim.esm), active at any one time. Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
+<p>Note that you can only have a maximum of 255 plugins active at any one time, including your game's master file (eg. Oblivion.esm, Skyrim.esm).
+	Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
 
 <h3 id="load-set">Setting The Load Order</h3>
 <p>Setting up a correct load order that minimises detrimental conflicts that could cause issues in-game can be a difficult and time-consuming process. Effective load-ordering often requires a knowledge of what each plugin in your load order contains so that you can position the plugins to minimise these conflicts. For simple mods, the description in the mod's readme will usually be sufficient to determine the records it contains, but to be sure a utility such as TES4Edit is required.
@@ -460,6 +471,18 @@ from other packages previously overridden by the uninstalled package's
 <figcaption>BOSS's Launch Using GUI option.</figcaption>
 </figure>
 <p>The <q>Launch Using GUI</q> toggles the use of the command line interface for BOSS with the BOSS GUI. Giving quick and easy access to the additional features the GUI provides such as the <q>Edit User Rules</q> option.
+
+<h3 id="load-undo">Undo and redo Load Order changes</h3>
+<p>Bash features a sophisticated undo/redo load order feature, comprising both load order changes <i>of active <b>or</b> inactive
+	plugins</i> and activating/de-activating plugins. Whether you activate a plugin, drag and drop it in another position, deactivate a
+	plugin (having its children deactivated too) etc, you can always hit <code>Ctrl+Z</code> <i>while the list of mods has focus</i> to undo
+	the operation or <code>Ctrl+Y</code> to redo it. Bash keeps the load orders (meaning total load order of <i>all</i> installed plugins
+	and active state of the plugins) in its internal structures and will persist those on disc on shutting down,
+	in <code>My Games\&lt;Game>\BashLoadOrders.dat</code>, so you can undo/redo on restarting Bash.
+<p>The undo/redo feature will try to preserve as many load orders as possible - so unlike undo/redo in other applications if you have an
+	initial load order state A then change it to B, then hit undo (so you are back on state A), then change it to C Bash will keep in its
+	internal structures the load order states A C B while most other applications would end up with A C. Undo/redo load order state is a
+	relatively new feature (available in 307 beta) so it may have rough edges.
 
 <h3 id="load-symbols">What Symbols &amp; Colours Mean</h3>
 <p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins. The different types of formatting used and their meanings are explained here.

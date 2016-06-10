@@ -38,6 +38,7 @@ lo/active from inside Bash.
 delegate to the game_handle.
 """
 import sys
+import math
 
 import balt
 import bass
@@ -206,13 +207,13 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
             elif __index_move: # attempted to undo/redo
                 _current_list_index += __index_move
                 target = _saved_load_orders[_current_list_index]
-                if target != cached_lord: # we failed to redo/undo
-                    bolt.deprint(u'Failed to revert load order change')
-                    # keep the invalid load order - for instance due to an esm
-                    # flip - but move it in the list so we can retry undo/redo
-                    _saved_load_orders[_current_list_index] = cached_lord
-                    _saved_load_orders[
-                        _current_list_index - __index_move] = target
+                if target != cached_lord: # we partially redid/undid
+                    # put it after (redo) or before (undo) the target
+                    _current_list_index += int(math.copysign(1, __index_move))
+                     # list[-1:-1] won't do what we want
+                    _current_list_index = max (0, _current_list_index)
+                    _saved_load_orders[_current_list_index:_current_list_index
+                                        ] = [cached_lord]
 
 def get_lo(cached=False, cached_active=True):
     global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
@@ -243,16 +244,22 @@ def get_lo(cached=False, cached_active=True):
             warn_locked = True
     return cached_lord
 
-def undo_load_order():
-    if _current_list_index <= 0: return cached_lord
-    return __restore(-1)
+def undo_load_order(): return __restore(-1)
 
-def redo_load_order():
-    if _current_list_index == len(_saved_load_orders) - 1: return cached_lord
-    return __restore(1)
+def redo_load_order(): return __restore(1)
 
 def __restore(index_move):
-    previous = _saved_load_orders[_current_list_index + index_move]
+    index = _current_list_index + index_move
+    if index < 0 or index > len(_saved_load_orders) - 1: return cached_lord
+    previous = _saved_load_orders[index]
+    # fix previous
+    lord, acti = game_handle.set_load_order(list(previous.loadOrder),
+                                            list(previous.activeOrdered),
+                                            dry_run=True)
+    previous = LoadOrder(lord, acti) # possibly fixed
+    if previous == cached_lord:
+        index_move += int(math.copysign(1, index_move)) # increase or decrease by 1
+        return __restore(index_move)
     return save_lo(previous.loadOrder, previous.activeOrdered,
                    __index_move=index_move)
 
