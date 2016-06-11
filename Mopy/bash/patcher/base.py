@@ -314,7 +314,7 @@ class AAliasesPatcher(_Abstract_Patcher):
         """Get config from configs dictionary and/or set to default."""
         super(AAliasesPatcher, self).getConfig(configs)
         #--Update old configs to use Paths instead of strings.
-        self.aliases = dict(
+        self.aliases = dict( # map(GPath, item) gives a list (item is a tuple)
             map(GPath, item) for item in self.aliases.iteritems())
 
     #--Patch Phase ------------------------------------------------------------

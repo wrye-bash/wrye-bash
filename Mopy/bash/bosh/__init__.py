@@ -2271,6 +2271,9 @@ class _AFileInfo:
         self.mtime = path.mtime
         return mtime
 
+    def __repr__(self):
+        return self.__class__.__name__ + u"<" + repr(self.name) + u">"
+
 class FileInfo(_AFileInfo):
     """Abstract TES4/TES4GAME File."""
 
@@ -3012,8 +3015,7 @@ class FileInfos(_DataStore):
 
     def refresh(self, scanData=True):
         """Refresh from file directory."""
-        data = self.data
-        oldNames = set(data) | set(self.corrupted)
+        oldNames = set(self.data) | set(self.corrupted)
         newNames = set()
         _added = set()
         _updated = set()
@@ -3036,10 +3038,10 @@ class FileInfos(_DataStore):
                 errorMessage = not dont_recheck and fileInfo.getHeaderError()
                 if errorMessage:
                     self.corrupted[name] = errorMessage
-                    data.pop(name,None)
+                    self.pop(name,None)
                     continue
                 else:
-                    data[name] = fileInfo
+                    self[name] = fileInfo
                     self.corrupted.pop(name,None)
                     if isAdded: _added.add(name)
                     elif isUpdated: _updated.add(name)
@@ -3047,7 +3049,7 @@ class FileInfos(_DataStore):
         _deleted = oldNames - newNames
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
-            data.pop(name, None); self.corrupted.pop(name, None)
+            self.pop(name, None); self.corrupted.pop(name, None)
         if _deleted:
             # items deleted outside Bash
             for d in set(self.table.keys()) &  set(_deleted):
@@ -3168,7 +3170,7 @@ class FileInfos(_DataStore):
         destName = GPath(destName)
         srcPath = self[fileName].getPath()
         if destDir == self.dir and destName in self.data:
-            destPath = self.data[destName].getPath()
+            destPath = self[destName].getPath()
         else:
             destPath = destDir.join(destName)
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
@@ -4026,7 +4028,7 @@ class ModInfos(FileInfos):
         """Extracts and returns version number for fileName from header.hedr.description."""
         if not fileName in self.data or not self.data[fileName].header:
             return ''
-        maVersion = reVersion.search(self.data[fileName].header.description)
+        maVersion = reVersion.search(self[fileName].header.description)
         return (maVersion and maVersion.group(2)) or u''
 
     def getVersionFloat(self,fileName):
@@ -4064,7 +4066,7 @@ class ModInfos(FileInfos):
         #--Old info
         baseName = self.masterName
         newSize = self.version_voSize[newVersion]
-        oldSize = self.data[baseName].size
+        oldSize = self[baseName].size
         if newSize == oldSize: return
         if oldSize not in self.size_voVersion:
             raise StateError(u"Can't match current main ESM to known version.")
@@ -4075,8 +4077,8 @@ class ModInfos(FileInfos):
         if newName not in self.data:
             raise StateError(u"Can't swap: %s doesn't exist." % newName)
         #--Rename
-        baseInfo = self.data[baseName]
-        newInfo = self.data[newName]
+        baseInfo = self[baseName]
+        newInfo = self[newName]
         basePath = baseInfo.getPath()
         newPath = newInfo.getPath()
         oldPath = self.dir.join(oldName)
@@ -4300,7 +4302,7 @@ class PeopleData(_DataStore):
 
     def delete(self, key, **kwargs):
         """Delete entry."""
-        del self.data[key]
+        del self[key]
         self.hasChanged = True
 
     def delete_Refresh(self, deleted): pass
@@ -4317,7 +4319,7 @@ class PeopleData(_DataStore):
                     if buff: buff.write(line)
                     continue
                 if name:
-                    self.data[name] = (time.time(), 0, buff.getvalue().strip())
+                    self[name] = (time.time(), 0, buff.getvalue().strip())
                     newNames.add(name)
                     buff.close()
                     buff = None
@@ -4331,7 +4333,7 @@ class PeopleData(_DataStore):
         with path.open('w',encoding='utf-8-sig') as out:
             for name in sorted(names,key=string.lower):
                 out.write(u'== %s %s\n' % (name,u'='*(75-len(name))))
-                out.write(self.data[name][2].strip())
+                out.write(self[name][2].strip())
                 out.write(u'\n\n')
 
 #------------------------------------------------------------------------------
@@ -4368,7 +4370,7 @@ class ScreensData(_DataStore):
             filePath = [dirJoin(fileName)]
         _delete(filePath, **kwargs)
         for item in filePath:
-            if not item.exists(): del self.data[item.tail]
+            if not item.exists(): del self[item.tail]
 
     def delete_Refresh(self, deleted): self.refresh()
 
@@ -5000,8 +5002,8 @@ class Installer(object):
             # process attributes and define destination for docs and images
             # (if not skipped globally)
             if fileExt in Installer._extensions_to_process:
-                dest = Installer._attributes_process[fileExt](self, fileLower,
-                                                          full, fileExt, file, sub)
+                dest = Installer._attributes_process[fileExt](
+                    self, fileLower, full, fileExt, file, sub)
                 if dest is None: continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
@@ -5957,10 +5959,10 @@ class InstallersData(_DataStore):
         apath = self.dir.join(item)
         apath.copyTo(destDir.join(destName))
         if destDir == self.dir:
-            self.data[destName] = installer = copy.copy(self.data[item])
+            self[destName] = installer = copy.copy(self[item])
             installer.archive = destName.s
             installer.isActive = False
-            self.moveArchives([destName],self.data[item].order+1)
+            self.moveArchives([destName], self[item].order + 1)
 
     #--Refresh Functions ------------------------------------------------------
     class _RefreshInfo(object):
@@ -6468,7 +6470,7 @@ class InstallersData(_DataStore):
         #--Mask and/or reorder to last
         mask = set()
         if last:
-            self.moveArchives(archives,len(self.data))
+            self.moveArchives(archives, len(self))
         else:
             maxOrder = max(self[x].order for x in archives)
             for installer in self.itervalues():
@@ -6748,7 +6750,6 @@ class InstallersData(_DataStore):
     def getConflictReport(self,srcInstaller,mode):
         """Returns report of overrides for specified package for display on conflicts tab.
         mode: OVER: Overrides; UNDER: Underrides"""
-        data = self.data
         srcOrder = srcInstaller.order
         conflictsMode = (mode == 'OVER')
         if conflictsMode:
@@ -6783,8 +6784,7 @@ class InstallersData(_DataStore):
 
             # Create a list of all active BSA Files except the ones in srcInstaller
             activeBSAFiles = []
-            for package in self.data:
-                installer = data[package]
+            for package, installer in self.iteritems():
                 if installer.order == srcOrder: continue
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))

@@ -442,10 +442,10 @@ class TimestampGame(Game):
         return timestamps
 
     def get_free_time(self, start_time, default_time='+1'):
-        haskey = self._mtime_mods.has_key
+        all_mtimes = set(self._mtime_mods)
         end_time = start_time + 1000 # 1000 (seconds) is an arbitrary limit
         while start_time < end_time:
-            if not haskey(start_time):
+            if not start_time in all_mtimes:
                 return start_time
             start_time += self._get_free_time_step
         return default_time

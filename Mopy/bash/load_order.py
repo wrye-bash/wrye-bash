@@ -195,7 +195,7 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
                 del _saved_load_orders[_current_list_index + 1:]
                 _saved_load_orders.append(cached_lord)
                 _current_list_index += 1
-            else: # attempted to undo/redo
+            elif __index_move: # attempted to undo/redo
                 _current_list_index += __index_move
                 target = _saved_load_orders[_current_list_index]
                 if target != cached_lord: # we failed to redo/undo

@@ -615,7 +615,7 @@ class Installer_Move(_InstallerLink):
             return
         if newPos == -3: newPos = self.idata[self.idata.lastKey].order
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
-        elif newPos < 0: newPos = len(self.idata.data)
+        elif newPos < 0: newPos = len(self.idata)
         current_archive = self.iPanel.GetDetailsItem()
         self.idata.moveArchives(self.selected,newPos)
         self.idata.irefresh(what='N')

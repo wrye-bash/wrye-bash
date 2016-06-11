@@ -1777,7 +1777,7 @@ class ModPanel(SashPanel):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
-        len(load_order.activeCached()), len(bosh.modInfos.data))
+        len(load_order.activeCached()), len(bosh.modInfos))
 
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
@@ -3926,14 +3926,14 @@ class BashFrame(wx.Frame):
     def warnTooManyModsBsas(self):
         if not bass.inisettings['WarnTooManyFiles']: return
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
-        if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 325 and not \
+        if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \
                 settings['bash.mods.autoGhost']:
             message = _(u"It appears that you have more than 325 mods and bsas"
                 u" in your data directory and auto-ghosting is disabled. This "
                 u"may cause problems in %s; see the readme under auto-ghost "
                 u"for more details and please enable auto-ghost.") % \
                       bush.game.displayName
-            if len(bosh.bsaInfos.data) + len(bosh.modInfos.data) >= 400:
+            if len(bosh.bsaInfos) + len(bosh.modInfos) >= 400:
                 message = _(u"It appears that you have more than 400 mods and "
                     u"bsas in your data directory and auto-ghosting is "
                     u"disabled. This will cause problems in %s; see the readme"
