@@ -1808,6 +1808,7 @@ class _Mod_Export_Link(EnabledLink):
     def _parser(self): raise AbstractError
 
 class _Mod_Import_Link(OneItemLink):
+    noChange = _(u"No changes required.")
 
     def _parser(self): raise AbstractError
 
@@ -2360,7 +2361,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 progress(1.0,_(u"Done."))
             #--Log
             if not changed:
-                self._showOk(_(u"No changes required."))
+                self._showOk(self.__class__.noChange)
             else:
                 buff = StringIO.StringIO()
                 format_ = u"%s'%s' >> '%s'\n"
@@ -2429,7 +2430,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
                                textPath)
         #--Log
         if not renamed:
-            self._showOk(_(u"No changes required."))
+            self._showOk(self.__class__.noChange)
         else:
             with bolt.sio() as buff:
                 format_ = u'%s:   %s >> %s\n'
