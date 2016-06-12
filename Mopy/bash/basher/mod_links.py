@@ -1812,6 +1812,11 @@ class _Mod_Import_Link(OneItemLink):
     supportedExts = {u'.csv'}
 
     def _parser(self): raise AbstractError
+    @property
+    def _wildcard(self):
+        if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
+        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + \
+               u';*.esp;*.esm;*.ghost'
 
     def _import(self, ext, fileInfo, fileName, textDir, textName, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
@@ -1855,21 +1860,17 @@ class _Mod_Import_Link(OneItemLink):
         fileInfo = bosh.modInfos[fileName]
         textName = fileName.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
-        #--Wildcard
-        try:
-            wildCard = self.__class__.wildCard
-        except AttributeError:
-            wildCard = u'*' + self.__class__.csvFile
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
-                                 wildCard, mustExist=True)
+                                 self._wildcard, mustExist=True)
         if not textPath: return
         (textDir, textName) = textPath.headTail
         #--Extension error check
         ext = textName.cext
         if ext not in supportedExts:
             self._showError(_(u'Source file must be a {0} file{1}.'.format(
-                self.__class__.csvFile, (len(supportedExts) > 1 and u" or esp/m") or u"")))
+                self.__class__.csvFile, (len(supportedExts) > 1 and
+                    u" or mod (.esp or .esm or .ghost)") or u"")))
             return
         #--Import
         changed = self._import(ext, fileInfo, fileName, textDir, textName,
@@ -2344,7 +2345,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,textDir,
-            textName, u'*' + self.__class__.csvFile ,mustExist=True)
+            textName, self._wildcard ,mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -2411,7 +2412,6 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
     supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
-    wildCard = _(u'Mod/Text File') + u'|*_Names.csv;*.esp;*.esm'
 
     def _parser(self): return CBash_FullNames() if CBash else FullNames()
 
