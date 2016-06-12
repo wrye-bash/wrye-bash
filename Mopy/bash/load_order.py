@@ -39,7 +39,9 @@ delegate to the game_handle.
 """
 import sys
 import math
-
+import collections
+import time
+# Internal
 import balt
 import bass
 import bolt
@@ -128,8 +130,38 @@ __empty = LoadOrder()
 cached_lord = __empty # must always be valid (or __empty)
 
 # Saved load orders
-_saved_load_orders = [] # type: list[LoadOrder]
+lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
+_saved_load_orders = [] # type: list[lo_entry]
 _current_list_index = -1
+
+def _new_entry():
+    _saved_load_orders[_current_list_index:_current_list_index] = [
+        lo_entry(time.time(), cached_lord)]
+
+def persist_orders(__keep_max=256):
+    _lords_pickle.vdata['_lords_pickle_version'] = 1
+    length = len(_saved_load_orders)
+    if length > __keep_max:
+        x, y = _keep_max(__keep_max, length)
+        _lords_pickle.data['_saved_load_orders'] = \
+            _saved_load_orders[_current_list_index - x:_current_list_index + y]
+        _lords_pickle.data['_current_list_index'] = x
+    else:
+        _lords_pickle.data['_saved_load_orders'] = _saved_load_orders
+        _lords_pickle.data['_current_list_index'] = _current_list_index
+    _lords_pickle.save()
+
+def _keep_max(max_to_keep, length):
+    max_2 = max_to_keep / 2
+    y = length - _current_list_index
+    if y <= max_2:
+        x = max_to_keep - y
+    else:
+        if _current_list_index > max_2:
+            x = y = max_2
+        else:
+            x, y = _current_list_index, max_to_keep - _current_list_index
+    return x, y
 
 # Load Order utility methods - make sure the cache is valid when using them
 def activeCached():
@@ -199,21 +231,19 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
         if cached_lord is not __empty:
             global _current_list_index
             if _current_list_index < 0 or (not __index_move and
-                cached_lord != _saved_load_orders[_current_list_index]):
+                cached_lord != _saved_load_orders[_current_list_index].lord):
                 # either getting or setting, plant the new load order in
                 _current_list_index += 1
-                _saved_load_orders[_current_list_index:_current_list_index] = [
-                    cached_lord]
+                _new_entry()
             elif __index_move: # attempted to undo/redo
                 _current_list_index += __index_move
-                target = _saved_load_orders[_current_list_index]
+                target = _saved_load_orders[_current_list_index].lord
                 if target != cached_lord: # we partially redid/undid
                     # put it after (redo) or before (undo) the target
                     _current_list_index += int(math.copysign(1, __index_move))
                      # list[-1:-1] won't do what we want
                     _current_list_index = max (0, _current_list_index)
-                    _saved_load_orders[_current_list_index:_current_list_index
-                                        ] = [cached_lord]
+                    _new_entry()
 
 def get_lo(cached=False, cached_active=True):
     global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
@@ -226,7 +256,7 @@ def get_lo(cached=False, cached_active=True):
         _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
         locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
     if locked and _saved_load_orders:
-        saved = _saved_load_orders[_current_list_index] # type: LoadOrder
+        saved = _saved_load_orders[_current_list_index].lord # type: LoadOrder
         lord, acti = game_handle.set_load_order( # make sure saved lo is valid
             list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
         saved = LoadOrder(lord, acti)
@@ -251,7 +281,7 @@ def redo_load_order(): return __restore(1)
 def __restore(index_move):
     index = _current_list_index + index_move
     if index < 0 or index > len(_saved_load_orders) - 1: return cached_lord
-    previous = _saved_load_orders[index]
+    previous = _saved_load_orders[index].lord
     # fix previous
     lord, acti = game_handle.set_load_order(list(previous.loadOrder),
                                             list(previous.activeOrdered),

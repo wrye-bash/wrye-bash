@@ -1743,6 +1743,10 @@ class ModPanel(SashPanel):
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
         len(load_order.activeCached()), len(bosh.modInfos))
 
+    def ClosePanel(self, destroy=False):
+        load_order.persist_orders()
+        super(ModPanel, self).ClosePanel(destroy)
+
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
     #--Class Data
