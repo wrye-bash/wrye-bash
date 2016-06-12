@@ -520,7 +520,7 @@ def InitModLinks():
             ModList.itemMenu.append(cleanMenu)
         ModList.itemMenu.append(Mod_AddMaster())
         ModList.itemMenu.append(Mod_CopyToEsmp())
-        if bush.game.fsName != u'Skyrim':
+        if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_DecompileAll())
         ModList.itemMenu.append(Mod_FlipSelf())
         ModList.itemMenu.append(Mod_FlipMasters())
