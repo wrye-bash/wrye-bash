@@ -2142,15 +2142,11 @@ class Mod_Stats_Import(_Mod_Import_Link):
         super(Mod_Stats_Import, self).Execute()
 
     def _log(self, changed, fileName):
-        if not len(changed): ## FIXME, never executed
-            self._showOk(_(u"No changed stats to import."),
-                         _(u"Import Stats"))
-        else:
-            buff = StringIO.StringIO()
-            for modName in sorted(changed):
-                buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
-            self._showLog(buff.getvalue())
-            buff.close()
+        buff = StringIO.StringIO()
+        for modName in sorted(changed):
+            buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
+        self._showLog(buff.getvalue())
+        buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemPrices, CBash_ItemPrices

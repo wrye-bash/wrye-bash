@@ -24,7 +24,7 @@
 
 """This module contains the parser classes used by the importer patcher classes
 and the Mod_Import/Export Mods menu."""
-
+import collections
 import ctypes
 from _ctypes import POINTER
 from ctypes import cast, c_ulong
@@ -100,7 +100,7 @@ class ActorFactions:
         modFile.load(True)
         mapper = modFile.getLongMapper()
         shortMapper = modFile.getShortMapper()
-        changed = {'CREA':0,'NPC_':0}
+        changed = collections.defaultdict(int) # {'CREA':0,'NPC_':0}
         for type_ in (x.classType for x in types):
             id_factions = type_id_factions.get(type_,None)
             typeBlock = modFile.tops.get(type_,None)
@@ -216,7 +216,7 @@ class CBash_ActorFactions:
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-            changed = {'CREA':0,'NPC_':0}
+            changed = collections.defaultdict(int) # {'CREA':0,'NPC_':0}
             types = dict((('CREA', modFile.CREA),('NPC_', modFile.NPC_)))
             for group,block in types.iteritems():
                 fid_factions = group_fid_factions.get(group,None)
@@ -1437,7 +1437,7 @@ class ItemStats:
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        changed = {} #--changed[modName] = numChanged
+        changed = collections.defaultdict(int) #--changed[modName] = numChanged
         for group, fid_attr_value in class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
             for record in getattr(modFile,group).getActiveRecords():
@@ -1449,7 +1449,7 @@ class ItemStats:
                     for attr, value in itemStats.iteritems():
                         setattr(record,attr,value)
                     record.setChanged()
-                    changed[longid[0]] = 1 + changed.get(longid[0],0)
+                    changed[longid[0]] += 1
         if changed: modFile.safeSave()
         return changed
 
@@ -1572,7 +1572,7 @@ class CBash_ItemStats:
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-            changed = {} #--changed[modName] = numChanged
+            changed = collections.defaultdict(int) #--changed[modName] = numChanged
             for group, fid_attr_value in class_fid_attr_value.iteritems():
                 attrs = self.class_attrs[group]
                 fid_attr_value = FormID.FilterValidDict(fid_attr_value,modFile,
@@ -1585,7 +1585,7 @@ class CBash_ItemStats:
                         if oldValues != attr_value:
                             for attr, value in attr_value.iteritems():
                                 setattr(record,attr,value)
-                            changed[fid[0]] = 1 + changed.get(fid[0],0)
+                            changed[fid[0]] += 1
             if changed: modFile.save()
             return changed
 
@@ -2341,7 +2341,7 @@ class ItemPrices(_ItemPrices):
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        changed = {} #--changed[modName] = numChanged
+        changed = collections.defaultdict(int) #--changed[modName] = numChanged
         for group, fid_stats in class_fid_stats.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
                 longid = mapper(record.fid)
@@ -2350,7 +2350,7 @@ class ItemPrices(_ItemPrices):
                 value = stats[0]
                 if record.value != value:
                     record.value = value
-                    changed[longid[0]] = changed.get(longid[0],0) + 1
+                    changed[longid[0]] += 1
                     record.setChanged()
         if changed: modFile.safeSave()
         return changed
@@ -2413,7 +2413,7 @@ class CBash_ItemPrices(_ItemPrices):
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-            changed = {} #--changed[modName] = numChanged
+            changed = collections.defaultdict(int) #--changed[modName] = numChanged
             for group,fid_stats in class_fid_stats.iteritems():
                 fid_stats = FormID.FilterValidDict(fid_stats,modFile,True,
                                                    False)
@@ -2423,7 +2423,7 @@ class CBash_ItemPrices(_ItemPrices):
                         value = stats[0]
                         if record.value != value:
                             record.value = value
-                            changed[fid[0]] = changed.get(fid[0],0) + 1
+                            changed[fid[0]] += 1
             if changed: modFile.save()
             return changed
 
@@ -2540,7 +2540,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
-        changed = {} #--changed[modName] = numChanged
+        changed = collections.defaultdict(int) #--changed[modName] = numChanged
         for type_ in self.type_stats:
             stats,attrs = self.type_stats[type_],self.type_attrs[type_]
             for record in getattr(modFile,type_).getActiveRecords():
@@ -2549,7 +2549,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                 if not itemStats: continue
                 map(record.__setattr__,attrs,itemStats)
                 record.setChanged()
-                changed[longid[0]] = 1 + changed.get(longid[0],0)
+                changed[longid[0]] += 1
         if changed: modFile.safeSave()
         return changed
 
@@ -2827,7 +2827,7 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
-            changed = {} #--changed[modName] = numChanged
+            changed = collections.defaultdict(int) #--changed[modName] = numChanged
             for group,fid_attr_value in class_fid_attr_value.iteritems():
                 attrs = self.class_attrs[group]
                 fid_attr_value = FormID.FilterValidDict(fid_attr_value,modFile,
@@ -2839,7 +2839,7 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
                         oldValues = map(record.__getattribute__,attrs)
                         if oldValues != attr_value:
                             map(record.__setattr__,attrs,attr_value)
-                            changed[fid[0]] = 1 + changed.get(fid[0],0)
+                            changed[fid[0]] += 1
             if changed: modFile.save()
             return changed
 
