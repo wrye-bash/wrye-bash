@@ -4124,6 +4124,8 @@ class BashFrame(WindowFrame):
 
     def on_closing(self, destroy=True):
         """Handle Close event. Save application data."""
+        self.statusBar.Unbind(wx.EVT_SIZE)
+        self.Unbind(wx.EVT_CLOSE)
         try:
             # Save sizes here, in the finally clause position is not saved - todo PY3: test if needed
             super(BashFrame, self).on_closing(destroy=False)
