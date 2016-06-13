@@ -28,13 +28,6 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 ############# bush.game must be set by the time you import bosh ! #############
 
-# Localization ----------------------------------------------------------------
-#--Not totally clear on this, but it seems to safest to put locale first...
-import locale
-locale.setlocale(locale.LC_ALL,u'')
-#locale.setlocale(locale.LC_ALL,'German')
-#locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
-
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
