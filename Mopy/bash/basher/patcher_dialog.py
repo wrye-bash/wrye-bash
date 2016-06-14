@@ -396,10 +396,8 @@ class PatchDialog(balt.Dialog):
                    [u'Python',u'CBash'][self.doCBash])):
             return
         if self.doCBash:
-            PatchFile.patchTime = CBash_PatchFile.patchTime
             PatchFile.patchName = CBash_PatchFile.patchName
         else:
-            CBash_PatchFile.patchTime = PatchFile.patchTime
             CBash_PatchFile.patchName = PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 

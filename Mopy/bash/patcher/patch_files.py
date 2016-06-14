@@ -635,7 +635,6 @@ class CBash_PatchFile(_PFile, ObModFile):
                 record.IsIgnored = True
         #--Done
         progress(progress.full,_(u'Patchers applied.'))
-        self.ScanCollection = None
 
     def buildPatchLog(self, log, progress):
         """Completes merge process. Use this when finished using buildPatch."""

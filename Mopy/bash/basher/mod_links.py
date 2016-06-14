@@ -902,11 +902,9 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             if not self._askYes(msg, title=title): importConfig = False
         prog = None
         if self.doCBash:
-            CBash_PatchFile.patchTime = fileInfo.mtime
             CBash_PatchFile.patchName = fileInfo.name
             prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
         else:
-            PatchFile.patchTime = fileInfo.mtime
             PatchFile.patchName = fileInfo.name
             if bass.settings['bash.CBashEnabled']:
                 # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
