@@ -699,7 +699,7 @@ tab. The directories skipped are:
         <tr><td rowspan="14">Import<td>Editor Ids...<td><b>For advanced mod authors only.</b> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes. <b>Note:</b> You may have to recompile any altered scripts in the Construction Set.
         <p>If you wish to update script references <i>after</i> the Editor IDs were changed, edit the CSV file and add another column after the eid column and give the old Editor IDs in the new column. E.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
         <tr><td id="modsImportFactions">Factions...<td><b>For advanced mod authors only.</b> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
-        <tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
+        <tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file (or other mod) into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
         <tr><td id="modsImportNPCLevels">NPC Levels...<td><b>For advanced mod authors only.</b> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="#savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="#modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
             <ul>
                 <li>The first column is the Form ID. <b>This must not have been edited.</b>
@@ -708,7 +708,7 @@ tab. The directories skipped are:
                 <li>The last four columns are the original NPC levels from the game's master file. If the NPCs are mod-added, these will be blank. These columns are ignored on import.
             </ul>
         <tr><td>Map Markers...<td><i>Oblivion only.</i> Imports map marker data from a CSV file into the selected plugin.
-        <tr><td>Prices...<td>Imports the prices of objects from a CSV file into the selected plugin.
+        <tr><td>Prices...<td>Imports the prices of objects from a CSV file (or other mod) into the selected plugin.
         <tr><td id="modsImportRelations">Relations...<td><b>For advanced mod authors only.</b> Imports faction relationships from a CSV file into the selected plugin.
         <tr><td id="modsImportIngredients">Ingredients...<td>Imports alchemy ingredient record data from a CSV file into the selected plugin.
         <tr><td>Scripts...<td>Imports scripts from a series of text files into the selected plugin. <b>Note:</b> You must recompile any altered or new scripts in the Construction Set.

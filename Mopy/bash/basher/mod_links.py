@@ -1808,8 +1808,16 @@ class _Mod_Export_Link(EnabledLink):
     def _parser(self): raise AbstractError
 
 class _Mod_Import_Link(OneItemLink):
+    noChange = _(u"No changes required.")
+    supportedExts = {u'.csv'}
+    progressTitle = continueInfo = continueKey = 'OVERRIDE'
 
     def _parser(self): raise AbstractError
+    @property
+    def _wildcard(self):
+        if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
+        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + \
+               u';*.esp;*.esm;*.ghost'
 
     def _import(self, ext, fileInfo, fileName, textDir, textName, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
@@ -1831,15 +1839,59 @@ class _Mod_Import_Link(OneItemLink):
             title=title or self.__class__.progressTitle, asDialog=asDialog,
             fixedFont=fixedFont, icons=icons, size=size)
 
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
+            buff.write(u'* %03d  %s\n' % (changed, fileName.s))
+            text = buff.getvalue()
+            self._showLog(text)
+
+    def show_change_log(self, changed, fileName):
+        if not changed:
+            self._showOk(self.__class__.noChange, self.__class__.progressTitle)
+        else:
+            self._log(changed, fileName)
+
+    def Execute(self):
+        if not self._askContinueImport(): return
+        supportedExts = self.__class__.supportedExts
+        fileName = GPath(self.selected[0])
+        fileInfo = bosh.modInfos[fileName]
+        textName = fileName.root + self.__class__.csvFile
+        textDir = bass.dirs['patches']
+        #--File dialog
+        textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
+                                 self._wildcard, mustExist=True)
+        if not textPath: return
+        (textDir, textName) = textPath.headTail
+        #--Extension error check
+        ext = textName.cext
+        if ext not in supportedExts:
+            self._showError(_(u'Source file must be a {0} file{1}.'.format(
+                self.__class__.csvFile, (len(supportedExts) > 1 and
+                    u" or mod (.esp or .esm or .ghost)") or u"")))
+            return
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
+        #--Log
+        self.show_change_log(changed, fileName)
+
+    def _askContinueImport(self):
+        return self._askContinue(self.__class__.continueInfo,
+            self.__class__.continueKey, self.__class__.progressTitle)
+
 #--Links ----------------------------------------------------------------------
 from ..parsers import ActorLevels, CBash_ActorLevels
 
 class Mod_ActorLevels_Export(_Mod_Export_Link):
     """Export actor levels from mod to text file."""
+    askTitle = _(u'Export NPC levels to:')
+    csvFile = u'_NPC_Levels.csv'
+    progressTitle = _(u'Export NPC levels')
     text = _(u'NPC Levels...')
     help = _(u"Export NPC level info from mod to text file.")
 
-    def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
+    def _parser(self): return CBash_ActorLevels() if CBash else ActorLevels()
 
     def Execute(self): # overrides _Mod_Export_Link
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
@@ -1847,72 +1899,22 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
                    _(u'See the Bash help file for more info.'))
         if not self._askContinue(message, 'bash.actorLevels.export.continue',
                                  _(u'Export NPC Levels')): return
-        fileName = GPath(self.selected[0])
-        textName = fileName.root+u'_NPC_Levels.csv'
-        textDir = bass.dirs['patches']
-        textDir.makedirs()
-        #--File dialog
-        textPath = self._askSave(title=_(u'Export NPC levels to:'),
-                                 defaultDir=textDir, defaultFile=textName,
-                                 wildcard=u'*_NPC_Levels.csv')
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Export
-        with balt.Progress(_(u'Export NPC levels')) as progress:
-            actorLevels = self._parser()
-            readProgress = SubProgress(progress,0.1,0.8)
-            readProgress.setFull(len(self.selected))
-            for index,fileName in enumerate(map(GPath,self.selected)):
-                fileInfo = bosh.modInfos[fileName]
-                readProgress(index,_(u'Reading')+u' '+fileName.s)
-                actorLevels.readFromMod(fileInfo)
-            progress(0.8,_(u'Exporting to')+u' '+textName.s+u'.')
-            actorLevels.writeToText(textPath)
-            progress(1.0,_(u'Done.'))
+        super(Mod_ActorLevels_Export, self).Execute()
 
 class Mod_ActorLevels_Import(_Mod_Import_Link):
     """Imports actor levels from text file to mod."""
+    askTitle = _(u'Import NPC levels from:')
+    csvFile = u'_NPC_Levels.csv'
+    progressTitle = _(u'Import NPC Levels')
     text = _(u'NPC Levels...')
     help = _(u"Import NPC level info from text file to mod")
+    continueInfo = _(
+        u'This command will import NPC level info from a previously exported '
+        u'file.') + u'\n\n' + _(u'See the Bash help file for more info.')
+    continueKey = 'bash.actorLevels.import.continue'
+    noChange = _(u'No relevant NPC levels to import.')
 
-    def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
-
-    def Execute(self):
-        message = (_(u'This command will import NPC level info from a previously exported file.')
-                   + u'\n\n' +
-                   _(u'See the Bash help file for more info.'))
-        if not self._askContinue(message, 'bash.actorLevels.import.continue',
-                                 _(u'Import NPC Levels')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_NPC_Levels.csv'
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(_(u'Import NPC levels from:'),
-            textDir,textName,u'*_NPC_Levels.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a _NPC_Levels.csv file.'))
-            return
-        #--Export
-        with balt.Progress(_(u'Import NPC Levels')) as progress:
-            actorLevels = self._parser()
-            progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
-            actorLevels.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = actorLevels.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant NPC levels to import.'),
-                         _(u'Import NPC Levels'))
-        else:
-            buff = StringIO.StringIO()
-            buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            self._showLog(buff.getvalue(), title=_(u'Import NPC Levels'))
+    def _parser(self): return CBash_ActorLevels() if CBash else ActorLevels()
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
@@ -1930,51 +1932,20 @@ class Mod_FactionRelations_Export(_Mod_Export_Link):
 
 class Mod_FactionRelations_Import(_Mod_Import_Link):
     """Imports faction relations from text file to mod."""
+    askTitle = _(u'Import faction relations from:')
+    csvFile = u'_Relations.csv'
+    progressTitle = _(u'Import Relations')
     text = _(u'Relations...')
     help = _(u'Import faction relations from text file to mod')
+    continueInfo = _(
+        u"This command will import faction relation info from a previously "
+        u"exported file.") + u'\n\n' + _(
+        u"See the Bash help file for more info.")
+    continueKey = 'bash.factionRelations.import.continue'
+    noChange = _(u'No relevant faction relations to import.')
 
     def _parser(self):
         return CBash_FactionRelations() if CBash else FactionRelations()
-
-    def Execute(self):
-        message = (_(u"This command will import faction relation info from a previously exported file.")
-                   + u'\n\n' +
-                   _(u"See the Bash help file for more info."))
-        if not self._askContinue(
-                message, 'bash.factionRelations.import.continue',
-                _(u'Import Relations')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Relations.csv'
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(_(u'Import faction relations from:'),
-            textDir, textName, u'*_Relations.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a _Relations.csv file.'))
-            return
-        #--Export
-        with balt.Progress(_(u'Import Relations')) as progress:
-            factionRelations =  self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            factionRelations.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = factionRelations.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant faction relations to import.'),
-                         _(u'Import Relations'))
-        else:
-            buff = StringIO.StringIO()
-            buff.write(u'* %03d  %s\n' % (changed, fileName.s))
-            text = buff.getvalue()
-            buff.close()
-            self._showLog(text, title=_(u'Import Relations'))
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions, CBash_ActorFactions
@@ -1992,52 +1963,26 @@ class Mod_Factions_Export(_Mod_Export_Link):
 
 class Mod_Factions_Import(_Mod_Import_Link):
     """Imports factions from text file to mod."""
+    askTitle = _(u'Import Factions from:')
+    csvFile = u'_Factions.csv'
+    progressTitle = _(u'Import Factions')
     text = _(u'Factions...')
     help = _(u'Import factions from text file to mod')
+    continueInfo = _(
+        u"This command will import faction ranks from a previously exported "
+        u"file.") + u'\n\n' + _(u'See the Bash help file for more info.')
+    continueKey = 'bash.factionRanks.import.continue'
+    noChange = _(u'No relevant faction ranks to import.')
 
     def _parser(self):
         return CBash_ActorFactions() if CBash else ActorFactions()
 
-    def Execute(self):
-        message = (_(u"This command will import faction ranks from a previously exported file.")
-                   + u'\n\n' +
-                   _(u'See the Bash help file for more info.'))
-        if not self._askContinue(message, 'bash.factionRanks.import.continue',
-                                 _(u'Import Factions')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Factions.csv'
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(_(u'Import Factions from:'),
-            textDir, textName, u'*_Factions.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(
-                _(u'Source file must be a _Factions.csv file.'))
-            return
-        #--Export
-        with balt.Progress(_(u'Import Factions')) as progress:
-            actorFactions = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            actorFactions.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = actorFactions.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant faction ranks to import.'),
-                         _(u'Import Factions'))
-        else:
-            buff = StringIO.StringIO()
+    def _log(self, changed, fileName):
+         with bolt.sio() as buff:
             for groupName in sorted(changed):
-                buff.write(u'* %s : %03d  %s\n' % (groupName,changed[groupName],fileName.s))
-            text = buff.getvalue()
-            buff.close()
-            self._showLog(text, title=_(u'Import Factions'))
+                buff.write(u'* %s : %03d  %s\n' % (
+                    groupName, changed[groupName], fileName.s))
+            self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import ScriptText, CBash_ScriptText
@@ -2106,16 +2051,19 @@ class Mod_Scripts_Export(_Mod_Export_Link):
                       asDialog=True, icons=Resources.bashBlue)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
-    """Import scripts from text file or other mod."""
+    """Import scripts from text file."""
     text = _(u'Scripts...')
-    help = _(u'Import scripts from text file or other mod')
+    help = _(u'Import scripts from text file')
+    continueInfo = _(
+        u"Import script from a text file.  This will replace existing "
+        u"scripts and is not reversible (except by restoring from backup)!")
+    continueKey = 'bash.scripts.import.continue'
+    progressTitle = _(u'Import Scripts')
 
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
     def Execute(self):
-        message = (_(u"Import script from a text file.  This will replace existing scripts and is not reversible (except by restoring from backup)!"))
-        if not self._askContinue(message, 'bash.scripts.import.continue',
-                                 _(u'Import Scripts')): return
+        if not self._askContinueImport(): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
@@ -2176,51 +2124,25 @@ class Mod_Stats_Export(_Mod_Export_Link):
     def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
 
 class Mod_Stats_Import(_Mod_Import_Link):
-    """Import stats from text file or other mod."""
+    """Import stats from text file."""
+    askTitle = _(u'Import stats from:')
+    csvFile = u'_Stats.csv'
+    progressTitle = _(u'Import Stats')
     text = _(u'Stats...')
-    help = _(u'Import stats from text file or other mod')
+    help = _(u'Import stats from text file')
+    continueInfo = _(u"Import item stats from a text file. This will replace "
+                     u"existing stats and is not reversible!")
+    continueKey = 'bash.stats.import.continue'
+    noChange = _(u"No relevant stats to import.")
 
     def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
 
-    def Execute(self):
-        message = (_(u"Import item stats from a text file. This will replace existing stats and is not reversible!"))
-        if not self._askContinue(message, 'bash.stats.import.continue',
-                                 _(u'Import Stats')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Stats.csv'
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(_(u'Import stats from:'),
-            textDir, textName, u'*_Stats.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a Stats.csv file.'))
-            return
-        #--Export
-        with balt.Progress(_(u"Import Stats")) as progress:
-            itemStats = self._parser()
-            progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
-            itemStats.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = itemStats.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
-        #--Log
-        if not changed:
-            self._showOk(_(u"No relevant stats to import."),_(u"Import Stats"))
-        else:
-            if not len(changed):
-                self._showOk(_(u"No changed stats to import."),
-                             _(u"Import Stats"))
-            else:
-                buff = StringIO.StringIO()
-                for modName in sorted(changed):
-                    buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
-                self._showLog(buff.getvalue(), title=_(u'Import Stats'))
-                buff.close()
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
+            for modName in sorted(changed):
+                buff.write(u'* %03d  %s\n' % (changed[modName], modName.s))
+            self._showLog(buff.getvalue())
+            buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import ItemPrices, CBash_ItemPrices
@@ -2236,48 +2158,26 @@ class Mod_Prices_Export(_Mod_Export_Link):
     def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
 class Mod_Prices_Import(_Mod_Import_Link):
-    """Import prices from text file."""
+    """Import prices from text file or other mod."""
     askTitle = _(u'Import prices from:')
     csvFile = u'_Prices.csv'
     progressTitle = _(u'Import Prices')
     text = _(u'Prices...')
-    help = _(u'Import item prices from text file')
+    help = _(u'Import item prices from text file or other mod')
+    continueInfo = _(u"Import item prices from a text file.  This will "
+                     u"replace existing prices and is not reversible!")
+    continueKey = 'bash.prices.import.continue'
+    noChange = _(u'No relevant prices to import.')
+    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
 
     def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
-    def Execute(self):
-        message = (_(u"Import item prices from a text file.  This will replace existing prices and is not reversible!"))
-        if not self._askContinue(message, 'bash.prices.import.continue',
-                                 _(u'Import prices')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir, textName, u'*_Prices.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext not in [u'.csv',u'.ghost',u'.esm',u'.esp']:
-            self._showError(
-                _(u'Source file must be a Prices.csv file or esp/m.'))
-            return
-        #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant prices to import.'),
-                         _(u'Import Prices'))
-        else:
-            buff = StringIO.StringIO()
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
             for modName in sorted(changed):
                 buff.write(_(u'Imported Prices:')
                            + u'\n* %s: %d\n' % (modName.s,changed[modName]))
             self._showLog(buff.getvalue())
-            buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import SigilStoneDetails, CBash_SigilStoneDetails
@@ -2300,43 +2200,23 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Sigil Stone details')
     text = _(u'Sigil Stones...')
     help = _(u'Import Sigil Stone details from text file')
+    continueInfo = _(
+        u"Import Sigil Stone details from a text file.  This will replace "
+        u"the existing data on sigil stones with the same form ids and is "
+        u"not reversible!")
+    continueKey = 'bash.SigilStone.import.continue'
+    noChange = _(u'No relevant Sigil Stone details to import.')
 
     def _parser(self):
         return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
 
-    def Execute(self):
-        message = (_(u"Import Sigil Stone details from a text file.  This will replace existing the data on sigil stones with the same form ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.SigilStone.import.continue',
-                                 _(u'Import Sigil Stones details')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir, textName, u'*_SigilStones.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a _SigilStones.csv file'))
-            return
-        #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant Sigil Stone details to import.'),
-                         _(u'Import Sigil Stone details'))
-        else:
-            buff = StringIO.StringIO()
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
             buff.write((_(u'Imported Sigil Stone details to mod %s:')
                         +u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue())
-            buff.close()
 
 #------------------------------------------------------------------------------
 from ..parsers import SpellRecords, CBash_SpellRecords
@@ -2361,8 +2241,16 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
 
 class Mod_SpellRecords_Import(_Mod_Import_Link):
     """Import Spell details from text file."""
+    askTitle = _(u'Import Spell details from:')
+    csvFile = u'_Spells.csv'
+    progressTitle = _(u'Import Spell details')
     text = _(u'Spells...')
     help = _(u'Import Spell details from text file')
+    continueInfo = _(u"Import Spell details from a text file.  This will "
+        u"replace the existing data on spells with the same form ids and is "
+        u"not reversible!")
+    continueKey = 'bash.SpellRecords.import.continue'
+    noChange = _(u'No relevant Spell details to import.')
 
     def _parser(self):
         message = (_(u'Import flags and effects?')
@@ -2374,44 +2262,13 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
         return CBash_SpellRecords(detailed=doDetailed) if CBash else \
             SpellRecords(detailed=doDetailed)
 
-    def Execute(self):
-        message = (_(u"Import Spell details from a text file.  This will replace existing the data on spells with the same form ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.SpellRecords.import.continue',
-                                 _(u'Import Spell details')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Spells.csv'
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(_(u'Import Spell details from:'),
-            textDir, textName, u'*_Spells.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a _Spells.csv file'))
-            return
-        #--Export
-        with balt.Progress(_(u'Import Spell details')) as progress:
-            spellRecords = self._parser()
-            progress(0.1,_(u'Reading')+u' '+textName.s+u'.')
-            spellRecords.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = spellRecords.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant Spell details to import.'),
-                         _(u'Import Spell details'))
-        else:
-            buff = StringIO.StringIO()
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
             buff.write((_(u'Imported Spell details to mod %s:')
                         +u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(), title=_(u'Import Spell details'))
-            buff.close()
+            self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import IngredientDetails, CBash_IngredientDetails
@@ -2429,51 +2286,27 @@ class Mod_IngredientDetails_Export(_Mod_Export_Link):
 
 class Mod_IngredientDetails_Import(_Mod_Import_Link):
     """Import Ingredient details from text file."""
+    askTitle = _(u'Import Ingredient details from:')
+    csvFile = u'_Ingredients.csv'
+    progressTitle = _(u'Import Ingredient details')
     text = _(u'Ingredients...')
     help = _(u'Import Ingredient details from text file')
+    continueInfo = _(u"Import Ingredient details from a text file.  This will "
+                     u"replace the existing data on Ingredients with the same "
+                     u"form ids and is not reversible!")
+    continueKey = 'bash.Ingredient.import.continue'
+    noChange = _(u'No relevant Ingredient details to import.')
 
     def _parser(self):
         return CBash_IngredientDetails() if CBash else IngredientDetails()
 
-    def Execute(self):
-        message = (_(u"Import Ingredient details from a text file.  This will replace existing the data on Ingredients with the same form ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.Ingredient.import.continue',
-                                 _(u'Import Ingredients details')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Ingredients.csv'
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(_(u'Import Ingredient details from:'),
-            textDir,textName,u'*_Ingredients.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != u'.csv':
-            self._showError(_(u'Source file must be a _Ingredients.csv file'))
-            return
-        #--Export
-        with balt.Progress(_(u'Import Ingredient details')) as progress:
-            Ingredients = self._parser()
-            progress(0.1,_(u'Reading %s.') % textName.s)
-            Ingredients.readFromText(textPath)
-            progress(0.2,_(u'Applying to %s.') % fileName.s)
-            changed = Ingredients.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant Ingredient details to import.'),
-                         _(u'Import Ingredient details'))
-        else:
-            buff = StringIO.StringIO()
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
             buff.write((_(u'Imported Ingredient details to mod %s:')
                         + u'\n') % fileName.s)
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(),
-                          title=_(u'Import Ingredient details'))
-            buff.close()
+            self._showLog(buff.getvalue())
 
 #------------------------------------------------------------------------------
 from ..parsers import EditorIds, CBash_EditorIds
@@ -2489,23 +2322,27 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
     def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
 class Mod_EditorIds_Import(_Mod_Import_Link):
-    """Import editor ids from text file or other mod."""
+    """Import editor ids from text file."""
+    askTitle = _(u'Import eids from:')
+    csvFile = u'_Eids.csv'
+    continueInfo = _(u"Import editor ids from a text file. This will replace "
+                     u"existing ids and is not reversible!")
+    continueKey = 'bash.editorIds.import.continue'
+    progressTitle = _(u'Import Editor Ids')
     text = _(u'Editor Ids...')
-    help = _(u'Import faction editor ids from text file or other mod')
+    help = _(u'Import faction editor ids from text file')
 
     def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
     def Execute(self):
-        message = (_(u"Import editor ids from a text file. This will replace existing ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.editorIds.import.continue',
-                                 _(u'Import Editor Ids')): return
+        if not self._askContinueImport(): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_Eids.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import names from:'),textDir,
-            textName, u'*_Eids.csv',mustExist=True)
+        textPath = self._askOpen(self.__class__.askTitle,textDir,
+            textName, self._wildcard ,mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
         #--Extension error check
@@ -2516,7 +2353,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
         questionableEidsSet = set()
         badEidsList = []
         try:
-            with balt.Progress(_(u"Import Editor Ids")) as progress:
+            with balt.Progress(self.__class__.progressTitle) as progress:
                 editorIds = self._parser()
                 progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
@@ -2525,7 +2362,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 progress(1.0,_(u"Done."))
             #--Log
             if not changed:
-                self._showOk(_(u"No changes required."))
+                self._showOk(self.__class__.noChange)
             else:
                 buff = StringIO.StringIO()
                 format_ = u"%s'%s' >> '%s'\n"
@@ -2565,47 +2402,27 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     askTitle = _(u'Import names from:')
     csvFile = u'_Names.csv'
     progressTitle = _(u'Import Names')
+    continueInfo = _(
+        u"Import record names from a text file. This will replace existing "
+        u"names and is not reversible!")
+    continueKey = 'bash.fullNames.import.continue'
     text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
+    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
 
     def _parser(self): return CBash_FullNames() if CBash else FullNames()
 
-    def Execute(self):
-        message = (_(u"Import record names from a text file. This will replace existing names and is not reversible!"))
-        if not self._askContinue(message, 'bash.fullNames.import.continue',
-                                 _(u'Import Names')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir,textName, _(u'Mod/Text File')+u'|*_Names.csv;*.esp;*.esm',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext not in (u'.esp',u'.esm',u'.csv'):
-            self._showError(
-                _(u'Source file must be mod (.esp or .esm) or csv file.'))
-            return
-        #--Import
-        renamed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
-        if not renamed:
-            self._showOk(_(u"No changes required."))
-        else:
-            with bolt.sio() as buff:
-                format_ = u'%s:   %s >> %s\n'
-                #buff.write(format_ % (_(u'Editor Id'),_(u'Name')))
-                for eid in sorted(renamed.keys()):
-                    full,newFull = renamed[eid]
-                    try:
-                        buff.write(format_ % (eid,full,newFull))
-                    except:
-                        print u'unicode error:', (format_, eid, full, newFull)
-                self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
+            format_ = u'%s:   %s >> %s\n'
+            #buff.write(format_ % (_(u'Editor Id'),_(u'Name')))
+            for eid in sorted(changed.keys()):
+                full, newFull = changed[eid]
+                try:
+                    buff.write(format_ % (eid, full, newFull))
+                except:
+                    print u'unicode error:', (format_, eid, full, newFull)
+            self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
 
 # CBash only Import/Export ----------------------------------------------------
 class _Mod_Export_Link_CBash(_Mod_Export_Link):
@@ -2630,19 +2447,27 @@ class CBash_Mod_MapMarkers_Export(_Mod_Export_Link_CBash):
 
 class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
     """Import MapMarkers from text file."""
+    askTitle = _(u'Import Map Markers from:')
+    csvFile = u'_MapMarkers.csv'
+    progressTitle = _(u'Import Map Markers')
     text = _(u'Map Markers...')
     help = _(u'Import MapMarkers from text file')
+    continueInfo = _(
+        u"Import Map Markers data from a text file.  This will replace "
+        u"the existing data on map markers with the same editor ids and is "
+        u"not reversible!")
+    continueKey = 'bash.MapMarkers.import.continue'
+
+    def _parser(self): return CBash_MapMarkers()
 
     def Execute(self):
-        message = (_(u"Import Map Markers data from a text file.  This will replace existing the data on map markers with the same editor ids and is not reversible!"))
-        if not self._askContinue(message, 'bash.MapMarkers.import.continue',
-                                 _(u'Import Map Markers')): return
+        if not self._askContinueImport(): return
         fileName = GPath(self.selected[0])
         fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root+u'_MapMarkers.csv'
+        textName = fileName.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
-        textPath = self._askOpen(_(u'Import Map Markers from:'),
+        textPath = self._askOpen(self.__class__.askTitle,
             textDir, textName, u'*_MapMarkers.csv',mustExist=True)
         if not textPath: return
         (textDir,textName) = textPath.headTail
@@ -2651,14 +2476,9 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
         if ext != u'.csv':
             self._showError(_(u'Source file must be a MapMarkers.csv file'))
             return
-        #--Export
-        with balt.Progress(_(u'Import Map Markers')) as progress:
-            MapMarkers = CBash_MapMarkers()
-            progress(0.1,_(u'Reading')+u' '+textName.s)
-            MapMarkers.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = MapMarkers.writeToMod(fileInfo)
-            progress(1.0,_(u'Done.'))
+        #--Import
+        changed = self._import(ext, fileInfo, fileName, textDir, textName,
+                               textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant Map Markers to import.'),
@@ -2669,7 +2489,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
                         + u'\n') % (fileName.s,))
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
-            self._showLog(buff.getvalue(), title=_(u'Import Map Markers'))
+            self._showLog(buff.getvalue())
             buff.close()
 
 #------------------------------------------------------------------------------
@@ -2709,43 +2529,22 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     text = _(u'Item Data...')
     help = _(u'Import pretty much complete item data from text file or other'
              u' mod')
+    continueInfo = _(
+        u"Import pretty much complete item data from a text file.  This will "
+        u"replace existing data and is not reversible!")
+    continueKey = 'bash.itemdata.import.continue'
+    noChange = _(u'No relevant data to import.')
 
     def _parser(self):
     # CBash_CompleteItemData.writeToText is disabled, apparently has problems
         return CompleteItemData()
 
-    def Execute(self):
-        message = (_(u"Import pretty much complete item data from a text file.  This will replace existing data and is not reversible!"))
-        if not self._askContinue(message, 'bash.itemdata.import.continue',
-                                 _(u'Import Item Data')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
-        textDir = bass.dirs['patches']
-        #--File dialog
-        textPath = self._askOpen(self.__class__.askTitle,
-            textDir, textName, u'*_ItemData.csv',mustExist=True)
-        if not textPath: return
-        (textDir,textName) = textPath.headTail
-        #--Extension error check
-        ext = textName.cext
-        if ext != '.csv':
-            self._showError(_(u'Source file must be a ItemData.csv file.'))
-            return
-        #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
-        #--Log
-        if not changed:
-            self._showOk(_(u'No relevant data to import.'),
-                         _(u'Import Item Data'))
-        else:
-            buff = StringIO.StringIO()
+    def _log(self, changed, fileName):
+        with bolt.sio() as buff:
             for modName in sorted(changed):
-                buff.write(_(u'Imported Item Data:')
-                           + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
+                buff.write(_(u'Imported Item Data:') + u'\n* %03d  %s:\n' % (
+                    changed[modName], modName.s))
             self._showLog(buff.getvalue())
-            buff.close()
 
 #------------------------------------------------------------------------------
 from ..bolt import deprint
