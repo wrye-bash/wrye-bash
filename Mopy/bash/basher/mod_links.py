@@ -1889,7 +1889,7 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
     text = _(u'NPC Levels...')
     help = _(u"Export NPC level info from mod to text file.")
 
-    def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
+    def _parser(self): return CBash_ActorLevels() if CBash else ActorLevels()
 
     def Execute(self): # overrides _Mod_Export_Link
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
@@ -1912,7 +1912,7 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     continueKey = 'bash.actorLevels.import.continue'
     noChange = _(u'No relevant NPC levels to import.')
 
-    def _parser(self): return CBash_ActorLevels() if CBash else  ActorLevels()
+    def _parser(self): return CBash_ActorLevels() if CBash else ActorLevels()
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
@@ -1979,7 +1979,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
         buff = StringIO.StringIO()
         for groupName in sorted(changed):
             buff.write(u'* %s : %03d  %s\n' % (
-            groupName, changed[groupName], fileName.s))
+                groupName, changed[groupName], fileName.s))
         text = buff.getvalue()
         buff.close()
         self._showLog(text)
@@ -2051,9 +2051,9 @@ class Mod_Scripts_Export(_Mod_Export_Link):
                       asDialog=True, icons=Resources.bashBlue)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
-    """Import scripts from text file or other mod."""
+    """Import scripts from text file."""
     text = _(u'Scripts...')
-    help = _(u'Import scripts from text file or other mod')
+    help = _(u'Import scripts from text file')
 
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
@@ -2121,12 +2121,12 @@ class Mod_Stats_Export(_Mod_Export_Link):
     def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
 
 class Mod_Stats_Import(_Mod_Import_Link):
-    """Import stats from text file or other mod."""
+    """Import stats from text file."""
     askTitle = _(u'Import stats from:')
     csvFile = u'_Stats.csv'
     progressTitle = _(u'Import Stats')
     text = _(u'Stats...')
-    help = _(u'Import stats from text file or other mod')
+    help = _(u'Import stats from text file')
     continueInfo = _(u"Import item stats from a text file. This will replace "
                      u"existing stats and is not reversible!")
     continueKey = 'bash.stats.import.continue'
@@ -2155,12 +2155,12 @@ class Mod_Prices_Export(_Mod_Export_Link):
     def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
 
 class Mod_Prices_Import(_Mod_Import_Link):
-    """Import prices from text file."""
+    """Import prices from text file or other mod."""
     askTitle = _(u'Import prices from:')
     csvFile = u'_Prices.csv'
     progressTitle = _(u'Import Prices')
     text = _(u'Prices...')
-    help = _(u'Import item prices from text file')
+    help = _(u'Import item prices from text file or other mod')
     continueInfo = _(u"Import item prices from a text file.  This will "
                      u"replace existing prices and is not reversible!")
     continueKey = 'bash.prices.import.continue'
@@ -2200,7 +2200,7 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     help = _(u'Import Sigil Stone details from text file')
     continueInfo = _(
         u"Import Sigil Stone details from a text file.  This will replace "
-        u"existing the data on sigil stones with the same form ids and is "
+        u"the existing data on sigil stones with the same form ids and is "
         u"not reversible!")
     continueKey = 'bash.SigilStone.import.continue'
     noChange = _(u'No relevant Sigil Stone details to import.')
@@ -2245,9 +2245,9 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
     progressTitle = _(u'Import Spell details')
     text = _(u'Spells...')
     help = _(u'Import Spell details from text file')
-    continueInfo = _(
-        u"Import Spell details from a text file.  This will replace existing "
-        u"the data on spells with the same form ids and is not reversible!")
+    continueInfo = _(u"Import Spell details from a text file.  This will "
+        u"replace the existing data on spells with the same form ids and is "
+        u"not reversible!")
     continueKey = 'bash.SpellRecords.import.continue'
     noChange = _(u'No relevant Spell details to import.')
 
@@ -2292,7 +2292,7 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     text = _(u'Ingredients...')
     help = _(u'Import Ingredient details from text file')
     continueInfo = _(u"Import Ingredient details from a text file.  This will "
-                     u"replace existing the data on Ingredients with the same "
+                     u"replace the existing data on Ingredients with the same "
                      u"form ids and is not reversible!")
     continueKey = 'bash.Ingredient.import.continue'
     noChange = _(u'No relevant Ingredient details to import.')
@@ -2323,7 +2323,7 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
     def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
 class Mod_EditorIds_Import(_Mod_Import_Link):
-    """Import editor ids from text file or other mod."""
+    """Import editor ids from text file."""
     askTitle = _(u'Import eids from:')
     csvFile = u'_Eids.csv'
     continueInfo = _(u"Import editor ids from a text file. This will replace "
@@ -2331,7 +2331,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
     continueKey = 'bash.editorIds.import.continue'
     progressTitle = _(u"Import Editor Ids")
     text = _(u'Editor Ids...')
-    help = _(u'Import faction editor ids from text file or other mod')
+    help = _(u'Import faction editor ids from text file')
 
     def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
 
@@ -2459,7 +2459,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
     def _parser(self): return CBash_MapMarkers()
 
     def Execute(self):
-        message = (_(u"Import Map Markers data from a text file.  This will replace existing the data on map markers with the same editor ids and is not reversible!"))
+        message = (_(u"Import Map Markers data from a text file.  This will replace the existing data on map markers with the same editor ids and is not reversible!"))
         if not self._askContinue(message, 'bash.MapMarkers.import.continue',
                                  _(u'Import Map Markers')): return
         fileName = GPath(self.selected[0])
@@ -2542,8 +2542,8 @@ class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     def _log(self, changed, fileName):
         buff = StringIO.StringIO()
         for modName in sorted(changed):
-            buff.write(_(u'Imported Item Data:')
-                       + u'\n* %03d  %s:\n' % (changed[modName], modName.s))
+            buff.write(_(u'Imported Item Data:') + u'\n* %03d  %s:\n' % (
+                changed[modName], modName.s))
         self._showLog(buff.getvalue())
         buff.close()
 
