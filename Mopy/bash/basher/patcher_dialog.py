@@ -516,8 +516,7 @@ class PatchDialog(balt.Dialog):
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.Moving():
-            mouseItem = (event.m_y/self.gPatchers.GetItemHeight() +
-                self.gPatchers.GetScrollPos(wx.VERTICAL))
+            mouseItem = self.gPatchers.HitTest(event.GetPosition())
             if mouseItem != self.mouseItem:
                 self.mouseItem = mouseItem
                 self.MouseEnteredItem(mouseItem)
@@ -529,7 +528,7 @@ class PatchDialog(balt.Dialog):
     def MouseEnteredItem(self,item):
         """Show tip text when changing item."""
         #--Following isn't displaying correctly.
-        if item < len(self.patchers):
+        if 0 <= item < len(self.patchers):
             patcherClass = self.patchers[item].__class__
             tip = patcherClass.tip or re.sub(ur'\..*',u'.',patcherClass.text.split(u'\n')[0],flags=re.U)
             self.gTipText.SetLabel(tip)

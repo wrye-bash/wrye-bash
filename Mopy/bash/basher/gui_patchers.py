@@ -259,14 +259,15 @@ class _ListPatcherPanel(_PatcherPanel):
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.RightDown():
-            self.mouseState = (event.m_x,event.m_y)
+            self.mouseState = event.GetPosition()
             event.Skip()
         elif event.RightUp() and self.mouseState:
             self.ShowChoiceMenu(event)
         elif event.Dragging():
             if self.mouseState:
                 oldx,oldy = self.mouseState
-                if max(abs(event.m_x-oldx),abs(event.m_y-oldy)) > 4:
+                x, y = event.GetPosition()
+                if max(abs(x - oldx), abs(y - oldy)) > 4:
                     self.mouseState = None
         else:
             self.mouseState = False
@@ -277,10 +278,8 @@ class _ListPatcherPanel(_PatcherPanel):
         NOTE: Assume that configChoice returns a set of chosen items."""
         if not self.choiceMenu: return
         #--Item Index
-        itemHeight = self.gList.GetCharHeight() if self.forceItemCheck else \
-            self.gList.GetItemHeight()
-        itemIndex = event.m_y/itemHeight + self.gList.GetScrollPos(wx.VERTICAL)
-        if itemIndex >= len(self.items): return
+        itemIndex = self.gList.HitTest(event.GetPosition())
+        if itemIndex < 0: return
         self.gList.SetSelection(itemIndex)
         choiceSet = self.getChoice(self.items[itemIndex])
         #--Build Menu
@@ -418,7 +417,7 @@ class _TweakPatcherPanel(_PatcherPanel):
     def TweakOnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.RightDown():
-            self.mouseState = (event.m_x,event.m_y)
+            self.mouseState = event.GetPosition()
             event.Skip()
         elif event.RightUp() and self.mouseState:
             self.ShowChoiceMenu(event)
@@ -429,10 +428,11 @@ class _TweakPatcherPanel(_PatcherPanel):
         elif event.Dragging():
             if self.mouseState:
                 oldx,oldy = self.mouseState
-                if max(abs(event.m_x-oldx),abs(event.m_y-oldy)) > 4:
+                x, y = event.GetPosition()
+                if max(abs(x - oldx), abs(y - oldy)) > 4:
                     self.mouseState = None
         elif event.Moving():
-            mouseItem = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
+            mouseItem = self.gTweakList.HitTest(event.GetPosition())
             self.mouseState = False
             if mouseItem != self.mouseItem:
                 self.mouseItem = mouseItem
@@ -445,7 +445,7 @@ class _TweakPatcherPanel(_PatcherPanel):
     def MouseEnteredItem(self,item):
         """Show tip text when changing item."""
         #--Following isn't displaying correctly.
-        tip = item < len(self.tweaks) and self.tweaks[item].tip
+        tip = 0 <= item < len(self.tweaks) and self.tweaks[item].tip
         if tip:
             self.gTipText.SetLabel(tip)
         else:
@@ -454,7 +454,7 @@ class _TweakPatcherPanel(_PatcherPanel):
     def ShowChoiceMenu(self,event):
         """Displays a popup choice menu if applicable."""
         #--Tweak Index
-        tweakIndex = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
+        tweakIndex = self.gTweakList.HitTest(event.GetPosition())
         self.rightClickTweakIndex = tweakIndex
         #--Tweaks
         tweaks = self.tweaks
