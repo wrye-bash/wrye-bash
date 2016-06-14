@@ -900,27 +900,28 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             msg = msg % (self.selected[0].s, old_mode, new_mode)
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
-        with balt.BusyCursor(): # just to show users that it hasn't stalled but is doing stuff.
-            prog = None
-            if self.doCBash:
-                CBash_PatchFile.patchTime = fileInfo.mtime
-                CBash_PatchFile.patchName = fileInfo.name
-                prog = bolt.Progress()
-            else:
-                PatchFile.patchTime = fileInfo.mtime
-                PatchFile.patchName = fileInfo.name
-                if bass.settings['bash.CBashEnabled']:
-                    # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
-                    prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
-            if prog is not None:
-                with prog: # cbash mode had verbose True...
-                    bosh.modInfos.rescanMergeable(bosh.modInfos.data, prog,
-                                                  self.doCBash)
-                self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
-
+        prog = None
+        if self.doCBash:
+            CBash_PatchFile.patchTime = fileInfo.mtime
+            CBash_PatchFile.patchName = fileInfo.name
+            prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
+        else:
+            PatchFile.patchTime = fileInfo.mtime
+            PatchFile.patchName = fileInfo.name
+            if bass.settings['bash.CBashEnabled']:
+                # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
+                prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
+        mods_prior_to_patch = load_order.cached_lord.loadOrder[
+                              :load_order.loIndexCached(fileName)]
+        if prog is not None:
+            with prog:
+                bosh.modInfos.rescanMergeable(mods_prior_to_patch, prog,
+                                              self.doCBash)
+            self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
         #--Check if we should be deactivating some plugins
-        self._ask_deactivate_mergeable(fileName)
-
+        active_prior_to_patch = [x for x in mods_prior_to_patch if
+                                 load_order.isActiveCached(x)]
+        self._ask_deactivate_mergeable(active_prior_to_patch)
         previousMods = set()
         missing = collections.defaultdict(list)
         delinquent = collections.defaultdict(list)
@@ -956,21 +957,18 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                          importConfig) as patchDialog: patchDialog.ShowModal()
         return fileName
 
-    def _ask_deactivate_mergeable(self, fileName):
-        def less(modName, dex=load_order.loIndexCached):
-            return dex(modName) < dex(fileName)
-        ActivePriortoPatch = [x for x in load_order.activeCached() if less(x)]
-        unfiltered = [x for x in ActivePriortoPatch if
+    def _ask_deactivate_mergeable(self, active_prior_to_patch):
+        unfiltered = [x for x in active_prior_to_patch if
                       u'Filter' in bosh.modInfos[x].getBashTags()]
-        merge = [x for x in ActivePriortoPatch if
+        merge = [x for x in active_prior_to_patch if
                  u'NoMerge' not in bosh.modInfos[x].getBashTags()
                  and x in bosh.modInfos.mergeable
                  and x not in unfiltered]
-        noMerge = [x for x in ActivePriortoPatch if
+        noMerge = [x for x in active_prior_to_patch if
                    u'NoMerge' in bosh.modInfos[x].getBashTags()
                    and x in bosh.modInfos.mergeable
                    and x not in unfiltered and x not in merge]
-        deactivate = [x for x in ActivePriortoPatch if
+        deactivate = [x for x in active_prior_to_patch if
                       u'Deactivate' in bosh.modInfos[x].getBashTags()
                       and not 'Filter' in bosh.modInfos[x].getBashTags()
                       and x not in unfiltered and x not in merge
