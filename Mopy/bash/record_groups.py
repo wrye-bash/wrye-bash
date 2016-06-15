@@ -250,7 +250,7 @@ class MobObjects(MobBase):
             self.indexRecords()
         record_id = record.fid
         if record.isKeyedByEid:
-            if record_id == (GPath(bosh.modInfos.masterName),0):
+            if record_id == (bosh.modInfos.masterName, 0):
                 record_id = record.eid
         if record_id in self.id_records:
             oldRecord = self.id_records[record_id]
@@ -262,9 +262,10 @@ class MobObjects(MobBase):
 
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
-        self.records = [record for record in self.records if (record.fid == (
-            record.isKeyedByEid and GPath(bosh.modInfos.masterName),
-            0) and record.eid in keepIds) or record.fid in keepIds]
+        nullFid = (bosh.modInfos.masterName, 0)
+        self.records = [record for record in self.records if
+                        (record.fid in keepIds if not record.isKeyedByEid else
+                        (record.fid == nullFid and record.eid in keepIds))]
         self.id_records.clear()
         self.setChanged()
 

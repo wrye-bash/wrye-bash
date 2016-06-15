@@ -270,7 +270,7 @@ class PatchFile(_PFile, ModFile):
         selfMergeFactoryType_class = self.mergeFactory.type_class
         selfReadFactoryAddClass = self.readFactory.addClass
         selfLoadFactoryAddClass = self.loadFactory.addClass
-        nullFid = (GPath(bosh.modInfos.masterName),0)
+        nullFid = (bosh.modInfos.masterName, 0)
         for blockType,block in modFile.tops.iteritems():
             iiSkipMerge = iiMode and blockType not in bush.game.listTypes
             #--Make sure block type is also in read and write factories

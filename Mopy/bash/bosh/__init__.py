@@ -3341,9 +3341,9 @@ class ModInfos(FileInfos):
 
     #--Load Order utility methods - be sure cache is valid when using them-----
     @staticmethod
-    def hexIndexString(masterName):
-        return u'%02X' % (load_order.activeIndexCached(masterName),) \
-            if load_order.isActiveCached(masterName) else u''
+    def hexIndexString(mod):
+        return u'%02X' % (load_order.activeIndexCached(mod),) \
+            if load_order.isActiveCached(mod) else u''
 
     def masterWithVersion(self, masterName):
         if masterName == u'Oblivion.esm' and self.voCurrent:

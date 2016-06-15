@@ -400,8 +400,8 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
-        for mi, masterName in enumerate(fileInfo.header.masters):
-            masterInfo = bosh.MasterInfo(masterName,0)
+        for mi, masters_name in enumerate(fileInfo.header.masters):
+            masterInfo = bosh.MasterInfo(masters_name, 0)
             self.data_store[mi] = masterInfo
         self._reList()
         self.PopulateItems()
@@ -409,39 +409,39 @@ class MasterList(_ModsUIList):
     #--Get Master Status
     def GetMasterStatus(self, mi):
         masterInfo = self.data_store[mi]
-        masterName = masterInfo.name
+        masters_name = masterInfo.name
         status = masterInfo.getStatus()
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
-        loadOrderIndex = self.loadOrderNames.index(masterName)
+        loadOrderIndex = self.loadOrderNames.index(masters_name)
         ordered = load_order.activeCached()
         if mi != loadOrderIndex: # there are active masters out of order
             return 20  # orange
         elif status > 0:
             return status  # never happens
-        elif (mi < len(ordered)) and (ordered[mi] == masterName):
+        elif (mi < len(ordered)) and (ordered[mi] == masters_name):
             return -10  # Blue
         else:
             return status  # 0, Green
 
     def set_item_format(self, mi, item_format):
         masterInfo = self.data_store[mi]
-        masterName = masterInfo.name
+        masters_name = masterInfo.name
         #--Font color
         fileBashTags = masterInfo.getBashTags()
         mouseText = u''
         if masterInfo.isEsm():
             item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
-        elif masterName in bosh.modInfos.mergeable:
+        elif masters_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags:
                 item_format.text_key = 'mods.text.noMerge'
                 mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
             else:
                 item_format.text_key = 'mods.text.mergeable'
         #--Text BG
-        if bosh.modInfos.isBadFileName(masterName.s):
-            if load_order.isActiveCached(masterName):
+        if bosh.modInfos.isBadFileName(masters_name.s):
+            if load_order.isActiveCached(masters_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -458,8 +458,8 @@ class MasterList(_ModsUIList):
                 item_format.font = Resources.fonts.bold
         #--Image
         status = self.GetMasterStatus(mi)
-        oninc = load_order.isActiveCached(masterName) or (
-            masterName in bosh.modInfos.merged and 2)
+        oninc = load_order.isActiveCached(masters_name) or (
+            masters_name in bosh.modInfos.merged and 2)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
             mouseText += _(u"Missing master of %s.  ") % on_display
@@ -467,7 +467,7 @@ class MasterList(_ModsUIList):
         elif on_display in bosh.modInfos:
             if status == 20:
                 mouseText += _(u"Reordered relative to other masters.  ")
-            if load_order.loIndexCached(on_display) < load_order.loIndexCached(masterName):
+            if load_order.loIndexCached(on_display) < load_order.loIndexCached(masters_name):
                 mouseText += _(u"Loads after %s.  ") % on_display
                 status = 20 # paint orange
         item_format.icon_key = status, oninc
@@ -483,8 +483,7 @@ class MasterList(_ModsUIList):
         #--Pre-clean
         edited = False
         for mi, masterInfo in self.data_store.items():
-            masterName = masterInfo.name
-            newName = settings['bash.mods.renames'].get(masterName, None)
+            newName = settings['bash.mods.renames'].get(masterInfo.name, None)
             #--Rename?
             if newName and newName in bosh.modInfos:
                 masterInfo.setName(newName)
