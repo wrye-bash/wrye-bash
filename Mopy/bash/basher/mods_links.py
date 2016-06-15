@@ -142,9 +142,8 @@ class Mods_LoadList(ChoiceLink):
         class _LoListLink(__Activate):
             def Execute(self):
                 """Select mods in list."""
-                listed = Mods_LoadList.loadListsDict[self.text]
-                mods = filter(lambda m: m in listed,
-                              map(GPath, self.window.GetItems()))
+                listed = set(Mods_LoadList.loadListsDict[self.text])
+                mods = [m for m in self.window.GetItems() if m in listed]
                 self._selectExact(mods)
         self.__class__.choiceLinkType = _LoListLink
 

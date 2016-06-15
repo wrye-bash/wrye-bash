@@ -1302,8 +1302,7 @@ class Progress(bolt.Progress):
     # __enter__ and __exit__ for use with the 'with' statement
     def __exit__(self, type, value, traceback): self.Destroy()
 
-    def getParent(self):
-        return self.dialog.GetParent()
+    def getParent(self): return self.dialog.GetParent()
 
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
