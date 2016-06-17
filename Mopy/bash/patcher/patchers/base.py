@@ -24,7 +24,6 @@
 
 """This module contains base patcher classes."""
 import collections
-import struct
 from operator import itemgetter
 # Internal
 from ... import bosh, load_order # for bosh.modInfos
@@ -185,11 +184,10 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         self.new_eid = {} #--Maps new fid to new editor id
 
     def readFromText(self,textPath):
-        """Reads replacment data from specified text file."""
+        """Reads replacement data from specified text file."""
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.patchFile.aliases
         with CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x' or fields[6][:2] != u'0x': continue
                 oldMod,oldObj,oldEid,newEid,newMod,newObj = fields[1:7]
@@ -226,7 +224,6 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         mapper = modFile.getLongMapper()
         patchCells = self.patchFile.CELL
         patchWorlds = self.patchFile.WRLD
-        newRecords = []
         modFile.convertToLongFids(('CELL','WRLD','REFR','ACRE','ACHR'))
 ##        for type in self.types:
 ##            for record in getattr(modFile,type).getActiveRecords():
@@ -309,7 +306,6 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
         """Adds merged fids to patchfile."""
         if not self.isActive: return
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
-        masters = self.patchFile
         keep = self.patchFile.getKeeper()
         count = collections.defaultdict(int)
         def swapper(oldId):
@@ -446,6 +442,27 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         self.new_eid = {} #--Maps new fid to new editor id
         self.mod_count_old_new = {}
 
+# Patchers: 40 ----------------------------------------------------------------
+class SpecialPatcher(object):
+    """Provides scan_more method only used in CBash importers (17) and CBash
+    race patchers (3/4 except CBash_RacePatcher_Eyes)."""
+    group = _(u'Special')
+    scanOrder = 40
+    editOrder = 40
+
+    def scan_more(self,modFile,record,bashTags):
+        if modFile.GName in self.srcs:
+            self.scan(modFile,record,bashTags)
+        #Must check for "unloaded" conflicts that occur past the winning record
+        #If any exist, they have to be scanned
+        for conflict in record.Conflicts(True):
+            if conflict != record:
+                mod = conflict.GetParentMod()
+                if mod.GName in self.srcs:
+                    tags = bosh.modInfos[mod.GName].getBashTags()
+                    self.scan(mod,conflict,tags)
+            else: return
+
 # Patchers: 20 ----------------------------------------------------------------
 class ImportPatcher(AImportPatcher, ListPatcher):
     # Override in subclasses as needed
@@ -503,22 +520,9 @@ class ImportPatcher(AImportPatcher, ListPatcher):
             progress.plus()
         return fullNames
 
-class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
+class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
-
-    def scan_more(self,modFile,record,bashTags):
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = bosh.modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: return
 
     def buildPatchLog(self,log):
         """Will write to log."""
@@ -553,23 +557,3 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher):
                 actorFactions.readFromText(getPatchesPath(srcFile))
             progress.plus()
         return actorFactions
-
-# Patchers: 40 ----------------------------------------------------------------
-class SpecialPatcher(object):
-    """Provides default group, scan and edit orders."""
-    group = _(u'Special')
-    scanOrder = 40
-    editOrder = 40
-
-    def scan_more(self,modFile,record,bashTags):
-        if modFile.GName in self.srcs:
-            self.scan(modFile,record,bashTags)
-        #Must check for "unloaded" conflicts that occur past the winning record
-        #If any exist, they have to be scanned
-        for conflict in record.Conflicts(True):
-            if conflict != record:
-                mod = conflict.GetParentMod()
-                if mod.GName in self.srcs:
-                    tags = bosh.modInfos[mod.GName].getBashTags()
-                    self.scan(mod,conflict,tags)
-            else: return
