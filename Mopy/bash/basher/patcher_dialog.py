@@ -116,7 +116,7 @@ class PatchDialog(balt.Dialog):
         self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
-        self.mouseItem = -1
+        self.mouse_dex = -1
         #--Layout
         self.gConfigSizer = gConfigSizer = vSizer()
         sizer = vSizer(
@@ -514,26 +514,22 @@ class PatchDialog(balt.Dialog):
         self.SetOkEnable()
 
     def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
+        """Show tip text when changing item."""
+        mouseItem = -1
         if event.Moving():
             mouseItem = self.gPatchers.HitTest(event.GetPosition())
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseEnteredItem(mouseItem)
+            if mouseItem != self.mouse_dex:
+                self.mouse_dex = mouseItem
         elif event.Leaving():
-            self.gTipText.SetLabel(self.defaultTipText)
-            self.mouseItem = -1
-        event.Skip()
-
-    def MouseEnteredItem(self,item):
-        """Show tip text when changing item."""
-        #--Following isn't displaying correctly.
-        if 0 <= item < len(self.patchers):
-            patcherClass = self.patchers[item].__class__
-            tip = patcherClass.tip or re.sub(ur'\..*',u'.',patcherClass.text.split(u'\n')[0],flags=re.U)
+            pass # will be set to defaultTipText
+        if 0 <= mouseItem < len(self.patchers):
+            patcherClass = self.patchers[mouseItem].__class__
+            tip = patcherClass.tip or re.sub(ur'\..*', u'.',
+                            patcherClass.text.split(u'\n')[0], flags=re.U)
             self.gTipText.SetLabel(tip)
         else:
             self.gTipText.SetLabel(self.defaultTipText)
+        event.Skip()
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""
