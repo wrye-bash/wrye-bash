@@ -545,7 +545,7 @@ class INIList(balt.UIList):
                  }
     def _sortValidFirst(self, items):
         if settings['bash.ini.sortValid']:
-            items.sort(key=lambda a: self.data_store[a].status < 0)
+            items.sort(key=lambda a: self.data_store[a].tweak_status < 0)
     _extra_sortings = [_sortValidFirst]
     #--Labels
     labels = OrderedDict([
@@ -563,7 +563,7 @@ class INIList(balt.UIList):
         not_applied = 0
         invalid = 0
         for tweak in self.data_store.keys():
-            status = self.data_store[tweak].status
+            status = self.data_store[tweak].tweak_status
             if status == -10: invalid += 1
             elif status == 0: not_applied += 1
             elif status == 10: mismatch += 1
@@ -577,13 +577,13 @@ class INIList(balt.UIList):
         tweaks = self.data_store.keys()
         tweaks.sort()
         for tweak in tweaks:
-            if not self.data_store[tweak].status == 20: continue
+            if not self.data_store[tweak].tweak_status == 20: continue
             tweaklist+= u'%s\n' % tweak
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
 
     def RefreshUIValid(self):
-        valid = [k for k, v in self.data_store.iteritems() if v.status >= 0]
+        valid = [k for k, v in self.data_store.iteritems() if v.tweak_status >= 0]
         self.RefreshUI(files=valid)
 
     @staticmethod
@@ -634,7 +634,7 @@ class INIList(balt.UIList):
         hitItem = self._getItemClicked(event, on_icon=True)
         if not hitItem: return
         tweak = bosh.iniInfos[hitItem]
-        if tweak.status == 20: return # already applied
+        if tweak.tweak_status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.panel
         choice = iniPanel.GetChoice().tail

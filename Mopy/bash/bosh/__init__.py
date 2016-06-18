@@ -2763,7 +2763,7 @@ class INIInfo(FileInfo):
         self._status = None
 
     @property
-    def status(self):
+    def tweak_status(self):
         if self._status is None: self.getStatus()
         return self._status
 
@@ -2777,7 +2777,7 @@ class INIInfo(FileInfo):
         10: mismatches (yellow)
         0: not installed (green)
         -10: invalid tweak file (red).
-        Also caches the value in self.status"""
+        Also caches the value in self._status"""
         path = self.getPath()
         infos = self.getFileInfos()
         ini = infos.ini
