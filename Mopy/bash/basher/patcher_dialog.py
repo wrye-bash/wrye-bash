@@ -39,6 +39,7 @@ from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
+from ..patcher.base import AListPatcher
 
 # Final lists of gui patcher classes instances, initialized in
 # gui_patchers.InitPatchers() based on game. These must be copied as needed.
@@ -60,6 +61,7 @@ class PatchDialog(balt.Dialog):
         super(PatchDialog, self).__init__(parent, title=title, size=size)
         self.SetSizeHints(400,300)
         #--Data
+        AListPatcher.list_patches_dir()
         groupOrder = dict([(group,index) for index,group in
             enumerate((_(u'General'),_(u'Importers'),_(u'Tweakers'),_(u'Special')))])
         patchConfigs = bosh.modInfos.table.getItem(patchInfo.name,'bash.patch.configs',{})
@@ -78,7 +80,7 @@ class PatchDialog(balt.Dialog):
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            if u'UNDEFINED' in (patcher.__class__.group, patcher.__class__.group):
+            if u'UNDEFINED' in (patcher.__class__.name, patcher.__class__.group):
                 raise UncodedError(u'Name or group not defined for: %s' % patcher.__class__.__name__)
             patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
             patcher.SetIsFirstLoad(isFirstLoad)
@@ -114,7 +116,7 @@ class PatchDialog(balt.Dialog):
         self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
-        self.mouseItem = -1
+        self.mouse_dex = -1
         #--Layout
         self.gConfigSizer = gConfigSizer = vSizer()
         sizer = vSizer(
@@ -394,10 +396,8 @@ class PatchDialog(balt.Dialog):
                    [u'Python',u'CBash'][self.doCBash])):
             return
         if self.doCBash:
-            PatchFile.patchTime = CBash_PatchFile.patchTime
             PatchFile.patchName = CBash_PatchFile.patchName
         else:
-            CBash_PatchFile.patchTime = PatchFile.patchTime
             CBash_PatchFile.patchName = PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
@@ -514,27 +514,22 @@ class PatchDialog(balt.Dialog):
         self.SetOkEnable()
 
     def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.Moving():
-            mouseItem = (event.m_y/self.gPatchers.GetItemHeight() +
-                self.gPatchers.GetScrollPos(wx.VERTICAL))
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseEnteredItem(mouseItem)
-        elif event.Leaving():
-            self.gTipText.SetLabel(self.defaultTipText)
-            self.mouseItem = -1
-        event.Skip()
-
-    def MouseEnteredItem(self,item):
         """Show tip text when changing item."""
-        #--Following isn't displaying correctly.
-        if item < len(self.patchers):
-            patcherClass = self.patchers[item].__class__
-            tip = patcherClass.tip or re.sub(ur'\..*',u'.',patcherClass.text.split(u'\n')[0],flags=re.U)
+        mouseItem = -1
+        if event.Moving():
+            mouseItem = self.gPatchers.HitTest(event.GetPosition())
+            if mouseItem != self.mouse_dex:
+                self.mouse_dex = mouseItem
+        elif event.Leaving():
+            pass # will be set to defaultTipText
+        if 0 <= mouseItem < len(self.patchers):
+            patcherClass = self.patchers[mouseItem].__class__
+            tip = patcherClass.tip or re.sub(ur'\..*', u'.',
+                            patcherClass.text.split(u'\n')[0], flags=re.U)
             self.gTipText.SetLabel(tip)
         else:
             self.gTipText.SetLabel(self.defaultTipText)
+        event.Skip()
 
     def OnChar(self,event):
         """Keyboard input to the patchers list box"""

@@ -264,13 +264,13 @@ class Master_ChangeTo(_Master_EditList):
     def Execute(self):
         itemId = self.selected[0]
         masterInfo = self.window.data_store[itemId]
-        masterName = masterInfo.name
+        master_name = masterInfo.name
         #--File Dialog
         wildcard = _(u'%s Mod Files') % bush.game.displayName \
                    + u' (*.esp;*.esm)|*.esp;*.esm'
         newPath = self._askOpen(title=_(u'Change master name to:'),
                                 defaultDir=bosh.modInfos.dir,
-                                defaultFile=masterName, wildcard=wildcard,
+                                defaultFile=master_name, wildcard=wildcard,
                                 mustExist=True)
         if not newPath: return
         (newDir,newName) = newPath.headTail
@@ -279,11 +279,11 @@ class Master_ChangeTo(_Master_EditList):
             self._showError(
                _(u"File must be selected from Oblivion Data Files directory."))
             return
-        elif newName == masterName:
+        elif newName == master_name:
             return
         #--Save Name
         masterInfo.setName(newName)
-        bass.settings.getChanged('bash.mods.renames')[masterName] = newName
+        bass.settings.getChanged('bash.mods.renames')[master_name] = newName
         self.window.SetMasterlistEdited(repopulate=True)
 
 #------------------------------------------------------------------------------
@@ -297,8 +297,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
     def Execute(self):
         itemId = self.selected[0]
         masterInfo = self.window.data_store[itemId]
-        masterName = masterInfo.name
-        newName = GPath(re.sub(u'[mM]$','p',u'XX'+masterName.s))
+        newName = GPath(re.sub(u'[mM]$', 'p', u'XX' + masterInfo.name.s))
         #--Save Name
         masterInfo.setName(newName)
         self.window.SetMasterlistEdited(repopulate=True)

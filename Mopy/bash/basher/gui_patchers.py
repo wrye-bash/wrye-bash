@@ -136,8 +136,8 @@ class _ListPatcherPanel(_PatcherPanel):
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
-        self.mouseItem = -1
-        self.mouseState = None
+        self.mouse_dex = -1
+        self.mouse_pos = None
         #--Manual controls
         if self.forceAuto:
             gManualSizer = None
@@ -259,17 +259,18 @@ class _ListPatcherPanel(_PatcherPanel):
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.RightDown():
-            self.mouseState = (event.m_x,event.m_y)
+            self.mouse_pos = event.GetPosition()
             event.Skip()
-        elif event.RightUp() and self.mouseState:
+        elif event.RightUp() and self.mouse_pos:
             self.ShowChoiceMenu(event)
         elif event.Dragging():
-            if self.mouseState:
-                oldx,oldy = self.mouseState
-                if max(abs(event.m_x-oldx),abs(event.m_y-oldy)) > 4:
-                    self.mouseState = None
+            if self.mouse_pos:
+                oldx, oldy = self.mouse_pos
+                x, y = event.GetPosition()
+                if max(abs(x - oldx), abs(y - oldy)) > 4:
+                    self.mouse_pos = None
         else:
-            self.mouseState = False
+            self.mouse_pos = None
             event.Skip()
 
     def ShowChoiceMenu(self,event):
@@ -277,10 +278,8 @@ class _ListPatcherPanel(_PatcherPanel):
         NOTE: Assume that configChoice returns a set of chosen items."""
         if not self.choiceMenu: return
         #--Item Index
-        itemHeight = self.gList.GetCharHeight() if self.forceItemCheck else \
-            self.gList.GetItemHeight()
-        itemIndex = event.m_y/itemHeight + self.gList.GetScrollPos(wx.VERTICAL)
-        if itemIndex >= len(self.items): return
+        itemIndex = self.gList.HitTest(event.GetPosition())
+        if itemIndex < 0: return
         self.gList.SetSelection(itemIndex)
         choiceSet = self.getChoice(self.items[itemIndex])
         #--Build Menu
@@ -333,24 +332,13 @@ class _ListPatcherPanel(_PatcherPanel):
 class _TweakPatcherPanel(_PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
     listLabel = _(u"Tweaks")
+    style = wx.TAB_TRAVERSAL
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         #--Else...
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent,style=wx.TAB_TRAVERSAL)
-        text = fill(self.__class__.text,70)
-        gText = StaticText(self.gConfigPanel,text)
-        self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
-        #--Events
-        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
-        self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW,self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN,self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_UP,self.TweakOnMouse)
-        self.mouseItem = -1
-        self.mouseState = None
+        gConfigPanel, gText = self._build_tweaks_list(gTipText, parent)
         if self.selectCommands:
             self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
                                      onButClick=self.TweakSelectAll)
@@ -375,6 +363,23 @@ class _TweakPatcherPanel(_PatcherPanel):
         gConfigPanel.SetSizer(gSizer)
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
+
+    def _build_tweaks_list(self, gTipText, parent):
+        self.gTipText = gTipText
+        gConfigPanel = self.gConfigPanel = wx.Window(
+            parent, style=self.__class__.style)
+        text = fill(self.__class__.text, 70)
+        gText = StaticText(self.gConfigPanel, text)
+        self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
+        #--Events
+        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX, self.TweakOnListCheck)
+        self.gTweakList.Bind(wx.EVT_MOTION, self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW, self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN, self.TweakOnMouse)
+        self.gTweakList.Bind(wx.EVT_RIGHT_UP, self.TweakOnMouse)
+        self.mouse_dex = -1
+        self.mouse_pos = None
+        return gConfigPanel, gText
 
     @staticmethod
     def _label(label, value): # edit label text with value
@@ -418,44 +423,41 @@ class _TweakPatcherPanel(_PatcherPanel):
     def TweakOnMouse(self,event):
         """Check mouse motion to detect right click event."""
         if event.RightDown():
-            self.mouseState = (event.m_x,event.m_y)
+            self.mouse_pos = event.GetPosition()
             event.Skip()
-        elif event.RightUp() and self.mouseState:
+        elif event.RightUp() and self.mouse_pos:
             self.ShowChoiceMenu(event)
         elif event.Leaving():
             self.gTipText.SetLabel(u'')
-            self.mouseState = False
+            self.mouse_pos = None
             event.Skip()
         elif event.Dragging():
-            if self.mouseState:
-                oldx,oldy = self.mouseState
-                if max(abs(event.m_x-oldx),abs(event.m_y-oldy)) > 4:
-                    self.mouseState = None
+            if self.mouse_pos:
+                oldx, oldy = self.mouse_pos
+                x, y = event.GetPosition()
+                if max(abs(x - oldx), abs(y - oldy)) > 4:
+                    self.mouse_pos = None
         elif event.Moving():
-            mouseItem = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
-            self.mouseState = False
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseEnteredItem(mouseItem)
+            mouseItem = self.gTweakList.HitTest(event.GetPosition())
+            self.mouse_pos = None
+            if mouseItem != self.mouse_dex:
+                # Show tip text when changing item
+                self.mouse_dex = mouseItem
+                tip = 0 <= mouseItem < len(self.tweaks) and self.tweaks[
+                    mouseItem].tip
+                if tip:
+                    self.gTipText.SetLabel(tip)
+                else:
+                    self.gTipText.SetLabel(u'')
             event.Skip()
         else:
-            self.mouseState = False
+            self.mouse_pos = None
             event.Skip()
-
-    def MouseEnteredItem(self,item):
-        """Show tip text when changing item."""
-        #--Following isn't displaying correctly.
-        tip = item < len(self.tweaks) and self.tweaks[item].tip
-        if tip:
-            self.gTipText.SetLabel(tip)
-        else:
-            self.gTipText.SetLabel(u'')
 
     def ShowChoiceMenu(self,event):
         """Displays a popup choice menu if applicable."""
         #--Tweak Index
-        tweakIndex = event.m_y/self.gTweakList.GetItemHeight() + self.gTweakList.GetScrollPos(wx.VERTICAL)
-        self.rightClickTweakIndex = tweakIndex
+        tweakIndex = self.gTweakList.HitTest(event.GetPosition())
         #--Tweaks
         tweaks = self.tweaks
         if tweakIndex >= len(tweaks): return
@@ -465,15 +467,15 @@ class _TweakPatcherPanel(_PatcherPanel):
         self.gTweakList.SetSelection(tweakIndex)
         #--Build Menu
         links = Links()
-        _self = self # ugly, OnTweakCustomChoice is too big to make it local though
+        _self = self # ugly, tweak_custom_choice is too big to make it local though
         class _ValueLink(CheckLink):
             def __init__(self, _text, index):
                 super(_ValueLink, self).__init__(_text)
                 self.index = index
             def _check(self): return self.index == tweak.chosen
-            def Execute(self): _self.OnTweakChoice(self.index)
+            def Execute(self): _self.tweak_choice(self.index, tweakIndex)
         class _ValueLinkCustom(_ValueLink):
-            def Execute(self): _self.OnTweakCustomChoice(self.index)
+            def Execute(self): _self.tweak_custom_choice(self.index,tweakIndex)
         for index,label in enumerate(choiceLabels):
             if label == u'----':
                 links.append(SeparatorLink())
@@ -485,9 +487,8 @@ class _TweakPatcherPanel(_PatcherPanel):
         #--Show/Destroy Menu
         links.PopupMenu(self.gTweakList, Link.Frame, None)
 
-    def OnTweakChoice(self, index):
+    def tweak_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
-        tweakIndex = self.rightClickTweakIndex
         self.tweaks[tweakIndex].chosen = index
         self.gTweakList.SetString(tweakIndex,self.tweaks[tweakIndex].getListLabel())
         self.gTweakList.Check(tweakIndex, True) # wx.EVT_CHECKLISTBOX is NOT
@@ -500,9 +501,8 @@ class _TweakPatcherPanel(_PatcherPanel):
         u'If you are trying to enter a decimal multiply it by 10, '
         u'for example for 0.3 enter 3 instead.')
 
-    def OnTweakCustomChoice(self, index):
+    def tweak_custom_choice(self, index, tweakIndex):
         """Handle choice menu selection."""
-        tweakIndex = self.rightClickTweakIndex
         tweak = self.tweaks[tweakIndex]
         value = []
         for i, v in enumerate(tweak.choiceValues[index]):
@@ -567,29 +567,18 @@ class _TweakPatcherPanel(_PatcherPanel):
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     """Patcher panel with option to select source elements."""
     listLabel = _(u'Source Mods/Files')
+    style = 0
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+    def GetConfigPanel(self,parent,gConfigSizer,gTipText): # TODO(ut): use super !
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         #--Else...
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent)
-        text = fill(self.text,70)
-        gText = StaticText(self.gConfigPanel,text)
+        gConfigPanel, gText = self._build_tweaks_list(gTipText, parent)
         #--Import List
         self.gList = balt.listBox(gConfigPanel, kind='checklist')
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
-        #--Tweak List
-        self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
-        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX,self.TweakOnListCheck)
-        self.gTweakList.Bind(wx.EVT_MOTION,self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW,self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN,self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_UP,self.TweakOnMouse)
-        self.mouseItem = -1
-        self.mouseState = None
         #--Buttons
         self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
                                  onButClick=self.SelectAll)

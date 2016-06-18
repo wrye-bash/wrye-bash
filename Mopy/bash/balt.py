@@ -1653,7 +1653,7 @@ class UIList(wx.Panel):
         self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
         self._gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         #--Mouse movement
-        self.mouseItem = None
+        self.mouse_index = None
         self.mouseTexts = {} # dictionary item->mouse text
         self.mouseTextPrev = u''
         self._gList.Bind(wx.EVT_MOTION, self.OnMouse)
@@ -1826,28 +1826,21 @@ class UIList(wx.Panel):
         self._gList.SetSize(size)
 
     def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.Moving():
-            (mouseItem,mouseHitFlag) = self._gList.HitTest(event.GetPosition())
-            if mouseItem != self.mouseItem:
-                self.mouseItem = mouseItem
-                self.MouseOverItem(mouseItem)
-        elif event.Leaving() and self.mouseItem is not None:
-            self.mouseItem = None
-            self.MouseOverItem(None)
-        event.Skip()
-
-    def MouseOverItem(self, itemDex):
         """Handle mouse entered item by showing tip or similar."""
-        if itemDex is None:
+        if event.Moving():
+            (itemDex, mouseHitFlag) = self._gList.HitTest(event.GetPosition())
+            if itemDex != self.mouse_index:
+                self.mouse_index = itemDex
+                if itemDex >= 0:
+                    item = self.GetItem(itemDex) # get the item for this index
+                    text = self.mouseTexts.get(item, u'')
+                    if text != self.mouseTextPrev:
+                        Link.Frame.SetStatusInfo(text)
+                        self.mouseTextPrev = text
+        elif event.Leaving() and self.mouse_index is not None:
+            self.mouse_index = None
             Link.Frame.SetStatusInfo(u'')
-            return
-        if itemDex < 0: return
-        item = self.GetItem(itemDex) # get the item (bolt Path) for this index
-        text = self.mouseTexts.get(item, u'')
-        if text != self.mouseTextPrev:
-            Link.Frame.SetStatusInfo(text)
-            self.mouseTextPrev = text
+        event.Skip()
 
     def OnKeyUp(self, event):
         """Char event: select all items, delete selected items, rename."""
@@ -2697,7 +2690,7 @@ def ask_uac_restart(message, title, mopy):
         return askYes(None, message + u'\n\n' + _(
                 u'Start Wrye Bash with Administrator Privileges?'), title)
     admin = _(u'Run with Administrator Privileges')
-    readme = _readme_url(mopy)
+    readme = readme_url(mopy)
     readme += '#trouble-permissions'
     return vistaDialog(None, message=message,
         buttons=[(True, u'+' + admin), (False, _(u'Run normally')), ],
@@ -2709,8 +2702,10 @@ def ask_uac_restart(message, title, mopy):
             u'\n\n' + _(u'See the <A href="%(readmePath)s">readme</A> '
                 u'for more information.') % {'readmePath': readme}])
 
-def _readme_url(mopy):
-    readme = mopy.join(u'Docs', u'Wrye Bash General Readme.html')
+def readme_url(mopy, advanced=False):
+    readme = mopy.join(u'Docs',
+                       u'Wrye Bash Advanced Readme.html' if advanced else
+                       u'Wrye Bash General Readme.html')
     if readme.exists():
         readme = u'file:///' + readme.s.replace(u'\\', u'/').replace(u' ',
                                                                      u'%20')

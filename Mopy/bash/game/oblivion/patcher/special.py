@@ -25,7 +25,7 @@
 import os
 import re
 from ....bolt import GPath, sio, SubProgress, StateError, CsvReader
-from ....patcher import getPatchesPath, getPatchesList
+from ....patcher import getPatchesPath
 from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord, ModReader
 from ....bass import null4
@@ -398,8 +398,7 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if srcPath not in patchesList: continue
+            if srcPath not in self.patches_set: continue
             self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
@@ -481,8 +480,7 @@ class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if srcPath not in patchesList: continue
+            if srcPath not in self.patches_set: continue
             self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
@@ -690,8 +688,7 @@ class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            patchesList = getPatchesList()
-            if srcPath not in patchesList: continue
+            if srcPath not in self.patches_set: continue
             self.readFromText(getPatchesPath(srcFile))
             progress.plus()
 
