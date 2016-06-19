@@ -4459,8 +4459,8 @@ class Installer(object):
     @staticmethod
     def sortFiles(files, __split=os.path.split):
         """Utility function. Sorts files by directory, then file name."""
-        sortKeys = dict((x, __split(x)) for x in files)
-        return sorted(files, key=sortKeys.__getitem__)
+        sort_keys_dict = dict((x, __split(x.lower())) for x in files)
+        return sorted(files, key=sort_keys_dict.__getitem__)
 
     @staticmethod
     def final_update(new_sizeCrcDate, old_sizeCrcDate, pending, pending_size,
@@ -5073,12 +5073,10 @@ class Installer(object):
     def _find_root_index(self, _os_sep=os_sep, skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
         #--Sort file names
-        def fscSortKey(fsc):
-            dirFile = fsc[0].lower().rsplit(os_sep, 1)
-            if len(dirFile) == 1: dirFile.insert(0,u'')
-            return dirFile
-        sortKeys = dict((x, fscSortKey(x)) for x in self.fileSizeCrcs)
-        self.fileSizeCrcs.sort(key=sortKeys.__getitem__)
+        split = os.path.split
+        sort_keys_dict = dict(
+            (x, split(x[0].lower())) for x in self.fileSizeCrcs)
+        self.fileSizeCrcs.sort(key=sort_keys_dict.__getitem__)
         #--Find correct starting point to treat as BAIN package
         self.extras_dict.clear() # if more keys are added be careful cleaning
         self.fileRootIdex = 0

@@ -346,7 +346,7 @@ class InstallerConverter(object):
         nextStep = step = 0.4 / len(srcCRCs)
         for srcCRC, realCRC in zip(srcCRCs, realCRCs):
             srcInstaller = crc_installer[srcCRC]
-            files = srcInstaller.sortFiles(
+            files = Installer.sortFiles(
                     [x[0] for x in srcInstaller.fileSizeCrcs])
             if not files: continue
             progress(0,

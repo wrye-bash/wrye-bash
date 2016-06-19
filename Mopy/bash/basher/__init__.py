@@ -2889,17 +2889,12 @@ class InstallersPanel(SashTankPanel):
         else: self.infoPages[index][1] = True
         pageName = gPage.GetName()
         sNone = _(u'[None]')
-        def sortKey(file):
-            dirFile = file.lower().rsplit(u'\\',1)
-            if len(dirFile) == 1: dirFile.insert(0,u'')
-            return dirFile
         def dumpFiles(installer,files,default=u'',header=u'',isPath=False):
             if files:
                 buff = StringIO.StringIO()
                 if isPath: files = [x.s for x in files]
                 else: files = list(files)
-                sortKeys = dict((x,sortKey(x)) for x in files)
-                files.sort(key=lambda x: sortKeys[x])
+                files = bosh.Installer.sortFiles(files)
                 if header: buff.write(header+u'\n')
                 for file in files:
                     oldName = installer.getEspmName(file)
