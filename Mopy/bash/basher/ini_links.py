@@ -161,7 +161,7 @@ class INI_Apply(EnabledLink):
     def Execute(self):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
-        choice = self.iniPanel.GetChoice().tail
+        choice = self.iniPanel.current_ini_path.tail
         if choice in bush.game.iniFiles:
             message = (_(u'Apply an ini tweak to %s?') % choice
                        + u'\n\n' +

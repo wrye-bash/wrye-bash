@@ -53,13 +53,13 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import StringIO
-from collections import OrderedDict
 import os
 import re
 import sys
 import time
-from types import ClassType
+from collections import OrderedDict
 from functools import partial
+from types import ClassType
 #--wxPython
 import collections
 import wx
@@ -80,7 +80,7 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton
+    SaveButton, CancelButton, INIListCtrl
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import spacer, hSizer, vSizer
 from ..balt import colors, images, Image
@@ -638,7 +638,7 @@ class INIList(balt.UIList):
         if tweak.tweak_status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         iniPanel = self.panel
-        choice = iniPanel.GetChoice().tail
+        choice = iniPanel.current_ini_path.tail
         if choice in bush.game.iniFiles:
             message = (_(u"Apply an ini tweak to %s?") % choice
                        + u'\n\n' +
@@ -654,11 +654,10 @@ class INIList(balt.UIList):
     def _select(self, tweakfile): self.panel.SelectTweak(tweakfile)
 
 #------------------------------------------------------------------------------
-class INITweakLineCtrl(wx.ListCtrl):
-    def __init__(self, parent, iniContents, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        wx.ListCtrl.__init__(self, parent, style=style)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
-        self.InsertColumn(0,u'')
+class INITweakLineCtrl(INIListCtrl):
+
+    def __init__(self, parent, iniContents):
+        super(INITweakLineCtrl, self).__init__(parent)
         self.tweakLines = []
         self.iniContents = iniContents
 
@@ -680,7 +679,7 @@ class INITweakLineCtrl(wx.ListCtrl):
         tweakPath = bosh.iniInfos[tweakPath].dir.join(tweakPath)
         self.tweakLines = ini.getTweakFileLines(tweakPath)
         num = self.GetItemCount()
-        updated = []
+        updated = set()
         for i,line in enumerate(self.tweakLines):
             #--Line
             if i >= num:
@@ -699,24 +698,21 @@ class INITweakLineCtrl(wx.ListCtrl):
             lineNo = line[5]
             if lineNo != -1:
                 self.iniContents.SetItemBackgroundColour(lineNo,color)
-                updated.append(lineNo)
+                updated.add(lineNo)
         #--Delete extra lines
-        for i in range(len(self.tweakLines),num):
-            self.DeleteItem(len(self.tweakLines))
+        start = len(self.tweakLines)
+        for i in xrange(start, num): self.DeleteItem(start)
         #--Reset line color for other iniContents lines
-        for i in range(self.iniContents.GetItemCount()):
+        background_color = self.iniContents.GetBackgroundColour()
+        for i in xrange(self.iniContents.GetItemCount()):
             if i in updated: continue
-            if self.iniContents.GetItemBackgroundColour(i) != self.iniContents.GetBackgroundColour():
-                self.iniContents.SetItemBackgroundColour(i, self.iniContents.GetBackgroundColour())
+            if self.iniContents.GetItemBackgroundColour(i) != background_color:
+                self.iniContents.SetItemBackgroundColour(i, background_color)
         #--Refresh column width
         self.SetColumnWidth(0,wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class INILineCtrl(wx.ListCtrl):
-    def __init__(self, parent, style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.LC_NO_HEADER):
-        wx.ListCtrl.__init__(self, parent, style=style)
-        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
-        self.InsertColumn(0, u'')
+class INILineCtrl(INIListCtrl):
 
     def SetTweakLinesCtrl(self, control):
         self.tweakContents = control
@@ -1524,27 +1520,25 @@ class INIPanel(SashPanel):
                                       onButClick=self.OnEdit)
         #--Choices
         self.choices = settings['bash.ini.choices']
-        self.choice = settings['bash.ini.choice']
-        self.CheckTargets()
-        self.lastDir = bass.dirs['mods'].s
-        self.SortChoices()
-        if self.choice < 0 or self.choice >= len(self.sortKeys):
-            self.choice = 0
+        """:type : dict[unicode, bolt.Path]"""
+        self.choice = settings['bash.ini.choice'] # type: int
+        self.__check_targets() # remove non existent, sort choices, set choice
+        self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
         #--Watch for changes to the target INI
         self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
-        self.trackedInfo.track(self.GetChoice())
+        self.trackedInfo.track(self.current_ini_path)
         #--Ini file
         self.iniContents = INILineCtrl(right)
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(right,self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = RoTextCtrl(right, noborder=True, multiline=False)
-        self.SetBaseIni(self.GetChoice())
+        self.SetBaseIni(self.current_ini_path)
         self.listData = bosh.iniInfos
         self.uiList = BashFrame.iniList = INIList(
             left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.comboBox = balt.ComboBox(right, value=self.GetChoiceString(),
-                                      choices=self.sortKeys)
+        self.comboBox = balt.ComboBox(right, value=self._ini_name,
+                                      choices=self.choices.keys())
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
         #--Layout
@@ -1578,33 +1572,25 @@ class INIPanel(SashPanel):
         self.tweakName.SetValue(tweakFile.sbody)
         self.tweakContents.RefreshTweakLineCtrl(tweakFile)
 
-    def GetChoice(self,index=None):
-        """ Return path for a given choice, or the
-        currently selected choice if index is None."""
-        if index is None:
-            return self.choices[self.sortKeys[self.choice]]
-        else:
-            return self.choices[self.sortKeys[index]]
+    @property
+    def current_ini_path(self):
+        """ Return path of currently chosen ini."""
+        return self.choices.values()[self.choice]
 
-    def GetChoiceString(self,index=None):
-        """Return text for a given choice, or the
-        currently selected choice if index is None."""
-        if index is None:
-            return self.sortKeys[self.choice]
-        else:
-            return self.sortKeys[index]
+    @property
+    def _ini_name(self): return self.choices.keys()[self.choice]
 
     def ShowPanel(self):
         changed = self.trackedInfo.refreshTracked()
         changed = set([x for x in changed if x != bosh.oblivionIni.path])
-        if self.GetChoice() in changed:
+        if self.current_ini_path in changed:
             self.RefreshPanel()
         super(INIPanel, self).ShowPanel()
 
     def RefreshPanel(self, what='ALL'):
         if what == 'ALL' or what == 'TARGETS':
             # Refresh the drop down list
-            path = self.GetChoice()
+            path = self.current_ini_path
             if path is None:
                 self.choice -= 1
             elif not path.isfile():
@@ -1612,10 +1598,10 @@ class INIPanel(SashPanel):
                     if iFile.path == path:
                         break
                 else:
-                    del self.choices[self.GetChoiceString()]
+                    del self.choices[self._ini_name]
                     self.choice -= 1
                     what = 'ALL'
-            self.SetBaseIni(self.GetChoice())
+            self.SetBaseIni(self.current_ini_path)
             self.comboBox.SetItems(self.SortChoices())
             self.comboBox.SetSelection(self.choice)
         if what == 'ALL' or what == 'TWEAKS':
@@ -1623,7 +1609,7 @@ class INIPanel(SashPanel):
 
     def SetBaseIni(self,path=None):
         """Sets the target INI file."""
-        choicePath = self.GetChoice()
+        choicePath = self.current_ini_path
         for iFile in bosh.gameInis:
             if iFile.path == choicePath:
                 isGameIni = True
@@ -1637,6 +1623,7 @@ class INIPanel(SashPanel):
         refresh = bosh.iniInfos.ini != target
         bosh.iniInfos.ini = target
         self.button.Enable(not isGameIni)
+        self.editButton.Enable(not isGameIni or target.path.isfile())
         selected = None
         # iniList can be None below cause we are called in INIPanel.__init__()
         # before iniList is assigned - possibly to avoid the RefreshUI below
@@ -1648,7 +1635,7 @@ class INIPanel(SashPanel):
                 selected = None
         if refresh:
             self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
-            self.trackedInfo.track(self.GetChoice())
+            self.trackedInfo.track(self.current_ini_path)
         self.RefreshIniDetails(selected, resetScroll=refresh)
         if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
 
@@ -1671,9 +1658,8 @@ class INIPanel(SashPanel):
         selection = self.comboBox.GetValue()
         self.choices[selection].start()
 
-    def CheckTargets(self):
+    def __check_targets(self):
         """Check the list of target INIs, remove any that don't exist"""
-        changed = False
         for i in self.choices.keys():
             if i == _(u'Browse...'): continue
             path = self.choices[i]
@@ -1683,17 +1669,14 @@ class INIPanel(SashPanel):
             # objects.  That will take care of it.
             if not isinstance(path,bolt.Path) or not path.isfile():
                 del self.choices[i]
-                changed = True
         csChoices = [x.lower() for x in self.choices]
         for iFile in bosh.gameInis:
             if iFile.path.tail.cs not in csChoices:
                 self.choices[iFile.path.stail] = iFile.path
-                changed = True
         if _(u'Browse...') not in self.choices:
             self.choices[_(u'Browse...')] = None
-            changed = True
-        if changed: self.SortChoices()
-        if len(self.choices.keys()) <= self.choice + 1:
+        self.SortChoices()
+        if self.choice < 0 or len(self.choices) <= self.choice + 1:
             self.choice = 0
 
     def SortChoices(self):
@@ -1703,11 +1686,12 @@ class INIPanel(SashPanel):
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
+        len_inis = len(bush.game.iniFiles)
         keys.sort(key=lambda a:
                   bush.game.iniFiles.index(a) if a in bush.game.iniFiles
-                  else len(bush.game.iniFiles)+1 if a == _(u'Browse...')
-                  else len(bush.game.iniFiles))
-        self.sortKeys = keys
+                  else (len_inis + 1 if a == _(u'Browse...') else len_inis))
+        self.choices = collections.OrderedDict(
+            [(k, self.choices[k]) for k in keys])
         return keys
 
     def _sbCount(self):
@@ -1717,12 +1701,11 @@ class INIPanel(SashPanel):
     def AddOrSelectIniDropDown(self, path):
         if path.stail not in self.choices:
             self.choices[path.stail] = path
-            self.SortChoices()
-            self.comboBox.SetItems(self.sortKeys)
+            self.comboBox.SetItems(self.SortChoices())
         else:
-            if self.choice == self.sortKeys.index(path.stail):
+            if self.choice == self.choices.keys().index(path.stail):
                 return
-        self.choice = self.sortKeys.index(path.stail)
+        self.choice = self.choices.keys().index(path.stail)
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni(path)
         self.uiList.RefreshUI()
@@ -1743,7 +1726,7 @@ class INIPanel(SashPanel):
                 return
             # Make sure the 'new' file isn't already in the list
             if path.stail in self.choices:
-                new_choice = self.sortKeys.index(path.stail)
+                new_choice = self.choices.keys().index(path.stail)
                 refresh = new_choice != self.choice
                 self.choice = new_choice
                 self.comboBox.SetSelection(self.choice)
@@ -1757,6 +1740,7 @@ class INIPanel(SashPanel):
     def ClosePanel(self):
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
+        settings['bash.ini.lastDir'] = self.lastDir
         super(INIPanel, self).ClosePanel()
 
 #------------------------------------------------------------------------------
