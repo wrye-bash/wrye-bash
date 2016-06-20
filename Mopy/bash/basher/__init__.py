@@ -1587,7 +1587,6 @@ class INIPanel(SashPanel):
 
     def ShowPanel(self):
         changed = self.trackedInfo.refreshTracked()
-        changed = set([x for x in changed if x != bosh.oblivionIni.path])
         if self.current_ini_path in changed:
             self.RefreshPanel()
         super(INIPanel, self).ShowPanel()
@@ -1621,23 +1620,21 @@ class INIPanel(SashPanel):
                 path = choicePath
             target = bosh.BestIniFile(path)
             isGameIni = False
-        refresh = bosh.iniInfos.ini != target
-        bosh.iniInfos.ini = target
+        target_changed = bosh.iniInfos.ini.path != target.path
+        if target_changed: bosh.iniInfos.ini = target
         self.button.Enable(not isGameIni)
         self.editButton.Enable(not isGameIni or target.path.isfile())
         selected = None
         # iniList can be None below cause we are called in INIPanel.__init__()
         # before iniList is assigned - possibly to avoid the RefreshUI below
         if BashFrame.iniList is not None:
-            selected = BashFrame.iniList.GetSelected()
-            if len(selected) > 0:
-                selected = selected[0]
-            else:
-                selected = None
-        if refresh:
+            selected_inis = BashFrame.iniList.GetSelected()
+            if selected_inis:
+                selected = selected_inis[0]
+        if target_changed: # we always only track the currently selected ini
             self.trackedInfo = bosh.TrackedFileInfos(bosh.INIInfo)
             self.trackedInfo.track(self.current_ini_path)
-        self.RefreshIniDetails(selected, resetScroll=refresh)
+        self.RefreshIniDetails(selected, resetScroll=target_changed)
         if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
 
     def RefreshIniDetails(self, selected_tweak, resetScroll=False):
@@ -4094,6 +4091,7 @@ class BashFrame(wx.Frame):
 
     _ini_missing = _(u"%(ini)s does not exist yet.  %(game)s will create this "
         u"file on first run.  INI tweaks will not be usable until then.")
+    @balt.conversation
     def warn_game_ini(self):
         #--Corrupt Oblivion.ini
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
