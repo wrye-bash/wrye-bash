@@ -4380,6 +4380,7 @@ class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
 
+    type_string = _(u'Unrecognized')
     #--Member data
     persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
         'fileSizeCrcs', 'type', 'isActive', 'subNames', 'subActives',
@@ -4575,6 +4576,19 @@ class Installer(object):
 
     def size_string(self, marker_string=u''):
         return round_size(self.size)
+
+    def structure_string(self):
+        if self.type == 1:
+            return _(u'Structure: Simple')
+        elif self.type == 2:
+            if len(self.subNames) == 2:
+                return _(u'Structure: Complex/Simple')
+            else:
+                return _(u'Structure: Complex')
+        elif self.type < 0:
+            return _(u'Structure: Corrupt/Incomplete')
+        else:
+            return _(u'Structure: Unrecognized')
 
     def resetEspmName(self,currentName):
         oldName = self.getEspmName(currentName)
@@ -5322,6 +5336,7 @@ class InstallerMarker(Installer):
     """Represents a marker installer entry.
     Currently only used for the '==Last==' marker"""
     __slots__ = tuple() #--No new slots
+    type_string = _(u'Marker')
 
     def __init__(self,archive):
         Installer.__init__(self,archive)
@@ -5334,6 +5349,8 @@ class InstallerMarker(Installer):
     def number_string(number, marker_string=u''): return marker_string
 
     def size_string(self, marker_string=u''): return marker_string
+
+    def structure_string(self): return _(u'Structure: N/A')
 
     def _refreshSource(self, archive, progress, recalculate_project_crc):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
@@ -5367,6 +5384,7 @@ class InstallerArchive(Installer):
     __slots__ = tuple() #--No new slots
     reValidNamePattern = re.compile(
         ur'^([^/\\:*?"<>|]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
+    type_string = _(u'Archive')
 
     #--File Operations --------------------------------------------------------
     def _refreshSource(self, archive, progress, recalculate_project_crc):
@@ -5554,6 +5572,7 @@ class InstallerArchive(Installer):
 class InstallerProject(Installer):
     """Represents a directory/build installer entry."""
     __slots__ = tuple() #--No new slots
+    type_string = _(u'Project')
 
     def _refresh_from_project_dir(self, progress=None,
                                   recalculate_all_crcs=False):

@@ -2888,8 +2888,7 @@ class InstallersPanel(SashTankPanel):
         if initialized: return
         else: self.infoPages[index][1] = True
         pageName = gPage.GetName()
-        sNone = _(u'[None]')
-        def dumpFiles(installer,files,default=u'',header=u'',isPath=False):
+        def dumpFiles(files, header=u'', isPath=True):
             if files:
                 buff = StringIO.StringIO()
                 if isPath: files = [x.s for x in files]
@@ -2910,29 +2909,8 @@ class InstallersPanel(SashTankPanel):
                 return u''
         if pageName == 'gGeneral':
             info = u'== '+_(u'Overview')+u'\n'
-            info += _(u'Type: ')
-            if isinstance(installer,bosh.InstallerProject):
-                info += _(u'Project')
-            elif isinstance(installer,bosh.InstallerMarker):
-                info += _(u'Marker')
-            elif isinstance(installer,bosh.InstallerArchive):
-                info += _(u'Archive')
-            else:
-                info += _(u'Unrecognized')
-            info += u'\n'
-            if isinstance(installer,bosh.InstallerMarker):
-                info += _(u'Structure: N/A')+u'\n'
-            elif installer.type == 1:
-                info += _(u'Structure: Simple')+u'\n'
-            elif installer.type == 2:
-                if len(installer.subNames) == 2:
-                    info += _(u'Structure: Complex/Simple')+u'\n'
-                else:
-                    info += _(u'Structure: Complex')+u'\n'
-            elif installer.type < 0:
-                info += _(u'Structure: Corrupt/Incomplete')+u'\n'
-            else:
-                info += _(u'Structure: Unrecognized')+u'\n'
+            info += _(u'Type: ') + installer.type_string + u'\n'
+            info += installer.structure_string() + u'\n'
             nConfigured = len(installer.data_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
@@ -2971,26 +2949,27 @@ class InstallersPanel(SashTankPanel):
                 nMismatched, marker_string=u'N/A'))
             info += '\n'
             #--Infoboxes
-            gPage.SetValue(info+dumpFiles(installer,installer.data_sizeCrc,sNone,
-                u'== '+_(u'Configured Files'),isPath=True))
+            gPage.SetValue(info + dumpFiles(installer.data_sizeCrc,
+                                            u'== ' + _(u'Configured Files')))
         elif pageName == 'gMatched':
-            gPage.SetValue(dumpFiles(installer,set(installer.data_sizeCrc)
-                - installer.missingFiles - installer.mismatchedFiles,isPath=True))
+            gPage.SetValue(dumpFiles(set(installer.data_sizeCrc) -
+                        installer.missingFiles - installer.mismatchedFiles))
         elif pageName == 'gMissing':
-            gPage.SetValue(dumpFiles(installer,installer.missingFiles,isPath=True))
+            gPage.SetValue(dumpFiles(installer.missingFiles))
         elif pageName == 'gMismatched':
-            gPage.SetValue(dumpFiles(installer,installer.mismatchedFiles,sNone,isPath=True))
+            gPage.SetValue(dumpFiles(installer.mismatchedFiles))
         elif pageName == 'gConflicts':
             gPage.SetValue(self.listData.getConflictReport(installer, 'OVER'))
         elif pageName == 'gUnderrides':
             gPage.SetValue(self.listData.getConflictReport(installer, 'UNDER'))
         elif pageName == 'gDirty':
-            gPage.SetValue(dumpFiles(installer,installer.dirty_sizeCrc,isPath=True))
+            gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
         elif pageName == 'gSkipped':
             gPage.SetValue(u'\n'.join((
-                dumpFiles(installer,installer.skipExtFiles,sNone,u'== '+_(u'Skipped (Extension)')),
-                dumpFiles(installer,installer.skipDirFiles,sNone,u'== '+_(u'Skipped (Dir)')),
-                )) or sNone)
+                dumpFiles(installer.skipExtFiles,
+                          u'== ' + _(u'Skipped (Extension)'), isPath=False),
+                dumpFiles(installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'),
+                          isPath=False),)) or _(u'[None]'))
 
     #--Config
     def refreshCurrent(self,installer):
