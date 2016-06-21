@@ -1592,25 +1592,21 @@ class INIPanel(SashPanel):
             self.RefreshPanel()
         super(INIPanel, self).ShowPanel()
 
-    def RefreshPanel(self, what='ALL'):
-        if what == 'ALL' or what == 'TARGETS':
-            # Refresh the drop down list
-            path = self.current_ini_path
-            if path is None:
+    def RefreshPanel(self):
+        # Refresh the drop down list
+        path = self.current_ini_path
+        if path is None:
+            self.choice -= 1
+        elif not path.isfile():
+            for iFile in bosh.gameInis:
+                if iFile.path == path:
+                    break
+            else:
+                del self.choices[self._ini_name]
                 self.choice -= 1
-            elif not path.isfile():
-                for iFile in bosh.gameInis:
-                    if iFile.path == path:
-                        break
-                else:
-                    del self.choices[self._ini_name]
-                    self.choice -= 1
-                    what = 'ALL'
-            self.SetBaseIni(self.current_ini_path)
-            self.comboBox.SetItems(self.SortChoices())
-            self.comboBox.SetSelection(self.choice)
-        if what == 'ALL' or what == 'TWEAKS':
-            self.uiList.RefreshUI()
+        self.SetBaseIni(self.current_ini_path)
+        self.comboBox.SetItems(self.SortChoices())
+        self.comboBox.SetSelection(self.choice)
 
     def SetBaseIni(self,path=None):
         """Sets the target INI file."""
@@ -1656,7 +1652,6 @@ class INIPanel(SashPanel):
         self.comboBox.SetItems(self.SortChoices())
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni()
-        self.uiList.RefreshUI()
 
     def OnEdit(self):
         """Called when the 'Edit' button is pressed."""
@@ -1713,7 +1708,6 @@ class INIPanel(SashPanel):
         self.choice = self.choices.keys().index(path.stail)
         self.comboBox.SetSelection(self.choice)
         self.SetBaseIni(path)
-        self.uiList.RefreshUI()
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
@@ -1737,7 +1731,6 @@ class INIPanel(SashPanel):
                 self.comboBox.SetSelection(self.choice)
                 if refresh:
                     self.SetBaseIni(path)
-                    self.uiList.RefreshUI()
                 return
             self.lastDir = path.shead
         self.AddOrSelectIniDropDown(path)
@@ -2822,12 +2815,10 @@ class InstallersPanel(SashTankPanel):
             BashFrame.modList.RefreshUI(refreshSaves=True)
             Link.Frame.warn_corrupted(warn_saves=False)
             Link.Frame.warn_load_order()
-        if BashFrame.iniList is not None:
-            if inis_changed: ##: why this if below ??
-                if bosh.iniInfos.refresh():
-                    BashFrame.iniList.panel.RefreshPanel('ALL')
-                else:
-                    BashFrame.iniList.panel.RefreshPanel('TARGETS')
+        if inis_changed:
+            bosh.iniInfos.refresh()
+            if BashFrame.iniList is not None:
+                BashFrame.iniList.panel.RefreshPanel()
         bosh.BSAInfos.check_bsa_timestamps()
 
     def SetFile(self, fileName='SAME'):
