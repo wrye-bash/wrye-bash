@@ -722,7 +722,7 @@ class INILineCtrl(INIListCtrl):
         num = self.GetItemCount()
         if resetScroll:
             self.EnsureVisible(0)
-        try:
+        try: #rework for when changing the ini - delete all !
             with bosh.iniInfos.ini.path.open('r') as ini:
                 lines = ini.readlines()
                 for i,line in enumerate(lines):
@@ -1713,7 +1713,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         stati = self.uiList.CountTweakStatus()
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
-    def AddOrSelectIniDropDown(self, path):
+    def AddOrSelectIniDropDown(self, path): ## will refersh the UI !!
         if path.stail not in self.choices:
             self.choices[path.stail] = path
             self.comboBox.SetItems(self.SortChoices())
@@ -1728,7 +1728,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         """Called when the user selects a new target INI from the drop down."""
         selection = event.GetString()
         path = self.choices[selection]
-        if not path:
+        if path is None:
             # 'Browse...'
             wildcard =  u'|'.join([_(u'Supported files')+u' (*.ini,*.cfg)|*.ini;*.cfg',
                                    _(u'INI files')+u' (*.ini)|*.ini',
@@ -1743,7 +1743,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 new_choice = self.choices.keys().index(path.stail)
                 refresh = new_choice != self.choice
                 self.choice = new_choice
-                self.comboBox.SetSelection(self.choice)
+                self.comboBox.SetSelection(self.choice) ## will not refresh !!!
                 if refresh:
                     self._SetBaseIni(path)
                 return

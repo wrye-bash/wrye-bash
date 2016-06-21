@@ -280,11 +280,16 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer',
                                         installer.archive)
+            # trigger refresh UI and unnecessary bosh.iniInfos.refresh()
             ui_refresh[1] = True
-            if iniFile in installer.data_sizeCrc or any(
-                    [iniFile == x for x in bush.game.iniFiles]):
-                if not ret.Install and not any(
-                        [iniFile == x for x in bush.game.iniFiles]):
+            is_game_ini, target_path = False, bass.dirs['mods'].join(iniFile)
+            for ini in bosh.gameInis:
+                if iniFile == ini.path.stail:
+                    target_path = ini.path
+                    is_game_ini = True
+                    break
+            if iniFile in installer.data_sizeCrc or is_game_ini:
+                if not ret.Install and not is_game_ini:
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto
                     # install after the wizard, we'll show a message telling
@@ -296,7 +301,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 if not INIList.warn_tweak_game_ini(iniFile): continue
                 if BashFrame.iniList is not None:
                     BashFrame.iniList.panel.AddOrSelectIniDropDown(
-                        bass.dirs['mods'].join(iniFile))
+                        target_path) # will set bosh.iniInfos.ini
+                else:
+                    bosh.iniInfos.ini = bosh.BestIniFile(target_path)
                 if bosh.iniInfos[outFile.tail].tweak_status in (20, -10):
                     continue # applied or invalid
                 bosh.iniInfos.ini.applyTweakFile(outFile)
