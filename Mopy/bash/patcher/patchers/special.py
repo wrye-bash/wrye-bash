@@ -271,7 +271,6 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         self.id_delevs = {}
         self.id_list = {}
         self.id_attrs = {}
-        self.mod_count = collections.defaultdict(int)
         self.empties = set()
         importMods = set(self.srcs) & set(loadMods)
         OverhaulCompat = False
