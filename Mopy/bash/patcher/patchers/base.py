@@ -511,6 +511,10 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
 
+    def initPatchFile(self, patchFile, loadMods):
+        super(CBash_ImportPatcher, self).initPatchFile(patchFile, loadMods)
+        self.mod_count = collections.defaultdict(int)
+
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return
@@ -531,7 +535,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
         log(self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+        self.mod_count = collections.defaultdict(int)
 
     # helpers WIP
     def _parse_texts(self, parser_class, progress):
