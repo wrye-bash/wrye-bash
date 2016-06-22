@@ -137,7 +137,7 @@ def _clog(self, log,
                           'count': sum(mod_count[top_rec_type].values())})
         for srcMod in load_order.get_ordered(mod_count[top_rec_type].keys()):
             log(u'  * %s: %d' % (srcMod.s, mod_count[top_rec_type][srcMod]))
-    self.mod_count = {}
+    self.mod_count = {} # use a defaultdict(lambda: defaultdict(int))
 
 # Common initData pattern -----------------------------------------------------
 def _initData(self,progress):
@@ -396,7 +396,6 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
         super(CBash_CellImporter, self).initPatchFile(patchFile,loadMods)
         if not self.isActive: return
         self.fid_attr_value = {}
-        self.mod_count = {}
         self.tag_attrs = {
             u'C.Climate': ('climate','IsBehaveLikeExterior'),
             u'C.Music': ('musicType',),
@@ -442,9 +441,7 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -1023,7 +1020,6 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_animations = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1044,8 +1040,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.animations = self.id_animations[recordId]
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1209,7 +1204,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         data = self.data
-        mod_count = {}
+        mod_count  = collections.defaultdict(int)
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
                 fid = record.fid
@@ -1221,7 +1216,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
-                    mod_count[mod] = mod_count.get(mod,0) + 1
+                    mod_count[mod] += 1
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -1236,7 +1231,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
         if not self.isActive: return
         self.previousPackages = {}
         self.mergedPackageList = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1306,9 +1300,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
                             if not pkg[0] is None: newMergedPackages.append(
                                 pkg)
                         override.aiPackages = newMergedPackages
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -1355,7 +1347,6 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_deathItem = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1385,8 +1376,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.deathItem = self.id_deathItem[recordId]
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1680,7 +1670,6 @@ class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
         if not self.isActive: return
         self.fid_faction_mod = {}
         self.csvFid_faction_mod = {}
-        self.mod_count = {}
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
@@ -1727,8 +1716,7 @@ class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
                     else:
                         relation = override.create_relation()
                         relation.faction,relation.mod = faction,mod
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1935,7 +1923,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
-        mod_count = {}
+        mod_count = collections.defaultdict(int)
         for type in game.inventoryTypes:
             for record in getattr(self.patchFile,type).records:
                 changed = False
@@ -1960,7 +1948,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
-                    mod_count[mod] = mod_count.get(mod,0) + 1
+                    mod_count[mod] += 1
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -2215,7 +2203,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         data = self.data
-        mod_count = {}
+        mod_count = collections.defaultdict(int)
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
                 fid = record.fid
@@ -2228,7 +2216,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
-                    mod_count[mod] = mod_count.get(mod,0) + 1
+                    mod_count[mod] += 1
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -2241,7 +2229,6 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_spells = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2286,9 +2273,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.spells = mergedSpells['merged']
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -2608,7 +2593,6 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
         self.faceData = (
             'fggs_p', 'fgga_p', 'fgts_p', 'eye', 'hair', 'hairLength',
             'hairRed', 'hairBlue', 'hairGreen', 'fnam')
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2665,9 +2649,7 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_face_value.iteritems():
                         setattr(override,attr,value)
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -2768,7 +2750,6 @@ class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_ROAD = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2808,8 +2789,7 @@ class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
                 #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
                 for copyattr in newRoad.copyattrs:
                     setattr(override, copyattr, getattr(newRoad, copyattr))
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -3172,7 +3152,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
         if not self.isActive: return
         self.id_stats = {}
         self.csvId_stats = {}
-        self.mod_count = {}
         self.spell_attrs = None #set in initData
 
     def initData(self,group_patchers,progress):
@@ -3214,8 +3193,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
                 if override:
                     for attr, value in prev_values.iteritems():
                         setattr(override,attr,value)
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
