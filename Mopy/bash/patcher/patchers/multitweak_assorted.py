@@ -24,7 +24,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Assorted Multitweaker - as well as the AssortedTweaker itself."""
-
+import collections
 import random
 import re
 # Internal
@@ -101,8 +101,7 @@ class CBash_AssortedTweak_ArmorShows(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -171,8 +170,7 @@ class CBash_AssortedTweak_ClothingShows(CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 setattr(override, self.hideFlag, False)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -235,8 +233,7 @@ class CBash_AssortedTweak_BowReach(AAssortedTweak_BowReach,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.reach = 1.0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -306,8 +303,7 @@ class CBash_AssortedTweak_SkyrimStyleWeapons(AAssortedTweak_SkyrimStyleWeapons,
                     override.IsBlunt2Hand = True
                 else:
                     override.IsBlade1Hand = True
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -373,8 +369,7 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
             if override:
                 override.IsLeftRing = False
                 override.IsRightRing = True
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 #------------------------------------------------------------------------------
@@ -469,9 +464,7 @@ class CBash_AssortedTweak_ClothingPlayable(AAssortedTweak_ClothingPlayable,
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -557,9 +550,7 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.IsNonPlayable = False
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -731,9 +722,7 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.text = text
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -748,12 +737,8 @@ class AAssortedTweak_FogFix(AMultiTweakItem):
             u'FogFix',
             (u'0.0001',  u'0.0001'),
             )
+        self.logMsg = u'* '+_(u'Cells with fog tweaked to 0.0001') + u': %d'
         self.defaultEnabled = True
-
-    def _patchLog(self, log, count):
-        log.setHeader(self.logHeader)
-        for srcMod in load_order.get_ordered(count.keys()):
-            log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
@@ -778,14 +763,13 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
     def buildPatch(self,log,progress,patchFile):
         """Adds merged lists to patchfile."""
         keep = patchFile.getKeeper()
-        count = {}
+        count = collections.defaultdict(int)
         for cellBlock in patchFile.CELL.cellBlocks:
             for cellBlock in patchFile.CELL.cellBlocks:
                 cell = cellBlock.cell
                 if not (cell.fogNear or cell.fogFar or cell.fogClip):
                     cell.fogNear = 0.0001
                     keep(cell.fid)
-                    count.setdefault(cell.fid[0],0)
                     count[cell.fid[0]] += 1
         self._patchLog(log, count)
 
@@ -808,8 +792,7 @@ class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.fogNear = 0.0001
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -887,8 +870,7 @@ class CBash_AssortedTweak_NoLightFlicker(AAssortedTweak_NoLightFlicker,
                 override.IsFlickerSlow = False
                 override.IsPulse = False
                 override.IsPulseSlow = False
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -991,8 +973,7 @@ class CBash_AssortedTweak_PotionWeight(AAssortedTweak_PotionWeight,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1074,8 +1055,7 @@ class CBash_AssortedTweak_IngredientWeight(AAssortedTweak_IngredientWeight,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1151,8 +1131,7 @@ class CBash_AssortedTweak_PotionWeightMinimum(
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = minWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1230,8 +1209,7 @@ class CBash_AssortedTweak_StaffWeight(AAssortedTweak_StaffWeight,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1303,8 +1281,7 @@ class CBash_AssortedTweak_ArrowWeight(AAssortedTweak_ArrowWeight,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1491,8 +1468,7 @@ class CBash_AssortedTweak_HarvestChance(AAssortedTweak_HarvestChance,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 map(override.__setattr__, self.attrs, newValues)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1556,8 +1532,7 @@ class CBash_AssortedTweak_WindSpeed(AAssortedTweak_WindSpeed,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.windSpeed = 0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1624,8 +1599,7 @@ class CBash_AssortedTweak_UniformGroundcover(AAssortedTweak_UniformGroundcover,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.heightRange = 0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1720,9 +1694,7 @@ class CBash_AssortedTweak_SetCastWhenUsedEnchantmentCosts(
                 if override:
                     override.enchantCost = cost
                     override.chargeAmount = amount
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -2043,8 +2015,7 @@ class CBash_AssortedTweak_DefaultIcons(AAssortedTweak_DefaultIcons,
                 print error
                 print self.patchFile.Current.Debug_DumpModFiles()
                 raise
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+            self.mod_count[modFile.GName] += 1
             record.UnloadRecord()
             record._RecordID = override._RecordID
 
@@ -2121,8 +2092,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels(
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.staticAtten *= choice
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -2202,8 +2172,7 @@ class CBash_AssortedTweak_SetSoundAttenuationLevels_NirnrootOnly(
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.staticAtten *= choice
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -2269,8 +2238,7 @@ class CBash_AssortedTweak_FactioncrimeGoldMultiplier(
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.crimeGoldMultiplier = 1.0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -2334,8 +2302,7 @@ class CBash_AssortedTweak_LightFadeValueFix(AAssortedTweak_LightFadeValueFix,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.fade = 1.0
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -2397,8 +2364,7 @@ class CBash_AssortedTweak_TextlessLSCRs(AAssortedTweak_TextlessLSCRs,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.text = u''
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 

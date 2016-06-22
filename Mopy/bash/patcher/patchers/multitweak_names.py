@@ -166,9 +166,7 @@ class CBash_NamesTweak_Body(CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -292,9 +290,7 @@ class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -435,9 +431,7 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -556,9 +550,7 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -662,9 +654,7 @@ class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.full = newFull
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -957,8 +947,7 @@ class CBash_TextReplacer(ATextReplacer,CBash_MultiTweakItem):
                     if newString:
                         override.master = reMatch.sub(self.reReplace,
                                                       newString)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 

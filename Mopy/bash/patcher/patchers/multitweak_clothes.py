@@ -24,6 +24,7 @@
 
 """This module contains oblivion multitweak item patcher classes that belong
 to the Clothes Multitweaker - as well as the ClothesTweaker itself."""
+import collections
 import itertools
 
 from ... import load_order
@@ -122,8 +123,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.weight = maxWeight
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -137,7 +137,7 @@ class CBash_ClothesTweak_MaxWeight(CBash_ClothesTweak):
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: [%4.2f]: %d' % (
                 srcMod.s, maxWeight, mod_count[srcMod]))
-        self.mod_count = {}
+        self.mod_count = collections.defaultdict(int)
 
 #------------------------------------------------------------------------------
 class ClothesTweak_Unblock(ClothesTweak):
@@ -189,8 +189,7 @@ class CBash_ClothesTweak_Unblock(CBash_ClothesTweak):
             if override:
                 for attr in self.hideFlags:
                     setattr(override, attr, False)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
