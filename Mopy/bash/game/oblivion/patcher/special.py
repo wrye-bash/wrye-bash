@@ -175,7 +175,6 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
-    unloadedText = ""
     srcs = [] #so as not to fail screaming when determining load mods - but
     # with the least processing required.
 
