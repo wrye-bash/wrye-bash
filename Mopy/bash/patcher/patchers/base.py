@@ -98,7 +98,8 @@ class CBash_MultiTweakItem(AMultiTweakItem):
     def __init__(self,label,tip,key,*choices,**kwargs):
         super(CBash_MultiTweakItem, self).__init__(label, tip, key, *choices,
                                                    **kwargs)
-        self.mod_count = {} # extra CBash_MultiTweakItem instance variable
+        # extra CBash_MultiTweakItem attribute, mod -> num of tweaked records
+        self.mod_count = collections.defaultdict(int)
 
     #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
@@ -111,7 +112,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         self._patchLog(log, self.mod_count)
-        self.mod_count = {}
+        self.mod_count = collections.defaultdict(int)
 
 class MultiTweaker(AMultiTweaker,Patcher):
 
