@@ -3118,7 +3118,6 @@ class FileInfos(_DataStore):
             #--Refresh
             if doRefresh:
                 self.delete_Refresh(tableUpdate.values())
-            return tableUpdate.values()
 
     def delete_Refresh(self, deleted):
         deleted = set(d for d in deleted if not self.dir.join(d).exists())
@@ -3984,15 +3983,15 @@ class ModInfos(FileInfos):
             if f.s in bush.game.masterFiles: raise bolt.BoltError(
                 u"Cannot delete the game's master file(s).")
         self.lo_deactivate(fileName, doSave=False)
-        deleted = FileInfos.delete(self, fileName, **kwargs)
-        # temporarily track deleted mods so BAIN can update its UI
-        for d in map(self.dir.join, deleted): # we need absolute paths
-            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
+        FileInfos.delete(self, fileName, **kwargs)
 
     def delete_Refresh(self, deleted):
         # adapted from refresh() (avoid refreshing from the data directory)
         deleted = FileInfos.delete_Refresh(self, deleted)
         if not deleted: return
+        # temporarily track deleted mods so BAIN can update its UI
+        for d in map(self.dir.join, deleted): # we need absolute paths
+            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
         self._refreshBadNames()
