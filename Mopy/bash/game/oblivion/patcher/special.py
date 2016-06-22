@@ -349,10 +349,6 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
 #------------------------------------------------------------------------------
 class _DefaultDictLog(CBash_ListPatcher):
 
-    def initPatchFile(self,patchFile,loadMods):
-        super(_DefaultDictLog, self).initPatchFile(patchFile, loadMods)
-        self.mod_count = collections.defaultdict(int)
-
     def buildPatchLog(self, log):
         """Will write to log."""
         if not self.isActive: return

@@ -46,6 +46,12 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
                              u' following list will be IGNORED.')
 
+    def initPatchFile(self, patchFile, loadMods):
+        super(CBash_ListPatcher, self).initPatchFile(patchFile, loadMods)
+        # used in all subclasses except CBash_RacePatcher,
+        # CBash_PatchMerger, CBash_UpdateReferences
+        self.mod_count = collections.defaultdict(int)
+
     #--Config Phase -----------------------------------------------------------
     def _patchFile(self):
         return CBash_PatchFile
@@ -510,10 +516,6 @@ class ImportPatcher(AImportPatcher, ListPatcher):
 class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
     scanRequiresChecked = True
     applyRequiresChecked = False
-
-    def initPatchFile(self, patchFile, loadMods):
-        super(CBash_ImportPatcher, self).initPatchFile(patchFile, loadMods)
-        self.mod_count = collections.defaultdict(int)
 
     def buildPatchLog(self,log):
         """Will write to log."""
