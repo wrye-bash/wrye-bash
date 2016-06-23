@@ -1849,7 +1849,7 @@ class UIList(wx.Panel):
             try:
                 self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
                 self.panel.ClearDetails() #omit this to leave displayed details
-                self.SelectAll()
+                self._SelectAll()
             finally:
                 self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
@@ -1903,21 +1903,27 @@ class UIList(wx.Panel):
     #-- Item selection --------------------------------------------------------
     def GetItems(self): return self.data_store.keys()
 
+    def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
+                      __state_selected=wx.LIST_STATE_SELECTED):
+        listCtrl, selected_list = self._gList, []
+        i = listCtrl.GetNextItem(-1, __next_all, __state_selected)
+        while i != -1:
+            selected_list.append(lam(i))
+            i = listCtrl.GetNextItem(i, __next_all, __state_selected)
+        return selected_list
+
     def GetSelected(self):
         """Return list of items selected (highlighted) in the interface."""
-        listCtrl = self._gList
-        return [self.GetItem(dex) for dex in xrange(listCtrl.GetItemCount())
-            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+        return self._get_selected(lam=self.GetItem)
 
     def GetSelectedIndexes(self):
-        """Return list of indexes highlighted in the interface in display order."""
-        listCtrl = self._gList
-        return [dex for dex in xrange(listCtrl.GetItemCount())
-            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+        """Return list of indexes highlighted in the interface in display
+        order."""
+        return self._get_selected()
 
     def SelectItemAtIndex(self, index, select=True,
-                          _select=wx.LIST_STATE_SELECTED):
-        self._gList.SetItemState(index, select * _select, _select)
+                          __select=wx.LIST_STATE_SELECTED):
+        self._gList.SetItemState(index, select * __select, __select)
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
@@ -1936,12 +1942,11 @@ class UIList(wx.Panel):
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
-        for i in xrange(self._gList.GetItemCount()):
-            self.SelectItemAtIndex(i, False)
+        self.SelectItemAtIndex(-1, False) # -1 indicates 'all items'
         if clear_details: self.panel.ClearDetails()
 
-    def SelectAll(self):
-        for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
+    def _SelectAll(self): # only called after unbinding EVT_LIST_ITEM_SELECTED
+        self.SelectItemAtIndex(-1) # -1 indicates 'all items'
 
     def SelectLast(self):
         self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
