@@ -193,7 +193,7 @@ class NotebookPanel(wx.Panel):
         self.uiList.autosizeColumns()
         self.SetStatusCount()
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc."""
         if hasattr(self, 'listData'): # must be a _DataStore instance
@@ -224,10 +224,10 @@ class _DetailsViewMixin(object):
         super(_DetailsViewMixin, self).RefreshUIColors()
         if self.detailsPanel: self.detailsPanel.RefreshUIColors()
 
-    def ClosePanel(self):
-        super(_DetailsViewMixin, self).ClosePanel()
+    def ClosePanel(self, destroy=False):
+        super(_DetailsViewMixin, self).ClosePanel(destroy)
         if self.detailsPanel and self.detailsPanel is not self:
-            self.detailsPanel.ClosePanel()
+            self.detailsPanel.ClosePanel(destroy)
 
     def ShowPanel(self):
         super(_DetailsViewMixin, self).ShowPanel()
@@ -263,11 +263,11 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         if not hasattr(self, '_firstShow'): # if the panel was shown
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        super(SashPanel, self).ClosePanel()
+        super(SashPanel, self).ClosePanel(destroy)
 
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
@@ -280,9 +280,9 @@ class SashTankPanel(SashPanel):
         self.detailsItem = None
         super(SashTankPanel,self).__init__(parent)
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         self.SaveDetails()
-        super(SashTankPanel, self).ClosePanel()
+        super(SashTankPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1169,7 +1169,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
             del self._firstShow
         self.uilist.autosizeColumns()
 
-    def ClosePanel(self): ##: does not call super
+    def ClosePanel(self, destroy=False): ##: does not call super
         if not hasattr(self, '_firstShow'):
             # Mod details Sash Positions
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
@@ -1732,11 +1732,12 @@ class INIPanel(SashPanel):
             self.lastDir = path.shead
         self.AddOrSelectIniDropDown(path)
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
         settings['bash.ini.lastDir'] = self.lastDir
-        super(INIPanel, self).ClosePanel()
+        if destroy: self.comboBox.Unbind(wx.EVT_SIZE)
+        super(INIPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
@@ -2088,9 +2089,9 @@ class SavePanel(SashPanel):
         self.uiList.RefreshUI()
         super(SavePanel, self).RefreshUIColors()
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         bosh.saveInfos.profiles.save()
-        super(SavePanel, self).ClosePanel()
+        super(SavePanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.UIList):
@@ -2786,11 +2787,11 @@ class InstallersPanel(SashTankPanel):
         active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
         return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         if not hasattr(self, '_firstShow'): # save comments text box size
             sashPos = self.commentsSplitter.GetSashPosition()
             settings['bash.installers.commentsSplitterSashPos'] = sashPos
-        super(InstallersPanel, self).ClosePanel()
+        super(InstallersPanel, self).ClosePanel(destroy)
 
     #--Details view (if it exists)
     def SaveDetails(self):
@@ -3129,7 +3130,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
 
-    def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
     def ShowPanel(self): pass
 
 class ScreensPanel(SashPanel):
@@ -3291,7 +3292,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             self.SetFile(None)
         self.bsaList.RefreshUI()
 
-    def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
     def ShowPanel(self): pass
 
 #------------------------------------------------------------------------------
@@ -3313,8 +3314,8 @@ class BSAPanel(SashPanel):
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
         self.detailsPanel.Fit()
 
-    def ClosePanel(self):
-        super(BSAPanel, self).ClosePanel()
+    def ClosePanel(self, destroy=False):
+        super(BSAPanel, self).ClosePanel(destroy)
         # bosh.bsaInfos.profiles.save()
 
 #------------------------------------------------------------------------------
@@ -4139,14 +4140,14 @@ class BashFrame(wx.Frame):
         """Handle Close event. Save application data."""
         try:
             self.BindRefresh(bind=False)
-            self.SaveSettings()
+            self.SaveSettings(destroy=True)
         except: ##: this has swallowed exceptions since forever
                 deprint(_(u'An error occurred while trying to save settings:'),
                         traceback=True)
         finally:
             self.Destroy()
 
-    def SaveSettings(self):
+    def SaveSettings(self, destroy=False):
         """Save application data."""
         # Purge some memory
         bolt.GPathPurge()
@@ -4158,12 +4159,14 @@ class BashFrame(wx.Frame):
             settings['bash.frameSize'] = tuple(self.GetSize())
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
-        for index in range(self.notebook.GetPageCount()):
+        # use tabInfo below so we save settings of panels that the user closed
+        for _k, (_cname, name, panel) in tabInfo.iteritems():
+            if panel is None: continue
             try:
-                self.notebook.GetPage(index).ClosePanel()
+                panel.ClosePanel(destroy)
             except:
-                deprint(_(u'An error occurred while trying to save settings:'),
-                        traceback=True)
+                deprint(u'An error occurred while saving settings of '
+                        u'the %s panel:' % name, traceback=True)
         settings.save()
 
     @staticmethod
