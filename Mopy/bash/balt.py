@@ -1277,7 +1277,7 @@ class BusyCursor(object):
        Pythons 'with' semantics."""
     def __enter__(self):
         wx.BeginBusyCursor()
-    def __exit__(self,type,value,traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         wx.EndBusyCursor()
 
 #------------------------------------------------------------------------------
@@ -1298,7 +1298,7 @@ class Progress(bolt.Progress):
         self.prevTime = 0
 
     # __enter__ and __exit__ for use with the 'with' statement
-    def __exit__(self, type, value, traceback): self.Destroy()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.Destroy()
 
     def getParent(self):
         return self.dialog.GetParent()

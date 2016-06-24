@@ -468,7 +468,7 @@ class LString(object):
 #------------------------------------------------------------------------------
 class sio(StringIO.StringIO):
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.close()
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -931,7 +931,7 @@ class Path(object):
                 self.oldPath = GPath(oldPath)
 
             def __enter__(self): return self.newPath
-            def __exit__(self,*args,**kwdargs): self.newPath.moveTo(self.oldPath)
+            def __exit__(self, exc_type, exc_value, exc_traceback): self.newPath.moveTo(self.oldPath)
         self.moveTo(destName)
         return temp(self,destName)
 
@@ -944,7 +944,7 @@ class Path(object):
                 def __init__(self,path):
                     self.path = path
                 def __enter__(self): return self.path
-                def __exit__(self,*args,**kwdargs): pass
+                def __exit__(self, exc_type, exc_value, exc_traceback): pass
             return temp(self)
         except UnicodeEncodeError:
             return self.tempMoveTo(self.temp)
@@ -1037,7 +1037,7 @@ class CsvReader:
             self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format)
 
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.ins.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
 
     def __iter__(self):
         for iter in self.reader:
@@ -1833,7 +1833,7 @@ class tempDebugMode(object):
         deprintOn = True
 
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         global deprintOn
         deprintOn = self._old
 
@@ -2168,7 +2168,7 @@ class Progress:
 
     # __enter__ and __exit__ for use with the 'with' statement
     def __enter__(self): return self
-    def __exit__(self,type,value,traceback): pass
+    def __exit__(self, exc_type, exc_value, exc_traceback): pass
 
 #------------------------------------------------------------------------------
 class SubProgress(Progress):
