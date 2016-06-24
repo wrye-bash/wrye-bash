@@ -1285,13 +1285,13 @@ class BusyCursor(object):
 #------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
-    def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
-            style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_SMOOTH,
-            abort=False, onAbort=None):
+    _style = wx.PD_APP_MODAL | wx.PD_ELAPSED_TIME | wx.PD_AUTO_HIDE | \
+             wx.PD_SMOOTH
+    def __init__(self, title=_(u'Progress'), message=u' '*60, parent=None,
+                 abort=False, __style=_style):
         if abort:
-            style |= wx.PD_CAN_ABORT
-            self.fnAbort = onAbort
-        self.dialog = wx.ProgressDialog(title,message,100,parent,style)
+            __style |= wx.PD_CAN_ABORT
+        self.dialog = wx.ProgressDialog(title, message, 100, parent, __style)
         self.dialog.SetFocus()
         bolt.Progress.__init__(self)
         self.message = message
@@ -1301,7 +1301,7 @@ class Progress(bolt.Progress):
         self.prevTime = 0
 
     # __enter__ and __exit__ for use with the 'with' statement
-    def __exit__(self,type,value,traceback): self.Destroy()
+    def __exit__(self, type, value, traceback): self.Destroy()
 
     def getParent(self):
         return self.dialog.GetParent()
@@ -1309,11 +1309,6 @@ class Progress(bolt.Progress):
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
         cancel.Enable(enabled)
-
-    def onAbort(self):
-        if self.fnAbort:
-            return self.fnAbort()
-        return True
 
     def doProgress(self,state,message):
         if not self.dialog:
@@ -1323,14 +1318,10 @@ class Progress(bolt.Progress):
             self.dialog.SetFocus()
             if message != self.prevMessage:
                 ret = self.dialog.Update(int(state*100),message)
-                if not ret[0]:
-                    if self.onAbort():
-                        raise CancelError
             else:
                 ret = self.dialog.Update(int(state*100))
-                if not ret[0]:
-                    if self.onAbort():
-                        raise CancelError
+            if not ret[0]:
+                raise CancelError
             self.prevMessage = message
             self.prevState = state
             self.prevTime = time.time()
