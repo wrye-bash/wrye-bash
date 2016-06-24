@@ -15305,7 +15305,7 @@ class ObCollection:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self.Close()
 
     def __eq__(self, other):

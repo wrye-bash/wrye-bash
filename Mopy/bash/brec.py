@@ -200,7 +200,7 @@ class ModReader:
 
     # with statement
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.ins.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
 
     def setStringTable(self,table={}):
         if table is None:
@@ -340,7 +340,7 @@ class ModWriter:
 
     # with statement
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.out.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.out.close()
 
     #--Stream Wrapping ------------------------------------
     def write(self,data): self.out.write(data)
