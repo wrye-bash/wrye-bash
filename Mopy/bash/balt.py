@@ -516,6 +516,9 @@ hspacer = ((0, 0), 1) #--Used to space elements apart.
 def hspace(pixels=4):
     return (pixels, 0),
 
+def vspace(pixels=4):
+    return (0, pixels),
+
 def _aSizer(sizer, *elements):
     """Adds elements to a sizer."""
     for element in elements:

@@ -31,7 +31,7 @@ from .. import bass, balt, bosh, bolt, bush, env
 from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton, ApplyButton, hspace
+    CancelButton, ApplyButton, hspace, vspace
 from ..bosh import faces
 
 class ColorDialog(balt.Dialog):
@@ -308,14 +308,14 @@ class ImportFaceDialog(balt.Dialog):
         sizer = hSizer(
             (self.listBox,1,wx.EXPAND|wx.TOP,4),
             (vSizer(
-                self.picture,
+                self.picture, vspace(),
                 (hSizer(
                     (fgSizer,1),
                     (vSizer(
                         (importButton,0,wx.ALIGN_RIGHT),
-                        (CancelButton(self),0,wx.TOP,4),
+                        vspace(), CancelButton(self),
                         )),
-                    ),0,wx.EXPAND|wx.TOP,4),
+                    ),0,wx.EXPAND),
                 ),0,wx.EXPAND|wx.ALL,4),
             )
         #--Done

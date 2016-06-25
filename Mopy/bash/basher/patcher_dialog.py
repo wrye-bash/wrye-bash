@@ -34,7 +34,7 @@ from .. import bass, bosh, bolt, balt, env, load_order
 from ..bass import Resources
 from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
-    RevertToSavedButton, RevertButton, hspace
+    RevertToSavedButton, RevertButton, hspace, vspace
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from ..patcher import configIsCBash, exportConfig
@@ -125,7 +125,7 @@ class PatchDialog(balt.Dialog):
                 (self.gConfigSizer,1,wx.EXPAND),
                 ),1,wx.EXPAND|wx.ALL,4),
             (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
-            (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
+            (wx.StaticLine(self),0,wx.EXPAND), vspace(),
             (hSizer(hspacer,
                 hspace(), self.gExportConfig,
                 hspace(), self.gImportConfig,

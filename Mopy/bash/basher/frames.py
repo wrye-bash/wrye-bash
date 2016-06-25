@@ -30,7 +30,7 @@ from .. import bass, balt, bosh, bolt, load_order
 from ..bass import Resources
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
-    CancelButton, hspace
+    CancelButton, hspace, vspace
 from ..bolt import GPath, BoltError, deprint
 from ..bosh import omods
 
@@ -133,7 +133,7 @@ class DocBrowser(wx.Frame):
         sizer = hSizer(
             (vSizer(
                 (self.modNameBox,0,wx.GROW),
-                (self.modNameList,1,wx.GROW|wx.TOP,4),
+                vspace(), (self.modNameList,1,wx.GROW),
                 ),0,wx.GROW|wx.TOP|wx.RIGHT,4),
             (self.mainSizer,1,wx.GROW),
             )

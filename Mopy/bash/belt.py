@@ -31,6 +31,7 @@ from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
+from balt import vspace, hspace
 import win32api
 import StringIO
 import traceback
@@ -421,9 +422,8 @@ class PageFinish(PageInstaller):
         sizerMain.Add(sizerTitle,0,wx.EXPAND)
 
         #--Subpackages and Espms
-        sizerSubsEspms = balt.hSizer()
-        subPackageSizer = balt.vSizer()
-        subPackageSizer.Add(balt.StaticText(self, _(u'Sub-Packages')),0,wx.BOTTOM,2)
+        subPackageSizer = balt.vSizer(
+            balt.StaticText(self, _(u'Sub-Packages')), vspace(2))
         self.listSubs = balt.listBox(self, choices=subs, kind='checklist')
         self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
         for index,key in enumerate(subs):
@@ -432,8 +432,7 @@ class PageFinish(PageInstaller):
                 self.listSubs.Check(index, True)
                 self.parent.ret.SelectSubPackages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
-        espmSizer = balt.vSizer()
-        espmSizer.Add(balt.StaticText(self, _(u'Esp/ms')),0,wx.BOTTOM,2)
+        espmSizer = balt.vSizer(balt.StaticText(self, _(u'Esp/ms')), vspace(2))
         self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist')
         self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
         for index,key in enumerate(espms):
@@ -442,40 +441,41 @@ class PageFinish(PageInstaller):
                 self.parent.ret.SelectEspms.append(key)
         espmSizer.Add(self.listEspms,1,wx.EXPAND)
         self.parent.ret.RenameEspms = espmRenames
-        sizerSubsEspms.Add(subPackageSizer,1,wx.EXPAND|wx.RIGHT,5)
-        sizerSubsEspms.Add(espmSizer,1,wx.EXPAND)
-        sizerMain.Add(sizerSubsEspms,2,wx.EXPAND|wx.TOP|wx.BOTTOM,5)
+        sizerSubsEspms = balt.hSizer((subPackageSizer, 1, wx.EXPAND),
+            hspace(5), (espmSizer, 1, wx.EXPAND))
+        sizerMain.Add(*vspace(5))
+        sizerMain.Add(sizerSubsEspms, 2, wx.EXPAND)
+        sizerMain.Add(*vspace(5))
 
         #--Ini tweaks
-        sizerIniTweaks = balt.hSizer()
-        sizerTweaks = balt.vSizer()
-        sizerTweaks.Add(balt.StaticText(self, _(u'Ini Tweaks:')),0,wx.BOTTOM,2)
+        sizerTweaks = balt.vSizer(balt.StaticText(self, _(u'Ini Tweaks:')),
+                                  vspace(2))
         self.listInis = balt.listBox(self, choices=[x.s for x in iniedits.keys()])
         self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
         sizerTweaks.Add(self.listInis,1,wx.EXPAND)
-        sizerContents = balt.vSizer()
-        sizerContents.Add(balt.StaticText(self, u''),0,wx.BOTTOM,2)
+        sizerContents = balt.vSizer(balt.StaticText(self, u''), vspace(2))
         self.listTweaks = balt.listBox(self)
         sizerContents.Add(self.listTweaks,1,wx.EXPAND)
-        sizerIniTweaks.Add(sizerTweaks,1,wx.EXPAND|wx.RIGHT,5)
-        sizerIniTweaks.Add(sizerContents,1,wx.EXPAND)
-        sizerMain.Add(sizerIniTweaks,2,wx.EXPAND|wx.BOTTOM,5)
+        sizerIniTweaks = balt.hSizer((sizerTweaks, 1, wx.EXPAND),
+            hspace(5), (sizerContents, 1, wx.EXPAND))
+        sizerMain.Add(sizerIniTweaks, 2, wx.EXPAND)
+        sizerMain.Add(*vspace(5))
         self.parent.ret.IniEdits = iniedits
 
         #--Notes
-        sizerMain.Add(balt.StaticText(self, _(u'Notes:')),0,wx.BOTTOM,2)
+        sizerMain.Add(balt.StaticText(self, _(u'Notes:')))
+        sizerMain.Add(*vspace(2))
         sizerMain.Add(
             balt.RoTextCtrl(self, u''.join(notes), autotooltip=False), 1,
             wx.EXPAND)
 
         checkSizer = balt.hSizer()
-        checkSubSizer = balt.vSizer()
         checkSizer.AddStretchSpacer()
         # Apply the selections
         self.checkApply = balt.checkBox(self, _(u'Apply these selections'),
                                         onCheck=self.OnCheckApply,
                                         checked=bAuto)
-        checkSubSizer.Add(self.checkApply,0,wx.BOTTOM,2)
+        checkSubSizer = balt.vSizer(self.checkApply, vspace(2))
         # Also install/anneal the package
         auto = bass.settings['bash.installers.autoWizard']
         self.checkInstall = balt.checkBox(self, _(u'Install this package'),

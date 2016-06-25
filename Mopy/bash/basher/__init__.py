@@ -80,7 +80,7 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl, hspace
+    SaveButton, CancelButton, INIListCtrl, hspace, vspace
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import hspacer, hSizer, vSizer
 from ..balt import colors, images, Image
@@ -1209,18 +1209,17 @@ class ModDetails(_SashDetailsPanel):
         self.gTags = RoTextCtrl(tagPanel, autotooltip=False,
                                 size=(textWidth, 100))
         #--Layout
-        detailsSizer = vSizer(
+        detailsSizer = vSizer(vspace(),
             (hSizer(
-                (StaticText(top,_(u"File:")),0,wx.TOP,4),
-                hspacer,
-                (self.version,0,wx.TOP|wx.RIGHT,4)
+                (StaticText(top,_(u"File:"))), hspacer,
+                self.version, hspace()
                 ),0,wx.EXPAND),
             (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((StaticText(top,_(u"Author:")),0,wx.TOP,4)),0,wx.EXPAND),
+            vspace(), (hSizer(StaticText(top,_(u"Author:"))),0,wx.EXPAND),
             (hSizer((self.author,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((StaticText(top,_(u"Modified:")),0,wx.TOP,4)),0,wx.EXPAND),
+            vspace(), (hSizer(StaticText(top,_(u"Modified:"))),0,wx.EXPAND),
             (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((StaticText(top,_(u"Description:")),0,wx.TOP,4)),0,wx.EXPAND),
+            vspace(), (hSizer(StaticText(top,_(u"Description:"))),0,wx.EXPAND),
             (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
@@ -1228,11 +1227,11 @@ class ModDetails(_SashDetailsPanel):
         subSplitter.SplitHorizontally(masterPanel,tagPanel)
         subSplitter.SetSashGravity(0.5)
         mastersSizer = vSizer(
-            (hSizer((StaticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
+            vspace(), (hSizer((StaticText(masterPanel,_(u"Masters:")))),0,wx.EXPAND),
             (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
-            (hSizer(self.save, hspace(), self.cancel),0,wx.EXPAND|wx.TOP,4),)
+            vspace(), (hSizer(self.save, hspace(), self.cancel),0,wx.EXPAND),)
         tagsSizer = vSizer(
-            (StaticText(tagPanel,_(u"Bash Tags:")),0,wx.TOP,4),
+            vspace(), (StaticText(tagPanel,_(u"Bash Tags:"))),
             (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
         mastersSizer.SetSizeHints(masterPanel)
         masterPanel.SetSizer(mastersSizer)
@@ -1536,7 +1535,7 @@ class INIPanel(SashPanel):
                     ((4,0),0),
                     (self.button,0,wx.ALIGN_TOP,0),
                     (self.editButton,0,wx.ALIGN_TOP,0),
-                    ),0,wx.EXPAND|wx.BOTTOM,4),
+                    ),0,wx.EXPAND), vspace(),
                 (self.iniContents,1,wx.EXPAND),
                 )
         lSizer = hSizer(
@@ -1544,9 +1543,9 @@ class INIPanel(SashPanel):
             )
         rSizer = hSizer(
             (vSizer(
-                (self.tweakName,0,wx.EXPAND|wx.TOP,6),
+                vspace(6), (self.tweakName,0,wx.EXPAND),
                 (self.tweakContents,1,wx.EXPAND),
-                ),1,wx.EXPAND|wx.RIGHT,4),
+                ),1,wx.EXPAND), hspace(),
             (iniSizer,1,wx.EXPAND),
             )
         iniSizer.SetSizeHints(right)
@@ -1901,15 +1900,14 @@ class SaveDetails(_SashDetailsPanel):
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
         detailsSizer = vSizer(
-            (self.file,0,wx.EXPAND|wx.TOP,4),
-            (hSizer(
-                (self.playerInfo,1,wx.EXPAND),
-                (self.gCoSaves,0,wx.EXPAND),
-                ),0,wx.EXPAND|wx.TOP,4),
-            (self.picture,1,wx.TOP|wx.EXPAND,4),
+            vspace(), (self.file,0,wx.EXPAND),
+            vspace(), (hSizer(
+                (self.playerInfo,1,wx.EXPAND), (self.gCoSaves,0,wx.EXPAND),)
+            ,0,wx.EXPAND),
+            vspace(), (self.picture,1,wx.EXPAND),
             )
         mastersSizer = vSizer(
-            (self.uilist,1,wx.EXPAND|wx.TOP,4),
+            vspace(), (self.uilist,1,wx.EXPAND),
             (hSizer(self.save, hspace(), self.cancel)),
             )
         noteSizer = vSizer(
@@ -3185,16 +3183,15 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.gInfo = TextCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
-        nameSizer = vSizer(
-            (hSizer((StaticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
-            wx.EXPAND), (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND), )
+        nameSizer = vSizer(vspace(),
+            (hSizer(StaticText(self.top, _(u'File:'))), 0, wx.EXPAND),
+            (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND))
         nameSizer.SetSizeHints(self.top)
         self.top.SetSizer(nameSizer)
         infoSizer = vSizer(
-        (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
-        (hSizer(
-                self.save, hspace(), self.cancel,
-                ),0,wx.EXPAND|wx.TOP,4),)
+            (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
+            vspace(),
+        (hSizer(self.save, hspace(), self.cancel,),0,wx.EXPAND),)
         infoSizer.SetSizeHints(self.bottom)
         self.bottom.SetSizer(infoSizer)
 
@@ -3349,7 +3346,7 @@ class PeoplePanel(SashTankPanel):
                 (self.gName,1,wx.GROW),
                 (self.gKarma,0,wx.GROW),
                 ),0,wx.GROW),
-            (self.gText,1,wx.GROW|wx.TOP,4),
+            vspace(), (self.gText, 1, wx.GROW),
             ))
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
