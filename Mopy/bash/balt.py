@@ -424,8 +424,13 @@ class CancelButton(Button):
     label = _(u'Cancel')
 
 def ok_and_cancel_sizer(parent, okButton=None):
-    return (hSizer(hspacer, okButton or OkButton(parent), hspace(),
-                   CancelButton(parent)), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6)
+    siz = wx.StdDialogButtonSizer()
+    okButton = okButton or OkButton(parent)
+    okButton.SetDefault()
+    siz.Add(okButton)
+    siz.Add(CancelButton(parent))
+    siz.Realize()
+    return hSizer(hspacer, siz), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6
 
 class SaveButton(Button):
     _id = wx.ID_SAVE
