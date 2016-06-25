@@ -478,10 +478,10 @@ def _showErrorInAnyGui(msg):
 
         class ErrorMessage(wx.Frame):
             def __init__(self):
-                wx.Frame.__init__(self, None, wx.ID_ANY, u'Wrye Bash')
-                self.panel = panel = wx.Panel(self, wx.ID_ANY)
+                wx.Frame.__init__(self, None, title=u'Wrye Bash')
+                self.panel = panel = wx.Panel(self)
                 sizer = wx.BoxSizer(wx.VERTICAL)
-                sizer.Add(wx.TextCtrl(panel, wx.ID_ANY, msg,
+                sizer.Add(wx.TextCtrl(panel, value=msg,
                                       style=wx.TE_MULTILINE | wx.TE_READONLY
                                             | wx.TE_BESTWRAP),
                           1, wx.GROW | wx.ALL, 5)
@@ -529,17 +529,17 @@ def _wxSelectGame(ret, msgtext):
 
     class GameSelect(wx.Frame):
         def __init__(self, gameNames, callback):
-            wx.Frame.__init__(self, None, wx.ID_ANY, u'Wrye Bash')
+            wx.Frame.__init__(self, None, title=u'Wrye Bash')
             self.callback = callback
-            self.panel = panel = wx.Panel(self, wx.ID_ANY)
+            self.panel = panel = wx.Panel(self)
             sizer = wx.BoxSizer(wx.VERTICAL)
-            sizer.Add(wx.TextCtrl(panel, wx.ID_ANY, msgtext,
+            sizer.Add(wx.TextCtrl(panel, value=msgtext,
                                   style=wx.TE_MULTILINE | wx.TE_READONLY |
                                         wx.TE_BESTWRAP),
                       1, wx.GROW | wx.ALL, 5)
             for gameName in gameNames:
                 gameName = gameName[0].upper() + gameName[1:]
-                sizer.Add(wx.Button(panel, wx.ID_ANY, gameName), 0,
+                sizer.Add(wx.Button(panel, label=gameName), 0,
                           wx.GROW | wx.ALL ^ wx.TOP, 5)
             button = wx.Button(panel, wx.ID_CANCEL, _(u'Quit'))
             button.SetDefault()

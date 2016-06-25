@@ -960,7 +960,7 @@ class Dialog(wx.Dialog):
     title = u'OVERRIDE'
 
     def __init__(self, parent=None, title=None, size=defSize, pos=defPos,
-                 style=0, resize=True, caption=False, *args, **kwargs):
+                 style=0, resize=True, caption=False):
         ##: drop parent/resize parameters(parent=Link.Frame (test),resize=True)
         self.sizesKey = self.__class__.__name__
         self.title = title or self.__class__.title
@@ -968,8 +968,8 @@ class Dialog(wx.Dialog):
         self.resizable = resize
         if resize: style |= wx.RESIZE_BORDER
         if caption: style |= wx.CAPTION
-        super(Dialog, self).__init__(parent, wx.ID_ANY, self.title, size=size,
-                                     pos=pos, style=style, *args, **kwargs)
+        super(Dialog, self).__init__(parent, title=self.title, size=size,
+                                     pos=pos, style=style)
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
 
     def OnCloseWindow(self, event):
