@@ -2323,7 +2323,7 @@ class InstallersList(balt.UIList):
                         (icon,0,wx.ALL,6), hspace(6),
                         (StaticText(dialog,message),1,wx.EXPAND),
                         ),1,wx.EXPAND|wx.ALL,6),
-                    (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    (gCheckBox,0,wx.EXPAND|wx.ALL^wx.TOP,6),
                     (hSizer(
                         hspacer,
                         balt.Button(dialog,label=_(u'Move'),
@@ -2332,7 +2332,7 @@ class InstallersList(balt.UIList):
                         balt.Button(dialog, label=_(u'Copy'),
                                     onButClick=lambda: dialog.EndModal(2)),
                         hspace(), CancelButton(dialog),
-                        ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                        ),0,wx.EXPAND|wx.ALL^wx.TOP,6),
                     )
                 dialog.SetSizer(sizer)
                 result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)

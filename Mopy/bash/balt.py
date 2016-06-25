@@ -422,9 +422,8 @@ class CancelButton(Button):
     label = _(u'Cancel')
 
 def ok_and_cancel_sizer(parent, okButton=None):
-    return (hSizer(hspacer, okButton or OkButton(parent),
-                   (CancelButton(parent), 0, wx.LEFT, 4), )
-            , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
+    return (hSizer(hspacer, okButton or OkButton(parent), hspace(),
+                   CancelButton(parent)), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6)
 
 class SaveButton(Button):
     _id = wx.ID_SAVE
@@ -620,7 +619,7 @@ def _continueDialog(parent, message, title, checkBoxText):
                     (StaticText(dialog, message, noAutoResize=True), 1,
                      wx.EXPAND)
                     ), 1, wx.EXPAND | wx.ALL, 6),
-            (gCheckBox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6),
+            (gCheckBox, 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6),
             ok_and_cancel_sizer(dialog),
             )
         dialog.SetSizer(sizer)
@@ -2580,7 +2579,7 @@ class ListBoxes(Dialog):
         self.text = StaticText(self, message)
         self.text.Rewrap(minWidth) # otherwise self.text expands to max width
         sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
-        sizer.Add(self.text, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.ALL, 0)
+        sizer.Add(self.text, 0, wx.EXPAND)
         self._ids = {}
         labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(minWidth, -1))
@@ -2621,7 +2620,7 @@ class ListBoxes(Dialog):
                              )
         if canCancel:
             buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+        sizer.Add(buttonSizer, 1, wx.EXPAND | wx.ALL ^ wx.TOP, 5)
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)

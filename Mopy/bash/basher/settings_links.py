@@ -72,7 +72,7 @@ class Settings_BackupSettings(ItemLink):
                            onButClick=lambda: dialog.EndModal(1)), hspace(),
                     Button(dialog, label=_(u'None'),
                            onButClick=lambda: dialog.EndModal(0)),
-                    ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    ),0,wx.EXPAND|wx.ALL^wx.TOP,6),
             )
         dialog.SetSizer(sizer)
         with dialog: images = dialog.ShowModal()

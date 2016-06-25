@@ -131,13 +131,13 @@ class PatchDialog(balt.Dialog):
                 hspace(), self.gImportConfig,
                 hspace(), self.gRevertConfig,
                 hspace(), self.gRevertToDefault,
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
+                ),0,wx.EXPAND|wx.ALL^wx.TOP,4),
             (hSizer(hspacer,
                 self.gExecute,
                 hspace(), self.gSelectAll,
                 hspace(), self.gDeselectAll,
                 hspace(), cancelButton,
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
+                ),0,wx.EXPAND|wx.ALL^wx.TOP,4)
             )
         self.SetSizer(sizer)
         self.SetIcons(Resources.bashMonkey)
