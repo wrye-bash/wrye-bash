@@ -28,7 +28,7 @@ import string
 import wx
 from .. import bass, balt, bosh, bolt, load_order
 from ..bass import Resources
-from ..balt import TextCtrl, StaticText, vSizer, hSizer, spacer, Button, \
+from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
     CancelButton
 from ..bolt import GPath, BoltError, deprint
@@ -463,7 +463,7 @@ class ModChecker(wx.Frame):
                     (self.gShowCRC,0,wx.LEFT,4),
                     (self.gScanDirty,0,wx.LEFT,4),
                     (self.gCopyText,0,wx.LEFT,4),
-                    spacer,
+                    hspacer,
                     gUpdateButton,
                     ),0,wx.ALL|wx.EXPAND,4),
                 )
@@ -579,7 +579,7 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
             (StaticText(self,_(u"Abstract")),0,wx.LEFT|wx.RIGHT,4),
             (self.gAbstract,1,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
             (hSizer(
-                spacer,
+                hspacer,
                 (SaveButton(self, onButClick=self.DoSave, default=True),0,),
                 (CancelButton(self, onButClick=self.DoCancel), 0,
                  wx.LEFT, 4),

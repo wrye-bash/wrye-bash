@@ -32,7 +32,7 @@ from datetime import timedelta
 from . import SetUAC, BashFrame
 from .. import bass, bosh, bolt, balt, env, load_order
 from ..bass import Resources
-from ..balt import StaticText, vSizer, hSizer, spacer, Link, OkButton, \
+from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
     RevertToSavedButton, RevertButton
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
@@ -127,14 +127,14 @@ class PatchDialog(balt.Dialog):
             (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
             (hSizer(
-                spacer,
+                hspacer,
                 (self.gExportConfig,0,wx.LEFT,4),
                 (self.gImportConfig,0,wx.LEFT,4),
                 (self.gRevertConfig,0,wx.LEFT,4),
                 (self.gRevertToDefault,0,wx.LEFT,4),
                 ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
             (hSizer(
-                spacer,
+                hspacer,
                 self.gExecute,
                 (self.gSelectAll,0,wx.LEFT,4),
                 (self.gDeselectAll,0,wx.LEFT,4),

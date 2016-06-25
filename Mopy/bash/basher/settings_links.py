@@ -25,7 +25,7 @@
 import locale
 import sys
 import wx
-from ..balt import ItemLink, vSizer, hSizer, spacer, Button, AppendableLink, \
+from ..balt import ItemLink, vSizer, hSizer, hspacer, Button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
     StaticText, tooltip, Link, staticBitmap
 from .. import barb, bush, balt, bass, bolt, env
@@ -65,7 +65,7 @@ class Settings_BackupSettings(ItemLink):
                     (StaticText(dialog,_(u'Do you want to backup any images?'),
                                 noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
                     ),1,wx.EXPAND|wx.ALL,6),
-            (hSizer(spacer,
+            (hSizer(hspacer,
                     Button(dialog, label=_(u'Backup All Images'),
                     onButClick=lambda: dialog.EndModal(2)),
                     (Button(dialog, label=_(u'Backup Changed Images'),

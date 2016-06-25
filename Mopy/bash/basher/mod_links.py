@@ -34,7 +34,7 @@ from operator import attrgetter
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
-    StaticText, spacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
+    StaticText, hspacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
     OkButton
 from ..bolt import GPath, SubProgress, AbstractError, CancelError, formatDate
@@ -2012,7 +2012,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         sizer = vSizer(
             StaticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
             gskip,
-            spacer,
+            hspacer,
             StaticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
                                + u'\n' +
                                _(u'as DenockInit.ext rather than as cobDenockInit.ext')
@@ -2020,7 +2020,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
                                _(u'(Leave blank to not cut any prefix, non-case sensitive):')
                                ),noAutoResize=True),
             gdeprefix,
-            spacer,
+            hspacer,
             gskipcomments,
             balt.ok_and_cancel_sizer(dialog, okButton=okButton),
             )

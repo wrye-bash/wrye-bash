@@ -422,7 +422,7 @@ class CancelButton(Button):
     label = _(u'Cancel')
 
 def ok_and_cancel_sizer(parent, okButton=None):
-    return (hSizer(spacer, okButton or OkButton(parent),
+    return (hSizer(hspacer, okButton or OkButton(parent),
                    (CancelButton(parent), 0, wx.LEFT, 4), )
             , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
 
@@ -512,7 +512,7 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
     return wx.StaticBitmap(parent, defId, bitmap)
 
 # Sizers ----------------------------------------------------------------------
-spacer = ((0,0),1) #--Used to space elements apart.
+hspacer = ((0, 0), 1) #--Used to space elements apart.
 
 def _aSizer(sizer, *elements):
     """Adds elements to a sizer."""
@@ -887,7 +887,7 @@ def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
             (hSizer(
                 gBackButton,
                 gForwardButton,
-                spacer,
+                hspacer,
                 gOkButton,
                 ),0,wx.ALL|wx.EXPAND,4),
             )
@@ -2612,7 +2612,7 @@ class ListBoxes(Dialog):
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i + 1)
         okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
-        buttonSizer = hSizer(spacer,
+        buttonSizer = hSizer(hspacer,
                              (okButton,0,wx.ALIGN_RIGHT),
                              )
         if canCancel:

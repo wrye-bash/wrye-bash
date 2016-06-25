@@ -82,7 +82,7 @@ from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
     SaveButton, CancelButton, INIListCtrl
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
-from ..balt import spacer, hSizer, vSizer
+from ..balt import hspacer, hSizer, vSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
 from ..balt import splitterStyle
@@ -1212,7 +1212,7 @@ class ModDetails(_SashDetailsPanel):
         detailsSizer = vSizer(
             (hSizer(
                 (StaticText(top,_(u"File:")),0,wx.TOP,4),
-                spacer,
+                hspacer,
                 (self.version,0,wx.TOP|wx.RIGHT,4)
                 ),0,wx.EXPAND),
             (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
@@ -2333,7 +2333,7 @@ class InstallersList(balt.UIList):
                         ),1,wx.EXPAND|wx.ALL,6),
                     (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     (hSizer(
-                        spacer,
+                        hspacer,
                         balt.Button(dialog,label=_(u'Move'),
                                     onButClick=lambda: dialog.EndModal(1)),
                         (balt.Button(dialog,label=_(u'Copy'),

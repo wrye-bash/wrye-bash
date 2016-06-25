@@ -29,7 +29,7 @@ from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import bass, balt, bosh, bolt, bush, env
 from ..bass import Resources
-from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
+from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
     CancelButton, ApplyButton
 from ..bosh import faces
@@ -95,7 +95,7 @@ class ColorDialog(balt.Dialog):
                 ),0,wx.EXPAND|wx.ALL,5),
             (hSizer(
                 (self.default,0,wx.RIGHT,5),
-                (self.apply,0,wx.RIGHT,5), self.importConfig, spacer, self.ok,
+                (self.apply,0,wx.RIGHT,5), self.importConfig, hspacer, self.ok,
                 ),0,wx.EXPAND|wx.ALL,5),
             )
         self.comboBox.SetFocus()
