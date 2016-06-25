@@ -25,7 +25,7 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
-from .. import bass, bosh, balt, bush, env
+from .. import bass, bosh, balt, env
 from ..bass import Resources
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
 
@@ -154,26 +154,19 @@ class INI_Apply(EnabledLink):
         if not bass.settings['bash.ini.allowNewLines']:
             for i in self.selected:
                 iniInfo = bosh.iniInfos[i]
-                if iniInfo.status < 0:
+                if iniInfo.tweak_status < 0:
                     return False # temp disabled for testing
         return True
 
     def Execute(self):
         """Handle applying INI Tweaks."""
         #-- If we're applying to Oblivion.ini, show the warning
-        iniPanel = self.iniPanel
-        choice = iniPanel.GetChoice().tail
-        if choice in bush.game.iniFiles:
-            message = (_(u'Apply an ini tweak to %s?') % choice
-                       + u'\n\n' +
-                       _(u'WARNING: Incorrect tweaks can result in CTDs and even damage to your computer!')
-                       )
-            if not self._askContinue(message, 'bash.iniTweaks.continue',
-                                     _(u'INI Tweaks')): return
+        choice = self.iniPanel.current_ini_path.tail
+        if not self.window.warn_tweak_game_ini(choice): return
         needsRefresh = False
         for item in self.selected:
             #--No point applying a tweak that's already applied
-            if bosh.iniInfos[item].status == 20: continue
+            if bosh.iniInfos[item].tweak_status == 20: continue
             needsRefresh = True
             if bass.dirs['tweaks'].join(item).isfile():
                 self.window.data_store.ini.applyTweakFile(
@@ -183,9 +176,7 @@ class INI_Apply(EnabledLink):
                     bass.dirs['defaultTweaks'].join(item))
         if needsRefresh:
             #--Refresh status of all the tweaks valid for this ini
-            self.window.RefreshUIValid()
-            iniPanel.iniContents.RefreshIniContents()
-            iniPanel.tweakContents.RefreshTweakLineCtrl(self.selected[0])
+            self.window.RefreshUIValid(self.selected[0])
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):
@@ -204,7 +195,7 @@ class INI_CreateNew(OneItemLink):
                 u"from '%(ini)s'.") % {'tweak': (selection[0]), 'ini': ini}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
-                              bosh.iniInfos[self.selected[0]].status >= 0
+                              bosh.iniInfos[self.selected[0]].tweak_status >= 0
 
     def Execute(self):
         """Handle creating a new INI tweak."""

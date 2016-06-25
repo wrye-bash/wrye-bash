@@ -1551,6 +1551,7 @@ class IniFile(object):
     reDeletedSetting = re.compile(ur';-\s*(\w.*?)\s*(;.*$|=.*$|$)',re.U)
     reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
     reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
+    formatRes = (reSetting, reSection)
     encoding = 'utf-8'
 
     def __init__(self,path,defaultSection=u'General'):
@@ -1558,20 +1559,16 @@ class IniFile(object):
         self.defaultSection = defaultSection
         self.isCorrupted = False
 
-    @staticmethod
-    def formatMatch(path):
+    @classmethod
+    def formatMatch(cls, path):
         count = 0
-        with path.open('r') as file:
-            for line in file:
-                stripped = IniFile.reComment.sub('',line).strip()
-                maSetting = IniFile.reSetting.match(stripped)
-                if maSetting:
-                    count += 1
-                    continue
-                maSection = IniFile.reSection.match(stripped)
-                if maSection:
-                    count += 1
-                    continue
+        with path.open('r') as ini_file:
+            for line in ini_file:
+                stripped = cls.reComment.sub(u'',line).strip()
+                for regex in cls.formatRes:
+                    if regex.match(stripped):
+                        count += 1
+                        break
         return count
 
     def getSetting(self,section,key,default=None):
@@ -1853,27 +1850,12 @@ class OBSEIniFile(IniFile):
     reDeleted = re.compile(ur';-(\w.*?)$',re.U)
     reSet     = re.compile(ur'\s*set\s+(.+?)\s+to\s+(.*)', re.I|re.U)
     reSetGS   = re.compile(ur'\s*setGS\s+(.+?)\s+(.*)', re.I|re.U)
+    formatRes = (reSet, reSetGS)
 
     def __init__(self,path,defaultSection=u''):
         """Change the default section to something that can't
         occur in a normal ini"""
         IniFile.__init__(self,path,u'')
-
-    @staticmethod
-    def formatMatch(path):
-        count = 0
-        with path.open('r') as file:
-            for line in file:
-                stripped = OBSEIniFile.reComment.sub(u'',line).strip()
-                maSet = OBSEIniFile.reSet.match(stripped)
-                if maSet:
-                    count += 1
-                    continue
-                maSetGS = OBSEIniFile.reSetGS.match(stripped)
-                if maSetGS:
-                    count += 1
-                    continue
-        return count
 
     def getSetting(self,section,key,default=None):
         lstr = LString(section)
@@ -2763,7 +2745,7 @@ class INIInfo(FileInfo):
         self._status = None
 
     @property
-    def status(self):
+    def tweak_status(self):
         if self._status is None: self.getStatus()
         return self._status
 
@@ -2777,7 +2759,7 @@ class INIInfo(FileInfo):
         10: mismatches (yellow)
         0: not installed (green)
         -10: invalid tweak file (red).
-        Also caches the value in self.status"""
+        Also caches the value in self._status"""
         path = self.getPath()
         infos = self.getFileInfos()
         ini = infos.ini

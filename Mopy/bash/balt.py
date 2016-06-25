@@ -2714,3 +2714,11 @@ def readme_url(mopy, advanced=False):
         readme = u"http://wrye-bash.github.io/docs/Wrye%20Bash" \
                  u"%20General%20Readme.html"
     return readme
+
+class INIListCtrl(wx.ListCtrl):
+
+    def __init__(self, parent):
+        wx.ListCtrl.__init__(self, parent,
+            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER)
+        self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
+        self.InsertColumn(0, u'')
