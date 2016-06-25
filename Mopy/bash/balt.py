@@ -513,6 +513,8 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
 
 # Sizers ----------------------------------------------------------------------
 hspacer = ((0, 0), 1) #--Used to space elements apart.
+def hspace(pixels=4):
+    return (pixels, 0),
 
 def _aSizer(sizer, *elements):
     """Adds elements to a sizer."""

@@ -31,7 +31,7 @@ from .. import bass, balt, bosh, bolt, bush, env
 from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton, ApplyButton
+    CancelButton, ApplyButton, hspace
 from ..bosh import faces
 
 class ColorDialog(balt.Dialog):
@@ -89,14 +89,14 @@ class ColorDialog(balt.Dialog):
                 (self.comboBox,1,wx.EXPAND|wx.RIGHT,5), self.picker,
                 ),0,wx.EXPAND|wx.ALL,5),
             (self.textCtrl,1,wx.EXPAND|wx.ALL,5),
-            (hSizer(
-                (self.defaultAll,0,wx.RIGHT,5),
-                (self.applyAll,0,wx.RIGHT,5), self.export_config,
-                ),0,wx.EXPAND|wx.ALL,5),
-            (hSizer(
-                (self.default,0,wx.RIGHT,5),
-                (self.apply,0,wx.RIGHT,5), self.importConfig, hspacer, self.ok,
-                ),0,wx.EXPAND|wx.ALL,5),
+            (hSizer(self.defaultAll, hspace(5),
+                    self.applyAll, hspace(5),
+                    self.export_config,
+                    ),0,wx.EXPAND|wx.ALL,5),
+            (hSizer(self.default, hspace(5),
+                    self.apply, hspace(5),
+                    self.importConfig, hspacer, self.ok,
+                    ),0,wx.EXPAND|wx.ALL,5),
             )
         self.comboBox.SetFocus()
         self.SetSizer(sizer)

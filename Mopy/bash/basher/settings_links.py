@@ -27,7 +27,7 @@ import sys
 import wx
 from ..balt import ItemLink, vSizer, hSizer, hspacer, Button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
-    StaticText, tooltip, Link, staticBitmap
+    StaticText, tooltip, Link, staticBitmap, hspace
 from .. import barb, bush, balt, bass, bolt, env
 from ..bolt import deprint, GPath
 from . import BashFrame, BashStatusBar
@@ -67,11 +67,11 @@ class Settings_BackupSettings(ItemLink):
                     ),1,wx.EXPAND|wx.ALL,6),
             (hSizer(hspacer,
                     Button(dialog, label=_(u'Backup All Images'),
-                    onButClick=lambda: dialog.EndModal(2)),
-                    (Button(dialog, label=_(u'Backup Changed Images'),
-                    onButClick=lambda: dialog.EndModal(1)), 0, wx.LEFT, 4),
-                    (Button(dialog, label=_(u'None'),
-                    onButClick=lambda: dialog.EndModal(0)), 0, wx.LEFT, 4),
+                           onButClick=lambda: dialog.EndModal(2)), hspace(),
+                    Button(dialog, label=_(u'Backup Changed Images'),
+                           onButClick=lambda: dialog.EndModal(1)), hspace(),
+                    Button(dialog, label=_(u'None'),
+                           onButClick=lambda: dialog.EndModal(0)),
                     ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
             )
         dialog.SetSizer(sizer)

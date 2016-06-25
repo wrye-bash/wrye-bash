@@ -80,7 +80,7 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl
+    SaveButton, CancelButton, INIListCtrl, hspace
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import hspacer, hSizer, vSizer
 from ..balt import colors, images, Image
@@ -1230,10 +1230,7 @@ class ModDetails(_SashDetailsPanel):
         mastersSizer = vSizer(
             (hSizer((StaticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
             (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
-            (hSizer(
-                self.save,
-                (self.cancel,0,wx.LEFT,4)
-                ),0,wx.EXPAND|wx.TOP,4),)
+            (hSizer(self.save, hspace(), self.cancel),0,wx.EXPAND|wx.TOP,4),)
         tagsSizer = vSizer(
             (StaticText(tagPanel,_(u"Bash Tags:")),0,wx.TOP,4),
             (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
@@ -1913,10 +1910,7 @@ class SaveDetails(_SashDetailsPanel):
             )
         mastersSizer = vSizer(
             (self.uilist,1,wx.EXPAND|wx.TOP,4),
-            (hSizer(
-                self.save,
-                (self.cancel,0,wx.LEFT,4),
-                )),
+            (hSizer(self.save, hspace(), self.cancel)),
             )
         noteSizer = vSizer(
             (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
@@ -2336,10 +2330,10 @@ class InstallersList(balt.UIList):
                         hspacer,
                         balt.Button(dialog,label=_(u'Move'),
                                     onButClick=lambda: dialog.EndModal(1)),
-                        (balt.Button(dialog,label=_(u'Copy'),
-                                     onButClick=lambda: dialog.EndModal(2)),
-                         0,wx.LEFT,4),
-                        (CancelButton(dialog),0,wx.LEFT,4),
+                        hspace(),
+                        balt.Button(dialog, label=_(u'Copy'),
+                                    onButClick=lambda: dialog.EndModal(2)),
+                        hspace(), CancelButton(dialog),
                         ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     )
                 dialog.SetSizer(sizer)
@@ -3199,8 +3193,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         infoSizer = vSizer(
         (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
         (hSizer(
-                self.save,
-                (self.cancel,0,wx.LEFT,4),
+                self.save, hspace(), self.cancel,
                 ),0,wx.EXPAND|wx.TOP,4),)
         infoSizer.SetSizeHints(self.bottom)
         self.bottom.SetSizer(infoSizer)
