@@ -412,7 +412,7 @@ class ConfigHelpers:
                       u' deleted records (UDR), or other issues that should be'
                       u' fixed with TES4Edit.  Visit the %(cleaning_wiki_url)s'
                       u' for more information.') % {
-                        '_cleaning_wiki_url': self._cleaning_wiki_url})
+                        'cleaning_wiki_url': self._cleaning_wiki_url})
                 for mod in sorted(shouldClean.keys()):
                     log(u'* __'+mod.s+u':__  %s' % shouldClean[mod])
             if shouldCleanMaybe:
