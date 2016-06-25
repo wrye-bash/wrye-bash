@@ -427,8 +427,7 @@ def main():
             basher.uacRestart = True
             return
 
-    frame = app.Init() # Link.Frame is set here !
-    frame.booting = False
+    app.Init() # Link.Frame is set here !
     app.MainLoop()
 
 # Show error in gui -----------------------------------------------------------

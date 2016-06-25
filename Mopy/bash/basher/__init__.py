@@ -3837,7 +3837,7 @@ class BashFrame(wx.Frame):
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = self.oblivionIniMissing = False
-        self.notebook = notebook = BashNotebook(self)
+        self.notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         self.BindRefresh(bind=True)
@@ -3847,9 +3847,6 @@ class BashFrame(wx.Frame):
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
         self.incompleteInstallError = False
-        #--Layout
-        sizer = vSizer((notebook,1,wx.GROW))
-        self.SetSizer(sizer)
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -4258,7 +4255,7 @@ class BashApp(wx.App):
         maximize()
         balt.ensureDisplayed(frame)
         frame.warnTooManyModsBsas()
-        return frame
+        frame.booting = False
 
     @staticmethod
     def InitResources():
