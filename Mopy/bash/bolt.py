@@ -2188,12 +2188,11 @@ class Progress:
         if (1.0*self.full) == 0: raise ArgumentError(u'Full must be non-zero!')
         if message: self.message = message
         if self.debug: deprint(u'%0.3f %s' % (1.0*state/self.full, self.message))
-        self.doProgress(1.0*state/self.full, self.message)
+        self._do_progress(1.0 * state / self.full, self.message)
         self.state = state
 
-    def doProgress(self,progress,message):
-        """Default doProgress does nothing."""
-        pass
+    def _do_progress(self, state, message):
+        """Default _do_progress does nothing."""
 
     # __enter__ and __exit__ for use with the 'with' statement
     def __enter__(self): return self
@@ -2231,7 +2230,7 @@ class ProgressFile(Progress): # CRUFT
         Progress.__init__(self,full)
         self.out = out or sys.stdout
 
-    def doProgress(self,progress,message):
+    def _do_progress(self, progress, message):
         msg = u'%0.2f %s\n' % (progress,message)
         try: self.out.write(msg)
         except UnicodeError: self.out.write(msg.encode('mbcs'))

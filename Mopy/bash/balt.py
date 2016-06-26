@@ -1285,12 +1285,12 @@ class BusyCursor(object):
 #------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
-    _style = wx.PD_APP_MODAL | wx.PD_ELAPSED_TIME | wx.PD_AUTO_HIDE | \
-             wx.PD_SMOOTH
+    _style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH
+
     def __init__(self, title=_(u'Progress'), message=u' '*60, parent=None,
-                 abort=False, __style=_style):
-        if abort:
-            __style |= wx.PD_CAN_ABORT
+                 abort=False, elapsed=True, __style=_style):
+        if abort: __style |= wx.PD_CAN_ABORT
+        if elapsed: __style |= wx.PD_ELAPSED_TIME
         self.dialog = wx.ProgressDialog(title, message, 100, parent, __style)
         self.dialog.SetFocus()
         bolt.Progress.__init__(self)
@@ -1310,7 +1310,7 @@ class Progress(bolt.Progress):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
         cancel.Enable(enabled)
 
-    def doProgress(self,state,message):
+    def _do_progress(self, state, message):
         if not self.dialog:
             raise StateError(u'Dialog already destroyed.')
         elif (state == 0 or state == 1 or (message != self.prevMessage) or

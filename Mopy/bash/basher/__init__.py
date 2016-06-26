@@ -4249,8 +4249,8 @@ class BashApp(wx.App):
         #--OnStartup SplashScreen and/or Progress
         #   Progress gets hidden behind splash by default, since it's not very informative anyway
         splashScreen = None
-        progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
-             style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
+        progress = balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
+                                 elapsed=False)
         # Is splash enabled in ini ?
         if bass.inisettings['EnableSplashScreen']:
             if bass.dirs['images'].join(u'wryesplash.png').exists():
@@ -4262,12 +4262,12 @@ class BashApp(wx.App):
         #--Constants
         self.InitResources()
         #--Init Data
-        progress.Update(20,_(u'Initializing Data'))
+        progress(0.2, _(u'Initializing Data'))
         self.InitData(progress)
-        progress.Update(70,_(u'Initializing Version'))
+        progress(0.7, _(u'Initializing Version'))
         self.InitVersion()
         #--MWFrame
-        progress.Update(80,_(u'Initializing Windows'))
+        progress(0.8, _(u'Initializing Windows'))
         frame = BashFrame( # Link.Frame global set here
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
@@ -4284,7 +4284,8 @@ class BashApp(wx.App):
         frame.warnTooManyModsBsas()
         return frame
 
-    def InitResources(self):
+    @staticmethod
+    def InitResources():
         """Init application resources."""
         Resources.bashBlue = Resources.bashBlue.GetIconBundle()
         Resources.bashRed = Resources.bashRed.GetIconBundle()
@@ -4292,17 +4293,18 @@ class BashApp(wx.App):
         Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
         Resources.fonts = balt.fonts()
 
-    def InitData(self,progress):
+    @staticmethod
+    def InitData(progress):
         """Initialize all data. Called by Init()."""
-        progress.Update(5,_(u'Initializing ModInfos'))
+        progress(0.05, _(u'Initializing ModInfos'))
         bosh.gameInis = tuple(bosh.OblivionIni(x) for x in bush.game.iniFiles)
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
-        progress.Update(30,_(u'Initializing SaveInfos'))
+        progress(0.3, _(u'Initializing SaveInfos'))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()
-        progress.Update(40,_(u'Initializing IniInfos'))
+        progress(0.4, _(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
         # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
@@ -4311,10 +4313,11 @@ class BashApp(wx.App):
         #--Patch check
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
-                progress.Update(68,_(u'Generating Blank Bashed Patch'))
+                progress(0.68, _(u'Generating Blank Bashed Patch'))
                 bosh.modInfos.generateNextBashedPatch()
 
-    def InitVersion(self):
+    @staticmethod
+    def InitVersion():
         """Perform any version to version conversion. Called by Init()."""
         #--Renames dictionary: Strings to Paths.
         if settings['bash.version'] < 40:
