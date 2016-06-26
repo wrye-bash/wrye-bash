@@ -536,15 +536,10 @@ def vSizer(*elements):
     """Vertical sizer and elements."""
     return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
 
-def hsbSizer(boxArgs,*elements):
-    """Horizontal static box sizer and elements."""
-    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.HORIZONTAL),
-                   *elements)
-
-def vsbSizer(boxArgs,*elements):
-    """Vertical static box sizer and elements."""
-    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.VERTICAL),
-                   *elements)
+def hsbSizer(parent, box_label=u'', *elements):
+    """A horizontal box sizer, but surrounded by a static box."""
+    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(parent, label=box_label),
+                                     wx.HORIZONTAL), *elements)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2588,7 +2583,7 @@ class ListBoxes(Dialog):
             tip = group[1]
             strings = [u'%s' % x for x in group[2:]] # works for Path & strings
             if len(strings) == 0: continue
-            subsizer = hsbSizer((self, wx.ID_ANY, title))
+            subsizer = hsbSizer(self, title)
             if liststyle == 'check':
                 checksCtrl = listBox(self, choices=strings, isSingle=True,
                                      isHScroll=True, kind='checklist')

@@ -168,7 +168,7 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Layout
         gSizer = vSizer(
             (gText,), vspace(),
-            (balt.hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+            (balt.hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
                 gManualSizer,gSelectSizer,
@@ -354,7 +354,7 @@ class _TweakPatcherPanel(_PatcherPanel):
         #--Layout
         gSizer = vSizer(
             (gText,), vspace(),
-            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+            (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
                 gSelectSizer,
@@ -599,11 +599,11 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         #--Layout
         gSizer = vSizer(
             (gText,), vspace(),
-            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+            (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
                 gSelectSizer,),1,wx.EXPAND), vspace(),
-            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.subLabel),
+            (hsbSizer(gConfigPanel, self.__class__.subLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
                 gTweakSelectSizer,),1,wx.EXPAND),

@@ -263,7 +263,7 @@ class PageSelect(PageInstaller):
 
         sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
 
-        sizerTitle = balt.hsbSizer((self,))
+        sizerTitle = balt.hsbSizer(self)
         self.TitleDesc = balt.StaticText(self, desc)
         self.TitleDesc.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(self.TitleDesc, 1, wx.ALIGN_CENTER|wx.ALL)
@@ -415,7 +415,7 @@ class PageFinish(PageInstaller):
         parent.parser.choiceIdex += 1
 
         #--Heading
-        sizerTitle = balt.hsbSizer((self,))
+        sizerTitle = balt.hsbSizer(self)
         textTitle = balt.StaticText(self, _(u"The installer script has finished, and will apply the following settings:"))
         textTitle.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(textTitle,0,wx.ALIGN_CENTER)
@@ -537,8 +537,7 @@ class PageVersions(PageInstaller):
         self.textWarning.Wrap(parent.GetPageSize()[0]-20)
         sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
 
-        sizerVersionsTop = balt.hsbSizer(
-            (self, wx.ID_ANY, _(u'Version Requirements')))
+        sizerVersionsTop = balt.hsbSizer(self, _(u'Version Requirements'))
         sizerVersions = wx.FlexGridSizer(5, 4, 5, 5)
         sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
 
