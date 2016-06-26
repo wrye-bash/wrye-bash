@@ -664,17 +664,9 @@ class INITweakLineCtrl(INIListCtrl):
     def __init__(self, parent, iniContents):
         super(INITweakLineCtrl, self).__init__(parent)
         self.tweakLines = []
-        self.iniContents = iniContents
+        self.iniContents = self._contents = iniContents
 
-    def OnSelect(self, event):
-        index = event.GetIndex()
-        iniLine = self.tweakLines[index][5]
-        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-        if iniLine != -1:
-            self.iniContents.EnsureVisible(iniLine)
-            scroll = iniLine - self.iniContents.GetScrollPos(wx.VERTICAL) - index
-            self.iniContents.ScrollLines(scroll)
-        event.Skip()
+    def _get_selected_line(self, index): return self.tweakLines[index][5]
 
     def RefreshTweakLineCtrl(self, tweakPath):
         if tweakPath is None:
@@ -720,18 +712,12 @@ class INITweakLineCtrl(INIListCtrl):
 class INILineCtrl(INIListCtrl):
 
     def SetTweakLinesCtrl(self, control):
-        self.tweakContents = control
+        self._contents = control
 
-    def OnSelect(self, event):
-        index = event.GetIndex()
-        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-        for i,line in enumerate(self.tweakContents.tweakLines):
-            if index == line[5]:
-                self.tweakContents.EnsureVisible(i)
-                scroll = i - self.tweakContents.GetScrollPos(wx.VERTICAL) - index
-                self.tweakContents.ScrollLines(scroll)
-                break
-        event.Skip()
+    def _get_selected_line(self, index):
+        for i, line in enumerate(self._contents.tweakLines):
+            if index == line[5]: return i
+        return -1
 
     def RefreshIniContents(self, resetScroll=False):
         num = self.GetItemCount()

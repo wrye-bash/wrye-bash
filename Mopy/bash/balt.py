@@ -2716,3 +2716,15 @@ class INIListCtrl(wx.ListCtrl):
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0, u'')
+
+    def OnSelect(self, event):
+        index = event.GetIndex()
+        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+        iniLine = self._get_selected_line(index)
+        if iniLine != -1:
+            self._contents.EnsureVisible(iniLine)
+            scroll = iniLine - self._contents.GetScrollPos(wx.VERTICAL) - index
+            self._contents.ScrollLines(scroll)
+        event.Skip()
+
+    def _get_selected_line(self, index): raise AbstractError
