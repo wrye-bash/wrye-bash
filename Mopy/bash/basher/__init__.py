@@ -1143,6 +1143,16 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
                                                         style=splitterStyle)
         self.masterPanel = wx.Panel(self.subSplitter)
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
+        #--Masters
+        mod_or_save_panel = parent.GetParent().GetParent()
+        self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
+                                 panel=mod_or_save_panel, detailsPanel=self)
+        mastersSizer = vSizer(
+            vspace(), hSizer(StaticText(self.masterPanel,_(u"Masters:"))),
+            (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
+            vspace(), hSizer(self.save, hspace(), self.cancel))
+        mastersSizer.SetSizeHints(self.masterPanel)
+        self.masterPanel.SetSizer(mastersSizer)
 
     def ShowPanel(self): ##: does not call super
         if hasattr(self, '_firstShow'):
@@ -1177,7 +1187,6 @@ class ModDetails(_SashDetailsPanel):
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
-        modPanel = parent.GetParent().GetParent()
         subSplitter, masterPanel = self.subSplitter, self.masterPanel
         top, bottom = self.top, self.bottom
         #--Data
@@ -1200,9 +1209,6 @@ class ModDetails(_SashDetailsPanel):
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
                                     onText=self.OnDescrEdit, maxChars=512)
-        #--Masters
-        self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=modPanel, detailsPanel=self)
         #--Bash tags
         tagPanel = wx.Panel(subSplitter)
         self.allTags = bosh.allTags
@@ -1226,15 +1232,9 @@ class ModDetails(_SashDetailsPanel):
         subSplitter.SetMinimumPaneSize(100)
         subSplitter.SplitHorizontally(masterPanel,tagPanel)
         subSplitter.SetSashGravity(0.5)
-        mastersSizer = vSizer(
-            vspace(), (hSizer((StaticText(masterPanel,_(u"Masters:")))),0,wx.EXPAND),
-            (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
-            vspace(), (hSizer(self.save, hspace(), self.cancel),0,wx.EXPAND),)
         tagsSizer = vSizer(
             vspace(), (StaticText(tagPanel,_(u"Bash Tags:"))),
             (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
-        mastersSizer.SetSizeHints(masterPanel)
-        masterPanel.SetSizer(mastersSizer)
         tagsSizer.SetSizeHints(masterPanel)
         tagPanel.SetSizer(tagsSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
@@ -1876,7 +1876,6 @@ class SaveDetails(_SashDetailsPanel):
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
-        savePanel = parent.GetParent().GetParent()
         subSplitter, masterPanel = self.subSplitter, self.masterPanel
         top, bottom = self.top, self.bottom
         #--Data
@@ -1892,9 +1891,6 @@ class SaveDetails(_SashDetailsPanel):
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
         notePanel = wx.Panel(subSplitter)
-        #--Masters
-        self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=savePanel, detailsPanel=self)
         #--Save Info
         self.gInfo = TextCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -1906,10 +1902,6 @@ class SaveDetails(_SashDetailsPanel):
             ,0,wx.EXPAND),
             vspace(), (self.picture,1,wx.EXPAND),
             )
-        mastersSizer = vSizer(
-            vspace(), (self.uilist,1,wx.EXPAND),
-            (hSizer(self.save, hspace(), self.cancel)),
-            )
         noteSizer = vSizer(
             (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
             )
@@ -1918,8 +1910,6 @@ class SaveDetails(_SashDetailsPanel):
         subSplitter.SetMinimumPaneSize(100)
         subSplitter.SplitHorizontally(masterPanel,notePanel)
         subSplitter.SetSashGravity(1.0)
-        mastersSizer.SetSizeHints(masterPanel)
-        masterPanel.SetSizer(mastersSizer)
         noteSizer.SetSizeHints(masterPanel)
         notePanel.SetSizer(noteSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
