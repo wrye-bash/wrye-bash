@@ -1295,6 +1295,7 @@ class Progress(bolt.Progress):
     def __init__(self, title=_(u'Progress'), message=u' '*60, parent=None,
                  abort=False, elapsed=True, __style=_style):
         if abort: __style |= wx.PD_CAN_ABORT
+        self._elapsed = elapsed
         if elapsed: __style |= wx.PD_ELAPSED_TIME
         self.dialog = wx.ProgressDialog(title, message, 100, parent, __style)
         bolt.Progress.__init__(self)
@@ -1316,8 +1317,9 @@ class Progress(bolt.Progress):
     def _do_progress(self, state, message):
         if not self.dialog:
             raise StateError(u'Dialog already destroyed.')
-        elif (state == 0 or state == 1 or (message != self.prevMessage) or
-            (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
+        elif (state == 0 or state == 1 or (message != self.prevMessage) or (
+                    state - self.prevState) > 0.05 or (
+                    self._elapsed and (time.time() - self.prevTime) > 0.5)):
             if message != self.prevMessage:
                 ret = self.dialog.Update(int(state*100),message)
             else:
