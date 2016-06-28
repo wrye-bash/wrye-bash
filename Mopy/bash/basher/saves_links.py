@@ -639,13 +639,13 @@ class Save_Move(ChoiceLink):
                 bosh.saveInfos.move_info(fileName, destDir)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable.pop(fileName)
-            count += 1
+                count += 1
         destTable.save()
         if self.copyMode:
             self._showInfo(_(u'%d files copied to %s.') % (count, profile),
                            title=_(u'Copy File'))
-        elif count: # files moved to other profile, refresh
-            bosh.saveInfos.delete_Refresh(self.selected)
+        elif count: # files moved to other profile, refresh ##: finally ?
+            bosh.saveInfos.delete_Refresh(self.selected, check_existence=True)
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------

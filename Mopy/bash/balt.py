@@ -2118,7 +2118,8 @@ class UIList(wx.Panel):
             except (AccessDeniedError, CancelError, SkipError): pass
             finally:
                 if self.__class__._shellUI: break # could delete fail mid-way ?
-        else: self.data_store.delete_Refresh(items)
+        else:
+            self.data_store.delete_Refresh(items, check_existence=True)
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def _toDelete(self, items):
