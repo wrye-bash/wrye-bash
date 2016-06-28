@@ -2996,7 +2996,8 @@ class TrackedFileInfos(DataDict):
 class _DataStore(DataDict):
 
     def delete(self, itemOrItems, **kwargs): raise AbstractError
-    def delete_Refresh(self, deleted): raise AbstractError # Yak - absorb in refresh - add deleted parameter
+    def delete_Refresh(self, deleted, check_existence=False):
+        raise AbstractError # Yak - absorb in refresh - add deleted parameter
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
@@ -3172,8 +3173,9 @@ class FileInfos(_DataStore):
             if doRefresh:
                 self.delete_Refresh(tableUpdate.values())
 
-    def delete_Refresh(self, deleted):
-        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+    def delete_Refresh(self, deleted, check_existence=False):
+        if check_existence:
+            deleted = set(d for d in deleted if not self.dir.join(d).exists())
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -3997,9 +3999,9 @@ class ModInfos(FileInfos):
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.delete(self, fileName, **kwargs)
 
-    def delete_Refresh(self, deleted):
+    def delete_Refresh(self, deleted, check_existence=False):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = FileInfos.delete_Refresh(self, deleted)
+        deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
         for d in map(self.dir.join, deleted): # we need absolute paths
@@ -4294,7 +4296,7 @@ class PeopleData(_DataStore):
         del self[key]
         self.hasChanged = True
 
-    def delete_Refresh(self, deleted): pass
+    def delete_Refresh(self, deleted, check_existence=False): pass
 
     #--Operations
     def loadText(self,path):
@@ -4364,7 +4366,7 @@ class ScreensData(_DataStore):
         for item in filePath:
             if not item.exists(): del self[item.tail]
 
-    def delete_Refresh(self, deleted): self.refresh()
+    def delete_Refresh(self, deleted, check_existence=False): self.refresh()
 
 #------------------------------------------------------------------------------
 os_sep = unicode(os.path.sep)
@@ -5957,7 +5959,11 @@ class InstallersData(_DataStore):
                 if deleted:
                     self.delete_Refresh(deleted) # markers are already popped
 
-    def delete_Refresh(self, deleted): self.irefresh(what='I', deleted=deleted)
+    def delete_Refresh(self, deleted, check_existence=False):
+        if check_existence:
+            deleted.remove(
+                item for item in deleted if self.dir.join(item).exists())
+        if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
         """Copies archive to new location."""

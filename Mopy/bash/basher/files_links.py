@@ -245,7 +245,7 @@ class File_Hide(ItemLink):
             #--Do it
             fileInfos.move_info(fileName, destDir)
         #--Refresh stuff
-        fileInfos.delete_Refresh(self.selected)
+        fileInfos.delete_Refresh(self.selected, check_existence=True)
         self.window.RefreshUI(refreshSaves=True)
 
 class File_ListMasters(OneItemLink):
