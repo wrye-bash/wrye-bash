@@ -3826,10 +3826,8 @@ class BashFrame(wx.Frame):
         self.notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
-        self.BindRefresh(bind=True)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
-        self.booting = True #--Prevent calling refresh on fileInfos twice when booting
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
         self.incompleteInstallError = False
@@ -3925,7 +3923,7 @@ class BashFrame(wx.Frame):
 
     #--Events ---------------------------------------------
     @balt.conversation
-    def RefreshData(self, event=None):
+    def RefreshData(self, event=None, booting=False):
         """Refreshes all data. Can be called manually, but is also triggered
         by window activation event.""" # hunt down - performance sink !
         #--Ignore deactivation events.
@@ -3936,7 +3934,7 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refreshBashTags()
         #--Check plugins.txt and mods directory...
-        if not self.booting and bosh.modInfos.refresh():
+        if not booting and bosh.modInfos.refresh():
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
@@ -3958,10 +3956,10 @@ class BashFrame(wx.Frame):
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Check savegames directory...
-        if not self.booting and bosh.saveInfos.refresh():
+        if not booting and bosh.saveInfos.refresh():
             popSaves = 'ALL'
         #--Check INI Tweaks...
-        if not self.booting and bosh.iniInfos.refresh():
+        if not booting and bosh.iniInfos.refresh():
             popInis = 'ALL'
         #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
         bosh.BSAInfos.check_bsa_timestamps()
@@ -3976,6 +3974,7 @@ class BashFrame(wx.Frame):
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
+        if booting: self.warnTooManyModsBsas()
         self.warn_load_order()
         self.warn_corrupted()
         self.warn_game_ini()
@@ -4237,12 +4236,10 @@ class BashApp(wx.App):
             splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
         self.SetTopWindow(frame)
         frame.Show()
-        @balt.conversation
-        def maximize(): frame.Maximize(settings['bash.frameMax'])
-        maximize()
+        frame.Maximize(settings['bash.frameMax'])
+        frame.RefreshData(booting=True)
         balt.ensureDisplayed(frame)
-        frame.warnTooManyModsBsas()
-        frame.booting = False
+        frame.BindRefresh(bind=True)
 
     @staticmethod
     def InitResources():
