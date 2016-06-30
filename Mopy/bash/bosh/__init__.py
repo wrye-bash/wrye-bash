@@ -33,6 +33,7 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 import cPickle
 import collections
 import copy
+import errno
 import os
 import re
 import string
@@ -6290,7 +6291,7 @@ class InstallersData(_DataStore):
                     else:
                         new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 except Exception as e:
-                    if isinstance(e, WindowsError) and e.errno == 2: ##: winerror also == 2
+                    if isinstance(e, OSError) and e.errno == errno.ENOENT:
                         continue # file does not exist
                     raise
         return new_sizeCrcDate, pending, pending_size

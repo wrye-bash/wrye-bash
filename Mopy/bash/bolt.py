@@ -873,14 +873,14 @@ class Path(object):
     def remove(self):
         try:
             if self.exists(): os.remove(self._s)
-        except WindowsError:
+        except OSError:
             # Clear RO flag
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
             os.remove(self._s)
     def removedirs(self):
         try:
             if self.exists(): os.removedirs(self._s)
-        except WindowsError:
+        except OSError:
             self.clearRO()
             os.removedirs(self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
@@ -919,7 +919,7 @@ class Path(object):
             destPath.remove()
         try:
             shutil.move(self._s,destPath._s)
-        except WindowsError:
+        except OSError:
             self.clearRO()
             shutil.move(self._s,destPath._s)
 
