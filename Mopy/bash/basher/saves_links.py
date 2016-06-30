@@ -272,8 +272,6 @@ class Save_RenamePlayer(EnabledLink):
     text = _(u'Rename Player...')
     help = _(u'Rename the Player character in a save game')
 
-    def _enable(self): return len(self.selected) != 0
-
     def Execute(self):
         saveInfo = bosh.saveInfos[self.selected[0]]
         # get new player name - must not be empty
@@ -348,8 +346,16 @@ class Save_Rename(UIList_Rename):
 class Save_Renumber(EnabledLink):
     """Renumbers a whole lot of save files."""
     text = _(u'Re-number Save(s)...')
-    help = _(u'Renumber a whole lot of save files')
-    def _enable(self): return len(self.selected) != 0
+    help = _(u'Renumber a whole lot of save files') + u'.  ' + _(
+        u'Saves must be named "Save <some_number><text>"')
+    _re_numbered_save = re.compile(ur'^(save )(\d*)(.*)', re.I | re.U)
+
+    def _enable(self):
+        self._matches = []
+        for save_path in self.selected:
+            save_match = self._re_numbered_save.match(save_path.s)
+            if save_match: self._matches.append((save_path, save_match))
+        return bool(self._matches)
 
     def Execute(self):
         #--File Info
@@ -358,22 +364,12 @@ class Save_Renumber(EnabledLink):
             prompt=_(u'Save Number'), title=_(u'Re-number Saves'), value=1,
             min=1, max=10000)
         if not newNumber: return
-        rePattern = re.compile(ur'^(save )(\d*)(.*)',re.I|re.U)
-        for index, name in enumerate(self.selected):
-            maPattern = rePattern.match(name.s)
-            if not maPattern: continue
+        for name, maPattern in self._matches:
             maPattern = maPattern.groups()
             if not maPattern[1]: continue
             newFileName = u"%s%d%s" % (maPattern[0],newNumber,maPattern[2])
             if newFileName != name.s:
-                oldPath = bosh.saveInfos.dir.join(name.s)
-                newPath = bosh.saveInfos.dir.join(newFileName)
-                if not newPath.exists():
-                    oldPath.moveTo(newPath)
-                    if GPath(oldPath.s[:-3]+bush.game.se.shortName.lower()).exists():
-                        GPath(oldPath.s[:-3]+bush.game.se.shortName.lower()).moveTo(GPath(newPath.s[:-3]+bush.game.se.shortName.lower()))
-                    if GPath(oldPath.s[:-3]+u'pluggy').exists():
-                        GPath(oldPath.s[:-3]+u'pluggy').moveTo(GPath(newPath.s[:-3]+u'pluggy'))
+                bosh.saveInfos.rename(name, GPath(newFileName))
                 newNumber += 1
         bosh.saveInfos.refresh()
         self.window.RefreshUI()
