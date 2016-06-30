@@ -6283,7 +6283,7 @@ class InstallersData(_DataStore):
                     else:
                         new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 except Exception as e:
-                    if isinstance(e, WindowsError) and e.errno == 2: ##: winerror also == 2
+                    if isinstance(e, OSError) and e.errno == 2: ##: winerror also == 2
                         continue # file does not exist
                     raise
         return new_sizeCrcDate, pending, pending_size
