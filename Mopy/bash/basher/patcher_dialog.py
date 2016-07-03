@@ -121,8 +121,8 @@ class PatchDialog(balt.Dialog):
         self.gConfigSizer = gConfigSizer = vSizer()
         sizer = vSizer(
             (hSizer(
-                (self.gPatchers,0,wx.EXPAND),
-                (self.gConfigSizer,1,wx.EXPAND|wx.LEFT,4),
+                (self.gPatchers,0,wx.EXPAND), hspace(),
+                (self.gConfigSizer,1,wx.EXPAND),
                 ),1,wx.EXPAND|wx.ALL,4),
             (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
             (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),

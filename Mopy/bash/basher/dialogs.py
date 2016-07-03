@@ -85,8 +85,7 @@ class ColorDialog(balt.Dialog):
         self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED,self.OnColorPicker)
         #--Layout
         sizer = vSizer(
-            (hSizer(
-                (self.comboBox,1,wx.EXPAND|wx.RIGHT,5), self.picker,
+            (hSizer((self.comboBox,1,wx.EXPAND), hspace(5), self.picker,
                 ),0,wx.EXPAND|wx.ALL,5),
             (self.textCtrl,1,wx.EXPAND|wx.ALL,5),
             (hSizer(self.defaultAll, hspace(5),

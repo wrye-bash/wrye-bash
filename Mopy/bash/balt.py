@@ -613,11 +613,10 @@ def _continueDialog(parent, message, title, checkBoxText):
         gCheckBox = checkBox(dialog, checkBoxText)
         #--Layout
         sizer = vSizer(
-            (hSizer(
-                (icon, 0, wx.ALL, 6),
-                (StaticText(dialog, message, noAutoResize=True), 1,
-                    wx.EXPAND | wx.LEFT, 6), ),
-             1, wx.EXPAND | wx.ALL, 6),
+            (hSizer((icon, 0, wx.ALL, 6), hspace(6),
+                    (StaticText(dialog, message, noAutoResize=True), 1,
+                     wx.EXPAND)
+                    ), 1, wx.EXPAND | wx.ALL, 6),
             (gCheckBox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6),
             ok_and_cancel_sizer(dialog),
             )

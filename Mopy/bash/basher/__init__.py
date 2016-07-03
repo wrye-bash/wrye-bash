@@ -2322,8 +2322,8 @@ class InstallersList(balt.UIList):
                                      _(u"Don't show this in the future."))
                 sizer = vSizer(
                     (hSizer(
-                        (icon,0,wx.ALL,6),
-                        (StaticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
+                        (icon,0,wx.ALL,6), hspace(6),
+                        (StaticText(dialog,message),1,wx.EXPAND),
                         ),1,wx.EXPAND|wx.ALL,6),
                     (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
                     (hSizer(
