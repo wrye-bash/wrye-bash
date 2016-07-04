@@ -25,9 +25,9 @@
 import locale
 import sys
 import wx
-from ..balt import ItemLink, vSizer, hSizer, spacer, Button, AppendableLink, \
+from ..balt import ItemLink, vSizer, hSizer, hspacer, Button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
-    StaticText, tooltip, Link, staticBitmap
+    StaticText, tooltip, Link, staticBitmap, hspace
 from .. import barb, bush, balt, bass, bolt, env
 from ..bolt import deprint, GPath
 from . import BashFrame, BashStatusBar
@@ -61,18 +61,18 @@ class Settings_BackupSettings(ItemLink):
         dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
         icon = staticBitmap(dialog)
         sizer = vSizer(
-            (hSizer((icon,0,wx.ALL,6),
+            (hSizer((icon,0,wx.ALL,6), hspace(6),
                     (StaticText(dialog,_(u'Do you want to backup any images?'),
-                                noAutoResize=True),1,wx.EXPAND|wx.LEFT,6),
+                                noAutoResize=True),1,wx.EXPAND),
                     ),1,wx.EXPAND|wx.ALL,6),
-            (hSizer(spacer,
+            (hSizer(hspacer,
                     Button(dialog, label=_(u'Backup All Images'),
-                    onButClick=lambda: dialog.EndModal(2)),
-                    (Button(dialog, label=_(u'Backup Changed Images'),
-                    onButClick=lambda: dialog.EndModal(1)), 0, wx.LEFT, 4),
-                    (Button(dialog, label=_(u'None'),
-                    onButClick=lambda: dialog.EndModal(0)), 0, wx.LEFT, 4),
-                    ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                           onButClick=lambda: dialog.EndModal(2)), hspace(),
+                    Button(dialog, label=_(u'Backup Changed Images'),
+                           onButClick=lambda: dialog.EndModal(1)), hspace(),
+                    Button(dialog, label=_(u'None'),
+                           onButClick=lambda: dialog.EndModal(0)),
+                    ),0,wx.EXPAND|wx.ALL^wx.TOP,6),
             )
         dialog.SetSizer(sizer)
         with dialog: images = dialog.ShowModal()

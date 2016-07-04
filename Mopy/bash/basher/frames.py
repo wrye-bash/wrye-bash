@@ -28,9 +28,9 @@ import string
 import wx
 from .. import bass, balt, bosh, bolt, load_order
 from ..bass import Resources
-from ..balt import TextCtrl, StaticText, vSizer, hSizer, spacer, Button, \
+from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
-    CancelButton
+    CancelButton, hspace, vspace
 from ..bolt import GPath, BoltError, deprint
 from ..bosh import omods
 
@@ -133,7 +133,7 @@ class DocBrowser(wx.Frame):
         sizer = hSizer(
             (vSizer(
                 (self.modNameBox,0,wx.GROW),
-                (self.modNameList,1,wx.GROW|wx.TOP,4),
+                vspace(), (self.modNameList,1,wx.GROW),
                 ),0,wx.GROW|wx.TOP|wx.RIGHT,4),
             (self.mainSizer,1,wx.GROW),
             )
@@ -452,18 +452,18 @@ class ModChecker(wx.Frame):
                 (hSizer(
                     gBackButton,
                     gForwardButton,
-                    (self.gShowModList,0,wx.LEFT,4),
-                    (self.gShowRuleSets,0,wx.LEFT,4),
-                    (self.gShowNotes,0,wx.LEFT,4),
-                    (self.gShowConfig,0,wx.LEFT,4),
-                    (self.gShowSuggest,0,wx.LEFT,4),
+                    hspace(), self.gShowModList,
+                    hspace(), self.gShowRuleSets,
+                    hspace(), self.gShowNotes,
+                    hspace(), self.gShowConfig,
+                    hspace(), self.gShowSuggest,
                     ),0,wx.ALL|wx.EXPAND,4),
                 (hSizer(
-                    (self.gShowVersion,0,wx.LEFT,4),
-                    (self.gShowCRC,0,wx.LEFT,4),
-                    (self.gScanDirty,0,wx.LEFT,4),
-                    (self.gCopyText,0,wx.LEFT,4),
-                    spacer,
+                    hspace(), self.gShowVersion,
+                    hspace(), self.gShowCRC,
+                    hspace(), self.gScanDirty,
+                    hspace(), self.gCopyText,
+                    hspacer,
                     gUpdateButton,
                     ),0,wx.ALL|wx.EXPAND,4),
                 )
@@ -579,10 +579,9 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
             (StaticText(self,_(u"Abstract")),0,wx.LEFT|wx.RIGHT,4),
             (self.gAbstract,1,wx.EXPAND|wx.ALL^wx.BOTTOM,4),
             (hSizer(
-                spacer,
-                (SaveButton(self, onButClick=self.DoSave, default=True),0,),
-                (CancelButton(self, onButClick=self.DoCancel), 0,
-                 wx.LEFT, 4),
+                hspacer, SaveButton(self, onButClick=self.DoSave,
+                                    default=True),
+                hspace(), CancelButton(self, onButClick=self.DoCancel),
                 ),0,wx.EXPAND|wx.ALL,4),
             )
         #--Done

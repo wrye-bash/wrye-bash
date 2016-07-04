@@ -80,9 +80,9 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl
+    SaveButton, CancelButton, INIListCtrl, hspace, vspace
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
-from ..balt import spacer, hSizer, vSizer
+from ..balt import hspacer, hSizer, vSizer
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
 from ..balt import splitterStyle
@@ -193,7 +193,7 @@ class NotebookPanel(wx.Panel):
         self.uiList.autosizeColumns()
         self.SetStatusCount()
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc."""
         if hasattr(self, 'listData'): # must be a _DataStore instance
@@ -224,10 +224,10 @@ class _DetailsViewMixin(object):
         super(_DetailsViewMixin, self).RefreshUIColors()
         if self.detailsPanel: self.detailsPanel.RefreshUIColors()
 
-    def ClosePanel(self):
-        super(_DetailsViewMixin, self).ClosePanel()
+    def ClosePanel(self, destroy=False):
+        super(_DetailsViewMixin, self).ClosePanel(destroy)
         if self.detailsPanel and self.detailsPanel is not self:
-            self.detailsPanel.ClosePanel()
+            self.detailsPanel.ClosePanel(destroy)
 
     def ShowPanel(self):
         super(_DetailsViewMixin, self).ShowPanel()
@@ -263,11 +263,11 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         if not hasattr(self, '_firstShow'): # if the panel was shown
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        super(SashPanel, self).ClosePanel()
+        super(SashPanel, self).ClosePanel(destroy)
 
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
@@ -280,9 +280,9 @@ class SashTankPanel(SashPanel):
         self.detailsItem = None
         super(SashTankPanel,self).__init__(parent)
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         self.SaveDetails()
-        super(SashTankPanel, self).ClosePanel()
+        super(SashTankPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -664,17 +664,9 @@ class INITweakLineCtrl(INIListCtrl):
     def __init__(self, parent, iniContents):
         super(INITweakLineCtrl, self).__init__(parent)
         self.tweakLines = []
-        self.iniContents = iniContents
+        self.iniContents = self._contents = iniContents
 
-    def OnSelect(self, event):
-        index = event.GetIndex()
-        iniLine = self.tweakLines[index][5]
-        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-        if iniLine != -1:
-            self.iniContents.EnsureVisible(iniLine)
-            scroll = iniLine - self.iniContents.GetScrollPos(wx.VERTICAL) - index
-            self.iniContents.ScrollLines(scroll)
-        event.Skip()
+    def _get_selected_line(self, index): return self.tweakLines[index][5]
 
     def RefreshTweakLineCtrl(self, tweakPath):
         if tweakPath is None:
@@ -720,18 +712,12 @@ class INITweakLineCtrl(INIListCtrl):
 class INILineCtrl(INIListCtrl):
 
     def SetTweakLinesCtrl(self, control):
-        self.tweakContents = control
+        self._contents = control
 
-    def OnSelect(self, event):
-        index = event.GetIndex()
-        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
-        for i,line in enumerate(self.tweakContents.tweakLines):
-            if index == line[5]:
-                self.tweakContents.EnsureVisible(i)
-                scroll = i - self.tweakContents.GetScrollPos(wx.VERTICAL) - index
-                self.tweakContents.ScrollLines(scroll)
-                break
-        event.Skip()
+    def _get_selected_line(self, index):
+        for i, line in enumerate(self._contents.tweakLines):
+            if index == line[5]: return i
+        return -1
 
     def RefreshIniContents(self, resetScroll=False):
         num = self.GetItemCount()
@@ -1157,6 +1143,16 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
                                                         style=splitterStyle)
         self.masterPanel = wx.Panel(self.subSplitter)
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
+        #--Masters
+        mod_or_save_panel = parent.GetParent().GetParent()
+        self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
+                                 panel=mod_or_save_panel, detailsPanel=self)
+        mastersSizer = vSizer(
+            vspace(), hSizer(StaticText(self.masterPanel,_(u"Masters:"))),
+            (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
+            vspace(), hSizer(self.save, hspace(), self.cancel))
+        mastersSizer.SetSizeHints(self.masterPanel)
+        self.masterPanel.SetSizer(mastersSizer)
 
     def ShowPanel(self): ##: does not call super
         if hasattr(self, '_firstShow'):
@@ -1169,7 +1165,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
             del self._firstShow
         self.uilist.autosizeColumns()
 
-    def ClosePanel(self): ##: does not call super
+    def ClosePanel(self, destroy=False): ##: does not call super
         if not hasattr(self, '_firstShow'):
             # Mod details Sash Positions
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
@@ -1191,7 +1187,6 @@ class ModDetails(_SashDetailsPanel):
 
     def __init__(self, parent):
         super(ModDetails, self).__init__(parent)
-        modPanel = parent.GetParent().GetParent()
         subSplitter, masterPanel = self.subSplitter, self.masterPanel
         top, bottom = self.top, self.bottom
         #--Data
@@ -1214,45 +1209,32 @@ class ModDetails(_SashDetailsPanel):
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
                                     onText=self.OnDescrEdit, maxChars=512)
-        #--Masters
-        self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=modPanel, detailsPanel=self)
         #--Bash tags
         tagPanel = wx.Panel(subSplitter)
         self.allTags = bosh.allTags
         self.gTags = RoTextCtrl(tagPanel, autotooltip=False,
                                 size=(textWidth, 100))
         #--Layout
-        detailsSizer = vSizer(
+        detailsSizer = vSizer(vspace(),
             (hSizer(
-                (StaticText(top,_(u"File:")),0,wx.TOP,4),
-                spacer,
-                (self.version,0,wx.TOP|wx.RIGHT,4)
+                (StaticText(top,_(u"File:"))), hspacer,
+                self.version, hspace()
                 ),0,wx.EXPAND),
             (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((StaticText(top,_(u"Author:")),0,wx.TOP,4)),0,wx.EXPAND),
+            vspace(), (hSizer(StaticText(top,_(u"Author:"))),0,wx.EXPAND),
             (hSizer((self.author,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((StaticText(top,_(u"Modified:")),0,wx.TOP,4)),0,wx.EXPAND),
+            vspace(), (hSizer(StaticText(top,_(u"Modified:"))),0,wx.EXPAND),
             (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
-            (hSizer((StaticText(top,_(u"Description:")),0,wx.TOP,4)),0,wx.EXPAND),
+            vspace(), (hSizer(StaticText(top,_(u"Description:"))),0,wx.EXPAND),
             (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
         subSplitter.SetMinimumPaneSize(100)
         subSplitter.SplitHorizontally(masterPanel,tagPanel)
         subSplitter.SetSashGravity(0.5)
-        mastersSizer = vSizer(
-            (hSizer((StaticText(masterPanel,_(u"Masters:")),0,wx.TOP,4)),0,wx.EXPAND),
-            (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
-            (hSizer(
-                self.save,
-                (self.cancel,0,wx.LEFT,4)
-                ),0,wx.EXPAND|wx.TOP,4),)
         tagsSizer = vSizer(
-            (StaticText(tagPanel,_(u"Bash Tags:")),0,wx.TOP,4),
+            vspace(), (StaticText(tagPanel,_(u"Bash Tags:"))),
             (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
-        mastersSizer.SetSizeHints(masterPanel)
-        masterPanel.SetSizer(mastersSizer)
         tagsSizer.SetSizeHints(masterPanel)
         tagPanel.SetSizer(tagsSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
@@ -1553,7 +1535,7 @@ class INIPanel(SashPanel):
                     ((4,0),0),
                     (self.button,0,wx.ALIGN_TOP,0),
                     (self.editButton,0,wx.ALIGN_TOP,0),
-                    ),0,wx.EXPAND|wx.BOTTOM,4),
+                    ),0,wx.EXPAND), vspace(),
                 (self.iniContents,1,wx.EXPAND),
                 )
         lSizer = hSizer(
@@ -1561,9 +1543,9 @@ class INIPanel(SashPanel):
             )
         rSizer = hSizer(
             (vSizer(
-                (self.tweakName,0,wx.EXPAND|wx.TOP,6),
+                vspace(6), (self.tweakName,0,wx.EXPAND),
                 (self.tweakContents,1,wx.EXPAND),
-                ),1,wx.EXPAND|wx.RIGHT,4),
+                ),1,wx.EXPAND), hspace(),
             (iniSizer,1,wx.EXPAND),
             )
         iniSizer.SetSizeHints(right)
@@ -1732,11 +1714,12 @@ class INIPanel(SashPanel):
             self.lastDir = path.shead
         self.AddOrSelectIniDropDown(path)
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         settings['bash.ini.choices'] = self.choices
         settings['bash.ini.choice'] = self.choice
         settings['bash.ini.lastDir'] = self.lastDir
-        super(INIPanel, self).ClosePanel()
+        if destroy: self.comboBox.Unbind(wx.EVT_SIZE)
+        super(INIPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class ModPanel(SashPanel):
@@ -1893,7 +1876,6 @@ class SaveDetails(_SashDetailsPanel):
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
-        savePanel = parent.GetParent().GetParent()
         subSplitter, masterPanel = self.subSplitter, self.masterPanel
         top, bottom = self.top, self.bottom
         #--Data
@@ -1909,27 +1891,16 @@ class SaveDetails(_SashDetailsPanel):
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
         notePanel = wx.Panel(subSplitter)
-        #--Masters
-        self.uilist = MasterList(masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=savePanel, detailsPanel=self)
         #--Save Info
         self.gInfo = TextCtrl(notePanel, size=(textWidth, 100), multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
         detailsSizer = vSizer(
-            (self.file,0,wx.EXPAND|wx.TOP,4),
-            (hSizer(
-                (self.playerInfo,1,wx.EXPAND),
-                (self.gCoSaves,0,wx.EXPAND),
-                ),0,wx.EXPAND|wx.TOP,4),
-            (self.picture,1,wx.TOP|wx.EXPAND,4),
-            )
-        mastersSizer = vSizer(
-            (self.uilist,1,wx.EXPAND|wx.TOP,4),
-            (hSizer(
-                self.save,
-                (self.cancel,0,wx.LEFT,4),
-                )),
+            vspace(), (self.file,0,wx.EXPAND),
+            vspace(), (hSizer(
+                (self.playerInfo,1,wx.EXPAND), (self.gCoSaves,0,wx.EXPAND),)
+            ,0,wx.EXPAND),
+            vspace(), (self.picture,1,wx.EXPAND),
             )
         noteSizer = vSizer(
             (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
@@ -1939,8 +1910,6 @@ class SaveDetails(_SashDetailsPanel):
         subSplitter.SetMinimumPaneSize(100)
         subSplitter.SplitHorizontally(masterPanel,notePanel)
         subSplitter.SetSashGravity(1.0)
-        mastersSizer.SetSizeHints(masterPanel)
-        masterPanel.SetSizer(mastersSizer)
         noteSizer.SetSizeHints(masterPanel)
         notePanel.SetSizer(noteSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
@@ -2088,9 +2057,9 @@ class SavePanel(SashPanel):
         self.uiList.RefreshUI()
         super(SavePanel, self).RefreshUIColors()
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         bosh.saveInfos.profiles.save()
-        super(SavePanel, self).ClosePanel()
+        super(SavePanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class InstallersList(balt.UIList):
@@ -2341,19 +2310,19 @@ class InstallersList(balt.UIList):
                                      _(u"Don't show this in the future."))
                 sizer = vSizer(
                     (hSizer(
-                        (icon,0,wx.ALL,6),
-                        (StaticText(dialog,message),1,wx.EXPAND|wx.LEFT,6),
+                        (icon,0,wx.ALL,6), hspace(6),
+                        (StaticText(dialog,message),1,wx.EXPAND),
                         ),1,wx.EXPAND|wx.ALL,6),
-                    (gCheckBox,0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                    (gCheckBox,0,wx.EXPAND|wx.ALL^wx.TOP,6),
                     (hSizer(
-                        spacer,
+                        hspacer,
                         balt.Button(dialog,label=_(u'Move'),
                                     onButClick=lambda: dialog.EndModal(1)),
-                        (balt.Button(dialog,label=_(u'Copy'),
-                                     onButClick=lambda: dialog.EndModal(2)),
-                         0,wx.LEFT,4),
-                        (CancelButton(dialog),0,wx.LEFT,4),
-                        ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,6),
+                        hspace(),
+                        balt.Button(dialog, label=_(u'Copy'),
+                                    onButClick=lambda: dialog.EndModal(2)),
+                        hspace(), CancelButton(dialog),
+                        ),0,wx.EXPAND|wx.ALL^wx.TOP,6),
                     )
                 dialog.SetSizer(sizer)
                 result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
@@ -2786,11 +2755,11 @@ class InstallersPanel(SashTankPanel):
         active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
         return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
 
-    def ClosePanel(self):
+    def ClosePanel(self, destroy=False):
         if not hasattr(self, '_firstShow'): # save comments text box size
             sashPos = self.commentsSplitter.GetSashPosition()
             settings['bash.installers.commentsSplitterSashPos'] = sashPos
-        super(InstallersPanel, self).ClosePanel()
+        super(InstallersPanel, self).ClosePanel(destroy)
 
     #--Details view (if it exists)
     def SaveDetails(self):
@@ -3129,7 +3098,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
 
-    def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
     def ShowPanel(self): pass
 
 class ScreensPanel(SashPanel):
@@ -3204,17 +3173,15 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.gInfo = TextCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
-        nameSizer = vSizer(
-            (hSizer((StaticText(self.top, _(u'File:')), 0, wx.TOP, 4)), 0,
-            wx.EXPAND), (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND), )
+        nameSizer = vSizer(vspace(),
+            (hSizer(StaticText(self.top, _(u'File:'))), 0, wx.EXPAND),
+            (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND))
         nameSizer.SetSizeHints(self.top)
         self.top.SetSizer(nameSizer)
         infoSizer = vSizer(
-        (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
-        (hSizer(
-                self.save,
-                (self.cancel,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.TOP,4),)
+            (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
+            vspace(),
+        (hSizer(self.save, hspace(), self.cancel,),0,wx.EXPAND),)
         infoSizer.SetSizeHints(self.bottom)
         self.bottom.SetSizer(infoSizer)
 
@@ -3291,7 +3258,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             self.SetFile(None)
         self.bsaList.RefreshUI()
 
-    def ClosePanel(self): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
+    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
     def ShowPanel(self): pass
 
 #------------------------------------------------------------------------------
@@ -3313,8 +3280,8 @@ class BSAPanel(SashPanel):
         left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
         self.detailsPanel.Fit()
 
-    def ClosePanel(self):
-        super(BSAPanel, self).ClosePanel()
+    def ClosePanel(self, destroy=False):
+        super(BSAPanel, self).ClosePanel(destroy)
         # bosh.bsaInfos.profiles.save()
 
 #------------------------------------------------------------------------------
@@ -3369,7 +3336,7 @@ class PeoplePanel(SashTankPanel):
                 (self.gName,1,wx.GROW),
                 (self.gKarma,0,wx.GROW),
                 ),0,wx.GROW),
-            (self.gText,1,wx.GROW|wx.TOP,4),
+            vspace(), (self.gText, 1, wx.GROW),
             ))
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
         wx.LayoutAlgorithm().LayoutWindow(self, right)
@@ -3860,7 +3827,7 @@ class BashFrame(wx.Frame):
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = self.oblivionIniMissing = False
-        self.notebook = notebook = BashNotebook(self)
+        self.notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         self.BindRefresh(bind=True)
@@ -3870,9 +3837,6 @@ class BashFrame(wx.Frame):
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
         self.incompleteInstallError = False
-        #--Layout
-        sizer = vSizer((notebook,1,wx.GROW))
-        self.SetSizer(sizer)
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -4139,14 +4103,14 @@ class BashFrame(wx.Frame):
         """Handle Close event. Save application data."""
         try:
             self.BindRefresh(bind=False)
-            self.SaveSettings()
+            self.SaveSettings(destroy=True)
         except: ##: this has swallowed exceptions since forever
                 deprint(_(u'An error occurred while trying to save settings:'),
                         traceback=True)
         finally:
             self.Destroy()
 
-    def SaveSettings(self):
+    def SaveSettings(self, destroy=False):
         """Save application data."""
         # Purge some memory
         bolt.GPathPurge()
@@ -4158,12 +4122,14 @@ class BashFrame(wx.Frame):
             settings['bash.frameSize'] = tuple(self.GetSize())
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
-        for index in range(self.notebook.GetPageCount()):
+        # use tabInfo below so we save settings of panels that the user closed
+        for _k, (_cname, name, panel) in tabInfo.iteritems():
+            if panel is None: continue
             try:
-                self.notebook.GetPage(index).ClosePanel()
+                panel.ClosePanel(destroy)
             except:
-                deprint(_(u'An error occurred while trying to save settings:'),
-                        traceback=True)
+                deprint(u'An error occurred while saving settings of '
+                        u'the %s panel:' % name, traceback=True)
         settings.save()
 
     @staticmethod
@@ -4246,8 +4212,8 @@ class BashApp(wx.App):
         #--OnStartup SplashScreen and/or Progress
         #   Progress gets hidden behind splash by default, since it's not very informative anyway
         splashScreen = None
-        progress = wx.ProgressDialog(u'Wrye Bash',_(u'Initializing')+u' '*10,
-             style=wx.PD_AUTO_HIDE|wx.PD_APP_MODAL|wx.PD_SMOOTH)
+        progress = balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
+                                 elapsed=False)
         # Is splash enabled in ini ?
         if bass.inisettings['EnableSplashScreen']:
             if bass.dirs['images'].join(u'wryesplash.png').exists():
@@ -4259,12 +4225,12 @@ class BashApp(wx.App):
         #--Constants
         self.InitResources()
         #--Init Data
-        progress.Update(20,_(u'Initializing Data'))
+        progress(0.2, _(u'Initializing Data'))
         self.InitData(progress)
-        progress.Update(70,_(u'Initializing Version'))
+        progress(0.7, _(u'Initializing Version'))
         self.InitVersion()
         #--MWFrame
-        progress.Update(80,_(u'Initializing Windows'))
+        progress(0.8, _(u'Initializing Windows'))
         frame = BashFrame( # Link.Frame global set here
              pos=settings['bash.framePos'],
              size=settings['bash.frameSize'])
@@ -4279,9 +4245,10 @@ class BashApp(wx.App):
         maximize()
         balt.ensureDisplayed(frame)
         frame.warnTooManyModsBsas()
-        return frame
+        frame.booting = False
 
-    def InitResources(self):
+    @staticmethod
+    def InitResources():
         """Init application resources."""
         Resources.bashBlue = Resources.bashBlue.GetIconBundle()
         Resources.bashRed = Resources.bashRed.GetIconBundle()
@@ -4289,17 +4256,18 @@ class BashApp(wx.App):
         Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
         Resources.fonts = balt.fonts()
 
-    def InitData(self,progress):
+    @staticmethod
+    def InitData(progress):
         """Initialize all data. Called by Init()."""
-        progress.Update(5,_(u'Initializing ModInfos'))
+        progress(0.05, _(u'Initializing ModInfos'))
         bosh.gameInis = tuple(bosh.OblivionIni(x) for x in bush.game.iniFiles)
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
-        progress.Update(30,_(u'Initializing SaveInfos'))
+        progress(0.3, _(u'Initializing SaveInfos'))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()
-        progress.Update(40,_(u'Initializing IniInfos'))
+        progress(0.4, _(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh()
         # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
@@ -4308,10 +4276,11 @@ class BashApp(wx.App):
         #--Patch check
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
-                progress.Update(68,_(u'Generating Blank Bashed Patch'))
+                progress(0.68, _(u'Generating Blank Bashed Patch'))
                 bosh.modInfos.generateNextBashedPatch()
 
-    def InitVersion(self):
+    @staticmethod
+    def InitVersion():
         """Perform any version to version conversion. Called by Init()."""
         #--Renames dictionary: Strings to Paths.
         if settings['bash.version'] < 40:

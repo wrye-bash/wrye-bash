@@ -29,9 +29,9 @@ from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import bass, balt, bosh, bolt, bush, env
 from ..bass import Resources
-from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, spacer, \
+from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton, ApplyButton
+    CancelButton, ApplyButton, hspace, vspace
 from ..bosh import faces
 
 class ColorDialog(balt.Dialog):
@@ -85,18 +85,17 @@ class ColorDialog(balt.Dialog):
         self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED,self.OnColorPicker)
         #--Layout
         sizer = vSizer(
-            (hSizer(
-                (self.comboBox,1,wx.EXPAND|wx.RIGHT,5), self.picker,
+            (hSizer((self.comboBox,1,wx.EXPAND), hspace(5), self.picker,
                 ),0,wx.EXPAND|wx.ALL,5),
             (self.textCtrl,1,wx.EXPAND|wx.ALL,5),
-            (hSizer(
-                (self.defaultAll,0,wx.RIGHT,5),
-                (self.applyAll,0,wx.RIGHT,5), self.export_config,
-                ),0,wx.EXPAND|wx.ALL,5),
-            (hSizer(
-                (self.default,0,wx.RIGHT,5),
-                (self.apply,0,wx.RIGHT,5), self.importConfig, spacer, self.ok,
-                ),0,wx.EXPAND|wx.ALL,5),
+            (hSizer(self.defaultAll, hspace(5),
+                    self.applyAll, hspace(5),
+                    self.export_config,
+                    ),0,wx.EXPAND|wx.ALL,5),
+            (hSizer(self.default, hspace(5),
+                    self.apply, hspace(5),
+                    self.importConfig, hspacer, self.ok,
+                    ),0,wx.EXPAND|wx.ALL,5),
             )
         self.comboBox.SetFocus()
         self.SetSizer(sizer)
@@ -309,14 +308,14 @@ class ImportFaceDialog(balt.Dialog):
         sizer = hSizer(
             (self.listBox,1,wx.EXPAND|wx.TOP,4),
             (vSizer(
-                self.picture,
+                self.picture, vspace(),
                 (hSizer(
                     (fgSizer,1),
                     (vSizer(
                         (importButton,0,wx.ALIGN_RIGHT),
-                        (CancelButton(self),0,wx.TOP,4),
+                        vspace(), CancelButton(self),
                         )),
-                    ),0,wx.EXPAND|wx.TOP,4),
+                    ),0,wx.EXPAND),
                 ),0,wx.EXPAND|wx.ALL,4),
             )
         #--Done
@@ -392,10 +391,10 @@ class CreateNewProject(balt.Dialog):
         okButton = OkButton(self, onButClickEventful=self.OnClose)
         cancelButton = CancelButton(self, onButClickEventful=self.OnCancel)
         # Panel Layout
-        hsizer = wx.BoxSizer(wx.HORIZONTAL)
+        hsizer = balt.hSizer()
         hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
         hsizer.Add(cancelButton,0,wx.ALL|wx.ALIGN_CENTER,10)
-        vsizer = wx.BoxSizer(wx.VERTICAL)
+        vsizer = balt.vSizer()
         vsizer.Add(StaticText(self,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
         vsizer.Add(self.textName,0,wx.ALL|wx.ALIGN_CENTER|wx.EXPAND,2)
         vsizer.Add(StaticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
@@ -405,7 +404,7 @@ class CreateNewProject(balt.Dialog):
         vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)
         vsizer.Add(self.checkDocs,0,wx.ALL|wx.ALIGN_TOP,5)
         # vsizer.Add(self.checkScreenshot,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(wx.StaticLine(self,wx.ID_ANY))
+        vsizer.Add(wx.StaticLine(self))
         vsizer.AddStretchSpacer()
         vsizer.Add(hsizer,0,wx.ALIGN_CENTER)
         vsizer.AddStretchSpacer()

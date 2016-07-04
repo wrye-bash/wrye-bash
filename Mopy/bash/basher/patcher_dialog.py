@@ -32,9 +32,9 @@ from datetime import timedelta
 from . import SetUAC, BashFrame
 from .. import bass, bosh, bolt, balt, env, load_order
 from ..bass import Resources
-from ..balt import StaticText, vSizer, hSizer, spacer, Link, OkButton, \
+from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
-    RevertToSavedButton, RevertButton
+    RevertToSavedButton, RevertButton, hspace, vspace
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
     SkipError, deprint, Path
 from ..patcher import configIsCBash, exportConfig
@@ -121,25 +121,23 @@ class PatchDialog(balt.Dialog):
         self.gConfigSizer = gConfigSizer = vSizer()
         sizer = vSizer(
             (hSizer(
-                (self.gPatchers,0,wx.EXPAND),
-                (self.gConfigSizer,1,wx.EXPAND|wx.LEFT,4),
+                (self.gPatchers,0,wx.EXPAND), hspace(),
+                (self.gConfigSizer,1,wx.EXPAND),
                 ),1,wx.EXPAND|wx.ALL,4),
             (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
-            (wx.StaticLine(self),0,wx.EXPAND|wx.BOTTOM,4),
-            (hSizer(
-                spacer,
-                (self.gExportConfig,0,wx.LEFT,4),
-                (self.gImportConfig,0,wx.LEFT,4),
-                (self.gRevertConfig,0,wx.LEFT,4),
-                (self.gRevertToDefault,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4),
-            (hSizer(
-                spacer,
+            (wx.StaticLine(self),0,wx.EXPAND), vspace(),
+            (hSizer(hspacer,
+                hspace(), self.gExportConfig,
+                hspace(), self.gImportConfig,
+                hspace(), self.gRevertConfig,
+                hspace(), self.gRevertToDefault,
+                ),0,wx.EXPAND|wx.ALL^wx.TOP,4),
+            (hSizer(hspacer,
                 self.gExecute,
-                (self.gSelectAll,0,wx.LEFT,4),
-                (self.gDeselectAll,0,wx.LEFT,4),
-                (cancelButton,0,wx.LEFT,4),
-                ),0,wx.EXPAND|wx.LEFT|wx.RIGHT|wx.BOTTOM,4)
+                hspace(), self.gSelectAll,
+                hspace(), self.gDeselectAll,
+                hspace(), cancelButton,
+                ),0,wx.EXPAND|wx.ALL^wx.TOP,4)
             )
         self.SetSizer(sizer)
         self.SetIcons(Resources.bashMonkey)

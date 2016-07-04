@@ -26,7 +26,7 @@ import string
 import wx
 from .. import bass, bosh, bush, balt
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, Links, \
-    SeparatorLink, CheckLink, Link
+    SeparatorLink, CheckLink, Link, vspace
 from ..bolt import GPath
 
 class _PatcherPanel(object):
@@ -93,7 +93,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         gSizer = vSizer(
             gText,
             #(gExample,0,wx.EXPAND|wx.TOP,8),
-            (self.gAliases,1,wx.EXPAND|wx.TOP,4))
+            vspace(), (self.gAliases, 1, wx.EXPAND))
         gConfigPanel.SetSizer(gSizer)
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return self.gConfigPanel
@@ -151,9 +151,9 @@ class _ListPatcherPanel(_PatcherPanel):
                                   onButClick=self.OnRemove)
             self.OnAutomatic()
             gManualSizer = (vSizer(
-                (self.gAuto,0,wx.TOP,2),
-                (self.gAdd,0,wx.TOP,12),
-                (self.gRemove,0,wx.TOP,4),
+                vspace(2), self.gAuto,
+                vspace(12), self.gAdd,
+                vspace(4), self.gRemove,
                 ),0,wx.EXPAND|wx.LEFT,4)
         if self.selectCommands:
             self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
@@ -161,18 +161,18 @@ class _ListPatcherPanel(_PatcherPanel):
             self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
                                        onButClick=self.DeselectAll)
             gSelectSizer = (vSizer(
-                (self.gSelectAll,0,wx.TOP,12),
-                (self.gDeselectAll,0,wx.TOP,4),
+                vspace(12), self.gSelectAll,
+                vspace(4), self.gDeselectAll,
                 ),0,wx.EXPAND|wx.LEFT,4)
         else: gSelectSizer = None
         #--Layout
         gSizer = vSizer(
-            (gText,),
-            (balt.hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+            (gText,), vspace(),
+            (balt.hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
                 gManualSizer,gSelectSizer,
-                ),1,wx.EXPAND|wx.TOP,4),
+                ),1,wx.EXPAND),
             )
         gConfigPanel.SetSizer(gSizer)
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
@@ -345,20 +345,20 @@ class _TweakPatcherPanel(_PatcherPanel):
             self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
                                        onButClick=self.TweakDeselectAll)
             gSelectSizer = (vSizer(
-                (self.gSelectAll,0,wx.TOP,12),
-                (self.gDeselectAll,0,wx.TOP,4),
+                 vspace(12), self.gSelectAll,
+                 vspace(4), self.gDeselectAll,
                 ),0,wx.EXPAND|wx.LEFT,4)
         else: gSelectSizer = None
         #--Init GUI
         self.SetTweaks()
         #--Layout
         gSizer = vSizer(
-            (gText,),
-            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+            (gText,), vspace(),
+            (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
                 gSelectSizer,
-                ),1,wx.EXPAND|wx.TOP,4),
+                ),1,wx.EXPAND),
             )
         gConfigPanel.SetSizer(gSizer)
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
@@ -585,28 +585,28 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
                                    onButClick=self.DeselectAll)
         gSelectSizer = (vSizer(
-            (self.gSelectAll,0,wx.TOP,12),
-            (self.gDeselectAll,0,wx.TOP,4),
+             vspace(12), self.gSelectAll,
+             vspace(4), self.gDeselectAll,
             ),0,wx.EXPAND|wx.LEFT,4)
         self.gTweakSelectAll = Button(gConfigPanel, _(u'Select All'),
                                       onButClick=self.TweakSelectAll)
         self.gTweakDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
                                         onButClick=self.TweakDeselectAll)
         gTweakSelectSizer = (vSizer(
-            (self.gTweakSelectAll,0,wx.TOP,12),
-            (self.gTweakDeselectAll,0,wx.TOP,4),
+             vspace(12), self.gTweakSelectAll,
+             vspace(4), self.gTweakDeselectAll,
             ),0,wx.EXPAND|wx.LEFT,4)
         #--Layout
         gSizer = vSizer(
-            (gText,),
-            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.listLabel),
+            (gText,), vspace(),
+            (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
-                gSelectSizer,),1,wx.EXPAND|wx.TOP,4),
-            (hsbSizer((gConfigPanel,wx.ID_ANY,self.__class__.subLabel),
+                gSelectSizer,),1,wx.EXPAND), vspace(),
+            (hsbSizer(gConfigPanel, self.__class__.subLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
-                gTweakSelectSizer,),1,wx.EXPAND|wx.TOP,4),
+                gTweakSelectSizer,),1,wx.EXPAND),
             )
         gConfigPanel.SetSizer(gSizer)
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)

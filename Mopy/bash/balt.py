@@ -422,9 +422,8 @@ class CancelButton(Button):
     label = _(u'Cancel')
 
 def ok_and_cancel_sizer(parent, okButton=None):
-    return (hSizer(spacer, okButton or OkButton(parent),
-                   (CancelButton(parent), 0, wx.LEFT, 4), )
-            , 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6)
+    return (hSizer(hspacer, okButton or OkButton(parent), hspace(),
+                   CancelButton(parent)), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6)
 
 class SaveButton(Button):
     _id = wx.ID_SAVE
@@ -512,7 +511,12 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
     return wx.StaticBitmap(parent, defId, bitmap)
 
 # Sizers ----------------------------------------------------------------------
-spacer = ((0,0),1) #--Used to space elements apart.
+hspacer = ((0, 0), 1) #--Used to space elements apart.
+def hspace(pixels=4):
+    return (pixels, 0),
+
+def vspace(pixels=4):
+    return (0, pixels),
 
 def _aSizer(sizer, *elements):
     """Adds elements to a sizer."""
@@ -532,15 +536,10 @@ def vSizer(*elements):
     """Vertical sizer and elements."""
     return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
 
-def hsbSizer(boxArgs,*elements):
-    """Horizontal static box sizer and elements."""
-    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.HORIZONTAL),
-                   *elements)
-
-def vsbSizer(boxArgs,*elements):
-    """Vertical static box sizer and elements."""
-    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(*boxArgs), wx.VERTICAL),
-                   *elements)
+def hsbSizer(parent, box_label=u'', *elements):
+    """A horizontal box sizer, but surrounded by a static box."""
+    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(parent, label=box_label),
+                                     wx.HORIZONTAL), *elements)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -611,12 +610,11 @@ def _continueDialog(parent, message, title, checkBoxText):
         gCheckBox = checkBox(dialog, checkBoxText)
         #--Layout
         sizer = vSizer(
-            (hSizer(
-                (icon, 0, wx.ALL, 6),
-                (StaticText(dialog, message, noAutoResize=True), 1,
-                    wx.EXPAND | wx.LEFT, 6), ),
-             1, wx.EXPAND | wx.ALL, 6),
-            (gCheckBox, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 6),
+            (hSizer((icon, 0, wx.ALL, 6), hspace(6),
+                    (StaticText(dialog, message, noAutoResize=True), 1,
+                     wx.EXPAND)
+                    ), 1, wx.EXPAND | wx.ALL, 6),
+            (gCheckBox, 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6),
             ok_and_cancel_sizer(dialog),
             )
         dialog.SetSizer(sizer)
@@ -887,7 +885,7 @@ def showWryeLog(parent, logText, title=u'', asDialog=True, icons=None):
             (hSizer(
                 gBackButton,
                 gForwardButton,
-                spacer,
+                hspacer,
                 gOkButton,
                 ),0,wx.ALL|wx.EXPAND,4),
             )
@@ -960,7 +958,7 @@ class Dialog(wx.Dialog):
     title = u'OVERRIDE'
 
     def __init__(self, parent=None, title=None, size=defSize, pos=defPos,
-                 style=0, resize=True, caption=False, *args, **kwargs):
+                 style=0, resize=True, caption=False):
         ##: drop parent/resize parameters(parent=Link.Frame (test),resize=True)
         self.sizesKey = self.__class__.__name__
         self.title = title or self.__class__.title
@@ -968,8 +966,8 @@ class Dialog(wx.Dialog):
         self.resizable = resize
         if resize: style |= wx.RESIZE_BORDER
         if caption: style |= wx.CAPTION
-        super(Dialog, self).__init__(parent, wx.ID_ANY, self.title, size=size,
-                                     pos=pos, style=style, *args, **kwargs)
+        super(Dialog, self).__init__(parent, title=self.title, size=size,
+                                     pos=pos, style=style)
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow) # used in ImportFaceDialog and ListEditor
 
     def OnCloseWindow(self, event):
@@ -1285,14 +1283,13 @@ class BusyCursor(object):
 #------------------------------------------------------------------------------
 class Progress(bolt.Progress):
     """Progress as progress dialog."""
-    def __init__(self,title=_(u'Progress'),message=u' '*60,parent=None,
-            style=wx.PD_APP_MODAL|wx.PD_ELAPSED_TIME|wx.PD_AUTO_HIDE|wx.PD_SMOOTH,
-            abort=False, onAbort=None):
-        if abort:
-            style |= wx.PD_CAN_ABORT
-            self.fnAbort = onAbort
-        self.dialog = wx.ProgressDialog(title,message,100,parent,style)
-        self.dialog.SetFocus()
+    _style = wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH
+
+    def __init__(self, title=_(u'Progress'), message=u' '*60, parent=None,
+                 abort=False, elapsed=True, __style=_style):
+        if abort: __style |= wx.PD_CAN_ABORT
+        if elapsed: __style |= wx.PD_ELAPSED_TIME
+        self.dialog = wx.ProgressDialog(title, message, 100, parent, __style)
         bolt.Progress.__init__(self)
         self.message = message
         self.isDestroyed = False
@@ -1301,7 +1298,7 @@ class Progress(bolt.Progress):
         self.prevTime = 0
 
     # __enter__ and __exit__ for use with the 'with' statement
-    def __exit__(self,type,value,traceback): self.Destroy()
+    def __exit__(self, type, value, traceback): self.Destroy()
 
     def getParent(self):
         return self.dialog.GetParent()
@@ -1310,27 +1307,17 @@ class Progress(bolt.Progress):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
         cancel.Enable(enabled)
 
-    def onAbort(self):
-        if self.fnAbort:
-            return self.fnAbort()
-        return True
-
-    def doProgress(self,state,message):
+    def _do_progress(self, state, message):
         if not self.dialog:
             raise StateError(u'Dialog already destroyed.')
         elif (state == 0 or state == 1 or (message != self.prevMessage) or
             (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
-            self.dialog.SetFocus()
             if message != self.prevMessage:
                 ret = self.dialog.Update(int(state*100),message)
-                if not ret[0]:
-                    if self.onAbort():
-                        raise CancelError
             else:
                 ret = self.dialog.Update(int(state*100))
-                if not ret[0]:
-                    if self.onAbort():
-                        raise CancelError
+            if not ret[0]:
+                raise CancelError
             self.prevMessage = message
             self.prevState = state
             self.prevTime = time.time()
@@ -1849,7 +1836,7 @@ class UIList(wx.Panel):
             try:
                 self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
                 self.panel.ClearDetails() #omit this to leave displayed details
-                self.SelectAll()
+                self._SelectAll()
             finally:
                 self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
@@ -1903,21 +1890,27 @@ class UIList(wx.Panel):
     #-- Item selection --------------------------------------------------------
     def GetItems(self): return self.data_store.keys()
 
+    def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
+                      __state_selected=wx.LIST_STATE_SELECTED):
+        listCtrl, selected_list = self._gList, []
+        i = listCtrl.GetNextItem(-1, __next_all, __state_selected)
+        while i != -1:
+            selected_list.append(lam(i))
+            i = listCtrl.GetNextItem(i, __next_all, __state_selected)
+        return selected_list
+
     def GetSelected(self):
         """Return list of items selected (highlighted) in the interface."""
-        listCtrl = self._gList
-        return [self.GetItem(dex) for dex in xrange(listCtrl.GetItemCount())
-            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+        return self._get_selected(lam=self.GetItem)
 
     def GetSelectedIndexes(self):
-        """Return list of indexes highlighted in the interface in display order."""
-        listCtrl = self._gList
-        return [dex for dex in xrange(listCtrl.GetItemCount())
-            if listCtrl.GetItemState(dex, wx.LIST_STATE_SELECTED)]
+        """Return list of indexes highlighted in the interface in display
+        order."""
+        return self._get_selected()
 
     def SelectItemAtIndex(self, index, select=True,
-                          _select=wx.LIST_STATE_SELECTED):
-        self._gList.SetItemState(index, select * _select, _select)
+                          __select=wx.LIST_STATE_SELECTED):
+        self._gList.SetItemState(index, select * __select, __select)
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
@@ -1936,12 +1929,11 @@ class UIList(wx.Panel):
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
-        for i in xrange(self._gList.GetItemCount()):
-            self.SelectItemAtIndex(i, False)
+        self.SelectItemAtIndex(-1, False) # -1 indicates 'all items'
         if clear_details: self.panel.ClearDetails()
 
-    def SelectAll(self):
-        for i in range(self._gList.GetItemCount()): self.SelectItemAtIndex(i)
+    def _SelectAll(self): # only called after unbinding EVT_LIST_ITEM_SELECTED
+        self.SelectItemAtIndex(-1) # -1 indicates 'all items'
 
     def SelectLast(self):
         self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
@@ -2582,7 +2574,7 @@ class ListBoxes(Dialog):
         self.text = StaticText(self, message)
         self.text.Rewrap(minWidth) # otherwise self.text expands to max width
         sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
-        sizer.Add(self.text, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM | wx.ALL, 0)
+        sizer.Add(self.text, 0, wx.EXPAND)
         self._ids = {}
         labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(minWidth, -1))
@@ -2591,7 +2583,7 @@ class ListBoxes(Dialog):
             tip = group[1]
             strings = [u'%s' % x for x in group[2:]] # works for Path & strings
             if len(strings) == 0: continue
-            subsizer = hsbSizer((self, wx.ID_ANY, title))
+            subsizer = hsbSizer(self, title)
             if liststyle == 'check':
                 checksCtrl = listBox(self, choices=strings, isSingle=True,
                                      isHScroll=True, kind='checklist')
@@ -2618,12 +2610,12 @@ class ListBoxes(Dialog):
             sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
             sizer.AddGrowableRow(i + 1)
         okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
-        buttonSizer = hSizer(spacer,
+        buttonSizer = hSizer(hspacer,
                              (okButton,0,wx.ALIGN_RIGHT),
                              )
         if canCancel:
             buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        sizer.Add(buttonSizer,1,wx.EXPAND|wx.BOTTOM|wx.LEFT|wx.RIGHT,5)
+        sizer.Add(buttonSizer, 1, wx.EXPAND | wx.ALL ^ wx.TOP, 5)
         sizer.AddGrowableCol(0)
         sizer.SetSizeHints(self)
         self.SetSizer(sizer)
@@ -2722,3 +2714,15 @@ class INIListCtrl(wx.ListCtrl):
             style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER)
         self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnSelect)
         self.InsertColumn(0, u'')
+
+    def OnSelect(self, event):
+        index = event.GetIndex()
+        self.SetItemState(index, 0, wx.LIST_STATE_SELECTED)
+        iniLine = self._get_selected_line(index)
+        if iniLine != -1:
+            self._contents.EnsureVisible(iniLine)
+            scroll = iniLine - self._contents.GetScrollPos(wx.VERTICAL) - index
+            self._contents.ScrollLines(scroll)
+        event.Skip()
+
+    def _get_selected_line(self, index): raise AbstractError
