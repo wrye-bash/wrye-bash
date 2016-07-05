@@ -22,6 +22,7 @@
 #
 # =============================================================================
 import time
+from collections import defaultdict
 from operator import attrgetter
 from .. import bush # for game etc
 from .. import bosh # for modInfos
@@ -53,7 +54,7 @@ class _PFile(object):
         self.worldOrphanMods = []
         self.unFilteredMods = []
         self.compiledAllMods = []
-        self.patcher_mod_skipcount = {}
+        self.patcher_mod_skipcount = defaultdict(lambda: defaultdict(int))
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods

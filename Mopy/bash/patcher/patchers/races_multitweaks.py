@@ -1349,11 +1349,8 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
             else:
                 attr_value = record.ConflictDetails(attrs)
                 if not ValidateDict(attr_value, self.patchFile):
-                    mod_skipcount = \
-                        self.patchFile.patcher_mod_skipcount.setdefault(
-                        self.name, {})
-                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                        modFile.GName, 0) + 1
+                    self.patchFile.patcher_mod_skipcount[self.name][
+                        modFile.GName] += 1
                     continue
             self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
 
@@ -1502,10 +1499,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 self.id_meshes[recordId] = eyePaths
         else:
             if not recordId.ValidateFormID(self.patchFile):
-                mod_skipcount = self.patchFile.patcher_mod_skipcount\
-                    .setdefault(self.name, {})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                    modFile.GName, 0) + 1
+                self.patchFile.patcher_mod_skipcount[self.name][
+                    modFile.GName] += 1
                 return
 
             if record._Type == 'HAIR':
