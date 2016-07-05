@@ -624,7 +624,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         id_info = self.id_info
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
-        changed = {}
+        changed = collections.defaultdict(int)
         mFactable = []
         for record in modFile.FACT.getActiveRecords():
             if record.fid not in id_info: continue
@@ -651,7 +651,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
                             u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
                 keep(record.fid)
                 mod = record.fid[0]
-                changed[mod] = changed.setdefault(mod,0) + 1
+                changed[mod] += 1
         #--MFact record
         record = modFile.FACT.getRecord(mFactLong)
         if record:

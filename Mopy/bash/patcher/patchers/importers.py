@@ -185,6 +185,7 @@ class _RecTypeModLogging(CBash_ImportPatcher):
         super(_RecTypeModLogging, self).initPatchFile(patchFile,loadMods)
         self.mod_count = collections.defaultdict(
             lambda: collections.defaultdict(int))
+        self.fid_attr_value = collections.defaultdict(dict) # used in some
 
     def _clog(self, log,
               logModRecs=u'* ' + _(u'Modified %(type)s Records: %(count)d'),
@@ -208,6 +209,16 @@ class _RecTypeModLogging(CBash_ImportPatcher):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[group_type][srcMod]))
         self.mod_count = collections.defaultdict(
                 lambda: collections.defaultdict(int))
+
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        attr_value = record.ConflictDetails(self.class_attrs[record._Type])
+        if not attr_value: return
+        if not ValidateDict(attr_value, self.patchFile):
+            self.patchFile.patcher_mod_skipcount[self.name][
+                modFile.GName] += 1
+            return
+        self.fid_attr_value[record.fid].update(attr_value)
 
 # Patchers: 20 ----------------------------------------------------------------
 class _ACellImporter(AImportPatcher):
@@ -618,11 +629,10 @@ class GraphicsPatcher(ImportPatcher, _AGraphicsPatcher):
 class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(CBash_GraphicsPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
         class_attrs = self.class_attrs = {}
         model = ('modPath','modb','modt_p')
         icon = ('iconPath',)
@@ -680,15 +690,6 @@ class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
                 'FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR',
                 'KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO',
                 'CLOT','CREA','MGEF','EFSH']
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        attr_value = record.ConflictDetails(self.class_attrs[record._Type])
-        if not ValidateDict(attr_value, self.patchFile):
-            self.patchFile.patcher_mod_skipcount[self.name][
-                modFile.GName] += 1
-            return
-        self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -2790,11 +2791,10 @@ class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     tip = text
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(CBash_SoundPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
         class_attrs = self.class_attrs = {}
         class_attrs['ACTI'] = ('sound',)
         class_attrs['CONT'] = ('soundOpen','soundClose')
@@ -2809,18 +2809,6 @@ class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['ACTI','CONT','CREA','DOOR','LIGH','MGEF','WTHR']
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        conflicts = record.ConflictDetails(self.class_attrs[record._Type])
-        if conflicts:
-            if ValidateDict(conflicts, self.patchFile):
-                self.fid_attr_value.setdefault(record.fid,{}).update(conflicts)
-            else:
-                # Ignore the record. Another option would be to just ignore
-                # the invalid formIDs
-                self.patchFile.patcher_mod_skipcount[self.name][
-                    modFile.GName] += 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -2937,12 +2925,11 @@ class StatsPatcher(ImportPatcher, _AStatsPatcher):
 
 class CBash_StatsPatcher(_RecTypeModLogging, _AStatsPatcher):
 
-    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
         super(CBash_StatsPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
         self.csvFid_attr_value = {}
         self.class_attrs = CBash_ItemStats.class_attrs
 
@@ -2962,17 +2949,6 @@ class CBash_StatsPatcher(_RecTypeModLogging, _AStatsPatcher):
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return self.class_attrs.keys()
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        conflicts = record.ConflictDetails(self.class_attrs[record._Type])
-        if conflicts:
-            if ValidateDict(conflicts, self.patchFile):
-                self.fid_attr_value.setdefault(record.fid,{}).update(conflicts)
-            else:
-                #Ignore the record. Another option would be to just ignore the invalid formIDs
-                self.patchFile.patcher_mod_skipcount[self.name][
-                    modFile.GName] += 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
