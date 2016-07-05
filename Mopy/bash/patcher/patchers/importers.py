@@ -413,7 +413,7 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         super(CBash_CellImporter, self).initPatchFile(patchFile,loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
+        self.fid_attr_value = collections.defaultdict(dict)
         self.tag_attrs = {
             u'C.Climate': ('climate','IsBehaveLikeExterior'),
             u'C.Music': ('musicType',),
@@ -441,7 +441,7 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
                 self.patchFile.patcher_mod_skipcount[self.name][
                     modFile.GName] += 1
                 continue
-            self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
+            self.fid_attr_value[record.fid].update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -897,7 +897,6 @@ class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
         """Prepare to handle specified patch mod. All functions are called after this."""
         super(CBash_ActorImporter, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
         class_tag_attrs = self.class_tag_attrs = {}
         class_tag_attrs['NPC_'] = {
                 u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
@@ -944,11 +943,12 @@ class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
             attrs = self.class_tag_attrs[record._Type].get(bashKey, None)
             if attrs:
                 attr_value = record.ConflictDetails(attrs)
+                if not attr_value: continue
                 if not ValidateDict(attr_value, self.patchFile):
                     self.patchFile.patcher_mod_skipcount[self.name][
                         modFile.GName] += 1
                     continue
-                self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
+                self.fid_attr_value[record.fid].update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
