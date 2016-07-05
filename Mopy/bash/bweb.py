@@ -27,7 +27,7 @@
    with the multiprocessing module, it needs to not have any dependancies on
    the rest of Wrye Bash's files."""
 # CRUFT, unused - use or bin
-
+import collections
 import os
 import re
 import urllib2
@@ -76,7 +76,7 @@ class Nexus:
         reFileVersion = self.reFileVersion
 
         inGroup = {}
-        versions = {}
+        versions = collections.defaultdict(list)
         if groups:
             for group in groups:
                 inGroup[group.lower()] = False
@@ -128,5 +128,5 @@ class Nexus:
                 inFile = False
                 if inAnyGroup:
                     if currentVersion is not None and currentFile is not None:
-                        versions.setdefault(group,[]).append((currentFile,currentVersion,currentUrl))
+                        versions[group].append((currentFile,currentVersion,currentUrl))
         return versions
