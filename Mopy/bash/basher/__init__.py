@@ -1460,7 +1460,7 @@ class ModDetails(_SashDetailsPanel):
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
-                if mod_info.setBashTagsDesc(mod_info.getBashTags()):
+                if mod_info.setBashTagsDesc(mod_tags):
                     _refreshUI()
                 else:
                     thinSplitterWin = self.window.GetParent().GetParent(

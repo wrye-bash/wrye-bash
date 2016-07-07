@@ -280,15 +280,7 @@ class ConfigHelpers:
             deprint(u'An error occurred while parsing taglist.yaml:',
                     traceback=True)
 
-    def getBashTags(self,modName):
-        """Retrieves bash tags for given file."""
-        return self._getTagCache(modName)[0]
-
-    def getBashRemoveTags(self,modName):
-        """Retrieves bash tags for given file."""
-        return self._getTagCache(modName)[1]
-
-    def _getTagCache(self,modName):
+    def getTagsInfoCache(self, modName):
         """Gets Bash tag info from the cache, or
            the LOOT API if it is not in cache."""
         if modName not in self.tagCache:
@@ -343,9 +335,14 @@ class ConfigHelpers:
             log(_(u'This is a report on your currently active/merged mods.'))
             #--Mergeable/NoMerge/Deactivate tagged mods
             shouldMerge = active & modInfos.mergeable
-            shouldDeactivateA = [x for x in active if u'Deactivate' in modInfos[x].getBashTags()]
-            shouldDeactivateB = [x for x in active if u'NoMerge' in modInfos[x].getBashTags() and x in modInfos.mergeable]
-            shouldActivateA = [x for x in imported if u'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
+            shouldDeactivateA, shouldDeactivateB = [], []
+            for x in active:
+                tags = modInfos[x].getBashTags()
+                if u'Deactivate' in tags: shouldDeactivateA.append(x)
+                if u'NoMerge' in tags and x in modInfos.mergeable:
+                    shouldDeactivateB.append(x)
+            shouldActivateA = [x for x in imported if x not in active and
+                        u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
             #--Mods with invalid TES4 version
             invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
             #--Look for dirty edits
