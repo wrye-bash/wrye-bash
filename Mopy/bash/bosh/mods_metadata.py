@@ -281,13 +281,9 @@ class ConfigHelpers:
 
     def getBashTags(self,modName):
         """Retrieves bash tags for given file."""
-        return self._getTagCache(modName)[0]
+        return self.getTagsInfoCache(modName)[0]
 
-    def getBashRemoveTags(self,modName):
-        """Retrieves bash tags for given file."""
-        return self._getTagCache(modName)[1]
-
-    def _getTagCache(self,modName):
+    def getTagsInfoCache(self, modName):
         """Gets Bash tag info from the cache, or
            the LOOT API if it is not in cache."""
         if modName not in self.tagCache:

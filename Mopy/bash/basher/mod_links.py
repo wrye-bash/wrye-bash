@@ -956,21 +956,17 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         return fileName
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
-        unfiltered = [x for x in active_prior_to_patch if
-                      u'Filter' in bosh.modInfos[x].getBashTags()]
-        merge = [x for x in active_prior_to_patch if
-                 u'NoMerge' not in bosh.modInfos[x].getBashTags()
-                 and x in bosh.modInfos.mergeable
-                 and x not in unfiltered]
-        noMerge = [x for x in active_prior_to_patch if
-                   u'NoMerge' in bosh.modInfos[x].getBashTags()
-                   and x in bosh.modInfos.mergeable
-                   and x not in unfiltered and x not in merge]
-        deactivate = [x for x in active_prior_to_patch if
-                      u'Deactivate' in bosh.modInfos[x].getBashTags()
-                      and not 'Filter' in bosh.modInfos[x].getBashTags()
-                      and x not in unfiltered and x not in merge
-                      and x not in noMerge]
+        mod_tags = [(mod, bosh.modInfos[mod].getBashTags()) for mod in
+                    active_prior_to_patch]
+        unfiltered = [mod for mod, tags in mod_tags if u'Filter' in tags]
+        _unfiltered = set(unfiltered)
+        merge = [mod for mod, tags in mod_tags if u'NoMerge' not in tags
+                 and mod in bosh.modInfos.mergeable and mod not in _unfiltered]
+        noMerge = [mod for mod, tags in mod_tags if u'NoMerge' in tags and
+                   mod in bosh.modInfos.mergeable and mod not in _unfiltered]
+        deactivate = [mod for mod, tags in mod_tags if u'Deactivate' in tags
+                      and mod not in _unfiltered and mod not in merge
+                      and mod not in noMerge]
         checklists = []
         unfilteredKey = _(u"Tagged 'Filter'")
         mergeKey = _(u"Mergeable")

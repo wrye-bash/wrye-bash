@@ -2704,8 +2704,9 @@ class ModInfo(FileInfo):
 
     def reloadBashTags(self):
         """Reloads bash tags from mod description and LOOT"""
-        tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
-        tags -= (configHelpers.getBashRemoveTags(self.name) or set())
+        tags, removed, _userlist = configHelpers.getTagsInfoCache(self.name)
+        tags |= (self.getBashTagsDesc() or set())
+        tags -= (removed or set())
         # Filter and remove old tags
         tags = tags & allTagsSet
         if tags & oldTagsSet:
@@ -3673,23 +3674,24 @@ class ModInfos(FileInfos):
     @staticmethod
     def _tagsies(modInfo, tagList):
         mname = modInfo.name
-        def tags(msg, iterable, tagsList):
+        def _tags(msg, iterable, tagsList):
             return tagsList + u'  * ' + msg + u', '.join(iterable) + u'\n'
         if not modInfos.table.getItem(mname, 'autoBashTags') and \
                modInfos.table.getItem(mname, 'bashTags', u''):
-            tagList = tags(_(u'From Manual (if any this overrides '
+            tagList = _tags(_(u'From Manual (if any this overrides '
                 u'Description/LOOT sourced tags): '), sorted(
                 modInfos.table.getItem(mname, 'bashTags', u'')), tagList)
         if modInfo.getBashTagsDesc():
-            tagList = tags(_(u'From Description: '),
+            tagList = _tags(_(u'From Description: '),
                            sorted(modInfo.getBashTagsDesc()), tagList)
-        if configHelpers.getBashTags(mname):
-            tagList = tags(_(u'From LOOT Masterlist and or userlist: '),
-                           sorted(configHelpers.getBashTags(mname)), tagList)
-        if configHelpers.getBashRemoveTags(mname):
-            tagList = tags(_(u'Removed by LOOT Masterlist and or userlist: '),
-                      sorted(configHelpers.getBashRemoveTags(mname)), tagList)
-        return tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
+        tags, removed, _userlist = configHelpers.getTagsInfoCache(mname)
+        if tags:
+            tagList = _tags(_(u'From LOOT Masterlist and or userlist: '),
+                            sorted(tags), tagList)
+        if removed:
+            tagList = _tags(_(u'Removed by LOOT Masterlist and or userlist: '),
+                            sorted(removed), tagList)
+        return _tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
 
     @staticmethod
     def getTagList(mod_list=None):
