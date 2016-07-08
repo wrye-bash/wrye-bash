@@ -546,8 +546,8 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(balt.StaticText(self, _(u'Have')))
         sizerVersions.AddStretchSpacer()
 
-        def _link(label, url): return wx.HyperlinkCtrl(self, label=label,
-                                                       url=url)
+        def _link(label, url): return wx.HyperlinkCtrl(self, balt.defId,
+                                                       label=label, url=url)
         # Game
         if bush.game.patchURL != u'':
             linkGame = _link(bush.game.displayName, bush.game.patchURL)
