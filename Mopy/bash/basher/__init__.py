@@ -968,7 +968,7 @@ class ModList(_ModsUIList):
             self._toggle_active_state(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
-            self.SelectItem(mod_clicked_on_icon, deselectOthers=True)
+            self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True, focus=True)
         else:
             mod_clicked = self._getItemClicked(event)
             if event.AltDown() and mod_clicked:
