@@ -59,7 +59,7 @@ class WizardReturn(object):
     #         'key': value
     #         }
     #      }
-    #    For BatchScript type ini's, the 'section' will either be 'set' or 'setGS'
+    #    For BatchScript type ini's, the 'section' will either be 'set' or 'setGS' or 'SetNumericGameSetting'
     # Install: Set to True if after configuring this package, it should also be installed.
     # PageSize: Tuple/wxSize of the saved size of the Wizard
     # Pos: Tuple/wxPoint of the saved position of the Wizard
@@ -348,6 +348,9 @@ def generateTweakLines(wizardEdits, target):
             modFormat = wizardEdits[realSection][0]+u' %(setting)s to %(value)s%(comment)s'
             delFormat = u';-'+wizardEdits[realSection][0]+u' %(setting)s to DELETED'
         elif realSection == u']setgs[':
+            modFormat = wizardEdits[realSection][0]+u' %(setting)s %(value)s%(comment)s'
+            delFormat = u';-'+wizardEdits[realSection][0]+u' %(setting)s DELETED'
+        elif realSection == u']SetNumericGameSetting[':
             modFormat = wizardEdits[realSection][0]+u' %(setting)s %(value)s%(comment)s'
             delFormat = u';-'+wizardEdits[realSection][0]+u' %(setting)s DELETED'
         elif not realSection:
@@ -1134,6 +1137,8 @@ class WryeParser(ScriptParser.Parser):
             realSection = bolt.LString(u']set[')
         elif section.strip().lower() == u'setgs':
             realSection = bolt.LString(u']setgs[')
+        elif section.strip().lower() == u'setnumericgamesetting':
+            realSection = bolt.LString(u']SetNumericGameSetting[')
         else:
             realSection = bolt.LString(section.strip())
         #--Setting
@@ -1158,6 +1163,8 @@ class WryeParser(ScriptParser.Parser):
             realSection = bolt.LString(u']set[')
         elif realSection == u'setgs':
             realSection = bolt.LString(u']setgs[')
+        elif section.strip().lower() == u'setnumericgamesetting':
+            realSection = bolt.LString(u']SetNumericGameSetting[')
         else:
             realSection = bolt.LString(section)
         #--Setting

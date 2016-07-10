@@ -1883,11 +1883,12 @@ def BestIniFile(path):
 
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
-    handle 'set' and 'setGS' statements."""
+    handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
     reDeleted = re.compile(ur';-(\w.*?)$',re.U)
     reSet     = re.compile(ur'\s*set\s+(.+?)\s+to\s+(.*)', re.I|re.U)
     reSetGS   = re.compile(ur'\s*setGS\s+(.+?)\s+(.*)', re.I|re.U)
-    formatRes = (reSet, reSetGS)
+    reSetNGS   = re.compile(ur'\s*SetNumericGameSetting\s+(.+?)\s+(.*)', re.I|re.U)
+    formatRes = (reSet, reSetGS, reSetNGS)
     defaultSection = u'' # Change the default section to something that
     # can't occur in a normal ini
 
@@ -1900,6 +1901,7 @@ class OBSEIniFile(IniFile):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
+        elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
     def getTweakFileSettings(self,tweakPath,lineNumbers=False):
@@ -1912,6 +1914,7 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         with tweakPath.open('r') as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
@@ -1919,6 +1922,7 @@ class OBSEIniFile(IniFile):
                 stripped = reComment.sub(u'',line).strip()
                 maSet   = reSet.match(stripped)
                 maSetGS = reSetGS.match(stripped)
+                maSetNGS = reSetNGS.match(stripped)
                 if maSet:
                     if not maDeleted:
                         section = ini_settings.setdefault(bolt.LString(u']set['),{})
@@ -1937,6 +1941,15 @@ class OBSEIniFile(IniFile):
                         section[LString(maSetGS.group(1))] = (maSetGS.group(2).strip(),i)
                     else:
                         section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
+                elif maSetNGS:
+                    if not maDeleted:
+                        section = ini_settings.setdefault(bolt.LString(u']SetNumericGameSetting['),{})
+                    else:
+                        section = deleted_settings.setdefault(LString(u']SetNumericGameSetting['),{})
+                    if lineNumbers:
+                        section[LString(maSetNGS.group(1))] = (maSetNGS.group(2).strip(),i)
+                    else:
+                        section[LString(maSetNGS.group(1))] = maSetNGS.group(2).strip()
         return ini_settings,deleted_settings
 
     def getTweakFileLines(self,tweakPath):
@@ -1960,8 +1973,10 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         setSection = LString(u']set[')
         setGSSection = LString(u']setGS[')
+        setNGSSection = LString(u']SetNumericGameSetting[')
         section = u''
         with tweakPath.open('r') as iniFile:
             for line in iniFile:
@@ -1970,9 +1985,10 @@ class OBSEIniFile(IniFile):
                 if maDeleted: stripped = maDeleted.group(1)
                 else: stripped = line
                 stripped = reComment.sub(u'',stripped).strip()
-                # Check which kind it is - 'set' or 'setGS'
+                # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
                 for regex,section in [(reSet,setSection),
-                                      (reSetGS,setGSSection)]:
+                                      (reSetGS,setGSSection),
+                                      (reSetNGS,setNGSSection)]:
                     match = regex.match(stripped)
                     if match:
                         groups = match.groups()
@@ -2009,6 +2025,7 @@ class OBSEIniFile(IniFile):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
+        elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         super(OBSEIniFile, self).saveSetting(section, key, value)
 
     def saveSettings(self,ini_settings,deleted_settings={}):
@@ -2022,10 +2039,13 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         setSection = LString(u']set[')
         setGSSection = LString(u']setGS[')
+        setNGSSection = LString(u']SetNumericGameSetting[')
         setFormat = u'set %s to %s\n'
         setGSFormat = u'setGS %s %s\n'
+        setNGSFormat = u'SetNumericGameSetting %s %s\n'
         section = {}
         with self.path.open('r') as iniFile:
             with self.path.temp.open('w') as tmpFile:
@@ -2035,10 +2055,11 @@ class OBSEIniFile(IniFile):
                     maDeleted = reDeleted.match(line)
                     if maDeleted: stripped = maDeleted.group(1)
                     else: stripped = line
-                    # Test what kind of line it is - 'set' or 'setGS'
+                    # Test what kind of line it is - 'set' or 'setGS' or 'SetNumericGameSetting'
                     stripped = reComment.sub(u'',line).strip()
                     for regex,sectionKey,format in [(reSet,setSection,setFormat),
-                                                    (reSetGS,setGSSection,setGSFormat)]:
+                                                    (reSetGS,setGSSection,setGSFormat),
+                                                    (reSetNGS,setNGSSection,setNGSFormat)]:
                         match = regex.match(stripped)
                         if match:
                             section = sectionKey
@@ -2073,10 +2094,12 @@ class OBSEIniFile(IniFile):
         reDeleted = self.reDeleted
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         ini_settings = {}
         deleted_settings = {}
         setSection = LString(u']set[')
         setGSSection = LString(u']setGS[')
+        setNGSSection = LString(u']SetNumericGameSetting[')
         with tweakPath.open('r') as tweakFile:
             for line in tweakFile:
                 # Check for deleted lines
@@ -2087,10 +2110,11 @@ class OBSEIniFile(IniFile):
                 else:
                     stripped = line
                     settings_ = ini_settings
-                # Check which kind of line - 'set' or 'setGS'
+                # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
                 stripped = reComment.sub(u'',stripped).strip()
                 for regex,sectionKey in [(reSet,setSection),
-                                         (reSetGS,setGSSection)]:
+                                         (reSetGS,setGSSection),
+                                         (reSetNGS,setNGSSection)]:
                     match = regex.match(stripped)
                     if match:
                         setting = LString(match.group(1))
@@ -6551,7 +6575,7 @@ class InstallersData(_DataStore):
                 if status in (10, -10):
                     # A setting that exists in both INI's, but is different,
                     # or a setting that doesn't exist in the new INI.
-                    if section == u']set[' or section == u']setGS[':
+                    if section == u']set[' or section == u']setGS[' or section == u']SetNumericGameSetting[':
                         lines.append(text + u'\n')
                     elif section != currSection:
                         section = currSection

@@ -13,7 +13,7 @@
 	li ul, li ol {margin-top:0.4em;}
 	li {margin-bottom:10px;}
 	ol ol {list-style:lower-alpha;}
- ol ol li {margin-bottom:0.2em;}
+	ol ol li {margin-bottom:0.2em;}
 	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
 	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
 	thead {font-weight:bold; background:#8af;}
@@ -25,9 +25,8 @@
 	blockquote {background:#E6E6FA; display:table; padding:5px 30px 5px 10px;}
 	figure {margin:0;}
 	figcaption {font-style:italic; margin-bottom:2em;}
- .missing {background:red; color:white; border:0.25em solid black;}
+	.missing {background:red; color:white; border:0.25em solid black;}
 	abbr {cursor:help;}
-
 	.indent {margin-left:2em;}
 	td > code.box {margin:0;}
 </style>
@@ -174,10 +173,21 @@
 	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existence of a file in the Data directory. If the file you are testing for is an ESP or ESM, this will also detected ghosted versions of the file.
+<p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existence of a file in the Data directory. If the file you are
+	testing for is an ESP or ESM, this will also detect ghosted versions of the file.
 <code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
 <ul>
-	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example using "test.esp" would test for "<var>[path to game]</var>\Data\test.esp"
+	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example
+		using <code>"Oblivion.esm"</code> would test for <code>"[path to game]\Data\Oblivion.esm"</code>. Notes:
+    <ul>
+		<li>When specifying a path below the Data directory, use double slashes to indicate folder separation. For example assuming
+			MenuQue.dll is installed correctly, <code>"obse\\plugins\\MenuQue.dll"</code> will work but
+			<code>"obse\plugins\MenuQue.dll"</code> will fail.
+		<li>You can also look for files above the Data directory using the following syntax: <code>"..\\SoundCommands.log"</code>
+		<li>When testing for multiple files, separate each file with commas. They do not have to all be in the same directory. Example:
+		<code>DataFileExists("Oblivion.esm","..\\SoundCommands.log","obse\\plugins\\MenuQue.dll")</code> will accurately test to see if each
+		of the files exist.
+	</ul>
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -201,7 +211,7 @@
 <code class="box">EditINI(file_name, section, setting, value [,comment])</code>
 <ul>
 	<li><var>file_name</var> - The name of the ini file you wish to edit, relative to the Data directory.
-	<li><var>section</var> - The section in the ini where <var>setting</var> resides, or 'set' or 'setGS' (see examples below).
+	<li><var>section</var> - The section in the ini where <var>setting</var> resides, or 'set' or 'setGS' or 'SetNumericGameSetting' (see examples below).
 	<li><var>setting</var> - The setting you wish to change.
 	<li><var>value</var> - The value to set the setting to.
 	<li><var>comment</var> - Optional comment to include with this tweak.
@@ -684,10 +694,12 @@ EndIf
 <p>These:
 <code class="box">EditINI('TargetINI.ini', 'set', 'ANVars.UseEW', 1)
 EditINI('TargetINI.ini', 'setGS', 'fPCBaseMagickaMult', 1)
+EditINI('TargetINI.ini', 'SetNumericGameSetting', 'fPerkSneakAttackMarksmanNoviceMult', 1.5, "default is 2.0")
 </code>
 <p>Would create Ini Tweaks:
 <code class="box">set ANVars.UseEW to 1
 setGS fPCBaseMagickaMult 1
+SetNumericGameSetting fPerkSneakAttackMarksmanNoviceMult 1.5;default is 2.0
 </code>
 <p>This:
 <code class="box">GetFilename("C:\Program Files\Bethesda Softworks\Oblivion\Oblivion.exe")</code>
