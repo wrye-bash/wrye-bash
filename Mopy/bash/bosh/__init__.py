@@ -1888,7 +1888,7 @@ class OBSEIniFile(IniFile):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
-        return IniFile.getSetting(self,section,key,default)
+        return super(OBSEIniFile, self).getSetting(section, key, default)
 
     def getTweakFileSettings(self,tweakPath,lineNumbers=False):
         """Get the settings in the ini script."""
@@ -1997,7 +1997,7 @@ class OBSEIniFile(IniFile):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
-        IniFile.saveSetting(self,section,key,value)
+        super(OBSEIniFile, self).saveSetting(section, key, value)
 
     def saveSettings(self,ini_settings,deleted_settings={}):
         if not self.path.exists() or not self.path.isfile():
@@ -2111,46 +2111,49 @@ class OblivionIni(IniFile):
         # default to user profile directory"""
         IniFile.__init__(self, dirs['saveBase'].join(name))
 
-    def __ensureExists(self): ##: YAK - track down call graph - we should avoid
-        # creating the ini and if we must (bsa redirection ?) warn the user !!!
-        """Ensures that Oblivion.ini file exists. Copies from default
-        oblivion.ini if necessary."""
-        if self.path.exists(): return
+    @balt.conversation
+    def ask_create_game_ini(self, msg=u''):
+        if self is not oblivionIni: return True
+        if self.path.exists(): return True
         srcPath = dirs['app'].join(bush.game.defaultIniFile)
-        if srcPath.exists():
+        default_path_exists = srcPath.exists()
+        msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.path}) + \
+              u'\n\n' + ((msg + u'\n\n') if msg else u'')
+        if default_path_exists:
+            msg += _(u'Do you want Bash to create it by copying '
+                     u'%(default_ini)s ?' % {'default_ini': srcPath})
+            if not balt.askYes(None, msg, _(u'Missing game Ini')):
+                return False
+        else:
+            msg += _(u'Please create it manually to continue.')
+            balt.showError(None, msg, _(u'Missing game Ini'))
+            return False
+        try:
             srcPath.copyTo(self.path)
-
-    def saveSettings(self,settings,deleted_settings={}):
-        """Applies dictionary of settings to ini file.
-        Values in settings dictionary can be either actual values or
-        full key=value line ending in newline char."""
-        self.__ensureExists()
-        IniFile.saveSettings(self,settings,deleted_settings)
-
-    def applyTweakFile(self,tweakPath):
-        """Read Ini tweak file and apply its settings to oblivion.ini.
-        Note: Will ONLY apply settings that already exist."""
-        self.__ensureExists()
-        IniFile.applyTweakFile(self,tweakPath)
+            return True
+        except (OSError, IOError):
+            error_msg = u'Failed to copy %s to %s' % (srcPath, self.path)
+            deprint(error_msg, traceback=True)
+            balt.showError(None, error_msg, _(u'Missing game Ini'))
+        return False
 
     #--BSA Redirection --------------------------------------------------------
-    def getBsaRedirection(self):
+    def _getBsaRedirection(self):
         """Returns True if BSA redirection is active."""
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return False
-        self.__ensureExists()
         sArchives = self.getSetting(section,key,u'')
         return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
 
     def setBsaRedirection(self,doRedirect=True):
-        """Activates or deactivates BSA redirection."""
+        """Activate or deactivate BSA redirection - game ini must exist!"""
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return
         aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
-        if doRedirect == self.getBsaRedirection():
+        if doRedirect == self._getBsaRedirection():
             return
         # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
@@ -2532,7 +2535,6 @@ class ModInfo(FileInfo):
         baseDirJoin = self.getPath().head.join
         files = []
         sbody,ext = self.name.sbody,self.name.ext
-        language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
         for (dir,join,format) in bush.game.esp.stringsFiles:
             fname = format % {'body':sbody,
                               'ext':ext,
@@ -4235,6 +4237,9 @@ class SaveInfos(FileInfos):
     def setLocalSave(self, localSave, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
+        if not oblivionIni.ask_create_game_ini(msg=_(
+                u'Setting the save profile is done by editing the game ini.')):
+            return
         self.localSave = localSave
         oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
                                 bush.game.saveProfilesKey[1],
@@ -5897,7 +5902,7 @@ class InstallersData(_DataStore):
         #--MakeDirs
         self.bashDir.makedirs()
         #--Archive invalidation
-        if settings.get('bash.bsaRedirection'):
+        if settings.get('bash.bsaRedirection') and oblivionIni.path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)

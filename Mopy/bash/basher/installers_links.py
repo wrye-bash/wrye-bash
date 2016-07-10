@@ -29,7 +29,7 @@ import copy
 from . import Installers_Link
 from .dialogs import CreateNewProject
 from .. import bass, bosh, balt, bush
-from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes
+from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, EnabledLink
 from ..bass import Resources
 from ..bolt import GPath
 
@@ -375,17 +375,24 @@ class Installers_Enabled(BoolLink):
             self.window.DeleteAll() ##: crude
             self.window.panel.ClearDetails()
 
-class Installers_BsaRedirection(AppendableLink, BoolLink):
+class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     """Toggle BSA Redirection."""
     text, key = _(u'BSA Redirection'),'bash.bsaRedirection'
     help = _(u"Use Quarn's BSA redirection technique.")
+
+    def _initData(self, window, selection):
+        super(Installers_BsaRedirection, self)._initData(window, selection)
+        if not self._enable():
+            self.help += u'  ' + _(u'%(ini)s must exist') % {
+                'ini': bush.game.iniFiles[0]}
 
     def _append(self, window):
         section,key = bush.game.ini.bsaRedirection
         return bool(section) and bool(key)
 
+    def _enable(self): return bosh.oblivionIni.path.exists()
+
     def Execute(self):
-        """Handle selection."""
         super(Installers_BsaRedirection, self).Execute()
         if bass.settings[self.key]:
             bsaPath = bosh.modInfos.dir.join(
