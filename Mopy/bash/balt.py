@@ -778,16 +778,6 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     """Shows a modal information message."""
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
-def showList(parent,header,items,maxItems=0,title=u'',**kwdargs):
-    """Formats a list of items into a message for use in a Message."""
-    numItems = len(items)
-    if maxItems <= 0: maxItems = numItems
-    message = string.Template(header).substitute(count=numItems)
-    message += u'\n* '+u'\n* '.join(items[:min(numItems,maxItems)])
-    if numItems > maxItems:
-        message += u'\n'+_(u'(And %d others.)') % (numItems - maxItems,)
-    return askStyled(parent,message,title,wx.OK,**kwdargs)
-
 #------------------------------------------------------------------------------
 def _showLogClose(evt=None):
     """Handle log message closing."""
