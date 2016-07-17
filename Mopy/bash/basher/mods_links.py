@@ -216,7 +216,6 @@ class Mods_CreateBlankBashedPatch(ItemLink):
             self._showWarning(u"Unable to create new bashed patch: "
                               u"10 bashed patches already exist!")
 
-
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
     text, help = _(u'New Mod...'), _(u'Create a new blank mod')

@@ -113,7 +113,7 @@ cached_lord = __empty # must always be valid (or __empty)
 _saved_load_orders = [] # type: list[LoadOrder]
 _current_list_index = -1
 
-# Load Order utility methods - be sure cache is valid when using them
+# Load Order utility methods - make sure the cache is valid when using them
 def activeCached():
     """Return the currently cached active mods in load order as a tuple.
     :rtype : tuple[bolt.Path]

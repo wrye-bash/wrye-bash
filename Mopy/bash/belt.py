@@ -313,9 +313,9 @@ class PageSelect(PageInstaller):
 
     def OnDoubleClick(self, event):
         try:
-            file = self.images[self.index]
-            if file.exists() and not file.isdir():
-                file.start()
+            img = self.images[self.index]
+            if img.isfile():
+                img.start()
         except:
             pass
 
@@ -325,9 +325,9 @@ class PageSelect(PageInstaller):
         self.textItem.SetValue(self.descs[index])
         # Don't want the bitmap to resize until we call self.Layout()
         self.bmpItem.Freeze()
-        file = self.images[index]
-        if file.exists() and not file.isdir():
-            image = wx.Bitmap(file.s)
+        img = self.images[index]
+        if img.isfile():
+            image = wx.Bitmap(img.s)
             self.bmpItem.SetBitmap(image)
             self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_MAGNIFIER))
         else:

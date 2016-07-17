@@ -59,6 +59,7 @@ import sys
 import time
 from collections import OrderedDict
 from functools import partial
+from operator import itemgetter
 from types import ClassType
 #--wxPython
 import collections
@@ -562,8 +563,8 @@ class INIList(balt.UIList):
         mismatch = 0
         not_applied = 0
         invalid = 0
-        for tweak in self.data_store.keys():
-            status = self.data_store[tweak].tweak_status
+        for ini_info in self.data_store.itervalues():
+            status = ini_info.tweak_status
             if status == -10: invalid += 1
             elif status == 0: not_applied += 1
             elif status == 10: mismatch += 1
@@ -574,10 +575,8 @@ class INIList(balt.UIList):
         """Returns text list of tweaks"""
         tweaklist = _(u'Active Ini Tweaks:') + u'\n'
         tweaklist += u'[spoiler][xml]\n'
-        tweaks = self.data_store.keys()
-        tweaks.sort()
-        for tweak in tweaks:
-            if not self.data_store[tweak].tweak_status == 20: continue
+        for tweak, info in sorted(self.data_store.items(), key=itemgetter(0)):
+            if not info.tweak_status == 20: continue
             tweaklist+= u'%s\n' % tweak
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
@@ -1576,7 +1575,7 @@ class INIPanel(SashPanel):
     def RefreshPanel(self):
         # Refresh the drop down list
         path = self.current_ini_path
-        if path is None:
+        if path is None: # Browse...
             self.choice -= 1
         elif not path.isfile():
             for iFile in bosh.gameInis:

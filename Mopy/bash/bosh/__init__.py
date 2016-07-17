@@ -3747,7 +3747,7 @@ class ModInfos(FileInfos):
             if doSave: self.cached_lo_save_active()
 
     def lo_deactivate(self, fileName, doSave=True):
-        """Remove mods and their children from selected, can only raise if
+        """Remove mods and their children from _active_wip, can only raise if
         doSave=True."""
         if not isinstance(fileName, (set, list)): fileName = {fileName}
         notDeactivatable = load_order.must_be_active_if_present()
@@ -3809,7 +3809,7 @@ class ModInfos(FileInfos):
             if toActivate: self.cached_lo_save_active(active=toActivate)
 
     def lo_activate_exact(self, modNames):
-        """Selects exactly the specified set of mods."""
+        """Activate exactly the specified set of mods."""
         modsSet, allMods = set(modNames), set(self.keys())
         #--Ensure plugins that cannot be deselected stay selected
         modsSet.update(load_order.must_be_active_if_present() & allMods)
@@ -3834,7 +3834,7 @@ class ModInfos(FileInfos):
             message += u'\n* '.join(x.s for x in extra)
         return message
 
-    #-- Helpers ---------------------------------------------------------------
+    #--Helpers ----------------------------------------------------------------
     def isBP(self, modName): return self[modName].header.author in (
             u'BASHED PATCH', u'BASHED LISTS')
 
@@ -4182,12 +4182,12 @@ class SaveInfos(FileInfos):
         if baseSaves.exists():
             localSaveDirs = [x for x in baseSaves.list() if (x != u'Bash' and baseSaves.join(x).isdir())]
             # Filter out non-encodable names
-            bad = []
-            for dir in localSaveDirs:
+            bad = set()
+            for folder in localSaveDirs:
                 try:
-                    dir.s.encode('cp1252')
+                    folder.s.encode('cp1252')
                 except UnicodeEncodeError:
-                    bad.append(dir)
+                    bad.add(folder)
             localSaveDirs = [x for x in localSaveDirs if x not in bad]
         else:
             localSaveDirs = []
