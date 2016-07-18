@@ -25,6 +25,8 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
+import copy
+
 from .. import bass, bosh, balt, env
 from ..bass import Resources
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
@@ -211,7 +213,7 @@ class INI_CreateNew(OneItemLink):
         bosh.iniInfos.refresh()
         oldTarget = self.window.data_store.ini
         target = bosh.BestIniFile(path)
-        settings = target.getSettings()
+        settings = copy.copy(target.getSettings())
         new_settings = oldTarget.getSettings()
         for section in settings:
             if section in new_settings:

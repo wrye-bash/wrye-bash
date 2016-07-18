@@ -1587,7 +1587,8 @@ class IniFile(object):
             return default
 
     def getSettings(self, with_line_numbers=False, with_deleted=False):
-        """Gets settings for self."""
+        """Populate and return cached settings - if not just reading them
+        do a copy first !"""
         if not self.path.exists() or self.path.isdir():
             return ({}, {}) if with_deleted else {}
         psize, pmtime = self.path.size_mtime()
@@ -1599,9 +1600,9 @@ class IniFile(object):
             self._settings_cache = dict(
                 (k, dict((x, y[0]) for x, y in v.iteritems())) for k, v in
                 self._settings_cache_linenum.iteritems())
-        cached = copy.copy(self._settings_cache if not with_line_numbers else
-                           self._settings_cache_linenum)
-        if with_deleted: return cached, copy.copy(self._deleted_cache)
+        cached = self._settings_cache if not with_line_numbers else \
+            self._settings_cache_linenum
+        if with_deleted: return cached, self._deleted_cache
         return cached
 
     def getTweakFileSettings(self,tweakPath,lineNumbers=False):
