@@ -5357,6 +5357,7 @@ class InstallerMarker(Installer):
     Currently only used for the '==Last==' marker"""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
+    reValidNamePattern = re.compile(ur'^(.+?)(\d*)$', re.I | re.U)
 
     def __init__(self,archive):
         Installer.__init__(self,archive)
@@ -5382,8 +5383,7 @@ class InstallerMarker(Installer):
 
     def renameInstaller(self, archive, root, numStr, data):
         installer = data[archive]
-        newName = GPath(
-            u'==' + root.strip(u'=') + numStr + archive.ext + u'==')
+        newName = GPath(u'==' + root.strip(u'=') + numStr + u'==')
         if newName == archive:
             return False
         #--Add the marker to Bash and remove old one

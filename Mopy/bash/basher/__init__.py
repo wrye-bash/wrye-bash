@@ -2141,18 +2141,10 @@ class InstallersList(balt.UIList):
 
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
+        to_rename = self.GetSelected()
         #--Only rename multiple items of the same type
-        firstItem = self.data_store[self.GetSelected()[0]]
-        if isinstance(firstItem,bosh.InstallerMarker):
-            installer_type = bosh.InstallerMarker
-        elif isinstance(firstItem,bosh.InstallerArchive):
-            installer_type = bosh.InstallerArchive
-        elif isinstance(firstItem,bosh.InstallerProject):
-            installer_type = bosh.InstallerProject
-        else:
-            event.Veto()
-            return
-        for item in self.GetSelected():
+        installer_type = type(self.data_store[to_rename[0]])
+        for item in to_rename[1:]:
             if not isinstance(self.data_store[item], installer_type):
                 event.Veto()
                 return
@@ -2174,26 +2166,26 @@ class InstallersList(balt.UIList):
         """For pressing F2 on the edit box for renaming"""
         if event.GetKeyCode() == wx.WXK_F2:
             editbox = self._gList.GetEditControl()
-            selection = editbox.GetSelection()
+            # (start, stop), if start==stop there is no selection
+            selection_span = editbox.GetSelection()
             text = editbox.GetValue()
             lenWithExt = len(text)
-            if selection[0] != 0:
-                selection = (0,lenWithExt)
-            selectedText = GPath(text[selection[0]:selection[1]])
+            if selection_span[0] != 0:
+                selection_span = (0,lenWithExt)
+            selectedText = GPath(text[selection_span[0]:selection_span[1]])
             textNextLower = selectedText.body
             if textNextLower == selectedText:
                 lenNextLower = lenWithExt
             else:
                 lenNextLower = len(textNextLower.s)
-
             selected = self.data_store[self.GetSelected()[0]]
             if isinstance(selected, bosh.InstallerArchive):
-                selection = (0, lenNextLower)
+                selection_span = (0, lenNextLower)
             elif isinstance(selected, bosh.InstallerMarker):
-                selection = (2, lenWithExt-2)
+                selection_span = (2, lenWithExt - 2)
             else:
-                selection = (0, lenWithExt)
-            editbox.SetSelection(*selection)
+                selection_span = (0, lenWithExt)
+            editbox.SetSelection(*selection_span)
         else:
             event.Skip()
 
