@@ -598,7 +598,7 @@ class INIList(balt.UIList):
 
     def set_item_format(self, ini_name, item_format):
         iniInfo = self.data_store[ini_name]
-        status = iniInfo.getStatus()
+        status = iniInfo.getStatus() ## FIXME ! performance, use status....
         #--Image
         checkMark = 0
         icon = 0    # Ok tweak, not applied
@@ -636,11 +636,14 @@ class INIList(balt.UIList):
         tweak = bosh.iniInfos[hitItem]
         if tweak.tweak_status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
+        target, gameIni = self.data_store.ini, bosh.oblivionIni
+        if target is gameIni and not gameIni.ask_create_game_ini(
+                msg=_(u'The game ini must exist to apply a tweak to it.')):
+            return
         choice = self.panel.current_ini_path.tail
         if not self.warn_tweak_game_ini(choice): return
-        #--No point applying a tweak that's already applied
         file_ = tweak.dir.join(hitItem)
-        self.data_store.ini.applyTweakFile(file_)
+        target.applyTweakFile(file_)
         self.RefreshUIValid(hitItem)
 
     @staticmethod
@@ -683,11 +686,11 @@ class INITweakLineCtrl(INIListCtrl):
             else:
                 self.SetStringItem(i, 0, line[0])
             #--Line color
-            status = line[4]
+            status, deleted = line[4], line[6]
             if status == -10: color = colors['tweak.bkgd.invalid']
             elif status == 10: color = colors['tweak.bkgd.mismatched']
             elif status == 20: color = colors['tweak.bkgd.matched']
-            elif line[6]: color = colors['tweak.bkgd.mismatched']
+            elif deleted: color = colors['tweak.bkgd.mismatched']
             else: color = self.GetBackgroundColour()
             self.SetItemBackgroundColour(i, color)
             #--Set iniContents color
@@ -4063,11 +4066,12 @@ class BashFrame(wx.Frame):
                 msg = _(u'Your %s should begin with a section header '
                         u'(e.g. "[General]"), but does not. You should edit '
                         u'the file to correct this.') % bush.game.iniFiles[0]
-                balt.showWarning(self, fill(msg))
+                balt.showWarning(self, fill(msg), _(u'Corrupted game Ini'))
         elif self.oblivionIniMissing:
             self.oblivionIniMissing = False
             balt.showWarning(self, self._ini_missing % {
-                'ini': bosh.oblivionIni.path, 'game': bush.game.displayName})
+                'ini': bosh.oblivionIni.path, 'game': bush.game.displayName},
+                             _(u'Missing game Ini'))
 
     def _obmmWarn(self):
         #--OBMM Warning?

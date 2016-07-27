@@ -1553,11 +1553,17 @@ class IniFile(object):
     reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
     formatRes = (reSetting, reSection)
     encoding = 'utf-8'
+    __empty = {}
+    defaultSection = u'General'
 
-    def __init__(self,path,defaultSection=u'General'):
+    def __init__(self, path):
         self.path = path
-        self.defaultSection = defaultSection
         self.isCorrupted = False
+        self._ini_size = self.path.size if self.path.exists() else 0
+        self._ini_mod_time = self.path.mtime if self.path.exists() else 0
+        self._settings_cache = self.__empty
+        self._settings_cache_linenum = self.__empty
+        self._deleted_cache = self.__empty
 
     @classmethod
     def formatMatch(cls, path):
@@ -1574,30 +1580,48 @@ class IniFile(object):
     def getSetting(self,section,key,default=None):
         """Gets a single setting from the file."""
         section,key = map(bolt.LString,(section,key))
-        ini_settings,deleted_settings = self.getSettings()
+        ini_settings = self.getSettings()
         if section in ini_settings:
             return ini_settings[section].get(key,default)
         else:
             return default
 
-    def getSettings(self):
-        """Gets settings for self."""
-        return self.getTweakFileSettings(self.path,True)
+    def getSettings(self, with_line_numbers=False, with_deleted=False):
+        """Populate and return cached settings - if not just reading them
+        do a copy first !"""
+        if not self.path.exists() or self.path.isdir():
+            return ({}, {}) if with_deleted else {}
+        psize, pmtime = self.path.size_mtime()
+        if self._settings_cache is self.__empty or self._ini_size != psize \
+                or self._ini_mod_time != pmtime:
+            self._ini_size, self._ini_mod_time = psize, pmtime
+            self._settings_cache_linenum, self._deleted_cache = \
+                self.getTweakFileSettings(self.path, lineNumbers=True)
+            self._settings_cache = dict(
+                (k, dict((x, y[0]) for x, y in v.iteritems())) for k, v in
+                self._settings_cache_linenum.iteritems())
+        cached = self._settings_cache if not with_line_numbers else \
+            self._settings_cache_linenum
+        if with_deleted: return cached, self._deleted_cache
+        return cached
 
-    def getTweakFileSettings(self,tweakPath,setCorrupted=False,lineNumbers=False):
+    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
         """Gets settings in a tweak file."""
         ini_settings = {}
         deleted_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings,deleted_settings
+        default_section = self.__class__.defaultSection
         if tweakPath != self.path:
             encoding = 'utf-8'
+            setCorrupted = False
         else:
             encoding = self.encoding
-        reComment = self.reComment
-        reSection = self.reSection
-        reDeleted = self.reDeletedSetting
-        reSetting = self.reSetting
+            setCorrupted = True
+        reComment = IniFile.reComment
+        reSection = IniFile.reSection
+        reDeleted = IniFile.reDeletedSetting
+        reSetting = IniFile.reSetting
         if lineNumbers:
             def makeSetting(match,lineNo): return match.group(2).strip(),lineNo
         else:
@@ -1620,7 +1644,8 @@ class IniFile(object):
                     sectionSettings = ini_settings.setdefault(section,{})
                 elif maSetting:
                     if sectionSettings is None:
-                        sectionSettings = ini_settings.setdefault(LString(self.defaultSection),{})
+                        sectionSettings = ini_settings.setdefault(LString(
+                            default_section), {})
                         if setCorrupted: self.isCorrupted = True
                     sectionSettings[LString(maSetting.group(1))] = makeSetting(maSetting,i)
                 elif maDeleted:
@@ -1630,7 +1655,7 @@ class IniFile(object):
 
     def getTweakFileLines(self,tweakPath):
         """Get a line by line breakdown of the tweak file, in this format:
-        [(fulltext,section,setting,value,status,ini_line_number)]
+        [(fulltext,section,setting,value,status,ini_line_number, deleted)]
         where:
         fulltext = full line of text from the ini
         section = the section that is being edited
@@ -1641,7 +1666,8 @@ class IniFile(object):
               0: does exist, but it's a heading or something else without a value
              10: does exist, but value isn't the same
              20: does exist, and value is the same
-        ini_line_number = line number in the ini that this tweak applies to"""
+        ini_line_number = line number in the ini that this tweak applies to
+        deleted: deleted line (?)"""
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
@@ -1649,14 +1675,14 @@ class IniFile(object):
             encoding = 'utf-8'
         else:
             encoding = self.encoding
-        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True,True)
+        iniSettings,deletedSettings = self.getSettings(with_line_numbers=True, with_deleted=True)
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
         reSetting = self.reSetting
         #--Read ini file
         with tweakPath.open('r') as iniFile:
-            section = LString(self.defaultSection)
+            section = LString(self.__class__.defaultSection)
             for i,line in enumerate(iniFile.readlines()):
                 try:
                     line = unicode(line,encoding)
@@ -1851,19 +1877,21 @@ class OBSEIniFile(IniFile):
     reSet     = re.compile(ur'\s*set\s+(.+?)\s+to\s+(.*)', re.I|re.U)
     reSetGS   = re.compile(ur'\s*setGS\s+(.+?)\s+(.*)', re.I|re.U)
     formatRes = (reSet, reSetGS)
+    defaultSection = u'' # Change the default section to something that
+    # can't occur in a normal ini
 
-    def __init__(self,path,defaultSection=u''):
+    def __init__(self, path):
         """Change the default section to something that can't
         occur in a normal ini"""
-        IniFile.__init__(self,path,u'')
+        IniFile.__init__(self, path)
 
     def getSetting(self,section,key,default=None):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
-        return IniFile.getSetting(self,section,key,default)
+        return super(OBSEIniFile, self).getSetting(section, key, default)
 
-    def getTweakFileSettings(self,tweakPath,setCorrupted=False,lineNumbers=False):
+    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
         """Get the settings in the ini script."""
         ini_settings = {}
         deleted_settings = {}
@@ -1916,7 +1944,7 @@ class OBSEIniFile(IniFile):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True,True)
+        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True)
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
@@ -1970,7 +1998,7 @@ class OBSEIniFile(IniFile):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
-        IniFile.saveSetting(self,section,key,value)
+        super(OBSEIniFile, self).saveSetting(section, key, value)
 
     def saveSettings(self,ini_settings,deleted_settings={}):
         if not self.path.exists() or not self.path.isfile():
@@ -2076,54 +2104,57 @@ class OblivionIni(IniFile):
     def __init__(self,name):
         # Use local copy of the oblivion.ini if present
         if dirs['app'].join(name).exists():
-            IniFile.__init__(self, dirs['app'].join(name), u'General')
+            IniFile.__init__(self, dirs['app'].join(name))
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
         # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
         # default to user profile directory"""
-        IniFile.__init__(self, dirs['saveBase'].join(name), u'General')
+        IniFile.__init__(self, dirs['saveBase'].join(name))
 
-    def __ensureExists(self): ##: YAK - track down call graph - we should avoid
-        # creating the ini and if we must (bsa redirection ?) warn the user !!!
-        """Ensures that Oblivion.ini file exists. Copies from default
-        oblivion.ini if necessary."""
-        if self.path.exists(): return
+    @balt.conversation
+    def ask_create_game_ini(self, msg=u''):
+        if self is not oblivionIni: return True
+        if self.path.exists(): return True
         srcPath = dirs['app'].join(bush.game.defaultIniFile)
-        if srcPath.exists():
+        default_path_exists = srcPath.exists()
+        msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.path}) + \
+              u'\n\n' + ((msg + u'\n\n') if msg else u'')
+        if default_path_exists:
+            msg += _(u'Do you want Bash to create it by copying '
+                     u'%(default_ini)s ?' % {'default_ini': srcPath})
+            if not balt.askYes(None, msg, _(u'Missing game Ini')):
+                return False
+        else:
+            msg += _(u'Please create it manually to continue.')
+            balt.showError(None, msg, _(u'Missing game Ini'))
+            return False
+        try:
             srcPath.copyTo(self.path)
-
-    def saveSettings(self,settings,deleted_settings={}):
-        """Applies dictionary of settings to ini file.
-        Values in settings dictionary can be either actual values or
-        full key=value line ending in newline char."""
-        self.__ensureExists()
-        IniFile.saveSettings(self,settings,deleted_settings)
-
-    def applyTweakFile(self,tweakPath):
-        """Read Ini tweak file and apply its settings to oblivion.ini.
-        Note: Will ONLY apply settings that already exist."""
-        self.__ensureExists()
-        IniFile.applyTweakFile(self,tweakPath)
+            return True
+        except (OSError, IOError):
+            error_msg = u'Failed to copy %s to %s' % (srcPath, self.path)
+            deprint(error_msg, traceback=True)
+            balt.showError(None, error_msg, _(u'Missing game Ini'))
+        return False
 
     #--BSA Redirection --------------------------------------------------------
-    def getBsaRedirection(self):
+    def _getBsaRedirection(self):
         """Returns True if BSA redirection is active."""
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return False
-        self.__ensureExists()
         sArchives = self.getSetting(section,key,u'')
         return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
 
     def setBsaRedirection(self,doRedirect=True):
-        """Activates or deactivates BSA redirection."""
+        """Activate or deactivate BSA redirection - game ini must exist!"""
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return
         aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
-        if doRedirect == self.getBsaRedirection():
+        if doRedirect == self._getBsaRedirection():
             return
         # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
@@ -2505,7 +2536,6 @@ class ModInfo(FileInfo):
         baseDirJoin = self.getPath().head.join
         files = []
         sbody,ext = self.name.sbody,self.name.ext
-        language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
         for (dir,join,format) in bush.game.esp.stringsFiles:
             fname = format % {'body':sbody,
                               'ext':ext,
@@ -2743,10 +2773,12 @@ class INIInfo(FileInfo):
     def __init__(self,*args,**kwdargs):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
+        self.__target_ini = None # used in status only
 
     @property
     def tweak_status(self):
-        if self._status is None: self.getStatus()
+        self.__target_ini, old = self.getFileInfos().ini, self.__target_ini
+        if self._status is None or self.__target_ini != old: self.getStatus()
         return self._status
 
     def getFileInfos(self):
@@ -2769,12 +2801,12 @@ class INIInfo(FileInfo):
             return -10
         match = False
         mismatch = 0
-        settings,deleted = ini.getSettings()
+        ini_settings = ini.getSettings()
         for key in tweak:
-            if key not in settings:
+            if key not in ini_settings:
                 self._status = -10
                 return -10
-            settingsKey = settings[key]
+            settingsKey = ini_settings[key]
             tweakKey = tweak[key]
             for item in tweakKey:
                 if item not in settingsKey:
@@ -2816,7 +2848,7 @@ class INIInfo(FileInfo):
         path = self.getPath()
         ini = iniInfos.ini
         tweak,deletes = ini.getTweakFileSettings(path)
-        settings,deleted_settings = ini.getSettings()
+        ini_settings = ini.getSettings()
         text = [u'%s:' % path.stail]
 
         if len(tweak) == 0:
@@ -2843,11 +2875,11 @@ class INIInfo(FileInfo):
                                  _(u'Tweak format: INI')))
         else:
             for key in tweak:
-                if key not in settings:
+                if key not in ini_settings:
                     text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
                 else:
                     for item in tweak[key]:
-                        if item not in settings[key]:
+                        if item not in ini_settings[key]:
                             text.append(u' [%s] %s' % (key, item))
         if len(text) == 1:
             text.append(u' None')
@@ -3883,11 +3915,16 @@ class ModInfos(FileInfos):
                     return True
         return False
 
+    _plugin_inis = {}
     def _ini_files(self, descending=False):
         if bush.game.fsName == u'Skyrim':
-            iniPaths = (self[name].getIniPath() for name in load_order.activeCached())
-            iniFiles = [IniFile(iniPath) for iniPath in iniPaths if
-                        iniPath.exists()]
+            iniPaths = set(
+                self[name].getIniPath() for name in load_order.activeCached())
+            for key in self._plugin_inis.keys():
+                if key not in iniPaths:
+                    del self._plugin_inis[key]
+            iniFiles = [self._plugin_inis.setdefault(iniPath, IniFile(iniPath))
+                        for iniPath in iniPaths if iniPath.exists()]
             if descending: iniFiles.reverse()
             iniFiles.append(oblivionIni)
         else:
@@ -4121,19 +4158,14 @@ class SaveInfos(FileInfos):
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
         local save attribute to that value."""
-        if oblivionIni.path.exists() and (
-            oblivionIni.path.mtime != self.iniMTime):
-            # saveInfos 'singleton' is constructed in InitData after
-            # bosh.oblivionIni is set (hopefully) - TODO(ut) test
-            self.localSave = oblivionIni.getSetting(
-                bush.game.saveProfilesKey[0], bush.game.saveProfilesKey[1],
-                u'Saves\\')
-            # Hopefully will solve issues with unicode usernames # TODO(ut) test
-            self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
-            self.iniMTime = oblivionIni.path.mtime
+        # saveInfos singleton is constructed in InitData after bosh.oblivionIni
+        self.localSave = oblivionIni.getSetting(
+            bush.game.saveProfilesKey[0], bush.game.saveProfilesKey[1],
+            u'Saves\\')
+        # Hopefully will solve issues with unicode usernames # TODO(ut) test
+        self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
 
     def __init__(self):
-        self.iniMTime = 0
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
         FileInfos.__init__(self, dirs['saveBase'].join(self.localSave), SaveInfo)
@@ -4206,11 +4238,13 @@ class SaveInfos(FileInfos):
     def setLocalSave(self, localSave, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
+        if not oblivionIni.ask_create_game_ini(msg=_(
+                u'Setting the save profile is done by editing the game ini.')):
+            return
         self.localSave = localSave
         oblivionIni.saveSetting(bush.game.saveProfilesKey[0],
                                 bush.game.saveProfilesKey[1],
                                 localSave)
-        self.iniMTime = oblivionIni.path.mtime
         self._initDB(dirs['saveBase'].join(self.localSave))
         if refreshSaveInfos: self.refresh()
 
@@ -4328,7 +4362,8 @@ class ScreensData(_DataStore):
     def refresh(self):
         """Refresh list of screenshots."""
         self.dir = dirs['app']
-        ssBase = GPath(oblivionIni.getSetting(u'Display',u'SScreenShotBaseName',u'ScreenShot')) ##: cache ?
+        ssBase = GPath(oblivionIni.getSetting(
+            u'Display', u'SScreenShotBaseName', u'ScreenShot'))
         if ssBase.head:
             self.dir = self.dir.join(ssBase.head)
         newData = {}
@@ -5868,7 +5903,7 @@ class InstallersData(_DataStore):
         #--MakeDirs
         self.bashDir.makedirs()
         #--Archive invalidation
-        if settings.get('bash.bsaRedirection'):
+        if settings.get('bash.bsaRedirection') and oblivionIni.path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)
