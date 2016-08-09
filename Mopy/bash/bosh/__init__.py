@@ -5864,10 +5864,12 @@ class InstallersData(_DataStore):
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
 
-    def addMarker(self,name):
+    def add_marker(self, name, order):
         path = GPath(name)
         self[path] = InstallerMarker(path)
-        self.irefresh(what='OS')
+        if order is None:
+            order = self[self.lastKey].order
+        self.moveArchives([path], order)
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""
