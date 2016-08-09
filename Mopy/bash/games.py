@@ -43,7 +43,7 @@ def _write_plugins_txt_(path, lord, active, _star=False):
             # plugins.txt.  Even activating through the SkyrimLauncher
             # doesn't work.
             try:
-                out.write(asterisk() + bolt.encode(mod.s))
+                out.write(asterisk() + bolt.encode(mod.s, firstEncoding='cp1252'))
                 out.write('\r\n')
             except UnicodeEncodeError:
                 pass
@@ -73,7 +73,7 @@ def _parse_plugins_txt_(path, mod_infos, _star):
                 if not modname: continue
                 is_active = not _star or modname.startswith('*')
                 if _star and is_active: modname = modname[1:]
-                test = bolt.decode(modname)
+                test = bolt.decode(modname, encoding='cp1252')
             except UnicodeError: continue
             if bolt.GPath(test) not in mod_infos:
                 # The automatic encoding detector could have returned
