@@ -80,6 +80,7 @@ _encodingSwap = {
     'SHIFT_JIS': 'cp932',   # Japanese
     'windows-1252': 'cp1252',
     'windows-1251': 'cp1251',
+    'utf-8': 'utf8',
     }
 
 # Preferred encoding to use when decoding/encoding strings in plugin files
@@ -134,7 +135,7 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
         try:
             temp = text_str.encode(encoding)
             detectedEncoding = _getbestencoding(temp)
-            if detectedEncoding == encoding:
+            if detectedEncoding[0] == encoding:
                 # This encoding also happens to be detected
                 # By the encoding detector as the same thing,
                 # which means use it!
