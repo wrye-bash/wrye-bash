@@ -1559,8 +1559,11 @@ class IniFile(object):
     def __init__(self, path):
         self.path = path
         self.isCorrupted = False
-        self._ini_size = self.path.size if self.path.exists() else 0
-        self._ini_mod_time = self.path.mtime if self.path.exists() else 0
+        #--Settings cache
+        try:
+            self._ini_size, self._ini_mod_time = self.path.size_mtime()
+        except OSError:
+            self._ini_size = self._ini_mod_time = 0
         self._settings_cache = self.__empty
         self._settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
