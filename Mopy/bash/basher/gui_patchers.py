@@ -822,6 +822,7 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         return config
 
 class _ListsMergerPanel(_ListPatcherPanel):
+    listLabel = _(u'Override Delev/Relev Tags')
 
     #--Config Phase -----------------------------------------------------------
     forceAuto = False
@@ -901,7 +902,12 @@ from ..patcher.patchers import special
 # Patchers 10 -----------------------------------------------------------------
 class AliasesPatcher(base.AliasesPatcher, _AliasesPatcherPanel): pass
 class CBash_AliasesPatcher(base.CBash_AliasesPatcher, _AliasesPatcherPanel):
-    pass
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        config = super(CBash_AliasesPatcher,self).getConfig(configs)
+        self.srcs = [] #so as not to fail screaming when determining load
+        # mods - but with the least processing required. ##: NOT HERE !
+        return config
 
 class PatchMerger(base.PatchMerger, _MergerPanel): pass
 class CBash_PatchMerger(base.CBash_PatchMerger, _MergerPanel): pass
@@ -972,9 +978,9 @@ class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
 
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,
-                      _TweakPatcherPanel): pass
+                      _TweakPatcherPanel): default_isEnabled = True
 class CBash_AssortedTweaker(multitweak_assorted.CBash_AssortedTweaker,
-                            _TweakPatcherPanel): pass
+                            _TweakPatcherPanel): default_isEnabled = True
 
 class ClothesTweaker(multitweak_clothes.ClothesTweaker,
                      _TweakPatcherPanel): pass
@@ -1006,13 +1012,13 @@ class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,
                         _DoublePatcherPanel):
     listLabel = _(u'Race Mods')
 
-class ListsMerger(special.ListsMerger, _ListsMergerPanel):
-    listLabel = _(u'Override Delev/Relev Tags')
-class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel):
-    listLabel = _(u'Override Delev/Relev Tags')
+class ListsMerger(special.ListsMerger, _ListsMergerPanel): pass
+class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel): pass
 
-class ContentsChecker(special.ContentsChecker, _PatcherPanel): pass
-class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel): pass
+class ContentsChecker(special.ContentsChecker, _PatcherPanel):
+    default_isEnabled = True
+class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel):
+    default_isEnabled = True
 
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------

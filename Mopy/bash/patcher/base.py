@@ -286,6 +286,7 @@ class APatchMerger(AListPatcher):
     group = _(u'General')
     name = _(u'Merge Patches')
     text = _(u"Merge patch mods into Bashed Patch.")
+    autoKey = {u'Merge'}
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -304,3 +305,4 @@ class AUpdateReferences(AListPatcher):
     group = _(u'General')
     name = _(u'Replace Form IDs')
     text = _(u"Imports Form Id replacers from csv files into the Bashed Patch.")
+    autoKey = {u'Formids'}

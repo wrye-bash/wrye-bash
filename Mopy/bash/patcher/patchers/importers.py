@@ -2328,14 +2328,16 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         super(CBash_ImportActorsSpells, self)._clog(log)
 
 #------------------------------------------------------------------------------
-class NamesPatcher(ImportPatcher):
+class _ANamesPatcher(AImportPatcher):
     """Import names from source mods/files."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
     autoRe = game.namesPatcherMaster
-    autoKey = u'Names'
+    autoKey = {u'Names'}
     logMsg =  u'\n=== ' + _(u'Renamed Items')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
+
+class NamesPatcher(ImportPatcher, _ANamesPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2428,14 +2430,7 @@ class NamesPatcher(ImportPatcher):
                     type_count[act_type] += 1
         self._patchLog(log,type_count)
 
-class CBash_NamesPatcher(CBash_ImportPatcher):
-    """Import names from source mods/files."""
-    name = _(u'Import Names')
-    text = _(u"Import names from source mods/files.")
-    autoRe = game.namesPatcherMaster
-    autoKey = {u'Names'}
-    logMsg = u'\n=== ' + _(u'Renamed Items')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+class CBash_NamesPatcher(CBash_ImportPatcher, _ANamesPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):

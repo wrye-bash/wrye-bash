@@ -520,8 +520,6 @@ class _AContentsChecker(SpecialPatcher):
     name = _(u'Contents Checker')
     text = _(u"Checks contents of leveled lists, inventories and containers"
              u" for correct types.")
-    # CONFIG DEFAULTS
-    default_isEnabled = True
 
 class ContentsChecker(_AContentsChecker,Patcher):
     #--Patch Phase ------------------------------------------------------------
