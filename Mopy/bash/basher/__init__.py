@@ -2425,10 +2425,16 @@ class InstallersList(balt.UIList):
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
+        selected_installers = self.GetSelected()
+        if selected_installers:
+            pairs = self.data_store.sorted_pairs(selected_installers)
+            max_order = pairs[-1][1].order + 1 # place it after last selected
+        else:
+            max_order = None
         try:
             index = self.GetIndex(GPath(u'===='))
         except KeyError: # u'====' not found in the internal dictionary
-            self.data_store.addMarker(u'====')
+            self.data_store.add_marker(u'====', max_order)
             self.RefreshUI() # why refresh mods/saves/inis when adding a marker
             index = self.GetIndex(GPath(u'===='))
         if index != -1:
