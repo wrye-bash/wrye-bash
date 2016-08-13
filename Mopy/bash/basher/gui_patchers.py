@@ -464,9 +464,6 @@ class _ListPatcherPanel(_PatcherPanel):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = self.__class__.autoKey
-        if isinstance(autoKey,basestring):
-            autoKey = {autoKey}
-        autoKey = set(autoKey)
         self.choiceMenu = self.__class__.choiceMenu
         dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
@@ -741,6 +738,7 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     and tweaks)."""
     listLabel = _(u'Source Mods/Files')
     style = 0
+    subLabel = _(u'Race Tweaks')
     # CONFIG DEFAULTS
     default_isEnabled = True # isActive will be set to True in initPatchFile
 
@@ -795,7 +793,7 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
         autoRe = self.__class__.autoRe
-        autoKey = set(self.__class__.autoKey)
+        autoKey = self.__class__.autoKey
         dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
             name = modInfo.name
