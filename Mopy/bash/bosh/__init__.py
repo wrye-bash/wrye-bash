@@ -47,7 +47,7 @@ from itertools import groupby
 #--Local
 from .. import bass, bolt, balt, bush, env, load_order, libbsa
 from .mods_metadata import ConfigHelpers
-from ..bass import dirs, inisettings, tooldirs
+from ..bass import dirs, inisettings, tooldirs, reModExt
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError, formatInteger, round_size
@@ -97,7 +97,6 @@ reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]
 #--Mod Extensions
 reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
 reExGroup = re.compile(u'(.*?),',re.U)
-reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
