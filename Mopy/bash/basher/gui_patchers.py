@@ -416,7 +416,7 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Verify file existence
         newConfigItems = []
         for srcPath in self.configItems:
-            if ((bosh.reModExt.search(srcPath.s) and srcPath in bosh.modInfos) or
+            if ((bass.reModExt.search(srcPath.s) and srcPath in bosh.modInfos) or
                  reCsvExt.search(srcPath.s) and srcPath in self.patches_set):
                 newConfigItems.append(srcPath)
         self.configItems = newConfigItems
@@ -815,7 +815,7 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
         if self.isEnabled:
             importedMods = [item for item,value in
                             self.configChecks.iteritems() if
-                            value and bosh.reModExt.search(item.s)]
+                            value and bass.reModExt.search(item.s)]
             configs['ImportedMods'].update(importedMods)
         return config
 
