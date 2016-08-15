@@ -74,6 +74,8 @@ ECHO Found Python at '%PYTHON%'
 ECHO Found Python at '%PYTHON%' >%OUTFILE%
 ECHO Launching Wrye Bash 307 in debug mode
 ECHO Launching Wrye Bash 307 in debug mode >>%OUTFILE%
+:: Line below won't do due to us redirecting stdout/err inside bash.py
+SET PYTHONIOENCODING=UTF8
 "%PYTHON%" "Wrye Bash Launcher.pyw" -d %1 %2 %3 %4 %5 %6 %7 %8 %9 >>%OUTFILE% 2>&1
 
 

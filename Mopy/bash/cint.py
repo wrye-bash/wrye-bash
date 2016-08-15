@@ -15457,6 +15457,12 @@ class ObCollection:
 
     def Debug_DumpModFiles(self):
         col = [_(u"Collection (%08X) contains the following modfiles:") % (self._CollectionID,)]
-        files = [_(u"Load Order (%s), Name(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID),), mod.ModName) if mod.ModName == mod.FileName else _("Load Order (%s), ModName(%s) FileName(%s)") % ('--' if _CGetModLoadOrderByID(mod._ModID) == -1 else '%02X' % (_CGetModLoadOrderByID(mod._ModID)), mod.ModName, mod.FileName) for mod in self.AllMods]
+        lo_mods = [(_CGetModLoadOrderByID(mod._ModID), mod.ModName,
+                    mod.FileName) for mod in self.AllMods]
+        files = [_(u"Load Order (%s), Name(%s)") % (
+            u'--' if lo == -1 else (u'%02X' % lo), mname) if mname == fname else
+                 _(u"Load Order (%s), ModName(%s) FileName(%s)") % (
+            u'--' if lo == -1 else (u'%02X' % lo), mname, fname)
+                 for lo, mname, fname in lo_mods]
         col.extend(files)
-        return u'\n'.join(col)
+        return u'\n'.join(col).encode('utf-8')
