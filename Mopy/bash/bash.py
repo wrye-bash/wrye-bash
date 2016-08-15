@@ -28,6 +28,7 @@ loop."""
 
 # Imports ---------------------------------------------------------------------
 import atexit
+import codecs
 import os
 from time import time, sleep
 import sys
@@ -279,7 +280,9 @@ def main():
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
-        errLog = open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w')
+        # errLog = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding='utf-8')
+        errLog = codecs.open(os.path.join(os.getcwdu(), u'BashBugDump.log'),
+                             'w', encoding='utf-8')
         sys.stdout = errLog
         sys.stderr = errLog
         old_stderr = errLog
