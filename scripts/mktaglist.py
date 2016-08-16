@@ -30,7 +30,7 @@ lootDir = u'../Mopy/bash/compiled'
 
 games_info = OrderedDict([(u'Oblivion', None), (u'Skyrim', None),
                           (u'Fallout3', None), (u'FalloutNV', None),
-                          # (u'Fallout4', None),
+                          (u'Fallout4', None),
                           ])
 
 # Detect games.
@@ -70,7 +70,7 @@ else:
 loot_codes = dict(zip(games_info.keys(), (
     loot.LOOT_GAME_TES4, loot.LOOT_GAME_TES5, loot.LOOT_GAME_FO3,
     loot.LOOT_GAME_FONV,
-    # loot.LOOT_GAME_FO4,
+    loot.LOOT_GAME_FO4,
 )))
 
 for game, info in games_info.iteritems():
