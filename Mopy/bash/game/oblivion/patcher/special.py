@@ -57,7 +57,8 @@ class _AAlchemicalCatalogs(SpecialPatcher):
     name = _(u'Cobl Catalogs')
     text = (_(u"Update COBL's catalogs of alchemical ingredients and effects.")
             + u'\n\n' + _(u'Will only run if Cobl Main.esm is loaded.'))
-    defaultConfig = {'isEnabled':True}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
 class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
 
@@ -357,6 +358,7 @@ class _ACoblExhaustion(SpecialPatcher):
             + u'\n\n' + _(u'Will only run if Cobl Main v1.66 (or higher) is'
                           u' active.'))
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
+    autoKey = {u'Exhaust'}
 
     def _pLog(self, log, count):
         log.setHeader(u'= ' + self.__class__.name)
@@ -365,7 +367,6 @@ class _ACoblExhaustion(SpecialPatcher):
             log(u'  * %s: %d' % (srcMod.s, count[srcMod]))
 
 class CoblExhaustion(_ACoblExhaustion,ListPatcher):
-    autoKey = u'Exhaust'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -458,7 +459,6 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         self._pLog(log, count)
 
 class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
-    autoKey = {u'Exhaust'}
     unloadedText = ""
 
     #--Config Phase -----------------------------------------------------------
@@ -551,6 +551,7 @@ class _AMFactMarker(SpecialPatcher):
     autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
+    autoKey = {u'MFact'}
 
     def _pLog(self, log, changed):
         log.setHeader(u'= ' + self.__class__.name)
@@ -560,7 +561,6 @@ class _AMFactMarker(SpecialPatcher):
             log(u'* %s: %d' % (mod.s, changed[mod]))
 
 class MFactMarker(_AMFactMarker,ListPatcher):
-    autoKey = 'MFact'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -666,7 +666,6 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         self._pLog(log, changed)
 
 class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
-    autoKey = {'MFact'}
     unloadedText = u""
 
     #--Config Phase -----------------------------------------------------------
@@ -787,7 +786,8 @@ class _ASEWorldEnforcer(SpecialPatcher):
     name = _(u'SEWorld Tests')
     text = _(u"Suspends Cyrodiil quests while in Shivering Isles. I.e. "
              u"re-instates GetPlayerInSEWorld tests as necessary.")
-    defaultConfig = {'isEnabled': True}
+    # CONFIG DEFAULTS
+    default_isEnabled = True
 
 class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
     #--Patch Phase ------------------------------------------------------------

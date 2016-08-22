@@ -132,11 +132,11 @@ def _clog(self, log,
     if listSrcs:
         self._srcMods(log)
         log(self.__class__.logMsg)
-    for type in mod_count.keys():
-        log(logModRecs % {'type': u'%s ' % type,
-                          'count': sum(mod_count[type].values())})
-        for srcMod in load_order.get_ordered(mod_count[type].keys()):
-            log(u'  * %s: %d' % (srcMod.s, mod_count[type][srcMod]))
+    for top_rec_type in sorted(mod_count.keys()):
+        log(logModRecs % {'type': u'%s ' % top_rec_type,
+                          'count': sum(mod_count[top_rec_type].values())})
+        for srcMod in load_order.get_ordered(mod_count[top_rec_type].keys()):
+            log(u'  * %s: %d' % (srcMod.s, mod_count[top_rec_type][srcMod]))
     self.mod_count = {}
 
 # Common initData pattern -----------------------------------------------------
@@ -449,12 +449,14 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class GraphicsPatcher(ImportPatcher):
+class _AGraphicsPatcher(AImportPatcher):
     """Merges changes to graphics (models and icons)."""
     name = _(u'Import Graphics')
     text = _(u"Import graphics (models, icons, etc.) from source mods.")
     tip = text
-    autoKey = u'Graphics'
+    autoKey = {u'Graphics'}
+
+class GraphicsPatcher(ImportPatcher, _AGraphicsPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -616,12 +618,7 @@ class GraphicsPatcher(ImportPatcher):
         needed."""
         _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
-class CBash_GraphicsPatcher(CBash_ImportPatcher):
-    """Merges changes to graphics (models and icons)."""
-    name = _(u'Import Graphics')
-    text = _(u"Import graphics (models, icons, etc.) from source mods.")
-    tip = text
-    autoKey = {u'Graphics'}
+class CBash_GraphicsPatcher(CBash_ImportPatcher, _AGraphicsPatcher):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
@@ -722,14 +719,16 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher):
         _clog(self, log)
 
 #------------------------------------------------------------------------------
-class ActorImporter(ImportPatcher):
+class _AActorImporter(AImportPatcher):
     """Merges changes to actors."""
     name = _(u'Import Actors')
     text = _(u"Import Actor components from source mods.")
     tip = text
-    autoKey = (u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
+    autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
                u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
-               u'Actors.Skeleton')
+               u'Actors.Skeleton'}
+
+class ActorImporter(ImportPatcher, _AActorImporter):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -901,14 +900,7 @@ class ActorImporter(ImportPatcher):
     def buildPatch(self,log,progress):
        _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
-class CBash_ActorImporter(CBash_ImportPatcher):
-    """Merges changes to actors."""
-    name = _(u'Import Actors')
-    text = _(u"Import Actor components from source mods.")
-    tip = text
-    autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
-               u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
-               u'Actors.Skeleton'}
+class CBash_ActorImporter(CBash_ImportPatcher, _AActorImporter):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
@@ -991,12 +983,14 @@ class CBash_ActorImporter(CBash_ImportPatcher):
         _clog(self, log)
 
 #------------------------------------------------------------------------------
-class KFFZPatcher(ImportPatcher):
+class _AKFFZPatcher(AImportPatcher):
     """Merges changes to actor animation lists."""
     name = _(u'Import Actors: Animations')
     text = _(u"Import Actor animations from source mods.")
     tip = text
-    autoKey = u'Actors.Anims'
+    autoKey = {u'Actors.Anims'}
+
+class KFFZPatcher(ImportPatcher, _AKFFZPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1021,12 +1015,7 @@ class KFFZPatcher(ImportPatcher):
     def buildPatch(self,log,progress):
         _buildPatch(self,log)
 
-class CBash_KFFZPatcher(CBash_ImportPatcher):
-    """Merges changes to actor animations."""
-    name = _(u'Import Actors: Animations')
-    text = _(u"Import Actor animations from source mods.")
-    tip = text
-    autoKey = {u'Actors.Anims'}
+class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     logMsg = u'* ' + _(u'Imported Animations') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
@@ -1061,12 +1050,14 @@ class CBash_KFFZPatcher(CBash_ImportPatcher):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class NPCAIPackagePatcher(ImportPatcher):
+class _ANPCAIPackagePatcher(AImportPatcher):
     """Merges changes to the AI Packages of Actors."""
     name = _(u'Import Actors: AI Packages')
     text = _(u"Import Actor AI Package links from source mods.")
     tip = text
-    autoKey = (u'Actors.AIPackages',u'Actors.AIPackagesForceAdd')
+    autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
+
+class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
     logMsg = _(u'AI Package Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
@@ -1235,12 +1226,7 @@ class NPCAIPackagePatcher(ImportPatcher):
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
-class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
-    """Merges changes to the AI Packages of Actors."""
-    name = _(u'Import Actors: AI Packages')
-    text = _(u"Import Actor AI Package links from source mods.")
-    tip = text
-    autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
+class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
     scanRequiresChecked = False
     logMsg = u'* ' + _(u'AI Package Lists Changed') + u': %d'
 
@@ -1327,12 +1313,14 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class DeathItemPatcher(ImportPatcher):
+class _ADeathItemPatcher(AImportPatcher):
     """Merges changes to actor death items."""
     name = _(u'Import Actors: Death Items')
     text = _(u"Import Actor death items from source mods.")
     tip = text
-    autoKey = u'Actors.DeathItem'
+    autoKey = {u'Actors.DeathItem'}
+
+class DeathItemPatcher(ImportPatcher, _ADeathItemPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1359,12 +1347,7 @@ class DeathItemPatcher(ImportPatcher):
         needed."""
         _buildPatch(self,log)
 
-class CBash_DeathItemPatcher(CBash_ImportPatcher):
-    """Imports actor death items."""
-    name = _(u'Import Actors: Death Items')
-    text = _(u"Import Actor death items from source mods.")
-    tip = text
-    autoKey = {u'Actors.DeathItem'}
+class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
     logMsg = u'* ' + _(u'Imported Death Items') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
@@ -1412,12 +1395,14 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher):
         super(CBash_DeathItemPatcher, self)._clog(log)
 
 #------------------------------------------------------------------------------
-class ImportFactions(ImportPatcher):
+class _AImportFactions(AImportPatcher):
     """Import factions to creatures and NPCs."""
     name = _(u'Import Factions')
     text = _(u"Import factions from source mods/files.")
+    autoKey = {u'Factions'}
+
+class ImportFactions(ImportPatcher, _AImportFactions):
     logMsg = _(u'Refactioned Actors')
-    autoKey = u'Factions'
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
@@ -1498,11 +1483,7 @@ class ImportFactions(ImportPatcher):
         _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
                     types=self.activeTypes)
 
-class CBash_ImportFactions(CBash_ImportPatcher):
-    """Import factions to creatures and NPCs."""
-    name = _(u'Import Factions')
-    text = _(u"Import factions from source mods/files.")
-    autoKey = {u'Factions'}
+class CBash_ImportFactions(CBash_ImportPatcher, _AImportFactions):
     # no logMsg here ! - listSrcs=False
     logModRecs = u'* ' + _(u'Refactioned %(type)s Records: %(count)d')
 
@@ -1598,11 +1579,13 @@ class CBash_ImportFactions(CBash_ImportPatcher):
         _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
 
 #------------------------------------------------------------------------------
-class ImportRelations(ImportPatcher):
+class _AImportRelations(AImportPatcher):
     """Import faction relations to factions."""
     name = _(u'Import Relations')
     text = _(u"Import relations from source mods/files.")
-    autoKey = u'Relations'
+    autoKey = {u'Relations'}
+
+class ImportRelations(ImportPatcher, _AImportRelations):
     logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
@@ -1688,11 +1671,7 @@ class ImportRelations(ImportPatcher):
     def _plog(self,log,type_count):
         log(self.__class__.logMsg % type_count['FACT'])
 
-class CBash_ImportRelations(CBash_ImportPatcher):
-    """Import faction relations to factions."""
-    name = _(u'Import Relations')
-    text = _(u"Import relations from source mods/files.")
-    autoKey = {u'Relations'}
+class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
     logMsg = u'* ' + _(u'Re-Relationed Records') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
@@ -1754,13 +1733,15 @@ class CBash_ImportRelations(CBash_ImportPatcher):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class ImportScripts(ImportPatcher):
+class _AImportScripts(AImportPatcher):
     """Imports attached scripts on objects."""
     name = _(u'Import Scripts')
-    text = _(u"Import Scripts on containers, plants, misc, weapons etc. from "
+    text = _(u"Import Scripts on containers, plants, misc, weapons etc from "
              u"source mods.")
     tip = text
-    autoKey = u'Scripts'
+    autoKey = {u'Scripts'}
+
+class ImportScripts(ImportPatcher, _AImportScripts):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1788,13 +1769,7 @@ class ImportScripts(ImportPatcher):
         """Merge last version of record with patched scripts link as needed."""
         _buildPatch(self,log)
 
-class CBash_ImportScripts(CBash_ImportPatcher):
-    """Imports attached scripts on objects."""
-    name = _(u'Import Scripts')
-    text = _(u"Import Scripts on containers, plants, misc, weapons etc from "
-             u"source mods.")
-    tip = text
-    autoKey = {u'Scripts'}
+class CBash_ImportScripts(CBash_ImportPatcher, _AImportScripts):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
@@ -1854,12 +1829,14 @@ class CBash_ImportScripts(CBash_ImportPatcher):
         _clog(self, log)
 
 #------------------------------------------------------------------------------
-class ImportInventory(ImportPatcher):
+class _AImportInventory(AImportPatcher):
     """Merge changes to actor inventories."""
     name = _(u'Import Inventory')
     text = _(u"Merges changes to NPC, creature and container inventories.")
-    autoKey = (u'Invent',u'InventOnly')
+    autoKey = {u'Invent', u'InventOnly'}
     iiMode = True
+
+class ImportInventory(ImportPatcher, _AImportInventory):
     logMsg = _(u'Inventories Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
@@ -1988,12 +1965,7 @@ class ImportInventory(ImportPatcher):
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
-class CBash_ImportInventory(CBash_ImportPatcher):
-    """Merge changes to actor inventories."""
-    name = _(u'Import Inventory')
-    text = _(u"Merges changes to NPC, creature and container inventories.")
-    autoKey = {u'Invent', u'InventOnly'}
-    iiMode = True
+class CBash_ImportInventory(CBash_ImportPatcher, _AImportInventory):
     # no logMsg here ! - listSrcs=False
     logModRecs = u'%(type)s ' + _(u'Inventories Changed') + u': %(count)d'
 
@@ -2088,12 +2060,14 @@ class CBash_ImportInventory(CBash_ImportPatcher):
         _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
 
 #------------------------------------------------------------------------------
-class ImportActorsSpells(ImportPatcher):
+class _AImportActorsSpells(AImportPatcher):
     """Merges changes to the spells lists of Actors."""
     name = _(u'Import Actors: Spells')
     text = _(u"Merges changes to NPC and creature spell lists.")
     tip = text
-    autoKey = (u'Actors.Spells',u'Actors.SpellsForceAdd')
+    autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
+
+class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
     logMsg = _(u'Spell Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
@@ -2259,12 +2233,7 @@ class ImportActorsSpells(ImportPatcher):
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
-class CBash_ImportActorsSpells(CBash_ImportPatcher):
-    """Merges changes to the spells lists of Actors."""
-    name = _(u'Import Actors: Spells')
-    text = _(u"Merges changes to NPC and creature spell lists.")
-    tip = text
-    autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
+class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
     logMsg = u'* '+_(u'Imported Spell Lists') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
@@ -2328,14 +2297,16 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher):
         super(CBash_ImportActorsSpells, self)._clog(log)
 
 #------------------------------------------------------------------------------
-class NamesPatcher(ImportPatcher):
+class _ANamesPatcher(AImportPatcher):
     """Import names from source mods/files."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
     autoRe = game.namesPatcherMaster
-    autoKey = u'Names'
+    autoKey = {u'Names'}
     logMsg =  u'\n=== ' + _(u'Renamed Items')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
+
+class NamesPatcher(ImportPatcher, _ANamesPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2428,14 +2399,7 @@ class NamesPatcher(ImportPatcher):
                     type_count[act_type] += 1
         self._patchLog(log,type_count)
 
-class CBash_NamesPatcher(CBash_ImportPatcher):
-    """Import names from source mods/files."""
-    name = _(u'Import Names')
-    text = _(u"Import names from source mods/files.")
-    autoRe = game.namesPatcherMaster
-    autoKey = {u'Names'}
-    logMsg = u'\n=== ' + _(u'Renamed Items')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+class CBash_NamesPatcher(CBash_ImportPatcher, _ANamesPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2498,6 +2462,8 @@ class _ANpcFacePatcher(AImportPatcher):
     text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR"
              u" and similar mods.")
     autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+    autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
+               u'Npc.EyesOnly'}
 
     def _ignore_record(self, faceMod):
         # Ignore the record. Another option would be to just ignore the
@@ -2507,8 +2473,6 @@ class _ANpcFacePatcher(AImportPatcher):
         mod_skipcount[faceMod] = mod_skipcount.setdefault(faceMod, 0) + 1
 
 class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
-    autoKey = (u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
-        u'Npc.EyesOnly')
     logMsg = u'\n=== '+_(u'Faces Patched')+ u': %d'
 
     #--Patch Phase ------------------------------------------------------------
@@ -2634,8 +2598,6 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         log(self.__class__.logMsg % count)
 
 class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
-    autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
-               u'Npc.EyesOnly'}
     logMsg = u'* '+_(u'Faces Patched') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
@@ -2714,12 +2676,14 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
         super(CBash_NpcFacePatcher, self)._clog(log)
 
 #------------------------------------------------------------------------------
-class RoadImporter(ImportPatcher):
+class _ARoadImporter(AImportPatcher):
     """Imports roads."""
     name = _(u'Import Roads')
     text = _(u"Import roads from source mods.")
     tip = text
-    autoKey = u'Roads'
+    autoKey = {u'Roads'}
+
+class RoadImporter(ImportPatcher, _ARoadImporter):
     logMsg = _(u'Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
@@ -2790,12 +2754,7 @@ class RoadImporter(ImportPatcher):
         for modWorld in sorted(worldsPatched):
             log(u'* %s: %s' % modWorld)
 
-class CBash_RoadImporter(CBash_ImportPatcher):
-    """Imports roads."""
-    name = _(u'Import Roads')
-    text = _(u"Import roads from source mods.")
-    tip = text
-    autoKey = {u'Roads'}
+class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
     logMsg = u'* ' + _(u'Roads Imported') + u': %d'
     #The regular patch routine doesn't allow merging of world records. The CBash patch routine does.
     #So, allowUnloaded isn't needed for this patcher to work. The same functionality could be gained by merging the tagged record.
@@ -2855,13 +2814,16 @@ class CBash_RoadImporter(CBash_ImportPatcher):
                 record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class SoundPatcher(ImportPatcher):
+class _ASoundPatcher(AImportPatcher):
     """Imports sounds from source mods into patch."""
     name = _(u'Import Sounds')
+    autoKey = {u'Sound'}
+
+class SoundPatcher(ImportPatcher, _ASoundPatcher):
+    """Imports sounds from source mods into patch."""
     text = _(u"Import sounds (from Magic Effects, Containers, Activators,"
              u" Lights, Weathers and Doors) from source mods.")
     tip = text
-    autoKey = u'Sound'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2888,13 +2850,11 @@ class SoundPatcher(ImportPatcher):
         """Merge last version of record with patched sound data as needed."""
         _buildPatch(self,log)
 
-class CBash_SoundPatcher(CBash_ImportPatcher):
+class CBash_SoundPatcher(CBash_ImportPatcher, _ASoundPatcher):
     """Imports sounds from source mods into patch."""
-    name = _(u'Import Sounds')
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors,"
              u" Lights, Magic Effects and Weathers) from source mods.")
     tip = text
-    autoKey = {u'Sound'}
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
@@ -2957,15 +2917,17 @@ class CBash_SoundPatcher(CBash_ImportPatcher):
         _clog(self, log)
 
 #------------------------------------------------------------------------------
-class StatsPatcher(ImportPatcher):
+class _AStatsPatcher(AImportPatcher):
     """Import stats from mod file."""
     scanOrder = 28
     editOrder = 28 #--Run ahead of bow patcher
     name = _(u'Import Stats')
     text = _(u"Import stats from any pickupable items from source mods/files.")
-    autoKey = u'Stats'
-    logMsg = u'\n=== ' + _(u'Modified Stats')
+    autoKey = {u'Stats'}
+    logMsg = u'\n=== ' + _(u'Imported Stats')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
+
+class StatsPatcher(ImportPatcher, _AStatsPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3050,15 +3012,7 @@ class StatsPatcher(ImportPatcher):
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
 
-class CBash_StatsPatcher(CBash_ImportPatcher):
-    """Import stats from mod file."""
-    scanOrder = 28
-    editOrder = 28 #--Run ahead of bow patcher
-    name = _(u'Import Stats')
-    text = _(u"Import stats from any pickupable items from source mods/files.")
-    autoKey = {u'Stats'}
-    logMsg = u'\n=== ' + _(u'Imported Stats')
-    srcsHeader = u'=== ' + _(u'Source Mods/Files')
+class CBash_StatsPatcher(CBash_ImportPatcher, _AStatsPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -3122,14 +3076,16 @@ class CBash_StatsPatcher(CBash_ImportPatcher):
         _clog(self, log)
 
 #------------------------------------------------------------------------------
-class SpellsPatcher(ImportPatcher):
+class _ASpellsPatcher(AImportPatcher):
     """Import spell changes from mod files."""
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
     text = _(u"Import stats from any spells from source mods/files.")
-    autoKey = (u'Spells',u'SpellStats')
-    logMsg = u'\n=== ' + _(u'Modified Stats')
+    autoKey = {u'Spells',u'SpellStats'}
+
+class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
+    logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
@@ -3207,13 +3163,7 @@ class SpellsPatcher(ImportPatcher):
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
 
-class CBash_SpellsPatcher(CBash_ImportPatcher):
-    """Import spell changes from mod files."""
-    scanOrder = 29
-    editOrder = 29 #--Run ahead of bow patcher
-    name = _(u'Import Spell Stats')
-    text = _(u"Import stats from any spells from source mods/files.")
-    autoKey = {u'Spells', u'SpellStats'}
+class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
     logMsg = u'* ' + _(u'Modified SPEL Stats') + u': %d'
 
     #--Config Phase -----------------------------------------------------------

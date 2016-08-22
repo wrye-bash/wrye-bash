@@ -1550,8 +1550,8 @@ soundsTypes = {
 #------------------------------------------------------------------------------
 # CellImporter
 #------------------------------------------------------------------------------
-cellAutoKeys = (
-    u'C.Climate',u'C.Light',u'C.Water',u'C.Owner',u'C.Name',u'C.RecordFlags',u'C.Music')#,u'C.Maps')
+cellAutoKeys = {u'C.Climate', u'C.Light', u'C.Water', u'C.Owner', u'C.Name',
+                u'C.RecordFlags', u'C.Music'}#,u'C.Maps'}
 cellRecAttrs = {
     u'C.Climate': ('climate',),
     u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',

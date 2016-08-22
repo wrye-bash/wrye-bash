@@ -34,14 +34,12 @@ import re
 # Internal
 from ... import bush # for defaultEyes (?)
 from ... import bosh # for modInfos
-from ... import load_order
 from ...bolt import SubProgress, BoltError, GPath, deprint
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
-from ...patcher.base import AMultiTweakItem
-from ...patcher.patch_files import PatchFile
+from ...patcher.base import AMultiTweakItem, AListPatcher
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
-    DoublePatcher, CBash_DoublePatcher
+    ListPatcher, CBash_ListPatcher
 from ...parsers import LoadFactory, ModFile
 
 # Patchers: 40 ----------------------------------------------------------------
@@ -742,7 +740,7 @@ class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,
                 record._RecordID = override._RecordID
                 return
 
-class RacePatcher(SpecialPatcher,DoublePatcher):
+class _ARacePatcher(SpecialPatcher, AListPatcher):
     """Merged leveled lists mod file."""
     name = _(u'Race Records')
     text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"
@@ -754,17 +752,13 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
               u" npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoRe = re.compile(r'^UNDEFINED$',re.I)
-    autoKey = (u'Hair',u'Eyes-D',u'Eyes-R',u'Eyes-E',u'Eyes',u'Body-M',
-        u'Body-F',u'Body-Size-M',u'Body-Size-F',u'Voice-M',u'Voice-F',
-        u'R.Relations',u'R.Teeth',u'R.Mouth',u'R.Ears',u'R.Head',
-        u'R.Attributes-F',u'R.Attributes-M',u'R.Skills',u'R.Description',
-        u'R.AddSpells',u'R.ChangeSpells',)
-    forceAuto = True
-    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
-                     'configItems': [], 'configChecks': {},
-                     'configChoices': {}}
-    subLabel = _(u'Race Tweaks')
+    autoKey = {u'R.Head', u'Eyes-R', u'R.Ears', u'Eyes-E', u'Eyes-D', u'Eyes',
+               u'Voice-F', u'R.ChangeSpells', u'R.Teeth', u'Voice-M',
+               u'R.Attributes-M', u'R.Attributes-F', u'Body-F', u'Body-M',
+               u'R.Mouth', u'R.Description', u'R.AddSpells', u'Body-Size-F',
+               u'R.Relations', u'Body-Size-M', u'R.Skills', u'Hair'}
+
+class RacePatcher(_ARacePatcher, ListPatcher):
     races_data = {'EYES':[],'HAIR':[]}
     tweaks = sorted([
         RaceTweaker_BiggerOrcsAndNords(),
@@ -776,20 +770,6 @@ class RacePatcher(SpecialPatcher,DoublePatcher):
         RaceTweaker_AllEyes(),
         RaceTweaker_AllHairs(),
         ],key=lambda a: a.label.lower())
-
-    #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = set(self.__class__.autoKey)
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(PatchFile.patchName): continue
-            if autoRe.match(name.s) or (autoKey & set(modInfo.getBashTags())):
-                autoItems.append(name)
-        return autoItems
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1795,35 +1775,14 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 npc.UnloadRecord()
             pstate += 1
 
-class CBash_RacePatcher(SpecialPatcher, CBash_DoublePatcher):
-    """Merged leveled lists mod file."""
-    name = _(u'Race Records')
-    text = (_(u"Merge race eyes, hair, body, voice from ACTIVE AND/OR MERGED"
-              u" mods.  Any non-active, non-merged mods in the following list"
-              u" will be IGNORED.") + u'\n\n' +
-            _(u"Even if none of the below mods are checked, this will sort"
-              u" hairs and eyes and attempt to remove googly eyes from all"
-              u" active mods.  It will also randomly assign hairs and eyes to"
-              u" npcs that are otherwise missing them.")
-            )
-    tip = _(u"Merge race eyes, hair, body, voice from mods.")
+class CBash_RacePatcher(_ARacePatcher, CBash_ListPatcher):
     autoRe = re.compile(ur'^UNDEFINED$',re.I|re.U)
-    autoKey = {'Hair', 'Eyes-D', 'Eyes-R', 'Eyes-E', 'Eyes', 'Body-M',
-               'Body-F', 'Voice-M', 'Voice-F', 'R.Relations', 'R.Teeth',
-               'R.Mouth', 'R.Ears', 'R.Head', 'R.Attributes-F',
-               'R.Attributes-M', 'R.Skills', 'R.Description', 'R.AddSpells',
-               'R.ChangeSpells', 'Body-Size-M', 'Body-Size-F'}
-    forceAuto = True
     tweakers = [
         CBash_RacePatcher_Relations(),
         CBash_RacePatcher_Imports(),
         CBash_RacePatcher_Spells(),
         CBash_RacePatcher_Eyes(),
         ]
-    defaultConfig = {'isEnabled': True, 'autoIsChecked': True,
-                     'configItems': [], 'configChecks': {},
-                     'configChoices': {}}
-    subLabel = _(u'Race Tweaks')
     tweaks = sorted([
         CBash_RaceTweaker_BiggerOrcsAndNords(),
         CBash_RaceTweaker_PlayableHairs(),

@@ -17216,11 +17216,9 @@ stringSoundsRecs = ()
 #------------------------------------------------------------------------------
 # CellImporter
 #------------------------------------------------------------------------------
-cellAutoKeys = (
-    u'C.Acoustic', u'C.Climate', u'C.Light', u'C.Location', u'C.Music',
-    u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.SkyLighting',
-    u'C.Water',
-)
+cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Light', u'C.Location',
+                u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
+                u'C.Regions', u'C.SkyLighting', u'C.Water'}
 
 cellRecAttrs = {
     u'C.Acoustic': ('acousticSpace',),

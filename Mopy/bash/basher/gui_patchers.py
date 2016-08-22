@@ -21,16 +21,25 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
+import copy
 import string
+import re
+from operator import itemgetter
 import wx
-from .. import bass, bosh, bush, balt
-from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, Links, \
-    SeparatorLink, CheckLink, Link, vspace
+# Internal
+from .. import bass, bosh, bush, balt, load_order
+from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
+    Links, SeparatorLink, CheckLink, Link, vspace
 from ..bolt import GPath
+
+reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
+    selectCommands = True # whether this panel displays De/Select All
+    # CONFIG DEFAULTS
+    default_isEnabled = False # is the patcher enabled on a new bashed patch ?
+
     def SetCallbackFns(self,checkPatcherFn,boldPatcherFn):
         self._checkPatcherFn = checkPatcherFn
         self._boldPatcherFn = boldPatcherFn
@@ -69,8 +78,37 @@ class _PatcherPanel(object):
         if self.gConfigPanel:
             self.gConfigPanel.Layout()
 
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self, configs):
+        """Get config from configs dictionary and/or set to default.
+
+        Called in basher.patcher_dialog.PatchDialog#__init__, before the
+        dialog is shown, to update the patch options based on the previous
+        config for this patch stored in modInfos.table[patch][
+        'bash.patch.configs']. If no config is saved then the class
+        default_XXX values are used for the relevant attributes."""
+        # TODO(ut): eliminate other uses - move them to child classes
+        config = configs.setdefault(self.__class__.__name__, {})
+        self.isEnabled = config.get('isEnabled',
+                                    self.__class__.default_isEnabled)
+        # return the config dict for this patcher to read additional values
+        return config
+
+    def saveConfig(self, configs):
+        """Save config to configs dictionary.
+
+        Most patchers just save their enabled state, except the AListPatcher
+        subclasses - which save their choices - and the AliasesPatcher that
+        saves the aliases."""
+        config = configs[self.__class__.__name__] = {}
+        config['isEnabled'] = self.isEnabled
+        return config # return the config dict for this patcher to further edit
+
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
+    # CONFIG DEFAULTS
+    default_aliases = {}
+
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
@@ -112,10 +150,39 @@ class _AliasesPatcherPanel(_PatcherPanel):
             self.aliases[GPath(fields[0])] = GPath(fields[1])
         self.SetAliasText()
 
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self, configs):
+        """Get config from configs dictionary and/or set to default."""
+        config = super(_AliasesPatcherPanel, self).getConfig(configs)
+        #--Update old configs to use Paths instead of strings.
+        self.aliases = dict(# map(GPath, item) gives a list (item is a tuple)
+            map(GPath, item) for item in
+            config.get('aliases', self.__class__.default_aliases).iteritems())
+        return config
+
+    def saveConfig(self, configs):
+        """Save config to configs dictionary."""
+        #--Toss outdated configCheck data.
+        config = super(_AliasesPatcherPanel, self).saveConfig(configs)
+        config['aliases'] = self.aliases
+        return config
+
 #------------------------------------------------------------------------------
 class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
     listLabel = _(u'Source Mods/Files')
+    forceAuto = True
+    forceItemCheck = False #--Force configChecked to True for all items
+    #--List of possible choices for each config item. Item 0 is default.
+    choiceMenu = None
+    canAutoItemCheck = True #--GUI: Whether new items are checked by default
+    #--Compiled re used by getAutoItems
+    autoRe = re.compile(ur"^UNDEFINED$", re.I | re.U)
+    # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
+    default_autoIsChecked = True
+    default_configItems   = []
+    default_configChecks  = {}
+    default_configChoices = {}
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
@@ -255,6 +322,12 @@ class _ListPatcherPanel(_PatcherPanel):
         newItems = [item for index,item in enumerate(self.configItems) if index not in selections]
         self.SetItems(newItems)
 
+    @staticmethod
+    def sortConfig(items):
+        """Return sorted items. Default assumes mods and sorts by load
+        order."""
+        return load_order.get_ordered(items)
+
     #--Choice stuff ---------------------------------------
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
@@ -327,6 +400,83 @@ class _ListPatcherPanel(_PatcherPanel):
         except AttributeError:
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self, configs):
+        """Get config from configs dictionary and/or set to default."""
+        config = super(_ListPatcherPanel, self).getConfig(configs)
+        self.autoIsChecked = self.forceAuto or config.get(
+            'autoIsChecked', self.__class__.default_autoIsChecked)
+        self.configItems = copy.deepcopy(
+            config.get('configItems', self.__class__.default_configItems))
+        self.configChecks = copy.deepcopy(
+            config.get('configChecks', self.__class__.default_configChecks))
+        self.configChoices = copy.deepcopy(
+            config.get('configChoices', self.__class__.default_configChoices))
+        #--Verify file existence
+        newConfigItems = []
+        for srcPath in self.configItems:
+            if ((bosh.reModExt.search(srcPath.s) and srcPath in bosh.modInfos) or
+                 reCsvExt.search(srcPath.s) and srcPath in self.patches_set):
+                newConfigItems.append(srcPath)
+        self.configItems = newConfigItems
+        if self.__class__.forceItemCheck:
+            for item in self.configItems:
+                self.configChecks[item] = True
+        #--Make sure configChoices are set (if choiceMenu exists).
+        if self.choiceMenu:
+            for item in self.configItems:
+                self.getChoice(item)
+        #--AutoItems?
+        if self.autoIsChecked:
+            self.getAutoItems()
+        return config
+
+    def saveConfig(self, configs):
+        """Save config to configs dictionary."""
+        #--Toss outdated configCheck data.
+        config = super(_ListPatcherPanel, self).saveConfig(configs)
+        listSet = set(self.configItems)
+        self.configChecks = config['configChecks'] = dict(
+            [(key, value) for key, value in self.configChecks.iteritems() if
+             key in listSet])
+        self.configChoices = config['configChoices'] = dict(
+            [(key, value) for key, value in self.configChoices.iteritems() if
+             key in listSet])
+        config['configItems'] = self.configItems
+        config['autoIsChecked'] = self.autoIsChecked
+        return config
+
+    def getChoice(self,item):
+        """Get default config choice."""
+        return self.configChoices.setdefault(item,self.choiceMenu[0])
+
+    def getItemLabel(self,item):
+        """Returns label for item to be used in list"""
+        item  = u'%s' % item # Path or basestring - YAK
+        if self.choiceMenu:
+            return u'%s [%s]' % (item,self.getChoice(item))
+        else:
+            return item
+
+    def getAutoItems(self):
+        """Returns list of items to be used for automatic configuration."""
+        autoItems = []
+        autoRe = self.__class__.autoRe
+        autoKey = self.__class__.autoKey
+        self.choiceMenu = self.__class__.choiceMenu
+        dex = load_order.loIndexCached
+        for modInfo in bosh.modInfos.values():
+            name = modInfo.name
+            if dex(name) >= dex(self._patchFile().patchName): continue
+            if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
+                autoItems.append(name)
+                if self.choiceMenu: self.getChoice(name)
+        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
+        for fileName in sorted(self.patches_set):
+            if reFile.search(fileName.s):
+                autoItems.append(fileName)
+        return autoItems
 
 #------------------------------------------------------------------------------
 class _TweakPatcherPanel(_PatcherPanel):
@@ -563,11 +713,34 @@ class _TweakPatcherPanel(_PatcherPanel):
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
+    #--Config Phase -----------------------------------------------------------
+    def getConfig(self, configs):
+        """Get config from configs dictionary and/or set to default."""
+        config = super(_TweakPatcherPanel, self).getConfig(configs)
+        self.tweaks = copy.deepcopy(self.__class__.tweaks)
+        for tweak in self.tweaks:
+            tweak.get_tweak_config(config)
+        return config
+
+    def saveConfig(self, configs):
+        """Save config to configs dictionary."""
+        config = super(_TweakPatcherPanel, self).saveConfig(configs)
+        for tweak in self.tweaks:
+            tweak.save_tweak_config(config)
+        self.enabledTweaks = [tweak for tweak in self.tweaks if
+                              tweak.isEnabled]
+        self.isActive = len(self.enabledTweaks) > 0 ##: NOT HERE !!!!
+        return config
+
 #------------------------------------------------------------------------------
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
-    """Patcher panel with option to select source elements."""
+    """Only used in Race Patcher which features a double panel (source mods
+    and tweaks)."""
     listLabel = _(u'Source Mods/Files')
     style = 0
+    subLabel = _(u'Race Tweaks')
+    # CONFIG DEFAULTS
+    default_isEnabled = True # isActive will be set to True in initPatchFile
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText): # TODO(ut): use super !
         """Show config."""
@@ -615,6 +788,104 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         self.SetTweaks()
         return gConfigPanel
 
+    #--Config Phase -----------------------------------------------------------
+    def getAutoItems(self): ##: why this override ?
+        """Returns list of items to be used for automatic configuration."""
+        autoItems = []
+        autoRe = self.__class__.autoRe
+        autoKey = self.__class__.autoKey
+        dex = load_order.loIndexCached
+        for modInfo in bosh.modInfos.values():
+            name = modInfo.name
+            if dex(name) >= dex(self._patchFile().patchName): continue
+            if autoRe.match(name.s) or (autoKey & set(modInfo.getBashTags())):
+                autoItems.append(name)
+        return autoItems
+
+#------------------------------------------------------------------------------
+class _ImporterPatcherPanel(_ListPatcherPanel):
+
+    #--Config Phase -----------------------------------------------------------
+    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U) # overridden by
+    # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
+    # ImportRelations, ImportFactions
+    def saveConfig(self, configs):
+        """Save config to configs dictionary."""
+        config = super(_ImporterPatcherPanel, self).saveConfig(configs)
+        if self.isEnabled:
+            importedMods = [item for item,value in
+                            self.configChecks.iteritems() if
+                            value and bosh.reModExt.search(item.s)]
+            configs['ImportedMods'].update(importedMods)
+        return config
+
+class _ListsMergerPanel(_ListPatcherPanel):
+    listLabel = _(u'Override Delev/Relev Tags')
+
+    #--Config Phase -----------------------------------------------------------
+    forceAuto = False
+    forceItemCheck = True #--Force configChecked to True for all items
+    choiceMenu = (u'Auto', u'----', u'Delev', u'Relev')
+    # CONFIG DEFAULTS
+    default_isEnabled = True
+    selectCommands = False
+
+    def getChoice(self,item):
+        """Get default config choice."""
+        choice = self.configChoices.get(item)
+        if not isinstance(choice,set): choice = {u'Auto'}
+        if u'Auto' in choice:
+            if item in bosh.modInfos:
+                bashTags = bosh.modInfos[item].getBashTags()
+                choice = {u'Auto'} | (self.autoKey & bashTags)
+        self.configChoices[item] = choice
+        return choice
+
+    def getItemLabel(self,item):
+        """Returns label for item to be used in list"""
+        choice = map(itemgetter(0),self.configChoices.get(item,tuple()))
+        item  = u'%s' % item # Path or basestring - YAK
+        if choice:
+            return u'%s [%s]' % (item,u''.join(sorted(choice)))
+        else:
+            return item
+
+class _MergerPanel(_ListPatcherPanel):
+    listLabel = _(u'Mergeable Mods')
+
+    def getAutoItems(self):
+        """Returns list of items to be used for automatic configuration."""
+        autoItems = []
+        dex = load_order.loIndexCached
+        for modInfo in bosh.modInfos.values():
+            if dex(modInfo.name) >= dex(self._patchFile().patchName): continue
+            if (modInfo.name in bosh.modInfos.mergeable and
+                u'NoMerge' not in modInfo.getBashTags()):
+                autoItems.append(modInfo.name)
+        return autoItems
+
+class _GmstTweakerPanel(_TweakPatcherPanel):
+
+    #--Config Phase -----------------------------------------------------------
+    # CONFIG DEFAULTS
+    default_isEnabled = True
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        config = super(_GmstTweakerPanel, self).getConfig(configs)
+        # Load game specific tweaks
+        tweaksAppend = self.tweaks.append # self.tweaks defined in super, empty
+        for cls,tweaks in self.__class__.class_tweaks:
+            for tweak in tweaks:
+                if isinstance(tweak,tuple):
+                    tweaksAppend(cls(*tweak))
+                elif isinstance(tweak,list):
+                    args = tweak[0]
+                    kwdargs = tweak[1]
+                    tweaksAppend(cls(*args,**kwdargs))
+        self.tweaks.sort(key=lambda a: a.label.lower())
+        for tweak in self.tweaks:
+            tweak.get_tweak_config(config)
+
 #------------------------------------------------------------------------------
 # GUI Patcher classes - mixins of patchers and the GUI patchers defined above -
 # Do _not_ rename the gui patcher classes or you will break existing BP configs
@@ -627,93 +898,96 @@ from ..patcher.patchers import multitweak_actors, multitweak_assorted, \
 from ..patcher.patchers import special
 
 # Patchers 10 -----------------------------------------------------------------
-class AliasesPatcher(_AliasesPatcherPanel, base.AliasesPatcher): pass
-class CBash_AliasesPatcher(_AliasesPatcherPanel,
-                           base.CBash_AliasesPatcher): pass
+class AliasesPatcher(base.AliasesPatcher, _AliasesPatcherPanel): pass
+class CBash_AliasesPatcher(base.CBash_AliasesPatcher, _AliasesPatcherPanel):
+    def getConfig(self,configs):
+        """Get config from configs dictionary and/or set to default."""
+        config = super(CBash_AliasesPatcher,self).getConfig(configs)
+        self.srcs = [] #so as not to fail screaming when determining load
+        # mods - but with the least processing required. ##: NOT HERE !
+        return config
 
-class PatchMerger(base.PatchMerger, _ListPatcherPanel):
-    listLabel = _(u'Mergeable Mods')
-class CBash_PatchMerger(base.CBash_PatchMerger, _ListPatcherPanel):
-    listLabel = _(u'Mergeable Mods')
+class PatchMerger(base.PatchMerger, _MergerPanel): pass
+class CBash_PatchMerger(base.CBash_PatchMerger, _MergerPanel): pass
 
 # Patchers 20 -----------------------------------------------------------------
-class GraphicsPatcher(importers.GraphicsPatcher, _ListPatcherPanel): pass
+class GraphicsPatcher(importers.GraphicsPatcher, _ImporterPatcherPanel): pass
 class CBash_GraphicsPatcher(importers.CBash_GraphicsPatcher,
-                            _ListPatcherPanel): pass
+                            _ImporterPatcherPanel): pass
 
-class KFFZPatcher(importers.KFFZPatcher, _ListPatcherPanel): pass
-class CBash_KFFZPatcher(importers.CBash_KFFZPatcher, _ListPatcherPanel): pass
+class KFFZPatcher(importers.KFFZPatcher, _ImporterPatcherPanel): pass
+class CBash_KFFZPatcher(importers.CBash_KFFZPatcher, _ImporterPatcherPanel): pass
 
 class NPCAIPackagePatcher(importers.NPCAIPackagePatcher,
-                          _ListPatcherPanel): pass
+                          _ImporterPatcherPanel): pass
 class CBash_NPCAIPackagePatcher(importers.CBash_NPCAIPackagePatcher,
-                                _ListPatcherPanel): pass
+                                _ImporterPatcherPanel): pass
 
-class ActorImporter(importers.ActorImporter, _ListPatcherPanel): pass
+class ActorImporter(importers.ActorImporter, _ImporterPatcherPanel): pass
 class CBash_ActorImporter(importers.CBash_ActorImporter,
-                          _ListPatcherPanel): pass
+                          _ImporterPatcherPanel): pass
 
-class DeathItemPatcher(importers.DeathItemPatcher, _ListPatcherPanel): pass
+class DeathItemPatcher(importers.DeathItemPatcher, _ImporterPatcherPanel): pass
 class CBash_DeathItemPatcher(importers.CBash_DeathItemPatcher,
-                             _ListPatcherPanel): pass
+                             _ImporterPatcherPanel): pass
 
-class CellImporter(importers.CellImporter, _ListPatcherPanel): pass
-class CBash_CellImporter(importers.CBash_CellImporter, _ListPatcherPanel): pass
+class CellImporter(importers.CellImporter, _ImporterPatcherPanel): pass
+class CBash_CellImporter(importers.CBash_CellImporter, _ImporterPatcherPanel): pass
 
-class ImportFactions(importers.ImportFactions, _ListPatcherPanel): pass
+class ImportFactions(importers.ImportFactions, _ImporterPatcherPanel): pass
 class CBash_ImportFactions(importers.CBash_ImportFactions,
-                           _ListPatcherPanel): pass
+                           _ImporterPatcherPanel): pass
 
-class ImportRelations(importers.ImportRelations, _ListPatcherPanel): pass
+class ImportRelations(importers.ImportRelations, _ImporterPatcherPanel): pass
 class CBash_ImportRelations(importers.CBash_ImportRelations,
-                            _ListPatcherPanel): pass
+                            _ImporterPatcherPanel): pass
 
-class ImportInventory(importers.ImportInventory, _ListPatcherPanel): pass
+class ImportInventory(importers.ImportInventory, _ImporterPatcherPanel): pass
 class CBash_ImportInventory(importers.CBash_ImportInventory,
-                            _ListPatcherPanel): pass
+                            _ImporterPatcherPanel): pass
 
-class ImportActorsSpells(importers.ImportActorsSpells, _ListPatcherPanel): pass
+class ImportActorsSpells(importers.ImportActorsSpells, _ImporterPatcherPanel): pass
 class CBash_ImportActorsSpells(importers.CBash_ImportActorsSpells,
-                               _ListPatcherPanel): pass
+                               _ImporterPatcherPanel): pass
 
-class NamesPatcher(importers.NamesPatcher, _ListPatcherPanel): pass
-class CBash_NamesPatcher(importers.CBash_NamesPatcher, _ListPatcherPanel): pass
+class NamesPatcher(importers.NamesPatcher, _ImporterPatcherPanel): pass
+class CBash_NamesPatcher(importers.CBash_NamesPatcher, _ImporterPatcherPanel): pass
 
-class NpcFacePatcher(importers.NpcFacePatcher, _ListPatcherPanel): pass
+class NpcFacePatcher(importers.NpcFacePatcher, _ImporterPatcherPanel): pass
 class CBash_NpcFacePatcher(importers.CBash_NpcFacePatcher,
-                           _ListPatcherPanel): pass
+                           _ImporterPatcherPanel): pass
 
-class RoadImporter(importers.RoadImporter, _ListPatcherPanel): pass
-class CBash_RoadImporter(importers.CBash_RoadImporter, _ListPatcherPanel): pass
+class RoadImporter(importers.RoadImporter, _ImporterPatcherPanel): pass
+class CBash_RoadImporter(importers.CBash_RoadImporter, _ImporterPatcherPanel): pass
 
-class SoundPatcher(importers.SoundPatcher, _ListPatcherPanel): pass
-class CBash_SoundPatcher(importers.CBash_SoundPatcher, _ListPatcherPanel): pass
+class SoundPatcher(importers.SoundPatcher, _ImporterPatcherPanel): pass
+class CBash_SoundPatcher(importers.CBash_SoundPatcher, _ImporterPatcherPanel): pass
 
-class StatsPatcher(importers.StatsPatcher, _ListPatcherPanel): pass
-class CBash_StatsPatcher(importers.CBash_StatsPatcher, _ListPatcherPanel): pass
+class StatsPatcher(importers.StatsPatcher, _ImporterPatcherPanel): pass
+class CBash_StatsPatcher(importers.CBash_StatsPatcher, _ImporterPatcherPanel): pass
 
-class ImportScripts(importers.ImportScripts, _ListPatcherPanel): pass
+class ImportScripts(importers.ImportScripts, _ImporterPatcherPanel): pass
 class CBash_ImportScripts(importers.CBash_ImportScripts,
-                          _ListPatcherPanel): pass
+                          _ImporterPatcherPanel): pass
 
-class SpellsPatcher(importers.SpellsPatcher, _ListPatcherPanel): pass
+class SpellsPatcher(importers.SpellsPatcher, _ImporterPatcherPanel): pass
 class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
-                          _ListPatcherPanel): pass
+                          _ImporterPatcherPanel): pass
 
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,
-                      _TweakPatcherPanel): pass
+                      _TweakPatcherPanel): default_isEnabled = True
 class CBash_AssortedTweaker(multitweak_assorted.CBash_AssortedTweaker,
-                            _TweakPatcherPanel): pass
+                            _TweakPatcherPanel): default_isEnabled = True
 
 class ClothesTweaker(multitweak_clothes.ClothesTweaker,
                      _TweakPatcherPanel): pass
 class CBash_ClothesTweaker(multitweak_clothes.CBash_ClothesTweaker,
                            _TweakPatcherPanel): pass
 
-class GmstTweaker(multitweak_settings.GmstTweaker, _TweakPatcherPanel): pass
+class GmstTweaker(multitweak_settings.GmstTweaker, _GmstTweakerPanel): pass
 class CBash_GmstTweaker(multitweak_settings.CBash_GmstTweaker,
-                        _TweakPatcherPanel): pass
+                        _GmstTweakerPanel): pass
 
 class NamesTweaker(multitweak_names.NamesTweaker, _TweakPatcherPanel): pass
 class CBash_NamesTweaker(multitweak_names.CBash_NamesTweaker,
@@ -724,9 +998,11 @@ class CBash_TweakActors(multitweak_actors.CBash_TweakActors,
                         _TweakPatcherPanel): pass
 
 # Patchers 40 -----------------------------------------------------------------
-class UpdateReferences(base.UpdateReferences, _ListPatcherPanel): pass
+class UpdateReferences(base.UpdateReferences, _ListPatcherPanel):
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 class CBash_UpdateReferences(base.CBash_UpdateReferences,
-                             _ListPatcherPanel): pass
+                             _ListPatcherPanel):
+    canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
 class RacePatcher(races_multitweaks.RacePatcher, _DoublePatcherPanel):
     listLabel = _(u'Race Mods')
@@ -734,13 +1010,13 @@ class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,
                         _DoublePatcherPanel):
     listLabel = _(u'Race Mods')
 
-class ListsMerger(special.ListsMerger, _ListPatcherPanel):
-    listLabel = _(u'Override Delev/Relev Tags')
-class CBash_ListsMerger(special.CBash_ListsMerger, _ListPatcherPanel):
-    listLabel = _(u'Override Delev/Relev Tags')
+class ListsMerger(special.ListsMerger, _ListsMergerPanel): pass
+class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel): pass
 
-class ContentsChecker(special.ContentsChecker, _PatcherPanel): pass
-class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel): pass
+class ContentsChecker(special.ContentsChecker, _PatcherPanel):
+    default_isEnabled = True
+class CBash_ContentsChecker(special.CBash_ContentsChecker, _PatcherPanel):
+    default_isEnabled = True
 
 #------------------------------------------------------------------------------
 # Game specific GUI Patchers --------------------------------------------------

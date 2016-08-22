@@ -32,8 +32,8 @@ from .. import getPatchesPath
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
-    CBash_Patcher, ADoublePatcher, AAliasesPatcher, AListPatcher, \
-    AImportPatcher, APatchMerger, AUpdateReferences
+    CBash_Patcher, AAliasesPatcher, AListPatcher, AImportPatcher, \
+    APatchMerger, AUpdateReferences
 from ..patch_files import PatchFile, CBash_PatchFile
 
 # Patchers 1 ------------------------------------------------------------------
@@ -139,30 +139,18 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
         for tweak in self.enabledTweaks:
             tweak.buildPatchLog(log)
 
-class DoublePatcher(ADoublePatcher, ListPatcher): pass
-
-class CBash_DoublePatcher(ADoublePatcher, CBash_ListPatcher): pass
-
 # Patchers: 10 ----------------------------------------------------------------
 class AliasesPatcher(AAliasesPatcher,Patcher): pass
 
-class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher):
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(CBash_AliasesPatcher,self).getConfig(configs)
-        self.srcs = [] #so as not to fail screaming when determining load
-        # mods - but with the least processing required.
+class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher): pass
 
 class PatchMerger(APatchMerger, ListPatcher):
-    autoKey = u'Merge'
 
     def _setMods(self,patchFile):
         if self.isEnabled: #--Since other mods may rely on this
             patchFile.setMods(None,self.getConfigChecked())
 
 class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
-    autoKey = {u'Merge'}
     unloadedText = "" # Cbash only
 
     def _setMods(self,patchFile):
@@ -171,7 +159,6 @@ class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
             patchFile.setMods(None,self.srcs)
 
 class UpdateReferences(AUpdateReferences,ListPatcher):
-    autoKey = u'Formids'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -365,7 +352,6 @@ class UpdateReferences(AUpdateReferences,ListPatcher):
 from ...parsers import CBash_FidReplacer
 
 class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
-    autoKey = {u'Formids'}
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):

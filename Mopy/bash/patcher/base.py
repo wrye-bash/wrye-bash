@@ -31,15 +31,10 @@ from this module outside of the patcher package."""
 # also document which methods MUST be overridden by raising AbstractError. For
 # instance Patcher.buildPatch() apparently is NOT always overridden
 
-import copy
-import re
 from . import getPatchesList
-from ..bolt import AbstractError, GPath, Path
+from ..bolt import AbstractError
 from ..bosh import reModExt
-from .. import bosh # for modInfos
 from .. import load_order
-
-reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
@@ -53,9 +48,7 @@ class _Abstract_Patcher(object):
     name = u'UNDEFINED'
     text = u"UNDEFINED."
     tip = None
-    defaultConfig = {'isEnabled':False}
     iiMode = False
-    selectCommands = True
 
     def getName(self):
         """Returns patcher name."""
@@ -73,19 +66,6 @@ class _Abstract_Patcher(object):
         self.gConfigPanel = None
         # super(Abstract_Patcher, self).__init__()#UNNEEDED (ALWAYS BEFORE obj)
 
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,{})
-        for attr,default in self.__class__.defaultConfig.iteritems():
-            value = copy.deepcopy(config.get(attr,default))
-            setattr(self,attr,value)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        for attr in self.__class__.defaultConfig:
-            config[attr] = copy.deepcopy(getattr(self,attr))
-
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called
@@ -99,6 +79,7 @@ class Patcher(_Abstract_Patcher):
     # would it make any sense to make getRead/WriteClasses() into classmethods
     # and just define an attribute in the classes - so getReadClasses(cls):
     # return cls.READ and have in subclasses just READ = 'AMMO' (say)
+
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -158,17 +139,7 @@ class CBash_Patcher(_Abstract_Patcher):
 class AListPatcher(_Abstract_Patcher):
     """Subclass for patchers that have GUI lists of objects."""
     #--Get/Save Config
-    choiceMenu = None #--List of possible choices for each config item. Item
-    #  0 is default.
-    defaultConfig = {'isEnabled':False,'autoIsChecked':True,'configItems':[],
-                     'configChecks':{},'configChoices':{}}
-    canAutoItemCheck = True #--GUI: Whether new items are checked by default
-    forceItemCheck = False #--Force configChecked to True for all items
-    autoRe = re.compile(u'^UNDEFINED$',re.U)#--Compiled re used by getAutoItems
-    # all subclasses override this with re.compile(ur"^UNDEFINED$",re.I|re.U)
-    # except DoublePatcher and UpdateReference ones
     autoKey = None
-    forceAuto = True
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
     _patches_set = None # type: set[bolt.Path]
@@ -197,81 +168,7 @@ class AListPatcher(_Abstract_Patcher):
                 log(u"* " +srcFile.s)
 
     #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
-        if isinstance(autoKey,basestring):
-            autoKey = {autoKey}
-        autoKey = set(autoKey)
-        self.choiceMenu = self.__class__.choiceMenu
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(self._patchFile().patchName): continue
-            if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
-                autoItems.append(name)
-                if self.choiceMenu: self.getChoice(name)
-        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(self.patches_set):
-            if reFile.search(fileName.s):
-                autoItems.append(fileName)
-        return autoItems
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(AListPatcher,self).getConfig(configs)
-        if self.forceAuto:
-            self.autoIsChecked = True
-        #--Verify file existence
-        newConfigItems = []
-        for srcPath in self.configItems:
-            if ((reModExt.search(srcPath.s) and srcPath in bosh.modInfos) or
-                 reCsvExt.search(srcPath.s) and srcPath in self.patches_set):
-                newConfigItems.append(srcPath)
-        self.configItems = newConfigItems
-        if self.__class__.forceItemCheck:
-            for item in self.configItems:
-                self.configChecks[item] = True
-        #--Make sure configChoices are set (if choiceMenu exists).
-        if self.choiceMenu:
-            for item in self.configItems:
-                self.getChoice(item)
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems()
-
     def _patchFile(self): raise AbstractError # TODO(ut) _PFile.class.patchName
-
-    def getChoice(self,item):
-        """Get default config choice."""
-        return self.configChoices.setdefault(item,self.choiceMenu[0])
-
-    def getItemLabel(self,item):
-        """Returns label for item to be used in list"""
-        if isinstance(item,Path): item = item.s
-        if self.choiceMenu:
-            return u'%s [%s]' % (item,self.getChoice(item))
-        else:
-            return item
-
-    def sortConfig(self,items):
-        """Return sorted items. Default assumes mods and sorts by load
-        order."""
-        return load_order.get_ordered(items)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        listSet = set(self.configItems)
-        self.configChecks = dict(
-            [(key,value) for key,value in self.configChecks.iteritems() if
-             key in listSet])
-        self.configChoices = dict(
-            [(key,value) for key,value in self.configChoices.iteritems() if
-             key in listSet])
-        super(AListPatcher,self).saveConfig(configs)
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
@@ -285,26 +182,6 @@ class AMultiTweaker(_Abstract_Patcher):
     scanOrder = 20
     editOrder = 20
 
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        config = configs.setdefault(self.__class__.__name__,
-                                    self.__class__.defaultConfig)
-        self.isEnabled = config.get('isEnabled',False)
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        for tweak in self.tweaks:
-            tweak.get_tweak_config(config)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        config = configs[self.__class__.__name__] = {}
-        config['isEnabled'] = self.isEnabled
-        for tweak in self.tweaks:
-            tweak.save_tweak_config(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if
-                              tweak.isEnabled]
-        self.isActive = len(self.enabledTweaks) > 0
-
 class AAliasesPatcher(_Abstract_Patcher):
     """Specify mod aliases for patch files."""
     scanOrder = 10
@@ -313,15 +190,6 @@ class AAliasesPatcher(_Abstract_Patcher):
     name = _(u"Alias Mod Names")
     text = _(u"Specify mod aliases for reading CSV source files.")
     tip = None
-    defaultConfig = {'isEnabled':False,'aliases':{}}
-
-    #--Config Phase -----------------------------------------------------------
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(AAliasesPatcher, self).getConfig(configs)
-        #--Update old configs to use Paths instead of strings.
-        self.aliases = dict( # map(GPath, item) gives a list (item is a tuple)
-            map(GPath, item) for item in self.aliases.iteritems())
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -404,43 +272,12 @@ class AMultiTweakItem(object):
 #------------------------------------------------------------------------------
 # AListPatcher subclasses------------------------------------------------------
 #------------------------------------------------------------------------------
-class ADoublePatcher(AListPatcher):
-
-    def getConfig(self,configs):
-        """Get config from configs dictionary and/or set to default."""
-        super(ADoublePatcher, self).getConfig(configs)
-        self.tweaks = copy.deepcopy(self.__class__.tweaks)
-        config = configs.setdefault(self.__class__.__name__,self.__class__.defaultConfig)
-        for tweak in self.tweaks:
-            tweak.get_tweak_config(config)
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        #--Toss outdated configCheck data.
-        super(ADoublePatcher, self).saveConfig(configs)
-        config = configs[self.__class__.__name__]
-        for tweak in self.tweaks:
-            tweak.save_tweak_config(config)
-        self.enabledTweaks = [tweak for tweak in self.tweaks if tweak.isEnabled]
-
 class AImportPatcher(AListPatcher):
     """Subclass for patchers in group Importer."""
     group = _(u'Importers')
     scanOrder = 20
     editOrder = 20
     masters = {}
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U) # overridden by
-    # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
-    # ImportRelations, ImportFactions
-
-    def saveConfig(self,configs):
-        """Save config to configs dictionary."""
-        super(AImportPatcher, self).saveConfig(configs)
-        if self.isEnabled:
-            importedMods = [item for item,value in
-                            self.configChecks.iteritems() if
-                            value and reModExt.search(item.s)]
-            configs['ImportedMods'].update(importedMods)
 
 class APatchMerger(AListPatcher):
     """Merges specified patches into Bashed Patch."""
@@ -449,18 +286,7 @@ class APatchMerger(AListPatcher):
     group = _(u'General')
     name = _(u'Merge Patches')
     text = _(u"Merge patch mods into Bashed Patch.")
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
-
-    def getAutoItems(self):
-        """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            if dex(modInfo.name) >= dex(self._patchFile().patchName): continue
-            if (modInfo.name in bosh.modInfos.mergeable and
-                u'NoMerge' not in modInfo.getBashTags()):
-                autoItems.append(modInfo.name)
-        return autoItems
+    autoKey = {u'Merge'}
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -479,4 +305,4 @@ class AUpdateReferences(AListPatcher):
     group = _(u'General')
     name = _(u'Replace Form IDs')
     text = _(u"Imports Form Id replacers from csv files into the Bashed Patch.")
-    canAutoItemCheck = False #--GUI: Whether new items are checked by default.
+    autoKey = {u'Formids'}
