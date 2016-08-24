@@ -141,13 +141,11 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
                     buffWrite(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
-        effect_ingred = {}
+        effect_ingred = collections.defaultdict(list)
         for fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
                 effectName = mgef_name[mgef]
                 if mgef in actorEffects: effectName += actorNames[actorValue]
-                if effectName not in effect_ingred:
-                    effect_ingred[effectName] = []
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
         iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',
@@ -186,7 +184,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         if not self.isActive: return
         patchFile.indexMGEFs = True
         self.id_ingred = {}
-        self.effect_ingred = {}
+        self.effect_ingred = collections.defaultdict(list)
         self.SEFF = MGEFCode('SEFF')
         self.DebugPrintOnce = 0
 
@@ -289,7 +287,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                     buff.write(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
-        effect_ingred = self.effect_ingred = {}
+        effect_ingred = self.effect_ingred = collections.defaultdict(list)
         for fid,(eid,full,effects_list) in id_ingred.iteritems():
             for index,effect in enumerate(effects_list):
                 mgef, actorValue = effect[0], effect[5]
@@ -314,7 +312,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                     else:
                         effectName = u'Unknown Effect'
                 if mgef in actorEffects: effectName += actorNames[actorValue]
-                effect_ingred.setdefault(effectName, []).append((index,full))
+                effect_ingred[effectName].append((index, full))
         #--Effect catalogs
         for (num, objectId, full, value) in _effect_alchem:
             subProgress(pstate, _(u'Cataloging Effects...')+u'\n%s' % full)

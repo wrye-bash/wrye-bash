@@ -23,6 +23,7 @@
 # =============================================================================
 
 """Specific parser for Wrye Bash."""
+import collections
 
 import ScriptParser         # generic parser class
 import bass
@@ -915,7 +916,7 @@ class WryeParser(ScriptParser.Parser):
         self.Flow = []
         self.notes = []
         self.espmrenames = {}
-        self.iniedits = {}
+        self.iniedits = collections.defaultdict(dict)
         self.cLine = 0
         self.reversing = 0
         self.ExecCount = 0
@@ -966,7 +967,7 @@ class WryeParser(ScriptParser.Parser):
         self.Flow = []
         self.notes = []
         self.espmrenames = {}
-        self.iniedits = {}
+        self.iniedits = collections.defaultdict(dict)
 
         i = 0
         while self.ExecCount > 0 and i < len(self.lines):
@@ -1162,7 +1163,7 @@ class WryeParser(ScriptParser.Parser):
             else:
                 comment = u';'+comment
         else: comment = u''
-        self.iniedits.setdefault(iniPath,{}).setdefault(realSection,[section,{}])
+        self.iniedits[iniPath].setdefault(realSection, [section, {}])
         self.iniedits[iniPath][realSection][0] = section
         self.iniedits[iniPath][realSection][1][realSetting] = (setting,value,comment,False)
 
@@ -1180,7 +1181,7 @@ class WryeParser(ScriptParser.Parser):
         #--Setting
         setting = setting.strip()
         realSetting = bolt.LString(setting)
-        self.iniedits.setdefault(iniPath,{}).setdefault(realSection,[section,{}])
+        self.iniedits[iniPath].setdefault(realSection, [section, {}])
         self.iniedits[iniPath][realSection][0] = section
         self.iniedits[iniPath][realSection][1][realSetting] = (setting,u'',u'',True)
 

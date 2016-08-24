@@ -1006,7 +1006,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     def initPatchFile(self,patchFile,loadMods):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.id_animations = {}
+        self.id_animations = collections.defaultdict(list)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1014,7 +1014,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        animations = self.id_animations.setdefault(record.fid,[])
+        animations = self.id_animations[record.fid]
         animations.extend(
             [anim for anim in record.animations if anim not in animations])
 
