@@ -257,11 +257,9 @@ class File_ListMasters(OneItemLink):
                         {'filename': selection[0]})
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
-        text = bosh.modInfos.getModList(fileInfo=fileInfo)
+        text = bosh.modInfos.getModList(fileInfo=self._selected_info)
         balt.copyToClipboard(text)
-        self._showLog(text, title=fileName.s, fixedFont=False,
+        self._showLog(text, title=self._selected_item.s, fixedFont=False,
                       icons=Resources.bashBlue)
 
 class File_Snapshot(ItemLink):

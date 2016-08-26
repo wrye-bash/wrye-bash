@@ -78,15 +78,15 @@ class Mod_FullLoad(OneItemLink):
     text = _(u'Test Full Record Definitions...')
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        with balt.Progress(_(u'Loading:')+u'\n%s'%fileName.stail) as progress:
+        with balt.Progress(_(u'Loading:') + u'\n%s'
+                % self._selected_item.stail) as progress:
             print bosh.MreRecord.type_class
             readClasses = bosh.MreRecord.type_class
             print readClasses.values()
             loadFactory = parsers.LoadFactory(False, *readClasses.values())
-            modFile = parsers.ModFile(bosh.modInfos[fileName], loadFactory)
+            modFile = parsers.ModFile(self._selected_info, loadFactory)
             try:
-                modFile.load(True,progress)
+                modFile.load(True, progress)
             except:
                 deprint('exception:\n', traceback=True)
 
@@ -474,11 +474,10 @@ class Mod_Details(OneItemLink):
     help = _(u'Show Mod Details')
 
     def Execute(self):
-        modName = GPath(self.selected[0])
-        modInfo = bosh.modInfos[modName]
-        with balt.Progress(modName.s) as progress:
+        with balt.Progress(self._selected_item.s) as progress:
             mod_details = bosh.mods_metadata.ModDetails()
-            mod_details.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
+            mod_details.readFromMod(self._selected_info,
+                                    SubProgress(progress, 0.1, 0.7))
             buff = StringIO.StringIO()
             progress(0.7,_(u'Sorting records.'))
             for group in sorted(mod_details.group_records):
@@ -492,7 +491,7 @@ class Mod_Details(OneItemLink):
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
-            self._showLog(buff.getvalue(), title=modInfo.name.s,
+            self._showLog(buff.getvalue(), title=self._selected_item.s,
                           fixedFont=True, icons=Resources.bashBlue)
             buff.close()
 
@@ -502,13 +501,11 @@ class Mod_ShowReadme(OneItemLink):
     help = _(u'Open the readme')
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         if not Link.Frame.docBrowser:
             DocBrowser().Show()
             bass.settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
-        Link.Frame.docBrowser.SetMod(fileInfo.name)
+        Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.Raise()
 
 class Mod_ListBashTags(ItemLink):
@@ -642,7 +639,7 @@ class Mod_ListDependent(OneItemLink):
                         {'filename': selection[0]})
 
     def Execute(self):
-        masterName = GPath(self.selected[0])
+        masterName = self._selected_item
         ##: HACK - refactor getModList
         modInfos = self.window.data_store
         merged, imported = modInfos.merged, modInfos.imported

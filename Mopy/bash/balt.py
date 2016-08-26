@@ -1290,8 +1290,7 @@ class Progress(bolt.Progress):
     # __enter__ and __exit__ for use with the 'with' statement
     def __exit__(self, exc_type, exc_value, exc_traceback): self.Destroy()
 
-    def getParent(self):
-        return self.dialog.GetParent()
+    def getParent(self): return self.dialog.GetParent()
 
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
@@ -2466,6 +2465,11 @@ class OneItemLink(EnabledLink):
     """
     ##: maybe edit help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
+
+    @property
+    def _selected_item(self): return self.selected[0]
+    @property
+    def _selected_info(self): return self.window.data_store[self.selected[0]]
 
 class CheckLink(ItemLink):
     kind = wx.ITEM_CHECK
