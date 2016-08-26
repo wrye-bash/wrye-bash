@@ -721,12 +721,12 @@ class Path(object):
         return os.path.getctime(self._s)
 
     #--Mtime
-    def getmtime(self):
+    def _getmtime(self):
         """Return mtime for path."""
         return int(os.path.getmtime(self._s))
-    def setmtime(self,mtime):
+    def _setmtime(self, mtime):
         os.utime(self._s, (self.atime, int(mtime)))
-    mtime = property(getmtime,setmtime,doc="Time file was last modified.")
+    mtime = property(_getmtime, _setmtime, doc="Time file was last modified.")
 
     def size_mtime(self):
         lstat = os.lstat(self._s)

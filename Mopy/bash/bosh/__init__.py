@@ -2469,8 +2469,7 @@ class ModInfo(FileInfo):
     def cachedCrc(self, recalculate=False):
         """Stores a cached crc, for quicker execution."""
         path = self.getPath()
-        size = path.size
-        mtime = path.getmtime()
+        size, mtime = path.size_mtime()
         cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
         cached_size = modInfos.table.getItem(self.name, 'crc_size')
         if recalculate or mtime != cached_mtime or size != cached_size:
