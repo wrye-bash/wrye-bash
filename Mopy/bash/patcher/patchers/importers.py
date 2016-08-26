@@ -115,30 +115,6 @@ def _scanModFile(self, modFile):
                     patchBlock.setRecord(record.getTypeCopy(mapper))
                     break
 
-# Logging Functions -----------------------------------------------------------
-# TODO(ut): remove logModRecs - not yet though - adds noise to the
-# patch comparisons
-def _clog(self, log,
-          logModRecs=u'* ' + _(u'Modified %(type)s Records: %(count)d'),
-          listSrcs=True):
-    """Common logging pattern of CBash loggers.
-
-    Used in: CBash_SoundPatcher, CBash_ImportScripts, CBash_ActorImporter,
-    CBash_GraphicsPatcher. Adding AImportPatcher.srcsHeader attribute absorbed
-    CBash_NamesPatcher and CBash_StatsPatcher. Adding (tmp!) logModRecs,
-    listSrcs parameters absorbs CBash_ImportFactions and CBash_ImportInventory.
-    """
-    mod_count = self.mod_count
-    if listSrcs:
-        self._srcMods(log)
-        log(self.__class__.logMsg)
-    for top_rec_type in sorted(mod_count.keys()):
-        log(logModRecs % {'type': u'%s ' % top_rec_type,
-                          'count': sum(mod_count[top_rec_type].values())})
-        for srcMod in load_order.get_ordered(mod_count[top_rec_type].keys()):
-            log(u'  * %s: %d' % (srcMod.s, mod_count[top_rec_type][srcMod]))
-    self.mod_count = {}
-
 # Common initData pattern -----------------------------------------------------
 def _initData(self,progress):
     """Common initData pattern.
@@ -201,6 +177,48 @@ def _initData(self,progress):
     temp_id_data = None
     self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
     self.isActive = bool(self.srcClasses)
+
+class _RecTypeModLogging(CBash_ImportPatcher):
+    """Import patchers that log type -> [mod-> count]"""
+
+    def initPatchFile(self,patchFile,loadMods):
+        super(_RecTypeModLogging, self).initPatchFile(patchFile,loadMods)
+        self.mod_count = collections.defaultdict(
+            lambda: collections.defaultdict(int))
+        self.fid_attr_value = collections.defaultdict(dict) # used in some
+
+    def _clog(self, log,
+              logModRecs=u'* ' + _(u'Modified %(type)s Records: %(count)d'),
+              listSrcs=True):
+        """Used in: CBash_SoundPatcher, CBash_ImportScripts,
+        CBash_ActorImporter, CBash_GraphicsPatcher. Adding
+        AImportPatcher.srcsHeader attribute absorbed CBash_NamesPatcher and
+        CBash_StatsPatcher. Adding (tmp!) logModRecs, listSrcs parameters
+        absorbs CBash_ImportFactions and CBash_ImportInventory.
+        """
+        # TODO(ut): remove logModRecs - not yet though - adds noise to the
+        # patch comparisons
+        mod_count = self.mod_count
+        if listSrcs:
+            self._srcMods(log)
+            log(self.__class__.logMsg)
+        for group_type in sorted(mod_count.keys()):
+            log(logModRecs % {'type': u'%s ' % group_type,
+                              'count': sum(mod_count[group_type].values())})
+            for srcMod in load_order.get_ordered(mod_count[group_type].keys()):
+                log(u'  * %s: %d' % (srcMod.s, mod_count[group_type][srcMod]))
+        self.mod_count = collections.defaultdict(
+                lambda: collections.defaultdict(int))
+
+    def scan(self,modFile,record,bashTags):
+        """Records information needed to apply the patch."""
+        attr_value = record.ConflictDetails(self.class_attrs[record._Type])
+        if not attr_value: return
+        if not ValidateDict(attr_value, self.patchFile):
+            self.patchFile.patcher_mod_skipcount[self.name][
+                modFile.GName] += 1
+            return
+        self.fid_attr_value[record.fid].update(attr_value)
 
 # Patchers: 20 ----------------------------------------------------------------
 class _ACellImporter(AImportPatcher):
@@ -395,8 +413,7 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
     def initPatchFile(self,patchFile,loadMods):
         super(CBash_CellImporter, self).initPatchFile(patchFile,loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
-        self.mod_count = {}
+        self.fid_attr_value = collections.defaultdict(dict)
         self.tag_attrs = {
             u'C.Climate': ('climate','IsBehaveLikeExterior'),
             u'C.Music': ('musicType',),
@@ -421,13 +438,10 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
         for bashKey in bashTags & self.autoKey:
             attr_value = record.ConflictDetails(self.tag_attrs[bashKey])
             if not ValidateDict(attr_value, self.patchFile):
-                mod_skipcount = \
-                    self.patchFile.patcher_mod_skipcount.setdefault(
-                    self.name, {})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                    modFile.GName, 0) + 1
+                self.patchFile.patcher_mod_skipcount[self.name][
+                    modFile.GName] += 1
                 continue
-            self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
+            self.fid_attr_value[record.fid].update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -442,9 +456,7 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -534,12 +546,8 @@ class GraphicsPatcher(ImportPatcher, _AGraphicsPatcher):
                                 0] not in self.patchFile.loadSet):
                                 # Ignore the record. Another option would be
                                 # to just ignore the attr_fidvalue result
-                                mod_skipcount = self.patchFile\
-                                    .patcher_mod_skipcount.setdefault(
-                                    self.name, {})
-                                mod_skipcount[
-                                    srcMod] = mod_skipcount.setdefault(srcMod,
-                                                                       0) + 1
+                                self.patchFile.patcher_mod_skipcount[
+                                    self.name][srcMod] += 1
                                 break
                         else:
                             temp_id_data[fid] = dict(
@@ -618,15 +626,13 @@ class GraphicsPatcher(ImportPatcher, _AGraphicsPatcher):
         needed."""
         _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
-class CBash_GraphicsPatcher(CBash_ImportPatcher, _AGraphicsPatcher):
+class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_GraphicsPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
-        self.mod_count = {}
         class_attrs = self.class_attrs = {}
         model = ('modPath','modb','modt_p')
         icon = ('iconPath',)
@@ -684,17 +690,6 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher, _AGraphicsPatcher):
                 'FURN','GRAS','STAT','ALCH','AMMO','APPA','BOOK','INGR',
                 'KEYM','LIGH','MISC','SGST','SLGM','WEAP','TREE','ARMO',
                 'CLOT','CREA','MGEF','EFSH']
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        attr_value = record.ConflictDetails(self.class_attrs[record._Type])
-        if not ValidateDict(attr_value, self.patchFile):
-            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(
-                self.name, {})
-            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                modFile.GName, 0) + 1
-            return
-        self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -708,15 +703,9 @@ class CBash_GraphicsPatcher(CBash_ImportPatcher, _AGraphicsPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.mod_count
-                    class_mod_count.setdefault(record._Type, {})[
-                        modFile.GName] = class_mod_count.setdefault(
-                        record._Type, {}).get(modFile.GName, 0) + 1
+                    self.mod_count[record._Type][modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def _clog(self, log):
-        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _AActorImporter(AImportPatcher):
@@ -900,16 +889,14 @@ class ActorImporter(ImportPatcher, _AActorImporter):
     def buildPatch(self,log,progress):
        _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
-class CBash_ActorImporter(CBash_ImportPatcher, _AActorImporter):
+class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ActorImporter, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
-        self.mod_count = {}
         class_tag_attrs = self.class_tag_attrs = {}
         class_tag_attrs['NPC_'] = {
                 u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
@@ -956,11 +943,12 @@ class CBash_ActorImporter(CBash_ImportPatcher, _AActorImporter):
             attrs = self.class_tag_attrs[record._Type].get(bashKey, None)
             if attrs:
                 attr_value = record.ConflictDetails(attrs)
+                if not attr_value: continue
                 if not ValidateDict(attr_value, self.patchFile):
-                    mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                    self.patchFile.patcher_mod_skipcount[self.name][
+                        modFile.GName] += 1
                     continue
-                self.fid_attr_value.setdefault(record.fid,{}).update(attr_value)
+                self.fid_attr_value[record.fid].update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -974,13 +962,9 @@ class CBash_ActorImporter(CBash_ImportPatcher, _AActorImporter):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.mod_count
-                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    self.mod_count[record._Type][modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def _clog(self, log):
-        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _AKFFZPatcher(AImportPatcher):
@@ -1022,8 +1006,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     def initPatchFile(self,patchFile,loadMods):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
-        self.id_animations = {}
-        self.mod_count = {}
+        self.id_animations = collections.defaultdict(list)
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1031,7 +1014,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     #--Patch Phase ------------------------------------------------------------
     def scan(self,modFile,record,bashTags):
         """Records information needed to apply the patch."""
-        animations = self.id_animations.setdefault(record.fid,[])
+        animations = self.id_animations[record.fid]
         animations.extend(
             [anim for anim in record.animations if anim not in animations])
 
@@ -1044,8 +1027,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.animations = self.id_animations[recordId]
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1209,7 +1191,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         data = self.data
-        mod_count = {}
+        mod_count = collections.defaultdict(int)
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
                 fid = record.fid
@@ -1221,7 +1203,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
-                    mod_count[mod] = mod_count.get(mod,0) + 1
+                    mod_count[mod] += 1
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -1236,7 +1218,6 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
         if not self.isActive: return
         self.previousPackages = {}
         self.mergedPackageList = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1246,10 +1227,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
         """Records information needed to apply the patch."""
         aiPackages = record.aiPackages
         if not ValidateList(aiPackages, self.patchFile):
-            mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(
-                self.name, {})
-            mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                modFile.GName, 0) + 1
+            self.patchFile.patcher_mod_skipcount[self.name][modFile.GName] += 1
             return
 
         recordId = record.fid
@@ -1306,9 +1284,7 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
                             if not pkg[0] is None: newMergedPackages.append(
                                 pkg)
                         override.aiPackages = newMergedPackages
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -1355,7 +1331,6 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_deathItem = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1370,11 +1345,8 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
             else:
                 # Ignore the record. Another option would be to just ignore
                 # the invalid formIDs
-                mod_skipcount = \
-                    self.patchFile.patcher_mod_skipcount.setdefault(
-                    self.name, {})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                    modFile.GName, 0) + 1
+                self.patchFile.patcher_mod_skipcount[self.name][
+                    modFile.GName] += 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -1385,8 +1357,7 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.deathItem = self.id_deathItem[recordId]
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1483,17 +1454,16 @@ class ImportFactions(ImportPatcher, _AImportFactions):
         _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
                     types=self.activeTypes)
 
-class CBash_ImportFactions(CBash_ImportPatcher, _AImportFactions):
+class CBash_ImportFactions(_RecTypeModLogging, _AImportFactions):
     # no logMsg here ! - listSrcs=False
     logModRecs = u'* ' + _(u'Refactioned %(type)s Records: %(count)d')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ImportFactions, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.id_factions = {}
         self.csvId_factions = {}
-        self.mod_count = {}
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
@@ -1568,15 +1538,12 @@ class CBash_ImportFactions(CBash_ImportPatcher, _AImportFactions):
                 override.factions_list = [(faction, rank) for faction, rank in
                                           override.factions_list if
                                           (faction, rank) not in removed]
-                class_mod_count = self.mod_count
-                class_mod_count.setdefault(record._Type, {})[
-                    modFile.GName] = class_mod_count.setdefault(record._Type,
-                    {}).get(modFile.GName, 0) + 1
+                self.mod_count[record._Type][modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log):
-        _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
+    def _clog(self, log, logModRecs=logModRecs, listSrcs=False):
+        super(CBash_ImportFactions, self)._clog(log, logModRecs, listSrcs)
 
 #------------------------------------------------------------------------------
 class _AImportRelations(AImportPatcher):
@@ -1680,7 +1647,6 @@ class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
         if not self.isActive: return
         self.fid_faction_mod = {}
         self.csvFid_faction_mod = {}
-        self.mod_count = {}
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
@@ -1727,8 +1693,7 @@ class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
                     else:
                         relation = override.create_relation()
                         relation.faction,relation.mod = faction,mod
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -1769,15 +1734,14 @@ class ImportScripts(ImportPatcher, _AImportScripts):
         """Merge last version of record with patched scripts link as needed."""
         _buildPatch(self,log)
 
-class CBash_ImportScripts(CBash_ImportPatcher, _AImportScripts):
+class CBash_ImportScripts(_RecTypeModLogging, _AImportScripts):
     logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ImportScripts, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.id_script = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -1803,11 +1767,8 @@ class CBash_ImportScripts(CBash_ImportPatcher, _AImportScripts):
             else:
                 # Ignore the record. Another option would be to just ignore
                 # the invalid formIDs
-                mod_skipcount = \
-                    self.patchFile.patcher_mod_skipcount.setdefault(
-                    self.name, {})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                    modFile.GName, 0) + 1
+                self.patchFile.patcher_mod_skipcount[self.name][
+                    modFile.GName] += 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -1818,15 +1779,9 @@ class CBash_ImportScripts(CBash_ImportPatcher, _AImportScripts):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.script = self.id_script[recordId]
-                class_mod_count = self.mod_count
-                class_mod_count.setdefault(record._Type, {})[
-                    modFile.GName] = class_mod_count.setdefault(record._Type,
-                    {}).get(modFile.GName, 0) + 1
+                self.mod_count[record._Type][modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def _clog(self, log):
-        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _AImportInventory(AImportPatcher):
@@ -1935,7 +1890,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
-        mod_count = {}
+        mod_count = collections.defaultdict(int)
         for type in game.inventoryTypes:
             for record in getattr(self.patchFile,type).records:
                 changed = False
@@ -1960,18 +1915,18 @@ class ImportInventory(ImportPatcher, _AImportInventory):
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
-                    mod_count[mod] = mod_count.get(mod,0) + 1
+                    mod_count[mod] += 1
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
-class CBash_ImportInventory(CBash_ImportPatcher, _AImportInventory):
+class CBash_ImportInventory(_RecTypeModLogging, _AImportInventory):
     # no logMsg here ! - listSrcs=False
     logModRecs = u'%(type)s ' + _(u'Inventories Changed') + u': %(count)d'
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ImportInventory, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.id_deltas = {}
         #should be redundant since this patcher doesn't allow unloaded
@@ -1980,7 +1935,6 @@ class CBash_ImportInventory(CBash_ImportPatcher, _AImportInventory):
         self.inventOnlyMods = set(x for x in self.srcs if (
             x in patchFile.mergeSet and
             {u'InventOnly', u'IIM'} & bosh.modInfos[x].getBashTags()))
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2049,15 +2003,12 @@ class CBash_ImportInventory(CBash_ImportPatcher, _AImportInventory):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.items_list = items
-                class_mod_count = self.mod_count
-                class_mod_count.setdefault(record._Type, {})[
-                    modFile.GName] = class_mod_count.setdefault(record._Type,
-                    {}).get(modFile.GName, 0) + 1
+                self.mod_count[record._Type][modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
-    def _clog(self,log):
-        _clog(self, log, logModRecs=self.__class__.logModRecs, listSrcs=False)
+    def _clog(self, log, logModRecs=logModRecs, listSrcs=False):
+        super(CBash_ImportInventory, self)._clog(log, logModRecs, listSrcs)
 
 #------------------------------------------------------------------------------
 class _AImportActorsSpells(AImportPatcher):
@@ -2215,7 +2166,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
         data = self.data
-        mod_count = {}
+        mod_count = collections.defaultdict(int)
         for type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,type).records:
                 fid = record.fid
@@ -2228,7 +2179,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
-                    mod_count[mod] = mod_count.get(mod,0) + 1
+                    mod_count[mod] += 1
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -2241,7 +2192,6 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_spells = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2286,9 +2236,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.spells = mergedSpells['merged']
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -2399,15 +2347,14 @@ class NamesPatcher(ImportPatcher, _ANamesPatcher):
                     type_count[act_type] += 1
         self._patchLog(log,type_count)
 
-class CBash_NamesPatcher(CBash_ImportPatcher, _ANamesPatcher):
+class CBash_NamesPatcher(_RecTypeModLogging, _ANamesPatcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_NamesPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.id_full = {}
         self.csvId_full = {}
-        self.mod_count = {}
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
@@ -2445,15 +2392,9 @@ class CBash_NamesPatcher(CBash_ImportPatcher, _ANamesPatcher):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.full = full
-                class_mod_count = self.mod_count
-                class_mod_count.setdefault(record._Type, {})[
-                    modFile.GName] = class_mod_count.setdefault(record._Type,
-                    {}).get(modFile.GName, 0) + 1
+                self.mod_count[record._Type][modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def _clog(self, log):
-        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _ANpcFacePatcher(AImportPatcher):
@@ -2468,9 +2409,7 @@ class _ANpcFacePatcher(AImportPatcher):
     def _ignore_record(self, faceMod):
         # Ignore the record. Another option would be to just ignore the
         # attr_fidvalue result
-        mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(
-            self.name, {})
-        mod_skipcount[faceMod] = mod_skipcount.setdefault(faceMod, 0) + 1
+        self.patchFile.patcher_mod_skipcount[self.name][faceMod] += 1
 
 class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
     logMsg = u'\n=== '+_(u'Faces Patched')+ u': %d'
@@ -2608,7 +2547,6 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
         self.faceData = (
             'fggs_p', 'fgga_p', 'fgts_p', 'eye', 'hair', 'hairLength',
             'hairRed', 'hairBlue', 'hairGreen', 'fnam')
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2665,9 +2603,7 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
                 if override:
                     for attr, value in prev_face_value.iteritems():
                         setattr(override,attr,value)
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -2768,7 +2704,6 @@ class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
         CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
         if not self.isActive: return
         self.id_ROAD = {}
-        self.mod_count = {}
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
@@ -2799,8 +2734,8 @@ class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
                 copyRoad = curRoad #Copy the current road over (its formID is acceptable)
             else:
                 #Ignore the record.
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                self.patchFile.patcher_mod_skipcount[self.name][
+                    modFile.GName] += 1
                 return
 
             override = copyRoad.CopyAsOverride(self.patchFile, UseWinningParents=True) #Copies the road over (along with the winning version of its parents if needed)
@@ -2808,8 +2743,7 @@ class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
                 #Copy the new road values into the override (in case the CopyAsOverride returned a record pre-existing in the patch file)
                 for copyattr in newRoad.copyattrs:
                     setattr(override, copyattr, getattr(newRoad, copyattr))
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -2850,19 +2784,17 @@ class SoundPatcher(ImportPatcher, _ASoundPatcher):
         """Merge last version of record with patched sound data as needed."""
         _buildPatch(self,log)
 
-class CBash_SoundPatcher(CBash_ImportPatcher, _ASoundPatcher):
+class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     """Imports sounds from source mods into patch."""
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors,"
              u" Lights, Magic Effects and Weathers) from source mods.")
     tip = text
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_SoundPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
-        self.mod_count = {}
         class_attrs = self.class_attrs = {}
         class_attrs['ACTI'] = ('sound',)
         class_attrs['CONT'] = ('soundOpen','soundClose')
@@ -2877,21 +2809,6 @@ class CBash_SoundPatcher(CBash_ImportPatcher, _ASoundPatcher):
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return ['ACTI','CONT','CREA','DOOR','LIGH','MGEF','WTHR']
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        conflicts = record.ConflictDetails(self.class_attrs[record._Type])
-        if conflicts:
-            if ValidateDict(conflicts, self.patchFile):
-                self.fid_attr_value.setdefault(record.fid,{}).update(conflicts)
-            else:
-                # Ignore the record. Another option would be to just ignore
-                # the invalid formIDs
-                mod_skipcount = \
-                    self.patchFile.patcher_mod_skipcount.setdefault(
-                    self.name, {})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                    modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -2906,15 +2823,9 @@ class CBash_SoundPatcher(CBash_ImportPatcher, _ASoundPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.mod_count
-                    class_mod_count.setdefault(record._Type, {})[
-                        modFile.GName] = class_mod_count.setdefault(
-                        record._Type, {}).get(modFile.GName, 0) + 1
+                    self.mod_count[record._Type][modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def _clog(self, log):
-        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _AStatsPatcher(AImportPatcher):
@@ -3012,17 +2923,15 @@ class StatsPatcher(ImportPatcher, _AStatsPatcher):
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
 
-class CBash_StatsPatcher(CBash_ImportPatcher, _AStatsPatcher):
+class CBash_StatsPatcher(_RecTypeModLogging, _AStatsPatcher):
 
-    #--Config Phase -----------------------------------------------------------
+    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_StatsPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
-        self.fid_attr_value = {}
         self.csvFid_attr_value = {}
         self.class_attrs = CBash_ItemStats.class_attrs
-        self.mod_count = {}
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
@@ -3040,17 +2949,6 @@ class CBash_StatsPatcher(CBash_ImportPatcher, _AStatsPatcher):
     def getTypes(self):
         """Returns the group types that this patcher checks"""
         return self.class_attrs.keys()
-    #--Patch Phase ------------------------------------------------------------
-    def scan(self,modFile,record,bashTags):
-        """Records information needed to apply the patch."""
-        conflicts = record.ConflictDetails(self.class_attrs[record._Type])
-        if conflicts:
-            if ValidateDict(conflicts, self.patchFile):
-                self.fid_attr_value.setdefault(record.fid,{}).update(conflicts)
-            else:
-                #Ignore the record. Another option would be to just ignore the invalid formIDs
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -3067,13 +2965,9 @@ class CBash_StatsPatcher(CBash_ImportPatcher, _AStatsPatcher):
                 if override:
                     for attr, value in prev_attr_value.iteritems():
                         setattr(override,attr,value)
-                    class_mod_count = self.mod_count
-                    class_mod_count.setdefault(record._Type,{})[modFile.GName] = class_mod_count.setdefault(record._Type,{}).get(modFile.GName,0) + 1
+                    self.mod_count[record._Type][modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
-
-    def _clog(self, log):
-        _clog(self, log)
 
 #------------------------------------------------------------------------------
 class _ASpellsPatcher(AImportPatcher):
@@ -3172,7 +3066,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
         if not self.isActive: return
         self.id_stats = {}
         self.csvId_stats = {}
-        self.mod_count = {}
         self.spell_attrs = None #set in initData
 
     def initData(self,group_patchers,progress):
@@ -3195,8 +3088,8 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
                 self.id_stats.setdefault(record.fid,{}).update(conflicts)
             else:
                 #Ignore the record. Another option would be to just ignore the invalid formIDs
-                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(modFile.GName, 0) + 1
+                self.patchFile.patcher_mod_skipcount[self.name][
+                    modFile.GName] += 1
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
@@ -3214,8 +3107,6 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
                 if override:
                     for attr, value in prev_values.iteritems():
                         setattr(override,attr,value)
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID

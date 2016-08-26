@@ -168,9 +168,7 @@ class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.modPath = newModPath
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -296,9 +294,7 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.modPath = newModPath.s
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -382,8 +378,7 @@ class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.modPath = newModPath
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -436,9 +431,7 @@ class CBash_RedguardNPCPatcher(ARedguardNPCPatcher,CBash_MultiTweakItem):
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
                     override.fgts_p = newFGTS_p
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -493,8 +486,7 @@ class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,
                 override.bloodSprayPath = None
                 override.IsNoBloodSpray = True
                 override.IsNoBloodDecal = True
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -579,8 +571,7 @@ class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
             if override:
                 spells.append(newSpell)
                 override.spells = spells
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -654,8 +645,7 @@ class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,
             if override:
                 spells.append(newSpell)
                 override.spells = spells
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -705,9 +695,7 @@ class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,
                 if override:
                     override.animations = override.animations + [
                         u'0sexywalk01.kf']
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -757,9 +745,7 @@ class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,
                 if override:
                     override.animations = override.animations + [
                         u'0realwalk01.kf']
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -838,8 +824,7 @@ class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.sounds_list = sounds_list
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
 
@@ -900,8 +885,7 @@ class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
         override = record.CopyAsOverride(self.patchFile)
         if override:
             override.responsibility = 0
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+            self.mod_count[modFile.GName] += 1
             record.UnloadRecord()
             record._RecordID = override._RecordID
 

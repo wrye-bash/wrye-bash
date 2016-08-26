@@ -21,7 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
+import collections
 import os
 import re
 from ....bolt import GPath, sio, SubProgress, StateError, CsvReader
@@ -141,13 +141,11 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
                     buffWrite(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
-        effect_ingred = {}
+        effect_ingred = collections.defaultdict(list)
         for fid,(eid,full,effects) in id_ingred.iteritems():
             for index,(mgef,actorValue) in enumerate(effects):
                 effectName = mgef_name[mgef]
                 if mgef in actorEffects: effectName += actorNames[actorValue]
-                if effectName not in effect_ingred:
-                    effect_ingred[effectName] = []
                 effect_ingred[effectName].append((index,full))
         #--Effect catalogs
         iconPath, modPath, modb_p = (u'Clutter\\IconBook7.dds',
@@ -186,7 +184,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         if not self.isActive: return
         patchFile.indexMGEFs = True
         self.id_ingred = {}
-        self.effect_ingred = {}
+        self.effect_ingred = collections.defaultdict(list)
         self.SEFF = MGEFCode('SEFF')
         self.DebugPrintOnce = 0
 
@@ -289,7 +287,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                     buff.write(u'\r\n')
                 book.text = re.sub(u'\r\n',u'<br>\r\n',buff.getvalue())
         #--Get Ingredients by Effect
-        effect_ingred = self.effect_ingred = {}
+        effect_ingred = self.effect_ingred = collections.defaultdict(list)
         for fid,(eid,full,effects_list) in id_ingred.iteritems():
             for index,effect in enumerate(effects_list):
                 mgef, actorValue = effect[0], effect[5]
@@ -314,7 +312,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                     else:
                         effectName = u'Unknown Effect'
                 if mgef in actorEffects: effectName += actorNames[actorValue]
-                effect_ingred.setdefault(effectName, []).append((index,full))
+                effect_ingred[effectName].append((index, full))
         #--Effect catalogs
         for (num, objectId, full, value) in _effect_alchem:
             subProgress(pstate, _(u'Cataloging Effects...')+u'\n%s' % full)
@@ -347,6 +345,16 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         log(u'* '+_(u'Effects Cataloged') + u': %d' % len(effect_ingred))
 
 #------------------------------------------------------------------------------
+class _DefaultDictLog(CBash_ListPatcher):
+    """Patchers that log [mod -> record count] """
+
+    def buildPatchLog(self, log):
+        """Will write to log."""
+        if not self.isActive: return
+        #--Log
+        self._pLog(log, self.mod_count)
+        self.mod_count = collections.defaultdict(int)
+
 class _ACoblExhaustion(SpecialPatcher):
     """Modifies most Greater power to work with Cobl's power exhaustion
     feature."""
@@ -458,7 +466,7 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         #--Log
         self._pLog(log, count)
 
-class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
+class CBash_CoblExhaustion(_ACoblExhaustion, _DefaultDictLog):
     unloadedText = ""
 
     #--Config Phase -----------------------------------------------------------
@@ -469,7 +477,6 @@ class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
         self.isActive = (self.cobl in loadMods and
                          bosh.modInfos.getVersionFloat(self.cobl) > 1.65)
         self.id_exhaustion = {}
-        self.mod_count = {}
         self.SEFF = MGEFCode('SEFF')
         self.exhaustionId = FormID(self.cobl, 0x05139B)
 
@@ -527,18 +534,9 @@ class CBash_CoblExhaustion(_ACoblExhaustion, CBash_ListPatcher):
                 effect.IsDestruction = True
                 effect.visual = MGEFCode(None,None)
                 effect.IsHostile = False
-
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        self._pLog(log, self.mod_count)
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class _AMFactMarker(SpecialPatcher):
@@ -624,7 +622,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
         id_info = self.id_info
         modFile = self.patchFile
         keep = self.patchFile.getKeeper()
-        changed = {}
+        changed = collections.defaultdict(int)
         mFactable = []
         for record in modFile.FACT.getActiveRecords():
             if record.fid not in id_info: continue
@@ -651,7 +649,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
                             u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
                 keep(record.fid)
                 mod = record.fid[0]
-                changed[mod] = changed.setdefault(mod,0) + 1
+                changed[mod] += 1
         #--MFact record
         record = modFile.FACT.getRecord(mFactLong)
         if record:
@@ -665,7 +663,7 @@ class MFactMarker(_AMFactMarker,ListPatcher):
             keep(record.fid)
         self._pLog(log, changed)
 
-class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
+class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
     unloadedText = u""
 
     #--Config Phase -----------------------------------------------------------
@@ -677,7 +675,6 @@ class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
                         bosh.modInfos.getVersionFloat(self.cobl) > 1.27
         self.id_info = {} #--Morphable factions keyed by fid
         self.mFactLong = FormID(self.cobl,0x33FB)
-        self.mod_count = {}
         self.mFactable = set()
 
     def initData(self,group_patchers,progress):
@@ -738,9 +735,7 @@ class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
                         if not rank.insigniaPath:
                             rank.insigniaPath = \
                             u'Menus\\Stats\\Cobl\\generic%02d.dds' % rank.rank
-                    mod_count = self.mod_count
-                    mod_count[modFile.GName] = mod_count.get(modFile.GName,
-                                                             0) + 1
+                    self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -772,13 +767,6 @@ class CBash_MFactMarker(_AMFactMarker, CBash_ListPatcher):
                 relation.mod = 10
                 pstate += 1
         mFactable.clear()
-
-    def buildPatchLog(self,log):
-        """Will write to log."""
-        if not self.isActive: return
-        #--Log
-        self._pLog(log, self.mod_count)
-        self.mod_count = {}
 
 #------------------------------------------------------------------------------
 class _ASEWorldEnforcer(SpecialPatcher):
@@ -860,7 +848,7 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
         self.cyrodiilQuests = set()
         self.srcs = [GPath(u'Oblivion.esm')]
         self.isActive = self.srcs[0] in loadMods
-        self.mod_eids = {}
+        self.mod_eids = collections.defaultdict(list)
 
     def getTypes(self):
         return ['QUST']
@@ -889,8 +877,7 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
                     condition.ifunc = 365
                     conditions.insert(0,condition)
                     override.conditions = conditions
-                    self.mod_eids.setdefault(modFile.GName, []).append(
-                        override.eid)
+                    self.mod_eids[modFile.GName].append(override.eid)
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
 
@@ -898,14 +885,13 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
         """Will write to log."""
         if not self.isActive: return
         #--Log
-        mod_eids = self.mod_eids
         log.setHeader(u'= ' +self.__class__.name)
         log(u'\n=== '+_(u'Quests Patched'))
-        for mod,eids in mod_eids.iteritems():
-            log(u'* %s: %d' % (mod.s,len(eids)))
+        for mod, eids in self.mod_eids.iteritems():
+            log(u'* %s: %d' % (mod.s, len(eids)))
             for eid in sorted(eids):
                 log(u'  * %s' % eid)
-        self.mod_eids = {}
+        self.mod_eids = collections.defaultdict(list)
 
 # Alchemical Catalogs ---------------------------------------------------------
 _ingred_alchem = (

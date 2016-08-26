@@ -139,8 +139,7 @@ class CBash_RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 map(override.__setattr__, self.attrs, newValues)
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
                 return
@@ -239,7 +238,6 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(
         races_data = patchFile.races_data
         races_vanilla = patchFile.races_vanilla
         changedHairs = {}
-        mod_count = self.mod_count
         #process hair list:s
         if self.choiceValues[self.chosen][0] == 1:  # merge hairs only from
             # vanilla races to custom hairs.
@@ -280,8 +278,7 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(
                         override = race.CopyAsOverride(patchFile)
                         if override:
                             override.hairs = changedHairs[race.full.lower()]
-                            mod_count[modFile.GName] = mod_count.get(
-                                modFile.GName, 0) + 1
+                            self.mod_count[modFile.GName] += 1
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
 
@@ -380,7 +377,6 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
         races_data = patchFile.races_data
         races_vanilla = patchFile.races_vanilla
         changedEyes = {}
-        mod_count = self.mod_count
         #process hair list:s
         if self.choiceValues[self.chosen][0] == 1:  # merge hairs only from
             # vanilla races to custom hairs.
@@ -422,8 +418,7 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
                         override = race.CopyAsOverride(patchFile)
                         if override:
                             override.eyes = changedEyes[race.full.lower()]
-                            mod_count[modFile.GName] = mod_count.get(
-                                modFile.GName, 0) + 1
+                            self.mod_count[modFile.GName] += 1
                             race.UnloadRecord()
                             race._RecordID = override._RecordID
 
@@ -481,8 +476,7 @@ class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.hairs = self.patchFile.races_data['HAIR']
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
                 return
@@ -547,8 +541,7 @@ class CBash_RaceTweaker_AllEyes(ARaceTweaker_AllEyes,CBash_MultiTweakItem):
             override = record.CopyAsOverride(self.patchFile)
             if override:
                 override.eyes = self.patchFile.races_data['EYES']
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
                 return
@@ -609,8 +602,7 @@ class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,
         override = record.CopyAsOverride(self.patchFile)
         if override:
             override.IsPlayable = True
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+            self.mod_count[modFile.GName] += 1
             record.UnloadRecord()
             record._RecordID = override._RecordID
             return
@@ -671,8 +663,7 @@ class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,
         override = record.CopyAsOverride(self.patchFile)
         if override:
             override.IsPlayable = True
-            mod_count = self.mod_count
-            mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+            self.mod_count[modFile.GName] += 1
             record.UnloadRecord()
             record._RecordID = override._RecordID
             return
@@ -734,8 +725,7 @@ class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,
             if override:
                 override.IsNotFemale = False
                 override.IsNotMale = False
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
                 return
@@ -1359,11 +1349,8 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
             else:
                 attr_value = record.ConflictDetails(attrs)
                 if not ValidateDict(attr_value, self.patchFile):
-                    mod_skipcount = \
-                        self.patchFile.patcher_mod_skipcount.setdefault(
-                        self.name, {})
-                    mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                        modFile.GName, 0) + 1
+                    self.patchFile.patcher_mod_skipcount[self.name][
+                        modFile.GName] += 1
                     continue
             self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
 
@@ -1512,10 +1499,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 self.id_meshes[recordId] = eyePaths
         else:
             if not recordId.ValidateFormID(self.patchFile):
-                mod_skipcount = self.patchFile.patcher_mod_skipcount\
-                    .setdefault(self.name, {})
-                mod_skipcount[modFile.GName] = mod_skipcount.setdefault(
-                    modFile.GName, 0) + 1
+                self.patchFile.patcher_mod_skipcount[self.name][
+                    modFile.GName] += 1
                 return
 
             if record._Type == 'HAIR':

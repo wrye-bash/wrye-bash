@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import collections
 import copy
 from operator import itemgetter, attrgetter
 import string
@@ -270,7 +271,6 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         self.id_delevs = {}
         self.id_list = {}
         self.id_attrs = {}
-        self.mod_count = {}
         self.empties = set()
         importMods = set(self.srcs) & set(loadMods)
         OverhaulCompat = False
@@ -426,8 +426,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
                 override.chanceNone, override.script, override.template, \
                 override.flags = mergedAttrs
                 override.entries_list = mergedList
-                mod_count = self.mod_count
-                mod_count[modFile.GName] = mod_count.get(modFile.GName,0) + 1
+                self.mod_count[modFile.GName] += 1
             record.UnloadRecord()
             record._RecordID = override._RecordID
 
@@ -509,7 +508,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         log(u'* '+_(u'Modified LVL') + u': %d' % (sum(mod_count.values()),))
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+        self.mod_count = collections.defaultdict(int)
 
 #------------------------------------------------------------------------------
 class _AContentsChecker(SpecialPatcher):

@@ -46,6 +46,12 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
                              u' following list will be IGNORED.')
 
+    def initPatchFile(self, patchFile, loadMods):
+        super(CBash_ListPatcher, self).initPatchFile(patchFile, loadMods)
+        # used in all subclasses except CBash_RacePatcher,
+        # CBash_PatchMerger, CBash_UpdateReferences
+        self.mod_count = collections.defaultdict(int)
+
     #--Config Phase -----------------------------------------------------------
     def _patchFile(self):
         return CBash_PatchFile
@@ -98,7 +104,8 @@ class CBash_MultiTweakItem(AMultiTweakItem):
     def __init__(self,label,tip,key,*choices,**kwargs):
         super(CBash_MultiTweakItem, self).__init__(label, tip, key, *choices,
                                                    **kwargs)
-        self.mod_count = {} # extra CBash_MultiTweakItem instance variable
+        # extra CBash_MultiTweakItem attribute, mod -> num of tweaked records
+        self.mod_count = collections.defaultdict(int)
 
     #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
@@ -111,7 +118,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
     def buildPatchLog(self,log):
         """Will write to log."""
         self._patchLog(log, self.mod_count)
-        self.mod_count = {}
+        self.mod_count = collections.defaultdict(int)
 
 class MultiTweaker(AMultiTweaker,Patcher):
 
@@ -530,7 +537,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
         log(self.__class__.logMsg % sum(mod_count.values()))
         for srcMod in load_order.get_ordered(mod_count.keys()):
             log(u'  * %s: %d' % (srcMod.s,mod_count[srcMod]))
-        self.mod_count = {}
+        self.mod_count = collections.defaultdict(int)
 
     # helpers WIP
     def _parse_texts(self, parser_class, progress):
