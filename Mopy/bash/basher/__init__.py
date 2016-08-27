@@ -4065,24 +4065,6 @@ def GetBashVersion():
     #return settings['bash.readme'] #readme file not found or not changed
 
 #------------------------------------------------------------------------------
-class WryeBashSplashScreen(wx.SplashScreen):
-    """This Creates the Splash Screen widget. (The first image you see when starting the Application.)"""
-    def __init__(self, parent=None):
-        splashScreenBitmap = wx.Image(name = bass.dirs['images'].join(u'wryesplash.png').s).ConvertToBitmap()
-        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_NO_TIMEOUT  #This centers the image on the screen
-        # image will stay until clicked by user or is explicitly destroyed when the main window is ready
-        # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then you have to guess how long it should last
-        splashDuration = 3500 # Duration in ms the splash screen will be visible (only used with the TIMEOUT option)
-        wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle, splashDuration, parent)
-        self.Bind(wx.EVT_CLOSE, self.OnExit)
-        wx.Yield()
-
-    def OnExit(self, event):
-        self.Hide()
-        # The program might/will freeze without this line.
-        event.Skip() # Make sure the default handler runs too...
-
-#------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
     def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
@@ -4099,7 +4081,7 @@ class BashApp(wx.App):
         if bass.inisettings['EnableSplashScreen']:
             if bass.dirs['images'].join(u'wryesplash.png').exists():
                 try:
-                        splashScreen = WryeBashSplashScreen()
+                        splashScreen = balt.WryeBashSplashScreen()
                         splashScreen.Show()
                 except:
                         pass
