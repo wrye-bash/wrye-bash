@@ -1779,7 +1779,7 @@ class _Mod_Export_Link(EnabledLink):
             parser = self._parser()
             readProgress = SubProgress(progress, 0.1, 0.8)
             readProgress.setFull(len(self.selected))
-            for index, fileName in enumerate(map(GPath, self.selected)):
+            for index, fileName in enumerate(self.selected):
                 fileInfo = bosh.modInfos[fileName]
                 readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
                 parser.readFromMod(fileInfo)
@@ -1801,7 +1801,7 @@ class _Mod_Import_Link(OneItemLink):
         return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + \
                u';*.esp;*.esm;*.ghost'
 
-    def _import(self, ext, fileInfo, fileName, textDir, textName, textPath):
+    def _import(self, ext, textDir, textName, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
             progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
@@ -1810,8 +1810,8 @@ class _Mod_Import_Link(OneItemLink):
             else:
                 srcInfo = bosh.ModInfo(textDir, textName)
                 parser.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = parser.writeToMod(fileInfo)
+            progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
+            changed = parser.writeToMod(self._selected_info)
             progress(1.0, _(u'Done.'))
         return changed
 
@@ -1851,8 +1851,7 @@ class _Mod_Import_Link(OneItemLink):
                     u" or mod (.esp or .esm or .ghost)") or u"")))
             return
         #--Import
-        changed = self._import(ext, self._selected_info, self._selected_item,
-                               textDir, textName, textPath)
+        changed = self._import(ext, textDir, textName, textPath)
         #--Log
         self.show_change_log(changed, self._selected_item)
 
@@ -2442,9 +2441,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
+        textName = self._selected_item.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,
@@ -2457,16 +2454,15 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             self._showError(_(u'Source file must be a MapMarkers.csv file'))
             return
         #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
+        changed = self._import(ext, textDir, textName, textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant Map Markers to import.'),
                          _(u'Import Map Markers'))
         else:
             buff = StringIO.StringIO()
-            buff.write((_(u'Imported Map Markers to mod %s:')
-                        + u'\n') % (fileName.s,))
+            buff.write((_(u'Imported Map Markers to mod %s:') + u'\n') % (
+                self._selected_item.s,))
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue())
