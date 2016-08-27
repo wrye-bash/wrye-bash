@@ -219,7 +219,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
     @balt.conversation
     def Execute(self):
         with balt.BusyCursor():
-            installer = self.idata[self.selected[0]]
+            installer = self._selected_info
             subs = []
             oldRemaps = copy.copy(installer.remaps)
             installer.remaps = {}
@@ -229,7 +229,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             default, pageSize, pos = self._get_size_and_pos()
             try:
                 wizard = InstallerWizard(self.window, self.idata,
-                                         self.selected[0], self.bAuto,
+                                         self._selected_item, self.bAuto,
                                          self.isSingleArchive(), subs,
                                          pageSize, pos)
             except CancelError:

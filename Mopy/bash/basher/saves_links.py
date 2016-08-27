@@ -223,20 +223,18 @@ class Save_ImportFace(OneItemLink):
 
     @balt.conversation
     def Execute(self):
-        #--File Info
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         #--Select source face file
-        srcDir = fileInfo.dir
-        wildcard = _(u'%s Files')%bush.game.displayName+u' (*.esp;*.esm;*.ess;*.esr)|*.esp;*.esm;*.ess;*.esr'
+        srcDir = self._selected_info.dir
+        wildcard = _(u'%s Files') % bush.game.displayName + \
+                   u' (*.esp;*.esm;*.ess;*.esr)|*.esp;*.esm;*.ess;*.esr'
         #--File dialog
         srcPath = self._askOpen(title=_(u'Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard, mustExist=True)
         if not srcPath: return
         if bosh.SaveInfos.rightFileType(srcPath):
-            self.FromSave(fileInfo,srcPath)
+            self.FromSave(self._selected_info, srcPath)
         elif bass.reModExt.search(srcPath.s):
-            self.FromMod(fileInfo,srcPath)
+            self.FromMod(self._selected_info, srcPath)
 
     def FromSave(self,fileInfo,srcPath):
         """Import from a save."""
@@ -493,13 +491,9 @@ class Save_EditCreated(OneItemLink):
         self.menuName = self.text = Save_EditCreated.menuNames[self.type]
 
     def Execute(self):
-        """Handle menu selection."""
-        #--Get save info for file
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         #--Get SaveFile
         with balt.Progress(_(u"Loading...")) as progress:
-            saveFile = bosh.SaveFile(fileInfo)
+            saveFile = bosh.SaveFile(self._selected_info)
             saveFile.load(progress)
         #--No custom items?
         recordTypes = Save_EditCreated.recordTypes.get(self.type,(self.type,))
@@ -557,10 +551,8 @@ class Save_EditPCSpells(OneItemLink):
              u' Warning: This cannot be undone')
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
-        data = Save_EditPCSpellsData(self.window,fileInfo)
-        balt.ListEditor.Display(self.window, _(u'Player Spells'), data)
+        pc_spell_data = Save_EditPCSpellsData(self.window, self._selected_info)
+        balt.ListEditor.Display(self.window, _(u'Player Spells'),pc_spell_data)
 
 #------------------------------------------------------------------------------
 class Save_EditCreatedEnchantmentCosts(OneItemLink):
@@ -569,15 +561,13 @@ class Save_EditCreatedEnchantmentCosts(OneItemLink):
     help = _(u'Set number of uses for Cast When Used Enchantments')
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         dialog = self._askNumber(
             _(u'Enter the number of uses you desire per recharge for all '
               u'custom made enchantments.') + u'\n' + _(
                 u'(Enter 0 for unlimited uses)'), prompt=_(u'Uses'),
             title=_(u'Number of Uses'), value=50, min=0, max=10000)
         if not dialog: return
-        Enchantments = bosh.SaveEnchantments(fileInfo)
+        Enchantments = bosh.SaveEnchantments(self._selected_info)
         Enchantments.load()
         Enchantments.setCastWhenUsedEnchantmentNumberOfUses(dialog)
 
@@ -656,8 +646,7 @@ class Save_RepairAbomb(OneItemLink):
 
     def Execute(self):
         #--File Info
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
+        fileInfo = self._selected_info
         #--Check current value
         saveFile = bosh.SaveFile(fileInfo)
         saveFile.load()
@@ -685,12 +674,10 @@ class Save_RepairHair(OneItemLink):
 
     def Execute(self):
         #--File Info
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
-        if bosh.faces.PCFaces.save_repairHair(fileInfo):
+        if bosh.faces.PCFaces.save_repairHair(self._selected_info):
             self._showOk(_(u'Hair repaired.'))
         else:
-            self._showOk(_(u'No repair necessary.'), fileName.s)
+            self._showOk(_(u'No repair necessary.'), self._selected_item.s)
 
 #------------------------------------------------------------------------------
 class Save_ReweighPotions(OneItemLink):
@@ -713,10 +700,8 @@ class Save_ReweighPotions(OneItemLink):
             return
         bass.settings['bash.reweighPotions.newWeight'] = newWeight
         #--Do it
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         with balt.Progress(_(u"Reweigh Potions")) as progress:
-            saveFile = bosh.SaveFile(fileInfo)
+            saveFile = bosh.SaveFile(self._selected_info)
             saveFile.load(SubProgress(progress,0,0.5))
             count = 0
             progress(0.5,_(u"Processing."))
@@ -730,10 +715,12 @@ class Save_ReweighPotions(OneItemLink):
             if count:
                 saveFile.safeSave(SubProgress(progress,0.6,1.0))
                 progress.Destroy()
-                self._showOk(_(u'Potions reweighed: %d.') % count, fileName.s)
+                self._showOk(_(u'Potions reweighed: %d.') % count,
+                             self._selected_item.s)
             else:
                 progress.Destroy()
-                self._showOk(_(u'No potions to reweigh!'), fileName.s)
+                self._showOk(_(u'No potions to reweigh!'),
+                             self._selected_item.s)
 
 #------------------------------------------------------------------------------
 class Save_Stats(OneItemLink):
@@ -742,9 +729,7 @@ class Save_Stats(OneItemLink):
     help = _(u'Show savefile statistics')
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
-        saveFile = bosh.SaveFile(fileInfo)
+        saveFile = bosh.SaveFile(self._selected_info)
         with balt.Progress(_(u"Statistics")) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(StringIO.StringIO())
@@ -752,7 +737,7 @@ class Save_Stats(OneItemLink):
             saveFile.logStats(log)
             progress.Destroy()
             text = log.out.getvalue()
-            self._showLog(text, title=fileName.s, fixedFont=False,
+            self._showLog(text, title=self._selected_item.s, fixedFont=False,
                           icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
@@ -765,7 +750,7 @@ class Save_StatObse(AppendableLink, EnabledLink):
 
     def _enable(self):
         if len(self.selected) != 1: return False
-        self.fileName = GPath(self.selected[0])
+        self.fileName = self.selected[0]
         self.fileInfo = self.window.data_store[self.fileName]
         fileName = self.fileInfo.getPath().root + u'.' + bush.game.se.shortName
         return fileName.exists()
@@ -791,17 +776,14 @@ class Save_Unbloat(OneItemLink):
 
     def Execute(self):
         #--File Info
-        saveName = GPath(self.selected[0])
-        saveInfo = self.window.data_store[saveName]
-        delObjRefs = 0
         with balt.Progress(_(u'Scanning for Bloat')) as progress:
             #--Scan and report
-            saveFile = bosh.SaveFile(saveInfo)
+            saveFile = bosh.SaveFile(self._selected_info)
             saveFile.load(SubProgress(progress,0,0.8))
             createdCounts,nullRefCount = saveFile.findBloating(SubProgress(progress,0.8,1.0))
         #--Dialog
         if not createdCounts and not nullRefCount:
-            self._showOk(_(u'No bloating found.'), saveName.s)
+            self._showOk(_(u'No bloating found.'), self._selected_item.s)
             return
         message = u''
         if createdCounts:
@@ -821,8 +803,8 @@ class Save_Unbloat(OneItemLink):
             saveFile.safeSave()
         self._showOk((_(u'Uncreated Objects: %d') + u'\n' +
                       _(u'Uncreated Refs: %d') + u'\n' +
-                      _(u'UnNulled Refs: %d')) % nums, saveName.s)
-        self.window.RefreshUI(files=[saveName])
+                      _(u'UnNulled Refs: %d')) % nums, self._selected_item.s)
+        self.window.RefreshUI(files=[self._selected_item])
 
 #------------------------------------------------------------------------------
 class Save_UpdateNPCLevels(EnabledLink):

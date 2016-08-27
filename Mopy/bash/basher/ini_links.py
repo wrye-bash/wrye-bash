@@ -201,7 +201,7 @@ class INI_CreateNew(OneItemLink):
 
     def Execute(self):
         """Handle creating a new INI tweak."""
-        pathFrom = self.selected[0]
+        pathFrom = self._selected_item
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
         path = self._askSave(title=_(u'Copy Tweak with current settings...'),
                              defaultDir=bass.dirs['tweaks'],

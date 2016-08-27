@@ -100,7 +100,7 @@ class Mod_CreateDummyMasters(OneItemLink):
 
     def _enable(self):
         return super(Mod_CreateDummyMasters, self)._enable() and \
-               bosh.modInfos[self.selected[0]].getStatus() == 30  # Missing masters
+               self._selected_info.getStatus() == 30  # Missing masters
 
     def Execute(self):
         """Create Dummy Masters"""
@@ -110,17 +110,16 @@ class Mod_CreateDummyMasters(OneItemLink):
                 u"To remove these files later, use 'Clean Dummy Masters...'")
         if not self._askYes(msg, title=_(u'Create Files')): return
         doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
-        modInfo = bosh.modInfos[self.selected[0]]
         lastTime = bosh.modInfos[bosh.modInfos.masterName].mtime
         if doCBash:
             newFiles = []
         refresh = []
-        for master in modInfo.header.masters:
+        for master in self._selected_info.header.masters:
             if master in bosh.modInfos:
                 lastTime = bosh.modInfos[master].mtime
                 continue
             # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(modInfo.dir,master)
+            newInfo = bosh.ModInfo(self._selected_info.dir, master)
             newInfo.mtime = load_order.get_free_time(lastTime, lastTime)
             refresh.append(master)
             if doCBash:
@@ -834,7 +833,7 @@ class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
         return super(_Mod_BP_Link, self)._enable() and bosh.modInfos.isBP(
-            self.selected[0])
+            self._selected_item)
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -868,9 +867,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def _Execute(self):
         # Clean up some memory
         bolt.GPathPurge()
-
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
+        # We need active mods
         if not load_order.activeCached():
             self._showWarning(
                 _(u'That which does not exist cannot be patched.') + u'\n' +
@@ -899,15 +896,15 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             if not self._askYes(msg, title=title): importConfig = False
         prog = None
         if self.doCBash:
-            CBash_PatchFile.patchName = fileInfo.name
+            CBash_PatchFile.patchName = self._selected_info.name
             prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
         else:
-            PatchFile.patchName = fileInfo.name
+            PatchFile.patchName = self._selected_info.name
             if bass.settings['bash.CBashEnabled']:
                 # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                 prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
         mods_prior_to_patch = load_order.cached_lord.loadOrder[
-                              :load_order.loIndexCached(fileName)]
+                              :load_order.loIndexCached(self._selected_item)]
         if prog is not None:
             with prog:
                 bosh.modInfos.rescanMergeable(mods_prior_to_patch, prog,
@@ -921,7 +918,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         missing = collections.defaultdict(list)
         delinquent = collections.defaultdict(list)
         for mod in load_order.activeCached():
-            if mod == fileName: break
+            if mod == self._selected_item: break
             for master in bosh.modInfos[mod].header.masters:
                 if not load_order.isActiveCached(master):
                     missing[mod].append(master)
@@ -948,9 +945,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
                 liststyle='tree',bOk=_(u'Continue Despite Errors')) as warning:
                    if not warning.askOkModal(): return
-        with PatchDialog(self.window, fileInfo, self.doCBash,
-                         importConfig) as patchDialog: patchDialog.ShowModal()
-        return fileName
+        with PatchDialog(self.window, self._selected_info, self.doCBash,
+                         importConfig) as patchDialog:
+            patchDialog.ShowModal()
+        return self._selected_item
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
         unfiltered, merge, noMerge, deactivate = [], [], [], []
@@ -1622,7 +1620,7 @@ class Mod_FlipMasters(_Esm_Flip):
     def _initData(self, window, selection):
         super(Mod_FlipMasters, self)._initData(window, selection)
         #--FileInfo
-        self.fileName = GPath(self.selected[0])
+        self.fileName = self.selected[0]
         fileInfo = bosh.modInfos[self.fileName]
         self.text = _(u'Esmify Masters')
         enable = len(selection) == 1 and len(fileInfo.header.masters) > 1
@@ -1764,8 +1762,7 @@ class _Mod_Export_Link(EnabledLink):
     def _enable(self): return bool(self.selected)
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        textName = fileName.root + self.__class__.csvFile
+        textName = self.selected[0].root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
@@ -1974,7 +1971,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
     def Execute(self): # overrides _Mod_Export_Link
-        fileName = GPath(self.selected[0])
+        fileName = self.selected[0]
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
@@ -2043,9 +2040,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
+        defaultPath = bass.dirs['patches'].join(
+            self._selected_item.s + u' Exported Scripts')
         if not defaultPath.exists():
             defaultPath = bass.dirs['patches']
         textDir = self._askDirectory(
@@ -2060,8 +2056,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         makeNew = self._askYes(message, _(u'Import Scripts'),
                                questionIcon=True)
         scriptText = self._parser()
-        scriptText.readFromText(textDir.s,fileInfo)
-        changed, added = scriptText.writeToMod(fileInfo,makeNew)
+        scriptText.readFromText(textDir.s, self._selected_info)
+        changed, added = scriptText.writeToMod(self._selected_info, makeNew)
         #--Log
         if not (len(changed) or len(added)):
             self._showOk(_(u"No changed or new scripts to import."),
@@ -2315,9 +2311,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
+        textName = self._selected_item.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,textDir,
@@ -2336,8 +2330,8 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 editorIds = self._parser()
                 progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
-                progress(0.2,_(u"Applying to %s.") % (fileName.s,))
-                changed = editorIds.writeToMod(fileInfo)
+                progress(0.2, _(u"Applying to %s.") % (self._selected_item.s,))
+                changed = editorIds.writeToMod(self._selected_info)
                 progress(1.0,_(u"Done."))
             #--Log
             if not changed:
