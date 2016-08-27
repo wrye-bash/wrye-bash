@@ -1430,22 +1430,20 @@ class Mod_AddMaster(OneItemLink):
                     u"splitting mods into esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Master')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         wildcard = _(u'%s Masters') % bush.game.displayName + \
                    u' (*.esm;*.esp)|*.esm;*.esp'
-        masterPaths = self._askOpenMulti(
-                            title=_(u'Add master:'), defaultDir=fileInfo.dir,
-                            wildcard=wildcard)
+        masterPaths = self._askOpenMulti(title=_(u'Add master:'),
+                                         defaultDir=self._selected_info.dir,
+                                         wildcard=wildcard)
         if not masterPaths: return
         names = []
         for masterPath in masterPaths:
             (dir_,name) = masterPath.headTail
-            if dir_ != fileInfo.dir:
+            if dir_ != self._selected_info.dir:
                 return self._showError(_(
                     u"File must be selected from %s Data Files directory.")
                                        % bush.game.fsName)
-            if name in fileInfo.header.masters:
+            if name in self._selected_info.header.masters:
                 return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
@@ -1453,10 +1451,10 @@ class Mod_AddMaster(OneItemLink):
             if masterName in bosh.modInfos:
                 #--Avoid capitalization errors by getting the actual name from modinfos.
                 masterName = bosh.modInfos[masterName].name
-            fileInfo.header.masters.append(masterName)
-        fileInfo.header.changed = True
-        fileInfo.writeHeader()
-        bosh.modInfos.refreshFile(fileInfo.name)
+            self._selected_info.header.masters.append(masterName)
+        self._selected_info.header.changed = True
+        self._selected_info.writeHeader()
+        bosh.modInfos.refreshFile(self._selected_info.name)
         self.window.RefreshUI(refreshSaves=True) # True ?
 
 #------------------------------------------------------------------------------
@@ -1707,8 +1705,6 @@ class Mod_Fids_Replace(OneItemLink):
     def Execute(self):
         if not self._askContinue(self.message, 'bash.formIds.replace.continue',
                                  _(u'Import Form IDs')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Form ID mapper file:'),textDir,
@@ -1724,8 +1720,8 @@ class Mod_Fids_Replace(OneItemLink):
             replacer = self._parser()
             progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
             replacer.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = replacer.updateMod(fileInfo)
+            progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
+            changed = replacer.updateMod(self._selected_info)
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed: self._showOk(_(u"No changes required."))
@@ -1749,9 +1745,7 @@ class Mod_Face_Import(OneItemLink):
         srcInfo = bosh.SaveInfo(srcDir,srcName)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
-        npc = bosh.faces.PCFaces.mod_addFace(fileInfo,srcFace)
+        npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
         #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
         if not imagePath.exists():
@@ -1761,7 +1755,8 @@ class Mod_Face_Import(OneItemLink):
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s,JPEG)
         self.window.RefreshUI(refreshSaves=False) # import save to esp
-        self._showOk(_(u'Imported face to: %s') % npc.eid, fileName.s)
+        self._showOk(_(u'Imported face to: %s') % npc.eid,
+                     self._selected_item.s)
 
 #--Common
 class _Mod_Export_Link(EnabledLink):
@@ -1841,9 +1836,7 @@ class _Mod_Import_Link(OneItemLink):
     def Execute(self):
         if not self._askContinueImport(): return
         supportedExts = self.__class__.supportedExts
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
+        textName = self._selected_item.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
@@ -1858,10 +1851,10 @@ class _Mod_Import_Link(OneItemLink):
                     u" or mod (.esp or .esm or .ghost)") or u"")))
             return
         #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
+        changed = self._import(ext, self._selected_info, self._selected_item,
+                               textDir, textName, textPath)
         #--Log
-        self.show_change_log(changed, fileName)
+        self.show_change_log(changed, self._selected_item)
 
     def _askContinueImport(self):
         return self._askContinue(self.__class__.continueInfo,
