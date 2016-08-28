@@ -6129,7 +6129,9 @@ class InstallersData(_DataStore):
         for item in installers_paths:
             if item.s.lower().startswith((u'bash',u'--')): continue
             apath = installersJoin(item)
-            if apath.isdir(): # Project - auto-refresh those only if specified
+            if apath.isfile() and item.cext in readExts:
+                installer = self.get(item)
+            elif apath.isdir(): # Project - autorefresh those only if specified
                 if item.s.lower() in self.installers_dir_skips:
                     continue # skip Bash directories and user specified ones
                 installer = self.get(item)
@@ -6142,8 +6144,6 @@ class InstallersData(_DataStore):
                        or not settings['bash.installers.autoRefreshProjects']):
                     installers.add(item) # installer is present
                     continue # and needs not refresh
-            elif apath.isfile() and item.cext in readExts:
-                installer = self.get(item)
             else:
                 continue ##: treat symlinks
             if fullRefresh or not installer or installer.size_or_mtime_changed(
