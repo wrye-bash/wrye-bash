@@ -104,6 +104,7 @@ def cmdRestore():
 
 #------------------------------------------------------------------------------
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
+pidpath, lockfd = None, -1
 def oneInstanceChecker():
     global pidpath, lockfd
     pidpath = bolt.Path.getcwd().root.join(u'pidfile.tmp')
@@ -118,7 +119,7 @@ def oneInstanceChecker():
         # is currently locked)
         if pidpath.exists(): os.remove(pidpath.s)
         lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
-        os.write(lockfd, u"%d" % os.getpid())
+        os.write(lockfd, "%d" % os.getpid())
     except OSError as e:
         # bolt.deprint('One instance checker error: %r' % e, traceback=True)
         # lock file exists and is currently locked by another process
