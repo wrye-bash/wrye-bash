@@ -360,7 +360,7 @@ class esp:
     #--Wrye Bash capabilities
     canBash = False         # Can create Bashed Patches
     canCBash = False        # CBash can handle this game's records
-    canEditHeader = False   # Can edit anything in the TES4 record
+    canEditHeader = True    # Can edit anything in the TES4 record
 
     #--Valid ESM/ESP header versions
     validHeaderVersions = (0.95,)
