@@ -2244,6 +2244,9 @@ class MasterInfo:
         else:
             return 0
 
+    def __repr__(self):
+        return self.__class__.__name__ + u"<" + repr(self.name) + u">"
+
 #------------------------------------------------------------------------------
 class _AFileInfo:
     """Abstract File."""
