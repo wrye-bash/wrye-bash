@@ -1710,7 +1710,7 @@ class MreHeaderBase(MelRecord):
             pack1 = out.packSub0
             pack2 = out.packSub
             for name in record.masters:
-                pack1('MAST',encode(name.s))
+                pack1('MAST', encode(name.s, firstEncoding='cp1252'))
                 pack2('DATA','Q',0)
 
     def getNextObject(self):
