@@ -295,7 +295,7 @@ class Game(object):
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
-        master_name = self.mod_infos.masterName
+        master_name = self.master_path
         master_dex = 0
         try:
             master_dex = lord.index(master_name)

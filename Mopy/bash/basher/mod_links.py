@@ -638,7 +638,6 @@ class Mod_ListDependent(OneItemLink):
                         {'filename': selection[0]})
 
     def Execute(self):
-        masterName = self._selected_item
         ##: HACK - refactor getModList
         modInfos = self.window.data_store
         merged, imported = modInfos.merged, modInfos.imported
@@ -650,7 +649,7 @@ class Mod_ListDependent(OneItemLink):
             loOrder =  lambda tup: load_order.loIndexCachedOrMax(tup[0])
             text = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
-                if masterName in info.header.masters:
+                if self._selected_item in info.header.masters:
                     hexIndex = modInfos.hexIndexString(mod)
                     if hexIndex:
                         prefix = bul + hexIndex
@@ -1445,11 +1444,11 @@ class Mod_AddMaster(OneItemLink):
                 return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
-        for masterName in load_order.get_ordered(names):
-            if masterName in bosh.modInfos:
+        for masters_name in load_order.get_ordered(names):
+            if masters_name in bosh.modInfos:
                 #--Avoid capitalization errors by getting the actual name from modinfos.
-                masterName = bosh.modInfos[masterName].name
-            self._selected_info.header.masters.append(masterName)
+                masters_name = bosh.modInfos[masters_name].name
+            self._selected_info.header.masters.append(masters_name)
         self._selected_info.header.changed = True
         self._selected_info.writeHeader()
         bosh.modInfos.refreshFile(self._selected_info.name)
@@ -1612,24 +1611,22 @@ class Mod_FlipSelf(_Esm_Flip):
         self._esm_flip_refresh(self.isEsm, self.selected)
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(_Esm_Flip):
+class Mod_FlipMasters(OneItemLink, _Esm_Flip):
     """Swaps masters between esp and esm versions."""
     help = _(
         u"Flip esp/esm bit of esp masters to convert them to/from esm state")
 
     def _initData(self, window, selection):
         super(Mod_FlipMasters, self)._initData(window, selection)
-        #--FileInfo
-        self.fileName = self.selected[0]
-        fileInfo = bosh.modInfos[self.fileName]
         self.text = _(u'Esmify Masters')
-        enable = len(selection) == 1 and len(fileInfo.header.masters) > 1
-        self.espMasters = [GPath(master) for master in fileInfo.header.masters
+        masters = self._selected_info.header.masters
+        enable = len(selection) == 1 and len(masters) > 1
+        self.espMasters = [master for master in masters
             if bosh.reEspExt.search(master.s)] if enable else []
         self.enable = enable and bool(self.espMasters)
         if not self.enable: return
         for masterName in self.espMasters:
-            masterInfo = bosh.modInfos.get(GPath(masterName),None)
+            masterInfo = bosh.modInfos.get(masterName, None)
             if masterInfo and masterInfo.isInvertedMod():
                 self.text = _(u'Espify Masters')
                 self.toEsm = False
@@ -1645,7 +1642,7 @@ class Mod_FlipMasters(_Esm_Flip):
                     u" esp masters to convert them to/from esm state. Useful"
                     u" for building/analyzing esp mastered mods.")
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
-        updated = [self.fileName]
+        updated = [self._selected_item]
         for masterPath in self.espMasters:
             masterInfo = bosh.modInfos.get(masterPath,None)
             if masterInfo:
