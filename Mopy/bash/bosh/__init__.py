@@ -28,13 +28,6 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 ############# bush.game must be set by the time you import bosh ! #############
 
-# Localization ----------------------------------------------------------------
-#--Not totally clear on this, but it seems to safest to put locale first...
-import locale
-locale.setlocale(locale.LC_ALL,u'')
-#locale.setlocale(locale.LC_ALL,'German')
-#locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
-
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
@@ -54,7 +47,7 @@ from itertools import groupby
 #--Local
 from .. import bass, bolt, balt, bush, env, load_order, libbsa
 from .mods_metadata import ConfigHelpers
-from ..bass import dirs, inisettings, tooldirs
+from ..bass import dirs, inisettings, tooldirs, reModExt
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError, formatInteger, round_size
@@ -104,11 +97,11 @@ reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]
 #--Mod Extensions
 reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
 reExGroup = re.compile(u'(.*?),',re.U)
-reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
+imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
@@ -1875,11 +1868,12 @@ def BestIniFile(path):
 
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
-    handle 'set' and 'setGS' statements."""
+    handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
     reDeleted = re.compile(ur';-(\w.*?)$',re.U)
     reSet     = re.compile(ur'\s*set\s+(.+?)\s+to\s+(.*)', re.I|re.U)
     reSetGS   = re.compile(ur'\s*setGS\s+(.+?)\s+(.*)', re.I|re.U)
-    formatRes = (reSet, reSetGS)
+    reSetNGS   = re.compile(ur'\s*SetNumericGameSetting\s+(.+?)\s+(.*)', re.I|re.U)
+    formatRes = (reSet, reSetGS, reSetNGS)
     defaultSection = u'' # Change the default section to something that
     # can't occur in a normal ini
 
@@ -1892,6 +1886,7 @@ class OBSEIniFile(IniFile):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
+        elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
     def getTweakFileSettings(self,tweakPath,lineNumbers=False):
@@ -1904,6 +1899,7 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         with tweakPath.open('r') as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
@@ -1911,6 +1907,7 @@ class OBSEIniFile(IniFile):
                 stripped = reComment.sub(u'',line).strip()
                 maSet   = reSet.match(stripped)
                 maSetGS = reSetGS.match(stripped)
+                maSetNGS = reSetNGS.match(stripped)
                 if maSet:
                     if not maDeleted:
                         section = ini_settings.setdefault(bolt.LString(u']set['),{})
@@ -1929,6 +1926,15 @@ class OBSEIniFile(IniFile):
                         section[LString(maSetGS.group(1))] = (maSetGS.group(2).strip(),i)
                     else:
                         section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
+                elif maSetNGS:
+                    if not maDeleted:
+                        section = ini_settings.setdefault(bolt.LString(u']SetNumericGameSetting['),{})
+                    else:
+                        section = deleted_settings.setdefault(LString(u']SetNumericGameSetting['),{})
+                    if lineNumbers:
+                        section[LString(maSetNGS.group(1))] = (maSetNGS.group(2).strip(),i)
+                    else:
+                        section[LString(maSetNGS.group(1))] = maSetNGS.group(2).strip()
         return ini_settings,deleted_settings
 
     def getTweakFileLines(self,tweakPath):
@@ -1952,8 +1958,10 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         setSection = LString(u']set[')
         setGSSection = LString(u']setGS[')
+        setNGSSection = LString(u']SetNumericGameSetting[')
         section = u''
         with tweakPath.open('r') as iniFile:
             for line in iniFile:
@@ -1962,9 +1970,10 @@ class OBSEIniFile(IniFile):
                 if maDeleted: stripped = maDeleted.group(1)
                 else: stripped = line
                 stripped = reComment.sub(u'',stripped).strip()
-                # Check which kind it is - 'set' or 'setGS'
+                # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
                 for regex,section in [(reSet,setSection),
-                                      (reSetGS,setGSSection)]:
+                                      (reSetGS,setGSSection),
+                                      (reSetNGS,setNGSSection)]:
                     match = regex.match(stripped)
                     if match:
                         groups = match.groups()
@@ -2001,6 +2010,7 @@ class OBSEIniFile(IniFile):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
+        elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         super(OBSEIniFile, self).saveSetting(section, key, value)
 
     def saveSettings(self,ini_settings,deleted_settings={}):
@@ -2014,10 +2024,13 @@ class OBSEIniFile(IniFile):
         reComment = self.reComment
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         setSection = LString(u']set[')
         setGSSection = LString(u']setGS[')
+        setNGSSection = LString(u']SetNumericGameSetting[')
         setFormat = u'set %s to %s\n'
         setGSFormat = u'setGS %s %s\n'
+        setNGSFormat = u'SetNumericGameSetting %s %s\n'
         section = {}
         with self.path.open('r') as iniFile:
             with self.path.temp.open('w') as tmpFile:
@@ -2027,10 +2040,11 @@ class OBSEIniFile(IniFile):
                     maDeleted = reDeleted.match(line)
                     if maDeleted: stripped = maDeleted.group(1)
                     else: stripped = line
-                    # Test what kind of line it is - 'set' or 'setGS'
+                    # Test what kind of line it is - 'set' or 'setGS' or 'SetNumericGameSetting'
                     stripped = reComment.sub(u'',line).strip()
                     for regex,sectionKey,format in [(reSet,setSection,setFormat),
-                                                    (reSetGS,setGSSection,setGSFormat)]:
+                                                    (reSetGS,setGSSection,setGSFormat),
+                                                    (reSetNGS,setNGSSection,setNGSFormat)]:
                         match = regex.match(stripped)
                         if match:
                             section = sectionKey
@@ -2067,10 +2081,12 @@ class OBSEIniFile(IniFile):
         reDeleted = self.reDeleted
         reSet = self.reSet
         reSetGS = self.reSetGS
+        reSetNGS = self.reSetNGS
         ini_settings = {}
         deleted_settings = {}
         setSection = LString(u']set[')
         setGSSection = LString(u']setGS[')
+        setNGSSection = LString(u']SetNumericGameSetting[')
         with tweakPath.open('r') as tweakFile:
             for line in tweakFile:
                 # Check for deleted lines
@@ -2081,10 +2097,11 @@ class OBSEIniFile(IniFile):
                 else:
                     stripped = line
                     settings_ = ini_settings
-                # Check which kind of line - 'set' or 'setGS'
+                # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
                 stripped = reComment.sub(u'',stripped).strip()
                 for regex,sectionKey in [(reSet,setSection),
-                                         (reSetGS,setGSSection)]:
+                                         (reSetGS,setGSSection),
+                                         (reSetNGS,setNGSSection)]:
                     match = regex.match(stripped)
                     if match:
                         setting = LString(match.group(1))
@@ -2591,7 +2608,6 @@ class ModInfo(FileInfo):
     def setmtime(self,mtime=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
         mtime = FileInfo.setmtime(self,mtime)
-        modInfos.mtimes[self.name] = mtime
         # Prevent re-calculating the File CRC
         modInfos.table.setItem(self.name,'crc_mtime',mtime)
 
@@ -2687,8 +2703,9 @@ class ModInfo(FileInfo):
 
     def reloadBashTags(self):
         """Reloads bash tags from mod description and LOOT"""
-        tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
-        tags -= (configHelpers.getBashRemoveTags(self.name) or set())
+        tags, removed, _userlist = configHelpers.getTagsInfoCache(self.name)
+        tags |= (self.getBashTagsDesc() or set())
+        tags -= (removed or set())
         # Filter and remove old tags
         tags = tags & allTagsSet
         if tags & oldTagsSet:
@@ -2777,6 +2794,7 @@ class INIInfo(FileInfo):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
         self.__target_ini = None # used in status only
+        self._ini_file = BestIniFile(self.getPath())
 
     @property
     def tweak_status(self):
@@ -2978,7 +2996,8 @@ class TrackedFileInfos(DataDict):
 class _DataStore(DataDict):
 
     def delete(self, itemOrItems, **kwargs): raise AbstractError
-    def delete_Refresh(self, deleted): raise AbstractError # Yak - absorb in refresh - add deleted parameter
+    def delete_Refresh(self, deleted, check_existence=False):
+        raise AbstractError # Yak - absorb in refresh - add deleted parameter
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
@@ -2990,7 +3009,7 @@ class FileInfos(_DataStore):
         self.dir = dir_ #--Path
         self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
-        self.bashDir = self.getBashDir() # should be a property
+        self.bashDir = self.get_bash_dir() # should be a property
         # the type of the table keys is always bolt.Path
         self.table = bolt.Table(
             bolt.PickleDict(self.bashDir.join(u'Table.dat')))
@@ -3001,7 +3020,7 @@ class FileInfos(_DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Returns Bash data storage directory."""
         return self.dir.join(u'Bash')
 
@@ -3119,7 +3138,7 @@ class FileInfos(_DataStore):
         #--Cache table updates
         tableUpdate = {}
         #--Backups
-        backBase = self.getBashDir().join(u'Backups')
+        backBase = self.get_bash_dir().join(u'Backups')
         #--Go through each file
         for fileName in fileNames:
             fileInfo = self[fileName]
@@ -3154,8 +3173,9 @@ class FileInfos(_DataStore):
             if doRefresh:
                 self.delete_Refresh(tableUpdate.values())
 
-    def delete_Refresh(self, deleted):
-        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+    def delete_Refresh(self, deleted, check_existence=False):
+        if check_existence:
+            deleted = set(d for d in deleted if not self.dir.join(d).exists())
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -3219,7 +3239,7 @@ class INIInfos(FileInfos):
         FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
         self.ini = oblivionIni
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Return directory to save info."""
         dir_ = dirs['modsBash'].join(u'INI Data')
         dir_.makedirs()
@@ -3268,13 +3288,9 @@ class ModInfos(FileInfos):
 
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'], ModInfo)
-        #--MTime resetting
-        self.mtimes = self.table.getColumn('mtime')
-        self.mtimesReset = [] #--Files whose mtimes have been reset.
-        self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        #--Selection state (merged, imported)
-        self.bashed_patches = set()
         #--Info lists/sets
+        self.mergeScanned = [] #--Files that have been scanned for mergeability.
+        self.bashed_patches = set()
         for fname in bush.game.masterFiles:
             if dirs['mods'].join(fname).exists():
                 self.masterName = GPath(fname)
@@ -3347,14 +3363,6 @@ class ModInfos(FileInfos):
     @_lo_cache
     def redo_load_order(self): load_order.redo_load_order()
 
-    @property
-    def lockLO(self):
-        return settings.getChanged('bosh.modInfos.resetMTimes', True)
-    def lockLOSet(self, val):
-        settings['bosh.modInfos.resetMTimes'] = val
-        if val: self._resetMTimes()
-        else: self.mtimes.clear()
-
     #--Load Order utility methods - be sure cache is valid when using them-----
     @staticmethod
     def hexIndexString(mod):
@@ -3383,28 +3391,11 @@ class ModInfos(FileInfos):
         order[newPos:newPos] = toMove
         return True
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Returns Bash data storage directory."""
         return dirs['modsBash']
 
     #--Refresh-----------------------------------------------------------------
-    def _OBMMWarn(self):
-        obmmWarn = settings.setdefault('bosh.modInfos.obmmWarn', 0)
-        if self.lockLO and obmmWarn == 0 and dirs['app'].join(
-                u'obmm').exists(): settings['bosh.modInfos.obmmWarn'] = 1
-        return settings['bosh.modInfos.obmmWarn'] == 1 # must warn
-
-    def canSetTimes(self):
-        """Returns a boolean indicating if mtime setting is allowed."""
-        ##: canSetTimes() will trigger a prompt if OBMM is installed so I keep
-        # it in refresh(): bin the OBMM warn and instead add a warn In lockLO
-        if self._OBMMWarn(): return False
-        if not self.lockLO: return False
-        if settings.dictFile.readOnly: return False
-        if load_order.using_txt_file(): return False
-        #--Else
-        return True
-
     def _names(self):
         names = FileInfos._names(self)
         names.sort(key=lambda x: x.cext == u'.ghost')
@@ -3419,8 +3410,6 @@ class ModInfos(FileInfos):
             change = FileInfos.refresh(self)
             if change: _added, _updated, deleted = change
             hasChanged = bool(change)
-        if self.canSetTimes() and hasChanged:
-            self._resetMTimes()
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
@@ -3472,21 +3461,6 @@ class ModInfos(FileInfos):
         self.new_missing_strings = new
         return bool(new)
 
-    def _resetMTimes(self):
-        """Remember/reset mtimes of member files."""
-        if not self.canSetTimes(): return
-        del self.mtimesReset[:]
-        try:
-            for fileName, fileInfo in sorted(self.iteritems(),key=lambda x: x[1].mtime):
-                oldMTime = int(self.mtimes.get(fileName,fileInfo.mtime))
-                self.mtimes[fileName] = oldMTime
-                if fileInfo.mtime != oldMTime and oldMTime  > 0:
-                    #deprint(fileInfo.name, oldMTime - fileInfo.mtime)
-                    fileInfo.setmtime(oldMTime)
-                    self.mtimesReset.append(fileName)
-        except:
-            self.mtimesReset = [u'FAILED',fileName]
-
     def autoGhost(self,force=False):
         """Automatically turn inactive files to ghosts.
 
@@ -3516,12 +3490,12 @@ class ModInfos(FileInfos):
         """Refreshes various mod info lists (exGroup_mods, imported,
         exported) - call after refreshing from Data AND having latest load
         order."""
-        #--Mod mtimes
+        #--Bashed patches
         self.bashed_patches.clear()
         for modName, modInfo in self.iteritems():
             if modInfo.header.author == u"BASHED PATCH":
                 self.bashed_patches.add(modName)
-        #--Selected mtimes and Refresh overLoaded too..
+        #--Refresh overLoaded
         self.exGroup_mods.clear()
         active_set = set(load_order.activeCached())
         for modName in active_set:
@@ -3699,23 +3673,24 @@ class ModInfos(FileInfos):
     @staticmethod
     def _tagsies(modInfo, tagList):
         mname = modInfo.name
-        def tags(msg, iterable, tagsList):
+        def _tags(msg, iterable, tagsList):
             return tagsList + u'  * ' + msg + u', '.join(iterable) + u'\n'
         if not modInfos.table.getItem(mname, 'autoBashTags') and \
                modInfos.table.getItem(mname, 'bashTags', u''):
-            tagList = tags(_(u'From Manual (if any this overrides '
+            tagList = _tags(_(u'From Manual (if any this overrides '
                 u'Description/LOOT sourced tags): '), sorted(
                 modInfos.table.getItem(mname, 'bashTags', u'')), tagList)
         if modInfo.getBashTagsDesc():
-            tagList = tags(_(u'From Description: '),
+            tagList = _tags(_(u'From Description: '),
                            sorted(modInfo.getBashTagsDesc()), tagList)
-        if configHelpers.getBashTags(mname):
-            tagList = tags(_(u'From LOOT Masterlist and or userlist: '),
-                           sorted(configHelpers.getBashTags(mname)), tagList)
-        if configHelpers.getBashRemoveTags(mname):
-            tagList = tags(_(u'Removed by LOOT Masterlist and or userlist: '),
-                      sorted(configHelpers.getBashRemoveTags(mname)), tagList)
-        return tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
+        tags, removed, _userlist = configHelpers.getTagsInfoCache(mname)
+        if tags:
+            tagList = _tags(_(u'From LOOT Masterlist and or userlist: '),
+                            sorted(tags), tagList)
+        if removed:
+            tagList = _tags(_(u'Removed by LOOT Masterlist and or userlist: '),
+                            sorted(removed), tagList)
+        return _tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
 
     @staticmethod
     def getTagList(mod_list=None):
@@ -3818,7 +3793,7 @@ class ModInfos(FileInfos):
                 if not m in toActivate:
                     self.lo_activate(m, doSave=False)
                     toActivate.add(m)
-            mods = self.keys()
+            mods = load_order.get_ordered(self.keys())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
                 if self.isBP(mod): _select(mod)
@@ -4025,9 +4000,9 @@ class ModInfos(FileInfos):
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.delete(self, fileName, **kwargs)
 
-    def delete_Refresh(self, deleted):
+    def delete_Refresh(self, deleted, check_existence=False):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = FileInfos.delete_Refresh(self, deleted)
+        deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
         for d in map(self.dir.join, deleted): # we need absolute paths
@@ -4129,7 +4104,6 @@ class ModInfos(FileInfos):
                 raise
         basePath.mtime = baseInfo.mtime
         oldPath.mtime = newInfo.mtime
-        self.mtimes[oldName] = newInfo.mtime
         if newInfo.isGhost:
             oldInfo = ModInfo(self.dir,oldName)
             oldInfo.setGhost(True)
@@ -4176,10 +4150,10 @@ class SaveInfos(FileInfos):
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Return the Bash save settings directory, creating it if it does
         not exist."""
-        dir_ = FileInfos.getBashDir(self)
+        dir_ = FileInfos.get_bash_dir(self)
         dir_.makedirs()
         return dir_
 
@@ -4191,7 +4165,7 @@ class SaveInfos(FileInfos):
         """Deletes savefile and associated pluggy file."""
         FileInfos.delete(self, fileName, **kwargs)
         kwargs['confirm'] = False # ask only on save deletion
-        kwargs['backupDir'] = self.getBashDir().join('Backups')
+        kwargs['backupDir'] = self.get_bash_dir().join('Backups')
         CoSaves(self.dir,fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):
@@ -4277,7 +4251,7 @@ class BSAInfos(FileInfos):
         self.dir = dirs['mods']
         FileInfos.__init__(self,self.dir,BSAInfo)
 
-    def getBashDir(self):
+    def get_bash_dir(self):
         """Return directory to save info."""
         return dirs['modsBash'].join(u'BSA Data')
 
@@ -4323,7 +4297,7 @@ class PeopleData(_DataStore):
         del self[key]
         self.hasChanged = True
 
-    def delete_Refresh(self, deleted): pass
+    def delete_Refresh(self, deleted, check_existence=False): pass
 
     #--Operations
     def loadText(self,path):
@@ -4356,7 +4330,9 @@ class PeopleData(_DataStore):
 
 #------------------------------------------------------------------------------
 class ScreensData(_DataStore):
-    reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
+    reImageExt = re.compile(
+        ur'\.(' + ur'|'.join(ext[1:] for ext in imageExts) + ur')$',
+        re.I | re.U)
 
     def __init__(self):
         self.dir = dirs['app']
@@ -4391,7 +4367,7 @@ class ScreensData(_DataStore):
         for item in filePath:
             if not item.exists(): del self[item.tail]
 
-    def delete_Refresh(self, deleted): self.refresh()
+    def delete_Refresh(self, deleted, check_existence=False): self.refresh()
 
 #------------------------------------------------------------------------------
 os_sep = unicode(os.path.sep)
@@ -4428,7 +4404,6 @@ class Installer(object):
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
     skipExts.update(set(readExts))
-    imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
     #--Regular game directories - needs update after bush.game has been set
@@ -4752,7 +4727,7 @@ class Installer(object):
             Installer._global_start_skips.append(bush.game.se.shortName.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if settings['bash.installers.skipImages']:
-            Installer._global_skip_extensions |= Installer.imageExts
+            Installer._global_skip_extensions |= imageExts
         Installer._init_executables_skips()
 
     @staticmethod
@@ -4931,7 +4906,6 @@ class Installer(object):
         archiveRoot = GPath(self.archive).sroot if isinstance(self,
                 InstallerArchive) else self.archive
         docExts = self.docExts
-        imageExts = self.imageExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -5356,6 +5330,7 @@ class InstallerMarker(Installer):
     Currently only used for the '==Last==' marker"""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
+    reValidNamePattern = re.compile(ur'^(.+?)(\d*)$', re.I | re.U)
 
     def __init__(self,archive):
         Installer.__init__(self,archive)
@@ -5381,8 +5356,7 @@ class InstallerMarker(Installer):
 
     def renameInstaller(self, archive, root, numStr, data):
         installer = data[archive]
-        newName = GPath(
-            u'==' + root.strip(u'=') + numStr + archive.ext + u'==')
+        newName = GPath(u'==' + root.strip(u'=') + numStr + u'==')
         if newName == archive:
             return False
         #--Add the marker to Bash and remove old one
@@ -5420,7 +5394,9 @@ class InstallerArchive(Installer):
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
             elif key == u'Path': _li.filepath = value.decode('utf8')
             elif key == u'Size': _li.size = int(value)
-            elif key == u'Attributes': _li.isdir = (value[0] == u'D')
+            elif key == u'Attributes':
+				if len(value) > 0: _li.isdir = (value[0] == u'D')
+				else: _li.isdir = False
             elif key == u'CRC' and value: _li.crc = int(value,16)
             elif key == u'Method':
                 if _li.filepath and not _li.isdir and _li.filepath != \
@@ -5550,7 +5526,10 @@ class InstallerArchive(Installer):
                 if key == u'Path':
                     filepath[0] = value.decode('utf8')
                 elif key == u'Attributes':
-                    text.append((u'%s' % filepath[0], (value[0] == u'D')))
+                    if len(value) is 0:
+                        text.append((u'%s' % filepath[0], False))
+                    else:
+                        text.append((u'%s' % filepath[0], (value[0] == u'D')))
                 elif key == u'Method':
                     filepath[0] = u''
             apath = dirs['installers'].join(archive)
@@ -5889,10 +5868,12 @@ class InstallersData(_DataStore):
         self.loaded = False
         self.lastKey = GPath(u'==Last==')
 
-    def addMarker(self,name):
+    def add_marker(self, name, order):
         path = GPath(name)
         self[path] = InstallerMarker(path)
-        self.irefresh(what='OS')
+        if order is None:
+            order = self[self.lastKey].order
+        self.moveArchives([path], order)
 
     def setChanged(self,hasChanged=True):
         """Mark as having changed."""
@@ -5986,7 +5967,11 @@ class InstallersData(_DataStore):
                 if deleted:
                     self.delete_Refresh(deleted) # markers are already popped
 
-    def delete_Refresh(self, deleted): self.irefresh(what='I', deleted=deleted)
+    def delete_Refresh(self, deleted, check_existence=False):
+        if check_existence:
+            deleted.remove(
+                item for item in deleted if self.dir.join(item).exists())
+        if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -6306,7 +6291,7 @@ class InstallersData(_DataStore):
                     else:
                         new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 except Exception as e:
-                    if isinstance(e, WindowsError) and e.errno == 2: ##: winerror also == 2
+                    if isinstance(e, OSError) and e.errno == 2: ##: winerror also == 2
                         continue # file does not exist
                     raise
         return new_sizeCrcDate, pending, pending_size
@@ -6435,17 +6420,17 @@ class InstallersData(_DataStore):
         installing, a tweak file will be generated. Call me *before*
         installing the new inis then call _editTweaks() to populate the tweaks.
         """
-        for relPath in destFiles:
-            if (not relPath.cext in (u'.ini', u'.cfg') or
+        dest_files = (x for x in destFiles if x .cext in (u'.ini', u'.cfg') and
                 # don't create ini tweaks for overridden ini tweaks...
-                relPath.head.cs == u'ini tweaks'): continue
+                x.head.cs != u'ini tweaks')
+        for relPath in dest_files:
             oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
             newCrc = installer.data_sizeCrc.get(relPath, (None, None))[1]
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
             iniAbsDataPath = dirs['mods'].join(relPath)
             # Create a copy of the old one
             baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
-                iniAbsDataPath.sbody, iniAbsDataPath.sbody))
+                iniAbsDataPath.sbody, installer.archive))
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
             tweaksCreated.add((tweakPath, iniAbsDataPath))
@@ -6473,7 +6458,7 @@ class InstallersData(_DataStore):
                 if status in (10, -10):
                     # A setting that exists in both INI's, but is different,
                     # or a setting that doesn't exist in the new INI.
-                    if section == u']set[' or section == u']setGS[':
+                    if section == u']set[' or section == u']setGS[' or section == u']SetNumericGameSetting[':
                         lines.append(text + u'\n')
                     elif section != currSection:
                         section = currSection
@@ -6532,6 +6517,7 @@ class InstallersData(_DataStore):
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
+            refresh_ui[1] |= bool(tweaksCreated)
         return tweaksCreated
 
     def sorted_pairs(self, package_keys=None, reverse=False):
