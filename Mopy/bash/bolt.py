@@ -2093,7 +2093,7 @@ def list_archive(archive, parse_archive_line, __reList=reListArchive):
     ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
                                 stdin=subprocess.PIPE,
                                 startupinfo=startupinfo).communicate()
-    for line in ins.splitlines(True):
+    for line in ins.splitlines(True): # keepends=True
         maList = __reList.match(line)
         if maList:
             parse_archive_line(*(maList.groups()))
