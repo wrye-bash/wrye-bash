@@ -638,7 +638,10 @@ class AsteriskGame(Game):
 
     must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
                                  bolt.GPath(u'DLCworkshop01.esm'),
-                                 bolt.GPath(u'DLCCost.esm'),)
+                                 bolt.GPath(u'DLCCoast.esm'),
+                                 bolt.GPath(u'DLCWorkshop02.esm'),
+                                 bolt.GPath(u'DLCWorkshop03.esm'),
+                                 bolt.GPath(u'DLCNukaWorld.esm'),)
 
     def load_order_changed(self): return self._plugins_txt_modified()
 

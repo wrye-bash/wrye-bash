@@ -55,7 +55,7 @@ bethDataFiles = {
     u'dlcrobot - main.ba2',
     u'dlcrobot - textures.ba2',
     u'dlcrobot - voices_en.ba2',
-	u'dlcworkshop01.esm',
+    u'dlcworkshop01.esm',
     u'dlcworkshop01.cdx',
     u'dlcworkshop01 - geometry.csg',
     u'dlcworkshop01 - main.ba2',
