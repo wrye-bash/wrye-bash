@@ -2586,18 +2586,6 @@ class ModInfo(FileInfo):
         # Prevent re-calculating the File CRC
         modInfos.table.setItem(self.name,'crc_mtime',mtime)
 
-    def writeNew(self,masters=[],mtime=0):
-        """Creates a new file with the given name, masters and mtime."""
-        header = bush.game.MreHeader((bush.game.MreHeader.classType,0,(self.isEsm() and 1 or 0),0,0))
-        for master in masters:
-            header.masters.append(master)
-        header.setChanged()
-        #--Write it
-        with self.getPath().open('wb') as out:
-            header.getSize()
-            header.dump(out)
-        self.setmtime(mtime)
-
     # Ghosting and ghosting related overrides ---------------------------------
     def sameAs(self, fileInfo):
         try:
