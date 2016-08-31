@@ -5394,7 +5394,9 @@ class InstallerArchive(Installer):
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
             elif key == u'Path': _li.filepath = value.decode('utf8')
             elif key == u'Size': _li.size = int(value)
-            elif key == u'Attributes': _li.isdir = (value[0] == u'D')
+            elif key == u'Attributes':
+				if len(value) > 0: _li.isdir = (value[0] == u'D')
+				else: _li.isdir = False
             elif key == u'CRC' and value: _li.crc = int(value,16)
             elif key == u'Method':
                 if _li.filepath and not _li.isdir and _li.filepath != \
@@ -5524,7 +5526,10 @@ class InstallerArchive(Installer):
                 if key == u'Path':
                     filepath[0] = value.decode('utf8')
                 elif key == u'Attributes':
-                    text.append((u'%s' % filepath[0], (value[0] == u'D')))
+                    if len(value) is 0:
+                        text.append((u'%s' % filepath[0], False))
+                    else:
+                        text.append((u'%s' % filepath[0], (value[0] == u'D')))
                 elif key == u'Method':
                     filepath[0] = u''
             apath = dirs['installers'].join(archive)
