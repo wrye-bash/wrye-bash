@@ -5396,7 +5396,9 @@ class InstallerArchive(Installer):
             elif key == u'Size': _li.size = int(value)
             elif key == u'Attributes':
 				if len(value) > 0: _li.isdir = (value[0] == u'D')
-				else: _li.isdir = False
+				else:
+					_li.isdir = False
+					print u'WARNING: A file in the archive has no attributes.'
             elif key == u'CRC' and value: _li.crc = int(value,16)
             elif key == u'Method':
                 if _li.filepath and not _li.isdir and _li.filepath != \
