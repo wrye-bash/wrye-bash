@@ -162,10 +162,10 @@ class Image:
         return self.icon
 
     @staticmethod
-    def GetImage(data, height, width):
+    def GetImage(image_data, height, width):
         """Hasty wrapper around wx.EmptyImage - absorb to GetBitmap."""
         image = wx.EmptyImage(width, height)
-        image.SetData(data)
+        image.SetData(image_data)
         return image
 
     @staticmethod

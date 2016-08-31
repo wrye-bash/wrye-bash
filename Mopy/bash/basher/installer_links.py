@@ -172,8 +172,7 @@ class _RefreshingLink(_SingleInstallable):
 
     @balt.conversation
     def Execute(self):
-        installer = self.idata[self.selected[0]]
-        dest_src = installer.refreshDataSizeCrc()
+        dest_src = self._selected_info.refreshDataSizeCrc()
         with balt.Progress(title=_(u'Override Skips')) as progress:
             if self._overrides_skips:
                 self.idata.update_for_overridden_skips(set(dest_src), progress)
@@ -214,7 +213,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
 
     def _enable(self):
         isSingle = super(Installer_Wizard, self)._enable()
-        return isSingle and (self.idata[self.selected[0]]).hasWizard != False
+        return isSingle and self._selected_info.hasWizard != False
 
     @balt.conversation
     def Execute(self):
@@ -357,7 +356,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
 
     def _enable(self):
         isSingle = super(Installer_OpenReadme, self)._enable()
-        return isSingle and bool(self.idata[self.selected[0]].hasReadme)
+        return isSingle and bool(self._selected_info.hasReadme)
 
     def Execute(self): self.idata[self.selected[0]].open_readme()
 
@@ -389,7 +388,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
 
     def _enable(self):
         isSingle = super(Installer_Duplicate, self)._enable()
-        return isSingle and not isinstance(self.idata[self.selected[0]],
+        return isSingle and not isinstance(self._selected_info,
                                            bosh.InstallerMarker)
 
     @balt.conversation
@@ -503,20 +502,19 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
         self._overrides_skips = self.idata[self.selected[0]].overrideSkips
         super(Installer_OverrideSkips, self).Execute()
 
-class Installer_SkipRefresh(CheckLink, _InstallerLink):
+class Installer_SkipRefresh(CheckLink, OneItemLink, _InstallerLink):
     """Toggle skipRefresh flag on project."""
     text = _(u"Don't Refresh")
     help = _(u"Don't automatically refresh project.")
 
     def _enable(self): return self.isSingleProject()
 
-    def _check(self): return self.isSingleProject() and (
-        self.idata[self.selected[0]]).skipRefresh
+    def _check(self): return self._enable() and self._selected_info.skipRefresh
 
     def Execute(self):
         """Toggle skipRefresh project attribute and refresh the project if
         skipRefresh is set to False."""
-        installer = self.idata[self.selected[0]]
+        installer = self._selected_info
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
             installer.refreshBasic(
@@ -567,14 +565,12 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
 
     def _enable(self):
         isSingle = super(Installer_ListStructure, self)._enable()
-        return isSingle and not isinstance(self.idata[self.selected[0]],
-                                                  bosh.InstallerMarker)
+        return isSingle and not isinstance(self._selected_info,
+                                           bosh.InstallerMarker)
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
-        archive = self.selected[0]
-        installer = self.idata[archive]
-        text = installer.listSource(archive)
+        text = self._selected_info.listSource(self._selected_item)
         #--Get masters list
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u'Package Structure'), fixedFont=False,

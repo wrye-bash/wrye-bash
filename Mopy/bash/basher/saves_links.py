@@ -291,11 +291,12 @@ class Save_ExportScreenshot(OneItemLink):
     help = _(u'Export the saved screenshot from a save game')
 
     def Execute(self):
-        saveInfo = bosh.saveInfos[self.selected[0]]
-        imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'), bass.dirs['patches'].s, _(u'Screenshot %s.jpg') % self.selected[0].s, u'*.jpg')
+        imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'),
+            bass.dirs['patches'].s,
+            _(u'Screenshot %s.jpg') % self._selected_item.s, u'*.jpg')
         if not imagePath: return
-        width,height,data = saveInfo.header.image
-        image = Image.GetImage(data, height, width)
+        width, height, image_data = self._selected_info.header.image
+        image = Image.GetImage(image_data, height, width)
         image.SaveFile(imagePath.s,JPEG)
 
 #------------------------------------------------------------------------------

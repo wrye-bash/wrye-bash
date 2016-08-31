@@ -106,18 +106,17 @@ class INI_FileOpenOrCopy(OneItemLink):
             self.help = _(u"Make an editable copy of the default tweak '%s'.") % selection[0]
 
     def Execute(self):
-        """Handle selection."""
-        dir = self.window.data_store.dir
-        for file in self.selected:
-            if bass.dirs['tweaks'].join(file).isfile():
-                dir.join(file).start()
-            else:
-                srcFile = bosh.iniInfos[file].dir.join(file)
-                destFile = bass.dirs['tweaks'].join(file)
-                env.shellMakeDirs(bass.dirs['tweaks'], self.window)
-                env.shellCopy(srcFile, destFile, parent=self.window)
-                bosh.iniInfos.refresh()
-                self.window.RefreshUI()
+        tweak_path = bass.dirs['tweaks'].join(self._selected_item)
+        if tweak_path.isfile():
+            tweak_path.start()
+        else: # default tweak, copy it
+            srcFile = bosh.iniInfos[self._selected_item].dir.join(
+                self._selected_item)
+            destFile = tweak_path
+            env.shellMakeDirs(bass.dirs['tweaks'], self.window)
+            env.shellCopy(srcFile, destFile, parent=self.window)
+            bosh.iniInfos.refresh()
+            self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
 class INI_Delete(balt.UIList_Delete, EnabledLink):

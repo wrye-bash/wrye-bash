@@ -895,10 +895,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             if not self._askYes(msg, title=title): importConfig = False
         prog = None
         if self.doCBash:
-            CBash_PatchFile.patchName = self._selected_info.name
+            CBash_PatchFile.patchName = self._selected_item
             prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
         else:
-            PatchFile.patchName = self._selected_info.name
+            PatchFile.patchName = self._selected_item
             if bass.settings['bash.CBashEnabled']:
                 # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                 prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
@@ -1451,7 +1451,7 @@ class Mod_AddMaster(OneItemLink):
             self._selected_info.header.masters.append(masters_name)
         self._selected_info.header.changed = True
         self._selected_info.writeHeader()
-        bosh.modInfos.refreshFile(self._selected_info.name)
+        bosh.modInfos.refreshFile(self._selected_item)
         self.window.RefreshUI(refreshSaves=True) # True ?
 
 #------------------------------------------------------------------------------
