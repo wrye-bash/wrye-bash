@@ -2463,7 +2463,7 @@ class InstallersList(balt.UIList):
                     dest.update(installer.refreshBasic(apath,
                         SubProgress(progress, index, index + 1),
                         recalculate_project_crc=calculate_projects_crc).keys())
-                    self.data_store.hasChanged = True  # is it really needed ?
+                self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
                     self.data_store.update_data_SizeCrcDate(dest, progress)

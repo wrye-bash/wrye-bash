@@ -5169,7 +5169,11 @@ class Installer(object):
                      _os_sep=os_sep, skips_start=tuple(
                 x.replace(os_sep, u'') for x in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
-        self._refreshSource(archive, progress, recalculate_project_crc)
+        try:
+            self._refreshSource(archive, progress, recalculate_project_crc)
+        except InstallerArchiveError:
+            self.type = -1 # size, modified and some of fileSizeCrcs may be set
+            return {}
         self._find_root_index()
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
@@ -6049,12 +6053,9 @@ class InstallersData(_DataStore):
                 if not installer:
                     installer = self.setdefault(package, iClass(package))
                 apath = dirs['installers'].join(package)
-                try:
-                    installer.refreshBasic(apath,
-                            SubProgress(progress, index, index + 1),
-                            recalculate_project_crc=fullRefresh)
-                except InstallerArchiveError:
-                    installer.type = -1
+                sub_progress = SubProgress(progress, index, index + 1)
+                installer.refreshBasic(apath, sub_progress,
+                                       recalculate_project_crc=fullRefresh)
         if changed: self.crc_installer = dict((x.crc, x) for x in
                         self.itervalues() if isinstance(x, InstallerArchive))
         return changed
