@@ -197,9 +197,9 @@ class Installer_EditWizard(_SingleInstallable):
 
     def _enable(self):
         return super(Installer_EditWizard, self)._enable() and bool(
-            self.idata[self.selected[0]].hasWizard)
+            self._selected_info.hasWizard)
 
-    def Execute(self): self.idata[self.selected[0]].open_wizard()
+    def Execute(self): self._selected_info.open_wizard()
 
 class Installer_Wizard(OneItemLink, _InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
@@ -476,12 +476,12 @@ class Installer_HasExtraData(CheckLink, _RefreshingLink):
     text = _(u'Has Extra Directories')
     help = _(u"Allow installation of files in non-standard directories.")
 
-    def _check(self): return self._enable() and (
-        self.idata[self.selected[0]]).hasExtraData
+    def _check(self):
+        return self._enable() and self._selected_info.hasExtraData
 
     def Execute(self):
         """Toggle hasExtraData installer attribute"""
-        self.idata[self.selected[0]].hasExtraData ^= True
+        self._selected_info.hasExtraData ^= True
         super(Installer_HasExtraData, self).Execute()
 
 class Installer_OverrideSkips(CheckLink, _RefreshingLink):
@@ -494,12 +494,12 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
             u"Override global file type skipping for %(installername)s.") % (
                     {'installername': self.selected[0]}) + u'  '+ _(u'BETA!')
 
-    def _check(self): return self._enable() and (
-        self.idata[self.selected[0]]).overrideSkips
+    def _check(self):
+        return self._enable() and self._selected_info.overrideSkips
 
     def Execute(self):
-        self.idata[self.selected[0]].overrideSkips ^= True
-        self._overrides_skips = self.idata[self.selected[0]].overrideSkips
+        self._selected_info.overrideSkips ^= True
+        self._overrides_skips = self._selected_info.overrideSkips
         super(Installer_OverrideSkips, self).Execute()
 
 class Installer_SkipRefresh(CheckLink, OneItemLink, _InstallerLink):
@@ -704,13 +704,12 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
     def _initData(self, window, selection):
         super(Installer_SkipVoices, self)._initData(window, selection)
         self.help = _(u"Skip over any voice files in %(installername)s") % (
-                    {'installername': self.selected[0]})
+                    {'installername': self._selected_item})
 
-    def _check(self): return self._enable() and (
-        self.idata[self.selected[0]]).skipVoices
+    def _check(self): return self._enable() and self._selected_info.skipVoices
 
     def Execute(self):
-        self.idata[self.selected[0]].skipVoices ^= True
+        self._selected_info.skipVoices ^= True
         super(Installer_SkipVoices, self).Execute()
 
 class Installer_Uninstall(_InstallLink):
@@ -976,7 +975,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def Execute(self):
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
-            projects = set()
+            projects = []
             for archive, installer in self.idata.sorted_pairs(self.selected):
                 project = archive.root
                 if self.isSingleArchive():
@@ -997,12 +996,12 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                         default=False): continue
                 installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                 self._get_refreshed(project, installer, progress=SubProgress(progress, 0.8, 0.99), do_refresh=False)
-                projects.add(project)
+                projects.append(project)
             if not projects: return
             self.idata.irefresh(what='NS')
             self.window.RefreshUI() # all files ? can status of others change ?
             self.window.SelectItemsNoCallback(projects)
-            self.window.SelectAndShowItem(project)
+            self.window.SelectAndShowItem(projects[-1])
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
