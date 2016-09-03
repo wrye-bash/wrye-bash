@@ -1698,10 +1698,8 @@ class MreBptd(MelRecord):
                 elif sub_type == 'BPNN': # for NVVoidBodyPartData, NVraven02
                     target = self.getDefault()
                     record.__getattribute__(self.attr).append(target)
-            slots = []
-            for element in self.elements:
-                slots.extend(element.getSlotsUsed())
-            target.__slots__ = slots
+            target.__slots__ = [s for element in self.elements for s in
+                                element.getSlotsUsed()]
             self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -5248,10 +5246,8 @@ class MreQust(MelRecord):
                 record.__getattribute__(self.attr).append(target)
             else:
                 target = record.__getattribute__(self.attr)[-1]
-            slots = []
-            for element in self.elements:
-                slots.extend(element.getSlotsUsed())
-            target.__slots__ = slots
+            target.__slots__ = [s for element in self.elements for s in
+                                element.getSlotsUsed()]
             self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
 
     melSet = MelSet(
@@ -5653,10 +5649,8 @@ class MreRegn(MelRecord):
                 elif sub_type == 'RDSA':
                     target = self.getDefault()
                     record.__getattribute__(self.attr).append(target)
-            slots = []
-            for element in self.elements:
-                slots.extend(element.getSlotsUsed())
-            target.__slots__ = slots
+            target.__slots__ = [s for element in self.elements for s in
+                                element.getSlotsUsed()]
             self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
 
     melSet = MelSet(
