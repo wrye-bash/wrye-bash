@@ -150,19 +150,10 @@ class AliasesPatcher(AAliasesPatcher,Patcher): pass
 
 class CBash_AliasesPatcher(AAliasesPatcher,CBash_Patcher): pass
 
-class PatchMerger(APatchMerger, ListPatcher):
-
-    def _setMods(self,patchFile):
-        if self.isEnabled: #--Since other mods may rely on this
-            patchFile.setMods(None,self.getConfigChecked())
+class PatchMerger(APatchMerger, ListPatcher): pass
 
 class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
     unloadedText = "" # Cbash only
-
-    def _setMods(self,patchFile):
-        if not self.isActive: return
-        if self.isEnabled: #--Since other mods may rely on this
-            patchFile.setMods(None,self.srcs)
 
 class UpdateReferences(AUpdateReferences,ListPatcher):
 

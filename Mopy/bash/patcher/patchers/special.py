@@ -69,6 +69,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(ListsMerger, self).initPatchFile(patchFile, loadMods)
+        self.srcs_ordered = self.srcs
         self.srcs = set(self.srcs) & set(loadMods)
         self.listTypes = bush.game.listTypes
         self.type_list = dict([(type,{}) for type in self.listTypes])
@@ -137,7 +138,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
         """Add lists from modFile."""
         #--Level Masters (complete initialization)
         if self.levelers is None:
-            self.levelers = [leveler for leveler in self.getConfigChecked() if
+            self.levelers = [leveler for leveler in self.srcs_ordered if
                              leveler in self.patchFile.allSet]
             self.delevMasters = set()
             for leveler in self.levelers:
