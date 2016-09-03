@@ -570,7 +570,7 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
-        text = self._selected_info.listSource(self._selected_item)
+        text = self._selected_info.listSource()
         #--Get masters list
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u'Package Structure'), fixedFont=False,
