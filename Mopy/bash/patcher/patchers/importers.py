@@ -40,66 +40,16 @@ from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
     CBash_ItemStats, SpellRecords, CBash_SpellRecords, LoadFactory, ModFile
 from .base import ImportPatcher, CBash_ImportPatcher
 
-# Functions -------------------------------------------------------------------
-# Factor out common code in the patchers. Serve as a document on the patcher
-# procedure. If need be inline them as default methods arguments in
-# buildPatch or scanMorFile.
-# TODO(ut): document parameters, generify more - maybe move some of it to base?
-def _inner_loop(id_data, keep, records, type, type_count):
-    """Most common pattern for the internal buildPatch() loop.
-
-    In:
-        KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
-    """
-    for record in records:
-        fid = record.fid
-        if fid not in id_data: continue
-        for attr, value in id_data[fid].iteritems():
-            if record.__getattribute__(attr) != value: break
-        else: continue
-        for attr, value in id_data[fid].iteritems():
-            record.__setattr__(attr, value)
-        keep(fid)
-        type_count[type] += 1
-
-def _buildPatch(self, log, inner_loop=_inner_loop, types=None):
-    """Common buildPatch() pattern of:
-
-        GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
-        ImportScripts, SoundPatcher
-    Consists of a type selection loop which could be rewritten to support
-    more patchers (maybe using filter()) and an inner loop that should be
-    provided by a patcher specific, static _inner_loop() method (except for
-    KFFZPatcher, DeathItemPatcher, ImportScripts and SoundPatcher which share
-    the module level _inner_loop() above).
-    Adding `types` and `srcsHeader` parameters absorbed ImportRelations and
-    ImportFactions.
-    """
-    if not self.isActive: return
-    modFileTops = self.patchFile.tops
-    keep = self.patchFile.getKeeper()
-    id_data = self.id_data
-    type_count = {}
-    types = filter(lambda x: x in modFileTops,
-               types if types else map(lambda x: x.classType, self.srcClasses))
-    for type in types:
-        type_count[type] = 0
-        records = modFileTops[type].records
-        inner_loop(id_data, keep, records, type, type_count)
-    # noinspection PyUnusedLocal
-    id_data = None # cleanup to save memory
-    # Log
-    self._patchLog(log,type_count)
-
 class _SimpleImporter(ImportPatcher):
     """For lack of a better name - common methods of a bunch of importers."""
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(_SimpleImporter, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
+        self.id_data = {} #--(attribute-> value) dicts keyed by long fid.
         self.srcClasses = set() #--Record classes actually provided by src
         # mods/files.
+        self.classestemp = set()
 
     def _init_data_loop(self, mapper, recAttrs, recClass, srcFile, srcMod,
                         temp_id_data):
@@ -112,9 +62,9 @@ class _SimpleImporter(ImportPatcher):
         """Common initData pattern.
 
         Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts.
+        Adding _init_data_loop absorbed GraphicsPatcher also.
         """
         if not self.isActive: return
-        self.classestemp = set()
         id_data = self.id_data
         recAttrs_class = self.recAttrs_class
         loadFactory = LoadFactory(False,*recAttrs_class.keys())
@@ -190,8 +140,48 @@ class _SimpleImporter(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
-    def buildPatch(self,log,progress):
-        _buildPatch(self,log)
+    def _inner_loop(self, keep, records, type, type_count):
+        """Most common pattern for the internal buildPatch() loop.
+
+        In:
+            KFFZPatcher, DeathItemPatcher, ImportScripts, SoundPatcher
+        """
+        id_data, set_id_data = self.id_data, set(self.id_data)
+        for record in records:
+            fid = record.fid
+            if fid not in set_id_data: continue
+            for attr, value in id_data[fid].iteritems():
+                if record.__getattribute__(attr) != value: break
+            else: continue
+            for attr, value in id_data[fid].iteritems():
+                record.__setattr__(attr, value)
+            keep(fid)
+            type_count[type] += 1
+
+    def buildPatch(self, log, progress, types=None):
+        """Common buildPatch() pattern of:
+
+            GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
+            ImportScripts, SoundPatcher
+        Consists of a type selection loop which could be rewritten to support
+        more patchers (maybe using filter()) and an inner loop that should be
+        provided by a patcher specific, _inner_loop() method.
+        Adding `types` parameter absorbed ImportRelations and ImportFactions.
+        """
+        if not self.isActive: return
+        modFileTops = self.patchFile.tops
+        keep = self.patchFile.getKeeper()
+        type_count = {}
+        types = filter(lambda x: x in modFileTops,
+                   types if types else map(lambda x: x.classType, self.srcClasses))
+        for type in types:
+            type_count[type] = 0
+            records = modFileTops[type].records
+            self._inner_loop(keep, records, type, type_count)
+        # noinspection PyUnusedLocal
+        id_data = None # cleanup to save memory
+        # Log
+        self._patchLog(log,type_count)
 
 class _RecTypeModLogging(CBash_ImportPatcher):
     """Import patchers that log type -> [mod-> count]"""
@@ -540,8 +530,8 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
                 temp_id_data[fid] = dict(
                     (attr, record.__getattribute__(attr)) for attr in recAttrs)
 
-    @staticmethod
-    def _inner_loop(id_data, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, type, type_count):
+        id_data = self.id_data
         for record in records:
             fid = record.fid
             if fid not in id_data: continue
@@ -565,11 +555,6 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
                 record.__setattr__(attr, value)
             keep(fid)
             type_count[type] += 1
-
-    def buildPatch(self,log,progress):
-        """Merge last version of record with patched graphics data as
-        needed."""
-        _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
 class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
     logMsg = u'\n=== ' + _(u'Modified Records')
@@ -662,14 +647,11 @@ class _AActorImporter(AImportPatcher):
                u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
                u'Actors.Skeleton'}
 
-class ActorImporter(ImportPatcher, _AActorImporter):
+class ActorImporter(_SimpleImporter, _AActorImporter):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(ActorImporter, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
-        self.classestemp = set()
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         self.actorClasses = (MreRecord.type_class['NPC_'],MreRecord.type_class['CREA'])
@@ -816,11 +798,11 @@ class ActorImporter(ImportPatcher, _AActorImporter):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
-    @staticmethod
-    def _inner_loop(id_data, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, type, type_count):
+        id_data, set_id_data = self.id_data, set(self.id_data)
         for record in records:
             fid = record.fid
-            if fid not in id_data: continue
+            if fid not in set_id_data: continue
             for attr, value in id_data[fid].iteritems():
                 if reduce(getattr, attr.split('.'), record) != value: break
             else: continue
@@ -830,9 +812,6 @@ class ActorImporter(ImportPatcher, _AActorImporter):
                         attr.split('.')[-1], value)
             keep(fid)
             type_count[type] += 1
-
-    def buildPatch(self,log,progress):
-       _buildPatch(self,log,inner_loop=self.__class__._inner_loop)
 
 class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
     logMsg = u'\n=== ' + _(u'Modified Records')
@@ -1288,7 +1267,7 @@ class _AImportFactions(AImportPatcher):
     text = _(u"Import factions from source mods/files.")
     autoKey = {u'Factions'}
 
-class ImportFactions(ImportPatcher, _AImportFactions):
+class ImportFactions(_SimpleImporter, _AImportFactions):
     logMsg = _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
@@ -1336,11 +1315,11 @@ class ImportFactions(ImportPatcher, _AImportFactions):
                 if fid not in id_factions: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    @staticmethod
-    def _inner_loop(id_data, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, type, type_count):
+        id_data, set_id_data = self.id_data, set(self.id_data)
         for record in records:
             fid = record.fid
-            if fid not in id_data: continue
+            if fid not in set_id_data: continue
             newFactions = set(id_data[fid])
             curFactions = set((x.faction, x.rank) for x in record.factions)
             changed = newFactions - curFactions
@@ -1366,9 +1345,8 @@ class ImportFactions(ImportPatcher, _AImportFactions):
                 type_count[type] += 1
                 keep(fid)
 
-    def buildPatch(self,log,progress):
-        _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
-                    types=self.activeTypes)
+    def buildPatch(self, log, progress, types=None):
+        super(ImportFactions, self).buildPatch(log, progress, self.activeTypes)
 
 class CBash_ImportFactions(_RecTypeModLogging, _AImportFactions):
     # no logMsg here ! - listSrcs=False
@@ -1468,7 +1446,7 @@ class _AImportRelations(AImportPatcher):
     text = _(u"Import relations from source mods/files.")
     autoKey = {u'Relations'}
 
-class ImportRelations(ImportPatcher, _AImportRelations):
+class ImportRelations(_SimpleImporter, _AImportRelations):
     logMsg = u'\n=== ' + _(u'Modified Factions') + u': %d'
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
@@ -1518,12 +1496,12 @@ class ImportRelations(ImportPatcher, _AImportRelations):
                 if fid not in id_relations: continue
                 patchBlock.setRecord(record.getTypeCopy(mapper))
 
-    @staticmethod
-    def _inner_loop(id_relations, keep, records, type, type_count):
+    def _inner_loop(self, keep, records, type, type_count):
+        id_data, set_id_data = self.id_data, set(self.id_data)
         for record in records:
             fid = record.fid
-            if fid in id_relations:
-                newRelations = set(id_relations[fid])
+            if fid in set_id_data:
+                newRelations = set(id_data[fid])
                 curRelations = set(
                     (x.faction, x.mod) for x in record.relations)
                 changed = newRelations - curRelations
@@ -1547,9 +1525,8 @@ class ImportRelations(ImportPatcher, _AImportRelations):
                     type_count[type] += 1
                     keep(fid)
 
-    def buildPatch(self,log,progress):
-        _buildPatch(self, log, inner_loop=self.__class__._inner_loop,
-                    types=('FACT',))
+    def buildPatch(self, log, progress, types=None):
+        super(ImportRelations, self).buildPatch(log, progress, ('FACT',))
 
     def _plog(self,log,type_count):
         log(self.__class__.logMsg % type_count['FACT'])
