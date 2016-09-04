@@ -41,7 +41,10 @@ from ...parsers import ActorFactions, CBash_ActorFactions, FactionRelations, \
 from .base import ImportPatcher, CBash_ImportPatcher
 
 class _SimpleImporter(ImportPatcher):
-    """For lack of a better name - common methods of a bunch of importers."""
+    """For lack of a better name - common methods of a bunch of importers.
+    :type rec_attrs: dict[str, tuple]"""
+    rec_attrs = {}
+    long_types = None
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -50,6 +53,11 @@ class _SimpleImporter(ImportPatcher):
         self.srcClasses = set() #--Record classes actually provided by src
         # mods/files.
         self.classestemp = set()
+        #--Type Fields
+        self.recAttrs_class = {MreRecord.type_class[recType]: attrs for
+                               recType, attrs in self.rec_attrs.iteritems()}
+        #--Needs Longs
+        self.longTypes = set(self.__class__.long_types or self.rec_attrs)
 
     def _init_data_loop(self, mapper, recAttrs, recClass, srcFile, srcMod,
                         temp_id_data):
@@ -474,6 +482,8 @@ class _AGraphicsPatcher(AImportPatcher):
     autoKey = {u'Graphics'}
 
 class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
+    rec_attrs = game.graphicsTypes
+    long_types = game.graphicsLongsTypes
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -494,15 +504,11 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
         # Is 'RACE' included in race patcher?
         # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconModelRecs):
         #     recAttrs_class[recClass] = ('iconPath','model',)
-        self.recAttrs_class = {MreRecord.type_class[recType]: attrs for
-                        recType, attrs in game.graphicsTypes.iteritems()}
         # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
         # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
         #     recFidAttrs_class[recClass] = game.graphicsMgefFidAttrs
         self.recFidAttrs_class = {MreRecord.type_class[recType]: attrs for
                         recType, attrs in game.graphicsFidTypes.iteritems()}
-        #--Needs Longs
-        self.longTypes = game.graphicsLongsTypes
 
     def _init_data_loop(self, mapper, recAttrs, recClass, srcFile, srcMod,
                         temp_id_data):
@@ -647,53 +653,63 @@ class _AActorImporter(AImportPatcher):
                u'Actors.Skeleton'}
 
 class ActorImporter(_SimpleImporter, _AActorImporter):
+    # note peculiar mapping of record type to dictionaries[tag, attributes]
+    rec_attrs = {'NPC_':{
+        u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
+                           'responsibility', 'services', 'trainSkill',
+                           'trainLevel'),
+        u'Actors.Stats': ('skills','health','attributes'),
+        u'Actors.ACBS': (('baseSpell', 'fatigue', 'level', 'calcMin',
+                          'calcMax', 'flags.autoCalc', 'flags.pcLevelOffset'),
+                         'barterGold', 'flags.female', 'flags.essential',
+                         'flags.respawn', 'flags.noLowLevel', 'flags.noRumors',
+                         'flags.summonable', 'flags.noPersuasion',
+                         'flags.canCorpseCheck',),
+        #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level',
+        #                 'calcMin','calcMax','flags'),
+        u'NPC.Class': ('iclass',),
+        u'NPC.Race': ('race',),
+        u'Actors.CombatStyle': ('combatStyle',),
+        u'Creatures.Blood': (),
+        u'Actors.Skeleton': ('model',),
+        },
+        'CREA':{
+            u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
+                               'responsibility', 'services', 'trainSkill',
+                               'trainLevel'),
+            u'Actors.Stats': ('combat','magic', 'stealth', 'soul', 'health',
+                              'attackDamage', 'strength', 'intelligence',
+                              'willpower', 'agility', 'speed', 'endurance',
+                              'personality','luck'),
+            u'Actors.ACBS': (('baseSpell', 'fatigue', 'level', 'calcMin',
+                              'calcMax', 'flags.pcLevelOffset',), 'barterGold',
+                             'flags.biped', 'flags.essential',
+                             'flags.weaponAndShield', 'flags.respawn',
+                             'flags.swims', 'flags.flies', 'flags.walks',
+                             'flags.noLowLevel', 'flags.noBloodSpray',
+                             'flags.noBloodDecal', 'flags.noHead',
+                             'flags.noRightArm', 'flags.noLeftArm',
+                             'flags.noCombatInWater', 'flags.noShadow',
+                             'flags.noCorpseCheck',),
+            #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level',
+            #                 'calcMin','calcMax','flags'),
+            u'NPC.Class': (),
+            u'NPC.Race': (),
+            u'Actors.CombatStyle': ('combatStyle',),
+            u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+            u'Actors.Skeleton': ('model',),
+        }
+    }
+    try:
+        actorClasses = (MreRecord.type_class['NPC_'], MreRecord.type_class['CREA'])
+    except KeyError:
+        pass # fallout 4
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ActorImporter, self).initPatchFile(patchFile, loadMods)
-        #--Type Fields
-        self.recAttrs_class = {}
-        self.actorClasses = (MreRecord.type_class['NPC_'],MreRecord.type_class['CREA'])
-        for recClass in (MreRecord.type_class[x] for x in ('NPC_',)):
-            self.recAttrs_class[recClass] = {
-                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
-                u'Actors.Stats': ('skills','health','attributes'),
-                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.autoCalc','flags.pcLevelOffset'),
-                                'barterGold','flags.female','flags.essential','flags.respawn','flags.noLowLevel',
-                                'flags.noRumors','flags.summonable','flags.noPersuasion','flags.canCorpseCheck',
-                                ),
-                #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
-                u'NPC.Class': ('iclass',),
-                u'NPC.Race': ('race',),
-                u'Actors.CombatStyle': ('combatStyle',),
-                u'Creatures.Blood': (),
-                u'Actors.Skeleton': ('model',),
-                }
-        for recClass in (MreRecord.type_class[x] for x in ('CREA',)):
-            self.recAttrs_class[recClass] = {
-                u'Actors.AIData': ('aggression','confidence','energyLevel','responsibility','services','trainSkill','trainLevel'),
-                u'Actors.Stats': ('combat','magic','stealth','soul','health','attackDamage','strength','intelligence','willpower','agility','speed','endurance','personality','luck'),
-                u'Actors.ACBS': (('baseSpell','fatigue','level','calcMin','calcMax','flags.pcLevelOffset',),
-                                'barterGold','flags.biped','flags.essential','flags.weaponAndShield',
-                                'flags.respawn','flags.swims','flags.flies','flags.walks','flags.noLowLevel',
-                                'flags.noBloodSpray','flags.noBloodDecal','flags.noHead','flags.noRightArm',
-                                'flags.noLeftArm','flags.noCombatInWater','flags.noShadow','flags.noCorpseCheck',
-                                ),
-                #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level','calcMin','calcMax','flags'),
-                u'NPC.Class': (),
-                u'NPC.Race': (),
-                u'Actors.CombatStyle': ('combatStyle',),
-                u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
-                u'Actors.Skeleton': ('model',),
-                }
-        #--Needs Longs
-        self.longTypes = {'CREA', 'NPC_'}
-
     def initData(self,progress):
         """Get graphics from source files."""
         if not self.isActive: return
         id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
         loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'],
                                         MreRecord.type_class['CREA'])
         longTypes =self.longTypes & set(x.classType for x in self.actorClasses)
@@ -896,15 +912,7 @@ class _AKFFZPatcher(AImportPatcher):
     autoKey = {u'Actors.Anims'}
 
 class KFFZPatcher(_SimpleImporter, _AKFFZPatcher):
-
-    def initPatchFile(self,patchFile,loadMods):
-        super(KFFZPatcher, self).initPatchFile(patchFile, loadMods)
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
-            recAttrs_class[recClass] = ('animations',)
-        #--Needs Longs
-        self.longTypes = {'CREA', 'NPC_'}
+    rec_attrs = dict((x, ('animations',)) for x in {'CREA', 'NPC_'})
 
 class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     logMsg = u'* ' + _(u'Imported Animations') + u': %d'
@@ -1207,16 +1215,7 @@ class _ADeathItemPatcher(AImportPatcher):
     autoKey = {u'Actors.DeathItem'}
 
 class DeathItemPatcher(_SimpleImporter, _ADeathItemPatcher):
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(DeathItemPatcher, self).initPatchFile(patchFile, loadMods)
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
-            recAttrs_class[recClass] = ('deathItem',)
-        #--Needs Longs
-        self.longTypes = {'CREA', 'NPC_'}
+    rec_attrs = dict((x, ('deathItem',)) for x in {'CREA', 'NPC_'})
 
 class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
     logMsg = u'* ' + _(u'Imported Death Items') + u': %d'
@@ -1274,7 +1273,6 @@ class ImportFactions(_SimpleImporter, _AImportFactions):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(ImportFactions, self).initPatchFile(patchFile, loadMods)
-        self.id_data= {} #--Factions keyed by long fid. WAS: id_factions
         self.activeTypes = []  #--Types ('CREA','NPC_') of data actually
         # provided by src mods/files.
 
@@ -1597,18 +1595,10 @@ class _AImportScripts(AImportPatcher):
     autoKey = {u'Scripts'}
 
 class ImportScripts(_SimpleImporter, _AImportScripts):
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ImportScripts, self).initPatchFile(patchFile, loadMods)
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        self.longTypes = {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK',
-                          'CLOT', 'CONT', 'CREA', 'DOOR', 'FLOR', 'FURN',
-                          'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_', 'QUST',
-                          'SGST', 'SLGM'}
-        for recClass in (MreRecord.type_class[x] for x in self.longTypes):
-            recAttrs_class[recClass] = ('script',)
+    rec_attrs = dict((x, ('script',)) for x in
+                     {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT',
+                      'CONT', 'CREA', 'DOOR', 'FLOR', 'FURN', 'INGR', 'KEYM',
+                      'LIGH', 'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM'})
 
 class CBash_ImportScripts(_RecTypeModLogging, _AImportScripts):
 
@@ -2636,17 +2626,8 @@ class SoundPatcher(_SimpleImporter, _ASoundPatcher):
     text = _(u"Import sounds (from Magic Effects, Containers, Activators,"
              u" Lights, Weathers and Doors) from source mods.")
     tip = text
-
-    #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(SoundPatcher, self).initPatchFile(patchFile, loadMods)
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        for recType, attrs in game.soundsTypes.iteritems():
-            recClass = MreRecord.type_class[recType]
-            recAttrs_class[recClass] = attrs
-        #--Needs Longs
-        self.longTypes = game.soundsLongsTypes
+    rec_attrs = game.soundsTypes
+    long_types = game.soundsLongsTypes
 
 class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     """Imports sounds from source mods into patch."""
