@@ -91,92 +91,107 @@ def _buildPatch(self, log, inner_loop=_inner_loop, types=None):
     # Log
     self._patchLog(log,type_count)
 
-def _scanModFile(self, modFile):
-    """Identical scanModFile() pattern of :
+class _SimpleImporter(ImportPatcher):
+    """For lack of a better name - common methods of a bunch of importers."""
 
-        GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
-        SoundPatcher.
-    """
-    if not self.isActive: return
-    id_data = self.id_data
-    mapper = modFile.getLongMapper()
-    if self.longTypes:
-        modFile.convertToLongFids(self.longTypes)
-    for recClass in self.srcClasses:
-        type = recClass.classType
-        if type not in modFile.tops: continue
-        patchBlock = getattr(self.patchFile,type)
-        for record in modFile.tops[type].getActiveRecords():
-            fid = record.fid
-            if not record.longFids: fid = mapper(fid)
-            if fid not in id_data: continue
-            for attr,value in id_data[fid].iteritems():
-                if record.__getattribute__(attr) != value:
-                    patchBlock.setRecord(record.getTypeCopy(mapper))
-                    break
+    #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self,patchFile,loadMods):
+        super(_SimpleImporter, self).initPatchFile(patchFile, loadMods)
+        self.id_data = {} #--Names keyed by long fid.
+        self.srcClasses = set() #--Record classes actually provided by src
+        # mods/files.
 
-# Common initData pattern -----------------------------------------------------
-def _initData(self,progress):
-    """Common initData pattern.
+    def _init_data_loop(self, mapper, recAttrs, recClass, srcFile, srcMod,
+                        temp_id_data):
+        for record in srcFile.tops[recClass.classType].getActiveRecords():
+            fid = mapper(record.fid)
+            temp_id_data[fid] = dict(
+                (attr, record.__getattribute__(attr)) for attr in recAttrs)
 
-    Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts.
-    """
-    if not self.isActive: return
-    self.classestemp = set()
-    id_data = self.id_data
-    recAttrs_class = self.recAttrs_class
-    loadFactory = LoadFactory(False,*recAttrs_class.keys())
-    longTypes = self.longTypes & set(x.classType for x in self.recAttrs_class)
-    progress.setFull(len(self.srcs))
-    cachedMasters = {}
-    for index,srcMod in enumerate(self.srcs):
-        temp_id_data = {}
-        if srcMod not in bosh.modInfos: continue
-        srcInfo = bosh.modInfos[srcMod]
-        srcFile = ModFile(srcInfo,loadFactory)
-        masters = srcInfo.header.masters
-        srcFile.load(True)
-        srcFile.convertToLongFids(longTypes)
-        mapper = srcFile.getLongMapper()
-        for recClass,recAttrs in recAttrs_class.iteritems():
-            if recClass.classType not in srcFile.tops: continue
-            self.srcClasses.add(recClass)
-            self.classestemp.add(recClass)
-            for record in srcFile.tops[
-                recClass.classType].getActiveRecords():
-                fid = mapper(record.fid)
-                temp_id_data[fid] = dict(
-                    (attr, record.__getattribute__(attr)) for attr in recAttrs)
-        for master in masters:
-            if not master in bosh.modInfos: continue # or break filter mods
-            if master in cachedMasters:
-                masterFile = cachedMasters[master]
-            else:
-                masterInfo = bosh.modInfos[master]
-                masterFile = ModFile(masterInfo,loadFactory)
-                masterFile.load(True)
-                masterFile.convertToLongFids(longTypes)
-                cachedMasters[master] = masterFile
-            mapper = masterFile.getLongMapper()
+    def initData(self, progress):
+        """Common initData pattern.
+
+        Used in KFFZPatcher, DeathItemPatcher, SoundPatcher, ImportScripts.
+        """
+        if not self.isActive: return
+        self.classestemp = set()
+        id_data = self.id_data
+        recAttrs_class = self.recAttrs_class
+        loadFactory = LoadFactory(False,*recAttrs_class.keys())
+        longTypes = self.longTypes & set(x.classType for x in recAttrs_class)
+        progress.setFull(len(self.srcs))
+        cachedMasters = {}
+        for index,srcMod in enumerate(self.srcs):
+            temp_id_data = {}
+            if srcMod not in bosh.modInfos: continue
+            srcInfo = bosh.modInfos[srcMod]
+            srcFile = ModFile(srcInfo,loadFactory)
+            masters = srcInfo.header.masters
+            srcFile.load(True)
+            srcFile.convertToLongFids(longTypes)
+            mapper = srcFile.getLongMapper()
             for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in masterFile.tops: continue
-                if recClass not in self.classestemp: continue
-                for record in masterFile.tops[
-                    recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    if fid not in temp_id_data: continue
-                    for attr, value in temp_id_data[fid].iteritems():
-                        if value == record.__getattribute__(attr): continue
-                        else:
-                            if fid not in id_data: id_data[fid] = dict()
-                            try:
-                                id_data[fid][attr] = temp_id_data[fid][attr]
-                            except KeyError:
-                                id_data[fid].setdefault(attr,value)
-        progress.plus()
-    temp_id_data = None
-    self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
-    self.isActive = bool(self.srcClasses)
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                self.classestemp.add(recClass)
+                self._init_data_loop(mapper, recAttrs, recClass, srcFile,
+                                     srcMod, temp_id_data)
+            for master in masters:
+                if not master in bosh.modInfos: continue # or break filter mods
+                if master in cachedMasters:
+                    masterFile = cachedMasters[master]
+                else:
+                    masterInfo = bosh.modInfos[master]
+                    masterFile = ModFile(masterInfo,loadFactory)
+                    masterFile.load(True)
+                    masterFile.convertToLongFids(longTypes)
+                    cachedMasters[master] = masterFile
+                mapper = masterFile.getLongMapper()
+                for recClass,recAttrs in recAttrs_class.iteritems():
+                    if recClass.classType not in masterFile.tops: continue
+                    if recClass not in self.classestemp: continue
+                    for record in masterFile.tops[
+                        recClass.classType].getActiveRecords():
+                        fid = mapper(record.fid)
+                        if fid not in temp_id_data: continue
+                        for attr, value in temp_id_data[fid].iteritems():
+                            if value == record.__getattribute__(attr): continue
+                            else:
+                                if fid not in id_data: id_data[fid] = dict()
+                                try:
+                                    id_data[fid][attr] = temp_id_data[fid][attr]
+                                except KeyError:
+                                    id_data[fid].setdefault(attr,value)
+            progress.plus()
+        temp_id_data = None
+        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.isActive = bool(self.srcClasses)
+
+    def scanModFile(self, modFile, progress):
+        """Identical scanModFile() pattern of :
+
+            GraphicsPatcher, KFFZPatcher, DeathItemPatcher, ImportScripts,
+            SoundPatcher.
+        """
+        if not self.isActive: return
+        id_data = self.id_data
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            if recClass.classType not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile, recClass.classType)
+            for record in modFile.tops[recClass.classType].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr, value in id_data[fid].iteritems():
+                    if record.__getattribute__(attr) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
+    def buildPatch(self,log,progress):
+        _buildPatch(self,log)
 
 class _RecTypeModLogging(CBash_ImportPatcher):
     """Import patchers that log type -> [mod-> count]"""
@@ -468,18 +483,12 @@ class _AGraphicsPatcher(AImportPatcher):
     tip = text
     autoKey = {u'Graphics'}
 
-class GraphicsPatcher(ImportPatcher, _AGraphicsPatcher):
+class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(GraphicsPatcher, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set()  # --Record classes actually provided by src
-        #  mods/files.
-        self.classestemp = set()
         #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        recFidAttrs_class = self.recFidAttrs_class = {}
         # Not available in Skyrim yet LAND, PERK, PACK, QUST, RACE, SCEN, REFR, REGN
         # Look into why these records are not included, are they part of other patchers?
         # no 'model' attr: 'EYES', 'AVIF', 'MICN',
@@ -495,105 +504,41 @@ class GraphicsPatcher(ImportPatcher, _AGraphicsPatcher):
         # Is 'RACE' included in race patcher?
         # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconModelRecs):
         #     recAttrs_class[recClass] = ('iconPath','model',)
-
-        for recType, attrs in game.graphicsTypes.iteritems():
-            recClass = MreRecord.type_class[recType]
-            recAttrs_class[recClass] = attrs
-
+        self.recAttrs_class = {MreRecord.type_class[recType]: attrs for
+                        recType, attrs in game.graphicsTypes.iteritems()}
         # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
         # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
         #     recFidAttrs_class[recClass] = game.graphicsMgefFidAttrs
-        for recType, attrs in game.graphicsFidTypes.iteritems():
-            recClass = MreRecord.type_class[recType]
-            recFidAttrs_class[recClass] = attrs
-
+        self.recFidAttrs_class = {MreRecord.type_class[recType]: attrs for
+                        recType, attrs in game.graphicsFidTypes.iteritems()}
         #--Needs Longs
         self.longTypes = game.graphicsLongsTypes
 
-    def initData(self,progress):
-        """Get graphics from source files."""
-        if not self.isActive: return
-        id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(
-            x.classType for x in self.recAttrs_class)
-        progress.setFull(len(self.srcs))
-        cachedMasters = {}
-        for index,srcMod in enumerate(self.srcs):
-            temp_id_data = {}
-            if srcMod not in bosh.modInfos: continue
-            srcInfo = bosh.modInfos[srcMod]
-            srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
-            srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
-            mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
-                if recClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(recClass)
-                self.classestemp.add(recClass)
-                recFidAttrs = self.recFidAttrs_class.get(recClass, None)
-                for record in srcFile.tops[
-                    recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    if recFidAttrs:
-                        attr_fidvalue = dict(
-                            (attr, record.__getattribute__(attr)) for attr in
-                            recFidAttrs)
-                        for fidvalue in attr_fidvalue.values():
-                            if fidvalue and (fidvalue[0] is None or fidvalue[
-                                0] not in self.patchFile.loadSet):
-                                # Ignore the record. Another option would be
-                                # to just ignore the attr_fidvalue result
-                                self.patchFile.patcher_mod_skipcount[
-                                    self.name][srcMod] += 1
-                                break
-                        else:
-                            temp_id_data[fid] = dict(
-                                (attr, record.__getattribute__(attr)) for attr
-                                in recAttrs)
-                            temp_id_data[fid].update(attr_fidvalue)
-                    else:
-                        temp_id_data[fid] = dict(
-                            (attr, record.__getattribute__(attr)) for attr in
-                            recAttrs)
-            for master in masters:
-                if not master in bosh.modInfos: continue  # or break
-                # filter mods
-                if master in cachedMasters:
-                    masterFile = cachedMasters[master]
+    def _init_data_loop(self, mapper, recAttrs, recClass, srcFile, srcMod,
+                        temp_id_data):
+        recFidAttrs = self.recFidAttrs_class.get(recClass, None)
+        for record in srcFile.tops[recClass.classType].getActiveRecords():
+            fid = mapper(record.fid)
+            if recFidAttrs:
+                attr_fidvalue = dict(
+                    (attr, record.__getattribute__(attr)) for attr in
+                    recFidAttrs)
+                for fidvalue in attr_fidvalue.values():
+                    if fidvalue and (fidvalue[0] is None or fidvalue[
+                        0] not in self.patchFile.loadSet):
+                        # Ignore the record. Another option would be
+                        # to just ignore the attr_fidvalue result
+                        self.patchFile.patcher_mod_skipcount[self.name][
+                            srcMod] += 1
+                        break
                 else:
-                    masterInfo = bosh.modInfos[master]
-                    masterFile = ModFile(masterInfo,loadFactory)
-                    masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
-                    cachedMasters[master] = masterFile
-                mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
-                    if recClass.classType not in masterFile.tops: continue
-                    if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[
-                        recClass.classType].getActiveRecords():
-                        fid = mapper(record.fid)
-                        if fid not in temp_id_data: continue
-                        for attr, value in temp_id_data[fid].iteritems():
-                            if value == record.__getattribute__(attr): continue
-                            else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][
-                                        attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
-            progress.plus()
-        temp_id_data = None
-        self.longTypes = self.longTypes & set(
-            x.classType for x in self.srcClasses)
-        self.isActive = bool(self.srcClasses)
-
-    def scanModFile(self, modFile, progress):
-         _scanModFile(self,modFile)
+                    temp_id_data[fid] = dict(
+                        (attr, record.__getattribute__(attr)) for attr in
+                        recAttrs)
+                    temp_id_data[fid].update(attr_fidvalue)
+            else:
+                temp_id_data[fid] = dict(
+                    (attr, record.__getattribute__(attr)) for attr in recAttrs)
 
     @staticmethod
     def _inner_loop(id_data, keep, records, type, type_count):
@@ -974,30 +919,16 @@ class _AKFFZPatcher(AImportPatcher):
     tip = text
     autoKey = {u'Actors.Anims'}
 
-class KFFZPatcher(ImportPatcher, _AKFFZPatcher):
+class KFFZPatcher(_SimpleImporter, _AKFFZPatcher):
 
-    #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(KFFZPatcher, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src
-        #  mods/files.
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
             recAttrs_class[recClass] = ('animations',)
         #--Needs Longs
         self.longTypes = {'CREA', 'NPC_'}
-
-    def initData(self,progress):
-        """Get actor animation lists from source files."""
-        _initData(self, progress)
-
-    def scanModFile(self, modFile, progress):
-         _scanModFile(self,modFile)
-
-    def buildPatch(self,log,progress):
-        _buildPatch(self,log)
 
 class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     logMsg = u'* ' + _(u'Imported Animations') + u': %d'
@@ -1296,32 +1227,17 @@ class _ADeathItemPatcher(AImportPatcher):
     tip = text
     autoKey = {u'Actors.DeathItem'}
 
-class DeathItemPatcher(ImportPatcher, _ADeathItemPatcher):
+class DeathItemPatcher(_SimpleImporter, _ADeathItemPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(DeathItemPatcher, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src
-        # mods/files.
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recClass in (MreRecord.type_class[x] for x in ('CREA','NPC_')):
             recAttrs_class[recClass] = ('deathItem',)
         #--Needs Longs
         self.longTypes = {'CREA', 'NPC_'}
-
-    def initData(self,progress):
-        """Get actor death items from source files."""
-        _initData(self, progress)
-
-    def scanModFile(self, modFile, progress):
-         _scanModFile(self,modFile)
-
-    def buildPatch(self,log,progress):
-        """Merge last version of record with patched actor death item as
-        needed."""
-        _buildPatch(self,log)
 
 class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
     logMsg = u'* ' + _(u'Imported Death Items') + u': %d'
@@ -1706,14 +1622,11 @@ class _AImportScripts(AImportPatcher):
     tip = text
     autoKey = {u'Scripts'}
 
-class ImportScripts(ImportPatcher, _AImportScripts):
+class ImportScripts(_SimpleImporter, _AImportScripts):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(ImportScripts, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set()  # --Record classes actually provided by src
-        #  mods/files.
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         self.longTypes = {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK',
@@ -1722,17 +1635,6 @@ class ImportScripts(ImportPatcher, _AImportScripts):
                           'SGST', 'SLGM'}
         for recClass in (MreRecord.type_class[x] for x in self.longTypes):
             recAttrs_class[recClass] = ('script',)
-
-    def initData(self,progress):
-        """Get script links from source files."""
-        _initData(self, progress)
-
-    def scanModFile(self, modFile, progress):
-         _scanModFile(self,modFile)
-
-    def buildPatch(self,log,progress):
-        """Merge last version of record with patched scripts link as needed."""
-        _buildPatch(self,log)
 
 class CBash_ImportScripts(_RecTypeModLogging, _AImportScripts):
     logMsg = u'\n=== ' + _(u'Modified Records')
@@ -2753,7 +2655,7 @@ class _ASoundPatcher(AImportPatcher):
     name = _(u'Import Sounds')
     autoKey = {u'Sound'}
 
-class SoundPatcher(ImportPatcher, _ASoundPatcher):
+class SoundPatcher(_SimpleImporter, _ASoundPatcher):
     """Imports sounds from source mods into patch."""
     text = _(u"Import sounds (from Magic Effects, Containers, Activators,"
              u" Lights, Weathers and Doors) from source mods.")
@@ -2762,9 +2664,6 @@ class SoundPatcher(ImportPatcher, _ASoundPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(SoundPatcher, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set()  #--Record classes actually provided by src
-        #  mods/files.
         #--Type Fields
         recAttrs_class = self.recAttrs_class = {}
         for recType, attrs in game.soundsTypes.iteritems():
@@ -2772,17 +2671,6 @@ class SoundPatcher(ImportPatcher, _ASoundPatcher):
             recAttrs_class[recClass] = attrs
         #--Needs Longs
         self.longTypes = game.soundsLongsTypes
-
-    def initData(self,progress):
-        """Get sounds from source files."""
-        _initData(self, progress)
-
-    def scanModFile(self, modFile, progress):
-        _scanModFile(self,modFile)
-
-    def buildPatch(self,log,progress):
-        """Merge last version of record with patched sound data as needed."""
-        _buildPatch(self,log)
 
 class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     """Imports sounds from source mods into patch."""
