@@ -183,6 +183,9 @@ class _SimpleImporter(ImportPatcher):
 
 class _RecTypeModLogging(CBash_ImportPatcher):
     """Import patchers that log type -> [mod-> count]"""
+    listSrcs = True # whether or not to list sources
+    logModRecs = u'* ' + _(u'Modified %(type)s Records: %(count)d')
+    logMsg = u'\n=== ' + _(u'Modified Records')
 
     def initPatchFile(self,patchFile,loadMods):
         super(_RecTypeModLogging, self).initPatchFile(patchFile,loadMods)
@@ -190,23 +193,21 @@ class _RecTypeModLogging(CBash_ImportPatcher):
             lambda: collections.defaultdict(int))
         self.fid_attr_value = collections.defaultdict(dict) # used in some
 
-    def _clog(self, log,
-              logModRecs=u'* ' + _(u'Modified %(type)s Records: %(count)d'),
-              listSrcs=True):
+    def _clog(self, log):
         """Used in: CBash_SoundPatcher, CBash_ImportScripts,
         CBash_ActorImporter, CBash_GraphicsPatcher. Adding
         AImportPatcher.srcsHeader attribute absorbed CBash_NamesPatcher and
-        CBash_StatsPatcher. Adding (tmp!) logModRecs, listSrcs parameters
+        CBash_StatsPatcher. Adding logModRecs, listSrcs class variables
         absorbs CBash_ImportFactions and CBash_ImportInventory.
         """
         # TODO(ut): remove logModRecs - not yet though - adds noise to the
         # patch comparisons
         mod_count = self.mod_count
-        if listSrcs:
+        if self.__class__.listSrcs:
             self._srcMods(log)
             log(self.__class__.logMsg)
         for group_type in sorted(mod_count.keys()):
-            log(logModRecs % {'type': u'%s ' % group_type,
+            log(self.__class__.logModRecs % {'type': u'%s ' % group_type,
                               'count': sum(mod_count[group_type].values())})
             for srcMod in load_order.get_ordered(mod_count[group_type].keys()):
                 log(u'  * %s: %d' % (srcMod.s, mod_count[group_type][srcMod]))
@@ -556,7 +557,6 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
             type_count[type] += 1
 
 class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
-    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -812,7 +812,6 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
             type_count[type] += 1
 
 class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
-    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1350,7 +1349,7 @@ class ImportFactions(_SimpleImporter, _AImportFactions):
         super(ImportFactions, self).buildPatch(log, progress, self.activeTypes)
 
 class CBash_ImportFactions(_RecTypeModLogging, _AImportFactions):
-    # no logMsg here ! - listSrcs=False
+    listSrcs = False
     logModRecs = u'* ' + _(u'Refactioned %(type)s Records: %(count)d')
 
     #--Config Phase -----------------------------------------------------------
@@ -1436,9 +1435,6 @@ class CBash_ImportFactions(_RecTypeModLogging, _AImportFactions):
                 self.mod_count[record._Type][modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def _clog(self, log, logModRecs=logModRecs, listSrcs=False):
-        super(CBash_ImportFactions, self)._clog(log, logModRecs, listSrcs)
 
 #------------------------------------------------------------------------------
 class _AImportRelations(AImportPatcher):
@@ -1615,7 +1611,6 @@ class ImportScripts(_SimpleImporter, _AImportScripts):
             recAttrs_class[recClass] = ('script',)
 
 class CBash_ImportScripts(_RecTypeModLogging, _AImportScripts):
-    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -1802,7 +1797,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
 
 class CBash_ImportInventory(_RecTypeModLogging, _AImportInventory):
-    # no logMsg here ! - listSrcs=False
+    listSrcs=False
     logModRecs = u'%(type)s ' + _(u'Inventories Changed') + u': %(count)d'
 
     #--Config Phase -----------------------------------------------------------
@@ -1887,9 +1882,6 @@ class CBash_ImportInventory(_RecTypeModLogging, _AImportInventory):
                 self.mod_count[record._Type][modFile.GName] += 1
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
-
-    def _clog(self, log, logModRecs=logModRecs, listSrcs=False):
-        super(CBash_ImportInventory, self)._clog(log, logModRecs, listSrcs)
 
 #------------------------------------------------------------------------------
 class _AImportActorsSpells(AImportPatcher):
@@ -2137,7 +2129,7 @@ class _ANamesPatcher(AImportPatcher):
     logMsg =  u'\n=== ' + _(u'Renamed Items')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
-class NamesPatcher(ImportPatcher, _ANamesPatcher):
+class NamesPatcher(_ANamesPatcher, ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2231,7 +2223,7 @@ class NamesPatcher(ImportPatcher, _ANamesPatcher):
         self.id_full.clear()
         self._patchLog(log,type_count)
 
-class CBash_NamesPatcher(_RecTypeModLogging, _ANamesPatcher):
+class CBash_NamesPatcher(_ANamesPatcher, _RecTypeModLogging):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2661,7 +2653,6 @@ class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     text = _(u"Import sounds (from Activators, Containers, Creatures, Doors,"
              u" Lights, Magic Effects and Weathers) from source mods.")
     tip = text
-    logMsg = u'\n=== ' + _(u'Modified Records')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2710,7 +2701,7 @@ class _AStatsPatcher(AImportPatcher):
     logMsg = u'\n=== ' + _(u'Imported Stats')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
-class StatsPatcher(ImportPatcher, _AStatsPatcher):
+class StatsPatcher(_AStatsPatcher, ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -2796,7 +2787,7 @@ class StatsPatcher(ImportPatcher, _AStatsPatcher):
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s,counts[modName]))
 
-class CBash_StatsPatcher(_RecTypeModLogging, _AStatsPatcher):
+class CBash_StatsPatcher(_AStatsPatcher, _RecTypeModLogging):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
