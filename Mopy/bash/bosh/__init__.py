@@ -4088,22 +4088,22 @@ class ModInfos(FileInfos):
         oldPath = self.dir.join(oldName)
         try:
             basePath.moveTo(oldPath)
-        except WindowsError as werr:
-            while werr.winerror == 32 and self._retry(basePath, oldPath):
+        except OSError as werr:
+            while werr.errno == errno.EACCES and self._retry(basePath,oldPath):
                 try:
                     basePath.moveTo(oldPath)
-                except WindowsError as werr:
+                except OSError as werr:
                     continue
                 break
             else:
                 raise
         try:
             newPath.moveTo(basePath)
-        except WindowsError as werr:
-            while werr.winerror == 32 and self._retry(newPath, basePath):
+        except OSError as werr:
+            while werr.errno == errno.EACCES and self._retry(newPath,basePath):
                 try:
                     newPath.moveTo(basePath)
-                except WindowsError as werr:
+                except OSError as werr:
                     continue
                 break
             else:

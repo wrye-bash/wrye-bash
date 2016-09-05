@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import errno
 import os
 import re
 import struct
@@ -954,25 +955,23 @@ class ModCleaner:
                             else:
                                 copy(size)
             #--Save
+            retry = _(u'Bash encountered an error when saving %s.') + u'\n\n' \
+                + _(u'The file is in use by another process such as TES4Edit.'
+                ) + u'\n' + _(u'Please close the other program that is '
+                              u'accessing %s.') + u'\n\n' + _(u'Try again?')
             if changed:
                 cleaner.modInfo.makeBackup()
                 try:
                     path.untemp()
-                except WindowsError as werr:
-                    if werr.winerror != 32: raise
-                    while balt.askYes(None,(_(u'Bash encountered an error when saving %s.')
-                                            + u'\n\n' +
-                                            _(u'The file is in use by another process such as TES4Edit.')
-                                            + u'\n' +
-                                            _(u'Please close the other program that is accessing %s.')
-                                            + u'\n\n' +
-                                            _(u'Try again?')
-                                            ) % (path.stail,path.stail),path.stail+_(u' - Save Error')):
+                except OSError as werr:
+                    while werr.errno == errno.EACCES and balt.askYes(
+                            None, retry % (path.stail, path.stail),
+                            path.stail + _(u' - Save Error')):
                         try:
                             path.untemp()
-                        except WindowsError as werr:
+                            break
+                        except OSError as werr:
                             continue
-                        break
                     else:
                         raise
                 cleaner.modInfo.setmtime()

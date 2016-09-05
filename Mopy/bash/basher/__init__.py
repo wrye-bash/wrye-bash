@@ -321,11 +321,12 @@ class MasterList(_ModsUIList):
     _editLabels = True
     #--Sorting
     _default_sort_col = 'Num'
-    _sort_keys = {'Num'          : None, # sort by master index, the key itself
-                  'File'         : lambda self, a: self.data_store[a].name.s.lower(),
-                  'Current Order': lambda self, a: self.loadOrderNames.index(
-                     self.data_store[a].name), #missing mods sort last alphabetically
-                 }
+    _sort_keys = {
+        'Num'          : None, # sort by master index, the key itself
+        'File'         : lambda self, a: self.data_store[a].name.s.lower(),
+        'Current Order': lambda self, a: self.loadOrderNames.index(
+           self.data_store[a].name), #missing mods sort last alphabetically
+    }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
             items.sort(key=lambda x: self.data_store[x].name not in set(
@@ -1750,14 +1751,15 @@ class SaveList(balt.UIList):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _editLabels = True
-    _sort_keys = {'File'    : None, # just sort by name
-                  'Modified': lambda self, a: self.data_store[a].mtime,
-                  'Size'    : lambda self, a: self.data_store[a].size,
-                  'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
-                  'Player'  : lambda self, a: self.data_store[a].header.pcName,
-                  'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
-                  'Status'  : lambda self, a: self.data_store[a].getStatus(),
-                 }
+    _sort_keys = {
+        'File'    : None, # just sort by name
+        'Modified': lambda self, a: self.data_store[a].mtime,
+        'Size'    : lambda self, a: self.data_store[a].size,
+        'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
+        'Player'  : lambda self, a: self.data_store[a].header.pcName,
+        'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
+        'Status'  : lambda self, a: self.data_store[a].getStatus(),
+    }
     #--Labels, why checking for header here - is this called on corrupt saves ?
     @staticmethod
     def _headInfo(saveInfo, attr):

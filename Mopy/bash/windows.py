@@ -284,8 +284,7 @@ except AttributeError:
 # Need to do this specially, because doing it via os.startfile, ShellExecute,
 # etc drops off the anchor part of the url
 def StartURL(url):
-    if not isinstance(url,basestring):
-        url = url.s
+    url = u'%s' % url # stringify if a Path instance
     # Get default browser location
     try:
         key = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,u'http\\shell\\open\\command')
@@ -294,7 +293,7 @@ def StartURL(url):
         cmd = cmd.replace(u'%1',url)
         subprocess.Popen(cmd)
     except WindowsError:
-        # Regestry detection failed, fallback
+        # Registry detection failed, fallback
         # This method doesn't work with # anchors in the url name on windows
         import webbrowser
         webbrowser.open(url,new=2)
