@@ -1673,6 +1673,12 @@ class UIList(wx.Panel):
         self._select(modName)
     def _select(self, item): self.panel.SetDetails(item)
 
+    # properties to encapsulate access to the list control
+    @property
+    def item_count(self): return self._gList.GetItemCount()
+    @property
+    def edit_control(self): return self._gList.GetEditControl()
+
     #--Items ----------------------------------------------
     def PopulateItem(self, itemDex=-1, item=None):
         """Populate ListCtrl for specified item. Either item or itemDex must be

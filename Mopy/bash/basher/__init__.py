@@ -792,7 +792,7 @@ class ModList(_ModsUIList):
     def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
         """Drop contiguous indexes on newIndex and return True if LO changed"""
         if newIndex < 0: return False # from OnChar() & moving master esm up
-        count = self._gList.GetItemCount()
+        count = self.item_count
         dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
         firstItem = self.GetItem(indexes[0])
         lastItem = self.GetItem(indexes[-1])
@@ -929,7 +929,7 @@ class ModList(_ModsUIList):
             moved = False
             for chunk in chunks:
                 newIndex = chunk[0] + moveMod
-                if chunk[-1] + moveMod == self._gList.GetItemCount():
+                if chunk[-1] + moveMod == self.item_count:
                     continue # trying to move last plugin past the list
                 moved |= self._dropIndexes(chunk, newIndex)
             if moved: self._refreshOnDrop()
@@ -2154,12 +2154,11 @@ class InstallersList(balt.UIList):
             elif item == u'==Last==':
                 event.Veto()
                 return
-        editbox = self._gList.GetEditControl()
-        editbox.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
+        self.edit_control.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
         if installer_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
-            editbox.SetSelection(2,to)
+            self.edit_control.SetSelection(2, to)
         #--Archives, change the selection to not include the extension
         elif installer_type is bosh.InstallerArchive:
             super(InstallersList, self).OnBeginEditLabel(event)
@@ -2167,7 +2166,7 @@ class InstallersList(balt.UIList):
     def OnEditLabelChar(self, event):
         """For pressing F2 on the edit box for renaming"""
         if event.GetKeyCode() == wx.WXK_F2:
-            editbox = self._gList.GetEditControl()
+            editbox = self.edit_control
             # (start, stop), if start==stop there is no selection
             selection_span = editbox.GetSelection()
             text = editbox.GetValue()
@@ -2227,7 +2226,7 @@ class InstallersList(balt.UIList):
         column = self.sort
         reverse = self.colReverse.get(column,False)
         if reverse:
-            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
+            newPos = self.item_count - newPos - 1 - (indexes[-1] - indexes[0])
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
         self.data_store.moveArchives(self.GetSelected(), newPos)
@@ -2431,16 +2430,17 @@ class InstallersList(balt.UIList):
             max_order = pairs[-1][1].order + 1 # place it after last selected
         else:
             max_order = None
+        new_marker = GPath(u'====')
         try:
-            index = self.GetIndex(GPath(u'===='))
+            index = self.GetIndex(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
             self.data_store.add_marker(u'====', max_order)
             self.RefreshUI() # why refresh mods/saves/inis when adding a marker
-            index = self.GetIndex(GPath(u'===='))
+            index = self.GetIndex(new_marker)
         if index != -1:
             self.ClearSelected()
             self.SelectItemAtIndex(index)
-            self._gList.EditLabel(index)
+            self.Rename([new_marker])
 
     def rescanInstallers(self, toRefresh, abort, update_from_data=True,
                          calculate_projects_crc=False):
