@@ -1950,14 +1950,13 @@ class UIList(wx.Panel):
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
-        dataDir = self.data_store.dir
         selected = selected if selected else self.GetSelected()
         num = len(selected)
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
             'bash.maxItemsOpen.continue'): return
         for file_ in selected:
-            file_ = dataDir.join(file_)
+            file_ = self.data_store.store_dir.join(file_)
             if file_.exists(): file_.start()
 
     #--Sorting ----------------------------------------------------------------

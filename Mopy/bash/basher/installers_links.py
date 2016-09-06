@@ -395,7 +395,7 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     def Execute(self):
         super(Installers_BsaRedirection, self).Execute()
         if bass.settings[self.key]:
-            bsaPath = bosh.modInfos.dir.join(
+            bsaPath = bosh.modInfos.store_dir.join(
                     bass.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.BsaFile(bsaPath)
             bsaFile.scan()

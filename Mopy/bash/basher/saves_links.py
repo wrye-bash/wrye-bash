@@ -309,7 +309,7 @@ class Save_DiffMasters(EnabledLink):
 
     def Execute(self):
         oldNew = map(GPath,self.selected)
-        oldNew.sort(key = lambda x: bosh.saveInfos.dir.join(x).mtime)
+        oldNew.sort(key = lambda x: bosh.saveInfos.store_dir.join(x).mtime)
         oldName = oldNew[0]
         oldInfo = self.window.data_store[GPath(oldName)]
         oldMasters = set(oldInfo.masterNames)
@@ -600,11 +600,10 @@ class Save_Move(ChoiceLink):
         self.extraItems = [_Default()]
 
     def MoveFiles(self,profile):
-        fileInfos = self.window.data_store
         destDir = bass.dirs['saveBase'].join(u'Saves')
         if profile != _(u'Default'):
             destDir = destDir.join(profile)
-        if destDir == fileInfos.dir:
+        if destDir == bosh.saveInfos.store_dir:
             self._showError(_(u"You can't move saves to the current profile!"))
             return
         savesTable = bosh.saveInfos.table

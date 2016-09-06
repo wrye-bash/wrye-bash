@@ -1817,8 +1817,8 @@ class SaveList(balt.UIList):
                     u'%d' % index) + bush.game.ess.ext)
             newFileName = GPath(newFileName)
             if newFileName != path:
-                oldPath = bosh.saveInfos.dir.join(path)
-                newPath = bosh.saveInfos.dir.join(newFileName)
+                oldPath = bosh.saveInfos.store_dir.join(path)
+                newPath = bosh.saveInfos.store_dir.join(newFileName)
                 renames = [(oldPath, newPath)]
                 renames.extend(CoSaves.get_new_paths(oldPath, newPath))
                 if not newPath.exists():
@@ -3040,7 +3040,7 @@ class ScreensList(balt.UIList):
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        screensDir = bosh.screensData.dir
+        screensDir = bosh.screensData.store_dir
         with balt.BusyCursor():
             newselected = []
             for screen in selected:
@@ -3077,7 +3077,7 @@ class ScreensList(balt.UIList):
         code = event.GetKeyCode()
         # Ctrl+C: Copy file(s) to clipboard
         if event.CmdDown() and code == ord('C'):
-            sel = map(lambda x: bosh.screensData.dir.join(x).s,
+            sel = map(lambda x: bosh.screensData.store_dir.join(x).s,
                       self.GetSelected())
             balt.copyListToClipboard(sel)
         super(ScreensList, self).OnKeyUp(event)
@@ -3104,7 +3104,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         #--Reset?
         self.displayed_screen = super(ScreensDetails, self).SetFile(fileName)
         if not self.displayed_screen: return
-        filePath = bosh.screensData.dir.join(self.displayed_screen)
+        filePath = bosh.screensData.store_dir.join(self.displayed_screen)
         bitmap = Image(filePath.s).GetBitmap() if filePath.exists() else None
         self.screenshot_control.SetBitmap(bitmap)
 

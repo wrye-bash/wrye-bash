@@ -1503,7 +1503,7 @@ class BsaFile:
             for folderInfo in folderInfos:
                 folderName = folderInfo[-2]
                 #--Actual directory files
-                diskPath = modInfos.dir.join(folderName)
+                diskPath = modInfos.store_dir.join(folderName)
                 diskFiles = set(x.s.lower() for x in diskPath.list())
                 trueHashes.clear()
                 nextHash = 0 #--But going in reverse order, physical 'next' == loop 'prev'
@@ -2953,7 +2953,7 @@ class FileInfos(_DataStore):
     ##: we need a common API for this and TankData...
     file_pattern = None # subclasses must define this !
     def _initDB(self, dir_):
-        self.dir = dir_ #--Path
+        self.store_dir = dir_ #--Path
         self.bash_dir.makedirs() # self.dir may need be set
         self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
@@ -2970,7 +2970,7 @@ class FileInfos(_DataStore):
     #--Refresh File
     def refreshFile(self,fileName):
         try:
-            fileInfo = self.factory(self.dir,fileName)
+            fileInfo = self.factory(self.store_dir, fileName)
             fileInfo.readHeader()
             self[fileName] = fileInfo
         except FileError as error:
@@ -2986,10 +2986,10 @@ class FileInfos(_DataStore):
                      self.dirdef.join(x).isfile() and self.rightFileType(x)}
         else:
             names = set()
-        if self.dir.exists():
+        if self.store_dir.exists():
             # Normal folder items
-            names |= {x for x in self.dir.list() if
-                      self.dir.join(x).isfile() and self.rightFileType(x)}
+            names |= {x for x in self.store_dir.list() if
+                self.store_dir.join(x).isfile() and self.rightFileType(x)}
         return list(names)
 
     def refresh(self, scanData=True):
@@ -3000,10 +3000,10 @@ class FileInfos(_DataStore):
         _updated = set()
         names = self._names()
         for name in names:
-            if self.dirdef and not self.dir.join(name).isfile():
+            if self.dirdef and not self.store_dir.join(name).isfile():
                 fileInfo = self.factory(self.dirdef,name)
             else:
-                fileInfo = self.factory(self.dir,name)
+                fileInfo = self.factory(self.store_dir, name)
             name = fileInfo.name #--Might have '.ghost' lopped off.
             if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
             oldInfo = self.get(name) # None if name was in corrupted
@@ -3052,7 +3052,7 @@ class FileInfos(_DataStore):
         #--Update references
         fileInfo = self[oldName]
         #--File system
-        newPath = self.dir.join(newName)
+        newPath = self.store_dir.join(newName)
         try:
             if fileInfo.isGhost: newPath += u'.ghost'
         except AttributeError: pass # not a mod info
@@ -3118,7 +3118,8 @@ class FileInfos(_DataStore):
 
     def delete_Refresh(self, deleted, check_existence=False):
         if check_existence:
-            deleted = set(d for d in deleted if not self.dir.join(d).exists())
+            deleted = set(
+                d for d in deleted if not self.store_dir.join(d).exists())
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -3147,12 +3148,12 @@ class FileInfos(_DataStore):
         destDir.makedirs()
         if not destName: destName = fileName
         srcPath = self[fileName].getPath()
-        if destDir == self.dir and destName in self.data:
+        if destDir == self.store_dir and destName in self.data:
             destPath = self[destName].getPath()
         else:
             destPath = destDir.join(destName)
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
-        if destDir == self.dir:
+        if destDir == self.store_dir:
             self.refreshFile(destName)
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
@@ -3933,7 +3934,7 @@ class ModInfos(FileInfos):
 
     def create_new_mod(self, newName, selected=(), masterless=False,
                        directory=u'', bashed_patch=False):
-        directory = directory or self.dir
+        directory = directory or self.store_dir
         new_name = GPath(newName)
         newInfo = self.factory(directory, new_name)
         newFile = ModFile(newInfo)
@@ -3942,7 +3943,7 @@ class ModInfos(FileInfos):
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
-        if directory == self.dir:
+        if directory == self.store_dir:
             self.refreshFile(new_name) # add to self, refresh size etc
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
@@ -3998,7 +3999,7 @@ class ModInfos(FileInfos):
         deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
-        for d in map(self.dir.join, deleted): # we need absolute paths
+        for d in map(self.store_dir.join, deleted): # we need absolute paths
             InstallersData.miscTrackedFiles.track(d, factory=self.factory)
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
@@ -4060,7 +4061,7 @@ class ModInfos(FileInfos):
         if oldSize not in self.size_voVersion:
             raise StateError(u"Can't match current main ESM to known version.")
         oldName = GPath(baseName.sbody+u'_'+self.size_voVersion[oldSize]+u'.esm')
-        if self.dir.join(oldName).exists():
+        if self.store_dir.join(oldName).exists():
             raise StateError(u"Can't swap: %s already exists." % oldName)
         newName = GPath(baseName.sbody+u'_'+newVersion+u'.esm')
         if newName not in self.data:
@@ -4070,7 +4071,7 @@ class ModInfos(FileInfos):
         newInfo = self[newName]
         basePath = baseInfo.getPath()
         newPath = newInfo.getPath()
-        oldPath = self.dir.join(oldName)
+        oldPath = self.store_dir.join(oldName)
         try:
             basePath.moveTo(oldPath)
         except OSError as werr:
@@ -4098,7 +4099,7 @@ class ModInfos(FileInfos):
         basePath.mtime = baseInfo.mtime
         oldPath.mtime = newInfo.mtime
         if newInfo.isGhost:
-            oldInfo = ModInfo(self.dir,oldName)
+            oldInfo = ModInfo(self.store_dir, oldName)
             oldInfo.setGhost(True)
         self.voCurrent = newVersion
 
@@ -4144,7 +4145,7 @@ class SaveInfos(FileInfos):
             dirs['saveBase'].join(u'BashProfiles.dat')))
 
     @property
-    def bash_dir(self): return self.dir.join(u'Bash')
+    def bash_dir(self): return self.store_dir.join(u'Bash')
 
     def refresh(self, scanData=True):
         self._refreshLocalSave()
@@ -4155,22 +4156,22 @@ class SaveInfos(FileInfos):
         FileInfos.delete(self, fileName, **kwargs)
         kwargs['confirm'] = False # ask only on save deletion
         kwargs['backupDir'] = self.bash_dir.join('Backups')
-        CoSaves(self.dir,fileName).delete(**kwargs)
+        CoSaves(self.store_dir, fileName).delete(**kwargs)
 
     def rename(self,oldName,newName):
         """Renames member file from oldName to newName."""
         FileInfos.rename(self,oldName,newName)
-        CoSaves(self.dir,oldName).move(self.dir,newName)
+        CoSaves(self.store_dir, oldName).move(self.store_dir, newName)
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated pluggy file."""
         FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
-        CoSaves(self.dir,fileName).copy(destDir,destName or fileName)
+        CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite!"""
         FileInfos.move_info(self, fileName, destDir)
-        CoSaves(self.dir,fileName).move(destDir,fileName)
+        CoSaves(self.store_dir, fileName).move(destDir, fileName)
 
     #--Local Saves ------------------------------------------------------------
     @staticmethod
@@ -4237,8 +4238,8 @@ class BSAInfos(FileInfos):
     file_pattern = re.compile(ur'\.bsa(.ghost)?$', re.I | re.U)
 
     def __init__(self):
-        self.dir = dirs['mods']
-        FileInfos.__init__(self,self.dir,BSAInfo)
+        self.store_dir = dirs['mods']
+        FileInfos.__init__(self, self.store_dir, BSAInfo)
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
@@ -4321,20 +4322,20 @@ class ScreensData(_DataStore):
     reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
 
     def __init__(self):
-        self.dir = dirs['app']
+        self.store_dir = dirs['app']
         self.data = {} #--data[Path] = (ext,mtime)
 
     def refresh(self):
         """Refresh list of screenshots."""
-        self.dir = dirs['app']
+        self.store_dir = dirs['app']
         ssBase = GPath(oblivionIni.getSetting(
             u'Display', u'SScreenShotBaseName', u'ScreenShot'))
         if ssBase.head:
-            self.dir = self.dir.join(ssBase.head)
+            self.store_dir = self.store_dir.join(ssBase.head)
         newData = {}
         #--Loop over files in directory
-        for fileName in self.dir.list():
-            filePath = self.dir.join(fileName)
+        for fileName in self.store_dir.list():
+            filePath = self.store_dir.join(fileName)
             maImageExt = self.reImageExt.search(fileName.s)
             if maImageExt and filePath.isfile():
                 newData[fileName] = (maImageExt.group(1).lower(),filePath.mtime)
@@ -4344,7 +4345,7 @@ class ScreensData(_DataStore):
 
     def delete(self, fileName, **kwargs):
         """Deletes member file."""
-        dirJoin = self.dir.join
+        dirJoin = self.store_dir.join
         if isinstance(fileName,(list,set)):
             filePath = [dirJoin(file) for file in fileName]
         else:
@@ -5836,7 +5837,7 @@ class InstallersData(_DataStore):
     installers_dir_skips = set()
 
     def __init__(self):
-        self.dir = dirs['installers']
+        self.store_dir = dirs['installers']
         self.bash_dir.makedirs()
         #--Persistent data
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
@@ -5939,7 +5940,7 @@ class InstallersData(_DataStore):
         for item in items:
             if item == self.lastKey: continue
             if isinstance(self[item], InstallerMarker): markers.append(item)
-            else: toDelete.append(self.dir.join(item))
+            else: toDelete.append(self.store_dir.join(item))
         #--Delete
         doRefresh = kwargs.pop('doRefresh', True)
         try:
@@ -5956,16 +5957,16 @@ class InstallersData(_DataStore):
     def delete_Refresh(self, deleted, check_existence=False):
         if check_existence:
             deleted.remove(
-                item for item in deleted if self.dir.join(item).exists())
+                item for item in deleted if self.store_dir.join(item).exists())
         if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
         """Copies archive to new location."""
         if item == self.lastKey: return
-        destDir = destDir or self.dir
-        apath = self.dir.join(item)
+        destDir = destDir or self.store_dir
+        apath = self.store_dir.join(item)
         apath.copyTo(destDir.join(destName))
-        if destDir == self.dir:
+        if destDir == self.store_dir:
             self[destName] = installer = copy.copy(self[item])
             installer.archive = destName.s
             installer.isActive = False

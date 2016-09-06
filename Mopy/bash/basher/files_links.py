@@ -43,11 +43,11 @@ class Files_Open(ItemLink):
 
     def _initData(self, window, selection):
         super(Files_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % window.data_store.dir.tail
+        self.help = _(u"Open '%s'") % window.data_store.store_dir.tail
 
     def Execute(self):
         """Handle selection."""
-        dir_ = self.window.data_store.dir
+        dir_ = self.window.data_store.store_dir
         dir_.makedirs()
         dir_.start()
 
@@ -79,11 +79,11 @@ class Files_Unhide(ItemLink):
         destDir = None
         if self.files_type == 'mod':
             wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
-            destDir = window.data_store.dir
+            destDir = window.data_store.store_dir
         elif self.files_type == 'save':
             wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
             srcDir = window.data_store.bash_dir.join(u'Hidden')
-            destDir = window.data_store.dir
+            destDir = window.data_store.store_dir
         elif self.files_type == 'installer':
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bass.dirs['installers']
@@ -92,7 +92,7 @@ class Files_Unhide(ItemLink):
                 defaultFile=u'.Folder Selection.', wildcard=wildcard)
         else:
             wildcard = u'*.*'
-        isSave = (destDir == bosh.saveInfos.dir)
+        isSave = (destDir == bosh.saveInfos.store_dir)
         #--File dialog
         srcDir.makedirs()
         if not self.files_type == 'installer':

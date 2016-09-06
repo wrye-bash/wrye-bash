@@ -96,13 +96,12 @@ class Screen_ConvertTo(EnabledLink):
         return bool(self.convertable)
 
     def Execute(self):
-        srcDir = bosh.screensData.dir
         try:
             with balt.Progress(_(u"Converting to %s") % self.ext) as progress:
                 progress.setFull(len(self.convertable))
                 for index, fileName in enumerate(self.convertable):
                     progress(index,fileName.s)
-                    srcPath = srcDir.join(fileName)
+                    srcPath = bosh.screensData.store_dir.join(fileName)
                     destPath = srcPath.root+u'.'+self.ext
                     if srcPath == destPath or destPath.exists(): continue
                     bitmap = Image.Load(srcPath, quality=bass.settings[
@@ -269,13 +268,13 @@ class Master_ChangeTo(_Master_EditList):
         wildcard = _(u'%s Mod Files') % bush.game.displayName \
                    + u' (*.esp;*.esm)|*.esp;*.esm'
         newPath = self._askOpen(title=_(u'Change master name to:'),
-                                defaultDir=bosh.modInfos.dir,
+                                defaultDir=bosh.modInfos.store_dir,
                                 defaultFile=master_name, wildcard=wildcard,
                                 mustExist=True)
         if not newPath: return
         (newDir,newName) = newPath.headTail
         #--Valid directory?
-        if newDir != bosh.modInfos.dir:
+        if newDir != bosh.modInfos.store_dir:
             self._showError(
                _(u"File must be selected from Oblivion Data Files directory."))
             return

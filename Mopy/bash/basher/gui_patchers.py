@@ -303,7 +303,7 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def OnAdd(self):
         """Add button clicked."""
-        srcDir = bosh.modInfos.dir
+        srcDir = bosh.modInfos.store_dir
         wildcard = bush.game.displayName+_(u' Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
         #--File dialog
         title = _(u'Get ')+self.__class__.listLabel
