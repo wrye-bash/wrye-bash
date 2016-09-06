@@ -2529,19 +2529,18 @@ class ModInfo(FileInfo):
         baseDirJoin = self.getPath().head.join
         files = []
         sbody,ext = self.name.sbody,self.name.ext
-        for (dir,join,format) in bush.game.esp.stringsFiles:
-            fname = format % {'body':sbody,
-                              'ext':ext,
-                              'language':language}
+        for _dir, join, format_str in bush.game.esp.stringsFiles:
+            fname = format_str % {'body': sbody, 'ext': ext,
+                                  'language': language}
             assetPath = GPath(u'').join(*join).join(fname)
             files.append(assetPath)
         extract = set()
         paths = set()
         #--Check for Loose Files first
-        for file in files:
-            loose = baseDirJoin(file)
+        for filepath in files:
+            loose = baseDirJoin(filepath)
             if not loose.exists():
-                extract.add(file)
+                extract.add(filepath)
             else:
                 paths.add(loose)
         #--If there were some missing Loose Files
@@ -2549,7 +2548,7 @@ class ModInfo(FileInfo):
             bsaPaths = modInfos.extra_bsas(self, descending=True)
             bsaFiles = {}
             targetJoin = dirs['bsaCache'].join
-            for file in extract:
+            for filepath in extract:
                 found = False
                 for path in bsaPaths:
                     bsaFile = bsaFiles.get(path,None)
@@ -2560,17 +2559,17 @@ class ModInfo(FileInfo):
                         except:
                             deprint(u'   Error loading BSA file:',path.stail,traceback=True)
                             continue
-                    if bsaFile.IsAssetInBSA(file):
+                    if bsaFile.IsAssetInBSA(filepath):
                         target = targetJoin(path.tail)
                         #--Extract
                         try:
-                            bsaFile.ExtractAsset(file,target)
+                            bsaFile.ExtractAsset(filepath,target)
                         except libbsa.LibbsaError as e:
                             raise ModError(self.name,u"Could not extract Strings File from '%s': %s" % (path.stail,e))
-                        paths.add(target.join(file))
+                        paths.add(target.join(filepath))
                         found = True
                 if not found:
-                    raise ModError(self.name,u"Could not locate Strings File '%s'" % file.stail)
+                    raise ModError(self.name,u"Could not locate Strings File '%s'" % filepath.stail)
         return paths
 
     def hasResources(self):
@@ -2909,7 +2908,7 @@ class TrackedFileInfos(DataDict):
        Uses absolute paths - the caller is responsible for passing them.
        """
     # DEPRECATED: hack introduced to track BAIN installed files AND game inis
-    dir = GPath(u'') # a mess with paths
+    tracked_dir = GPath(u'') # a mess with paths
 
     def __init__(self, factory=_AFileInfo):
         self.factory = factory
@@ -2918,7 +2917,7 @@ class TrackedFileInfos(DataDict):
     def refreshTracked(self):
         changed = set()
         for name, tracked in self.items():
-            fileInfo = self.factory(self.dir, name)
+            fileInfo = self.factory(self.tracked_dir, name)
             filePath = fileInfo.getPath()
             if not filePath.exists(): # untrack - runs on first run !!
                 self.pop(name, None)
@@ -2930,7 +2929,7 @@ class TrackedFileInfos(DataDict):
 
     def track(self, absPath, factory=None): # cf FileInfos.refreshFile
         factory = factory or self.factory
-        fileInfo = factory(self.dir, absPath)
+        fileInfo = factory(self.tracked_dir, absPath)
         # fileInfo.readHeader() #ModInfo: will blow if absPath doesn't exist
         self[absPath] = fileInfo
 
@@ -3862,14 +3861,12 @@ class ModInfos(FileInfos):
             sbody,ext = modName.sbody,modName.ext
             bsaPaths = self.extra_bsas(modInfo)
             bsaFiles = {}
-            for stringsFile in bush.game.esp.stringsFiles:
-                dir,join,format = stringsFile
-                fname = format % {'body':sbody,
-                                  'ext':ext,
-                                  'language':language}
+            for dir_, join, format_str in bush.game.esp.stringsFiles:
+                fname = format_str % {'body': sbody, 'ext': ext,
+                                      'language': language}
                 assetPath = GPath(u'').join(*join).join(fname)
                 # Check loose files first
-                if dirs[dir].join(assetPath).exists():
+                if dirs[dir_].join(assetPath).exists():
                     continue
                 # Check in BSA's next
                 found = False

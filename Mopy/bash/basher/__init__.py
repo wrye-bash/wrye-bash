@@ -648,8 +648,7 @@ class INIList(balt.UIList):
             return
         choice = self.panel.current_ini_path.tail
         if not self.warn_tweak_game_ini(choice): return
-        file_ = tweak.dir.join(hitItem)
-        target.applyTweakFile(file_)
+        target.applyTweakFile(tweak.getPath())
         self.RefreshUIValid(hitItem)
 
     @staticmethod
@@ -680,9 +679,8 @@ class INITweakLineCtrl(INIListCtrl):
         if tweakPath is None:
             self.DeleteAllItems()
             return
-        ini = bosh.iniInfos.ini
-        tweakPath = bosh.iniInfos[tweakPath].dir.join(tweakPath)
-        self.tweakLines = ini.getTweakFileLines(tweakPath)
+        tweakPath = bosh.iniInfos[tweakPath].getPath()
+        self.tweakLines = bosh.iniInfos.ini.getTweakFileLines(tweakPath)
         num = self.GetItemCount()
         updated = set()
         for i,line in enumerate(self.tweakLines):
