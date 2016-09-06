@@ -116,7 +116,8 @@ class Saves_ProfilesData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        oldDir,newDir = (self.baseSaves.join(dir) for dir in (oldName,newName))
+        oldDir, newDir = (self.baseSaves.join(subdir) for subdir in
+                          (oldName, newName))
         oldDir.moveTo(newDir)
         oldSaves,newSaves = ((u'Saves\\'+name+u'\\') for name in (oldName,newName))
         if bosh.saveInfos.localSave == oldSaves:

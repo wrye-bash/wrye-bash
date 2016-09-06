@@ -2253,8 +2253,8 @@ class MasterInfo:
 #------------------------------------------------------------------------------
 class _AFileInfo:
     """Abstract File."""
-    def __init__(self,dir,name):
-        self.dir = GPath(dir)
+    def __init__(self, parent_dir, name):
+        self.dir = GPath(parent_dir)
         self.name = GPath(name)
         try:
             self.size, self.mtime, self.ctime = \
@@ -2288,8 +2288,8 @@ class _AFileInfo:
 class FileInfo(_AFileInfo):
     """Abstract TES4/TES4GAME File."""
 
-    def __init__(self, dir, name):
-        _AFileInfo.__init__(self, dir, name)
+    def __init__(self, parent_dir, name):
+        _AFileInfo.__init__(self, parent_dir, name)
         self.bashDir = self.getFileInfos().bash_dir
         self.header = None
         self.masterNames = tuple()
@@ -2440,14 +2440,14 @@ reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 class ModInfo(FileInfo):
     """An esp/m file."""
 
-    def __init__(self, dir, name):
+    def __init__(self, parent_dir, name):
         self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
         if endsInGhost: name = GPath(name.s[:-6])
         else: # refreshFile() path
-            absPath = GPath(dir).join(name)
+            absPath = GPath(parent_dir).join(name)
             self.isGhost = \
                 not absPath.exists() and (absPath + u'.ghost').exists()
-        FileInfo.__init__(self, dir, name)
+        FileInfo.__init__(self, parent_dir, name)
 
     def getFileInfos(self): return modInfos
 
@@ -7410,10 +7410,8 @@ def initDirs(bashIni, personal, localAppData):
     dirs['corruptBCFs'] = dirs['converters'].join(u'--Corrupt')
 
     #--Test correct permissions for the directories
-    badPermissions = []
-    for dir in dirs:
-        if not test_permissions(dirs[dir]):
-            badPermissions.append(dirs[dir])
+    badPermissions = [test_dir for test_dir in dirs.itervalues()
+                      if not test_permissions(test_dir)] # DOES NOTHING !!!
     if not test_permissions(oblivionMods):
         badPermissions.append(oblivionMods)
     if badPermissions:
@@ -7422,7 +7420,8 @@ def initDirs(bashIni, personal, localAppData):
         # bad, just disable BAIN.  If only the saves path is bad, just disable
         # saves related stuff.
         msg = balt.fill(_(u'Wrye Bash cannot access the following paths:'))
-        msg += u'\n\n'+ u'\n'.join([u' * '+dir.s for dir in badPermissions]) + u'\n\n'
+        msg += u'\n\n' + u'\n'.join(
+            [u' * ' + bad_dir.s for bad_dir in badPermissions]) + u'\n\n'
         msg += balt.fill(_(u'See: "Wrye Bash.html, Installation - Windows Vista/7" for information on how to solve this problem.'))
         raise PermissionError(msg)
 

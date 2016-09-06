@@ -537,10 +537,8 @@ class Path(object):
         return Path(os.getcwdu())
 
     def setcwd(self):
-        """Set cwd. Works as either instance or class method."""
-        if isinstance(self,Path): dir = self._s
-        else: dir = self
-        os.chdir(dir)
+        """Set cwd."""
+        os.chdir(self._s)
 
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
@@ -858,11 +856,11 @@ class Path(object):
                 chmod = os.chmod
                 for root,dirs,files in os.walk(self._s):
                     rootJoin = root.join
-                    for dir in dirs:
-                        try: chmod(rootJoin(dir),flags)
+                    for directory in dirs:
+                        try: chmod(rootJoin(directory),flags)
                         except: pass
-                    for file in files:
-                        try: chmod(rootJoin(file),flags)
+                    for filename in files:
+                        try: chmod(rootJoin(filename),flags)
                         except: pass
 
     def open(self,*args,**kwdargs):
@@ -2639,8 +2637,8 @@ class WryeText:
         else:
             if cssName.ext != u'.css':
                 raise BoltError(u'Invalid Css file: '+cssName.s)
-            for dir in cssDirs:
-                cssPath = GPath(dir).join(cssName)
+            for css_dir in cssDirs:
+                cssPath = GPath(css_dir).join(cssName)
                 if cssPath.exists(): break
             else:
                 raise BoltError(u'Css file not found: '+cssName.s)
