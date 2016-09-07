@@ -626,7 +626,6 @@ def InitBSALinks():
         BSAList.mainMenu.append(sortMenu)
     BSAList.mainMenu.append(SeparatorLink())
     BSAList.mainMenu.append(UIList_OpenStore())
-    BSAList.mainMenu.append(Files_Unhide('save'))
     #--BSAList: Item Links
     if True: #--File
         fileMenu = MenuLink(_(u"File")) #>>

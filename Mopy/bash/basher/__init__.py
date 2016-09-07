@@ -2165,7 +2165,7 @@ class InstallersList(balt.UIList):
             elif item == u'==Last==':
                 event.Veto()
                 return
-        self.edit_control.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
+        self.edit_control.Bind(wx.EVT_CHAR, self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
         if installer_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
@@ -2174,7 +2174,7 @@ class InstallersList(balt.UIList):
         elif installer_type is bosh.InstallerArchive:
             super(InstallersList, self).OnBeginEditLabel(event)
 
-    def OnEditLabelChar(self, event):
+    def _OnEditLabelChar(self, event):
         """For pressing F2 on the edit box for renaming"""
         if event.GetKeyCode() == wx.WXK_F2:
             editbox = self.edit_control
@@ -2633,7 +2633,6 @@ class InstallersPanel(SashTankPanel):
     @projects_walk_cache
     def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
                                       scan_data_dir):
-        data = self.listData
         if settings.get('bash.installers.updatedCRCs',True): #only checked here
             settings['bash.installers.updatedCRCs'] = False
             self._data_dir_scanned = False
@@ -2643,23 +2642,29 @@ class InstallersPanel(SashTankPanel):
             self.__extractOmods()
         do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
         if not do_refresh and self.frameActivated:
-            refresh_info = data.scan_installers_dir(installers_paths, fullRefresh)
+            refresh_info = self.listData.scan_installers_dir(installers_paths,
+                                                             fullRefresh)
             do_refresh = refresh_info.refresh_needed()
         else: refresh_info = None
         if do_refresh:
-            with balt.Progress(_(u'Refreshing Installers...'),u'\n'+u' '*60, abort=canCancel) as progress:
+            with balt.Progress(_(u'Refreshing Installers...'),
+                               u'\n' + u' ' * 60, abort=canCancel) as progress:
                 try:
                     what = 'DISC' if scan_data_dir else 'IC'
-                    refreshui[0] |= data.irefresh(progress, what, fullRefresh, refresh_info)
+                    refreshui[0] |= self.listData.irefresh(progress, what,
+                                                           fullRefresh,
+                                                           refresh_info)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
                 finally:
                     self._data_dir_scanned = True
-        elif self.frameActivated and data.refreshConvertersNeeded():
-            with balt.Progress(_(u'Refreshing Converters...'),u'\n'+u' '*60) as progress:
+        elif self.frameActivated and self.listData.refreshConvertersNeeded():
+            with balt.Progress(_(u'Refreshing Converters...'),
+                               u'\n' + u' ' * 60) as progress:
                 try:
-                    refreshui[0] |= data.irefresh(progress, 'C', fullRefresh)
+                    refreshui[0] |= self.listData.irefresh(progress, 'C',
+                                                           fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh

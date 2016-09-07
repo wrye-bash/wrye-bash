@@ -1893,7 +1893,7 @@ class UIList(wx.Panel):
             return None
         return self.GetItem(hitItem)
 
-    #-- Item selection --------------------------------------------------------
+    #--Item selection ---------------------------------------------------------
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
                       __state_selected=wx.LIST_STATE_SELECTED):
         listCtrl, selected_list = self.__gList, []

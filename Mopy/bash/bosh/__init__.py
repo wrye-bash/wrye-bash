@@ -6011,7 +6011,14 @@ class InstallersData(_DataStore):
         True, triggering the rest of the refreshes in irefresh. Once
         refresh_info is calculated, deleted are removed, refreshBasic is
         called on added/updated files and crc_installer updated. If you
-        don't need that last step you may directly call refreshBasic."""
+        don't need that last step you may directly call refreshBasic.
+        :type progress: bolt.Progress | None
+        :type fullRefresh: bool
+        :type refresh_info: InstallersData._RefreshInfo | None
+        :type deleted: collections.Iterable[bolt.Path] | None
+        :type pending: collections.Iterable[bolt.Path] | None
+        :type projects: collections.Iterable[bolt.Path] | None
+        """
         # TODO(ut):we need to return the refresh_info for more granular control
         # in irefresh and also add extra processing for deleted files
         progress = progress or bolt.Progress()

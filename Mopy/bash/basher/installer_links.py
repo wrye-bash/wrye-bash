@@ -432,9 +432,9 @@ class Installer_Hide(_InstallerLink):
         for curName in self.selected:
             newName = destDir.join(curName)
             if newName.exists():
-                message = (_(u'A file named %s already exists in the hidden files directory. Overwrite it?')
-                    % newName.stail)
-                if not self._askYes(message, _(u'Hide Files')): return
+                message = (_(u'A file named %s already exists in the hidden '
+                             u'files directory. Overwrite it?') % curName)
+                if not self._askYes(message, _(u'Hide Files')): continue
             #Move
             with balt.BusyCursor():
                 file = bass.dirs['installers'].join(curName)
