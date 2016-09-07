@@ -1531,8 +1531,8 @@ statsHeaders = (
 # SoundPatcher
 #------------------------------------------------------------------------------
 # Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'CONT', 'DOOR', 'LIGH', 'MGEF', 'SOUN', 'WTHR',
-                    'WEAP'}
+soundsLongsTypes = {'MGEF', 'ACTI', 'LIGH', 'WTHR', 'CONT', 'DOOR',
+                    'SOUN', 'WEAP'} # those 2 were not included before
 soundsTypes = {
     "ACTI": ('sound',),
     "CONT": ('soundOpen','soundClose',),
@@ -1541,8 +1541,8 @@ soundsTypes = {
     "LIGH": ('sound',),
     "MGEF": ('castingSound','boltSound','hitSound','areaSound',),
 #    "REGN": ('entries.sounds',),
-    "SOUN": ('soundFile','minDist1','maxDist1','freqAdj1','minDist2',
-             'maxDist2','freqAdj2','staticAtten','stopTime','startTime',),
+    "SOUN": ('soundFile', 'minDist2', 'maxDist2', 'freqAdj2', 'staticAtten',
+             'stopTime', 'startTime',),
     "WATR": ('sound',),
     "WTHR": ('sounds',),
 }
