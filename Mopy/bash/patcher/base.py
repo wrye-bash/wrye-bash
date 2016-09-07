@@ -33,8 +33,7 @@ from this module outside of the patcher package."""
 
 from . import getPatchesList
 from ..bolt import AbstractError
-from ..bosh import reModExt
-from .. import load_order
+from .. import load_order, bass
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
@@ -128,7 +127,7 @@ class CBash_Patcher(_Abstract_Patcher):
         for type_ in self.getTypes():
             group_patchers.setdefault(type_,[]).append(self)
         if self.allowUnloaded:
-            loadMods = set([mod for mod in self.srcs if reModExt.search(
+            loadMods = set([mod for mod in self.srcs if bass.reModExt.search(
                 mod.s) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
 

@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import errno
 import os
 import re
 import struct
@@ -279,15 +280,7 @@ class ConfigHelpers:
             deprint(u'An error occurred while parsing taglist.yaml:',
                     traceback=True)
 
-    def getBashTags(self,modName):
-        """Retrieves bash tags for given file."""
-        return self._getTagCache(modName)[0]
-
-    def getBashRemoveTags(self,modName):
-        """Retrieves bash tags for given file."""
-        return self._getTagCache(modName)[1]
-
-    def _getTagCache(self,modName):
+    def getTagsInfoCache(self, modName):
         """Gets Bash tag info from the cache, or
            the LOOT API if it is not in cache."""
         if modName not in self.tagCache:
@@ -342,9 +335,14 @@ class ConfigHelpers:
             log(_(u'This is a report on your currently active/merged mods.'))
             #--Mergeable/NoMerge/Deactivate tagged mods
             shouldMerge = active & modInfos.mergeable
-            shouldDeactivateA = [x for x in active if u'Deactivate' in modInfos[x].getBashTags()]
-            shouldDeactivateB = [x for x in active if u'NoMerge' in modInfos[x].getBashTags() and x in modInfos.mergeable]
-            shouldActivateA = [x for x in imported if u'MustBeActiveIfImported' in modInfos[x].getBashTags() and x not in active]
+            shouldDeactivateA, shouldDeactivateB = [], []
+            for x in active:
+                tags = modInfos[x].getBashTags()
+                if u'Deactivate' in tags: shouldDeactivateA.append(x)
+                if u'NoMerge' in tags and x in modInfos.mergeable:
+                    shouldDeactivateB.append(x)
+            shouldActivateA = [x for x in imported if x not in active and
+                        u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
             #--Mods with invalid TES4 version
             invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
             #--Look for dirty edits
@@ -954,25 +952,23 @@ class ModCleaner:
                             else:
                                 copy(size)
             #--Save
+            retry = _(u'Bash encountered an error when saving %s.') + u'\n\n' \
+                + _(u'The file is in use by another process such as TES4Edit.'
+                ) + u'\n' + _(u'Please close the other program that is '
+                              u'accessing %s.') + u'\n\n' + _(u'Try again?')
             if changed:
                 cleaner.modInfo.makeBackup()
                 try:
                     path.untemp()
-                except WindowsError as werr:
-                    if werr.winerror != 32: raise
-                    while balt.askYes(None,(_(u'Bash encountered an error when saving %s.')
-                                            + u'\n\n' +
-                                            _(u'The file is in use by another process such as TES4Edit.')
-                                            + u'\n' +
-                                            _(u'Please close the other program that is accessing %s.')
-                                            + u'\n\n' +
-                                            _(u'Try again?')
-                                            ) % (path.stail,path.stail),path.stail+_(u' - Save Error')):
+                except OSError as werr:
+                    while werr.errno == errno.EACCES and balt.askYes(
+                            None, retry % (path.stail, path.stail),
+                            path.stail + _(u' - Save Error')):
                         try:
                             path.untemp()
-                        except WindowsError as werr:
+                            break
+                        except OSError as werr:
                             continue
-                        break
                     else:
                         raise
                 cleaner.modInfo.setmtime()

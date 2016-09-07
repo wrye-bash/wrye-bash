@@ -28,18 +28,12 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 
 ############# bush.game must be set by the time you import bosh ! #############
 
-# Localization ----------------------------------------------------------------
-#--Not totally clear on this, but it seems to safest to put locale first...
-import locale
-locale.setlocale(locale.LC_ALL,u'')
-#locale.setlocale(locale.LC_ALL,'German')
-#locale.setlocale(locale.LC_ALL,'Japanese_Japan.932')
-
 # Imports ---------------------------------------------------------------------
 #--Python
 import cPickle
 import collections
 import copy
+import errno
 import os
 import re
 import string
@@ -54,7 +48,7 @@ from itertools import groupby
 #--Local
 from .. import bass, bolt, balt, bush, env, load_order, libbsa
 from .mods_metadata import ConfigHelpers
-from ..bass import dirs, inisettings, tooldirs
+from ..bass import dirs, inisettings, tooldirs, reModExt
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
     PermissionError, FileError, formatInteger, round_size
@@ -104,7 +98,6 @@ reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]
 #--Mod Extensions
 reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
 reExGroup = re.compile(u'(.*?),',re.U)
-reModExt  = re.compile(ur'\.es[mp](.ghost)?$',re.I|re.U)
 _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
@@ -2252,6 +2245,9 @@ class MasterInfo:
         else:
             return 0
 
+    def __repr__(self):
+        return self.__class__.__name__ + u"<" + repr(self.name) + u">"
+
 #------------------------------------------------------------------------------
 class _AFileInfo:
     """Abstract File."""
@@ -2476,8 +2472,7 @@ class ModInfo(FileInfo):
     def cachedCrc(self, recalculate=False):
         """Stores a cached crc, for quicker execution."""
         path = self.getPath()
-        size = path.size
-        mtime = path.getmtime()
+        size, mtime = path.size_mtime()
         cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
         cached_size = modInfos.table.getItem(self.name, 'crc_size')
         if recalculate or mtime != cached_mtime or size != cached_size:
@@ -2595,18 +2590,6 @@ class ModInfo(FileInfo):
         # Prevent re-calculating the File CRC
         modInfos.table.setItem(self.name,'crc_mtime',mtime)
 
-    def writeNew(self,masters=[],mtime=0):
-        """Creates a new file with the given name, masters and mtime."""
-        header = bush.game.MreHeader((bush.game.MreHeader.classType,0,(self.isEsm() and 1 or 0),0,0))
-        for master in masters:
-            header.masters.append(master)
-        header.setChanged()
-        #--Write it
-        with self.getPath().open('wb') as out:
-            header.getSize()
-            header.dump(out)
-        self.setmtime(mtime)
-
     # Ghosting and ghosting related overrides ---------------------------------
     def sameAs(self, fileInfo):
         try:
@@ -2680,15 +2663,16 @@ class ModInfo(FileInfo):
         description = self.header.description or u''
         maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}',description,flags=re.U)
         if not maBashKeys:
-            return None
+            return set()
         else:
             bashTags = maBashKeys.group(1).split(u',')
             return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
 
     def reloadBashTags(self):
         """Reloads bash tags from mod description and LOOT"""
-        tags = (self.getBashTagsDesc() or set()) | (configHelpers.getBashTags(self.name) or set())
-        tags -= (configHelpers.getBashRemoveTags(self.name) or set())
+        tags, removed, _userlist = configHelpers.getTagsInfoCache(self.name)
+        tags |= self.getBashTagsDesc()
+        tags -= removed
         # Filter and remove old tags
         tags = tags & allTagsSet
         if tags & oldTagsSet:
@@ -2978,7 +2962,8 @@ class TrackedFileInfos(DataDict):
 class _DataStore(DataDict):
 
     def delete(self, itemOrItems, **kwargs): raise AbstractError
-    def delete_Refresh(self, deleted): raise AbstractError # Yak - absorb in refresh - add deleted parameter
+    def delete_Refresh(self, deleted, check_existence=False):
+        raise AbstractError # Yak - absorb in refresh - add deleted parameter
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
@@ -3154,8 +3139,9 @@ class FileInfos(_DataStore):
             if doRefresh:
                 self.delete_Refresh(tableUpdate.values())
 
-    def delete_Refresh(self, deleted):
-        deleted = set(d for d in deleted if not self.dir.join(d).exists())
+    def delete_Refresh(self, deleted, check_existence=False):
+        if check_existence:
+            deleted = set(d for d in deleted if not self.dir.join(d).exists())
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -3699,23 +3685,25 @@ class ModInfos(FileInfos):
     @staticmethod
     def _tagsies(modInfo, tagList):
         mname = modInfo.name
-        def tags(msg, iterable, tagsList):
+        def _tags(msg, iterable, tagsList):
             return tagsList + u'  * ' + msg + u', '.join(iterable) + u'\n'
         if not modInfos.table.getItem(mname, 'autoBashTags') and \
                modInfos.table.getItem(mname, 'bashTags', u''):
-            tagList = tags(_(u'From Manual (if any this overrides '
+            tagList = _tags(_(u'From Manual (if any this overrides '
                 u'Description/LOOT sourced tags): '), sorted(
                 modInfos.table.getItem(mname, 'bashTags', u'')), tagList)
-        if modInfo.getBashTagsDesc():
-            tagList = tags(_(u'From Description: '),
-                           sorted(modInfo.getBashTagsDesc()), tagList)
-        if configHelpers.getBashTags(mname):
-            tagList = tags(_(u'From LOOT Masterlist and or userlist: '),
-                           sorted(configHelpers.getBashTags(mname)), tagList)
-        if configHelpers.getBashRemoveTags(mname):
-            tagList = tags(_(u'Removed by LOOT Masterlist and or userlist: '),
-                      sorted(configHelpers.getBashRemoveTags(mname)), tagList)
-        return tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
+        tags_desc = modInfo.getBashTagsDesc()
+        if tags_desc:
+            tagList = _tags(_(u'From Description: '), sorted(tags_desc),
+                            tagList)
+        tags, removed, _userlist = configHelpers.getTagsInfoCache(mname)
+        if tags:
+            tagList = _tags(_(u'From LOOT Masterlist and or userlist: '),
+                            sorted(tags), tagList)
+        if removed:
+            tagList = _tags(_(u'Removed by LOOT Masterlist and or userlist: '),
+                            sorted(removed), tagList)
+        return _tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
 
     @staticmethod
     def getTagList(mod_list=None):
@@ -4025,9 +4013,9 @@ class ModInfos(FileInfos):
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.delete(self, fileName, **kwargs)
 
-    def delete_Refresh(self, deleted):
+    def delete_Refresh(self, deleted, check_existence=False):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = FileInfos.delete_Refresh(self, deleted)
+        deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
         for d in map(self.dir.join, deleted): # we need absolute paths
@@ -4105,22 +4093,22 @@ class ModInfos(FileInfos):
         oldPath = self.dir.join(oldName)
         try:
             basePath.moveTo(oldPath)
-        except WindowsError as werr:
-            while werr.winerror == 32 and self._retry(basePath, oldPath):
+        except OSError as werr:
+            while werr.errno == errno.EACCES and self._retry(basePath,oldPath):
                 try:
                     basePath.moveTo(oldPath)
-                except WindowsError as werr:
+                except OSError as werr:
                     continue
                 break
             else:
                 raise
         try:
             newPath.moveTo(basePath)
-        except WindowsError as werr:
-            while werr.winerror == 32 and self._retry(newPath, basePath):
+        except OSError as werr:
+            while werr.errno == errno.EACCES and self._retry(newPath,basePath):
                 try:
                     newPath.moveTo(basePath)
-                except WindowsError as werr:
+                except OSError as werr:
                     continue
                 break
             else:
@@ -4323,7 +4311,7 @@ class PeopleData(_DataStore):
         del self[key]
         self.hasChanged = True
 
-    def delete_Refresh(self, deleted): pass
+    def delete_Refresh(self, deleted, check_existence=False): pass
 
     #--Operations
     def loadText(self,path):
@@ -4391,7 +4379,7 @@ class ScreensData(_DataStore):
         for item in filePath:
             if not item.exists(): del self[item.tail]
 
-    def delete_Refresh(self, deleted): self.refresh()
+    def delete_Refresh(self, deleted, check_existence=False): self.refresh()
 
 #------------------------------------------------------------------------------
 os_sep = unicode(os.path.sep)
@@ -5169,7 +5157,11 @@ class Installer(object):
                      _os_sep=os_sep, skips_start=tuple(
                 x.replace(os_sep, u'') for x in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
-        self._refreshSource(archive, progress, recalculate_project_crc)
+        try:
+            self._refreshSource(archive, progress, recalculate_project_crc)
+        except InstallerArchiveError:
+            self.type = -1 # size, modified and some of fileSizeCrcs may be set
+            return {}
         self._find_root_index()
         # fileRootIdex now points to the start in the file strings to ignore
         #--Type, subNames
@@ -5987,7 +5979,11 @@ class InstallersData(_DataStore):
                 if deleted:
                     self.delete_Refresh(deleted) # markers are already popped
 
-    def delete_Refresh(self, deleted): self.irefresh(what='I', deleted=deleted)
+    def delete_Refresh(self, deleted, check_existence=False):
+        if check_existence:
+            deleted.remove(
+                item for item in deleted if self.dir.join(item).exists())
+        if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -6049,12 +6045,9 @@ class InstallersData(_DataStore):
                 if not installer:
                     installer = self.setdefault(package, iClass(package))
                 apath = dirs['installers'].join(package)
-                try:
-                    installer.refreshBasic(apath,
-                            SubProgress(progress, index, index + 1),
-                            recalculate_project_crc=fullRefresh)
-                except InstallerArchiveError:
-                    installer.type = -1
+                sub_progress = SubProgress(progress, index, index + 1)
+                installer.refreshBasic(apath, sub_progress,
+                                       recalculate_project_crc=fullRefresh)
         if changed: self.crc_installer = dict((x.crc, x) for x in
                         self.itervalues() if isinstance(x, InstallerArchive))
         return changed
@@ -6136,7 +6129,9 @@ class InstallersData(_DataStore):
         for item in installers_paths:
             if item.s.lower().startswith((u'bash',u'--')): continue
             apath = installersJoin(item)
-            if apath.isdir(): # Project - auto-refresh those only if specified
+            if apath.isfile() and item.cext in readExts:
+                installer = self.get(item)
+            elif apath.isdir(): # Project - autorefresh those only if specified
                 if item.s.lower() in self.installers_dir_skips:
                     continue # skip Bash directories and user specified ones
                 installer = self.get(item)
@@ -6149,8 +6144,6 @@ class InstallersData(_DataStore):
                        or not settings['bash.installers.autoRefreshProjects']):
                     installers.add(item) # installer is present
                     continue # and needs not refresh
-            elif apath.isfile() and item.cext in readExts:
-                installer = self.get(item)
             else:
                 continue ##: treat symlinks
             if fullRefresh or not installer or installer.size_or_mtime_changed(
@@ -6307,7 +6300,7 @@ class InstallersData(_DataStore):
                     else:
                         new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
                 except Exception as e:
-                    if isinstance(e, WindowsError) and e.errno == 2: ##: winerror also == 2
+                    if isinstance(e, OSError) and e.errno == errno.ENOENT:
                         continue # file does not exist
                     raise
         return new_sizeCrcDate, pending, pending_size

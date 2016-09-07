@@ -321,11 +321,12 @@ class MasterList(_ModsUIList):
     _editLabels = True
     #--Sorting
     _default_sort_col = 'Num'
-    _sort_keys = {'Num'          : None, # sort by master index, the key itself
-                  'File'         : lambda self, a: self.data_store[a].name.s.lower(),
-                  'Current Order': lambda self, a: self.loadOrderNames.index(
-                     self.data_store[a].name), #missing mods sort last alphabetically
-                 }
+    _sort_keys = {
+        'Num'          : None, # sort by master index, the key itself
+        'File'         : lambda self, a: self.data_store[a].name.s.lower(),
+        'Current Order': lambda self, a: self.loadOrderNames.index(
+           self.data_store[a].name), #missing mods sort last alphabetically
+    }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
             items.sort(key=lambda x: self.data_store[x].name not in set(
@@ -1459,7 +1460,7 @@ class ModDetails(_SashDetailsPanel):
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
-                if mod_info.setBashTagsDesc(mod_info.getBashTags()):
+                if mod_info.setBashTagsDesc(mod_tags):
                     _refreshUI()
                 else:
                     thinSplitterWin = self.window.GetParent().GetParent(
@@ -1750,14 +1751,15 @@ class SaveList(balt.UIList):
     mainMenu = Links() #--Column menu
     itemMenu = Links() #--Single item menu
     _editLabels = True
-    _sort_keys = {'File'    : None, # just sort by name
-                  'Modified': lambda self, a: self.data_store[a].mtime,
-                  'Size'    : lambda self, a: self.data_store[a].size,
-                  'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
-                  'Player'  : lambda self, a: self.data_store[a].header.pcName,
-                  'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
-                  'Status'  : lambda self, a: self.data_store[a].getStatus(),
-                 }
+    _sort_keys = {
+        'File'    : None, # just sort by name
+        'Modified': lambda self, a: self.data_store[a].mtime,
+        'Size'    : lambda self, a: self.data_store[a].size,
+        'PlayTime': lambda self, a: self.data_store[a].header.gameTicks,
+        'Player'  : lambda self, a: self.data_store[a].header.pcName,
+        'Cell'    : lambda self, a: self.data_store[a].header.pcLocation,
+        'Status'  : lambda self, a: self.data_store[a].getStatus(),
+    }
     #--Labels, why checking for header here - is this called on corrupt saves ?
     @staticmethod
     def _headInfo(saveInfo, attr):
@@ -2463,7 +2465,7 @@ class InstallersList(balt.UIList):
                     dest.update(installer.refreshBasic(apath,
                         SubProgress(progress, index, index + 1),
                         recalculate_project_crc=calculate_projects_crc).keys())
-                    self.data_store.hasChanged = True  # is it really needed ?
+                self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
                     self.data_store.update_data_SizeCrcDate(dest, progress)

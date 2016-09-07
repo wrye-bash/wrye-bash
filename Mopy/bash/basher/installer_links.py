@@ -70,13 +70,6 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
 class _InstallerLink(Installers_Link, EnabledLink):
     """Common functions for installer links..."""
 
-    def hasMarker(self):
-        if len(self.selected) > 0:
-            for i in self.selected:
-                if isinstance(self.idata[i],bosh.InstallerMarker):
-                    return True
-        return False
-
     def isSingleProject(self):
         """Indicates whether or not is single project."""
         if len(self.selected) != 1: return False

@@ -771,16 +771,6 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     """Shows a modal information message."""
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
-def showList(parent,header,items,maxItems=0,title=u'',**kwdargs):
-    """Formats a list of items into a message for use in a Message."""
-    numItems = len(items)
-    if maxItems <= 0: maxItems = numItems
-    message = string.Template(header).substitute(count=numItems)
-    message += u'\n* '+u'\n* '.join(items[:min(numItems,maxItems)])
-    if numItems > maxItems:
-        message += u'\n'+_(u'(And %d others.)') % (numItems - maxItems,)
-    return askStyled(parent,message,title,wx.OK,**kwdargs)
-
 #------------------------------------------------------------------------------
 def _showLogClose(evt=None):
     """Handle log message closing."""
@@ -1277,7 +1267,7 @@ class BusyCursor(object):
        Pythons 'with' semantics."""
     def __enter__(self):
         wx.BeginBusyCursor()
-    def __exit__(self,type,value,traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         wx.EndBusyCursor()
 
 #------------------------------------------------------------------------------
@@ -1298,7 +1288,7 @@ class Progress(bolt.Progress):
         self.prevTime = 0
 
     # __enter__ and __exit__ for use with the 'with' statement
-    def __exit__(self, type, value, traceback): self.Destroy()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.Destroy()
 
     def getParent(self):
         return self.dialog.GetParent()
@@ -2128,7 +2118,8 @@ class UIList(wx.Panel):
             except (AccessDeniedError, CancelError, SkipError): pass
             finally:
                 if self.__class__._shellUI: break # could delete fail mid-way ?
-        else: self.data_store.delete_Refresh(items)
+        else:
+            self.data_store.delete_Refresh(items, check_existence=True)
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def _toDelete(self, items):

@@ -213,107 +213,112 @@ class App_Button(StatusBar_Button):
                        _(u"Could not launch '%s'") % self.exePath.stail)
 
     def Execute(self):
-        if self.IsPresent():
-            if self.isShortcut or self.isFolder:
-                webbrowser.open(self.exePath.s)
-            elif self.isJava:
-                cwd = bolt.Path.getcwd()
-                if self.workingDir:
-                    self.workingDir.setcwd()
-                else:
-                    self.jar.head.setcwd()
-                try:
-                    subprocess.Popen((self.java.stail,u'-jar',self.jar.stail,self.appArgs), executable=self.java.s, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-                except UnicodeError:
-                    self._showUnicodeError()
-                except Exception as error:
-                    self.ShowError(error)
-                finally:
-                    cwd.setcwd()
-            elif self.isExe:
-                exeObse = bass.dirs['app'].join(bush.game.se.exe)
-                exeLaa = bass.dirs['app'].join(bush.game.laa.exe)
-                if exeLaa.exists() and bass.settings.get('bash.laa.on',True) and self.exePath.tail == bush.game.exe:
-                    # Should use the LAA Launcher
-                    exePath = exeLaa
-                    args = [exePath.s]
-                elif self.obseArg is not None and bass.settings.get('bash.obse.on',False) and exeObse.exists():
-                    if bass.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
-                        exePath = self.exePath
-                    else:
-                        exePath = exeObse
-                    args = [exePath.s]
-                    if self.obseArg != u'':
-                        args.append(u'%s' % self.obseArg)
-                else:
-                    exePath = self.exePath
-                    args = [exePath.s]
-                args.extend(self.exeArgs)
-                if self.extraArgs: args.extend(self.extraArgs)
-                Link.Frame.SetStatusInfo(u' '.join(args[1:]))
-                cwd = bolt.Path.getcwd()
-                if self.workingDir:
-                    self.workingDir.setcwd()
-                else:
-                    exePath.head.setcwd()
-                try:
-                    popen = subprocess.Popen(args, close_fds=bolt.close_fds) #close_fds is needed for the one instance checker
-                    if self.wait:
-                        popen.wait()
-                except UnicodeError:
-                    self._showUnicodeError()
-                except WindowsError as werr:
-                    if werr.winerror != 740:
-                        self.ShowError(werr)
-                    try:
-                        import win32api
-                        win32api.ShellExecute(0,'runas', exePath.s,u'%s' % self.exeArgs,
-                                              bass.dirs['app'].s, 1)
-                    except:
-                        self.ShowError(werr)
-                except Exception as error:
-                    self.ShowError(error)
-                finally:
-                    cwd.setcwd()
-            else:
-                dir_ = self.workingDir.s if self.workingDir else bolt.Path.getcwd().s
-                args = u'"%s"' % self.exePath.s
-                args += u' '.join([u'%s' % arg for arg in self.exeArgs])
-                try:
-                    import win32api
-                    r, executable = win32api.FindExecutable(self.exePath.s)
-                    executable = win32api.GetLongPathName(executable)
-                    win32api.ShellExecute(0,u"open",executable,args,dir_,1)
-                except Exception as error:
-                    if isinstance(error,WindowsError) and error.winerror == 740:
-                        # Requires elevated permissions
-                        try:
-                            import win32api
-                            win32api.ShellExecute(0,'runas',executable,args,dir_,1)
-                        except Exception as error:
-                            self.ShowError(error)
-                    else:
-                        # Most likely we're here because FindExecutable failed (no file association)
-                        # Or because win32api import failed.  Try doing it using os.startfile
-                        # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
-                        cwd = bolt.Path.getcwd()
-                        if self.workingDir:
-                            self.workingDir.setcwd()
-                        else:
-                            self.exePath.head.setcwd()
-                        try:
-                            webbrowser.open(self.exePath.s)
-                        except UnicodeError:
-                            self._showUnicodeError()
-                        except Exception as error:
-                            self.ShowError(error)
-                        finally:
-                            cwd.setcwd()
-        else:
+        if not self.IsPresent():
             balt.showError(Link.Frame,
                            _(u'Application missing: %s') % self.exePath.s,
                            _(u"Could not launch '%s'" % self.exePath.stail)
                            )
+            return
+        if self.isShortcut or self.isFolder:
+            webbrowser.open(self.exePath.s)
+        elif self.isJava:
+            cwd = bolt.Path.getcwd()
+            if self.workingDir:
+                self.workingDir.setcwd()
+            else:
+                self.jar.head.setcwd()
+            try:
+                subprocess.Popen(
+                    (self.java.stail, u'-jar', self.jar.stail, self.appArgs),
+                    #close_fds is needed for the one instance checker
+                    executable=self.java.s, close_fds=bolt.close_fds)
+            except UnicodeError:
+                self._showUnicodeError()
+            except Exception as error:
+                self.ShowError(error)
+            finally:
+                cwd.setcwd()
+        elif self.isExe:
+            exeObse = bass.dirs['app'].join(bush.game.se.exe)
+            exeLaa = bass.dirs['app'].join(bush.game.laa.exe)
+            if exeLaa.exists() and bass.settings.get('bash.laa.on',True) and self.exePath.tail == bush.game.exe:
+                # Should use the LAA Launcher
+                exePath = exeLaa
+                args = [exePath.s]
+            elif self.obseArg is not None and bass.settings.get('bash.obse.on',False) and exeObse.exists():
+                if bass.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
+                    exePath = self.exePath
+                else:
+                    exePath = exeObse
+                args = [exePath.s]
+                if self.obseArg != u'':
+                    args.append(u'%s' % self.obseArg)
+            else:
+                exePath = self.exePath
+                args = [exePath.s]
+            args.extend(self.exeArgs)
+            if self.extraArgs: args.extend(self.extraArgs)
+            Link.Frame.SetStatusInfo(u' '.join(args[1:]))
+            cwd = bolt.Path.getcwd()
+            if self.workingDir:
+                self.workingDir.setcwd()
+            else:
+                exePath.head.setcwd()
+            try:
+                #close_fds is needed for the one instance checker
+                popen = subprocess.Popen(args, close_fds=bolt.close_fds)
+                if self.wait:
+                    popen.wait()
+            except UnicodeError:
+                self._showUnicodeError()
+            except WindowsError as werr:
+                if werr.winerror != 740:
+                    self.ShowError(werr)
+                try:
+                    import win32api
+                    win32api.ShellExecute(0,'runas', exePath.s,
+                                          u'%s' % self.exeArgs,
+                                          bass.dirs['app'].s, 1)
+                except:
+                    self.ShowError(werr)
+            except Exception as error:
+                self.ShowError(error)
+            finally:
+                cwd.setcwd()
+        else:
+            dir_ = self.workingDir.s if self.workingDir else bolt.Path.getcwd().s
+            args = u'"%s"' % self.exePath.s
+            args += u' '.join([u'%s' % arg for arg in self.exeArgs])
+            try:
+                import win32api
+                r, executable = win32api.FindExecutable(self.exePath.s)
+                executable = win32api.GetLongPathName(executable)
+                win32api.ShellExecute(0,u"open",executable,args,dir_,1)
+            except Exception as error:
+                if isinstance(error,WindowsError) and error.winerror == 740:
+                    # Requires elevated permissions
+                    try:
+                        import win32api
+                        win32api.ShellExecute(0,'runas',executable,args,dir_,1)
+                    except Exception as error:
+                        self.ShowError(error)
+                else:
+                    # Most likely we're here because FindExecutable failed (no file association)
+                    # Or because win32api import failed.  Try doing it using os.startfile
+                    # ...Changed to webbrowser.open because os.startfile is windows specific and is not cross platform compatible
+                    cwd = bolt.Path.getcwd()
+                    if self.workingDir:
+                        self.workingDir.setcwd()
+                    else:
+                        self.exePath.head.setcwd()
+                    try:
+                        webbrowser.open(self.exePath.s)
+                    except UnicodeError:
+                        self._showUnicodeError()
+                    except Exception as error:
+                        self.ShowError(error)
+                    finally:
+                        cwd.setcwd()
 
 #------------------------------------------------------------------------------
 class Tooldir_Button(App_Button):

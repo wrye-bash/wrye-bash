@@ -27,6 +27,7 @@ without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
 import os as _os
 import ConfigParser as _cp
+import re as _re
 
 language = None
 AppVersion = u"307" # must represent a valid float
@@ -65,3 +66,6 @@ tooldirs = {}
 
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !
+
+# mod extension regex - used all over
+reModExt = _re.compile(ur'\.es[mp](.ghost)?$', _re.I | _re.U)

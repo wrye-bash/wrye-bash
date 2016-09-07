@@ -25,6 +25,7 @@
 """Patch dialog"""
 import StringIO
 import copy
+import errno
 import re
 import time
 import wx
@@ -288,8 +289,8 @@ class PatchDialog(balt.Dialog):
                 # shellMove, not sure if ever a Windows or Cancel are raised
                 patchFile.safeSave()
                 return
-            except (CancelError, SkipError, WindowsError) as error:
-                if isinstance(error, WindowsError) and error.winerror != 32:
+            except (CancelError, SkipError, OSError) as werr:
+                if isinstance(werr, OSError) and werr.errno != errno.EACCES:
                     raise
                 if self._pretry(patch_name):
                     continue
@@ -303,8 +304,8 @@ class PatchDialog(balt.Dialog):
                 patch_name.untemp()
                 patch_name.mtime = patchTime
                 return
-            except WindowsError as werr:
-                if werr.winerror == 32:
+            except OSError as werr:
+                if werr.errno == errno.EACCES:
                     if not self._cretry(patch_name):
                         raise SkipError() # caught - Processing error displayed
                     continue

@@ -468,7 +468,7 @@ class LString(object):
 #------------------------------------------------------------------------------
 class sio(StringIO.StringIO):
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.close()
 
 # Paths -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -515,16 +515,7 @@ class Path(object):
      May be just a directory, filename or full path."""
 
     #--Class Vars/Methods -------------------------------------------
-    norm_path = {} #--Dictionary of paths
     sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
-
-    @staticmethod
-    def get(name):
-        """Returns path object for specified name/path."""
-        if isinstance(name,Path): norm = name._s
-        elif isinstance(name,str): norm = os.path.normpath(decode(name))
-        else: norm = os.path.normpath(name)
-        return Path.norm_path.setdefault(norm,Path(norm))
 
     @staticmethod
     def getNorm(name):
@@ -720,41 +711,22 @@ class Path(object):
             except ValueError:
                 return 0
         else:
-            try:
-                return os.path.getsize(self._s)
-            except WindowsError as werr:
-                    if werr.winerror != 123: raise
-                    deprint(u'Unable to determine size of %s - probably a unicode error' % self._s)
-                    return 0
+            return os.path.getsize(self._s)
+
     @property
     def atime(self):
-        try:
-            return os.path.getatime(self._s)
-        except WindowsError as werr:
-            if werr.winerror != 123: raise
-            deprint(u'Unable to determine atime of %s - probably a unicode error' % self._s)
-            return 1309853942.895 #timestamp of oblivion.exe (also known as any random time may work).
+        return os.path.getatime(self._s)
     @property
     def ctime(self):
         return os.path.getctime(self._s)
 
     #--Mtime
-    def getmtime(self):
+    def _getmtime(self):
         """Return mtime for path."""
-        try:
-            mtime = int(os.path.getmtime(self._s))
-        except WindowsError as werr:
-                if werr.winerror != 123: raise
-                deprint(u'Unable to determine modified time of %s - probably a unicode error' % self._s)
-                mtime = 1146007898.0 #0blivion.exe's time... random basically.
-        return mtime
-    def setmtime(self,mtime):
-        try:
-            os.utime(self._s,(self.atime,int(mtime)))
-        except WindowsError as werr:
-            if werr.winerror != 123: raise
-            deprint(u'Unable to set modified time of %s - probably a unicode error' % self._s)
-    mtime = property(getmtime,setmtime,doc="Time file was last modified.")
+        return int(os.path.getmtime(self._s))
+    def _setmtime(self, mtime):
+        os.utime(self._s, (self.atime, int(mtime)))
+    mtime = property(_getmtime, _setmtime, doc="Time file was last modified.")
 
     def size_mtime(self):
         lstat = os.lstat(self._s)
@@ -901,14 +873,14 @@ class Path(object):
     def remove(self):
         try:
             if self.exists(): os.remove(self._s)
-        except WindowsError:
+        except OSError:
             # Clear RO flag
             os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
             os.remove(self._s)
     def removedirs(self):
         try:
             if self.exists(): os.removedirs(self._s)
-        except WindowsError:
+        except OSError:
             self.clearRO()
             os.removedirs(self._s)
     def rmtree(self,safety='PART OF DIRECTORY NAME'):
@@ -947,7 +919,7 @@ class Path(object):
             destPath.remove()
         try:
             shutil.move(self._s,destPath._s)
-        except WindowsError:
+        except OSError:
             self.clearRO()
             shutil.move(self._s,destPath._s)
 
@@ -959,7 +931,7 @@ class Path(object):
                 self.oldPath = GPath(oldPath)
 
             def __enter__(self): return self.newPath
-            def __exit__(self,*args,**kwdargs): self.newPath.moveTo(self.oldPath)
+            def __exit__(self, exc_type, exc_value, exc_traceback): self.newPath.moveTo(self.oldPath)
         self.moveTo(destName)
         return temp(self,destName)
 
@@ -972,7 +944,7 @@ class Path(object):
                 def __init__(self,path):
                     self.path = path
                 def __enter__(self): return self.path
-                def __exit__(self,*args,**kwdargs): pass
+                def __exit__(self, exc_type, exc_value, exc_traceback): pass
             return temp(self)
         except UnicodeEncodeError:
             return self.tempMoveTo(self.temp)
@@ -1065,7 +1037,7 @@ class CsvReader:
             self.reader = csv.reader(CsvReader.utf_8_encoder(self.ins),format)
 
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs): self.ins.close()
+    def __exit__(self, exc_type, exc_value, exc_traceback): self.ins.close()
 
     def __iter__(self):
         for iter in self.reader:
@@ -1861,7 +1833,7 @@ class tempDebugMode(object):
         deprintOn = True
 
     def __enter__(self): return self
-    def __exit__(self,*args,**kwdargs):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         global deprintOn
         deprintOn = self._old
 
@@ -2196,7 +2168,7 @@ class Progress:
 
     # __enter__ and __exit__ for use with the 'with' statement
     def __enter__(self): return self
-    def __exit__(self,type,value,traceback): pass
+    def __exit__(self, exc_type, exc_value, exc_traceback): pass
 
 #------------------------------------------------------------------------------
 class SubProgress(Progress):
