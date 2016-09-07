@@ -1444,7 +1444,7 @@ class Mod_AddMaster(OneItemLink):
         self._selected_info.header.changed = True
         self._selected_info.writeHeader()
         bosh.modInfos.refreshFile(self._selected_item)
-        self.window.RefreshUI(refreshSaves=True) # True ?
+        self.window.RefreshUI(refreshSaves=False) # why refreshing saves ?
 
 #------------------------------------------------------------------------------
 class Mod_CopyToEsmp(EnabledLink):
@@ -1490,7 +1490,7 @@ class Mod_CopyToEsmp(EnabledLink):
         #--Repopulate
         if added:
             modInfos.refresh(scanData=False)
-            self.window.RefreshUI(refreshSaves=True) # True ?
+            self.window.RefreshUI(refreshSaves=True) # just in case
             self.window.SelectItemsNoCallback(added)
 
 #------------------------------------------------------------------------------

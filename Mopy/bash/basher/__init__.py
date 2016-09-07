@@ -1390,7 +1390,8 @@ class ModDetails(_SashDetailsPanel):
             modInfo.setmtime(newTimeInt)
             self.SetFile(self.displayed_item)
             bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
-            BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
+            BashFrame.modList.RefreshUI( # refresh saves if lo changed
+                refreshSaves=not load_order.using_txt_file())
             return
         #--Backup
         modInfo.makeBackup()
@@ -1428,7 +1429,9 @@ class ModDetails(_SashDetailsPanel):
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
         bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
-        BashFrame.modList.RefreshUI(refreshSaves=True) # True ?
+        refreshSaves = changeName or (
+            changeDate and not load_order.using_txt_file())
+        BashFrame.modList.RefreshUI(refreshSaves=refreshSaves)
 
     #--Bash Tags
     def ShowBashTagsMenu(self):
@@ -3849,7 +3852,7 @@ class BashFrame(wx.Frame):
         bosh.BSAInfos.check_bsa_timestamps()
         #--Repopulate
         if popMods:
-            BashFrame.modList.RefreshUI(refreshSaves=True) ##: True ?
+            BashFrame.modList.RefreshUI(refreshSaves=True) # True just in case
         elif popSaves:
             BashFrame.saveListRefresh()
         if popInis and self.iniList:
