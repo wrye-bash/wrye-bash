@@ -91,16 +91,16 @@ class Screen_ConvertTo(EnabledLink):
         self.text = _(u'Convert to %s') % self.ext
 
     def _enable(self):
-        convertable = [name_ for name_ in self.selected if
-                       GPath(name_).cext != u'.' + self.ext]
-        return len(convertable) > 0
+        self.convertable = [s for s in self.selected if
+                            s.cext != u'.' + self.ext]
+        return bool(self.convertable)
 
     def Execute(self):
         srcDir = bosh.screensData.dir
         try:
             with balt.Progress(_(u"Converting to %s") % self.ext) as progress:
-                progress.setFull(len(self.selected))
-                for index,fileName in enumerate(self.selected):
+                progress.setFull(len(self.convertable))
+                for index, fileName in enumerate(self.convertable):
                     progress(index,fileName.s)
                     srcPath = srcDir.join(fileName)
                     destPath = srcPath.root+u'.'+self.ext
