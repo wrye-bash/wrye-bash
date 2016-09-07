@@ -55,34 +55,14 @@ class Files_Unhide(ItemLink):
 
     def __init__(self, files_type):
         super(Files_Unhide, self).__init__()
-        self.files_type = files_type # yak - move logic to the data model
         self.help = _(u"Unhides hidden %ss.") % files_type
 
+    @balt.conversation
     def Execute(self):
-        srcDir = bass.dirs['modsBash'].join(u'Hidden')
-        window = self.window
-        destDir = None
-        if self.files_type == 'mod':
-            wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
-            destDir = window.data_store.store_dir
-        elif self.files_type == 'save':
-            wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
-            srcDir = window.data_store.bash_dir.join(u'Hidden')
-            destDir = window.data_store.store_dir
-        elif self.files_type == 'installer':
-            wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
-            destDir = bass.dirs['installers']
-            srcPaths = self._askOpenMulti(
-                title=_(u'Unhide files:'), defaultDir=srcDir,
-                defaultFile=u'.Folder Selection.', wildcard=wildcard)
-        else:
-            wildcard = u'*.*'
+        destDir, srcDir, srcPaths = self.window.unhide()
         isSave = (destDir == bosh.saveInfos.store_dir)
         #--File dialog
         srcDir.makedirs()
-        if not self.files_type == 'installer':
-            srcPaths = self._askOpenMulti(_(u'Unhide files:'),
-                                          defaultDir=srcDir, wildcard=wildcard)
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
@@ -104,7 +84,7 @@ class Files_Unhide(ItemLink):
                 srcPath = srcPath.head
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
-            if destPath.exists():
+            if destPath.exists() or (destPath + u'.ghost').exists():
                 self._showWarning(_(u"File skipped: %s. File is already "
                                     u"present.") % (srcFileName.s,))
             #--Move it?
@@ -117,7 +97,7 @@ class Files_Unhide(ItemLink):
         if not srcFiles:
             return
         try:
-            env.shellMove(srcFiles, destFiles, parent=window)
+            env.shellMove(srcFiles, destFiles, parent=self.window)
             for dest in coSavesMoves:
                 coSavesMoves[dest].move(dest)
         except (CancelError,SkipError):

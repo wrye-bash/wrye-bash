@@ -987,6 +987,15 @@ class ModList(_ModsUIList):
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
 
+    def unhide(self):
+        srcDir = bass.dirs['modsBash'].join(u'Hidden')
+        wildcard = bush.game.displayName + u' ' + _(
+            u'Mod Files') + u' (*.esp;*.esm)|*.esp;*.esm'
+        destDir = self.data_store.store_dir
+        srcPaths = balt.askOpenMulti(self, _(u'Unhide files:'),
+                                     defaultDir=srcDir, wildcard=wildcard)
+        return destDir, srcDir, srcPaths
+
     #--Helpers ---------------------------------------------
     @balt.conversation
     def _toggle_active_state(self, *mods):
@@ -1844,6 +1853,15 @@ class SaveList(balt.UIList):
         if item_edited: self.SelectItem(item_edited)
         event.Veto() # needed ! clears new name from label on exception
 
+    def unhide(self):
+        srcDir = self.data_store.bash_dir.join(u'Hidden')
+        wildcard = bush.game.displayName + u' ' + _(
+            u'Save files') + u' (*.ess)|*.ess'
+        destDir = self.data_store.store_dir
+        srcPaths = balt.askOpenMulti(self, _(u'Unhide files:'),
+                                     defaultDir=srcDir, wildcard=wildcard)
+        return destDir, srcDir, srcPaths
+
     #--Populate Item
     def set_item_format(self, fileName, item_format):
         save_info = self.data_store[fileName]
@@ -2230,6 +2248,17 @@ class InstallersList(balt.UIList):
                     BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
+
+    def unhide(self):
+        srcDir = bass.dirs['modsBash'].join(u'Hidden')
+        wildcard = bush.game.displayName + u' ' + _(
+            u'Mod Archives') + u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
+        destDir = self.data_store.store_dir
+        srcPaths = balt.askOpenMulti(self, title=_(u'Unhide files:'),
+                                     defaultDir=srcDir,
+                                     defaultFile=u'.Folder Selection.',
+                                     wildcard=wildcard)
+        return destDir, srcDir, srcPaths
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
