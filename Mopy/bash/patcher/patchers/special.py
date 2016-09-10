@@ -523,7 +523,7 @@ class _AContentsChecker(SpecialPatcher):
 class ContentsChecker(_AContentsChecker,Patcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(ContentsChecker, self).initPatchFile(patchFile, loadMods)
         self.contType_entryTypes = {
             'LVSP':'LVSP,SPEL'.split(','),
             'LVLC':'LVLC,NPC_,CREA'.split(','),
@@ -620,7 +620,7 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ContentsChecker, self).initPatchFile(patchFile, loadMods)
         self.isActive = True
         self.type_validEntries = {'LVSP': {'LVSP', 'SPEL'},
                                 'LVLC': {'LVLC', 'NPC_', 'CREA'},

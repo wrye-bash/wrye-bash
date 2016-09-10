@@ -64,7 +64,7 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(AlchemicalCatalogs, self).initPatchFile(patchFile, loadMods)
         self.isActive = (GPath(u'COBL Main.esm') in loadMods)
         self.id_ingred = {}
 
@@ -178,7 +178,7 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_AlchemicalCatalogs, self).initPatchFile(patchFile,loadMods)
         self.isActive = GPath(u'Cobl Main.esm') in loadMods
         if not self.isActive: return
         patchFile.indexMGEFs = True
@@ -779,7 +779,7 @@ class _ASEWorldEnforcer(SpecialPatcher):
 class SEWorldEnforcer(_ASEWorldEnforcer,Patcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(SEWorldEnforcer, self).initPatchFile(patchFile, loadMods)
         self.cyrodiilQuests = set()
         if GPath(u'Oblivion.esm') in loadMods:
             loadFactory = LoadFactory(False,MreRecord.type_class['QUST'])
@@ -843,7 +843,7 @@ class CBash_SEWorldEnforcer(_ASEWorldEnforcer,CBash_Patcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_SEWorldEnforcer, self).initPatchFile(patchFile, loadMods)
         self.cyrodiilQuests = set()
         self.srcs = [GPath(u'Oblivion.esm')]
         self.isActive = self.srcs[0] in loadMods
