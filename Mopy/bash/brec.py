@@ -965,7 +965,7 @@ class MelStruct(MelBase):
         setter = record.__setattr__
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
             if action: value = action(value)
-            setter(attr,value)
+            setter(attr, value)
         if self.formatLen >= 0:
             # Dump remaining subrecord data into an attribute
             setter(self.attrs[-1], ins.read(size-self.formatLen))

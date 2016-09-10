@@ -2087,10 +2087,14 @@ class MreSoun(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FNAM','soundFile'),
-        MelSounSndd('SNDD','=2BbsH2s','minDist1', 'maxDist1', 'freqAdj1', ('unused1',null1),
-            (_flags,'flags'), ('unused2',null2)),
-        MelOptStruct('SNDX','=2BbsH2sH2B',('minDist2',None), ('maxDist2',None), ('freqAdj2',None), ('unused1',null1),
-            (_flags,'flags',None), ('unused2',null2), ('staticAtten',None),('stopTime',None),('startTime',None),)
+        MelSounSndd('SNDD', '=2BbsH2s', 'minDistance', 'maxDistance',
+                    'freqAdjustment', ('unused1', null1), (_flags, 'flags'),
+                    ('unused2', null2)),
+        MelOptStruct('SNDX', '=2BbsH2sH2B', ('minDistance', None),
+                     ('maxDistance', None), ('freqAdjustment', None),
+                     ('unused1', null1), (_flags, 'flags', None),
+                     ('unused2', null2), ('staticAtten', None),
+                     ('stopTime', None), ('startTime', None), )
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
