@@ -2177,6 +2177,8 @@ class UIList(wx.Panel):
             new_name, count = UIList._new_name(base_name, count)
         return new_name
 
+    @staticmethod
+    def _unhide_wildcard(): raise AbstractError
     def unhide(self): raise AbstractError
 
 # Links -----------------------------------------------------------------------

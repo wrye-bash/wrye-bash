@@ -989,12 +989,16 @@ class ModList(_ModsUIList):
 
     def unhide(self):
         srcDir = bass.dirs['modsBash'].join(u'Hidden')
-        wildcard = bush.game.displayName + u' ' + _(
-            u'Mod Files') + u' (*.esp;*.esm)|*.esp;*.esm'
+        wildcard = self._unhide_wildcard()
         destDir = self.data_store.store_dir
         srcPaths = balt.askOpenMulti(self, _(u'Unhide files:'),
                                      defaultDir=srcDir, wildcard=wildcard)
         return destDir, srcDir, srcPaths
+
+    @staticmethod
+    def _unhide_wildcard():
+        return bush.game.displayName + u' ' + _(
+            u'Mod Files') + u' (*.esp;*.esm)|*.esp;*.esm'
 
     #--Helpers ---------------------------------------------
     @balt.conversation
@@ -1855,12 +1859,17 @@ class SaveList(balt.UIList):
 
     def unhide(self):
         srcDir = self.data_store.bash_dir.join(u'Hidden')
-        wildcard = bush.game.displayName + u' ' + _(
-            u'Save files') + u' (*.ess)|*.ess'
+        wildcard = self._unhide_wildcard()
         destDir = self.data_store.store_dir
         srcPaths = balt.askOpenMulti(self, _(u'Unhide files:'),
                                      defaultDir=srcDir, wildcard=wildcard)
         return destDir, srcDir, srcPaths
+
+    @staticmethod
+    def _unhide_wildcard():
+        starred = u'*' + bush.game.ess.ext
+        return bush.game.displayName + u' ' + _(
+            u'Save files') + u' (' + starred + u')|' + starred
 
     #--Populate Item
     def set_item_format(self, fileName, item_format):
@@ -2251,14 +2260,19 @@ class InstallersList(balt.UIList):
 
     def unhide(self):
         srcDir = bass.dirs['modsBash'].join(u'Hidden')
-        wildcard = bush.game.displayName + u' ' + _(
-            u'Mod Archives') + u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
+        wildcard = self._unhide_wildcard()
         destDir = self.data_store.store_dir
         srcPaths = balt.askOpenMulti(self, title=_(u'Unhide files:'),
                                      defaultDir=srcDir,
                                      defaultFile=u'.Folder Selection.',
                                      wildcard=wildcard)
         return destDir, srcDir, srcPaths
+
+    @staticmethod
+    def _unhide_wildcard():
+        starred = u';'.join(bolt.readExts)
+        return bush.game.displayName + u' ' + _(
+            u'Mod Archives') + u' (' + starred + u')|' + starred
 
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
