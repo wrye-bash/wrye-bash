@@ -8,7 +8,7 @@
         SectionIn RO
 
         ClearErrors
-        
+
         ; Python version requires Python, wxPython, Python Comtypes and PyWin32.
         ${If} $PythonVersionInstall == $True
             ; Look for Python.
@@ -61,18 +61,18 @@
             ; Download and install missing requirements.
             ${If} $Python_Path == $Empty
                 SetOutPath "$TEMP\PythonInstallers"
-                DetailPrint "Python 2.7.8 - Downloading..."
-                inetc::get /NOCANCEL /RESUME "" "https://www.python.org/ftp/python/2.7.8/python-2.7.8.msi" "$TEMP\PythonInstallers\python-2.7.8.msi"
+                DetailPrint "Python 2.7.10 - Downloading..."
+                inetc::get /NOCANCEL /RESUME "" "https://www.python.org/ftp/python/2.7.10/python-2.7.10.msi" "$TEMP\PythonInstallers\python-2.7.10.msi"
                 Pop $R0
                 ${If} $R0 == "OK"
-                    DetailPrint "Python 2.7.8 - Installing..."
+                    DetailPrint "Python 2.7.10 - Installing..."
                     Sleep 2000
                     HideWindow
-                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.8.msi"'
+                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.10.msi"'
                     BringToFront
-                    DetailPrint "Python 2.7.8 - Installed."
+                    DetailPrint "Python 2.7.10 - Installed."
                 ${Else}
-                    DetailPrint "Python 2.7.8 - Download Failed!"
+                    DetailPrint "Python 2.7.10 - Download Failed!"
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
                     Abort
                 ${EndIf}
@@ -122,7 +122,7 @@
             ${If} $Python_pywin32 == "1"
                 SetOutPath "$TEMP\PythonInstallers"
                 DetailPrint "PyWin32 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/project/pywin32/pywin32/Build%20218/pywin32-218.win32-py2.7.exe "$TEMP\PythonInstallers\pywin32.exe"
+                NSISdl::download https://sourceforge.net/projects/pywin32/files/pywin32/Build%20220/pywin32-220.win32-py2.7.exe "$TEMP\PythonInstallers\pywin32.exe"
                 Pop $R0
                 ${If} $R0 == "success"
                     DetailPrint "PyWin32 - Installing..."

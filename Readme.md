@@ -30,10 +30,10 @@ Docs are included in the download but we are setting them up also online
 To run Wrye Bash from the latest `dev` code (download from [here][8])
 you need:
 
-* A game to manage (currently Oblivion or Skyrim)
+* A game to manage (currently Oblivion, Skyrim or Fallout 4)
 * [Python 2.7](http://www.python.org/) (latest 2.7 is recommended)
 * [wxPython 2.8.12.1 Unicode][9] (do **not** get a newer version)
-* [pywin32 build 218 or newer](https://sourceforge.net/projects/pywin32/files/pywin32/)
+* [pywin32 build 220 or newer](https://sourceforge.net/projects/pywin32/files/pywin32/)
 for your Python
 * [comtypes 0.6.2 or later](https://sourceforge.net/projects/comtypes/files/comtypes/)
 for your Python
@@ -70,19 +70,33 @@ def setUAC(button_,uac=True):
 For details see our [wiki article][11].
 Wine issue: [#240][12]
 
+###Questions ? Feedback ?
+
+We are currently monitoring the [Oblivion thread][13] at the Bethesda forums.
+Please address your comments there. Since the threads have a 200 post limit,
+if the topic is locked, follow the link to the next thread found in the last
+post. If reporting a bug please see our "Reporting a bug" [wiki page][14].
+It is essential you produce a [bashbugdump.log][15] to get a chance your
+bug is fixed.
+
+####Latest betas
+
+In the [second post][16] of the Oblivion thread there are links to latest
+python and standalone (exe) builds. Be sure to check those out for bleeding
+edge bugfixes and enhancements. Feedback appreciated!
 
 ###Contributing
 
 To contribute to the code, fork the repo and set your fork up as
-detailed in [\[git\] Syncing a Fork with the main repository][13].
-A good starting point is the [currently worked on issues][14]
- (see also [issue 200][15] for some refactoring tasks we need help with).
-The recommended way to code for Bash is Pycharm ([set up instructions][16]).
+detailed in [\[git\] Syncing a Fork with the main repository][17].
+A good starting point is the [currently worked on issues][18]
+ (see also [issue 200][19] for some refactoring tasks we need help with).
+The recommended way to code for Bash is Pycharm ([set up instructions][20]).
 Please also read at least:
 
-* **[\[github\] Branching Model & Using The Repository][17]**
-* **[\[github\] Branching and merging to dev using rebase][18]**
-* **[\[dev\] Coding Style][19]**
+* **[\[github\] Branching Model & Using The Repository][21]**
+* **[\[github\] Branching and merging to dev using rebase][22]**
+* **[\[dev\] Coding Style][23]**
 
 When ready do not issue a pull request - contact instead a member of the team
 in the relevant issue and let them review. Then those branches can be pulled
@@ -114,10 +128,14 @@ testing very latest features/fixes.
   [10]: https://github.com/wrye-bash/wrye-bash/blob/0a47238de9e7f46f55fe755f2744e2cea521f514/Mopy/bash/balt.py#L678
   [11]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Running-Wrye-Bash-on-WINE-%28Arch-Linux%29
   [12]: https://github.com/wrye-bash/wrye-bash/issues/240
-  [13]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository
-  [14]: https://github.com/wrye-bash/wrye-bash/issues?utf8=%E2%9C%93&q=sort%3Aupdated-desc%20is%3Aopen
-  [15]: https://github.com/wrye-bash/wrye-bash/issues/200
-  [16]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Set-up-Pycharm-for-wrye-bash
-  [17]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository
-  [18]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase
-  [19]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style
+  [13]: http://forums.bethsoft.com/topic/1606578-wrye-bash-thread-111/
+  [14]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug
+  [15]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug#the-bashbugdumplog
+  [16]: http://forums.bethsoft.com/topic/1606578-wrye-bash-thread-111/#entry25216860
+  [17]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository
+  [18]: https://github.com/wrye-bash/wrye-bash/issues?utf8=%E2%9C%93&q=sort%3Aupdated-desc%20is%3Aopen
+  [19]: https://github.com/wrye-bash/wrye-bash/issues/200
+  [20]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Set-up-Pycharm-for-wrye-bash
+  [21]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository
+  [22]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase
+  [23]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style
