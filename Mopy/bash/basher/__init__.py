@@ -64,7 +64,6 @@ from types import ClassType
 #--wxPython
 import collections
 import wx
-import wx.gizmos
 
 #--Localization
 #..Handled by bosh, so import that.
@@ -81,7 +80,7 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl, hspace, vspace
+    SaveButton, CancelButton, INIListCtrl, hspace, vspace, DnDStatusBar
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import hspacer, hSizer, vSizer
 from ..balt import colors, images, Image
@@ -245,8 +244,7 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
     def __init__(self, parent, sashGravity=0.5, isVertical=True,
                  style=splitterStyle):
         NotebookPanel.__init__(self, parent)
-        self.splitter = splitter = wx.gizmos.ThinSplitterWindow(self,
-                                                                style=style)
+        self.splitter = splitter = wx.SplitterWindow(self, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
@@ -792,7 +790,7 @@ class ModList(_ModsUIList):
     def _dropIndexes(self, indexes, newIndex): # will mess with plugins cache !
         """Drop contiguous indexes on newIndex and return True if LO changed"""
         if newIndex < 0: return False # from OnChar() & moving master esm up
-        count = self._gList.GetItemCount()
+        count = self.item_count
         dropItem = self.GetItem(newIndex if (count > newIndex) else count - 1)
         firstItem = self.GetItem(indexes[0])
         lastItem = self.GetItem(indexes[-1])
@@ -929,7 +927,7 @@ class ModList(_ModsUIList):
             moved = False
             for chunk in chunks:
                 newIndex = chunk[0] + moveMod
-                if chunk[-1] + moveMod == self._gList.GetItemCount():
+                if chunk[-1] + moveMod == self.item_count:
                     continue # trying to move last plugin past the list
                 moved |= self._dropIndexes(chunk, newIndex)
             if moved: self._refreshOnDrop()
@@ -1142,8 +1140,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
                            style=wx.SW_BORDER | splitterStyle)
         self.top, self.bottom = self.left, self.right
-        self.subSplitter = wx.gizmos.ThinSplitterWindow(self.bottom,
-                                                        style=splitterStyle)
+        self.subSplitter = wx.SplitterWindow(self.bottom, style=splitterStyle)
         self.masterPanel = wx.Panel(self.subSplitter)
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
         #--Masters
@@ -2154,12 +2151,11 @@ class InstallersList(balt.UIList):
             elif item == u'==Last==':
                 event.Veto()
                 return
-        editbox = self._gList.GetEditControl()
-        editbox.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
+        self.edit_control.Bind(wx.EVT_CHAR, self.OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
         if installer_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
-            editbox.SetSelection(2,to)
+            self.edit_control.SetSelection(2, to)
         #--Archives, change the selection to not include the extension
         elif installer_type is bosh.InstallerArchive:
             super(InstallersList, self).OnBeginEditLabel(event)
@@ -2167,7 +2163,7 @@ class InstallersList(balt.UIList):
     def OnEditLabelChar(self, event):
         """For pressing F2 on the edit box for renaming"""
         if event.GetKeyCode() == wx.WXK_F2:
-            editbox = self._gList.GetEditControl()
+            editbox = self.edit_control
             # (start, stop), if start==stop there is no selection
             selection_span = editbox.GetSelection()
             text = editbox.GetValue()
@@ -2227,7 +2223,7 @@ class InstallersList(balt.UIList):
         column = self.sort
         reverse = self.colReverse.get(column,False)
         if reverse:
-            newPos = self._gList.GetItemCount() - newPos - 1 - (indexes[-1]-indexes[0])
+            newPos = self.item_count - newPos - 1 - (indexes[-1] - indexes[0])
             if newPos < 0: newPos = 0
         # Move the given indexes to the new position
         self.data_store.moveArchives(self.GetSelected(), newPos)
@@ -2425,16 +2421,23 @@ class InstallersList(balt.UIList):
 
     # Installer specific ------------------------------------------------------
     def addMarker(self):
+        selected_installers = self.GetSelected()
+        if selected_installers:
+            pairs = self.data_store.sorted_pairs(selected_installers)
+            max_order = pairs[-1][1].order + 1 # place it after last selected
+        else:
+            max_order = None
+        new_marker = GPath(u'====')
         try:
-            index = self.GetIndex(GPath(u'===='))
+            index = self.GetIndex(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
-            self.data_store.addMarker(u'====')
+            self.data_store.add_marker(u'====', max_order)
             self.RefreshUI() # why refresh mods/saves/inis when adding a marker
-            index = self.GetIndex(GPath(u'===='))
+            index = self.GetIndex(new_marker)
         if index != -1:
             self.ClearSelected()
             self.SelectItemAtIndex(index)
-            self._gList.EditLabel(index)
+            self.Rename([new_marker])
 
     def rescanInstallers(self, toRefresh, abort, update_from_data=True,
                          calculate_projects_crc=False):
@@ -2488,9 +2491,9 @@ class InstallersPanel(SashTankPanel):
         SashTankPanel.__init__(self, parent)
         left,right = self.left,self.right
         self.commentsSplitter = commentsSplitter = \
-            wx.gizmos.ThinSplitterWindow(right, style=splitterStyle)
-        subSplitter = wx.gizmos.ThinSplitterWindow(commentsSplitter, style=splitterStyle)
-        checkListSplitter = wx.gizmos.ThinSplitterWindow(subSplitter, style=splitterStyle)
+            wx.SplitterWindow(right, style=splitterStyle)
+        subSplitter = wx.SplitterWindow(commentsSplitter, style=splitterStyle)
+        checkListSplitter = wx.SplitterWindow(subSplitter, style=splitterStyle)
         #--Refreshing
         self._data_dir_scanned = False
         self.refreshing = False
@@ -3572,36 +3575,11 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             event.Skip() ##: shouldn't this always be called ?
 
 #------------------------------------------------------------------------------
-class BashStatusBar(wx.StatusBar):
+class BashStatusBar(DnDStatusBar):
     #--Class Data
-    buttons = Links()
     SettingsMenu = Links()
     obseButton = None
     laaButton = None
-
-    def __init__(self, parent):
-        wx.StatusBar.__init__(self, parent)
-        self.SetFieldsCount(3)
-        self.UpdateIconSizes()
-        #--Bind events
-        self.Bind(wx.EVT_SIZE, self.OnSize)
-        #--Setup Drag-n-Drop reordering
-        self.dragging = wx.NOT_FOUND
-        self.dragStart = 0
-        self.moved = False
-
-    @property
-    def iconsSize(self): return settings['bash.statusbar.iconSize'] + 8
-
-    def _addButton(self,link):
-        gButton = link.GetBitmapButton(self,style=wx.NO_BORDER)
-        if gButton:
-            self.buttons.append(gButton)
-            # DnD events
-            gButton.Bind(wx.EVT_LEFT_DOWN,self.OnDragStart)
-            gButton.Bind(wx.EVT_LEFT_UP,self.OnDragEnd)
-            gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST,self.OnDragEndForced)
-            gButton.Bind(wx.EVT_MOTION,self.OnDrag)
 
     def UpdateIconSizes(self):
         self.buttons = [] # will be populated with _displayed_ gButtons - g ?
@@ -3700,96 +3678,6 @@ class BashStatusBar(wx.StatusBar):
                     return link
         return None
 
-    def _getButtonIndex(self, mouseEvent):
-        id_ = mouseEvent.GetId()
-        for i,button in enumerate(self.buttons):
-            if button.GetId() == id_:
-                x = mouseEvent.GetPosition()[0]
-                delta = x / self.iconsSize
-                if abs(x) % self.iconsSize > self.iconsSize:
-                    delta += x / abs(x)
-                i += delta
-                if i < 0: i = 0
-                elif i > len(self.buttons): i = len(self.buttons)
-                return i
-        return wx.NOT_FOUND
-
-    def OnDragStart(self,event):
-        self.dragging = self._getButtonIndex(event)
-        if self.dragging != wx.NOT_FOUND:
-            self.dragStart = event.GetPosition()[0]
-            button = self.buttons[self.dragging]
-            button.CaptureMouse()
-        event.Skip()
-
-    def OnDragEndForced(self,event):
-        if self.dragging == wx.NOT_FOUND or not self.GetParent().IsActive():
-            # The even for clicking the button sends a force capture loss
-            # message.  Ignore lost capture messages if we're the active
-            # window.  If we're not, that means something else forced the
-            # loss of mouse capture.
-            self.dragging = wx.NOT_FOUND
-            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-        event.Skip()
-
-    def OnDragEnd(self,event):
-        if self.dragging != wx.NOT_FOUND:
-            button = self.buttons[self.dragging]
-            try:
-                button.ReleaseMouse()
-            except:
-                pass
-            # -*- Hacky code! -*-
-            # Since we've got to CaptureMouse to do DnD properly,
-            # The button will never get a EVT_BUTTON event if you
-            # just click it.  Can't figure out a good way for the
-            # two to play nicely, so we'll just simulate it for now
-            released = self._getButtonIndex(event)
-            if released != self.dragging: released = wx.NOT_FOUND
-            self.dragging = wx.NOT_FOUND
-            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
-            if self.moved:
-                self.moved = False
-                return
-            # -*- Rest of hacky code -*-
-            if released != wx.NOT_FOUND:
-                evt = wx.CommandEvent(wx.wxEVT_COMMAND_BUTTON_CLICKED,
-                                      button.GetId())
-                wx.PostEvent(button,evt)
-        event.Skip()
-
-    def OnDrag(self,event):
-        if self.dragging != wx.NOT_FOUND:
-            if abs(event.GetPosition()[0] - self.dragStart) > 4:
-                self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
-            over = self._getButtonIndex(event)
-            if over >= len(self.buttons): over -= 1
-            if over not in (wx.NOT_FOUND, self.dragging):
-                self.moved = True
-                button = self.buttons[self.dragging]
-                # update settings
-                uid = self.GetLink(button=button).uid
-                overUid = self.GetLink(index=over).uid
-                settings['bash.statusbar.order'].remove(uid)
-                overIndex = settings['bash.statusbar.order'].index(overUid)
-                settings['bash.statusbar.order'].insert(overIndex, uid)
-                settings.setChanged('bash.statusbar.order')
-                # update self.buttons
-                self.buttons.remove(button)
-                self.buttons.insert(over,button)
-                self.dragging = over
-                # Refresh button positions
-                self.OnSize()
-        event.Skip()
-
-    def OnSize(self,event=None):
-        rect = self.GetFieldRect(0)
-        (xPos, yPos) = (rect.x + 4, rect.y + 2)
-        for button in self.buttons:
-            button.SetPosition((xPos, yPos))
-            xPos += self.iconsSize
-        if event: event.Skip()
-
 #------------------------------------------------------------------------------
 class BashFrame(wx.Frame):
     """Main application frame."""
@@ -3826,10 +3714,8 @@ class BashFrame(wx.Frame):
         self.notebook = BashNotebook(self)
         #--Events
         self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
-        self.BindRefresh(bind=True)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
-        self.booting = True #--Prevent calling refresh on fileInfos twice when booting
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
         self.incompleteInstallError = False
@@ -3925,7 +3811,7 @@ class BashFrame(wx.Frame):
 
     #--Events ---------------------------------------------
     @balt.conversation
-    def RefreshData(self, event=None):
+    def RefreshData(self, event=None, booting=False):
         """Refreshes all data. Can be called manually, but is also triggered
         by window activation event.""" # hunt down - performance sink !
         #--Ignore deactivation events.
@@ -3936,7 +3822,7 @@ class BashFrame(wx.Frame):
         #--Config helpers
         bosh.configHelpers.refreshBashTags()
         #--Check plugins.txt and mods directory...
-        if not self.booting and bosh.modInfos.refresh():
+        if not booting and bosh.modInfos.refresh():
             popMods = 'ALL'
         #--Have any mtimes been reset?
         if bosh.modInfos.mtimesReset:
@@ -3958,10 +3844,10 @@ class BashFrame(wx.Frame):
             del bosh.modInfos.mtimesReset[:]
             popMods = 'ALL'
         #--Check savegames directory...
-        if not self.booting and bosh.saveInfos.refresh():
+        if not booting and bosh.saveInfos.refresh():
             popSaves = 'ALL'
         #--Check INI Tweaks...
-        if not self.booting and bosh.iniInfos.refresh():
+        if not booting and bosh.iniInfos.refresh():
             popInis = 'ALL'
         #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
         bosh.BSAInfos.check_bsa_timestamps()
@@ -3976,6 +3862,7 @@ class BashFrame(wx.Frame):
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
         #--WARNINGS----------------------------------------
+        if booting: self.warnTooManyModsBsas()
         self.warn_load_order()
         self.warn_corrupted()
         self.warn_game_ini()
@@ -4181,24 +4068,6 @@ def GetBashVersion():
     #return settings['bash.readme'] #readme file not found or not changed
 
 #------------------------------------------------------------------------------
-class WryeBashSplashScreen(wx.SplashScreen):
-    """This Creates the Splash Screen widget. (The first image you see when starting the Application.)"""
-    def __init__(self, parent=None):
-        splashScreenBitmap = wx.Image(name = bass.dirs['images'].join(u'wryesplash.png').s).ConvertToBitmap()
-        splashStyle = wx.SPLASH_CENTRE_ON_SCREEN | wx.SPLASH_NO_TIMEOUT  #This centers the image on the screen
-        # image will stay until clicked by user or is explicitly destroyed when the main window is ready
-        # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then you have to guess how long it should last
-        splashDuration = 3500 # Duration in ms the splash screen will be visible (only used with the TIMEOUT option)
-        wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle, splashDuration, parent)
-        self.Bind(wx.EVT_CLOSE, self.OnExit)
-        wx.Yield()
-
-    def OnExit(self, event):
-        self.Hide()
-        # The program might/will freeze without this line.
-        event.Skip() # Make sure the default handler runs too...
-
-#------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
     def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
@@ -4215,7 +4084,7 @@ class BashApp(wx.App):
         if bass.inisettings['EnableSplashScreen']:
             if bass.dirs['images'].join(u'wryesplash.png').exists():
                 try:
-                        splashScreen = WryeBashSplashScreen()
+                        splashScreen = balt.WryeBashSplashScreen()
                         splashScreen.Show()
                 except:
                         pass
@@ -4237,12 +4106,10 @@ class BashApp(wx.App):
             splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..
         self.SetTopWindow(frame)
         frame.Show()
-        @balt.conversation
-        def maximize(): frame.Maximize(settings['bash.frameMax'])
-        maximize()
+        frame.Maximize(settings['bash.frameMax'])
+        frame.RefreshData(booting=True)
         balt.ensureDisplayed(frame)
-        frame.warnTooManyModsBsas()
-        frame.booting = False
+        frame.BindRefresh(bind=True)
 
     @staticmethod
     def InitResources():

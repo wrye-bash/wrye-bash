@@ -1601,40 +1601,40 @@ class UIList(wx.Panel):
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
         if self.__class__._sunkenBorder: ctrlStyle |= wx.SUNKEN_BORDER
         if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
-        self._gList = ListCtrl(self, style=ctrlStyle,
-                               dndFiles=self.__class__._dndFiles,
-                               dndList=self.__class__._dndList,
-                               fnDndAllow=self.dndAllow,
-                               fnDropFiles=self.OnDropFiles,
-                               fnDropIndexes=self.OnDropIndexes)
+        self.__gList = ListCtrl(self, style=ctrlStyle,
+                                dndFiles=self.__class__._dndFiles,
+                                dndList=self.__class__._dndList,
+                                fnDndAllow=self.dndAllow,
+                                fnDropFiles=self.OnDropFiles,
+                                fnDropIndexes=self.OnDropIndexes)
         if self.icons:
             # Image List: Column sorting order indicators
             # explorer style ^ == ascending
             checkboxesIL = self.icons.GetImageList()
             self.sm_up = checkboxesIL.Add(SmallUpArrow.GetBitmap())
             self.sm_dn = checkboxesIL.Add(SmallDnArrow.GetBitmap())
-            self._gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
+            self.__gList.SetImageList(checkboxesIL, wx.IMAGE_LIST_SMALL)
         if self.__class__._editLabels:
-            self._gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
-            self._gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
+            self.__gList.Bind(wx.EVT_LIST_END_LABEL_EDIT, self.OnLabelEdited)
+            self.__gList.Bind(wx.EVT_LIST_BEGIN_LABEL_EDIT, self.OnBeginEditLabel)
         # gList callbacks
-        self._gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
-        self._gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
-        self._gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
-        self._gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
-        self._gList.Bind(wx.EVT_CHAR, self.OnChar)
+        self.__gList.Bind(wx.EVT_LIST_COL_RIGHT_CLICK, self.DoColumnMenu)
+        self.__gList.Bind(wx.EVT_CONTEXT_MENU, self.DoItemMenu)
+        self.__gList.Bind(wx.EVT_LIST_COL_CLICK, self.OnColumnClick)
+        self.__gList.Bind(wx.EVT_KEY_UP, self.OnKeyUp)
+        self.__gList.Bind(wx.EVT_CHAR, self.OnChar)
         #--Events: Columns
-        self._gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
+        self.__gList.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnColumnResize)
         #--Events: Items
-        self._gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
-        self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
-        self._gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
+        self.__gList.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
+        self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+        self.__gList.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         #--Mouse movement
         self.mouse_index = None
         self.mouseTexts = {} # dictionary item->mouse text
         self.mouseTextPrev = u''
-        self._gList.Bind(wx.EVT_MOTION, self.OnMouse)
-        self._gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
+        self.__gList.Bind(wx.EVT_MOTION, self.OnMouse)
+        self.__gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         # Panel callbacks
         self.Bind(wx.EVT_SIZE,self.OnSize)
         # Columns
@@ -1673,6 +1673,12 @@ class UIList(wx.Panel):
         self._select(modName)
     def _select(self, item): self.panel.SetDetails(item)
 
+    # properties to encapsulate access to the list control
+    @property
+    def item_count(self): return self.__gList.GetItemCount()
+    @property
+    def edit_control(self): return self.__gList.GetEditControl()
+
     #--Items ----------------------------------------------
     def PopulateItem(self, itemDex=-1, item=None):
         """Populate ListCtrl for specified item. Either item or itemDex must be
@@ -1687,7 +1693,7 @@ class UIList(wx.Panel):
             try:
                 itemDex = self.GetIndex(item)
             except KeyError: # item is not present, so inserting
-                itemDex = self._gList.GetItemCount() # insert at the end
+                itemDex = self.__gList.GetItemCount() # insert at the end
                 insert = True
         else: # no way we're inserting with a None item
             item = self.GetItem(itemDex)
@@ -1696,9 +1702,9 @@ class UIList(wx.Panel):
             col = cols[colDex]
             labelTxt = self.labels[col](self, item)
             if insert and colDex == 0:
-                self._gList.InsertListCtrlItem(itemDex, labelTxt, item)
+                self.__gList.InsertListCtrlItem(itemDex, labelTxt, item)
             else:
-                self._gList.SetStringItem(itemDex, colDex, labelTxt)
+                self.__gList.SetStringItem(itemDex, colDex, labelTxt)
         self.__setUI(item, itemDex)
 
     class _ListItemFormat(object):
@@ -1718,7 +1724,7 @@ class UIList(wx.Panel):
 
     def __setUI(self, fileName, itemDex):
         """Set font, status icon, background text etc."""
-        gItem = self._gList.GetItem(itemDex)
+        gItem = self.__gList.GetItem(itemDex)
         df = self._ListItemFormat()
         self.set_item_format(fileName, df)
         if df.icon_key and self.icons:
@@ -1727,13 +1733,13 @@ class UIList(wx.Panel):
             else: img = self.icons[df.icon_key]
             gItem.SetImage(img)
         if df.text_key: gItem.SetTextColour(colors[df.text_key])
-        else: gItem.SetTextColour(self._gList.GetTextColour())
+        else: gItem.SetTextColour(self.__gList.GetTextColour())
         if df.back_key: gItem.SetBackgroundColour(colors[df.back_key])
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
         font = gItem.GetFont()
         font.SetUnderlined(df.underline)
         gItem.SetFont(font)
-        self._gList.SetItem(gItem)
+        self.__gList.SetItem(gItem)
 
     def PopulateItems(self):
         """Sort items and populate entire list."""
@@ -1741,9 +1747,9 @@ class UIList(wx.Panel):
         items = set(self.GetItems())
         #--Update existing items.
         index = 0
-        while index < self._gList.GetItemCount():
+        while index < self.__gList.GetItemCount():
             item = self.GetItem(index)
-            if item not in items: self._gList.RemoveItemAt(index)
+            if item not in items: self.__gList.RemoveItemAt(index)
             else:
                 self.PopulateItem(index)
                 items.remove(item)
@@ -1803,12 +1809,12 @@ class UIList(wx.Panel):
     def OnSize(self, event):
         """Panel size was changed. Change gList size to match."""
         size = tuple(self.GetClientSize())
-        self._gList.SetSize(size)
+        self.__gList.SetSize(size)
 
     def OnMouse(self,event):
         """Handle mouse entered item by showing tip or similar."""
         if event.Moving():
-            (itemDex, mouseHitFlag) = self._gList.HitTest(event.GetPosition())
+            (itemDex, mouseHitFlag) = self.__gList.HitTest(event.GetPosition())
             if itemDex != self.mouse_index:
                 self.mouse_index = itemDex
                 if itemDex >= 0:
@@ -1827,11 +1833,11 @@ class UIList(wx.Panel):
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): # Ctrl+A
             try:
-                self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
                 self.panel.ClearDetails() #omit this to leave displayed details
                 self._SelectAll()
             finally:
-                self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+                self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(event=event)
@@ -1846,12 +1852,12 @@ class UIList(wx.Panel):
         """Column resized: enforce minimal width and save column size info."""
         colDex = event.GetColumn()
         colName = self.cols[colDex]
-        width = self._gList.GetColumnWidth(colDex)
+        width = self.__gList.GetColumnWidth(colDex)
         if width < self._min_column_width:
             width = self._min_column_width
-            self._gList.SetColumnWidth(colDex, self._min_column_width)
+            self.__gList.SetColumnWidth(colDex, self._min_column_width)
             event.Veto() # if we do not veto the column will be resized anyway!
-            self._gList.resizeLastColumn(0) # resize last column to fill
+            self.__gList.resizeLastColumn(0) # resize last column to fill
         else:
             event.Skip()
         self.colWidths[colName] = width
@@ -1859,9 +1865,9 @@ class UIList(wx.Panel):
     # gList columns autosize---------------------------------------------------
     def autosizeColumns(self):
         if self.autoColWidths:
-            colCount = xrange(self._gList.GetColumnCount())
+            colCount = xrange(self.__gList.GetColumnCount())
             for i in colCount:
-                self._gList.SetColumnWidth(i, -self.autoColWidths)
+                self.__gList.SetColumnWidth(i, -self.autoColWidths)
 
     #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
     def OnLeftDown(self,event): event.Skip()
@@ -1871,11 +1877,11 @@ class UIList(wx.Panel):
     def OnBeginEditLabel(self, event):
         """Start renaming: deselect the extension."""
         to = len(GPath(event.GetLabel()).sbody)
-        (self._gList.GetEditControl()).SetSelection(0, to)
+        (self.__gList.GetEditControl()).SetSelection(0, to)
     def OnLabelEdited(self,event): event.Skip()
 
     def _getItemClicked(self, event, on_icon=False):
-        (hitItem, hitFlag) = self._gList.HitTest(event.GetPosition())
+        (hitItem, hitFlag) = self.__gList.HitTest(event.GetPosition())
         if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
             return None
         return self.GetItem(hitItem)
@@ -1885,7 +1891,7 @@ class UIList(wx.Panel):
 
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
                       __state_selected=wx.LIST_STATE_SELECTED):
-        listCtrl, selected_list = self._gList, []
+        listCtrl, selected_list = self.__gList, []
         i = listCtrl.GetNextItem(-1, __next_all, __state_selected)
         while i != -1:
             selected_list.append(lam(i))
@@ -1903,7 +1909,7 @@ class UIList(wx.Panel):
 
     def SelectItemAtIndex(self, index, select=True,
                           __select=wx.LIST_STATE_SELECTED):
-        self._gList.SetItemState(index, select * __select, __select)
+        self.__gList.SetItemState(index, select * __select, __select)
 
     def SelectItem(self, item, deselectOthers=False):
         dex = self.GetIndex(item)
@@ -1915,10 +1921,10 @@ class UIList(wx.Panel):
     def SelectItemsNoCallback(self, items, deselectOthers=False):
         if deselectOthers: self.ClearSelected()
         try:
-            self._gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+            self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
             for item in items: self.SelectItem(item)
         finally:
-            self._gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+            self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
 
     def ClearSelected(self, clear_details=False):
         """Unselect all items."""
@@ -1929,16 +1935,16 @@ class UIList(wx.Panel):
         self.SelectItemAtIndex(-1) # -1 indicates 'all items'
 
     def SelectLast(self):
-        self.SelectItemAtIndex(self._gList.GetItemCount() - 1)
+        self.SelectItemAtIndex(self.__gList.GetItemCount() - 1)
 
-    def DeleteAll(self): self._gList.DeleteAll()
+    def DeleteAll(self): self.__gList.DeleteAll()
 
     def EnsureVisibleItem(self, name, focus=False):
         self.EnsureVisibleIndex(self.GetIndex(name), focus=focus)
 
     def EnsureVisibleIndex(self, dex, focus=False):
-        self._gList.Focus(dex) if focus else self._gList.EnsureVisible(dex)
-        self._gList.SetFocus()
+        self.__gList.Focus(dex) if focus else self.__gList.EnsureVisible(dex)
+        self.__gList.SetFocus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
         self.SelectItem(item, deselectOthers=deselectOthers)
@@ -1970,7 +1976,7 @@ class UIList(wx.Panel):
         """
         column, reverse, oldcol = self._GetSortSettings(column, reverse)
         items = self._SortItems(column, reverse)
-        self._gList.ReorderDisplayed(items)
+        self.__gList.ReorderDisplayed(items)
         self._setColumnSortIndicator(column, oldcol, reverse)
 
     def _GetSortSettings(self, column, reverse):
@@ -2021,7 +2027,7 @@ class UIList(wx.Panel):
     def _setColumnSortIndicator(self, col, oldcol, reverse):
         # set column sort image
         try:
-            listCtrl = self._gList
+            listCtrl = self.__gList
             try: listCtrl.ClearColumnImage(self._colDict[oldcol])
             except KeyError:
                 pass # if old column no longer is active this will fail but
@@ -2033,11 +2039,11 @@ class UIList(wx.Panel):
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
         """Returns item for specified list index."""
-        return self._gList.FindItemAt(index)
+        return self.__gList.FindItemAt(index)
 
     def GetIndex(self,item):
         """Return index for item, raise KeyError if item not present."""
-        return self._gList.FindIndexOf(item)
+        return self.__gList.FindIndexOf(item)
 
     #--Populate Columns -------------------------------------------------------
     def PopulateColumns(self):
@@ -2046,7 +2052,7 @@ class UIList(wx.Panel):
         numCols = len(cols)
         names = set(_settings['bash.colNames'].get(key) for key in cols)
         self._colDict.clear()
-        colDex, listCtrl = 0, self._gList
+        colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
             colKey = cols[colDex]
             colName = _settings['bash.colNames'].get(colKey, colKey)
@@ -2082,11 +2088,11 @@ class UIList(wx.Panel):
 
     # gList scroll position----------------------------------------------------
     def SaveScrollPosition(self, isVertical=True):
-        _settings[self.keyPrefix + '.scrollPos'] = self._gList.GetScrollPos(
+        _settings[self.keyPrefix + '.scrollPos'] = self.__gList.GetScrollPos(
             wx.VERTICAL if isVertical else wx.HORIZONTAL)
 
     def SetScrollPosition(self):
-        self._gList.ScrollLines(
+        self.__gList.ScrollLines(
             _settings.get(self.keyPrefix + '.scrollPos', 0))
 
     # Data commands (WIP)------------------------------------------------------
@@ -2095,7 +2101,7 @@ class UIList(wx.Panel):
         if selected:
             index = self.GetIndex(selected[0])
             if index != -1:
-                self._gList.EditLabel(index)
+                self.__gList.EditLabel(index)
 
     @conversation
     def DeleteItems(self, event=None, items=None,
@@ -2720,3 +2726,148 @@ class INIListCtrl(wx.ListCtrl):
         event.Skip()
 
     def _get_selected_line(self, index): raise AbstractError
+
+# Status bar ------------------------------------------------------------------
+class DnDStatusBar(wx.StatusBar):
+    buttons = Links()
+
+    def __init__(self, parent):
+        wx.StatusBar.__init__(self, parent)
+        self.SetFieldsCount(3)
+        self.UpdateIconSizes()
+        #--Bind events
+        self.Bind(wx.EVT_SIZE, self.OnSize)
+        #--Setup Drag-n-Drop reordering
+        self.dragging = wx.NOT_FOUND
+        self.dragStart = 0
+        self.moved = False
+
+    def UpdateIconSizes(self): raise AbstractError
+    def GetLink(self,uid=None,index=None,button=None): raise AbstractError
+
+    @property
+    def iconsSize(self): return _settings['bash.statusbar.iconSize'] + 8
+
+    def _addButton(self, link):
+        gButton = link.GetBitmapButton(self, style=wx.NO_BORDER)
+        if gButton:
+            self.buttons.append(gButton)
+            # DnD events
+            gButton.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
+            gButton.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
+            gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.OnDragEndForced)
+            gButton.Bind(wx.EVT_MOTION, self.OnDrag)
+
+    def _getButtonIndex(self, mouseEvent):
+        id_ = mouseEvent.GetId()
+        for i, button in enumerate(self.buttons):
+            if button.GetId() == id_:
+                x = mouseEvent.GetPosition()[0]
+                delta = x / self.iconsSize
+                if abs(x) % self.iconsSize > self.iconsSize:
+                    delta += x / abs(x)
+                i += delta
+                if i < 0: i = 0
+                elif i > len(self.buttons): i = len(self.buttons)
+                return i
+        return wx.NOT_FOUND
+
+    def OnDragStart(self, event):
+        self.dragging = self._getButtonIndex(event)
+        if self.dragging != wx.NOT_FOUND:
+            self.dragStart = event.GetPosition()[0]
+            button = self.buttons[self.dragging]
+            button.CaptureMouse()
+        event.Skip()
+
+    def OnDragEndForced(self, event):
+        if self.dragging == wx.NOT_FOUND or not self.GetParent().IsActive():
+            # The even for clicking the button sends a force capture loss
+            # message.  Ignore lost capture messages if we're the active
+            # window.  If we're not, that means something else forced the
+            # loss of mouse capture.
+            self.dragging = wx.NOT_FOUND
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+        event.Skip()
+
+    def OnDragEnd(self, event):
+        if self.dragging != wx.NOT_FOUND:
+            button = self.buttons[self.dragging]
+            try:
+                button.ReleaseMouse()
+            except:
+                pass
+            # -*- Hacky code! -*-
+            # Since we've got to CaptureMouse to do DnD properly,
+            # The button will never get a EVT_BUTTON event if you
+            # just click it.  Can't figure out a good way for the
+            # two to play nicely, so we'll just simulate it for now
+            released = self._getButtonIndex(event)
+            if released != self.dragging: released = wx.NOT_FOUND
+            self.dragging = wx.NOT_FOUND
+            self.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
+            if self.moved:
+                self.moved = False
+                return
+            # -*- Rest of hacky code -*-
+            if released != wx.NOT_FOUND:
+                evt = wx.CommandEvent(wx.wxEVT_COMMAND_BUTTON_CLICKED,
+                                      button.GetId())
+                wx.PostEvent(button, evt)
+        event.Skip()
+
+    def OnDrag(self, event):
+        if self.dragging != wx.NOT_FOUND:
+            if abs(event.GetPosition()[0] - self.dragStart) > 4:
+                self.SetCursor(wx.StockCursor(wx.CURSOR_HAND))
+            over = self._getButtonIndex(event)
+            if over >= len(self.buttons): over -= 1
+            if over not in (wx.NOT_FOUND, self.dragging):
+                self.moved = True
+                button = self.buttons[self.dragging]
+                # update settings
+                uid = self.GetLink(button=button).uid
+                overUid = self.GetLink(index=over).uid
+                _settings['bash.statusbar.order'].remove(uid)
+                overIndex = _settings['bash.statusbar.order'].index(overUid)
+                _settings['bash.statusbar.order'].insert(overIndex, uid)
+                _settings.setChanged('bash.statusbar.order')
+                # update self.buttons
+                self.buttons.remove(button)
+                self.buttons.insert(over, button)
+                self.dragging = over
+                # Refresh button positions
+                self.OnSize()
+        event.Skip()
+
+    def OnSize(self, event=None):
+        rect = self.GetFieldRect(0)
+        (xPos, yPos) = (rect.x + 4, rect.y + 2)
+        for button in self.buttons:
+            button.SetPosition((xPos, yPos))
+            xPos += self.iconsSize
+        if event: event.Skip()
+
+#------------------------------------------------------------------------------
+class WryeBashSplashScreen(wx.SplashScreen):
+    """This Creates the Splash Screen widget. (The first image you see when
+    starting the Application.)"""
+    def __init__(self, parent=None):
+        splashScreenBitmap = wx.Image(name=bass.dirs['images'].join(
+            u'wryesplash.png').s).ConvertToBitmap()
+        splashStyle = (wx.SPLASH_CENTRE_ON_SCREEN | #Center image on the screen
+                       wx.SPLASH_NO_TIMEOUT) # image will stay until clicked by
+        # user or is explicitly destroyed when the main window is ready
+        # alternately wx.SPLASH_TIMEOUT and a duration can be used, but then
+        # you have to guess how long it should last
+        splashDuration = 3500 # Duration in ms the splash screen will be
+        # visible (only used with the TIMEOUT option)
+        wx.SplashScreen.__init__(self, splashScreenBitmap, splashStyle,
+                                 splashDuration, parent)
+        self.Bind(wx.EVT_CLOSE, self.OnExit)
+        wx.Yield()
+
+    def OnExit(self, event):
+        self.Hide()
+        # The program might/will freeze without this line.
+        event.Skip() # Make sure the default handler runs too...
