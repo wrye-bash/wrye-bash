@@ -76,13 +76,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
         else: return isinstance(self.idata[self.selected[0]],
                                 bosh.InstallerArchive)
 
-    def isSelectedArchives(self):
-        """Indicates whether or not selected is all archives."""
-        for selected in self.selected:
-            if not isinstance(self.idata[selected],
-                              bosh.InstallerArchive): return False
-        return True
-
     def _get_refreshed(self, installer, src_installer, is_project=True,
                        progress=None, do_refresh=True):
         new = installer not in self.idata
@@ -599,20 +592,15 @@ class Installer_Move(_InstallerLink):
         self.window.RefreshUI()
         self.window.SelectAndShowItem(GPath(current_archive.archive), focus=True)
 
-class Installer_Open(_InstallerLink):
+class Installer_Open(balt.UIList_OpenItems, _InstallerLink):
     """Open selected file(s)."""
-    text = _(u'Open...')
 
     def _initData(self, window, selection):
         super(Installer_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % selection[0] if len(selection) == 1 \
-            else _(u"Open selected files.")
         self.selected = [x for x in self.selected if
                          not isinstance(self.idata[x], bosh.InstallerMarker)]
 
     def _enable(self): return bool(self.selected)
-
-    def Execute(self): self.window.OpenSelected(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -965,7 +953,10 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
         self.window = window # and the idata access is via self.window
-        return self.isSelectedArchives()
+        for selected in self.selected:
+            if not isinstance(self.idata[selected],
+                              bosh.InstallerArchive): return False
+        return True
 
     @balt.conversation
     def Execute(self):

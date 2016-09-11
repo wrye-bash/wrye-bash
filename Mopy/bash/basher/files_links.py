@@ -31,8 +31,7 @@ from ..bolt import CancelError, SkipError, GPath, formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
            'File_Duplicate', 'File_Snapshot', 'File_Hide',
-           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
-           'File_Open']
+           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -346,17 +345,6 @@ class File_Backup(ItemLink):
         for item in self.selected:
             fileInfo = self.window.data_store[item]
             fileInfo.makeBackup(True)
-
-class File_Open(ItemLink):
-    """Open specified file(s)."""
-    text = _(u'Open...')
-
-    def _initData(self, window, selection):
-        super(File_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s' with the system's default program.") % selection[
-            0] if len(selection) == 1 else _(u'Open the selected files.')
-
-    def Execute(self): self.window.OpenSelected(selected=self.selected)
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""

@@ -1955,9 +1955,12 @@ class UIList(wx.Panel):
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
             'bash.maxItemsOpen.continue'): return
-        for file_ in selected:
-            file_ = self.data_store.store_dir.join(file_)
-            if file_.exists(): file_.start()
+        for filename in selected:
+            filepath = self.data_store.store_dir.join(filename)
+            try:
+                filepath.start()
+            except OSError:
+                deprint(u'Failed to open %s', filepath, traceback=True)
 
     #--Sorting ----------------------------------------------------------------
     def SortItems(self, column=None, reverse='CURRENT'):
@@ -2508,6 +2511,18 @@ class UIList_Rename(ItemLink):
     text = _(u'Rename...')
 
     def Execute(self): self.window.Rename(selected=self.selected)
+
+class UIList_OpenItems(ItemLink):
+    """Open specified file(s)."""
+    text = _(u'Open...')
+
+    @property
+    def help(self):
+        return _(u"Open '%s' with the system's default program.") % \
+               self.selected[0] if len(self.selected) == 1 else _(
+            u'Open the selected files.')
+
+    def Execute(self): self.window.OpenSelected(selected=self.selected)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------

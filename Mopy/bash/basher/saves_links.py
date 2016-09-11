@@ -308,10 +308,10 @@ class Save_DiffMasters(EnabledLink):
     def _enable(self): return len(self.selected) in (1,2)
 
     def Execute(self):
-        oldNew = map(GPath,self.selected)
-        oldNew.sort(key = lambda x: bosh.saveInfos.store_dir.join(x).mtime)
+        oldNew = self.selected
+        oldNew.sort(key = lambda x: bosh.saveInfos[x].mtime)
         oldName = oldNew[0]
-        oldInfo = self.window.data_store[GPath(oldName)]
+        oldInfo = self.window.data_store[oldName]
         oldMasters = set(oldInfo.masterNames)
         if len(self.selected) == 1:
             newName = GPath(_(u'Active Masters'))

@@ -2935,6 +2935,7 @@ class TrackedFileInfos(DataDict):
 
 #------------------------------------------------------------------------------
 class _DataStore(DataDict):
+    store_dir = empty_path # where the datas sit, static except for SaveInfos
 
     def delete(self, itemOrItems, **kwargs): raise AbstractError
     def delete_Refresh(self, deleted, check_existence=False):
@@ -4237,9 +4238,7 @@ class BSAInfos(FileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
     file_pattern = re.compile(ur'\.bsa(.ghost)?$', re.I | re.U)
 
-    def __init__(self):
-        self.store_dir = dirs['mods']
-        FileInfos.__init__(self, self.store_dir, BSAInfo)
+    def __init__(self): FileInfos.__init__(self, dirs['mods'], BSAInfo)
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')

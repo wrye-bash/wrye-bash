@@ -31,7 +31,7 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import bass, balt, bush
 from ..cint import CBash
-from ..balt import Image, MenuLink, SeparatorLink
+from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems
 from ..env import init_app_links
 # modules below define the __all__ directive
 from .app_buttons import *
@@ -657,7 +657,7 @@ def InitScreenLinks():
         ScreensList.mainMenu.append(SeparatorLink())
         ScreensList.mainMenu.append(qualityMenu)
     #--ScreensList: Item Links
-    ScreensList.itemMenu.append(File_Open())
+    ScreensList.itemMenu.append(UIList_OpenItems())
     ScreensList.itemMenu.append(Screen_Rename())
     ScreensList.itemMenu.append(balt.UIList_Delete())
     ScreensList.itemMenu.append(SeparatorLink())
