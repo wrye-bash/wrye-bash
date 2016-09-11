@@ -742,7 +742,7 @@ class Save_Stats(OneItemLink):
                           icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
-class Save_StatObse(AppendableLink, EnabledLink):
+class Save_StatObse(AppendableLink, OneItemLink):
     """Dump .obse records."""
     text = _(u'.%s Statistics') % bush.game.se.shortName.lower()
     help = _(u'Dump .%s records') % bush.game.se.shortName.lower()
@@ -750,14 +750,13 @@ class Save_StatObse(AppendableLink, EnabledLink):
     def _append(self, window): return bool(bush.game.se.shortName)
 
     def _enable(self):
-        if len(self.selected) != 1: return False
-        self.fileName = self.selected[0]
-        self.fileInfo = self.window.data_store[self.fileName]
-        fileName = self.fileInfo.getPath().root + u'.' + bush.game.se.shortName
-        return fileName.exists()
+        if not super(Save_StatObse, self)._enable(): return False
+        cosave = self._selected_info.getPath().root + u'.' + \
+                   bush.game.se.shortName
+        return cosave.exists()
 
     def Execute(self):
-        saveFile = bosh.SaveFile(self.fileInfo)
+        saveFile = bosh.SaveFile(self._selected_info)
         with balt.Progress(u'.'+bush.game.se.shortName) as progress:
             saveFile.load(SubProgress(progress,0,0.9))
             log = bolt.LogFile(StringIO.StringIO())
@@ -765,7 +764,7 @@ class Save_StatObse(AppendableLink, EnabledLink):
             saveFile.logStatObse(log)
         text = log.out.getvalue()
         log.out.close()
-        self._showLog(text, title=self.fileName.s, fixedFont=False,
+        self._showLog(text, title=self._selected_item.s, fixedFont=False,
                       icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------

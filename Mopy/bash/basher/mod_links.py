@@ -1661,23 +1661,19 @@ class Mod_SetVersion(OneItemLink):
         u" the internal file version number back to 0.8. While this will make "
         u"the mod editable, it may also break the mod in some way.")
 
-    def _initData(self, window, selection):
-        super(Mod_SetVersion, self)._initData(window, selection)
-        self.fileInfo = window.data_store[selection[0]]
-
     def _enable(self):
         return (super(Mod_SetVersion, self)._enable() and
-                int(10 * self.fileInfo.header.version) != 8)
+                int(10 * self._selected_info.header.version) != 8)
 
     def Execute(self):
         if not self._askContinue(self.message, 'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
-        self.fileInfo.makeBackup()
-        self.fileInfo.header.version = 0.8
-        self.fileInfo.header.setChanged()
-        self.fileInfo.writeHeader()
+        self._selected_info.makeBackup()
+        self._selected_info.header.version = 0.8
+        self._selected_info.header.setChanged()
+        self._selected_info.writeHeader()
         #--Repopulate
-        self.window.RefreshUI(files=[self.fileInfo.name],
+        self.window.RefreshUI(files=[self._selected_item],
                               refreshSaves=False) # version: why affect saves ?
 
 #------------------------------------------------------------------------------
