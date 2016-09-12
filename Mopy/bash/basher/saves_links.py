@@ -279,7 +279,7 @@ class Save_RenamePlayer(EnabledLink):
             title=_(u"Rename player"), default=saveInfo.header.pcName)
         if not newName: return
         for save in self.selected:
-            savedPlayer = bosh.Save_NPCEdits(self.window.data_store[GPath(save)])
+            savedPlayer = bosh.Save_NPCEdits(self.window.data_store[save])
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
         self.window.RefreshUI()

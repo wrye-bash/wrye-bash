@@ -685,7 +685,7 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
         return super(Mod_JumpToInstaller,
                      self)._enable() and self._installer is not None
 
-    def Execute(self): self.window.jump_to_mods_installer(self.selected[0])
+    def Execute(self): self.window.jump_to_mods_installer(self._selected_item)
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -848,7 +848,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def _initData(self, window, selection):
         super(_Mod_Patch_Update, self)._initData(window, selection)
         # Detect if the patch was build with Python or CBash
-        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
+        config = bosh.modInfos.table.getItem(self._selected_item,
+                                             'bash.patch.configs', {})
         thisIsCBash = configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
@@ -890,7 +891,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         if self.CBashMismatch:
             old_mode = [u'CBash', u'Python'][self.doCBash]
             new_mode = [u'Python', u'CBash'][self.doCBash]
-            msg = msg % (self.selected[0].s, old_mode, new_mode)
+            msg = msg % (self._selected_item.s, old_mode, new_mode)
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         prog = None
@@ -1026,13 +1027,13 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         u'Lists the Bashed Patch configuration and copies it to the clipboard')
 
     def Execute(self):
-        """Handle execution."""
         #--Patcher info
         groupOrder = dict([(group,index) for index,group in
             enumerate((_(u'General'),_(u'Importers'),
                        _(u'Tweakers'),_(u'Special')))])
         #--Config
-        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
+        config = bosh.modInfos.table.getItem(self._selected_item,
+                                             'bash.patch.configs', {})
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
         patchers = [copy.deepcopy(x) for x in
@@ -1041,10 +1042,10 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
-        log.setHeader(u'= %s %s' % (self.selected[0],_(u'Config')))
+        log.setHeader(u'= %s %s' % (self._selected_item, _(u'Config')))
         log(_(u'This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.')+u'\n')
         clip = StringIO.StringIO()
-        clip.write(u'%s %s:\n' % (self.selected[0],_(u'Config')))
+        clip.write(u'%s %s:\n' % (self._selected_item, _(u'Config')))
         clip.write(u'[spoiler][xml]\n')
         # CBash/Python patch?
         log.setHeader(u'== '+_(u'Patch Mode'))
@@ -1131,11 +1132,10 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
 
     @balt.conversation
     def Execute(self):
-        """Handle execution."""
         #--Config
-        config = bosh.modInfos.table.getItem(self.selected[0],
+        config = bosh.modInfos.table.getItem(self._selected_item,
                                              'bash.patch.configs', {})
-        exportConfig(patch_name=self.selected[0].s, config=config,
+        exportConfig(patch_name=self._selected_item.s, config=config,
                      isCBash=configIsCBash(config), win=self.window,
                      outDir=bass.dirs['patches'])
 
