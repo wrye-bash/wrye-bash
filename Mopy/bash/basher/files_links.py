@@ -348,7 +348,7 @@ class File_Backup(ItemLink):
             fileInfo = self.window.data_store[item]
             fileInfo.makeBackup(True)
 
-class File_Open(EnabledLink):
+class File_Open(ItemLink):
     """Open specified file(s)."""
     text = _(u'Open...')
 
@@ -356,8 +356,6 @@ class File_Open(EnabledLink):
         super(File_Open, self)._initData(window, selection)
         self.help = _(u"Open '%s' with the system's default program.") % selection[
             0] if len(selection) == 1 else _(u'Open the selected files.')
-
-    def _enable(self): return len(self.selected) > 0
 
     def Execute(self): self.window.OpenSelected(selected=self.selected)
 

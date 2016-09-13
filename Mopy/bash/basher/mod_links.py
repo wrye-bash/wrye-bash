@@ -343,14 +343,12 @@ class _Mod_Labels(ChoiceLink):
     def _choices(self): return sorted(self.mod_labels, key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
-class _Mod_Groups_Export(EnabledLink):
+class _Mod_Groups_Export(ItemLink):
     """Export mod groups to text file."""
     askTitle = _(u'Export groups to:')
     csvFile = u'_Groups.csv'
     text = _(u'Export Groups')
     help = _(u'Export groups of selected mods to a csv file')
-
-    def _enable(self): return bool(self.selected)
 
     def Execute(self):
         textName = u'My' + self.__class__.csvFile
@@ -367,13 +365,11 @@ class _Mod_Groups_Export(EnabledLink):
         modGroups.writeToText(textPath)
         self._showOk(_(u"Exported %d mod/groups.") % len(modGroups.mod_group))
 
-class _Mod_Groups_Import(EnabledLink):
+class _Mod_Groups_Import(ItemLink):
     """Import mod groups from text file."""
     text = _(u'Import Groups')
     help = _(u'Import groups for selected mods from a csv file (filename must'
              u' end in _Groups.csv)')
-
-    def _enable(self): return bool(self.selected)
 
     def Execute(self):
         message = _(
@@ -789,7 +785,7 @@ class Mod_AllowGhosting(TransLink):
 
 # BP Links --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Mod_MarkMergeable(EnabledLink):
+class Mod_MarkMergeable(ItemLink):
     """Returns true if can act as patch mod."""
     def __init__(self,doCBash):
         Link.__init__(self)
@@ -800,8 +796,6 @@ class Mod_MarkMergeable(EnabledLink):
                       u'mergeable into the %(patch_type)s bashed patch, '
                       u'reporting also the reason they are unmergeable') % {
                         'patch_type': _(u'Cbash') if doCBash else _(u'Python')}
-
-    def _enable(self): return bool(self.selected)
 
     @balt.conversation
     def Execute(self):
@@ -1340,13 +1334,11 @@ class Mod_RemoveWorldOrphans(EnabledLink):
                 self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
-class Mod_FogFixer(EnabledLink):
+class Mod_FogFixer(ItemLink):
     """Fix fog on selected cells."""
     text = _(u'Nvidia Fog Fix')
     help = _(u'Modify fog values in interior cells to avoid the Nvidia black '
              u'screen bug')
-
-    def _enable(self): return bool(self.selected)
 
     def Execute(self):
         message = _(u'Apply Nvidia fog fix.  This modify fog values in interior cells to avoid the Nvidia black screen bug.')
@@ -1750,9 +1742,7 @@ class Mod_Face_Import(OneItemLink):
                      self._selected_item.s)
 
 #--Common
-class _Mod_Export_Link(EnabledLink):
-
-    def _enable(self): return bool(self.selected)
+class _Mod_Export_Link(ItemLink):
 
     def Execute(self):
         textName = self.selected[0].root + self.__class__.csvFile
@@ -2391,8 +2381,8 @@ class Mod_FullNames_Import(_Mod_Import_Link):
             self._showLog(buff.getvalue(), title=_(u'Objects Renamed'))
 
 # CBash only Import/Export ----------------------------------------------------
-class _Mod_Export_Link_CBash(_Mod_Export_Link):
-    def _enable(self): return bool(self.selected) and bool(CBash)
+class _Mod_Export_Link_CBash(_Mod_Export_Link, EnabledLink):
+    def _enable(self): return bool(CBash)
 
 class _Mod_Import_Link_CBash(_Mod_Import_Link):
     def _enable(self):

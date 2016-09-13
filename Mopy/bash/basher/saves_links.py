@@ -811,8 +811,7 @@ class Save_UpdateNPCLevels(EnabledLink):
     text = _(u'Update NPC Levels...')
     help = _(u'Update NPC levels from active mods')
 
-    def _enable(self):
-        return bool(self.selected and load_order.activeCached())
+    def _enable(self): return bool(load_order.activeCached())
 
     def Execute(self):
         message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
