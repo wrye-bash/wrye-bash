@@ -3347,10 +3347,10 @@ class ModInfos(FileInfos):
         return u'%02X' % (load_order.activeIndexCached(mod),) \
             if load_order.isActiveCached(mod) else u''
 
-    def masterWithVersion(self, masterName):
-        if masterName == u'Oblivion.esm' and self.voCurrent:
-            masterName += u' [' + self.voCurrent + u']'
-        return masterName
+    def masterWithVersion(self, master_name):
+        if master_name == u'Oblivion.esm' and self.voCurrent:
+            master_name += u' [' + self.voCurrent + u']'
+        return master_name
 
     def dropItems(self, dropItem, firstItem, lastItem): # MUTATES plugins CACHE
         # Calculating indexes through order.index() cause we may be called in
@@ -5331,9 +5331,19 @@ class Installer(object):
             #--Clean up staging dir
             self.rmTempDir()
 
-    def listSource(self,archive):
-        """Lists the folder structure of the installer."""
-        raise AbstractError
+    def listSource(self):
+        """Return package structure as text."""
+        with sio() as out:
+            log = bolt.LogFile(out)
+            log.setHeader(u'%s ' % self.archive + _(u'Package Structure:'))
+            log(u'[spoiler][xml]\n', False)
+            apath = dirs['installers'].join(self.archive)
+            self._list_package(apath, log)
+            log(u'[/xml][/spoiler]')
+            return bolt.winNewLines(log.out.getvalue())
+
+    @staticmethod
+    def _list_package(apath, log): raise AbstractError
 
     def renameInstaller(self, archive, root, numStr, data):
         """Rename installer and return a three tuple specifying if a refresh in
@@ -5529,13 +5539,9 @@ class InstallerArchive(Installer):
         self.rmTempDir()
         return count
 
-    def listSource(self, archive):
-        """Returns package structure as text."""
-        #--Setup
-        with sio() as out:
-            log = bolt.LogFile(out)
-            log.setHeader(_(u'Package Structure:'))
-            log(u'[spoiler][xml]\n', False)
+    @staticmethod
+    def _list_package(apath, log):
+        with apath.unicodeSafe() as tempArch:
             filepath = [u'']
             text = []
             def _parse_archive_line(key, value):
@@ -5546,16 +5552,12 @@ class InstallerArchive(Installer):
                         (u'%s' % filepath[0], value and (value[0] == u'D')))
                 elif key == u'Method':
                     filepath[0] = u''
-            apath = dirs['installers'].join(archive)
-            with apath.unicodeSafe() as tempArch:
-                bolt.list_archive(tempArch, _parse_archive_line)
-            text.sort()
-            #--Output
-            for node, isdir in text:
-                log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
-                    os.sep if isdir else u''))
-            log(u'[/xml][/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+            bolt.list_archive(tempArch, _parse_archive_line)
+        text.sort()
+        #--Output
+        for node, isdir in text:
+            log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
+                os.sep if isdir else u''))
 
     def renameInstaller(self, archive, root, numStr, data):
         newName = GPath(root + numStr + archive.ext)
@@ -5790,8 +5792,8 @@ class InstallerProject(Installer):
             progress(i,file.s)
             srcJoin(file).copyTo(dstJoin(file))
 
-    def listSource(self,archive):
-        """Returns package structure as text."""
+    @staticmethod
+    def _list_package(apath, log):
         def walkPath(folder, depth):
             for entry in os.listdir(folder):
                 path = os.path.join(folder, entry)
@@ -5802,16 +5804,7 @@ class InstallerProject(Installer):
                     depth -= 2
                 else:
                     log(u' ' * depth + entry)
-        #--Setup
-        with sio() as out:
-            log = bolt.LogFile(out)
-            log.setHeader(_(u'Package Structure:'))
-            log(u'[spoiler][xml]\n', False)
-            apath = dirs['installers'].join(archive)
-
-            walkPath(apath.s, 0)
-            log(u'[/xml][/spoiler]')
-            return bolt.winNewLines(log.out.getvalue())
+        walkPath(apath.s, 0)
 
     def renameInstaller(self, archive, root, numStr, data):
         newName = GPath(root + numStr)

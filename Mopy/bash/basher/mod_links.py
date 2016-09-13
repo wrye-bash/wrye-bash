@@ -78,15 +78,15 @@ class Mod_FullLoad(OneItemLink):
     text = _(u'Test Full Record Definitions...')
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        with balt.Progress(_(u'Loading:')+u'\n%s'%fileName.stail) as progress:
+        with balt.Progress(_(u'Loading:') + u'\n%s'
+                % self._selected_item.stail) as progress:
             print bosh.MreRecord.type_class
             readClasses = bosh.MreRecord.type_class
             print readClasses.values()
             loadFactory = parsers.LoadFactory(False, *readClasses.values())
-            modFile = parsers.ModFile(bosh.modInfos[fileName], loadFactory)
+            modFile = parsers.ModFile(self._selected_info, loadFactory)
             try:
-                modFile.load(True,progress)
+                modFile.load(True, progress)
             except:
                 deprint('exception:\n', traceback=True)
 
@@ -100,7 +100,7 @@ class Mod_CreateDummyMasters(OneItemLink):
 
     def _enable(self):
         return super(Mod_CreateDummyMasters, self)._enable() and \
-               bosh.modInfos[self.selected[0]].getStatus() == 30  # Missing masters
+               self._selected_info.getStatus() == 30  # Missing masters
 
     def Execute(self):
         """Create Dummy Masters"""
@@ -110,17 +110,16 @@ class Mod_CreateDummyMasters(OneItemLink):
                 u"To remove these files later, use 'Clean Dummy Masters...'")
         if not self._askYes(msg, title=_(u'Create Files')): return
         doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
-        modInfo = bosh.modInfos[self.selected[0]]
         lastTime = bosh.modInfos[bosh.modInfos.masterName].mtime
         if doCBash:
             newFiles = []
         refresh = []
-        for master in modInfo.header.masters:
+        for master in self._selected_info.header.masters:
             if master in bosh.modInfos:
                 lastTime = bosh.modInfos[master].mtime
                 continue
             # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(modInfo.dir,master)
+            newInfo = bosh.ModInfo(self._selected_info.dir, master)
             newInfo.mtime = load_order.get_free_time(lastTime, lastTime)
             refresh.append(master)
             if doCBash:
@@ -474,11 +473,10 @@ class Mod_Details(OneItemLink):
     help = _(u'Show Mod Details')
 
     def Execute(self):
-        modName = GPath(self.selected[0])
-        modInfo = bosh.modInfos[modName]
-        with balt.Progress(modName.s) as progress:
+        with balt.Progress(self._selected_item.s) as progress:
             mod_details = bosh.mods_metadata.ModDetails()
-            mod_details.readFromMod(modInfo,SubProgress(progress,0.1,0.7))
+            mod_details.readFromMod(self._selected_info,
+                                    SubProgress(progress, 0.1, 0.7))
             buff = StringIO.StringIO()
             progress(0.7,_(u'Sorting records.'))
             for group in sorted(mod_details.group_records):
@@ -492,7 +490,7 @@ class Mod_Details(OneItemLink):
                 for fid,eid in records:
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
-            self._showLog(buff.getvalue(), title=modInfo.name.s,
+            self._showLog(buff.getvalue(), title=self._selected_item.s,
                           fixedFont=True, icons=Resources.bashBlue)
             buff.close()
 
@@ -502,13 +500,11 @@ class Mod_ShowReadme(OneItemLink):
     help = _(u'Open the readme')
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         if not Link.Frame.docBrowser:
             DocBrowser().Show()
             bass.settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
-        Link.Frame.docBrowser.SetMod(fileInfo.name)
+        Link.Frame.docBrowser.SetMod(self._selected_item)
         Link.Frame.docBrowser.Raise()
 
 class Mod_ListBashTags(ItemLink):
@@ -642,7 +638,6 @@ class Mod_ListDependent(OneItemLink):
                         {'filename': selection[0]})
 
     def Execute(self):
-        masterName = GPath(self.selected[0])
         ##: HACK - refactor getModList
         modInfos = self.window.data_store
         merged, imported = modInfos.merged, modInfos.imported
@@ -654,7 +649,7 @@ class Mod_ListDependent(OneItemLink):
             loOrder =  lambda tup: load_order.loIndexCachedOrMax(tup[0])
             text = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
-                if masterName in info.header.masters:
+                if self._selected_item in info.header.masters:
                     hexIndex = modInfos.hexIndexString(mod)
                     if hexIndex:
                         prefix = bul + hexIndex
@@ -690,7 +685,7 @@ class Mod_JumpToInstaller(AppendableLink, OneItemLink):
         return super(Mod_JumpToInstaller,
                      self)._enable() and self._installer is not None
 
-    def Execute(self): self.window.jump_to_mods_installer(self.selected[0])
+    def Execute(self): self.window.jump_to_mods_installer(self._selected_item)
 
 # Ghosting --------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -837,7 +832,7 @@ class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
         return super(_Mod_BP_Link, self)._enable() and bosh.modInfos.isBP(
-            self.selected[0])
+            self._selected_item)
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -853,7 +848,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def _initData(self, window, selection):
         super(_Mod_Patch_Update, self)._initData(window, selection)
         # Detect if the patch was build with Python or CBash
-        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
+        config = bosh.modInfos.table.getItem(self._selected_item,
+                                             'bash.patch.configs', {})
         thisIsCBash = configIsCBash(config)
         self.CBashMismatch = bool(thisIsCBash != self.doCBash)
 
@@ -871,9 +867,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
     def _Execute(self):
         # Clean up some memory
         bolt.GPathPurge()
-
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
+        # We need active mods
         if not load_order.activeCached():
             self._showWarning(
                 _(u'That which does not exist cannot be patched.') + u'\n' +
@@ -897,20 +891,20 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         if self.CBashMismatch:
             old_mode = [u'CBash', u'Python'][self.doCBash]
             new_mode = [u'Python', u'CBash'][self.doCBash]
-            msg = msg % (self.selected[0].s, old_mode, new_mode)
+            msg = msg % (self._selected_item.s, old_mode, new_mode)
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         prog = None
         if self.doCBash:
-            CBash_PatchFile.patchName = fileInfo.name
+            CBash_PatchFile.patchName = self._selected_item
             prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
         else:
-            PatchFile.patchName = fileInfo.name
+            PatchFile.patchName = self._selected_item
             if bass.settings['bash.CBashEnabled']:
                 # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
                 prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
         mods_prior_to_patch = load_order.cached_lord.loadOrder[
-                              :load_order.loIndexCached(fileName)]
+                              :load_order.loIndexCached(self._selected_item)]
         if prog is not None:
             with prog:
                 bosh.modInfos.rescanMergeable(mods_prior_to_patch, prog,
@@ -924,7 +918,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         missing = collections.defaultdict(list)
         delinquent = collections.defaultdict(list)
         for mod in load_order.activeCached():
-            if mod == fileName: break
+            if mod == self._selected_item: break
             for master in bosh.modInfos[mod].header.masters:
                 if not load_order.isActiveCached(master):
                     missing[mod].append(master)
@@ -951,9 +945,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 [_(u'Delinquent Master Errors'), delinquentMsg, delinquent]],
                 liststyle='tree',bOk=_(u'Continue Despite Errors')) as warning:
                    if not warning.askOkModal(): return
-        with PatchDialog(self.window, fileInfo, self.doCBash,
-                         importConfig) as patchDialog: patchDialog.ShowModal()
-        return fileName
+        with PatchDialog(self.window, self._selected_info, self.doCBash,
+                         importConfig) as patchDialog:
+            patchDialog.ShowModal()
+        return self._selected_item
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
         unfiltered, merge, noMerge, deactivate = [], [], [], []
@@ -1032,13 +1027,13 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         u'Lists the Bashed Patch configuration and copies it to the clipboard')
 
     def Execute(self):
-        """Handle execution."""
         #--Patcher info
         groupOrder = dict([(group,index) for index,group in
             enumerate((_(u'General'),_(u'Importers'),
                        _(u'Tweakers'),_(u'Special')))])
         #--Config
-        config = bosh.modInfos.table.getItem(self.selected[0],'bash.patch.configs',{})
+        config = bosh.modInfos.table.getItem(self._selected_item,
+                                             'bash.patch.configs', {})
         # Detect CBash/Python mode patch
         doCBash = configIsCBash(config)
         patchers = [copy.deepcopy(x) for x in
@@ -1047,10 +1042,10 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         #--Log & Clipboard text
         log = bolt.LogFile(StringIO.StringIO())
-        log.setHeader(u'= %s %s' % (self.selected[0],_(u'Config')))
+        log.setHeader(u'= %s %s' % (self._selected_item, _(u'Config')))
         log(_(u'This is the current configuration of this Bashed Patch.  This report has also been copied into your clipboard.')+u'\n')
         clip = StringIO.StringIO()
-        clip.write(u'%s %s:\n' % (self.selected[0],_(u'Config')))
+        clip.write(u'%s %s:\n' % (self._selected_item, _(u'Config')))
         clip.write(u'[spoiler][xml]\n')
         # CBash/Python patch?
         log.setHeader(u'== '+_(u'Patch Mode'))
@@ -1137,11 +1132,10 @@ class Mod_ExportPatchConfig(_Mod_BP_Link):
 
     @balt.conversation
     def Execute(self):
-        """Handle execution."""
         #--Config
-        config = bosh.modInfos.table.getItem(self.selected[0],
+        config = bosh.modInfos.table.getItem(self._selected_item,
                                              'bash.patch.configs', {})
-        exportConfig(patch_name=self.selected[0].s, config=config,
+        exportConfig(patch_name=self._selected_item.s, config=config,
                      isCBash=configIsCBash(config), win=self.window,
                      outDir=bass.dirs['patches'])
 
@@ -1433,33 +1427,31 @@ class Mod_AddMaster(OneItemLink):
                     u"splitting mods into esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Master')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
         wildcard = _(u'%s Masters') % bush.game.displayName + \
                    u' (*.esm;*.esp)|*.esm;*.esp'
-        masterPaths = self._askOpenMulti(
-                            title=_(u'Add master:'), defaultDir=fileInfo.dir,
-                            wildcard=wildcard)
+        masterPaths = self._askOpenMulti(title=_(u'Add master:'),
+                                         defaultDir=self._selected_info.dir,
+                                         wildcard=wildcard)
         if not masterPaths: return
         names = []
         for masterPath in masterPaths:
             (dir_,name) = masterPath.headTail
-            if dir_ != fileInfo.dir:
+            if dir_ != self._selected_info.dir:
                 return self._showError(_(
                     u"File must be selected from %s Data Files directory.")
                                        % bush.game.fsName)
-            if name in fileInfo.header.masters:
+            if name in self._selected_info.header.masters:
                 return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
-        for masterName in load_order.get_ordered(names):
-            if masterName in bosh.modInfos:
+        for masters_name in load_order.get_ordered(names):
+            if masters_name in bosh.modInfos:
                 #--Avoid capitalization errors by getting the actual name from modinfos.
-                masterName = bosh.modInfos[masterName].name
-            fileInfo.header.masters.append(masterName)
-        fileInfo.header.changed = True
-        fileInfo.writeHeader()
-        bosh.modInfos.refreshFile(fileInfo.name)
+                masters_name = bosh.modInfos[masters_name].name
+            self._selected_info.header.masters.append(masters_name)
+        self._selected_info.header.changed = True
+        self._selected_info.writeHeader()
+        bosh.modInfos.refreshFile(self._selected_item)
         self.window.RefreshUI(refreshSaves=True) # True ?
 
 #------------------------------------------------------------------------------
@@ -1619,24 +1611,22 @@ class Mod_FlipSelf(_Esm_Flip):
         self._esm_flip_refresh(self.isEsm, self.selected)
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(_Esm_Flip):
+class Mod_FlipMasters(OneItemLink, _Esm_Flip):
     """Swaps masters between esp and esm versions."""
     help = _(
         u"Flip esp/esm bit of esp masters to convert them to/from esm state")
 
     def _initData(self, window, selection):
         super(Mod_FlipMasters, self)._initData(window, selection)
-        #--FileInfo
-        self.fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[self.fileName]
         self.text = _(u'Esmify Masters')
-        enable = len(selection) == 1 and len(fileInfo.header.masters) > 1
-        self.espMasters = [GPath(master) for master in fileInfo.header.masters
+        masters = self._selected_info.header.masters
+        enable = len(selection) == 1 and len(masters) > 1
+        self.espMasters = [master for master in masters
             if bosh.reEspExt.search(master.s)] if enable else []
         self.enable = enable and bool(self.espMasters)
         if not self.enable: return
         for masterName in self.espMasters:
-            masterInfo = bosh.modInfos.get(GPath(masterName),None)
+            masterInfo = bosh.modInfos.get(masterName, None)
             if masterInfo and masterInfo.isInvertedMod():
                 self.text = _(u'Espify Masters')
                 self.toEsm = False
@@ -1652,7 +1642,7 @@ class Mod_FlipMasters(_Esm_Flip):
                     u" esp masters to convert them to/from esm state. Useful"
                     u" for building/analyzing esp mastered mods.")
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
-        updated = [self.fileName]
+        updated = [self._selected_item]
         for masterPath in self.espMasters:
             masterInfo = bosh.modInfos.get(masterPath,None)
             if masterInfo:
@@ -1671,23 +1661,19 @@ class Mod_SetVersion(OneItemLink):
         u" the internal file version number back to 0.8. While this will make "
         u"the mod editable, it may also break the mod in some way.")
 
-    def _initData(self, window, selection):
-        super(Mod_SetVersion, self)._initData(window, selection)
-        self.fileInfo = window.data_store[selection[0]]
-
     def _enable(self):
         return (super(Mod_SetVersion, self)._enable() and
-                int(10 * self.fileInfo.header.version) != 8)
+                int(10 * self._selected_info.header.version) != 8)
 
     def Execute(self):
         if not self._askContinue(self.message, 'bash.setModVersion.continue',
                                  _(u'Set File Version')): return
-        self.fileInfo.makeBackup()
-        self.fileInfo.header.version = 0.8
-        self.fileInfo.header.setChanged()
-        self.fileInfo.writeHeader()
+        self._selected_info.makeBackup()
+        self._selected_info.header.version = 0.8
+        self._selected_info.header.setChanged()
+        self._selected_info.writeHeader()
         #--Repopulate
-        self.window.RefreshUI(files=[self.fileInfo.name],
+        self.window.RefreshUI(files=[self._selected_item],
                               refreshSaves=False) # version: why affect saves ?
 
 #------------------------------------------------------------------------------
@@ -1710,8 +1696,6 @@ class Mod_Fids_Replace(OneItemLink):
     def Execute(self):
         if not self._askContinue(self.message, 'bash.formIds.replace.continue',
                                  _(u'Import Form IDs')): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(_(u'Form ID mapper file:'),textDir,
@@ -1727,8 +1711,8 @@ class Mod_Fids_Replace(OneItemLink):
             replacer = self._parser()
             progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
             replacer.readFromText(textPath)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = replacer.updateMod(fileInfo)
+            progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
+            changed = replacer.updateMod(self._selected_info)
             progress(1.0,_(u'Done.'))
         #--Log
         if not changed: self._showOk(_(u"No changes required."))
@@ -1752,9 +1736,7 @@ class Mod_Face_Import(OneItemLink):
         srcInfo = bosh.SaveInfo(srcDir,srcName)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
-        npc = bosh.faces.PCFaces.mod_addFace(fileInfo,srcFace)
+        npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
         #--Save Face picture? # FIXME(ut) does not save face picture but save screen ?!
         imagePath = bosh.modInfos.dir.join(u'Docs',u'Images',npc.eid+u'.jpg')
         if not imagePath.exists():
@@ -1764,7 +1746,8 @@ class Mod_Face_Import(OneItemLink):
             imagePath.head.makedirs()
             image.SaveFile(imagePath.s,JPEG)
         self.window.RefreshUI(refreshSaves=False) # import save to esp
-        self._showOk(_(u'Imported face to: %s') % npc.eid, fileName.s)
+        self._showOk(_(u'Imported face to: %s') % npc.eid,
+                     self._selected_item.s)
 
 #--Common
 class _Mod_Export_Link(EnabledLink):
@@ -1772,8 +1755,7 @@ class _Mod_Export_Link(EnabledLink):
     def _enable(self): return bool(self.selected)
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        textName = fileName.root + self.__class__.csvFile
+        textName = self.selected[0].root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
@@ -1787,7 +1769,7 @@ class _Mod_Export_Link(EnabledLink):
             parser = self._parser()
             readProgress = SubProgress(progress, 0.1, 0.8)
             readProgress.setFull(len(self.selected))
-            for index, fileName in enumerate(map(GPath, self.selected)):
+            for index, fileName in enumerate(self.selected):
                 fileInfo = bosh.modInfos[fileName]
                 readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
                 parser.readFromMod(fileInfo)
@@ -1809,7 +1791,7 @@ class _Mod_Import_Link(OneItemLink):
         return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + \
                u';*.esp;*.esm;*.ghost'
 
-    def _import(self, ext, fileInfo, fileName, textDir, textName, textPath):
+    def _import(self, ext, textDir, textName, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
             parser = self._parser()
             progress(0.1, _(u'Reading') + u' ' + textName.s + u'.')
@@ -1818,8 +1800,8 @@ class _Mod_Import_Link(OneItemLink):
             else:
                 srcInfo = bosh.ModInfo(textDir, textName)
                 parser.readFromMod(srcInfo)
-            progress(0.2, _(u'Applying to') + u' ' + fileName.s + u'.')
-            changed = parser.writeToMod(fileInfo)
+            progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
+            changed = parser.writeToMod(self._selected_info)
             progress(1.0, _(u'Done.'))
         return changed
 
@@ -1844,9 +1826,7 @@ class _Mod_Import_Link(OneItemLink):
     def Execute(self):
         if not self._askContinueImport(): return
         supportedExts = self.__class__.supportedExts
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
+        textName = self._selected_item.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle, textDir, textName,
@@ -1861,10 +1841,9 @@ class _Mod_Import_Link(OneItemLink):
                     u" or mod (.esp or .esm or .ghost)") or u"")))
             return
         #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
+        changed = self._import(ext, textDir, textName, textPath)
         #--Log
-        self.show_change_log(changed, fileName)
+        self.show_change_log(changed, self._selected_item)
 
     def _askContinueImport(self):
         return self._askContinue(self.__class__.continueInfo,
@@ -1985,7 +1964,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
     def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
 
     def Execute(self): # overrides _Mod_Export_Link
-        fileName = GPath(self.selected[0])
+        fileName = self.selected[0]
         fileInfo = bosh.modInfos[fileName]
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
@@ -2054,9 +2033,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
+        defaultPath = bass.dirs['patches'].join(
+            self._selected_item.s + u' Exported Scripts')
         if not defaultPath.exists():
             defaultPath = bass.dirs['patches']
         textDir = self._askDirectory(
@@ -2071,8 +2049,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
         makeNew = self._askYes(message, _(u'Import Scripts'),
                                questionIcon=True)
         scriptText = self._parser()
-        scriptText.readFromText(textDir.s,fileInfo)
-        changed, added = scriptText.writeToMod(fileInfo,makeNew)
+        scriptText.readFromText(textDir.s, self._selected_info)
+        changed, added = scriptText.writeToMod(self._selected_info, makeNew)
         #--Log
         if not (len(changed) or len(added)):
             self._showOk(_(u"No changed or new scripts to import."),
@@ -2326,9 +2304,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
+        textName = self._selected_item.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,textDir,
@@ -2347,8 +2323,8 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 editorIds = self._parser()
                 progress(0.1,_(u'Reading') + u' ' + textName.s + u'.')
                 editorIds.readFromText(textPath,questionableEidsSet,badEidsList)
-                progress(0.2,_(u"Applying to %s.") % (fileName.s,))
-                changed = editorIds.writeToMod(fileInfo)
+                progress(0.2, _(u"Applying to %s.") % (self._selected_item.s,))
+                changed = editorIds.writeToMod(self._selected_info)
                 progress(1.0,_(u"Done."))
             #--Log
             if not changed:
@@ -2452,9 +2428,7 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
 
     def Execute(self):
         if not self._askContinueImport(): return
-        fileName = GPath(self.selected[0])
-        fileInfo = bosh.modInfos[fileName]
-        textName = fileName.root + self.__class__.csvFile
+        textName = self._selected_item.root + self.__class__.csvFile
         textDir = bass.dirs['patches']
         #--File dialog
         textPath = self._askOpen(self.__class__.askTitle,
@@ -2467,16 +2441,15 @@ class CBash_Mod_MapMarkers_Import(_Mod_Import_Link_CBash):
             self._showError(_(u'Source file must be a MapMarkers.csv file'))
             return
         #--Import
-        changed = self._import(ext, fileInfo, fileName, textDir, textName,
-                               textPath)
+        changed = self._import(ext, textDir, textName, textPath)
         #--Log
         if not changed:
             self._showOk(_(u'No relevant Map Markers to import.'),
                          _(u'Import Map Markers'))
         else:
             buff = StringIO.StringIO()
-            buff.write((_(u'Imported Map Markers to mod %s:')
-                        + u'\n') % (fileName.s,))
+            buff.write((_(u'Imported Map Markers to mod %s:') + u'\n') % (
+                self._selected_item.s,))
             for eid in sorted(changed):
                 buff.write(u'* %s\n' % eid)
             self._showLog(buff.getvalue())

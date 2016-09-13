@@ -532,7 +532,8 @@ class MasterList(_ModsUIList):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [self.data_store[item].name for item in sorted(self.GetItems())]
+        return [v.name for k, v in
+                sorted(self.data_store.items(), key=itemgetter(0))]
 
 #------------------------------------------------------------------------------
 class INIList(balt.UIList):

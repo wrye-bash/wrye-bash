@@ -70,12 +70,6 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
 class _InstallerLink(Installers_Link, EnabledLink):
     """Common functions for installer links..."""
 
-    def isSingleProject(self):
-        """Indicates whether or not is single project."""
-        if len(self.selected) != 1: return False
-        else: return isinstance(self.idata[self.selected[0]],
-                                bosh.InstallerProject)
-
     def isSingleArchive(self):
         """Indicates whether or not is single archive."""
         if len(self.selected) != 1: return False
@@ -167,13 +161,18 @@ class _SingleInstallable(OneItemLink, _InstallerLink):
         return super(_SingleInstallable, self)._enable() and bool(
             self.idata.filterInstallables(self.selected))
 
+class _SingleProject(OneItemLink, _InstallerLink):
+
+    def _enable(self):
+        return super(_SingleProject, self)._enable() and isinstance(
+            self._selected_info, bosh.InstallerProject)
+
 class _RefreshingLink(_SingleInstallable):
     _overrides_skips = False
 
     @balt.conversation
     def Execute(self):
-        installer = self.idata[self.selected[0]]
-        dest_src = installer.refreshDataSizeCrc()
+        dest_src = self._selected_info.refreshDataSizeCrc()
         with balt.Progress(title=_(u'Override Skips')) as progress:
             if self._overrides_skips:
                 self.idata.update_for_overridden_skips(set(dest_src), progress)
@@ -198,9 +197,9 @@ class Installer_EditWizard(_SingleInstallable):
 
     def _enable(self):
         return super(Installer_EditWizard, self)._enable() and bool(
-            self.idata[self.selected[0]].hasWizard)
+            self._selected_info.hasWizard)
 
-    def Execute(self): self.idata[self.selected[0]].open_wizard()
+    def Execute(self): self._selected_info.open_wizard()
 
 class Installer_Wizard(OneItemLink, _InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
@@ -214,12 +213,12 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
 
     def _enable(self):
         isSingle = super(Installer_Wizard, self)._enable()
-        return isSingle and (self.idata[self.selected[0]]).hasWizard != False
+        return isSingle and self._selected_info.hasWizard != False
 
     @balt.conversation
     def Execute(self):
         with balt.BusyCursor():
-            installer = self.idata[self.selected[0]]
+            installer = self._selected_info
             subs = []
             oldRemaps = copy.copy(installer.remaps)
             installer.remaps = {}
@@ -229,7 +228,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             default, pageSize, pos = self._get_size_and_pos()
             try:
                 wizard = InstallerWizard(self.window, self.idata,
-                                         self.selected[0], self.bAuto,
+                                         self._selected_item, self.bAuto,
                                          self.isSingleArchive(), subs,
                                          pageSize, pos)
             except CancelError:
@@ -357,7 +356,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
 
     def _enable(self):
         isSingle = super(Installer_OpenReadme, self)._enable()
-        return isSingle and bool(self.idata[self.selected[0]].hasReadme)
+        return isSingle and bool(self._selected_info.hasReadme)
 
     def Execute(self): self.idata[self.selected[0]].open_readme()
 
@@ -385,17 +384,17 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     def _initData(self, window, selection):
         super(Installer_Duplicate, self)._initData(window, selection)
         self.help = _(u"Duplicate selected %(installername)s.") % (
-            {'installername': self.selected[0]})
+            {'installername': self._selected_item})
 
     def _enable(self):
         isSingle = super(Installer_Duplicate, self)._enable()
-        return isSingle and not isinstance(self.idata[self.selected[0]],
+        return isSingle and not isinstance(self._selected_info,
                                            bosh.InstallerMarker)
 
     @balt.conversation
     def Execute(self):
         """Duplicate selected Installer."""
-        curName = self.selected[0]
+        curName = self._selected_item
         isdir = self.idata.dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.rootExt
@@ -477,12 +476,12 @@ class Installer_HasExtraData(CheckLink, _RefreshingLink):
     text = _(u'Has Extra Directories')
     help = _(u"Allow installation of files in non-standard directories.")
 
-    def _check(self): return self._enable() and (
-        self.idata[self.selected[0]]).hasExtraData
+    def _check(self):
+        return self._enable() and self._selected_info.hasExtraData
 
     def Execute(self):
         """Toggle hasExtraData installer attribute"""
-        self.idata[self.selected[0]].hasExtraData ^= True
+        self._selected_info.hasExtraData ^= True
         super(Installer_HasExtraData, self).Execute()
 
 class Installer_OverrideSkips(CheckLink, _RefreshingLink):
@@ -493,30 +492,27 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
         super(Installer_OverrideSkips, self)._initData(window, selection)
         self.help = _(
             u"Override global file type skipping for %(installername)s.") % (
-                    {'installername': self.selected[0]}) + u'  '+ _(u'BETA!')
+                {'installername': self._selected_item}) + u'  '+ _(u'BETA!')
 
-    def _check(self): return self._enable() and (
-        self.idata[self.selected[0]]).overrideSkips
+    def _check(self):
+        return self._enable() and self._selected_info.overrideSkips
 
     def Execute(self):
-        self.idata[self.selected[0]].overrideSkips ^= True
-        self._overrides_skips = self.idata[self.selected[0]].overrideSkips
+        self._selected_info.overrideSkips ^= True
+        self._overrides_skips = self._selected_info.overrideSkips
         super(Installer_OverrideSkips, self).Execute()
 
-class Installer_SkipRefresh(CheckLink, _InstallerLink):
+class Installer_SkipRefresh(CheckLink, _SingleProject):
     """Toggle skipRefresh flag on project."""
     text = _(u"Don't Refresh")
     help = _(u"Don't automatically refresh project.")
 
-    def _enable(self): return self.isSingleProject()
-
-    def _check(self): return self.isSingleProject() and (
-        self.idata[self.selected[0]]).skipRefresh
+    def _check(self): return self._enable() and self._selected_info.skipRefresh
 
     def Execute(self):
         """Toggle skipRefresh project attribute and refresh the project if
         skipRefresh is set to False."""
-        installer = self.idata[self.selected[0]]
+        installer = self._selected_info
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
             installer.refreshBasic(
@@ -567,14 +563,12 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
 
     def _enable(self):
         isSingle = super(Installer_ListStructure, self)._enable()
-        return isSingle and not isinstance(self.idata[self.selected[0]],
-                                                  bosh.InstallerMarker)
+        return isSingle and not isinstance(self._selected_info,
+                                           bosh.InstallerMarker)
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
-        archive = self.selected[0]
-        installer = self.idata[archive]
-        text = installer.listSource(archive)
+        text = self._selected_info.listSource()
         #--Get masters list
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u'Package Structure'), fixedFont=False,
@@ -708,13 +702,12 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
     def _initData(self, window, selection):
         super(Installer_SkipVoices, self)._initData(window, selection)
         self.help = _(u"Skip over any voice files in %(installername)s") % (
-                    {'installername': self.selected[0]})
+                    {'installername': self._selected_item})
 
-    def _check(self): return self._enable() and (
-        self.idata[self.selected[0]]).skipVoices
+    def _check(self): return self._enable() and self._selected_info.skipVoices
 
     def Execute(self):
-        self.idata[self.selected[0]].skipVoices ^= True
+        self._selected_info.skipVoices ^= True
         super(Installer_SkipVoices, self).Execute()
 
 class Installer_Uninstall(_InstallLink):
@@ -748,7 +741,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         installers to a project."""
         srcConflicts = set()
         packConflicts = []
-        srcArchive = self.selected[0]
+        srcArchive = self._selected_item
         srcInstaller = self.idata[srcArchive]
         src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path -> (int, int)
         all_files = set(src_sizeCrc) # bolt.PathS of ALL installer's files
@@ -980,7 +973,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def Execute(self):
         #--Copy to Build
         with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
-            projects = set()
+            projects = []
             for archive, installer in self.idata.sorted_pairs(self.selected):
                 project = archive.root
                 if self.isSingleArchive():
@@ -1001,79 +994,74 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                         default=False): continue
                 installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
                 self._get_refreshed(project, installer, progress=SubProgress(progress, 0.8, 0.99), do_refresh=False)
-                projects.add(project)
+                projects.append(project)
             if not projects: return
             self.idata.irefresh(what='NS')
             self.window.RefreshUI() # all files ? can status of others change ?
             self.window.SelectItemsNoCallback(projects)
-            self.window.SelectAndShowItem(project)
+            self.window.SelectAndShowItem(projects[-1])
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
 #------------------------------------------------------------------------------
-class InstallerProject_OmodConfig(_InstallerLink):
+class InstallerProject_OmodConfig(_SingleProject):
     """Projects only. Allows you to read/write omod configuration info."""
     text = _(u'Omod Info...')
     help = _(u'Projects only. Allows you to read/write omod configuration info')
 
-    def _enable(self): return self.isSingleProject()
-
     def Execute(self):
-        project = self.selected[0]
         (InstallerProject_OmodConfigDialog(self.window, self.idata,
-                                           project)).Show()
+                                           self._selected_item)).Show()
 
 #------------------------------------------------------------------------------
-class InstallerProject_Sync(_InstallerLink):
+class InstallerProject_Sync(_SingleProject):
     """Synchronize the project with files from the Data directory."""
     text = _(u'Sync from Data')
-    help = _(u'Synchronize the project with files from the Data directory')
+    help = _(u'Synchronize the project with files from the Data directory') + \
+        u'.  ' + _(u'Currently only for projects (not archives)')
 
     def _enable(self):
-        if not self.isSingleProject(): return False
-        project = self.selected[0]
-        installer = self.idata[project]
-        return bool(installer.missingFiles or installer.mismatchedFiles)
+        if not super(InstallerProject_Sync, self)._enable(): return False
+        return bool(self._selected_info.missingFiles or
+                    self._selected_info.mismatchedFiles)
 
     def Execute(self):
-        project = self.selected[0]
-        installer = self.idata[project]
-        missing = installer.missingFiles
-        mismatched = installer.mismatchedFiles
-        message = (_(u'Update %s according to data directory?') + u'\n' +
-                   _(u'Files to delete:') + u'%d\n' +
-                   _(u'Files to update:') + u'%d') % (
-                        project.s, len(missing), len(mismatched))
+        missing = self._selected_info.missingFiles
+        mismatched = self._selected_info.mismatchedFiles
+        message = (_(u'Update %s according to data directory?') + u'\n' + _(
+            u'Files to delete:') + u'%d\n' + _(
+            u'Files to update:') + u'%d') % (
+                      self._selected_info.s, len(missing), len(mismatched))
         if not self._askWarning(message, title=self.text): return
         #--Sync it, baby!
         with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
-            installer.syncToData(project,missing|mismatched)
-            pProject = bass.dirs['installers'].join(project)
-            installer.refreshBasic(pProject, SubProgress(progress, 0.1, 0.99))
+            self._selected_info.syncToData(self._selected_info,
+                                           missing | mismatched)
+            pProject = bass.dirs['installers'].join(self._selected_info)
+            self._selected_info.refreshBasic(pProject,
+                                             SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallerProject_Pack(_InstallerLink):
+class InstallerProject_Pack(_SingleProject):
     """Pack project to an archive."""
     text = dialogTitle = _(u'Pack to Archive...')
     help = _(u'Pack project to an archive')
     release = False
 
-    def _enable(self): return self.isSingleProject()
-
     @balt.conversation
     def Execute(self):
         #--Generate default filename from the project name and the default extension
-        project = self.selected[0]
-        installer = self.idata[project]
-        archive = GPath(project.s + bolt.defaultExt)
+        archive = GPath(self._selected_item.s + bolt.defaultExt)
         #--Confirm operation
         archive = self._askFilename(
-            message=_(u'Pack %s to Archive:') % project.s, filename=archive.s)
+            message=_(u'Pack %s to Archive:') % self._selected_item.s,
+            filename=archive.s)
         if not archive: return
-        self._pack(archive, installer, project, release=self.__class__.release)
+        self._pack(archive, self._selected_info, self._selected_item,
+                   release=self.__class__.release)
         self.window.SelectAndShowItem(archive)
 
 #------------------------------------------------------------------------------

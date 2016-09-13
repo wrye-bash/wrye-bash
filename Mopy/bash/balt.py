@@ -162,10 +162,10 @@ class Image:
         return self.icon
 
     @staticmethod
-    def GetImage(data, height, width):
+    def GetImage(image_data, height, width):
         """Hasty wrapper around wx.EmptyImage - absorb to GetBitmap."""
         image = wx.EmptyImage(width, height)
-        image.SetData(data)
+        image.SetData(image_data)
         return image
 
     @staticmethod
@@ -1290,8 +1290,7 @@ class Progress(bolt.Progress):
     # __enter__ and __exit__ for use with the 'with' statement
     def __exit__(self, exc_type, exc_value, exc_traceback): self.Destroy()
 
-    def getParent(self):
-        return self.dialog.GetParent()
+    def getParent(self): return self.dialog.GetParent()
 
     def setCancel(self, enabled=True):
         cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
@@ -1377,7 +1376,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.doDnD = True
         #--Item/Id mapping
         self._item_itemId = {}
+        """:type : dict[bolt.Path | basestring | int, long]"""
         self._itemId_item = {}
+        """:type : dict[long, bolt.Path | basestring | int]"""
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
@@ -1744,7 +1745,7 @@ class UIList(wx.Panel):
     def PopulateItems(self):
         """Sort items and populate entire list."""
         self.mouseTexts.clear()
-        items = set(self.GetItems())
+        items = set(self.data_store.keys())
         #--Update existing items.
         index = 0
         while index < self.__gList.GetItemCount():
@@ -1887,8 +1888,6 @@ class UIList(wx.Panel):
         return self.GetItem(hitItem)
 
     #-- Item selection --------------------------------------------------------
-    def GetItems(self): return self.data_store.keys()
-
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
                       __state_selected=wx.LIST_STATE_SELECTED):
         listCtrl, selected_list = self.__gList, []
@@ -2009,9 +2008,9 @@ class UIList(wx.Panel):
         """Sort and return items by specified column, possibly in reverse
         order.
 
-        If items are not specified, sort what is returned by GetItems() and
+        If items are not specified, sort self.data_store.keys() and
         return that. If sortSpecial is False do not apply extra sortings."""
-        items = items if items is not None else self.GetItems()
+        items = items if items is not None else self.data_store.keys()
         def key(k): # if key is None then keep it None else provide self
             k = self._sort_keys[k]
             return k if k is None else partial(k, self)
@@ -2038,7 +2037,9 @@ class UIList(wx.Panel):
 
     #--Item/Index Translation -------------------------------------------------
     def GetItem(self,index):
-        """Returns item for specified list index."""
+        """Return item (key in self.data_store) for specified list index.
+        :rtype: bolt.Path | basestring | int
+        """
         return self.__gList.FindItemAt(index)
 
     def GetIndex(self,item):
@@ -2464,6 +2465,11 @@ class OneItemLink(EnabledLink):
     """
     ##: maybe edit help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
+
+    @property
+    def _selected_item(self): return self.selected[0]
+    @property
+    def _selected_info(self): return self.window.data_store[self.selected[0]]
 
 class CheckLink(ItemLink):
     kind = wx.ITEM_CHECK

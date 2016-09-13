@@ -257,11 +257,9 @@ class File_ListMasters(OneItemLink):
                         {'filename': selection[0]})
 
     def Execute(self):
-        fileName = GPath(self.selected[0])
-        fileInfo = self.window.data_store[fileName]
-        text = bosh.modInfos.getModList(fileInfo=fileInfo)
+        text = bosh.modInfos.getModList(fileInfo=self._selected_info)
         balt.copyToClipboard(text)
-        self._showLog(text, title=fileName.s, fixedFont=False,
+        self._showLog(text, title=self._selected_item.s, fixedFont=False,
                       icons=Resources.bashBlue)
 
 class File_Snapshot(ItemLink):
@@ -312,11 +310,10 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     @balt.conversation
     def Execute(self):
         """Revert to Snapshot."""
-        fileInfo = self.window.data_store[self.selected[0]]
-        fileName = fileInfo.name
+        fileName = self._selected_item
         #--Snapshot finder
         srcDir = self.window.data_store.bashDir.join(u'Snapshots')
-        wildcard = fileInfo.getNextSnapshot()[2]
+        wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
         snapPath = self._askOpen(_(u'Revert %s to snapshot:') % fileName.s,
@@ -325,14 +322,14 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
         if not snapPath: return
         snapName = snapPath.tail
         #--Warning box
-        message = (_(u"Revert %s to snapshot %s dated %s?")
-            % (fileInfo.name.s, snapName.s, formatDate(snapPath.mtime)))
+        message = (_(u"Revert %s to snapshot %s dated %s?") % (
+            fileName.s, snapName.s, formatDate(snapPath.mtime)))
         if not self._askYes(message, _(u'Revert to Snapshot')): return
         with balt.BusyCursor():
-            destPath = fileInfo.getPath()
+            destPath = self._selected_info.getPath()
             current_mtime = destPath.mtime
             snapPath.copyTo(destPath)
-            fileInfo.setmtime(current_mtime) # do not change load order
+            self._selected_info.setmtime(current_mtime) # keep load order
             try:
                 self.window.data_store.refreshFile(fileName)
             except bosh.FileError:
