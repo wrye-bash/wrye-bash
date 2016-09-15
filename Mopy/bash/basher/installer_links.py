@@ -775,7 +775,9 @@ class Installer_CopyConflicts(_SingleInstallable):
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
-class _Installer_Details_Link(balt.ItemLink):
+class _Installer_Details_Link(EnabledLink):
+
+    def _enable(self): return len(self.window.espms) != 0
 
     def _initData(self, window, selection):
         """:type window: bosh.InstallersDetails
@@ -783,11 +785,9 @@ class _Installer_Details_Link(balt.ItemLink):
         super(_Installer_Details_Link, self)._initData(window, selection)
         self._installer = self.window.file_info
 
-class Installer_Espm_SelectAll(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_SelectAll(_Installer_Details_Link):
     """Select All Esp/ms in installer for installation."""
     text = _(u'Select All')
-
-    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
         self._installer.espmNots = set()
@@ -795,11 +795,9 @@ class Installer_Espm_SelectAll(EnabledLink, _Installer_Details_Link):
             self.window.gEspmList.Check(i, True)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_DeselectAll(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_DeselectAll(_Installer_Details_Link):
     """Deselect All Esp/ms in installer for installation."""
     text = _(u'Deselect All')
-
-    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
         espmNots = self._installer.espmNots = set()
@@ -809,7 +807,7 @@ class Installer_Espm_DeselectAll(EnabledLink, _Installer_Details_Link):
             espmNots.add(espm)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_Rename(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_Rename(_Installer_Details_Link):
     """Changes the installed name for an Esp/m."""
     text = _(u'Rename...')
 
@@ -828,7 +826,7 @@ class Installer_Espm_Rename(EnabledLink, _Installer_Details_Link):
         self._installer.setEspmName(curName, newName + _file.cext)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_Reset(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_Reset(_Installer_Details_Link):
     """Resets the installed name for an Esp/m."""
     text = _(u'Reset Name')
 
@@ -844,21 +842,17 @@ class Installer_Espm_Reset(EnabledLink, _Installer_Details_Link):
         self._installer.resetEspmName(self.curName)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_ResetAll(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_ResetAll(_Installer_Details_Link):
     """Resets all renamed Esp/ms."""
     text = _(u'Reset All Names')
-
-    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
         self._installer.resetAllEspmNames()
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_List(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_List(_Installer_Details_Link):
     """Lists all Esp/ms in installer for user information/w/e."""
     text = _(u'List Esp/ms')
-
-    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
         subs = (_(u'Esp/m List for %s:') % self._installer.archive +
@@ -875,7 +869,7 @@ class Installer_Espm_List(EnabledLink, _Installer_Details_Link):
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
-class _Installer_Subs(EnabledLink, _Installer_Details_Link):
+class _Installer_Subs(_Installer_Details_Link):
     def _enable(self): return self.window.gSubList.GetCount() > 1
 
 class Installer_Subs_SelectAll(_Installer_Subs):

@@ -2784,27 +2784,25 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
         commentsSplitter.SetSashGravity(1.0)
         #--Layout
-        subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+        subPackagesSizer = vSizer(subPackagesLabel,(self.gSubList,1,wx.EXPAND))
         subPackagesSizer.SetSizeHints(subPackagesPanel)
         subPackagesPanel.SetSizer(subPackagesSizer)
-        espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+        espmsSizer = vSizer(espmsLabel, (self.gEspmList, 1, wx.EXPAND))
         espmsSizer.SetSizeHints(espmsPanel)
         espmsPanel.SetSizer(espmsSizer)
-        topSizer = vSizer(
-            (self.gPackage,0,wx.EXPAND),
-            (subSplitter,1,wx.EXPAND|wx.ALL,2),
+        topSizer = vSizer(vspace(2),
+            (self.gPackage,0,wx.EXPAND|wx.LEFT,3),
+            (subSplitter,1,wx.EXPAND),
             )
         top.SetSizer(topSizer)
         topSizer.SetSizeHints(top)
-        wx.LayoutAlgorithm().LayoutWindow(self, top)
-        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND,2))
+        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND))
         commentsSizer.SetSizeHints(commentsPanel)
         commentsPanel.SetSizer(commentsSizer)
         bottomSizer = vSizer(
-            (commentsPanel,1,wx.EXPAND,2))
+            (commentsPanel,1,wx.EXPAND))
         bottomSizer.SetSizeHints(bottom)
         bottom.SetSizer(bottomSizer)
-        wx.LayoutAlgorithm().LayoutWindow(self, bottom)
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -2879,6 +2877,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 'bash.installers.commentsSplitterSashPos', 0)
             # restore saved comments text box size
             if 0 == commentsSplitterSavedSashPos:
+                # same height as the gPackage control, from the bottom
                 self.commentsSplitter.SetSashPosition(-commentsHeight)
             else:
                 self.commentsSplitter.SetSashPosition(
