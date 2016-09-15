@@ -215,8 +215,6 @@ class _DetailsViewMixin(object):
     SetDetails, RefreshDetails and ClearDetails on their panels. TODO !:
      - just mix it only in classes that _do_ have a details view (as it is
      even Details panels inherit it).
-     - drop hideous if detailsPanel is not self, due to Installers, People
-     using themselves as details (YAK!)
     """
     detailsPanel = None
     def _setDetails(self, fileName):
@@ -231,13 +229,13 @@ class _DetailsViewMixin(object):
         if self.detailsPanel: self.detailsPanel.RefreshUIColors()
 
     def ClosePanel(self, destroy=False):
-        super(_DetailsViewMixin, self).ClosePanel(destroy)
-        if self.detailsPanel and self.detailsPanel is not self:
+        if self.detailsPanel:
             self.detailsPanel.ClosePanel(destroy)
+        super(_DetailsViewMixin, self).ClosePanel(destroy)
 
     def ShowPanel(self):
         super(_DetailsViewMixin, self).ShowPanel()
-        if self.detailsPanel and self.detailsPanel is not self:
+        if self.detailsPanel:
             self.detailsPanel.ShowPanel()
 
     def GetDetailsItem(self):
@@ -277,17 +275,6 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
                                       focus=True)
-
-#------------------------------------------------------------------------------
-class SashTankPanel(SashPanel):
-
-    def __init__(self, parent):
-        self.detailsItem = None
-        super(SashTankPanel,self).__init__(parent)
-
-    def ClosePanel(self, destroy=False):
-        self.SaveDetails()
-        super(SashTankPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -3340,7 +3327,7 @@ class PeopleList(balt.UIList):
         item_format.icon_key = u'karma%+d' % self.data_store[item][1]
 
 #------------------------------------------------------------------------------
-class PeoplePanel(SashTankPanel):
+class PeoplePanel(SashPanel):
     """Panel for PeopleTank."""
     keyPrefix = 'bash.people'
     _status_str = _(u'People:') + u' %d'
@@ -3348,67 +3335,74 @@ class PeoplePanel(SashTankPanel):
     def __init__(self,parent):
         """Initialize."""
         self.listData = bosh.PeopleData()
-        SashTankPanel.__init__(self, parent)
+        SashPanel.__init__(self, parent)
         left,right = self.left,self.right
         #--Contents
-        self.detailsPanel = self # YAK
+        self.detailsPanel = PeopleDetails(right)
         self.uiList = PeopleList(left, listData=self.listData,
                                  keyPrefix=self.keyPrefix, panel=self)
-        self.gName = RoTextCtrl(right, multiline=False)
-        self.gText = TextCtrl(right, multiline=True)
-        self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
-        self.gKarma.SetSizeHints(40,-1)
-        #--Layout
-        right.SetSizer(vSizer(
-            (hSizer(
-                (self.gName,1,wx.GROW),
-                (self.gKarma,0,wx.GROW),
-                ),0,wx.GROW),
-            vspace(), (self.gText, 1, wx.GROW),
-            ))
         left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
-        wx.LayoutAlgorithm().LayoutWindow(self, right)
+        right.SetSizer(vSizer((self.detailsPanel,1,wx.GROW)))
 
     def ShowPanel(self):
         if self.listData.refresh(): self.uiList.RefreshUI()
         super(PeoplePanel, self).ShowPanel()
 
+    def RefreshUIColors(self): self.uiList.RefreshUI()
+
+class PeopleDetails(_DetailsMixin, NotebookPanel):
+
+    def __init__(self, parent):
+        super(PeopleDetails, self).__init__(parent)
+        self.detailsItem = None # type: unicode
+        self.peoplePanel = parent.GetParent().GetParent()
+        self.gName = RoTextCtrl(self, multiline=False)
+        self.gText = TextCtrl(self, multiline=True)
+        self.gKarma = spinCtrl(self,u'0',min=-5,max=5,onSpin=self.OnSpin)
+        self.gKarma.SetSizeHints(40,-1)
+        #--Layout
+        self.SetSizer(vSizer(
+            (hSizer((self.gName, 1, wx.GROW),
+                    (self.gKarma, 0, wx.GROW),
+                    ), 0, wx.GROW),
+            vspace(), (self.gText, 1, wx.GROW),
+        ))
+
     def OnSpin(self):
         """Karma spin."""
         if not self.detailsItem: return
         karma = int(self.gKarma.GetValue())
-        text = self.listData[self.detailsItem][2]
-        self.listData[self.detailsItem] = (time.time(), karma, text)
-        self.uiList.PopulateItem(item=self.detailsItem)
-        self.listData.setChanged()
+        text = self.peoplePanel.listData[self.detailsItem][2]
+        self.peoplePanel.listData[self.detailsItem] = (time.time(), karma, text)
+        self.peoplePanel.uiList.PopulateItem(item=self.detailsItem)
+        self.peoplePanel.listData.setChanged()
 
-    #--Details view (if it exists)
-    def SaveDetails(self):
+    def ShowPanel(self): pass
+
+    def ClosePanel(self, destroy=False):
         """Saves details if they need saving."""
         if not self.gText.IsModified(): return
-        if not self.detailsItem or self.detailsItem not in self.listData: return
-        mtime,karma,text = self.listData[self.detailsItem]
-        self.listData[self.detailsItem] = (time.time(), karma, self.gText.GetValue().strip())
-        self.uiList.PopulateItem(item=self.detailsItem)
-        self.listData.setChanged()
+        if not self.detailsItem or self.detailsItem not in self.peoplePanel.listData: return
+        mtime,karma,text = self.peoplePanel.listData[self.detailsItem]
+        self.peoplePanel.listData[self.detailsItem] = (time.time(), karma, self.gText.GetValue().strip())
+        self.peoplePanel.uiList.PopulateItem(item=self.detailsItem)
+        self.peoplePanel.listData.setChanged()
 
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
         item = self.detailsItem if fileName == 'SAME' else fileName
-        if item not in self.listData: item = None
-        self.SaveDetails()
+        if item not in self.peoplePanel.listData: item = None
+        self.ClosePanel()
         if item is None:
             self.gKarma.SetValue(0)
             self.gName.SetValue(u'')
             self.gText.Clear()
         else:
-            karma,text = self.listData[item][1:3]
+            karma,text = self.peoplePanel.listData[item][1:3]
             self.gName.SetValue(item)
             self.gKarma.SetValue(karma)
             self.gText.SetValue(text)
         self.detailsItem = item
-
-    def RefreshUIColors(self): self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 #--Tabs menu
@@ -4136,7 +4130,7 @@ class BashApp(wx.App):
         bosh.iniInfos.refresh()
         # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
         bosh.bsaInfos = bosh.BSAInfos()
-        # screens, messages and Tank datas are refreshed() upon panel showing
+        # screens/people/installers data are refreshed upon showing the panel
         #--Patch check
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
