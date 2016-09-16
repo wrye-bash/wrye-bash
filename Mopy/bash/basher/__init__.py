@@ -218,13 +218,14 @@ class SashPanel(NotebookPanel):
 class SashUIListPanel(SashPanel):
     listData = None
     _status_str = u'OVERRIDE:' + u' %d'
+    _ui_list_type = None # type: type
 
-    def __init__(self, parent, uiList_type, sashGravity=0.5, isVertical=True,
+    def __init__(self, parent, sashGravity=0.5, isVertical=True,
                  style=splitterStyle):
         super(SashUIListPanel, self).__init__(parent, sashGravity, isVertical,
                                               style)
-        self.uiList = uiList_type(self.left, listData=self.listData,
-                                  keyPrefix=self.keyPrefix, panel=self)
+        self.uiList = self._ui_list_type(self.left, listData=self.listData,
+                                         keyPrefix=self.keyPrefix, panel=self)
 
     def RefreshDetails(self):
         """Called in UIList#RefreshUI on the panel attribute  - including
@@ -263,6 +264,18 @@ class SashUIListPanel(SashPanel):
         # the only SashPanels that do not have this attribute are ModDetails
         # and SaveDetails that use a MasterList whose data is initially {}
         self.listData.save()
+
+class BashTab(_DetailsViewMixin, SashUIListPanel):
+    _details_panel_type = None # type: type
+
+    def __init__(self, parent, sashGravity=0.5, isVertical=True,
+                 style=splitterStyle):
+        super(BashTab, self).__init__(parent, sashGravity, isVertical,
+                                      style)
+        self.detailsPanel = self._details_panel_type(self.right)
+        #--Layout
+        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND), ))
+        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND), ))
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1493,10 +1506,11 @@ class ModDetails(_SashDetailsPanel):
 #------------------------------------------------------------------------------
 class INIPanel(SashUIListPanel): # should have a details panel too !
     keyPrefix = 'bash.ini'
+    _ui_list_type = INIList
 
     def __init__(self, parent):
         self.listData = bosh.iniInfos
-        super(INIPanel, self).__init__(parent, INIList)
+        super(INIPanel, self).__init__(parent)
         left,right = self.left, self.right
         #--Remove from list button
         self.button = balt.Button(right, _(u'Remove'),
@@ -1719,17 +1733,15 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         super(INIPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
-class ModPanel(_DetailsViewMixin, SashUIListPanel):
+class ModPanel(BashTab):
     keyPrefix = 'bash.mods'
+    _ui_list_type = ModList
+    _details_panel_type = ModDetails
 
     def __init__(self,parent):
         self.listData = bosh.modInfos
-        super(ModPanel, self).__init__(parent, ModList, sashGravity=1.0)
+        super(ModPanel, self).__init__(parent, sashGravity=1.0)
         BashFrame.modList = self.uiList
-        self.detailsPanel = ModDetails(self.right)
-        #--Layout
-        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
-        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
@@ -2024,22 +2036,20 @@ class SaveDetails(_SashDetailsPanel):
         self.picture.SetBackground(colors['screens.bkgd.image'])
 
 #------------------------------------------------------------------------------
-class SavePanel(_DetailsViewMixin, SashUIListPanel):
+class SavePanel(BashTab):
     """Savegames tab."""
     keyPrefix = 'bash.saves'
     _status_str = _(u'Saves:') + u' %d'
+    _ui_list_type = SaveList
+    _details_panel_type = SaveDetails
 
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
             raise BoltError(u'Wrye Bash cannot read save games for %s.' %
                 bush.game.displayName)
         self.listData = bosh.saveInfos
-        super(SavePanel, self).__init__(parent, SaveList, sashGravity=1.0)
+        super(SavePanel, self).__init__(parent, sashGravity=1.0)
         BashFrame.saveList = self.uiList
-        self.detailsPanel = SaveDetails(self.right)
-        #--Layout
-        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
-        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -2474,208 +2484,6 @@ class InstallersList(balt.UIList):
         self.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallersPanel(_DetailsViewMixin, SashUIListPanel):
-    """Panel for InstallersTank."""
-    espmMenu = Links()
-    subsMenu = Links()
-    keyPrefix = 'bash.installers'
-
-    def __init__(self,parent):
-        """Initialize."""
-        BashFrame.iPanel = self
-        self.listData = bosh.InstallersData()
-        super(InstallersPanel, self).__init__(parent, InstallersList)
-        self.detailsPanel = InstallersDetails(self.right)
-        #--Refreshing
-        self._data_dir_scanned = False
-        self.refreshing = False
-        self.frameActivated = False
-        #--Contents
-        self.right.SetSizer(vSizer((self.detailsPanel, 1, wx.EXPAND), ))
-        self.left.SetSizer(vSizer((self.uiList, 1, wx.EXPAND), ))
-
-    def RefreshUIColors(self):
-        """Update any controls using custom colors."""
-        self.uiList.RefreshUI()
-
-    @balt.conversation
-    def _first_run_set_enabled(self):
-        if settings.get('bash.installers.isFirstRun',True):
-            settings['bash.installers.isFirstRun'] = False
-            message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
-                u'If you do, Bash will first need to initialize some data. '
-                u'This can take on the order of five minutes if there are '
-                u'many mods installed.') + u'\n\n\t' + _(
-                u"If not, you can enable it at any time by right-clicking "
-                u"the column header menu and selecting 'Enabled'.")
-            settings['bash.installers.enabled'] = balt.askYes(self, message,
-                                                              _(u'Installers'))
-
-    @balt.conversation
-    def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False):
-        """Panel is shown. Update self.data."""
-        self._first_run_set_enabled() # must run _before_ if below
-        if not settings['bash.installers.enabled'] or self.refreshing: return
-        refresh_ui = [False]
-        try:
-            self.refreshing = True
-            self._refresh_installers_if_needed(refresh_ui, canCancel,
-                                               fullRefresh, scan_data_dir)
-            if refresh_ui[0]: self.uiList.RefreshUI()
-            super(InstallersPanel, self).ShowPanel()
-        finally:
-            self.refreshing = False
-
-    @balt.conversation
-    @projects_walk_cache
-    def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
-                                      scan_data_dir):
-        if settings.get('bash.installers.updatedCRCs',True): #only checked here
-            settings['bash.installers.updatedCRCs'] = False
-            self._data_dir_scanned = False
-        installers_paths = bass.dirs[
-            'installers'].list() if self.frameActivated else ()
-        if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
-            self.__extractOmods()
-        do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
-        if not do_refresh and self.frameActivated:
-            refresh_info = self.listData.scan_installers_dir(installers_paths,
-                                                             fullRefresh)
-            do_refresh = refresh_info.refresh_needed()
-        else: refresh_info = None
-        if do_refresh:
-            with balt.Progress(_(u'Refreshing Installers...'),
-                               u'\n' + u' ' * 60, abort=canCancel) as progress:
-                try:
-                    what = 'DISC' if scan_data_dir else 'IC'
-                    refreshui[0] |= self.listData.irefresh(progress, what,
-                                                           fullRefresh,
-                                                           refresh_info)
-                    self.frameActivated = False
-                except CancelError:
-                    pass # User canceled the refresh
-                finally:
-                    self._data_dir_scanned = True
-        elif self.frameActivated and self.listData.refreshConvertersNeeded():
-            with balt.Progress(_(u'Refreshing Converters...'),
-                               u'\n' + u' ' * 60) as progress:
-                try:
-                    refreshui[0] |= self.listData.irefresh(progress, 'C',
-                                                           fullRefresh)
-                    self.frameActivated = False
-                except CancelError:
-                    pass # User canceled the refresh
-        changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
-        if changed:
-            # Some tracked files changed, update the ui
-            data_sizeCrcDate = self.listData.data_sizeCrcDate
-            refresh = False
-            for apath in changed:
-                # the Game/Data dir - will give correct relative path for both
-                # Ini tweaks and mods - those are keyed in data by rel path...
-                if apath.cs.startswith(bass.dirs['mods'].cs):
-                    path = apath.relpath(bass.dirs['mods'])
-                else:
-                    path = apath
-                if apath.exists():
-                    data_sizeCrcDate[path] = (apath.size,apath.crc,apath.mtime)
-                    refresh = True
-                else:
-                    refresh |= bool(data_sizeCrcDate.pop(path, None))
-            if refresh:
-                refreshui[0] |= self.listData.refreshInstallersStatus()
-
-    def __extractOmods(self):
-        with balt.Progress(_(u'Extracting OMODs...'),
-                           u'\n' + u' ' * 60) as progress:
-            dirInstallers = bass.dirs['installers']
-            dirInstallersJoin = dirInstallers.join
-            omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
-                     x.cext == u'.omod']
-            progress.setFull(max(len(omods), 1))
-            omodMoves, omodRemoves = set(), set()
-            for i, omod in enumerate(omods):
-                progress(i, omod.stail)
-                outDir = dirInstallersJoin(omod.body)
-                num = 0
-                while outDir.exists():
-                    outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
-                    num += 1
-                try:
-                    bosh.omods.OmodFile(omod).extractToProject(
-                        outDir, SubProgress(progress, i))
-                    omodRemoves.add(omod)
-                except (CancelError, SkipError):
-                    omodMoves.add(omod)
-                except:
-                    deprint(_(u"Error extracting OMOD '%s':") % omod.stail,
-                            traceback=True)
-                    # Ensure we don't infinitely refresh if moving the omod
-                    # fails
-                    bosh.omods.failedOmods.add(omod.tail)
-                    omodMoves.add(omod)
-            # Cleanup
-            dialog_title = _(u'OMOD Extraction - Cleanup Error')
-            # Delete extracted omods
-            def _del(files): env.shellDelete(files, parent=self)
-            try:
-                _del(omodRemoves)
-            except (CancelError, SkipError):
-                while balt.askYes(self, _(
-                        u'Bash needs Administrator Privileges to delete '
-                        u'OMODs that have already been extracted.') +
-                        u'\n\n' + _(u'Try again?'), dialog_title):
-                    try:
-                        omodRemoves = [x for x in omodRemoves if x.exists()]
-                        _del(omodRemoves)
-                    except (CancelError, SkipError):
-                        continue
-                    break
-                else:
-                    # User decided not to give permission.  Add omod to
-                    # 'failedOmods' so we know not to try to extract them again
-                    for omod in omodRemoves:
-                        if omod.exists():
-                            bosh.omods.failedOmods.add(omod.tail)
-            # Move bad omods
-            def _move_omods(failed):
-                dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
-                         for omod in failed]
-                env.shellMove(failed, dests, parent=self)
-            try:
-                omodMoves = list(omodMoves)
-                env.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
-                _move_omods(omodMoves)
-            except (CancelError, SkipError):
-                while balt.askYes(self, _(
-                        u'Bash needs Administrator Privileges to move failed '
-                        u'OMODs out of the Bash Installers directory.') +
-                        u'\n\n' + _(u'Try again?'), dialog_title):
-                    try:
-                        omodMoves = [x for x in omodMoves if x.exists()]
-                        _move_omods(omodMoves)
-                    except (CancelError, SkipError):
-                        continue
-
-    def _sbCount(self):
-        active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
-        return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
-
-    def RefreshUIMods(self, mods_changed, inis_changed):
-        """Refresh UI plus refresh mods state."""
-        self.uiList.RefreshUI()
-        if mods_changed:
-            with load_order.Unlock():
-                bosh.modInfos.refresh()
-            BashFrame.modList.RefreshUI(refreshSaves=True)
-            Link.Frame.warn_corrupted(warn_saves=False)
-            Link.Frame.warn_load_order()
-        if inis_changed:
-            bosh.iniInfos.refresh()
-            if BashFrame.iniList is not None:
-                BashFrame.iniList.panel.RefreshPanel()
-        bosh.BSAInfos.check_bsa_timestamps()
-
 class InstallersDetails(_DetailsMixin, SashPanel):
     keyPrefix = 'bash.installers.details'
 
@@ -2996,6 +2804,205 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         if not balt.getKeyState_Shift():
             self.refreshCurrent(self.file_info)
 
+class InstallersPanel(BashTab):
+    """Panel for InstallersTank."""
+    espmMenu = Links()
+    subsMenu = Links()
+    keyPrefix = 'bash.installers'
+    _ui_list_type = InstallersList
+    _details_panel_type = InstallersDetails
+
+    def __init__(self,parent):
+        """Initialize."""
+        BashFrame.iPanel = self
+        self.listData = bosh.InstallersData()
+        super(InstallersPanel, self).__init__(parent)
+        #--Refreshing
+        self._data_dir_scanned = False
+        self.refreshing = False
+        self.frameActivated = False
+
+    def RefreshUIColors(self):
+        """Update any controls using custom colors."""
+        self.uiList.RefreshUI()
+
+    @balt.conversation
+    def _first_run_set_enabled(self):
+        if settings.get('bash.installers.isFirstRun',True):
+            settings['bash.installers.isFirstRun'] = False
+            message = _(u'Do you want to enable Installers?') + u'\n\n\t' + _(
+                u'If you do, Bash will first need to initialize some data. '
+                u'This can take on the order of five minutes if there are '
+                u'many mods installed.') + u'\n\n\t' + _(
+                u"If not, you can enable it at any time by right-clicking "
+                u"the column header menu and selecting 'Enabled'.")
+            settings['bash.installers.enabled'] = balt.askYes(self, message,
+                                                              _(u'Installers'))
+
+    @balt.conversation
+    def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False):
+        """Panel is shown. Update self.data."""
+        self._first_run_set_enabled() # must run _before_ if below
+        if not settings['bash.installers.enabled'] or self.refreshing: return
+        refresh_ui = [False]
+        try:
+            self.refreshing = True
+            self._refresh_installers_if_needed(refresh_ui, canCancel,
+                                               fullRefresh, scan_data_dir)
+            if refresh_ui[0]: self.uiList.RefreshUI()
+            super(InstallersPanel, self).ShowPanel()
+        finally:
+            self.refreshing = False
+
+    @balt.conversation
+    @projects_walk_cache
+    def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
+                                      scan_data_dir):
+        if settings.get('bash.installers.updatedCRCs',True): #only checked here
+            settings['bash.installers.updatedCRCs'] = False
+            self._data_dir_scanned = False
+        installers_paths = bass.dirs[
+            'installers'].list() if self.frameActivated else ()
+        if self.frameActivated and omods.extractOmodsNeeded(installers_paths):
+            self.__extractOmods()
+        do_refresh = scan_data_dir = scan_data_dir or not self._data_dir_scanned
+        if not do_refresh and self.frameActivated:
+            refresh_info = self.listData.scan_installers_dir(installers_paths,
+                                                             fullRefresh)
+            do_refresh = refresh_info.refresh_needed()
+        else: refresh_info = None
+        if do_refresh:
+            with balt.Progress(_(u'Refreshing Installers...'),
+                               u'\n' + u' ' * 60, abort=canCancel) as progress:
+                try:
+                    what = 'DISC' if scan_data_dir else 'IC'
+                    refreshui[0] |= self.listData.irefresh(progress, what,
+                                                           fullRefresh,
+                                                           refresh_info)
+                    self.frameActivated = False
+                except CancelError:
+                    pass # User canceled the refresh
+                finally:
+                    self._data_dir_scanned = True
+        elif self.frameActivated and self.listData.refreshConvertersNeeded():
+            with balt.Progress(_(u'Refreshing Converters...'),
+                               u'\n' + u' ' * 60) as progress:
+                try:
+                    refreshui[0] |= self.listData.irefresh(progress, 'C',
+                                                           fullRefresh)
+                    self.frameActivated = False
+                except CancelError:
+                    pass # User canceled the refresh
+        changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
+        if changed:
+            # Some tracked files changed, update the ui
+            data_sizeCrcDate = self.listData.data_sizeCrcDate
+            refresh = False
+            for apath in changed:
+                # the Game/Data dir - will give correct relative path for both
+                # Ini tweaks and mods - those are keyed in data by rel path...
+                if apath.cs.startswith(bass.dirs['mods'].cs):
+                    path = apath.relpath(bass.dirs['mods'])
+                else:
+                    path = apath
+                if apath.exists():
+                    data_sizeCrcDate[path] = (apath.size,apath.crc,apath.mtime)
+                    refresh = True
+                else:
+                    refresh |= bool(data_sizeCrcDate.pop(path, None))
+            if refresh:
+                refreshui[0] |= self.listData.refreshInstallersStatus()
+
+    def __extractOmods(self):
+        with balt.Progress(_(u'Extracting OMODs...'),
+                           u'\n' + u' ' * 60) as progress:
+            dirInstallers = bass.dirs['installers']
+            dirInstallersJoin = dirInstallers.join
+            omods = [dirInstallersJoin(x) for x in dirInstallers.list() if
+                     x.cext == u'.omod']
+            progress.setFull(max(len(omods), 1))
+            omodMoves, omodRemoves = set(), set()
+            for i, omod in enumerate(omods):
+                progress(i, omod.stail)
+                outDir = dirInstallersJoin(omod.body)
+                num = 0
+                while outDir.exists():
+                    outDir = dirInstallersJoin(u'%s%s' % (omod.sbody, num))
+                    num += 1
+                try:
+                    bosh.omods.OmodFile(omod).extractToProject(
+                        outDir, SubProgress(progress, i))
+                    omodRemoves.add(omod)
+                except (CancelError, SkipError):
+                    omodMoves.add(omod)
+                except:
+                    deprint(_(u"Error extracting OMOD '%s':") % omod.stail,
+                            traceback=True)
+                    # Ensure we don't infinitely refresh if moving the omod
+                    # fails
+                    bosh.omods.failedOmods.add(omod.tail)
+                    omodMoves.add(omod)
+            # Cleanup
+            dialog_title = _(u'OMOD Extraction - Cleanup Error')
+            # Delete extracted omods
+            def _del(files): env.shellDelete(files, parent=self)
+            try:
+                _del(omodRemoves)
+            except (CancelError, SkipError):
+                while balt.askYes(self, _(
+                        u'Bash needs Administrator Privileges to delete '
+                        u'OMODs that have already been extracted.') +
+                        u'\n\n' + _(u'Try again?'), dialog_title):
+                    try:
+                        omodRemoves = [x for x in omodRemoves if x.exists()]
+                        _del(omodRemoves)
+                    except (CancelError, SkipError):
+                        continue
+                    break
+                else:
+                    # User decided not to give permission.  Add omod to
+                    # 'failedOmods' so we know not to try to extract them again
+                    for omod in omodRemoves:
+                        if omod.exists():
+                            bosh.omods.failedOmods.add(omod.tail)
+            # Move bad omods
+            def _move_omods(failed):
+                dests = [dirInstallersJoin(u'Bash', u'Failed OMODs', omod.tail)
+                         for omod in failed]
+                env.shellMove(failed, dests, parent=self)
+            try:
+                omodMoves = list(omodMoves)
+                env.shellMakeDirs(dirInstallersJoin(u'Bash', u'Failed OMODs'))
+                _move_omods(omodMoves)
+            except (CancelError, SkipError):
+                while balt.askYes(self, _(
+                        u'Bash needs Administrator Privileges to move failed '
+                        u'OMODs out of the Bash Installers directory.') +
+                        u'\n\n' + _(u'Try again?'), dialog_title):
+                    try:
+                        omodMoves = [x for x in omodMoves if x.exists()]
+                        _move_omods(omodMoves)
+                    except (CancelError, SkipError):
+                        continue
+
+    def _sbCount(self):
+        active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
+        return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
+
+    def RefreshUIMods(self, mods_changed, inis_changed):
+        """Refresh UI plus refresh mods state."""
+        self.uiList.RefreshUI()
+        if mods_changed:
+            with load_order.Unlock():
+                bosh.modInfos.refresh()
+            BashFrame.modList.RefreshUI(refreshSaves=True)
+            Link.Frame.warn_corrupted(warn_saves=False)
+            Link.Frame.warn_load_order()
+        if inis_changed:
+            bosh.iniInfos.refresh()
+            if BashFrame.iniList is not None:
+                BashFrame.iniList.panel.RefreshPanel()
+        bosh.BSAInfos.check_bsa_timestamps()
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
 
@@ -3067,7 +3074,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         super(ScreensDetails, self).__init__(parent)
         self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
-        parent.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
+        self.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
 
     @property
     def displayed_item(self): return self.displayed_screen
@@ -3089,20 +3096,17 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
 
-class ScreensPanel(_DetailsViewMixin, SashUIListPanel):
+class ScreensPanel(BashTab):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
     _status_str = _(u'Screens:') + u' %d'
+    _ui_list_type = ScreensList
+    _details_panel_type = ScreensDetails
 
     def __init__(self,parent):
         """Initialize."""
         self.listData = bosh.screensData = bosh.ScreensData()
-        super(ScreensPanel, self).__init__(parent, ScreensList)
-        #--Contents
-        self.detailsPanel = ScreensDetails(self.right)
-        #--Layout
-        self.left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
-        wx.LayoutAlgorithm().LayoutWindow(self,self.right)
+        super(ScreensPanel, self).__init__(parent)
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -3247,20 +3251,18 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.bsaList.RefreshUI()
 
 #------------------------------------------------------------------------------
-class BSAPanel(_DetailsViewMixin, SashUIListPanel):
+class BSAPanel(BashTab):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
     _status_str = _(u'BSAs:') + u' %d'
+    _ui_list_type = BSAList
+    _details_panel_type = BSADetails
 
     def __init__(self,parent):
         self.listData = bosh.bsaInfos
         bosh.bsaInfos.refresh()
-        super(BSAPanel, self).__init__(parent, BSAList)
-        self.detailsPanel = BSADetails(self.right)
-        #--Layout
-        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND), ))
-        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND), ))
-        self.detailsPanel.Fit()
+        super(BSAPanel, self).__init__(parent)
+        self.detailsPanel.Fit() ##: TEST - NEEDED ?/???
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.UIList):
@@ -3290,26 +3292,6 @@ class PeopleList(balt.UIList):
         item_format.icon_key = u'karma%+d' % self.data_store[item][1]
 
 #------------------------------------------------------------------------------
-class PeoplePanel(_DetailsViewMixin, SashUIListPanel):
-    """Panel for PeopleTank."""
-    keyPrefix = 'bash.people'
-    _status_str = _(u'People:') + u' %d'
-
-    def __init__(self,parent):
-        """Initialize."""
-        self.listData = bosh.PeopleData()
-        super(PeoplePanel, self).__init__(parent, PeopleList)
-        #--Contents
-        self.detailsPanel = PeopleDetails(self.right)
-        self.left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
-        self.right.SetSizer(vSizer((self.detailsPanel,1,wx.GROW)))
-
-    def ShowPanel(self):
-        if self.listData.refresh(): self.uiList.RefreshUI()
-        super(PeoplePanel, self).ShowPanel()
-
-    def RefreshUIColors(self): self.uiList.RefreshUI()
-
 class PeopleDetails(_DetailsMixin, NotebookPanel):
 
     def __init__(self, parent):
@@ -3361,6 +3343,24 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
             self.gKarma.SetValue(karma)
             self.gText.SetValue(text)
         self.detailsItem = item
+
+class PeoplePanel(BashTab):
+    """Panel for PeopleTank."""
+    keyPrefix = 'bash.people'
+    _status_str = _(u'People:') + u' %d'
+    _ui_list_type = PeopleList
+    _details_panel_type = PeopleDetails
+
+    def __init__(self,parent):
+        """Initialize."""
+        self.listData = bosh.PeopleData()
+        super(PeoplePanel, self).__init__(parent)
+
+    def ShowPanel(self):
+        if self.listData.refresh(): self.uiList.RefreshUI()
+        super(PeoplePanel, self).ShowPanel()
+
+    def RefreshUIColors(self): self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 #--Tabs menu
