@@ -263,13 +263,16 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def ClosePanel(self, destroy=False):
-        if not hasattr(self, '_firstShow'): # if the panel was shown
-            settings[self.sashPosKey] = self.splitter.GetSashPosition()
-            self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        super(SashPanel, self).ClosePanel(destroy)
+class SashUIListPanel(SashPanel):
+    listData = None
 
-class SashUIListPanel(SashPanel): ## add init with panel and uiList
+    def __init__(self, parent, uiList_type, sashGravity=0.5, isVertical=True,
+                 style=splitterStyle):
+        super(SashUIListPanel, self).__init__(parent, sashGravity, isVertical,
+                                              style)
+        self.uiList = uiList_type(self.left, listData=self.listData,
+                                  keyPrefix=self.keyPrefix, panel=self)
+
     def RefreshDetails(self):
         """Called in UIList#RefreshUI on the panel attribute  - including
         the INIList where there are no details to refresh."""
@@ -281,6 +284,12 @@ class SashUIListPanel(SashPanel): ## add init with panel and uiList
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
                                       focus=True)
+
+    def ClosePanel(self, destroy=False):
+        if not hasattr(self, '_firstShow'): # if the panel was shown
+            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+            self.uiList.SaveScrollPosition(isVertical=self.isVertical)
+        super(SashUIListPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1510,11 +1519,12 @@ class ModDetails(_SashDetailsPanel):
         tagLinks.PopupMenu(self.gTags, Link.Frame, None)
 
 #------------------------------------------------------------------------------
-class INIPanel(SashUIListPanel):
+class INIPanel(SashUIListPanel): # should have a details panel too !
     keyPrefix = 'bash.ini'
 
     def __init__(self, parent):
-        super(INIPanel, self).__init__(parent)
+        self.listData = bosh.iniInfos
+        super(INIPanel, self).__init__(parent, INIList)
         left,right = self.left, self.right
         #--Remove from list button
         self.button = balt.Button(right, _(u'Remove'),
@@ -1538,9 +1548,7 @@ class INIPanel(SashUIListPanel):
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = RoTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.current_ini_path)
-        self.listData = bosh.iniInfos
-        self.uiList = BashFrame.iniList = INIList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        BashFrame.iniList = self.uiList # must be AFTER SetBaseIni, DUH
         self.comboBox = balt.ComboBox(right, value=self._ini_name,
                                       choices=self.choices.keys())
         #--Events
@@ -1743,15 +1751,13 @@ class ModPanel(_DetailsViewMixin, SashUIListPanel):
     keyPrefix = 'bash.mods'
 
     def __init__(self,parent):
-        super(ModPanel, self).__init__(parent, sashGravity=1.0)
-        left,right = self.left, self.right
         self.listData = bosh.modInfos
-        self.detailsPanel = ModDetails(right)
-        self.uiList = BashFrame.modList = ModList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        super(ModPanel, self).__init__(parent, ModList, sashGravity=1.0)
+        BashFrame.modList = self.uiList
+        self.detailsPanel = ModDetails(self.right)
         #--Layout
-        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
-        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
+        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
+        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
@@ -2055,15 +2061,13 @@ class SavePanel(_DetailsViewMixin, SashUIListPanel):
         if not bush.game.ess.canReadBasic:
             raise BoltError(u'Wrye Bash cannot read save games for %s.' %
                 bush.game.displayName)
-        super(SavePanel, self).__init__(parent, sashGravity=1.0)
-        left,right = self.left, self.right
         self.listData = bosh.saveInfos
-        self.detailsPanel = SaveDetails(right)
-        self.uiList = BashFrame.saveList = SaveList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        super(SavePanel, self).__init__(parent, SaveList, sashGravity=1.0)
+        BashFrame.saveList = self.uiList
+        self.detailsPanel = SaveDetails(self.right)
         #--Layout
-        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
-        left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
+        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
+        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -2508,18 +2512,15 @@ class InstallersPanel(_DetailsViewMixin, SashUIListPanel):
         """Initialize."""
         BashFrame.iPanel = self
         self.listData = bosh.InstallersData()
-        super(InstallersPanel, self).__init__(parent)
-        left,right = self.left,self.right
+        super(InstallersPanel, self).__init__(parent, InstallersList)
+        self.detailsPanel = InstallersDetails(self.right)
         #--Refreshing
         self._data_dir_scanned = False
         self.refreshing = False
         self.frameActivated = False
         #--Contents
-        self.detailsPanel = InstallersDetails(right)
-        self.uiList = InstallersList(left, listData=self.listData,
-                                     keyPrefix=self.keyPrefix, panel=self)
-        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
-        left.SetSizer(vSizer((self.uiList, 1, wx.EXPAND), ))
+        self.right.SetSizer(vSizer((self.detailsPanel, 1, wx.EXPAND), ))
+        self.left.SetSizer(vSizer((self.uiList, 1, wx.EXPAND), ))
 
     def RefreshUIColors(self):
         """Update any controls using custom colors."""
@@ -3127,16 +3128,13 @@ class ScreensPanel(_DetailsViewMixin, SashUIListPanel):
 
     def __init__(self,parent):
         """Initialize."""
-        super(ScreensPanel, self).__init__(parent)
-        left,right = self.left,self.right
-        #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()
-        self.detailsPanel = ScreensDetails(right)
-        self.uiList = ScreensList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        super(ScreensPanel, self).__init__(parent, ScreensList)
+        #--Contents
+        self.detailsPanel = ScreensDetails(self.right)
         #--Layout
-        left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
-        wx.LayoutAlgorithm().LayoutWindow(self,right)
+        self.left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
+        wx.LayoutAlgorithm().LayoutWindow(self,self.right)
 
     def RefreshUIColors(self):
         self.uiList.RefreshUI()
@@ -3290,16 +3288,13 @@ class BSAPanel(_DetailsViewMixin, SashUIListPanel):
     _status_str = _(u'BSAs:') + u' %d'
 
     def __init__(self,parent):
-        super(BSAPanel, self).__init__(parent)
-        left,right = self.left, self.right
         self.listData = bosh.bsaInfos
         bosh.bsaInfos.refresh()
-        self.uiList = BSAList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.detailsPanel = BSADetails(right)
+        super(BSAPanel, self).__init__(parent, BSAList)
+        self.detailsPanel = BSADetails(self.right)
         #--Layout
-        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
-        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
+        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND), ))
+        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND), ))
         self.detailsPanel.Fit()
 
     def ClosePanel(self, destroy=False):
@@ -3342,14 +3337,11 @@ class PeoplePanel(_DetailsViewMixin, SashUIListPanel):
     def __init__(self,parent):
         """Initialize."""
         self.listData = bosh.PeopleData()
-        super(PeoplePanel, self).__init__(parent)
-        left,right = self.left,self.right
+        super(PeoplePanel, self).__init__(parent, PeopleList)
         #--Contents
-        self.detailsPanel = PeopleDetails(right)
-        self.uiList = PeopleList(left, listData=self.listData,
-                                 keyPrefix=self.keyPrefix, panel=self)
-        left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
-        right.SetSizer(vSizer((self.detailsPanel,1,wx.GROW)))
+        self.detailsPanel = PeopleDetails(self.right)
+        self.left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
+        self.right.SetSizer(vSizer((self.detailsPanel,1,wx.GROW)))
 
     def ShowPanel(self):
         if self.listData.refresh(): self.uiList.RefreshUI()
