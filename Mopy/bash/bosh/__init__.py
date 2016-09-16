@@ -2298,7 +2298,8 @@ class FileInfo(_AFileInfo):
         self.extras = {}
 
     def getFileInfos(self):
-        """Returns modInfos or saveInfos depending on fileInfo type."""
+        """Return one of the FileInfos singletons depending on fileInfo type.
+        :rtype: FileInfos"""
         raise AbstractError
 
     #--File type tests
@@ -2450,9 +2451,7 @@ class ModInfo(FileInfo):
                 not absPath.exists() and (absPath + u'.ghost').exists()
         FileInfo.__init__(self, dir, name)
 
-    def getFileInfos(self):
-        """Returns modInfos or saveInfos depending on fileInfo type."""
-        return modInfos
+    def getFileInfos(self): return modInfos
 
     def setType(self, esm_or_esp):
         """Sets the file's internal type."""
@@ -2765,8 +2764,7 @@ class INIInfo(FileInfo):
         if self._status is None or self.__target_ini != old: self.getStatus()
         return self._status
 
-    def getFileInfos(self):
-        return iniInfos
+    def getFileInfos(self): return iniInfos
 
     def getStatus(self):
         """Returns status of the ini tweak:
@@ -2876,9 +2874,7 @@ class INIInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 class SaveInfo(FileInfo):
-    def getFileInfos(self):
-        """Returns modInfos or saveInfos depending on fileInfo type."""
-        return saveInfos
+    def getFileInfos(self): return saveInfos
 
     def getStatus(self):
         status = FileInfo.getStatus(self)
@@ -2914,9 +2910,7 @@ class SaveInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 class BSAInfo(FileInfo):
-    def getFileInfos(self):
-        """Returns modInfos or saveInfos depending on fileInfo type."""
-        return bsaInfos
+    def getFileInfos(self): return bsaInfos
 
     def resetMTime(self,mtime=u'01-01-2006 00:00:00'):
         mtime = time.mktime(time.strptime(mtime,u'%m-%d-%Y %H:%M:%S'))
@@ -3392,7 +3386,7 @@ class ModInfos(FileInfos):
         elif lo_changed < 2: # maybe string files were deleted...
             #we need a load order below: in skyrim we read inis in active order
             hasChanged += self._refreshMissingStrings()
-        self.setOblivionVersions()
+        self._setOblivionVersions()
         oldMergeable = set(self.mergeable)
         scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
@@ -4009,7 +4003,7 @@ class ModInfos(FileInfos):
             return 0
 
     #--Oblivion 1.1/SI Swapping -----------------------------------------------
-    def setOblivionVersions(self):
+    def _setOblivionVersions(self):
         """Set current (and available) master game esm(s) - oblivion only."""
         self.voAvailable.clear()
         for name,info in self.iteritems():
@@ -5312,8 +5306,7 @@ class Installer(object):
 
 #------------------------------------------------------------------------------
 class InstallerMarker(Installer):
-    """Represents a marker installer entry.
-    Currently only used for the '==Last==' marker"""
+    """Represents a marker installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
     reValidNamePattern = re.compile(ur'^(.+?)(\d*)$', re.I | re.U)

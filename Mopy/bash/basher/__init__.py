@@ -2611,6 +2611,7 @@ class InstallersPanel(SashTankPanel):
             settings['bash.installers.enabled'] = balt.askYes(self, message,
                                                               _(u'Installers'))
 
+    @balt.conversation
     def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
@@ -4057,10 +4058,9 @@ def GetBashVersion():
 class BashApp(wx.App):
     """Bash Application class."""
     def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
-        """Initialize the application data, create and return the BashFrame."""
+        """Initialize the application data and create the BashFrame."""
         global appRestart
         appRestart = False
-        """wxWindows: Initialization handler."""
         #--OnStartup SplashScreen and/or Progress
         #   Progress gets hidden behind splash by default, since it's not very informative anyway
         splashScreen = None

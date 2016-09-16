@@ -29,7 +29,7 @@ import struct
 # Wrye Bash imports
 from bolt import AbstractError, ArgumentError
 from brec import ModError, ModReader
-from bolt import GPath, sio
+from bolt import sio
 import bush # for groupTypes
 import bosh # for modInfos
 

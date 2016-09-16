@@ -246,15 +246,7 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
                     _new_entry()
 
 def get_lo(cached=False, cached_active=True):
-    global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
-        warn_locked
-    if _lords_pickle is None:
-        _lords_pickle = bolt.PickleDict(_lord_pickle_path)
-        _lords_pickle.load()
-        _lords_pickle.vdata['_lords_pickle_version'] = 1
-        _saved_load_orders = _lords_pickle.data.get('_saved_load_orders', [])
-        _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
-        locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
+    if _lords_pickle is None: __load_pickled_load_orders() # once only
     if locked and _saved_load_orders:
         saved = _saved_load_orders[_current_list_index].lord # type: LoadOrder
         lord, acti = game_handle.set_load_order( # make sure saved lo is valid
@@ -271,8 +263,18 @@ def get_lo(cached=False, cached_active=True):
     if locked and saved is not None:
         if cached_lord.loadOrder != saved.loadOrder:
             save_lo(saved.loadOrder, saved.activeOrdered)
+            global warn_locked
             warn_locked = True
     return cached_lord
+
+def __load_pickled_load_orders():
+    global _lords_pickle, _saved_load_orders, _current_list_index, locked
+    _lords_pickle = bolt.PickleDict(_lord_pickle_path)
+    _lords_pickle.load()
+    _lords_pickle.vdata['_lords_pickle_version'] = 1
+    _saved_load_orders = _lords_pickle.data.get('_saved_load_orders', [])
+    _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
+    locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
 
 def undo_load_order(): return __restore(-1)
 

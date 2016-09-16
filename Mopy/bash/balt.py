@@ -33,7 +33,6 @@ from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
 from bass import Resources
 #--Python
 import cPickle
-import string
 import textwrap
 import time
 import threading

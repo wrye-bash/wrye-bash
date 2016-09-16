@@ -261,7 +261,6 @@ class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
     help = _(u"Copies list of bash tags to clipboard.")
 
     def Execute(self):
-        #--Get masters list
         text = bosh.modInfos.getTagList()
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
@@ -280,15 +279,13 @@ class Mods_CleanDummyMasters(EnabledLink):
         return False
 
     def Execute(self):
-        """Handle execution."""
         remove = []
-        for fileName, fileInfo in bosh.modInfos.items():
+        for fileName, fileInfo in bosh.modInfos.iteritems():
             if fileInfo.header.author == u'BASHED DUMMY':
                 remove.append(fileName)
         remove = load_order.get_ordered(remove)
         self.window.DeleteItems(items=remove, order=False,
                                 dialogTitle=_(u'Delete Dummy Masters'))
-        # Link.Frame.RefreshData() ##: why ?
 
 #------------------------------------------------------------------------------
 class Mods_AutoGhost(BoolLink):

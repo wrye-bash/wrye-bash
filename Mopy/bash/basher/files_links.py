@@ -271,13 +271,12 @@ class File_Snapshot(ItemLink):
         self.text = (_(u'Snapshot'),_(u'Snapshot...'))[len(selection) == 1]
 
     def Execute(self):
-        data = self.selected
-        for item in data:
+        for item in self.selected:
             fileName = GPath(item)
             fileInfo = self.window.data_store[fileName]
             (destDir,destName,wildcard) = fileInfo.getNextSnapshot()
             destDir.makedirs()
-            if len(data) == 1:
+            if len(self.selected) == 1:
                 destPath = self._askSave(
                     title=_(u'Save snapshot as:'), defaultDir=destDir,
                     defaultFile=destName, wildcard=wildcard)
