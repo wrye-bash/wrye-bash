@@ -167,7 +167,6 @@ class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""
     # UI settings keys prefix - used for sashPos and uiList gui settings
     keyPrefix = 'OVERRIDE'
-    _status_str = u'OVERRIDE:' + u' %d'
 
     def __init__(self, *args, **kwargs):
         super(NotebookPanel, self).__init__(*args, **kwargs)
@@ -177,66 +176,40 @@ class NotebookPanel(wx.Panel):
         """Called to signal that UI color settings have changed."""
         pass
 
-    def _sbCount(self): return self.__class__._status_str % len(self.listData)
-
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        Link.Frame.SetStatusCount(self, self._sbCount())
-
     def ShowPanel(self):
         """To be called when particular panel is changed to and/or shown for
-        first time.
-
-        Default version resizes the columns if auto is on and sets Status bar
-        text. It also sets the scroll bar and sash positions on first show.
-        """
-        if hasattr(self, '_firstShow'):
-            self.uiList.SetScrollPosition()
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
-            del self._firstShow
-        self.uiList.autosizeColumns()
-        self.SetStatusCount()
+        first time."""
 
     def ClosePanel(self, destroy=False):
         """To be manually called when containing frame is closing. Use for
         saving data, scrollpos, etc."""
-        if hasattr(self, 'listData'): # must be a _DataStore instance
-        # the only SashPanels that do not have this attribute are ModDetails
-        # and SaveDetails that use a MasterList whose data is initially {}
-            self.listData.save()
 
 #------------------------------------------------------------------------------
-class _DetailsViewMixin(object):
+class _DetailsViewMixin(NotebookPanel):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
-    This is a hasty mixin. I added it to SashPanel so UILists can call
-    SetDetails, RefreshDetails and ClearDetails on their panels."""
+    Mix it in to SashUIListPanel so UILists can call SetDetails, RefreshDetails
+    and ClearDetails on their panels."""
     detailsPanel = None
     def _setDetails(self, fileName):
-        if self.detailsPanel: self.detailsPanel.SetFile(
-            fileName=fileName)
+        self.detailsPanel.SetFile(fileName=fileName)
     def RefreshDetails(self): self._setDetails('SAME')
     def ClearDetails(self): self._setDetails(None)
     def SetDetails(self, fileName): self._setDetails(fileName)
 
     def RefreshUIColors(self):
         super(_DetailsViewMixin, self).RefreshUIColors()
-        if self.detailsPanel: self.detailsPanel.RefreshUIColors()
+        self.detailsPanel.RefreshUIColors()
 
     def ClosePanel(self, destroy=False):
-        if self.detailsPanel:
-            self.detailsPanel.ClosePanel(destroy)
+        self.detailsPanel.ClosePanel(destroy)
         super(_DetailsViewMixin, self).ClosePanel(destroy)
 
     def ShowPanel(self):
         super(_DetailsViewMixin, self).ShowPanel()
-        if self.detailsPanel:
-            self.detailsPanel.ShowPanel()
+        self.detailsPanel.ShowPanel()
 
-    def GetDetailsItem(self):
-        return self.detailsPanel.file_info if self.detailsPanel else None
+    def GetDetailsItem(self): return self.detailsPanel.file_info
 
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
@@ -244,7 +217,7 @@ class SashPanel(NotebookPanel):
 
     def __init__(self, parent, sashGravity=0.5, isVertical=True,
                  style=splitterStyle):
-        NotebookPanel.__init__(self, parent)
+        super(SashPanel, self).__init__(parent)
         self.splitter = splitter = wx.SplitterWindow(self, style=style)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
@@ -265,6 +238,7 @@ class SashPanel(NotebookPanel):
 
 class SashUIListPanel(SashPanel):
     listData = None
+    _status_str = u'OVERRIDE:' + u' %d'
 
     def __init__(self, parent, uiList_type, sashGravity=0.5, isVertical=True,
                  style=splitterStyle):
@@ -285,11 +259,31 @@ class SashUIListPanel(SashPanel):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
                                       focus=True)
 
+    def _sbCount(self): return self.__class__._status_str % len(self.listData)
+
+    def SetStatusCount(self):
+        """Sets status bar count field."""
+        Link.Frame.SetStatusCount(self, self._sbCount())
+
+    def ShowPanel(self):
+        """Resize the columns if auto is on and set Status bar text. Also
+        sets the scroll bar and sash positions on first show."""
+        if hasattr(self, '_firstShow'):
+            self.uiList.SetScrollPosition()
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
+            del self._firstShow
+        self.uiList.autosizeColumns()
+        self.SetStatusCount()
+
     def ClosePanel(self, destroy=False):
         if not hasattr(self, '_firstShow'): # if the panel was shown
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        super(SashUIListPanel, self).ClosePanel(destroy)
+        # the only SashPanels that do not have this attribute are ModDetails
+        # and SaveDetails that use a MasterList whose data is initially {}
+        self.listData.save()
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1136,7 +1130,7 @@ class _EditableMixin(_DetailsMixin):
     def DoCancel(self): self.SetFile(self.displayed_item)
 
 class _EditableMixinOnFileInfos(_EditableMixin):
-    """Bsa/Mods/Saves details, DEPRECATED: we need common data stores API!"""
+    """Bsa/Mods/Saves details, DEPRECATED: we need common data infos API!"""
     @property
     def file_info(self): raise AbstractError
     @property
@@ -1148,7 +1142,6 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
 
     def __init__(self, parent):
-        # TODO(ut) use super !! Initialize the UIList here !
         SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
                            style=wx.SW_BORDER | splitterStyle)
         self.top, self.bottom = self.left, self.right
@@ -1166,7 +1159,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         mastersSizer.SetSizeHints(self.masterPanel)
         self.masterPanel.SetSizer(mastersSizer)
 
-    def ShowPanel(self): ##: does not call super
+    def ShowPanel(self):
         if hasattr(self, '_firstShow'):
             sashPos = settings.get(self.sashPosKey,
                                    self.__class__.defaultSashPos)
@@ -1177,7 +1170,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
             del self._firstShow
         self.uilist.autosizeColumns()
 
-    def ClosePanel(self, destroy=False): ##: does not call super
+    def ClosePanel(self, destroy=False):
         if not hasattr(self, '_firstShow'):
             # Mod details Sash Positions
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
@@ -3118,9 +3111,6 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
 
-    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
-    def ShowPanel(self): pass
-
 class ScreensPanel(_DetailsViewMixin, SashUIListPanel):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
@@ -3278,9 +3268,6 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             self.SetFile(None)
         self.bsaList.RefreshUI()
 
-    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
-    def ShowPanel(self): pass
-
 #------------------------------------------------------------------------------
 class BSAPanel(_DetailsViewMixin, SashUIListPanel):
     """BSA info tab."""
@@ -3296,10 +3283,6 @@ class BSAPanel(_DetailsViewMixin, SashUIListPanel):
         self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND), ))
         self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND), ))
         self.detailsPanel.Fit()
-
-    def ClosePanel(self, destroy=False):
-        super(BSAPanel, self).ClosePanel(destroy)
-        # bosh.bsaInfos.profiles.save()
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.UIList):
@@ -3375,8 +3358,6 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         self.peoplePanel.listData[self.detailsItem] = (time.time(), karma, text)
         self.peoplePanel.uiList.PopulateItem(item=self.detailsItem)
         self.peoplePanel.listData.setChanged()
-
-    def ShowPanel(self): pass
 
     def ClosePanel(self, destroy=False):
         """Saves details if they need saving."""
