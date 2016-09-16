@@ -3011,3 +3011,24 @@ class WryeBashSplashScreen(wx.SplashScreen):
         self.Hide()
         # The program might/will freeze without this line.
         event.Skip() # Make sure the default handler runs too...
+
+class NotebookPanel(wx.Panel):
+    """Parent class for notebook panels."""
+    # UI settings keys prefix - used for sashPos and uiList gui settings
+    keyPrefix = 'OVERRIDE'
+
+    def __init__(self, *args, **kwargs):
+        super(NotebookPanel, self).__init__(*args, **kwargs)
+        self._firstShow = True
+
+    def RefreshUIColors(self):
+        """Called to signal that UI color settings have changed."""
+        pass
+
+    def ShowPanel(self):
+        """To be called when particular panel is changed to and/or shown for
+        first time."""
+
+    def ClosePanel(self, destroy=False):
+        """To be manually called when containing frame is closing. Use for
+        saving data, scrollpos, etc - also used in BashFrame#SaveSettings."""

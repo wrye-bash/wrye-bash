@@ -80,9 +80,9 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl, hspace, vspace, DnDStatusBar
+    SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
-from ..balt import hspacer, hSizer, vSizer
+from ..balt import hspacer, hSizer, vSizer, hspace, vspace
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
 from ..balt import splitterStyle
@@ -161,29 +161,8 @@ tabInfo = {
     # 'BSAs':['BSAPanel', _(u"BSAs"), None],
 }
 
-# Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class NotebookPanel(wx.Panel):
-    """Parent class for notebook panels."""
-    # UI settings keys prefix - used for sashPos and uiList gui settings
-    keyPrefix = 'OVERRIDE'
-
-    def __init__(self, *args, **kwargs):
-        super(NotebookPanel, self).__init__(*args, **kwargs)
-        self._firstShow = True
-
-    def RefreshUIColors(self):
-        """Called to signal that UI color settings have changed."""
-        pass
-
-    def ShowPanel(self):
-        """To be called when particular panel is changed to and/or shown for
-        first time."""
-
-    def ClosePanel(self, destroy=False):
-        """To be manually called when containing frame is closing. Use for
-        saving data, scrollpos, etc."""
-
+# Panels ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
 class _DetailsViewMixin(NotebookPanel):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
@@ -268,17 +247,17 @@ class SashUIListPanel(SashPanel):
     def ShowPanel(self):
         """Resize the columns if auto is on and set Status bar text. Also
         sets the scroll bar and sash positions on first show."""
-        if hasattr(self, '_firstShow'):
+        if self._firstShow:
             self.uiList.SetScrollPosition()
             sashPos = settings.get(self.sashPosKey,
                                    self.__class__.defaultSashPos)
             self.splitter.SetSashPosition(sashPos)
-            del self._firstShow
+            self._firstShow = False
         self.uiList.autosizeColumns()
         self.SetStatusCount()
 
     def ClosePanel(self, destroy=False):
-        if not hasattr(self, '_firstShow'): # if the panel was shown
+        if not self._firstShow: # if the panel was shown
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         # the only SashPanels that do not have this attribute are ModDetails
@@ -1160,18 +1139,18 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         self.masterPanel.SetSizer(mastersSizer)
 
     def ShowPanel(self):
-        if hasattr(self, '_firstShow'):
+        if self._firstShow:
             sashPos = settings.get(self.sashPosKey,
                                    self.__class__.defaultSashPos)
             self.splitter.SetSashPosition(sashPos)
             sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
                                    self.__class__.defaultSubSashPos)
             self.subSplitter.SetSashPosition(sashPos)
-            del self._firstShow
+            self._firstShow = False
         self.uilist.autosizeColumns()
 
     def ClosePanel(self, destroy=False):
-        if not hasattr(self, '_firstShow'):
+        if not self._firstShow:
             # Mod details Sash Positions
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
@@ -2780,7 +2759,6 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             (subSplitter,1,wx.EXPAND),
             )
         top.SetSizer(topSizer)
-        topSizer.SetSizeHints(top)
         commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND))
         commentsSizer.SetSizeHints(commentsPanel)
         commentsPanel.SetSizer(commentsSizer)
@@ -2798,12 +2776,12 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 self.RefreshInfoPage(index, self.file_info)
             event.Skip()
 
-    def ClosePanel(self, destroy=False):
+    def ClosePanel(self, destroy=False, only_details=False):
         """Saves details if they need saving."""
-        if destroy and not hasattr(self, '_firstShow'): # save comments text box size
+        if not self._firstShow and not only_details: # comments text box size
             sashPos = self.commentsSplitter.GetSashPosition()
             settings['bash.installers.commentsSplitterSashPos'] = sashPos
-        settings['bash.installers.page'] = self.gNotebook.GetSelection()
+            settings['bash.installers.page'] = self.gNotebook.GetSelection()
         installer = self.file_info
         if not installer or not self.gComments.IsModified(): return
         installer.comments = self.gComments.GetValue()
@@ -2812,7 +2790,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
         if self._displayed_installer is not None:
-            self.ClosePanel() #--Save previous details
+            self.ClosePanel(only_details=True) #--Save previous details
         fileName = super(InstallersDetails, self).SetFile(fileName)
         self._displayed_installer = fileName
         del self.espms[:]
@@ -2854,7 +2832,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.gComments.SetValue(u'')
 
     def ShowPanel(self):
-        if hasattr(self, '_firstShow'): # FIXME - see supper, use splitter, sashPosKey,
+        if self._firstShow:
             commentsHeight = self.gPackage.GetSize()[1]
             commentsSplitterSavedSashPos = settings.get(
                 'bash.installers.commentsSplitterSashPos', 0)
@@ -2865,7 +2843,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             else:
                 self.commentsSplitter.SetSashPosition(
                     commentsSplitterSavedSashPos)
-            del self._firstShow
+            self._firstShow = False
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
