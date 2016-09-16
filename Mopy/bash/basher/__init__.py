@@ -212,10 +212,7 @@ class _DetailsViewMixin(object):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
     This is a hasty mixin. I added it to SashPanel so UILists can call
-    SetDetails, RefreshDetails and ClearDetails on their panels. TODO !:
-     - just mix it only in classes that _do_ have a details view (as it is
-     even Details panels inherit it).
-    """
+    SetDetails, RefreshDetails and ClearDetails on their panels."""
     detailsPanel = None
     def _setDetails(self, fileName):
         if self.detailsPanel: self.detailsPanel.SetFile(
@@ -241,7 +238,7 @@ class _DetailsViewMixin(object):
     def GetDetailsItem(self):
         return self.detailsPanel.file_info if self.detailsPanel else None
 
-class SashPanel(_DetailsViewMixin, NotebookPanel):
+class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
 
@@ -271,6 +268,15 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         super(SashPanel, self).ClosePanel(destroy)
+
+class SashUIListPanel(SashPanel): ## add init with panel and uiList
+    def RefreshDetails(self):
+        """Called in UIList#RefreshUI on the panel attribute  - including
+        the INIList where there are no details to refresh."""
+
+    def ClearDetails(self):
+        """Called in UIList#OnKeyUp on the panel attribute  - including
+        the INIList where there are no details to refresh."""
 
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
@@ -1504,11 +1510,11 @@ class ModDetails(_SashDetailsPanel):
         tagLinks.PopupMenu(self.gTags, Link.Frame, None)
 
 #------------------------------------------------------------------------------
-class INIPanel(SashPanel):
+class INIPanel(SashUIListPanel):
     keyPrefix = 'bash.ini'
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent)
+        super(INIPanel, self).__init__(parent)
         left,right = self.left, self.right
         #--Remove from list button
         self.button = balt.Button(right, _(u'Remove'),
@@ -1733,11 +1739,11 @@ class INIPanel(SashPanel):
         super(INIPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
-class ModPanel(SashPanel):
+class ModPanel(_DetailsViewMixin, SashUIListPanel):
     keyPrefix = 'bash.mods'
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent, sashGravity=1.0)
+        super(ModPanel, self).__init__(parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.modInfos
         self.detailsPanel = ModDetails(right)
@@ -2040,7 +2046,7 @@ class SaveDetails(_SashDetailsPanel):
         self.picture.SetBackground(colors['screens.bkgd.image'])
 
 #------------------------------------------------------------------------------
-class SavePanel(SashPanel):
+class SavePanel(_DetailsViewMixin, SashUIListPanel):
     """Savegames tab."""
     keyPrefix = 'bash.saves'
     _status_str = _(u'Saves:') + u' %d'
@@ -2049,7 +2055,7 @@ class SavePanel(SashPanel):
         if not bush.game.ess.canReadBasic:
             raise BoltError(u'Wrye Bash cannot read save games for %s.' %
                 bush.game.displayName)
-        SashPanel.__init__(self, parent, sashGravity=1.0)
+        super(SavePanel, self).__init__(parent, sashGravity=1.0)
         left,right = self.left, self.right
         self.listData = bosh.saveInfos
         self.detailsPanel = SaveDetails(right)
@@ -2492,7 +2498,7 @@ class InstallersList(balt.UIList):
         self.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallersPanel(SashPanel):
+class InstallersPanel(_DetailsViewMixin, SashUIListPanel):
     """Panel for InstallersTank."""
     espmMenu = Links()
     subsMenu = Links()
@@ -2502,7 +2508,7 @@ class InstallersPanel(SashPanel):
         """Initialize."""
         BashFrame.iPanel = self
         self.listData = bosh.InstallersData()
-        SashPanel.__init__(self, parent)
+        super(InstallersPanel, self).__init__(parent)
         left,right = self.left,self.right
         #--Refreshing
         self._data_dir_scanned = False
@@ -3114,14 +3120,14 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
     def ShowPanel(self): pass
 
-class ScreensPanel(SashPanel):
+class ScreensPanel(_DetailsViewMixin, SashUIListPanel):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
     _status_str = _(u'Screens:') + u' %d'
 
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent)
+        super(ScreensPanel, self).__init__(parent)
         left,right = self.left,self.right
         #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()
@@ -3170,8 +3176,9 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def allowDetailsEdit(self): return True
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
-                           style=wx.TAB_TRAVERSAL)
+        super(BSADetails, self).__init__(parent, sashGravity=1.0,
+                                         isVertical=False,
+                                         style=wx.TAB_TRAVERSAL)
         self.top, self.bottom = self.left, self.right
         bsaPanel = parent.GetParent().GetParent()
         self.bsaList = bsaPanel.uiList
@@ -3277,7 +3284,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def ShowPanel(self): pass
 
 #------------------------------------------------------------------------------
-class BSAPanel(SashPanel):
+class BSAPanel(_DetailsViewMixin, SashUIListPanel):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
     _status_str = _(u'BSAs:') + u' %d'
@@ -3327,7 +3334,7 @@ class PeopleList(balt.UIList):
         item_format.icon_key = u'karma%+d' % self.data_store[item][1]
 
 #------------------------------------------------------------------------------
-class PeoplePanel(SashPanel):
+class PeoplePanel(_DetailsViewMixin, SashUIListPanel):
     """Panel for PeopleTank."""
     keyPrefix = 'bash.people'
     _status_str = _(u'People:') + u' %d'
@@ -3335,7 +3342,7 @@ class PeoplePanel(SashPanel):
     def __init__(self,parent):
         """Initialize."""
         self.listData = bosh.PeopleData()
-        SashPanel.__init__(self, parent)
+        super(PeoplePanel, self).__init__(parent)
         left,right = self.left,self.right
         #--Contents
         self.detailsPanel = PeopleDetails(right)
