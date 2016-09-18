@@ -1206,7 +1206,7 @@ class ModDetails(_SashDetailsPanel):
                              onText=self.OnFileEdit, maxChars=textWidth) # size=(textWidth,-1))
         #--Author
         self.author = TextCtrl(top, onKillFocus=self.OnEditAuthor,
-                               onText=self.OnAuthorEdit, maxChars=512) # size=(textWidth,-1))
+                               onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
         #--Modified
         self.modified = TextCtrl(top,size=(textWidth, -1),
                                  onKillFocus=self.OnEditModified,
@@ -1215,7 +1215,7 @@ class ModDetails(_SashDetailsPanel):
         self.description = TextCtrl(top, size=(textWidth, 150),
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
-                                    onText=self.OnDescrEdit, maxChars=512)
+                                    onText=self.OnDescrEdit, maxChars=511)
         #--Bash tags
         tagPanel = wx.Panel(subSplitter)
         self.allTags = bosh.allTags
