@@ -109,21 +109,21 @@ class Mod_CreateDummyMasters(OneItemLink):
                 u"master.  Are you sure you want to continue?") + u'\n\n' + _(
                 u"To remove these files later, use 'Clean Dummy Masters...'")
         if not self._askYes(msg, title=_(u'Create Files')): return
-        doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
-        lastTime = bosh.modInfos[bosh.modInfos.masterName].mtime
+        doCBash = bass.settings['bash.CBashEnabled'] # something odd's going on, can't rename temp names
         if doCBash:
             newFiles = []
         refresh = []
+        # creates esp files - so place them correctly after the last esm
+        previous_master = bosh.modInfos.cached_lo_last_esm()
         for master in self._selected_info.header.masters:
             if master in bosh.modInfos:
-                lastTime = bosh.modInfos[master].mtime
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(self._selected_info.dir, master)
-            newInfo.mtime = load_order.get_free_time(lastTime, lastTime)
-            refresh.append(master)
+            refresh.append((master, newInfo, previous_master))
+            previous_master = master
             if doCBash:
-                # TODO: CBash doesn't handle unicode.  Make this make temp unicode safe
+                # TODO: CBash doesn't handle unicode.  Make temp unicode safe
                 # files, then rename them to the correct unicode name later
                 newFiles.append(newInfo.getPath().stail)
             else:
@@ -138,7 +138,17 @@ class Mod_CreateDummyMasters(OneItemLink):
                 modFile.TES4.author = u'BASHED DUMMY'
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
-        Link.Frame.RefreshData()
+        to_select = []
+        for mod, info, previous in refresh:
+            # add it to modInfos or lo_insert_after blows for timestamp games
+            bosh.modInfos.refreshFile(mod)
+            bosh.modInfos.cached_lo_insert_after(previous, mod)
+            to_select.append(mod)
+        bosh.modInfos.cached_lo_save_all()
+        bosh.modInfos.refresh(scanData=False)
+        self.window.RefreshUI(refreshSaves=True)
+        self.window.SelectItemsNoCallback(to_select)
+        self.window.SelectAndShowItem(to_select[-1])
 
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
