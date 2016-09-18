@@ -1787,6 +1787,7 @@ class UIList(wx.Panel):
         # B) Rework details: add 'select' tuple parameter (ex 'detail', duh) to
         # allow specifying detail item - for now use heuristics (len(files))
         files = kwargs.pop('files', self.__all)
+        focus_list = kwargs.pop('focus_list', True)
         if files is self.__all:
             self.PopulateItems()
         else:  #--Iterable
@@ -1799,6 +1800,10 @@ class UIList(wx.Panel):
         if len(files) == 1: self.SelectItem(files[0])
         else: self.panel.RefreshDetails()
         self.panel.SetStatusCount()
+        if focus_list: self.Focus()
+
+    def Focus(self):
+        self.__gList.SetFocus()
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -1970,7 +1975,7 @@ class UIList(wx.Panel):
 
     def EnsureVisibleIndex(self, dex, focus=False):
         self.__gList.Focus(dex) if focus else self.__gList.EnsureVisible(dex)
-        self.__gList.SetFocus()
+        self.Focus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
         self.SelectItem(item, deselectOthers=deselectOthers)

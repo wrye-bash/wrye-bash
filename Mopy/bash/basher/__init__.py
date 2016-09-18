@@ -255,6 +255,7 @@ class SashUIListPanel(SashPanel):
             self.splitter.SetSashPosition(sashPos)
             self._firstShow = False
         self.uiList.autosizeColumns()
+        self.uiList.Focus()
         self.SetStatusCount()
 
     def ClosePanel(self, destroy=False):
@@ -886,7 +887,8 @@ class ModList(_ModsUIList):
     def RefreshUI(self, **kwargs):
         """Refresh UI for modList - always specify refreshSaves explicitly."""
         super(ModList, self).RefreshUI(**kwargs)
-        if kwargs.pop('refreshSaves', False): Link.Frame.saveListRefresh()
+        if kwargs.pop('refreshSaves', False):
+            Link.Frame.saveListRefresh(focus_list=False)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -1130,7 +1132,11 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         return self.file_info.name if self.file_info else None
 
 class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
-    """Mod and Saves details panel, feature a master's list."""
+    """Mod and Saves details panel, feature a master's list.
+
+    I named the master list attribute 'uilist' to stand out from the usual
+    uiList of SashPanels.
+    :type uilist: MasterList"""
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
 
     def __init__(self, parent):
@@ -1581,7 +1587,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     def ShowPanel(self):
         changed = self.trackedInfo.refreshTracked()
         if self.current_ini_path in changed:
-            self.RefreshPanel()
+            self.RefreshPanel() ##: move to iniInfos refresh - add focus param
         super(INIPanel, self).ShowPanel()
 
     def RefreshPanel(self):
@@ -2028,9 +2034,9 @@ class SaveDetails(_SashDetailsPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-            BashFrame.saveListRefresh()
-        else: # files=[saveInfo.name], Nope: deleted oldName drives _glist nuts
-            BashFrame.saveListRefresh()
+        # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
+        BashFrame.saveList.RefreshUI()
+        BashFrame.saveList.SelectAndShowItem(self.saveInfo.name)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
@@ -2216,7 +2222,8 @@ class InstallersList(balt.UIList):
                     any(grouped) for grouped in zip(*refreshes)]
             #--Refresh UI
             if refreshNeeded or ex: # refresh the UI in case of an exception
-                if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False)
+                if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False,
+                                                            focus_list=False)
                 if iniRefresh and BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at
                     # startup, and never initialized
@@ -2849,7 +2856,7 @@ class InstallersPanel(BashTab):
             self.refreshing = True
             self._refresh_installers_if_needed(refresh_ui, canCancel,
                                                fullRefresh, scan_data_dir)
-            if refresh_ui[0]: self.uiList.RefreshUI()
+            if refresh_ui[0]: self.uiList.RefreshUI(focus_list=False)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
@@ -2995,7 +3002,7 @@ class InstallersPanel(BashTab):
         if mods_changed:
             with load_order.Unlock():
                 bosh.modInfos.refresh()
-            BashFrame.modList.RefreshUI(refreshSaves=True)
+            BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
             Link.Frame.warn_corrupted(warn_saves=False)
             Link.Frame.warn_load_order()
         if inis_changed:
@@ -3115,7 +3122,7 @@ class ScreensPanel(BashTab):
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
-            self.uiList.RefreshUI()
+            self.uiList.RefreshUI(focus_list=False)
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
@@ -3357,7 +3364,7 @@ class PeoplePanel(BashTab):
         super(PeoplePanel, self).__init__(parent)
 
     def ShowPanel(self):
-        if self.listData.refresh(): self.uiList.RefreshUI()
+        if self.listData.refresh(): self.uiList.RefreshUI(focus_list=False)
         super(PeoplePanel, self).ShowPanel()
 
     def RefreshUIColors(self): self.uiList.RefreshUI()
@@ -3813,13 +3820,14 @@ class BashFrame(wx.Frame):
             popInis = 'ALL'
         #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
         bosh.BSAInfos.check_bsa_timestamps()
-        #--Repopulate
+        #--Repopulate, focus will be set in ShowPanel
         if popMods:
-            BashFrame.modList.RefreshUI(refreshSaves=True) # True just in case
+            BashFrame.modList.RefreshUI(refreshSaves=True, # True just in case
+                                        focus_list=False)
         elif popSaves:
-            BashFrame.saveListRefresh()
+            BashFrame.saveListRefresh(focus_list=False)
         if popInis and self.iniList:
-            BashFrame.iniList.RefreshUI()
+            BashFrame.iniList.RefreshUI(focus_list=False)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
@@ -4003,8 +4011,9 @@ class BashFrame(wx.Frame):
                     path.remove()
 
     @staticmethod
-    def saveListRefresh():
-        if BashFrame.saveList: BashFrame.saveList.RefreshUI()
+    def saveListRefresh(focus_list):
+        if BashFrame.saveList:
+            BashFrame.saveList.RefreshUI(focus_list=focus_list)
 
 #------------------------------------------------------------------------------
 def GetBashVersion():

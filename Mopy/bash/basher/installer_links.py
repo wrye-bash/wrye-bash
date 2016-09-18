@@ -275,7 +275,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     out.write(line+u'\n')
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
+            if BashFrame.iniList is not None:
+                BashFrame.iniList.RefreshUI(focus_list=False)
             if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
                 if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
                     # Can only automatically apply ini tweaks if the ini was actually installed.  Since

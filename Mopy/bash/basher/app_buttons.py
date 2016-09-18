@@ -461,7 +461,7 @@ class App_BOSS(App_Button):
                 bosh.modInfos.refresh(
                     scanData=not bosh.load_order.using_txt_file())
             # Refresh UI, so WB is made aware of the changes to load order
-            BashFrame.modList.RefreshUI(refreshSaves=True)
+            BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
 
 #------------------------------------------------------------------------------
 class Game_Button(App_Button):
