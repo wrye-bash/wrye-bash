@@ -133,8 +133,7 @@ class Game(object):
         NOTE: modInfos must exist and be up to date for validation.
         :type cached_load_order: tuple[bolt.Path]
         :type cached_active_ordered: tuple[bolt.Path]
-        :rtype: (list[bolt.Path], list[bolt.Path]) |
-                (tuple[bolt.Path], tuple[bolt.Path])
+        :rtype: (tuple[bolt.Path], tuple[bolt.Path])
         """
         if cached_load_order is not None and cached_active_ordered is not None:
             return cached_load_order, cached_active_ordered # NOOP
@@ -151,7 +150,7 @@ class Game(object):
                 self._fix_active_plugins(active, lo, on_disc=True, quiet=quiet)
         self._save_fixed_load_order(removed, added, reordered,
                                     fixed_active, lo, active)
-        return lo, active
+        return tuple(lo), tuple(active)
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # we need to override this bit for fallout4 to parse the file once
@@ -423,10 +422,16 @@ class Game(object):
         return duplicates
 
 class TimestampGame(Game):
+    """Oblivion and other games where load order is set using modification
+    times.
+
+    :type _mod_mtime: dict[bolt.Path, int]
+    :type _mtime_mods: dict[int, set[bolt.Path]]
+    """
 
     allow_deactivate_master = True
-    _mod_mtime = {} # type: dict[bolt.Path, int]
-    _mtime_mods = defaultdict(set) # type: dict[int, set[bolt.Path]]
+    _mod_mtime = {}
+    _mtime_mods = defaultdict(set)
     _get_free_time_step = 1 # step by one second intervals
 
     @staticmethod

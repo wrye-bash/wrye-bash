@@ -32,8 +32,7 @@ from this module outside of the patcher package."""
 # instance Patcher.buildPatch() apparently is NOT always overridden
 
 from . import getPatchesList
-from ..bolt import AbstractError
-from .. import load_order, bass
+from .. import load_order, bass, bolt
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
@@ -136,12 +135,14 @@ class CBash_Patcher(_Abstract_Patcher):
         pass
 
 class AListPatcher(_Abstract_Patcher):
-    """Subclass for patchers that have GUI lists of objects."""
+    """Subclass for patchers that have GUI lists of objects.
+
+    :type _patches_set: set[bolt.Path]"""
     #--Get/Save Config
     autoKey = None
     # log header to be used if the ListPatcher has mods/files source files
     srcsHeader = u'=== '+ _(u'Source Mods')
-    _patches_set = None # type: set[bolt.Path]
+    _patches_set = None
 
     @staticmethod
     def list_patches_dir(): AListPatcher._patches_set = getPatchesList()
@@ -167,7 +168,7 @@ class AListPatcher(_Abstract_Patcher):
                 log(u"* " +srcFile.s)
 
     #--Config Phase -----------------------------------------------------------
-    def _patchFile(self): raise AbstractError # TODO(ut) _PFile.class.patchName
+    def _patchFile(self): raise bolt.AbstractError # TODO(ut) _PFile.class.patchName
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
@@ -295,7 +296,7 @@ class APatchMerger(AListPatcher):
         # runs first or near first.
         self._setMods(patchFile)
 
-    def _setMods(self, patchFile): raise AbstractError # override in subclasses
+    def _setMods(self, patchFile): raise bolt.AbstractError # override in subclasses
 
 class AUpdateReferences(AListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""

@@ -2225,8 +2225,8 @@ class Link(object):
         In modlist/installers it's a list<Path> while in subpackage it's the
         index of the right-clicked item. In main (column header) menus it's
         the column clicked on or the first column. Set in Links.PopupMenu().
-        :type window: UIList | wx.Panel | wx.Button | basher.BashStatusbar
-        :type selection: list[Path | unicode | int] | int
+        :type window: UIList | wx.Panel | wx.Button | DnDStatusBar
+        :type selection: list[Path | unicode | int] | int | None
         """
         self.window = window
         self.selected = selection

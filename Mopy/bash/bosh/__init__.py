@@ -44,6 +44,7 @@ from operator import attrgetter, itemgetter
 from functools import wraps, partial
 from binascii import crc32
 from itertools import groupby
+from collections import OrderedDict
 
 #--Local
 from .. import bass, bolt, balt, bush, env, load_order, libbsa
@@ -3504,7 +3505,7 @@ class ModInfos(FileInfos):
         is_mergeable = isCBashMergeable if doCBash else isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
-        result, tagged_no_merge = collections.OrderedDict(), set()
+        result, tagged_no_merge = OrderedDict(), set()
         for i,fileName in enumerate(names):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
@@ -6254,9 +6255,8 @@ class InstallersData(_DataStore):
                         pending_size += size
                     else:
                         new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
-                except Exception as e:
-                    if isinstance(e, OSError) and e.errno == errno.ENOENT:
-                        continue # file does not exist
+                except OSError as e:
+                    if e.errno == errno.ENOENT: continue # file does not exist
                     raise
         return new_sizeCrcDate, pending, pending_size
 
