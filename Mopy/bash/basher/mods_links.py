@@ -211,7 +211,8 @@ class Mods_CreateBlankBashedPatch(ItemLink):
     text, help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
 
     def Execute(self):
-        newPatchName = bosh.modInfos.generateNextBashedPatch()
+        newPatchName = bosh.modInfos.generateNextBashedPatch(
+            self.window.GetSelected())
         if newPatchName is not None:
             self.window.RefreshUI(files=[newPatchName], refreshSaves=False)
             self.window.SelectAndShowItem(newPatchName, deselectOthers=True)

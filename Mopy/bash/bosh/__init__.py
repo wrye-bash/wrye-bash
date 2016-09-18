@@ -3914,32 +3914,31 @@ class ModInfos(FileInfos):
     def create_new_mod(self, newName, selected=(), masterless=False,
                        directory=u'', bashed_patch=False):
         directory = directory or self.dir
-        newInfo = self.factory(directory, GPath(newName))
-        if directory == self.dir:
-            mods = (self[x] for x in selected) if selected else self.itervalues()
-            newTime = max(x.mtime for x in mods)
-            newInfo.mtime = load_order.get_free_time(newTime, newTime)
-        else: newInfo.mtime = time.time()
+        new_name = GPath(newName)
+        newInfo = self.factory(directory, new_name)
         newFile = ModFile(newInfo)
         if not masterless:
-            newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
+            newFile.tes4.masters = [self.masterName]
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
         if directory == self.dir:
-            self[newInfo.name] = newInfo
-            newInfo.readHeader()
+            self.refreshFile(new_name) # add to self, refresh size etc
+            last_selected = load_order.get_ordered(selected)[
+                -1] if selected else self._lo_wip[-1]
+            self.cached_lo_insert_after(last_selected, new_name)
+            self.cached_lo_save_all()
             self.refresh(scanData=False)
 
-    def generateNextBashedPatch(self):
+    def generateNextBashedPatch(self, selected_mods):
         """Attempt to create a new bashed patch, numbered from 0 to 9.  If
         a lowered number bashed patch exists, will create the next in the
         sequence."""
         for num in xrange(10):
             modName = GPath(u'Bashed Patch, %d.esp' % num)
             if modName not in self:
-                self.create_new_mod(modName, masterless=True,
-                                    bashed_patch=True)
+                self.create_new_mod(modName, selected=selected_mods,
+                                    masterless=True, bashed_patch=True)
                 return modName
         return None
 
