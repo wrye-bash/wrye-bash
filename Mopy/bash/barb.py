@@ -113,7 +113,7 @@ class BackupSettings(BaseBackupSettings):
               (dirs['userApp'],                   u'bash config',          u'LocalAppData\\'+game),
               (dirs['saveBase'],                  u'BashProfiles',         u'My Games\\'+game),
               (dirs['saveBase'],                  u'BashSettings',         u'My Games\\'+game),
-              (dirs['saveBase'],                  u'Messages',             u'My Games\\'+game),
+              (dirs['saveBase'],                  u'BashLoadOrders',       u'My Games\\'+game),
               (dirs['saveBase'],                  u'ModeBase',             u'My Games\\'+game),
               (dirs['saveBase'],                  u'People',               u'My Games\\'+game),
                 ):
@@ -160,13 +160,11 @@ class BackupSettings(BaseBackupSettings):
                 tpath = savedir.join(*txt)
                 fpath = dirs['saveBase'].join(*txt)
                 if fpath.exists(): self.files[tpath] = fpath
-            for ext in (u'.dat', u'.pkl'):
-                table = (u'Saves', profile, u'Bash', u'Table' + ext)
-                tpath = savedir.join(*table)
-                fpath = dirs['saveBase'].join(*table)
-                if fpath.exists(): self.files[tpath] = fpath
-                if fpath.backup.exists():
-                    self.files[tpath.backup] = fpath.backup
+            table = (u'Saves', profile, u'Bash', u'Table.dat')
+            tpath = savedir.join(*table)
+            fpath = dirs['saveBase'].join(*table)
+            if fpath.exists(): self.files[tpath] = fpath
+            if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
 
     def Apply(self):
         if not self.PromptFile(): return

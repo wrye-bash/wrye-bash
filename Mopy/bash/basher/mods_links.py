@@ -36,7 +36,7 @@ from ..bolt import GPath, BoltError
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
-           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockTimes',
+           'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
            'Mods_ScanDirty']
 
 # "Load" submenu --------------------------------------------------------------
@@ -81,7 +81,7 @@ class _Mods_LoadListData(balt.ListEditorData):
         return True
 
 class Mods_LoadList(ChoiceLink):
-    """Add load list links."""
+    """Add active mods list links."""
     loadListsDict = {}
 
     def __init__(self):
@@ -96,7 +96,7 @@ class Mods_LoadList(ChoiceLink):
                 self._refresh()
                 if errorMessage: self._showError(errorMessage, self.text)
         class _All(__Activate):
-            text = _(u'All')
+            text = _(u'Activate All')
             help = _(u'Activate all mods')
             def Execute(self):
                 """Select all mods."""
@@ -110,29 +110,33 @@ class Mods_LoadList(ChoiceLink):
                     self._showError(u'%s' % e, _(u'Select All'))
                 self._refresh()
         class _None(__Activate):
-            text = _(u'None')
+            text = _(u'De-activate All')
+            help = _(u'De-activate all mods')
             def Execute(self): self._selectExact([])
         class _Selected(__Activate):
-            text = _(u'Selected')
+            text = _(u'Activate Selected')
             help = _(u'Activate only the mods selected in the list')
             def Execute(self):
                 self._selectExact(self.window.GetSelected())
         class _Edit(ItemLink):
-            text = _(u'Edit Lists...')
+            text = _(u'Edit Active Mods Lists...')
+            help = _(u'Display a dialog to rename/remove active mods lists')
             def Execute(self):
                 editorData = _Mods_LoadListData(self.window,
                                                 Mods_LoadList.loadListsDict)
-                balt.ListEditor.Display(self.window, _(u'Load Lists'),
+                balt.ListEditor.Display(self.window, _(u'Active Mods Lists'),
                                         editorData)
         class _SaveLink(EnabledLink):
-            text = _(u'Save List...')
+            text = _(u'Save Active Mods List')
+            help = _(u'Save the currently active mods to a new active mods list')
             def _enable(self): return bool(load_order.activeCached())
             def Execute(self):
-                newItem = self._askText(_(u'Save current load list as:'))
+                newItem = self._askText(
+                    _(u'Save currently active mods list as:'))
                 if not newItem: return
                 if len(newItem) > 64:
-                    message = _(u'Load list name must be between 1 and 64 '
-                                u'characters long.')
+                    message = _(u'Active Mods list name must be between '
+                                u'1 and 64 characters long.')
                     return self._showError(message)
                 Mods_LoadList.loadListsDict[newItem] = list(
                     load_order.activeCached())
@@ -141,7 +145,7 @@ class Mods_LoadList(ChoiceLink):
                            SeparatorLink()]
         class _LoListLink(__Activate):
             def Execute(self):
-                """Select mods in list."""
+                """Activate mods in list."""
                 mods = set(Mods_LoadList.loadListsDict[self.text])
                 mods = [m for m in self.window.data_store.keys() if m in mods]
                 self._selectExact(mods)
@@ -306,12 +310,12 @@ class Mods_ScanDirty(BoolLink):
         super(Mods_ScanDirty, self).Execute()
         self.window.RefreshUI(refreshSaves=False)
 
-class Mods_LockTimes(CheckLink):
+class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""
     text = _(u'Lock Load Order')
     help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
              u" them whenever Wrye Bash refreshes data/starts up.")
 
-    def _check(self): return bosh.modInfos.lockLO
+    def _check(self): return load_order.locked
 
-    def Execute(self): bosh.modInfos.lockLOSet(not bosh.modInfos.lockLO)
+    def Execute(self): load_order.toggle_lock_load_order()

@@ -588,12 +588,16 @@ tab. The directories skipped are:
         <tr><th colspan="3">Column Header Context Menu
         <tr><th colspan="2">Command<th>Description
     <tbody>
-        <tr><td rowspan="5">Load<td id="modsLoadAll">All<td>Activates all the plugins in the mod list.
-        <tr><td>None<td>Deactivates all the plugins in the mod list.
-        <tr><td>Selected<td>Activate only the mods selected in the mod list - warning: their masters won't be activated !
-        <tr><td>Save List...<td>Saves the current load order to a new load list.
-        <tr><td>Edit Lists...<td>Allows the deletion and renaming of load lists.
-        <tr><td>[Load List]<td>[Load List] is the name of a load list, which are listed below the separator in the Load submenu. Clicking a load list will apply it, deactivating any plugins that are not listed as active in it.
+        <tr><td rowspan="5">Active Mods<td id="modsLoadAll">Activate All<td>Activates all the plugins in the mod list. If more than 255 mods are
+            present Bash will activate all it can from the bashed patches, then non mergeable and then mergeable mods then will display an
+            error message. Bash will try to activate mods in their load order.
+        <tr><td>De-activate All<td>Deactivates all the plugins in the mod list. Some plugins will not be deactivated (for instance Fallout 4
+        DLCs) as the game force loads them when present.
+        <tr><td>Activate Selected<td>Activate only the mods selected in the mod list interface - warning: their masters won't be activated !
+        <tr><td>Save Active Mods List<td>Saves the currently active mods to a new list.
+        <tr><td>Edit Active Mods Lists...<td>Allows the deletion and renaming of active mods lists.
+        <tr><td>[Active Mods List]<td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
+            list name will apply the list, trying to activate exactly the plugins that are listed in it.
         <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
         <tr><td colspan="2">Oblivion.esm<td><i>Oblivion only.</i> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
         <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
@@ -605,7 +609,8 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
         <tr><td colspan="2">List Bash Tags<td>This outputs a BBCode-formatted list of all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
         <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
-        <tr><td colspan="2">Lock Load Order<td><i>Oblivion only.</i> This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye Bash is focused (ie. on top of all other program windows) and reverses those changes.
+        <tr><td colspan="2">Lock Load Order<td>This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye
+            Bash starts or is focused (ie. on top of all other program windows) and reverses those changes.
         <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
         <tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
         <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
@@ -2005,6 +2010,8 @@ and masterlist relative priority and role see the LOOT docs.
         <tr><td><code>ctrl-a</code><td>Selects all.
         <tr><td><code>shift-ctrl-a</code><td>Deselects all.
         <tr><td><code>ctrl-c</code><td>Copies files to the clipboard (Mods, Saves, Installers, Screens)
+        <tr><td><code>ctrl-z</code><td>Undo load order state change (Mods)
+        <tr><td><code>ctrl-y</code><td>Redo load order state change (Mods)
 </table>
 
 <h3 id="tools-arguments">Command Line Arguments</h3>

@@ -357,7 +357,7 @@ def InitModLinks():
     """Initialize Mods tab menus."""
     #--ModList: Column Links
     if True: #--Load
-        loadMenu = MenuLink(_(u"Load"))
+        loadMenu = MenuLink(_(u"Active Mods"))
         loadMenu.links.append(Mods_LoadList())
         ModList.mainMenu.append(loadMenu)
     if True: #--Sort by
@@ -406,8 +406,7 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_CleanDummyMasters())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
-    if bush.game.fsName != u'Skyrim':
-        ModList.mainMenu.append(Mods_LockTimes())
+    ModList.mainMenu.append(Mods_LockLoadOrder())
     ModList.mainMenu.append(Mods_ScanDirty())
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools']:
@@ -521,7 +520,7 @@ def InitModLinks():
             ModList.itemMenu.append(cleanMenu)
         ModList.itemMenu.append(Mod_AddMaster())
         ModList.itemMenu.append(Mod_CopyToEsmp())
-        if bush.game.fsName != u'Skyrim':
+        if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_DecompileAll())
         ModList.itemMenu.append(Mod_FlipSelf())
         ModList.itemMenu.append(Mod_FlipMasters())

@@ -22,7 +22,7 @@
 #  Mopy/bash/load_order.py copyright (C) 2016 Utumno: Original design
 #
 # =============================================================================
-"""Load order management, features caching and undo/redo.
+"""Load order management, features caching, load order locking and undo/redo.
 
 Notes:
 - cached_lord is a cache exported to the next level of the load order API,
@@ -38,15 +38,22 @@ lo/active from inside Bash.
 delegate to the game_handle.
 """
 import sys
-
+import math
+import collections
+import time
+# Internal
+import balt
 import bass
 import bolt
 import bush
-import bosh
 # Game instance providing load order operations API
 import games
 game_handle = None # type: games.Game
-_plugins_txt_path = _loadorder_txt_path = None
+_plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
+# Load order locking
+locked = False
+warn_locked = False
+_lords_pickle = None # type: bolt.PickleDict
 
 def initialize_load_order_files():
     if bass.dirs['saveBase'] == bass.dirs['app']:
@@ -54,9 +61,10 @@ def initialize_load_order_files():
         _dir = bass.dirs['app']
     else:
         _dir = bass.dirs['userApp']
-    global _plugins_txt_path, _loadorder_txt_path
+    global _plugins_txt_path, _loadorder_txt_path, _lord_pickle_path
     _plugins_txt_path = _dir.join(u'plugins.txt')
     _loadorder_txt_path = _dir.join(u'loadorder.txt')
+    _lord_pickle_path = bass.dirs['saveBase'].join(u'BashLoadOrders.dat')
 
 def initialize_load_order_handle(mod_infos):
     global game_handle
@@ -105,13 +113,55 @@ class LoadOrder(object):
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
     def activeIndex(self, path): return self.__mod_actIndex[path]
 
+    def __getstate__(self): # we pickle _activeOrdered to avoid recreating it
+        return {'_activeOrdered': self._activeOrdered,
+                '_loadOrder': self.loadOrder}
+
+    def __setstate__(self, dct):
+        self.__dict__.update(dct)   # update attributes
+        self._active = frozenset(self._activeOrdered)
+        self.__mod_loIndex = dict(
+            (a, i) for i, a in enumerate(self._loadOrder))
+        self.__mod_actIndex = dict(
+            (a, i) for i, a in enumerate(self._activeOrdered))
+
 # Module level cache
 __empty = LoadOrder()
 cached_lord = __empty # must always be valid (or __empty)
 
 # Saved load orders
-_saved_load_orders = [] # type: list[LoadOrder]
+lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
+_saved_load_orders = [] # type: list[lo_entry]
 _current_list_index = -1
+
+def _new_entry():
+    _saved_load_orders[_current_list_index:_current_list_index] = [
+        lo_entry(time.time(), cached_lord)]
+
+def persist_orders(__keep_max=256):
+    _lords_pickle.vdata['_lords_pickle_version'] = 1
+    length = len(_saved_load_orders)
+    if length > __keep_max:
+        x, y = _keep_max(__keep_max, length)
+        _lords_pickle.data['_saved_load_orders'] = \
+            _saved_load_orders[_current_list_index - x:_current_list_index + y]
+        _lords_pickle.data['_current_list_index'] = x
+    else:
+        _lords_pickle.data['_saved_load_orders'] = _saved_load_orders
+        _lords_pickle.data['_current_list_index'] = _current_list_index
+    _lords_pickle.save()
+
+def _keep_max(max_to_keep, length):
+    max_2 = max_to_keep / 2
+    y = length - _current_list_index
+    if y <= max_2:
+        x = max_to_keep - y
+    else:
+        if _current_list_index > max_2:
+            x = y = max_2
+        else:
+            x, y = _current_list_index, max_to_keep - _current_list_index
+    return x, y
 
 # Load Order utility methods - make sure the cache is valid when using them
 def activeCached():
@@ -161,17 +211,8 @@ def save_lo(lord, acti=None, __index_move=0):
     lord, acti = game_handle.set_load_order(load_list, acti_list,
                                             list(cached_lord.loadOrder),
                                             list(cached_lord.activeOrdered))
-    _reset_mtimes_cache()
     _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
     return cached_lord
-
-def _reset_mtimes_cache():
-    """Reset the mtimes cache or LockLO feature will revert intentional
-    changes."""
-    if using_txt_file(): return
-    for name in bosh.modInfos.mtimes:
-        path = bosh.modInfos[name].getPath()
-        if path.exists(): bosh.modInfos.mtimes[name] = path.mtime
 
 def _update_cache(lord=None, acti_sorted=None, __index_move=0):
     """
@@ -190,23 +231,36 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
         if cached_lord is not __empty:
             global _current_list_index
             if _current_list_index < 0 or (not __index_move and
-                cached_lord != _saved_load_orders[_current_list_index]):
-                # either getting or setting
-                del _saved_load_orders[_current_list_index + 1:]
-                _saved_load_orders.append(cached_lord)
+                cached_lord != _saved_load_orders[_current_list_index].lord):
+                # either getting or setting, plant the new load order in
                 _current_list_index += 1
+                _new_entry()
             elif __index_move: # attempted to undo/redo
                 _current_list_index += __index_move
-                target = _saved_load_orders[_current_list_index]
-                if target != cached_lord: # we failed to redo/undo
-                    bolt.deprint(u'Failed to revert load order change')
-                    # keep the invalid load order - for instance due to an esm
-                    # flip - but move it in the list so we can retry undo/redo
-                    _saved_load_orders[_current_list_index] = cached_lord
-                    _saved_load_orders[
-                        _current_list_index - __index_move] = target
+                target = _saved_load_orders[_current_list_index].lord
+                if target != cached_lord: # we partially redid/undid
+                    # put it after (redo) or before (undo) the target
+                    _current_list_index += int(math.copysign(1, __index_move))
+                     # list[-1:-1] won't do what we want
+                    _current_list_index = max (0, _current_list_index)
+                    _new_entry()
 
 def get_lo(cached=False, cached_active=True):
+    global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
+        warn_locked
+    if _lords_pickle is None:
+        _lords_pickle = bolt.PickleDict(_lord_pickle_path)
+        _lords_pickle.load()
+        _lords_pickle.vdata['_lords_pickle_version'] = 1
+        _saved_load_orders = _lords_pickle.data.get('_saved_load_orders', [])
+        _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
+        locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
+    if locked and _saved_load_orders:
+        saved = _saved_load_orders[_current_list_index].lord # type: LoadOrder
+        lord, acti = game_handle.set_load_order( # make sure saved lo is valid
+            list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
+        saved = LoadOrder(lord, acti)
+    else: saved = None
     if cached_lord is not __empty:
         lo = cached_lord.loadOrder if (
             cached and not game_handle.load_order_changed()) else None
@@ -214,18 +268,28 @@ def get_lo(cached=False, cached_active=True):
             cached_active and not game_handle.active_changed()) else None
     else: active = lo = None
     _update_cache(lo, active)
+    if locked and saved is not None:
+        if cached_lord.loadOrder != saved.loadOrder:
+            save_lo(saved.loadOrder, saved.activeOrdered)
+            warn_locked = True
     return cached_lord
 
-def undo_load_order():
-    if _current_list_index <= 0: return cached_lord
-    return __restore(-1)
+def undo_load_order(): return __restore(-1)
 
-def redo_load_order():
-    if _current_list_index == len(_saved_load_orders) - 1: return cached_lord
-    return __restore(1)
+def redo_load_order(): return __restore(1)
 
 def __restore(index_move):
-    previous = _saved_load_orders[_current_list_index + index_move]
+    index = _current_list_index + index_move
+    if index < 0 or index > len(_saved_load_orders) - 1: return cached_lord
+    previous = _saved_load_orders[index].lord
+    # fix previous
+    lord, acti = game_handle.set_load_order(list(previous.loadOrder),
+                                            list(previous.activeOrdered),
+                                            dry_run=True)
+    previous = LoadOrder(lord, acti) # possibly fixed
+    if previous == cached_lord:
+        index_move += int(math.copysign(1, index_move)) # increase or decrease by 1
+        return __restore(index_move)
     return save_lo(previous.loadOrder, previous.activeOrdered,
                    __index_move=index_move)
 
@@ -253,3 +317,16 @@ def get_free_time(start_time, default_time='+1'):
     return game_handle.get_free_time(start_time, default_time=default_time)
 
 def install_last(): return game_handle.install_last()
+
+# Lock load order
+def toggle_lock_load_order():
+    global locked
+    lock = not locked
+    if lock:
+        message =  _(u'Lock Load Order is a feature which resets load order '
+            u'to a previously memorized state.  While this feature is good '
+            u'for maintaining your load order, it will also undo any load '
+            u'order changes that you have made outside Bash.')
+        lock = balt.askContinue(None, message, 'bash.load_order.lock_continue',
+                                title=_(u'Lock Load Order'))
+    bass.settings['bosh.modInfos.resetMTimes'] = locked = lock

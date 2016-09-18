@@ -1743,6 +1743,10 @@ class ModPanel(SashPanel):
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
         len(load_order.activeCached()), len(bosh.modInfos))
 
+    def ClosePanel(self, destroy=False):
+        load_order.persist_orders()
+        super(ModPanel, self).ClosePanel(destroy)
+
 #------------------------------------------------------------------------------
 class SaveList(balt.UIList):
     #--Class Data
@@ -2776,8 +2780,12 @@ class InstallersPanel(SashTankPanel):
         """Refresh UI plus refresh mods state."""
         self.uiList.RefreshUI()
         if mods_changed:
-            if bosh.modInfos.refresh():
-                del bosh.modInfos.mtimesReset[:] ##: not sure why this here
+            locked = load_order.locked
+            try:
+                load_order.locked = False
+                bosh.modInfos.refresh()
+            finally:
+                load_order.locked = locked
             BashFrame.modList.RefreshUI(refreshSaves=True)
             Link.Frame.warn_corrupted(warn_saves=False)
             Link.Frame.warn_load_order()
@@ -3825,25 +3833,6 @@ class BashFrame(wx.Frame):
         #--Check plugins.txt and mods directory...
         if not booting and bosh.modInfos.refresh():
             popMods = 'ALL'
-        #--Have any mtimes been reset?
-        if bosh.modInfos.mtimesReset:
-            if bosh.modInfos.mtimesReset[0] == 'PLUGINS':
-                if not bass.inisettings['SkipResetTimeNotifications']:
-                    balt.showWarning(self,_(u"An invalid plugin load order has been corrected."))
-            else:
-                if bosh.modInfos.mtimesReset[0] == 'FAILED':
-                    balt.showWarning(self,_(u"It appears that the current user doesn't have permissions for some or all of the files in ")
-                                            + bush.game.fsName+u'\\Data.\n' +
-                                            _(u"Specifically had permission denied to change the time on:")
-                                            + u'\n' + bosh.modInfos.mtimesReset[1].s)
-                if not bass.inisettings['SkipResetTimeNotifications']:
-                    message = [u'',_(u'Modified dates have been reset for some mod files')]
-                    message.extend(sorted(bosh.modInfos.mtimesReset))
-                    ListBoxes.Display(self, _(u'Modified Dates Reset'), _(
-                        u'Modified dates have been reset for some mod files.'),
-                        [message], liststyle='list', canCancel=False)
-            del bosh.modInfos.mtimesReset[:]
-            popMods = 'ALL'
         #--Check savegames directory...
         if not booting and bosh.saveInfos.refresh():
             popSaves = 'ALL'
@@ -3865,12 +3854,21 @@ class BashFrame(wx.Frame):
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self.warn_load_order()
+        self._warn_reset_load_order()
         self.warn_corrupted()
         self.warn_game_ini()
-        self._obmmWarn()
         self._missingDocsDir()
         #--Done (end recursion blocker)
         self.inRefreshData = False
+
+    def _warn_reset_load_order(self):
+        if load_order.warn_locked and not bass.inisettings[
+            'SkipResetTimeNotifications']:
+            balt.showWarning(self, _(u"Load order has changed outside of Bash "
+                u"and has been reverted to the one saved in Bash. You can hit "
+                u"Ctrl + Z while the mods list has focus to undo this."),
+                             _(u'Lock Load Order'))
+            load_order.warn_locked = False
 
     def warn_load_order(self):
         """Warn if plugins.txt has bad or missing files, or is overloaded."""
@@ -3954,24 +3952,6 @@ class BashFrame(wx.Frame):
             balt.showWarning(self, self._ini_missing % {
                 'ini': bosh.oblivionIni.path, 'game': bush.game.displayName},
                              _(u'Missing game Ini'))
-
-    def _obmmWarn(self):
-        #--OBMM Warning?
-        if settings['bosh.modInfos.obmmWarn'] == 1:
-            settings['bosh.modInfos.obmmWarn'] = 2
-            message = _(u'Turn Lock Load Order Off?') + u'\n\n' + _(
-                u'Lock Load Order is a feature which resets load order to a '
-                u'previously memorized state.  While this feature is good '
-                u'for maintaining your load order, it will also undo any '
-                u'load order changes that you have made in OBMM.')
-            lockTimes = not balt.askYes(self, message, _(u'Lock Load Order'))
-            bosh.modInfos.lockLOSet(lockTimes)
-            message = _(
-                u"Lock Load Order is now %s.  To change it in the future, "
-                u"right click on the main list header on the Mods tab and "
-                u"select 'Lock Load Order'.")
-            balt.showOk(self, message % ((_(u'off'), _(u'on'))[lockTimes],),
-                        _(u'Lock Load Order'))
 
     def _missingDocsDir(self):
         #--Missing docs directory?
