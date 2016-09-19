@@ -332,46 +332,51 @@ class File_Backup(ItemLink):
             fileInfo = self.window.data_store[item]
             fileInfo.makeBackup(True)
 
-class File_RevertToBackup(ChoiceLink):
-    """Revert to last or first backup."""
+class _RevertBackup(OneItemLink):
+    text = _(u'Revert to Backup')
 
     def _initData(self, window, selection):
-        super(File_RevertToBackup, self)._initData(window, selection)
-        #--Backup Files
-        singleSelect = len(selection) == 1
-        self.fileInfo = window.data_store[selection[0]]
-        backup = self.fileInfo.bashDir.join(u'Backups', self.fileInfo.name)
-        firstBackup = backup + u'f'
-        #--Backup Item
-        _self = self
-        class _RevertBackup(EnabledLink):
-            text = _(u'Revert to Backup')
-            def _enable(self): return singleSelect and backup.exists()
-            def Execute(self): return _self.revert(backup)
-        #--First Backup item
-        class _RevertFirstBackup(EnabledLink):
-            text = _(u'Revert to First Backup')
-            def _enable(self): return singleSelect and firstBackup.exists()
-            def Execute(self): return _self.revert(firstBackup)
-        self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
+        super(_RevertBackup, self)._initData(window, selection)
+        self.backup_path = self._selected_info.bashDir.join(
+            u'Backups', self._selected_item)
+        self.help = _(u"Revert %(file)s to its last backup") % {
+            'file': self._selected_item}
+
+    def _enable(self):
+        return super(_RevertBackup,
+                     self)._enable() and self.backup_path.exists()
 
     @balt.conversation
-    def revert(self, backup):
-        fileInfo = self.fileInfo
-        fileName = fileInfo.name
+    def Execute(self):
+        fileName = self._selected_item
         #--Warning box
-        message = _(u"Revert %s to backup dated %s?") % (fileName.s,
-            formatDate(backup.mtime))
-        if self._askYes(message, _(u'Revert to Backup')):
+        message = _(u"Revert %s to backup dated %s?") % (
+            fileName.s, formatDate(self.backup_path.mtime))
+        if self._askYes(message):
             with balt.BusyCursor():
-                dest = fileInfo.getPath() # care for ghosts !
+                dest = self._selected_info.getPath() # care for ghosts !
                 current_mtime = dest.mtime
-                backup.copyTo(dest)
-                fileInfo.setmtime(current_mtime) # do not change load order
-                if fileInfo.isEss(): #--Handle CoSave (.pluggy and .obse) files.
-                    bosh.CoSaves(backup).copy(dest)
+                self.backup_path.copyTo(dest)
+                # do not change load order for timestamp games - rest works ok
+                self._selected_info.setmtime(current_mtime)
+                if self._selected_info.isEss():
+                    #--Handle CoSave (.pluggy and .obse) files.
+                    bosh.CoSaves(self.backup_path).copy(dest)
                 try:
                     self.window.data_store.refreshFile(fileName)
                 except bosh.FileError:
                     self._showError(_(u'Old file is corrupt!'))
                 self.window.RefreshUI(files=[fileName], refreshSaves=False)
+
+class _RevertFirstBackup(_RevertBackup):
+    text = _(u'Revert to First Backup')
+
+    def _initData(self, window, selection):
+        super(_RevertFirstBackup, self)._initData(window, selection)
+        self.backup_path += u'f'
+        self.help = _(u"Revert %(file)s to its first backup") % {
+            'file': self._selected_item}
+
+class File_RevertToBackup(ChoiceLink):
+    """Revert to last or first backup."""
+    extraItems = [_RevertBackup(), _RevertFirstBackup()]
