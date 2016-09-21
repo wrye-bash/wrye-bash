@@ -3329,6 +3329,13 @@ class ModInfos(FileInfos):
             self[new_mod].setmtime(set_time)
         self._lo_wip[previous_index + 1:previous_index + 1] = [new_mod]
 
+    def cached_lo_last_esm(self):
+        esm = self.masterName
+        for mod in self._lo_wip[1:]:
+            if not self[mod].isEsm(): return esm
+            esm = mod
+        return esm
+
     @staticmethod
     def hexIndexString(mod):
         return u'%02X' % (load_order.activeIndexCached(mod),) \

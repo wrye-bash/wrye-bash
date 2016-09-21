@@ -1468,6 +1468,7 @@ class Mod_CopyToEsmp(EnabledLink):
 
     def Execute(self):
         modInfos, added = bosh.modInfos, []
+        save_lo = False
         for curName, fileInfo in ((x, modInfos[x]) for x in self.selected):
             newType = (fileInfo.isEsm() and u'esp') or u'esm'
             newName = curName.root + u'.' + newType # calls GPath internally
@@ -1481,19 +1482,24 @@ class Mod_CopyToEsmp(EnabledLink):
                 existing.makeBackup()
                 timeSource = newName
             #--New Time
-            newTime = modInfos[timeSource].mtime if timeSource else \
-                load_order.get_free_time(fileInfo.mtime)
+            newTime = modInfos[timeSource].mtime if timeSource else None
             #--Copy, set type, update mtime - will use ghosted path if needed
             modInfos.copy_info(curName, fileInfo.dir, newName,
                                set_mtime=newTime)
+            added.append(newName)
             newInfo = modInfos[newName]
             newInfo.setType(newType)
-            added.append(newName)
+            if timeSource is None: # otherwise it has a load order already !
+                modInfos.cached_lo_insert_after(modInfos.cached_lo_last_esm(),
+                                                newName)
+                save_lo = True
         #--Repopulate
         if added:
+            if save_lo: modInfos.cached_lo_save_all()
             modInfos.refresh(scanData=False)
             self.window.RefreshUI(refreshSaves=True) # just in case
             self.window.SelectItemsNoCallback(added)
+            self.window.SelectAndShowItem(added[-1])
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
