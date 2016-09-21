@@ -144,7 +144,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             bosh.modInfos.refreshFile(mod)
             bosh.modInfos.cached_lo_insert_after(previous, mod)
             to_select.append(mod)
-        bosh.modInfos.cached_lo_save_all()
+        bosh.modInfos.cached_lo_save_lo()
         bosh.modInfos.refresh(scanData=False)
         self.window.RefreshUI(refreshSaves=True)
         self.window.SelectItemsNoCallback(to_select)
@@ -1505,7 +1505,7 @@ class Mod_CopyToEsmp(EnabledLink):
                 save_lo = True
         #--Repopulate
         if added:
-            if save_lo: modInfos.cached_lo_save_all()
+            if save_lo: modInfos.cached_lo_save_lo()
             modInfos.refresh(scanData=False)
             self.window.RefreshUI(refreshSaves=True) # just in case
             self.window.SelectItemsNoCallback(added)

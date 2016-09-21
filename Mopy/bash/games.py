@@ -426,12 +426,10 @@ class TimestampGame(Game):
     """Oblivion and other games where load order is set using modification
     times.
 
-    :type _mod_mtime: dict[bolt.Path, int]
     :type _mtime_mods: dict[int, set[bolt.Path]]
     """
 
     allow_deactivate_master = True
-    _mod_mtime = {}
     _mtime_mods = defaultdict(set)
     _get_free_time_step = 1 # step by one second intervals
 
@@ -500,11 +498,9 @@ class TimestampGame(Game):
         self._rebuild_mtimes_cache()
 
     def _rebuild_mtimes_cache(self):
-        self._mod_mtime.clear()
         self._mtime_mods.clear()
         for mod, info in self.mod_infos.iteritems():
             mtime = info.mtime
-            self._mod_mtime[mod] = mtime
             self._mtime_mods[mtime] |= {mod}
 
     def _persist_active_plugins(self, active, lord):

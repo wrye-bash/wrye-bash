@@ -3299,6 +3299,11 @@ class ModInfos(FileInfos):
                         active if active is not None else self._active_wip))
 
     @_lo_cache
+    def cached_lo_save_lo(self):
+        """Save load order when active did not change."""
+        load_order.save_lo(self._lo_wip)
+
+    @_lo_cache
     def cached_lo_save_all(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
         dex = {x: i for i, x in enumerate(self._lo_wip) if
@@ -3386,10 +3391,12 @@ class ModInfos(FileInfos):
          order) with load_order.Unlock.
         """
         hasChanged = deleted = False
+        # Scan the data dir, getting info on added, deleted and modified files
         if scanData:
             change = FileInfos.refresh(self)
             if change: _added, _updated, deleted = change
             hasChanged = bool(change)
+        # If scanData is False and mods are added be sure to refresh manually
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
@@ -3934,7 +3941,7 @@ class ModInfos(FileInfos):
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
             self.cached_lo_insert_after(last_selected, new_name)
-            self.cached_lo_save_all()
+            self.cached_lo_save_lo()
             self.refresh(scanData=False)
 
     def generateNextBashedPatch(self, selected_mods):
