@@ -3146,7 +3146,7 @@ class FileInfos(_DataStore):
         try:
             if fileInfo.isGhost: newName += u'.ghost'
         except AttributeError: pass # not a mod info
-        _DataStore._rename_operation(self, oldName, newName)
+        super(FileInfos, self)._rename_operation(oldName, newName)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -3206,7 +3206,8 @@ class FileInfos(_DataStore):
                 self.delete_Refresh(tableUpdate.values())
 
     def delete_Refresh(self, deleted, check_existence=False):
-        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
+        deleted = super(FileInfos, self).delete_Refresh(deleted,
+                                                        check_existence)
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -4095,7 +4096,7 @@ class ModInfos(FileInfos):
         FileInfos.move_info(self, fileName, destDir)
 
     def move_infos(self, sources, destinations, window):
-        moved = _DataStore.move_infos(self, sources, destinations, window)
+        moved = super(ModInfos, self).move_infos(sources, destinations, window)
         self.refresh() # yak, it should have an "added" parameter
         balt.Link.Frame.warn_corrupted(warn_saves=False)
         return moved
@@ -4276,7 +4277,7 @@ class SaveInfos(FileInfos):
 
     def move_infos(self, sources, destinations, window):
         # CoSaves sucks - operations should be atomic
-        moved = _DataStore.move_infos(self, sources, destinations, window)
+        moved = super(SaveInfos,self).move_infos(sources, destinations, window)
         for s, d in zip(sources, destinations):
             if d.tail in moved: CoSaves(s).move(d)
         for d in moved:
@@ -4479,7 +4480,7 @@ class ScreensData(_DataStore):
     def delete_Refresh(self, deleted, check_existence=False): self.refresh()
 
     def _rename_operation(self, oldName, newName):
-        _DataStore._rename_operation(self, oldName, newName)
+        super(ScreensData, self)._rename_operation(oldName, newName)
         self[newName] = self[oldName]
         del self[oldName]
 
@@ -6082,7 +6083,8 @@ class InstallersData(_DataStore):
                     self.delete_Refresh(deleted) # markers are already popped
 
     def delete_Refresh(self, deleted, check_existence=False):
-        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
+        deleted = super(InstallersData, self).delete_Refresh(deleted,
+                                                             check_existence)
         if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
@@ -6102,7 +6104,8 @@ class InstallersData(_DataStore):
         self.store_dir.join(filename).moveTo(destDir.join(filename))
 
     def move_infos(self, sources, destinations, window):
-        moved = _DataStore.move_infos(self, sources, destinations, window)
+        moved = super(InstallersData, self).move_infos(sources, destinations,
+                                                       window)
         self.irefresh(what='I', pending=moved)
         return moved
 

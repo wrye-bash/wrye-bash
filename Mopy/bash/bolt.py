@@ -1177,8 +1177,9 @@ class Flags(object):
         return tuple(trueNames)
 
 #------------------------------------------------------------------------------
-class DataDict:
-    """Mixin class that handles dictionary emulation, assuming that dictionary is its 'data' attribute."""
+class DataDict(object):
+    """Mixin class that handles dictionary emulation, assuming that
+    dictionary is its 'data' attribute."""
 
     def __contains__(self,key):
         return key in self.data
