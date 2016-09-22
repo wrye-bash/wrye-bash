@@ -1545,7 +1545,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self.editButton = balt.Button(right, _(u'Edit...'),
                                       onButClick=self.OnEdit)
         #--Choices
-        self.choices = settings['bash.ini.choices']
+        self.target_inis = settings['bash.ini.choices']
         """:type : dict[unicode, bolt.Path]"""
         self.choice = settings['bash.ini.choice'] # type: int
         self.__check_targets() # remove non existent, sort choices, set choice
@@ -1562,7 +1562,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self._SetBaseIni(self.current_ini_path)
         BashFrame.iniList = self.uiList # must be AFTER _SetBaseIni, DUH
         self.comboBox = balt.ComboBox(right, value=self._ini_name,
-                                      choices=self.choices.keys())
+                                      choices=self.target_inis.keys())
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
         #--Layout
@@ -1598,10 +1598,10 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     @property
     def current_ini_path(self):
         """ Return path of currently chosen ini."""
-        return self.choices.values()[self.choice]
+        return self.target_inis.values()[self.choice]
 
     @property
-    def _ini_name(self): return self.choices.keys()[self.choice]
+    def _ini_name(self): return self.target_inis.keys()[self.choice]
 
     def ShowPanel(self):
         changed = self.trackedInfo.refreshTracked()
@@ -1619,7 +1619,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 if iFile.path == path:
                     break
             else:
-                del self.choices[self._ini_name]
+                del self.target_inis[self._ini_name]
                 self.choice -= 1
         self._SetBaseIni(self.current_ini_path)
         self.comboBox.SetItems(self.SortChoices())
@@ -1663,7 +1663,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         """Called when the 'Remove' button is pressed."""
         selection = self.comboBox.GetValue()
         self.choice -= 1
-        del self.choices[selection]
+        del self.target_inis[selection]
         self.comboBox.SetItems(self.SortChoices())
         self.comboBox.SetSelection(self.choice)
         self._SetBaseIni()
@@ -1671,33 +1671,33 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     def OnEdit(self):
         """Called when the 'Edit' button is pressed."""
         selection = self.comboBox.GetValue()
-        self.choices[selection].start()
+        self.target_inis[selection].start()
 
     def __check_targets(self):
         """Check the list of target INIs, remove any that don't exist"""
-        for i in self.choices.keys():
+        for i in self.target_inis.keys():
             if i == _(u'Browse...'): continue
-            path = self.choices[i]
+            path = self.target_inis[i]
             # If user started with non-translated, 'Browse...'
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
             # objects.  That will take care of it.
             if not isinstance(path,bolt.Path) or not path.isfile():
-                del self.choices[i]
-        csChoices = [x.lower() for x in self.choices]
+                del self.target_inis[i]
+        csChoices = [x.lower() for x in self.target_inis]
         for iFile in bosh.gameInis:
             if iFile.path.tail.cs not in csChoices:
-                self.choices[iFile.path.stail] = iFile.path
-        if _(u'Browse...') not in self.choices:
-            self.choices[_(u'Browse...')] = None
+                self.target_inis[iFile.path.stail] = iFile.path
+        if _(u'Browse...') not in self.target_inis:
+            self.target_inis[_(u'Browse...')] = None
         self.SortChoices()
-        if self.choice < 0 or len(self.choices) <= self.choice + 1:
+        if self.choice < 0 or len(self.target_inis) <= self.choice + 1:
             self.choice = 0
 
     def SortChoices(self):
         """Sorts the list of target INIs alphabetically, but with
         Oblivion.ini at the top and 'Browse...' at the bottom"""
-        keys = self.choices.keys()
+        keys = self.target_inis.keys()
         # Sort alphabetically
         keys.sort()
         # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
@@ -1705,8 +1705,8 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         keys.sort(key=lambda a:
                   bush.game.iniFiles.index(a) if a in bush.game.iniFiles
                   else (len_inis + 1 if a == _(u'Browse...') else len_inis))
-        self.choices = collections.OrderedDict(
-            [(k, self.choices[k]) for k in keys])
+        self.target_inis = collections.OrderedDict(
+            [(k, self.target_inis[k]) for k in keys])
         return keys
 
     def _sbCount(self):
@@ -1714,20 +1714,20 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
     def AddOrSelectIniDropDown(self, path): ## will refersh the UI !!
-        if path.stail not in self.choices:
-            self.choices[path.stail] = path
+        if path.stail not in self.target_inis:
+            self.target_inis[path.stail] = path
             self.comboBox.SetItems(self.SortChoices())
         else:
-            if self.choice == self.choices.keys().index(path.stail):
+            if self.choice == self.target_inis.keys().index(path.stail):
                 return
-        self.choice = self.choices.keys().index(path.stail)
+        self.choice = self.target_inis.keys().index(path.stail)
         self.comboBox.SetSelection(self.choice)
         self._SetBaseIni(path)
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
         selection = event.GetString()
-        path = self.choices[selection]
+        path = self.target_inis[selection]
         if path is None:
             # 'Browse...'
             wildcard =  u'|'.join([_(u'Supported files')+u' (*.ini,*.cfg)|*.ini;*.cfg',
@@ -1739,8 +1739,8 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 self.comboBox.SetSelection(self.choice)
                 return
             # Make sure the 'new' file isn't already in the list
-            if path.stail in self.choices:
-                new_choice = self.choices.keys().index(path.stail)
+            if path.stail in self.target_inis:
+                new_choice = self.target_inis.keys().index(path.stail)
                 refresh = new_choice != self.choice
                 self.choice = new_choice
                 self.comboBox.SetSelection(self.choice) ## will not refresh !!!
@@ -1751,7 +1751,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self.AddOrSelectIniDropDown(path)
 
     def ClosePanel(self, destroy=False):
-        settings['bash.ini.choices'] = self.choices
+        settings['bash.ini.choices'] = self.target_inis
         settings['bash.ini.choice'] = self.choice
         settings['bash.ini.lastDir'] = self.lastDir
         if destroy: self.comboBox.Unbind(wx.EVT_SIZE)

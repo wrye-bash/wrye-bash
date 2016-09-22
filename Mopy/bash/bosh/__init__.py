@@ -2140,8 +2140,8 @@ class OblivionIni(IniFile):
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
-        # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
-        # default to user profile directory"""
+        # oblivion.ini was not found in the game directory or
+        # bUseMyGamesDirectory was not set.  Default to user profile directory
         IniFile.__init__(self, dirs['saveBase'].join(name))
 
     @balt.conversation
@@ -2171,13 +2171,6 @@ class OblivionIni(IniFile):
         return False
 
     #--BSA Redirection --------------------------------------------------------
-    def _getBsaRedirection(self):
-        """Returns True if BSA redirection is active."""
-        section,key = bush.game.ini.bsaRedirection
-        if not section or not key: return False
-        sArchives = self.getSetting(section,key,u'')
-        return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
-
     def setBsaRedirection(self,doRedirect=True):
         """Activate or deactivate BSA redirection - game ini must exist!"""
         section,key = bush.game.ini.bsaRedirection
@@ -2186,7 +2179,11 @@ class OblivionIni(IniFile):
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
-        if doRedirect == self._getBsaRedirection():
+        # check if BSA redirection is active
+        sArchives = self.getSetting(section, key, u'')
+        is_bsa_redirection_active = any(x for x in sArchives.split(u',')
+            if x.strip().lower() in self.bsaRedirectors)
+        if doRedirect == is_bsa_redirection_active:
             return
         # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
