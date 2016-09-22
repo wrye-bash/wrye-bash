@@ -1871,6 +1871,7 @@ class IniFile(object):
 
 #------------------------------------------------------------------------------
 def BestIniFile(path):
+    """:rtype: IniFile"""
     if not path:
         return oblivionIni
     for ini in gameInis:
@@ -2788,7 +2789,7 @@ class INIInfo(FileInfo):
 
     def getFileInfos(self): return iniInfos
 
-    def getStatus(self):
+    def getStatus(self, target_ini=None):
         """Returns status of the ini tweak:
         20: installed (green with check)
         15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
@@ -2798,14 +2799,14 @@ class INIInfo(FileInfo):
         Also caches the value in self._status"""
         path = self.getPath()
         infos = self.getFileInfos()
-        ini = infos.ini
-        tweak,tweak_deleted = ini.getTweakFileSettings(path)
+        target_ini = target_ini or infos.ini
+        tweak,tweak_deleted = target_ini.getTweakFileSettings(path)
         if not tweak:
             self._status = -10
             return -10
         match = False
         mismatch = 0
-        ini_settings = ini.getSettings()
+        ini_settings = target_ini.getSettings()
         for key in tweak:
             if key not in ini_settings:
                 self._status = -10
@@ -2828,7 +2829,7 @@ class INIInfo(FileInfo):
                             if this != other: continue
                             # It's from the same installer
                             other_settings, other_deletes = \
-                                ini.getTweakFileSettings(ini_info.getPath())
+                                target_ini.getTweakFileSettings(ini_info.getPath())
                             value = other_settings.get(key,{}).get(item)
                             if value == settingsKey[item]:
                                 # The other tweak has the setting we're worried about

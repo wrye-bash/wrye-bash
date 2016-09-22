@@ -271,13 +271,14 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
+        new_targets = set()
         for iniFile in ret.IniEdits:
             outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
                 (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
                 for line in generateTweakLines(ret.IniEdits[iniFile], iniFile):
                     out.write(line + u'\n')
-            bosh.iniInfos.refresh()
+            bosh.iniInfos.refreshFile(outFile.tail) # add it to the iniInfos
             bosh.iniInfos.table.setItem(outFile.tail, 'installer',
                                         installer.archive)
             # trigger refresh UI and unnecessary bosh.iniInfos.refresh()
@@ -287,7 +288,9 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 if iniFile == ini.path.stail:
                     target_path = ini.path
                     is_game_ini = True
+                    target_ini_file = ini
                     break
+            else: target_ini_file = None
             if iniFile in installer.data_sizeCrc or is_game_ini:
                 if not ret.Install and not is_game_ini:
                     # Can only automatically apply ini tweaks if the ini was
@@ -299,22 +302,27 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 # Editing an INI file from this installer is ok, but editing
                 # Oblivion.ini give a warning message
                 if not INIList.warn_tweak_game_ini(iniFile): continue
-                if BashFrame.iniList is not None:
-                    BashFrame.iniList.panel.AddOrSelectIniDropDown(
-                        target_path) # will set bosh.iniInfos.ini
-                else:
-                    bosh.iniInfos.ini = bosh.BestIniFile(target_path)
-                if bosh.iniInfos[outFile.tail].tweak_status in (20, -10):
+                target_ini_file = target_ini_file or bosh.BestIniFile(target_path)
+                if bosh.iniInfos[outFile.tail].getStatus(target_ini_file) in (20, -10):
                     continue # applied or invalid
-                bosh.iniInfos.ini.applyTweakFile(outFile)
+                target_ini_file.applyTweakFile(outFile)
                 lastApplied = outFile.tail
+                if not is_game_ini: new_targets.add(target_path)
             else:
                 # We wont automatically apply tweaks to anything other than
                 # Oblivion.ini or an ini from this installer
                 manuallyApply.append((outFile, iniFile))
         #--Refresh after all the tweaks are applied
-        if lastApplied is not None and BashFrame.iniList is not None:
-            BashFrame.iniList.RefreshUIValid(lastApplied, focus_list=False)
+        if lastApplied is not None:
+            if BashFrame.iniList is not None:
+                BashFrame.iniList.panel.add_target(new_targets)
+                BashFrame.iniList.panel.AddOrSelectIniDropDown(
+                    target_path) # will set bosh.iniInfos.ini
+                BashFrame.iniList.RefreshUIValid(lastApplied, focus_list=False)
+            else:
+                targets = bass.settings['bash.ini.choices']
+                for target in new_targets:
+                    if target.tail not in targets: targets[target.tail] = target ##: we must sort!
         if len(manuallyApply) > 0:
             message = balt.fill(_(
                 u'The following INI Tweaks were not automatically applied.  '

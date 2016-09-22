@@ -1713,6 +1713,14 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         stati = self.uiList.CountTweakStatus()
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
+    def add_target(self, paths):
+        for path in paths:
+            if path.stail not in self.target_inis:
+                current_choice = self._ini_name
+                self.target_inis[path.stail] = path
+                self.comboBox.SetItems(self.SortChoices())
+                self.choice = self.target_inis.keys().index(current_choice)
+
     def AddOrSelectIniDropDown(self, path): ## will refersh the UI !!
         if path.stail not in self.target_inis:
             self.target_inis[path.stail] = path
@@ -3358,6 +3366,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
                     # 'Mods' tab instead.
                     Link.Frame.notebook.SetSelection(iMods)
             # TODO(ut): we should call ClosePanel and make sure there are no leaks
+            tabInfo[self.tabKey][2].ClosePanel()
             page = Link.Frame.notebook.GetPage(iDelete)
             Link.Frame.notebook.RemovePage(iDelete)
             page.Show(False)
