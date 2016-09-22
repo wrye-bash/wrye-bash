@@ -3028,7 +3028,6 @@ class NotebookPanel(wx.Panel):
 
     def RefreshUIColors(self):
         """Called to signal that UI color settings have changed."""
-        pass
 
     def ShowPanel(self):
         """To be called when particular panel is changed to and/or shown for

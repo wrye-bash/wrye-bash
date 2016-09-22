@@ -245,6 +245,9 @@ class SashUIListPanel(SashPanel):
         """Sets status bar count field."""
         Link.Frame.SetStatusCount(self, self._sbCount())
 
+    def RefreshUIColors(self):
+        self.uiList.RefreshUI(focus_list=False)
+
     def ShowPanel(self):
         """Resize the columns if auto is on and set Status bar text. Also
         sets the scroll bar and sash positions on first show."""
@@ -1569,8 +1572,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         right.SetSizer(rSizer)
         left.SetSizer(lSizer)
 
-    def RefreshUIColors(self):
-        self.RefreshPanel()
+    def RefreshUIColors(self): self.RefreshPanel()
 
     def SelectTweak(self, tweakFile):
         self.tweakName.SetValue(tweakFile.sbody)
@@ -1748,9 +1750,6 @@ class ModPanel(BashTab):
         self.listData = bosh.modInfos
         super(ModPanel, self).__init__(parent, sashGravity=1.0)
         BashFrame.modList = self.uiList
-
-    def RefreshUIColors(self):
-        self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
         len(load_order.activeCached()), len(bosh.modInfos))
@@ -2056,10 +2055,6 @@ class SavePanel(BashTab):
         self.listData = bosh.saveInfos
         super(SavePanel, self).__init__(parent, sashGravity=1.0)
         BashFrame.saveList = self.uiList
-
-    def RefreshUIColors(self):
-        self.uiList.RefreshUI()
-        super(SavePanel, self).RefreshUIColors()
 
     def ClosePanel(self, destroy=False):
         bosh.saveInfos.profiles.save()
@@ -2829,10 +2824,6 @@ class InstallersPanel(BashTab):
         self.refreshing = False
         self.frameActivated = False
 
-    def RefreshUIColors(self):
-        """Update any controls using custom colors."""
-        self.uiList.RefreshUI()
-
     @balt.conversation
     def _first_run_set_enabled(self):
         if settings.get('bash.installers.isFirstRun',True):
@@ -3115,10 +3106,6 @@ class ScreensPanel(BashTab):
         self.listData = bosh.screensData = bosh.ScreensData()
         super(ScreensPanel, self).__init__(parent)
 
-    def RefreshUIColors(self):
-        self.uiList.RefreshUI()
-        super(ScreensPanel, self).RefreshUIColors()
-
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
@@ -3366,8 +3353,6 @@ class PeoplePanel(BashTab):
     def ShowPanel(self):
         if self.listData.refresh(): self.uiList.RefreshUI(focus_list=False)
         super(PeoplePanel, self).ShowPanel()
-
-    def RefreshUIColors(self): self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 #--Tabs menu
