@@ -2254,14 +2254,11 @@ class _AFileInfo:
     def __init__(self,dir,name):
         self.dir = GPath(dir)
         self.name = GPath(name)
-        path = self.getPath()
-        if path.exists():
-            self.ctime = path.ctime
-            self.mtime = path.mtime
-            self.size = path.size
-        else:
-            self.ctime = time.time()
-            self.mtime = time.time()
+        try:
+            self.size, self.mtime, self.ctime = \
+                self.getPath().size_mtime_ctime()
+        except OSError:
+            self.ctime = self.mtime = time.time()
             self.size = 0
 
     def getPath(self):

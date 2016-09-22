@@ -732,6 +732,10 @@ class Path(object):
         lstat = os.lstat(self._s)
         return lstat.st_size, int(lstat.st_mtime)
 
+    def size_mtime_ctime(self):
+        lstat = os.lstat(self._s)
+        return lstat.st_size, int(lstat.st_mtime), lstat.st_ctime
+
     @property
     def stat(self):
         """File stats"""
