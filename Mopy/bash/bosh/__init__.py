@@ -1636,9 +1636,11 @@ class IniFile(object):
         reDeleted = IniFile.reDeletedSetting
         reSetting = IniFile.reSetting
         if lineNumbers:
-            def makeSetting(match,lineNo): return match.group(2).strip(),lineNo
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip(), j
         else:
-            def makeSetting(match,lineNo): return match.group(2).strip()
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip()
         #--Read ini file
         with tweakPath.open('r') as iniFile:
             sectionSettings = None
@@ -1660,7 +1662,7 @@ class IniFile(object):
                         sectionSettings = ini_settings.setdefault(LString(
                             default_section), {})
                         if setCorrupted: self.isCorrupted = True
-                    sectionSettings[LString(maSetting.group(1))] = makeSetting(maSetting,i)
+                    _add_setting(i, maSetting, sectionSettings)
                 elif maDeleted:
                     if not section: continue
                     deleted_settings.setdefault(section,{})[LString(maDeleted.group(1))] = i
@@ -1915,6 +1917,12 @@ class OBSEIniFile(IniFile):
         reSet = self.reSet
         reSetGS = self.reSetGS
         reSetNGS = self.reSetNGS
+        if lineNumbers:
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip(), j
+        else:
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip()
         with tweakPath.open('r') as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
@@ -1928,28 +1936,19 @@ class OBSEIniFile(IniFile):
                         section = ini_settings.setdefault(bolt.LString(u']set['),{})
                     else:
                         section = deleted_settings.setdefault(LString(u']set['),{})
-                    if lineNumbers:
-                        section[LString(maSet.group(1))] = (maSet.group(2).strip(),i)
-                    else:
-                        section[LString(maSet.group(1))] = maSet.group(2).strip()
+                    _add_setting(i, maSet, section)
                 elif maSetGS:
                     if not maDeleted:
                         section = ini_settings.setdefault(bolt.LString(u']setGS['),{})
                     else:
                         section = deleted_settings.setdefault(LString(u']setGS['),{})
-                    if lineNumbers:
-                        section[LString(maSetGS.group(1))] = (maSetGS.group(2).strip(),i)
-                    else:
-                        section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
+                    _add_setting(i, maSetGS, section)
                 elif maSetNGS:
                     if not maDeleted:
                         section = ini_settings.setdefault(bolt.LString(u']SetNumericGameSetting['),{})
                     else:
                         section = deleted_settings.setdefault(LString(u']SetNumericGameSetting['),{})
-                    if lineNumbers:
-                        section[LString(maSetNGS.group(1))] = (maSetNGS.group(2).strip(),i)
-                    else:
-                        section[LString(maSetNGS.group(1))] = maSetNGS.group(2).strip()
+                    _add_setting(i, maSetNGS, section)
         return ini_settings,deleted_settings
 
     def getTweakFileLines(self,tweakPath):
@@ -1963,7 +1962,7 @@ class OBSEIniFile(IniFile):
             -10: doesn't exist in the ini
               0: does exist, but it's a heading or something else without a value
              10: does exist, but value isn't the same
-             20: deos exist, and value is the same
+             20: does exist, and value is the same
         ini_line_number = line number in the ini that this tweak applies to"""
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():

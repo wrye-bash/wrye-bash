@@ -269,20 +269,23 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         for iniFile in ret.IniEdits:
-            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
+                (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
-                for line in generateTweakLines(ret.IniEdits[iniFile],iniFile):
-                    out.write(line+u'\n')
+                for line in generateTweakLines(ret.IniEdits[iniFile], iniFile):
+                    out.write(line + u'\n')
             bosh.iniInfos.refresh()
-            bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
+            bosh.iniInfos.table.setItem(outFile.tail, 'installer',
+                                        installer.archive)
             if BashFrame.iniList is not None:
                 BashFrame.iniList.RefreshUI(focus_list=False)
             if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
                 if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
-                    # Can only automatically apply ini tweaks if the ini was actually installed.  Since
-                    # BAIN is setup to not auto install after the wizard, we'll show a message telling the
-                    # User what tweaks to apply manually.
-                    manuallyApply.append((outFile,iniFile))
+                    # Can only automatically apply ini tweaks if the ini was
+                    # actually installed.  Since BAIN is setup to not auto
+                    # install after the wizard, we'll show a message telling
+                    # the User what tweaks to apply manually.
+                    manuallyApply.append((outFile, iniFile))
                     continue
                 # Editing an INI file from this installer is ok, but editing
                 # Oblivion.ini give a warning message
@@ -295,16 +298,19 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 bosh.iniInfos.ini.applyTweakFile(outFile)
                 lastApplied = outFile.tail
             else:
-                # We wont automatically apply tweaks to anything other than Oblivion.ini or an ini from
-                # this installer
-                manuallyApply.append((outFile,iniFile))
+                # We wont automatically apply tweaks to anything other than
+                # Oblivion.ini or an ini from this installer
+                manuallyApply.append((outFile, iniFile))
         #--Refresh after all the tweaks are applied
         if lastApplied is not None and BashFrame.iniList is not None:
             BashFrame.iniList.RefreshUIValid(lastApplied)
         if len(manuallyApply) > 0:
-            message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
+            message = balt.fill(_(
+                u'The following INI Tweaks were not automatically applied.  '
+                u'Be sure to apply them after installing the package.'))
             message += u'\n\n'
-            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
+            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s
+                                   for x in manuallyApply])
             self._showInfo(message)
 
     @staticmethod

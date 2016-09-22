@@ -735,7 +735,7 @@ class INILineCtrl(INIListCtrl):
         except IOError:
             warn = True
             if hasattr(Link.Frame, 'notebook'): # we may be called before
-                # the notebook is build, in INIPanel.__init__ > SetBaseIni
+                # the notebook is build, in INIPanel.__init__ > _SetBaseIni
                 page = Link.Frame.notebook.currentPage
                 if page != self.GetParent().GetParent().GetParent():
                     warn = False
@@ -1559,8 +1559,8 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self.tweakContents = INITweakLineCtrl(right,self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = RoTextCtrl(right, noborder=True, multiline=False)
-        self.SetBaseIni(self.current_ini_path)
-        BashFrame.iniList = self.uiList # must be AFTER SetBaseIni, DUH
+        self._SetBaseIni(self.current_ini_path)
+        BashFrame.iniList = self.uiList # must be AFTER _SetBaseIni, DUH
         self.comboBox = balt.ComboBox(right, value=self._ini_name,
                                       choices=self.choices.keys())
         #--Events
@@ -1621,11 +1621,11 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
             else:
                 del self.choices[self._ini_name]
                 self.choice -= 1
-        self.SetBaseIni(self.current_ini_path)
+        self._SetBaseIni(self.current_ini_path)
         self.comboBox.SetItems(self.SortChoices())
         self.comboBox.SetSelection(self.choice)
 
-    def SetBaseIni(self,path=None):
+    def _SetBaseIni(self, path=None):
         """Sets the target INI file."""
         choicePath = self.current_ini_path
         for iFile in bosh.gameInis:
@@ -1666,7 +1666,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         del self.choices[selection]
         self.comboBox.SetItems(self.SortChoices())
         self.comboBox.SetSelection(self.choice)
-        self.SetBaseIni()
+        self._SetBaseIni()
 
     def OnEdit(self):
         """Called when the 'Edit' button is pressed."""
@@ -1722,7 +1722,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 return
         self.choice = self.choices.keys().index(path.stail)
         self.comboBox.SetSelection(self.choice)
-        self.SetBaseIni(path)
+        self._SetBaseIni(path)
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
@@ -1745,7 +1745,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 self.choice = new_choice
                 self.comboBox.SetSelection(self.choice)
                 if refresh:
-                    self.SetBaseIni(path)
+                    self._SetBaseIni(path)
                 return
             self.lastDir = path.shead
         self.AddOrSelectIniDropDown(path)
