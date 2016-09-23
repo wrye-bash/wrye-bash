@@ -3047,9 +3047,8 @@ class FileInfos(_DataStore):
         self.table = bolt.Table(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
 
-    def __init__(self, dir_, factory=FileInfo, dirdef=None):
+    def __init__(self, dir_, factory=FileInfo):
         """Init with specified directory and specified factory type."""
-        self.dirdef = dirdef
         self.factory=factory
         self._initDB(dir_)
 
@@ -3066,14 +3065,8 @@ class FileInfos(_DataStore):
 
     #--Refresh
     def _names(self): # performance intensive - dirdef stuff needs rethinking
-        if self.dirdef:
-            # Default items
-            names = {x for x in self.dirdef.list() if
-                     self.dirdef.join(x).isfile() and self.rightFileType(x)}
-        else:
-            names = set()
+        names = set()
         if self.store_dir.exists():
-            # Normal folder items
             names |= {x for x in self.store_dir.list() if
                 self.store_dir.join(x).isfile() and self.rightFileType(x)}
         return list(names)
@@ -3086,10 +3079,7 @@ class FileInfos(_DataStore):
         _updated = set()
         names = self._names()
         for name in names:
-            if self.dirdef and not self.store_dir.join(name).isfile():
-                fileInfo = self.factory(self.dirdef,name)
-            else:
-                fileInfo = self.factory(self.store_dir, name)
+            fileInfo = self.factory(self.store_dir, name)
             name = fileInfo.name #--Might have '.ghost' lopped off.
             if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
             oldInfo = self.get(name) # None if name was in corrupted
@@ -3259,8 +3249,55 @@ class INIInfos(FileInfos):
     file_pattern = re.compile(ur'\.ini$', re.I | re.U)
 
     def __init__(self):
-        FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
+        FileInfos.__init__(self, dirs['tweaks'], INIInfo)
+        self.dirdef = dirs['defaultTweaks']
         self.ini = oblivionIni
+
+    def _names(self): # Yak !
+        names = {x for x in self.dirdef.list() if
+                 self.dirdef.join(x).isfile() and self.rightFileType(x)}
+        if self.store_dir.exists():
+            # Normal folder items
+            names |= {x for x in self.store_dir.list() if
+                self.store_dir.join(x).isfile() and self.rightFileType(x)}
+        return list(names)
+
+    def refresh(self, scanData=True):
+        """Refresh from file directory."""
+        oldNames = set(self.data)
+        newNames = set()
+        _added = set()
+        _updated = set()
+        names = self._names()
+        for name in names:
+            if not self.store_dir.join(name).isfile():
+                fileInfo = self.factory(self.dirdef, name)
+            else:
+                fileInfo = self.factory(self.store_dir, name)
+            name = fileInfo.name
+            if name in newNames:
+                deprint(u'%s appears twice (%s)' % (name, fileInfo.getPath()))
+                continue
+            oldInfo = self.get(name) # None if name was in corrupted
+            isAdded = name not in oldNames
+            if oldInfo is not None:
+                isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
+            else: isUpdated = False
+            if isAdded or isUpdated:
+                self[name] = fileInfo
+                if isAdded: _added.add(name)
+                elif isUpdated: _updated.add(name)
+            newNames.add(name)
+        _deleted = oldNames - newNames
+        for name in _deleted:
+            self.pop(name, None)
+        if _deleted:
+            # items deleted outside Bash
+            for d in set(self.table.keys()) & set(_deleted):
+                del self.table[d]
+        change = bool(_added) or bool(_updated) or bool(_deleted)
+        if not change: return change
+        return _added, _updated, _deleted
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
