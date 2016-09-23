@@ -2738,19 +2738,6 @@ class ModInfo(FileInfo):
         self.header.setChanged()
         self.writeHeader()
 
-    def writeAuthor(self,author):
-        """Sets author to specified text and then writes hedr."""
-        author = author[:min(511,len(author))] # 511 + 1 for null = 512
-        self.header.author = author
-        self.header.setChanged()
-        self.writeHeader()
-
-    def writeAuthorWB(self):
-        """Marks author field with " [wb]" to indicate Wrye Bash modification."""
-        author = self.header.author
-        if u'[wm]' not in author and len(author) <= 27:
-            self.writeAuthor(author+u' [wb]')
-
 #------------------------------------------------------------------------------
 class INIInfo(FileInfo):
     def __init__(self,*args,**kwdargs):
