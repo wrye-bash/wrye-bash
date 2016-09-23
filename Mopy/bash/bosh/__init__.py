@@ -1631,10 +1631,10 @@ class IniFile(object):
         else:
             encoding = self.encoding
             setCorrupted = True
-        reComment = IniFile.reComment
-        reSection = IniFile.reSection
-        reDeleted = IniFile.reDeletedSetting
-        reSetting = IniFile.reSetting
+        reComment = self.__class__.reComment
+        reSection = self.__class__.reSection
+        reDeleted = self.__class__.reDeletedSetting
+        reSetting = self.__class__.reSetting
         if lineNumbers:
             def _add_setting(j, match, _section):
                 _section[LString(match.group(1))] = match.group(2).strip(), j
@@ -1913,11 +1913,11 @@ class OBSEIniFile(IniFile):
         deleted_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings,deleted_settings
-        reDeleted = self.reDeleted
-        reComment = self.reComment
-        reSet = self.reSet
-        reSetGS = self.reSetGS
-        reSetNGS = self.reSetNGS
+        reDeleted = self.__class__.reDeleted
+        reComment = self.__class__.reComment
+        reSet     = self.__class__.reSet
+        reSetGS   = self.__class__.reSetGS
+        reSetNGS  = self.__class__.reSetNGS
         if lineNumbers:
             def _add_setting(j, match, _section):
                 _section[LString(match.group(1))] = match.group(2).strip(), j
@@ -2789,6 +2789,12 @@ class INIInfo(FileInfo):
 
     def getFileInfos(self): return iniInfos
 
+    _ini_types, _obse_ini_types = {IniFile, OblivionIni}, {OBSEIniFile}
+    def _incompatible(self, other):
+        if type(self._ini_file) not in self._obse_ini_types:
+            return type(other) in self._obse_ini_types
+        return type(other) not in self._obse_ini_types
+
     def getStatus(self, target_ini=None):
         """Returns status of the ini tweak:
         20: installed (green with check)
@@ -2800,19 +2806,19 @@ class INIInfo(FileInfo):
         path = self.getPath()
         infos = self.getFileInfos()
         target_ini = target_ini or infos.ini
-        tweak,tweak_deleted = target_ini.getTweakFileSettings(path)
-        if not tweak:
+        tweak_settings = self._ini_file.getSettings()
+        if self._incompatible(target_ini) or not tweak_settings:
             self._status = -10
             return -10
         match = False
         mismatch = 0
         ini_settings = target_ini.getSettings()
-        for key in tweak:
+        for key in tweak_settings:
             if key not in ini_settings:
                 self._status = -10
                 return -10
             settingsKey = ini_settings[key]
-            tweakKey = tweak[key]
+            tweakKey = tweak_settings[key]
             for item in tweakKey:
                 if item not in settingsKey:
                     self._status = -10
