@@ -1874,9 +1874,9 @@ def BestIniFile(path):
     """:rtype: IniFile"""
     if not path:
         return oblivionIni
-    for ini in gameInis:
-        if path == ini.path:
-            return ini
+    for game_ini in gameInis:
+        if path == game_ini.path:
+            return game_ini
     INICount = IniFile.formatMatch(path)
     OBSECount = OBSEIniFile.formatMatch(path)
     if INICount >= OBSECount:

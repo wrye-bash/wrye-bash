@@ -284,11 +284,11 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             # trigger refresh UI and unnecessary bosh.iniInfos.refresh()
             ui_refresh[1] = True
             is_game_ini, target_path = False, bass.dirs['mods'].join(iniFile)
-            for ini in bosh.gameInis:
-                if iniFile == ini.path.stail:
-                    target_path = ini.path
+            for game_ini in bosh.gameInis:
+                if iniFile == game_ini.path.stail:
+                    target_path = game_ini.path
                     is_game_ini = True
-                    target_ini_file = ini
+                    target_ini_file = game_ini
                     break
             else: target_ini_file = None
             if iniFile in installer.data_sizeCrc or is_game_ini:

@@ -554,6 +554,9 @@ class INIList(balt.UIList):
                                                    p, 'installer', u'')),
     ])
 
+    @property
+    def current_ini_name(self): return self.panel.ini_name
+
     def CountTweakStatus(self):
         """Returns number of each type of tweak, in the
         following format:
@@ -1561,7 +1564,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self.tweakName = RoTextCtrl(right, noborder=True, multiline=False)
         self._SetBaseIni(self.current_ini_path)
         BashFrame.iniList = self.uiList # must be AFTER _SetBaseIni, DUH
-        self.comboBox = balt.ComboBox(right, value=self._ini_name,
+        self.comboBox = balt.ComboBox(right, value=self.ini_name,
                                       choices=self.target_inis.keys())
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
@@ -1601,7 +1604,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         return self.target_inis.values()[self.choice]
 
     @property
-    def _ini_name(self): return self.target_inis.keys()[self.choice]
+    def ini_name(self): return self.target_inis.keys()[self.choice]
 
     def ShowPanel(self):
         changed = self.trackedInfo.refreshTracked()
@@ -1619,7 +1622,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 if iFile.path == path:
                     break
             else:
-                del self.target_inis[self._ini_name]
+                del self.target_inis[self.ini_name]
                 self.choice -= 1
         self._SetBaseIni(self.current_ini_path)
         self.comboBox.SetItems(self.SortChoices())
@@ -1716,7 +1719,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     def add_target(self, paths):
         for path in paths:
             if path.stail not in self.target_inis:
-                current_choice = self._ini_name
+                current_choice = self.ini_name
                 self.target_inis[path.stail] = path
                 self.comboBox.SetItems(self.SortChoices())
                 self.choice = self.target_inis.keys().index(current_choice)
