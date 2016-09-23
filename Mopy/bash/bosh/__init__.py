@@ -2320,11 +2320,8 @@ class FileInfo(_AFileInfo):
     def isEss(self):
         return self.name.cext == bush.game.ess.ext
 
-    def refresh(self):
-        path = self.getPath()
-        self.ctime = path.ctime
-        self.mtime = path.mtime
-        self.size  = path.size
+    def info_refresh(self):
+        self.size, self.mtime, self.ctime = self.getPath().size_mtime_ctime()
         if self.header: self.readHeader() # if not header remains None
 
     def readHeader(self):

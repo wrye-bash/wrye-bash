@@ -207,7 +207,7 @@ class PatchDialog(balt.Dialog):
                 progress(0.9,patch_name.s+u'\n'+_(u'Saving...'))
                 self._save_pbash(patchFile, patch_name)
             #--Cleanup
-            self.patchInfo.refresh()
+            self.patchInfo.info_refresh()
             #--Done
             progress.Destroy(); progress = None
             timer2 = time.clock()
