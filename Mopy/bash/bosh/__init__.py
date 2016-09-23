@@ -1690,7 +1690,8 @@ class IniFile(object):
             encoding = 'utf-8'
         else:
             encoding = self.encoding
-        iniSettings,deletedSettings = self.getSettings(with_line_numbers=True, with_deleted=True)
+        iniSettings, deletedSettings = self.getSettings(with_line_numbers=True,
+                                                        with_deleted=True)
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -1968,8 +1969,8 @@ class OBSEIniFile(IniFile):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        iniSettings, deletedSettings = self._getTweakFileSettings(
-            self.path, lineNumbers=True)
+        iniSettings, deletedSettings = self.getSettings(with_line_numbers=True,
+                                                        with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
