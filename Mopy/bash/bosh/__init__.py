@@ -1609,7 +1609,7 @@ class IniFile(object):
                 or self._ini_mod_time != pmtime:
             self._ini_size, self._ini_mod_time = psize, pmtime
             self._settings_cache_linenum, self._deleted_cache = \
-                self.getTweakFileSettings(self.path, lineNumbers=True)
+                self._getTweakFileSettings(self.path, lineNumbers=True)
             self._settings_cache = dict(
                 (k, dict((x, y[0]) for x, y in v.iteritems())) for k, v in
                 self._settings_cache_linenum.iteritems())
@@ -1618,7 +1618,7 @@ class IniFile(object):
         if with_deleted: return cached, self._deleted_cache
         return cached
 
-    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
+    def _getTweakFileSettings(self, tweakPath, lineNumbers=False):
         """Gets settings in a tweak file."""
         ini_settings = {}
         deleted_settings = {}
@@ -1907,7 +1907,7 @@ class OBSEIniFile(IniFile):
         elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
-    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
+    def _getTweakFileSettings(self, tweakPath, lineNumbers=False):
         """Get the settings in the ini script."""
         ini_settings = {}
         deleted_settings = {}
@@ -1968,7 +1968,8 @@ class OBSEIniFile(IniFile):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True)
+        iniSettings, deletedSettings = self._getTweakFileSettings(
+            self.path, lineNumbers=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
@@ -2813,17 +2814,17 @@ class INIInfo(FileInfo):
         mismatch = 0
         ini_settings = target_ini.getSettings()
         this = infos.table.getItem(self.getPath().tail, 'installer')
-        for key in tweak_settings:
-            if key not in ini_settings:
+        for section_key in tweak_settings:
+            if section_key not in ini_settings:
                 self._status = -10
                 return -10
-            settingsKey = ini_settings[key]
-            tweakKey = tweak_settings[key]
-            for item in tweakKey:
-                if item not in settingsKey:
+            target_section = ini_settings[section_key]
+            tweak_section = tweak_settings[section_key]
+            for item in tweak_section:
+                if item not in target_section:
                     self._status = -10
                     return -10
-                if tweakKey[item] != settingsKey[item]:
+                if tweak_section[item] != target_section[item]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another
                         # ini tweak that is applied, and from the same installer
@@ -2837,8 +2838,8 @@ class INIInfo(FileInfo):
                             other_ini_file = ini_info.ini_info_file
                             if self._incompatible(other_ini_file): continue
                             other_settings = other_ini_file.getSettings()
-                            value = other_settings.get(key,{}).get(item)
-                            if value == settingsKey[item]:
+                            value = other_settings.get(section_key,{}).get(item)
+                            if value == target_section[item]:
                                 # The other tweak has the setting we're worried about
                                 mismatch = 1
                                 break
@@ -2856,46 +2857,34 @@ class INIInfo(FileInfo):
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
-        #--Setup
-        path = self.getPath()
-        ini = iniInfos.ini
-        tweak,deletes = ini.getTweakFileSettings(path)
-        ini_settings = ini.getSettings()
-        text = [u'%s:' % path.stail]
-
-        if len(tweak) == 0:
-            tweak = BestIniFile(path)
-            if isinstance(ini,(OblivionIni,IniFile)):
-                # Target is a "true" INI format file
-                if isinstance(tweak,(OblivionIni,IniFile)):
-                    # Tweak is also a "true" INI format
+        ini_infos_ini = iniInfos.ini
+        text = [u'%s:' % self.getPath().stail]
+        if self._incompatible(ini_infos_ini):
+            text.append(u' '+_(u'Format mismatch:') + u'\n  ')
+            if type(self.ini_info_file) in self._obse_ini_types:
+                text.append(_(u'Target format: INI') + u'\n  ' +
+                            _(u'Tweak format: Batch Script'))
+            else:
+                text.append(_(u'Target format: Batch Script') + u'\n  ' +
+                            _(u'Tweak format: INI'))
+        else:
+            tweak_settings = self.ini_info_file.getSettings()
+            ini_settings = ini_infos_ini.getSettings()
+            if len(tweak_settings) == 0:
+                if type(self.ini_info_file) not in self._obse_ini_types:
                     text.append(_(u' No valid INI format lines.'))
                 else:
-                    text.append((u' '+_(u'Format mismatch:')
-                                 + u'\n  ' +
-                                 _(u'Target format: INI')
-                                 + u'\n  ' +
-                                 _(u'Tweak format: Batch Script')))
-            else:
-                if isinstance(tweak,OBSEIniFile):
                     text.append(_(u' No valid Batch Script format lines.'))
-                else:
-                    text.append((u' '+_(u'Format mismatch:')
-                                 + u'\n  ' +
-                                 _(u'Target format: Batch Script')
-                                 + u'\n  ' +
-                                 _(u'Tweak format: INI')))
-        else:
-            for key in tweak:
-                if key not in ini_settings:
-                    text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
-                else:
-                    for item in tweak[key]:
-                        if item not in ini_settings[key]:
-                            text.append(u' [%s] %s' % (key, item))
+            else:
+                for key in tweak_settings:
+                    if key not in ini_settings:
+                        text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
+                    else:
+                        for item in tweak_settings[key]:
+                            if item not in ini_settings[key]:
+                                text.append(u' [%s] %s' % (key, item))
         if len(text) == 1:
             text.append(u' None')
-
         with sio() as out:
             log = bolt.LogFile(out)
             for line in text:
