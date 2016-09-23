@@ -2776,7 +2776,7 @@ class INIInfo(FileInfo):
         self.__ini_file = None
 
     @property
-    def _ini_file(self): # init once when we need it
+    def ini_info_file(self): # init once when we need it
         if self.__ini_file is None:
             self.__ini_file = BestIniFile(self.getPath())
         return self.__ini_file
@@ -2791,7 +2791,7 @@ class INIInfo(FileInfo):
 
     _ini_types, _obse_ini_types = {IniFile, OblivionIni}, {OBSEIniFile}
     def _incompatible(self, other):
-        if type(self._ini_file) not in self._obse_ini_types:
+        if type(self.ini_info_file) not in self._obse_ini_types:
             return type(other) in self._obse_ini_types
         return type(other) not in self._obse_ini_types
 
@@ -2803,16 +2803,16 @@ class INIInfo(FileInfo):
         0: not installed (green)
         -10: invalid tweak file (red).
         Also caches the value in self._status"""
-        path = self.getPath()
         infos = self.getFileInfos()
         target_ini = target_ini or infos.ini
-        tweak_settings = self._ini_file.getSettings()
+        tweak_settings = self.ini_info_file.getSettings()
         if self._incompatible(target_ini) or not tweak_settings:
             self._status = -10
             return -10
         match = False
         mismatch = 0
         ini_settings = target_ini.getSettings()
+        this = infos.table.getItem(self.getPath().tail, 'installer')
         for key in tweak_settings:
             if key not in ini_settings:
                 self._status = -10
@@ -2828,14 +2828,15 @@ class INIInfo(FileInfo):
                         # Check to see if the mismatch is from another
                         # ini tweak that is applied, and from the same installer
                         mismatch = 2
+                        if this is None: continue
                         for name, ini_info in infos.iteritems():
                             if self is ini_info: continue
-                            this = infos.table.getItem(path.tail,'installer')
                             other = infos.table.getItem(name, 'installer')
                             if this != other: continue
                             # It's from the same installer
-                            other_settings, other_deletes = \
-                                target_ini.getTweakFileSettings(ini_info.getPath())
+                            other_ini_file = ini_info.ini_info_file
+                            if self._incompatible(other_ini_file): continue
+                            other_settings = other_ini_file.getSettings()
                             value = other_settings.get(key,{}).get(item)
                             if value == settingsKey[item]:
                                 # The other tweak has the setting we're worried about

@@ -207,7 +207,7 @@ class INI_CreateNew(OneItemLink):
         # Now edit it with the values from the target INI
         bosh.iniInfos.refresh()
         oldTarget = self.window.data_store.ini
-        target = bosh.BestIniFile(tweak_path)
+        target = bosh.iniInfos[tweak_path.tail].ini_info_file
         settings = copy.copy(target.getSettings())
         new_settings = oldTarget.getSettings()
         for section in settings:
