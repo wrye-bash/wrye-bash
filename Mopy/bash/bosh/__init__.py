@@ -2186,7 +2186,10 @@ class OblivionIni(IniFile):
             return False
         try:
             srcPath.copyTo(self.path)
-            for ini_info in iniInfos.itervalues(): ini_info.reset_status()
+            if balt.Link.Frame.iniList:
+                balt.Link.Frame.iniList.panel.ShowPanel(refresh_infos=False)
+            else:
+                iniInfos.refresh(refresh_infos=False)
             return True
         except (OSError, IOError):
             error_msg = u'Failed to copy %s to %s' % (srcPath, self.path)
@@ -3092,7 +3095,7 @@ class FileInfos(_DataStore):
                 self.store_dir.join(x).isfile() and self.rightFileType(x)}
         return list(names)
 
-    def refresh(self, scanData=True):
+    def refresh(self, refresh_infos=True):
         """Refresh from file directory."""
         oldNames = set(self.data) | set(self.corrupted)
         newNames = set()
@@ -3337,7 +3340,7 @@ class INIInfos(FileInfos):
                 self.store_dir.join(x).isfile() and self.rightFileType(x)}
         return list(names)
 
-    def refresh(self, scanData=True):
+    def _refresh_infos(self):
         """Refresh from file directory."""
         oldNames = set(self.data)
         newNames = set()
@@ -3370,7 +3373,14 @@ class INIInfos(FileInfos):
             # items deleted outside Bash
             for d in set(self.table.keys()) & set(_deleted):
                 del self.table[d]
-        changed = self.ini.updated or self.ini.needs_update()
+        return _added, _deleted, _updated
+
+    def refresh(self, refresh_infos=True, refresh_target=True):
+        _added = _deleted = _updated = set()
+        if refresh_infos:
+            _added, _deleted, _updated = self._refresh_infos()
+        changed = refresh_target and (
+            self.ini.updated or self.ini.needs_update())
         if changed: # reset the status of all infos and let RefreshUI set it
             self.ini.updated = False
             for ini_info in self.itervalues(): ini_info.reset_status()
@@ -3586,10 +3596,10 @@ class ModInfos(FileInfos):
         names.sort(key=lambda x: x.cext == u'.ghost')
         return names
 
-    def refresh(self, scanData=True, _modTimesChange=False):
+    def refresh(self, refresh_infos=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes.
 
-        See usages for how to use the scanData and _modTimesChange params.
+        See usages for how to use the refresh_infos and _modTimesChange params.
         _modTimesChange is not strictly needed after the lo rewrite,
         as get_lo will always recalculate it - kept to help track places in
         the code where timestamp load order may change.
@@ -3600,11 +3610,11 @@ class ModInfos(FileInfos):
         """
         hasChanged = deleted = False
         # Scan the data dir, getting info on added, deleted and modified files
-        if scanData:
+        if refresh_infos:
             change = FileInfos.refresh(self)
             if change: _added, _updated, deleted = change
             hasChanged = bool(change)
-        # If scanData is False and mods are added be sure to refresh manually
+        # If refresh_infos is False and mods are added _do_ manually refresh
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
@@ -4148,7 +4158,7 @@ class ModInfos(FileInfos):
                 -1] if selected else self._lo_wip[-1]
             self.cached_lo_insert_after(last_selected, new_name)
             self.cached_lo_save_lo()
-            self.refresh(scanData=False)
+            self.refresh(refresh_infos=False)
 
     def generateNextBashedPatch(self, selected_mods):
         """Attempt to create a new bashed patch, numbered from 0 to 9.  If
@@ -4371,9 +4381,9 @@ class SaveInfos(FileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, scanData=True):
+    def refresh(self, refresh_infos=True):
         self._refreshLocalSave()
-        return scanData and FileInfos.refresh(self)
+        return refresh_infos and FileInfos.refresh(self)
 
     def delete(self, fileName, **kwargs):
         """Deletes savefile and associated pluggy file."""

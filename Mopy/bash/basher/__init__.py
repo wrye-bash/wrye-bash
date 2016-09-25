@@ -180,7 +180,7 @@ class _DetailsViewMixin(NotebookPanel):
         self.detailsPanel.ClosePanel(destroy)
         super(_DetailsViewMixin, self).ClosePanel(destroy)
 
-    def ShowPanel(self):
+    def ShowPanel(self, **kwargs):
         super(_DetailsViewMixin, self).ShowPanel()
         self.detailsPanel.ShowPanel()
 
@@ -211,7 +211,7 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
-    def ShowPanel(self):
+    def ShowPanel(self, **kwargs):
         if self._firstShow:
             sashPos = settings.get(self.sashPosKey,
                                    self.__class__.defaultSashPos)
@@ -253,7 +253,7 @@ class SashUIListPanel(SashPanel):
     def RefreshUIColors(self):
         self.uiList.RefreshUI(focus_list=False)
 
-    def ShowPanel(self):
+    def ShowPanel(self, **kwargs):
         """Resize the columns if auto is on and set Status bar text. Also
         sets the scroll bar and sash positions on first show. Must be _after_
         RefreshUI for scroll bar to be set correctly."""
@@ -645,7 +645,7 @@ class INIList(balt.UIList):
         choice = self.panel.current_ini_path.tail
         if not self.warn_tweak_game_ini(choice): return
         target.applyTweakFile(tweak.getPath())
-        self.panel.ShowPanel()
+        self.panel.ShowPanel(refresh_infos=False)
 
     @staticmethod
     @balt.conversation
@@ -1214,7 +1214,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
             vspace(), hSizer(self.save, hspace(), self.cancel))
         self.masterPanel.SetSizer(mastersSizer)
 
-    def ShowPanel(self):
+    def ShowPanel(self, **kwargs):
         if self._firstShow:
             super(_SashDetailsPanel, self).ShowPanel() # set sashPosition
             sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
@@ -1412,7 +1412,7 @@ class ModDetails(_SashDetailsPanel):
             modInfo.setmtime(newTimeInt)
             self.SetFile(self.displayed_item)
             with load_order.Unlock():
-                bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
+                bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI( # refresh saves if lo changed
                 refreshSaves=not load_order.using_txt_file())
             return
@@ -1458,7 +1458,7 @@ class ModDetails(_SashDetailsPanel):
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
         with load_order.Unlock():
-            bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
+            bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
             changeDate and not load_order.using_txt_file())
         self.panel_uilist.RefreshUI(refreshSaves=refreshSaves)
@@ -1609,8 +1609,9 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     @property
     def ini_name(self): return self.target_inis.keys()[self.choice]
 
-    def ShowPanel(self):
-        changes = bosh.iniInfos.refresh()
+    def ShowPanel(self, refresh_infos=True, refresh_target=True, **kwargs):
+        changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
+                                        refresh_target=refresh_target)
         if changes:
             if changes[3]:
                 path = self.current_ini_path
@@ -2613,7 +2614,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.gEspmList.Clear()
         self.gComments.SetValue(u'')
 
-    def ShowPanel(self):
+    def ShowPanel(self, **kwargs):
         if self._firstShow:
             super(InstallersDetails, self).ShowPanel() # set sash position
             sashPos = settings.get(
@@ -2807,7 +2808,8 @@ class InstallersPanel(BashTab):
                                                               _(u'Installers'))
 
     @balt.conversation
-    def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False):
+    def ShowPanel(self, canCancel=True, fullRefresh=False, scan_data_dir=False,
+                  **kwargs):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
         if not settings['bash.installers.enabled'] or self.refreshing: return
@@ -2966,7 +2968,7 @@ class InstallersPanel(BashTab):
             Link.Frame.warn_corrupted(warn_saves=False)
             Link.Frame.warn_load_order()
         if inis_changed:
-            bosh.iniInfos.refresh()
+            bosh.iniInfos.refresh(refresh_target=False)
             if BashFrame.iniList is not None:
                 BashFrame.iniList.panel.RefreshPanel()
         bosh.BSAInfos.check_bsa_timestamps()
@@ -3076,7 +3078,7 @@ class ScreensPanel(BashTab):
         self.listData = bosh.screensData = bosh.ScreensData()
         super(ScreensPanel, self).__init__(parent)
 
-    def ShowPanel(self):
+    def ShowPanel(self, **kwargs):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
             self.uiList.RefreshUI(focus_list=False)
@@ -3289,7 +3291,7 @@ class PeoplePanel(BashTab):
         self.listData = bosh.PeopleData()
         super(PeoplePanel, self).__init__(parent)
 
-    def ShowPanel(self):
+    def ShowPanel(self, **kwargs):
         if self.listData.refresh(): self.uiList.RefreshUI(focus_list=False)
         super(PeoplePanel, self).ShowPanel()
 
@@ -3744,7 +3746,7 @@ class BashFrame(wx.Frame):
             BashFrame.saveListRefresh(focus_list=False)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
-        self.notebook.currentPage.ShowPanel()
+        self.notebook.currentPage.ShowPanel(refresh_infos=not booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self.warn_load_order()
@@ -4010,7 +4012,8 @@ class BashApp(wx.App):
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()
         progress(0.4, _(u'Initializing IniInfos'))
-        bosh.iniInfos = bosh.INIInfos() # no need to refresh if panel is not shown
+        bosh.iniInfos = bosh.INIInfos()
+        bosh.iniInfos.refresh(refresh_target=False)
         # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
         bosh.bsaInfos = bosh.BSAInfos()
         # screens/people/installers data are refreshed upon showing the panel

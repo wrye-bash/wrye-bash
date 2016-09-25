@@ -152,7 +152,7 @@ class File_Duplicate(ItemLink):
             dests.append(destName)
         if dests:
             if fileInfo.isMod(): fileInfos.cached_lo_save_lo()
-            fileInfos.refresh(scanData=False)
+            fileInfos.refresh(refresh_infos=False)
             self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
             self.window.SelectAndShowItem(dests[-1])
