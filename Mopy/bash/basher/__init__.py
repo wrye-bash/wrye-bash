@@ -3259,10 +3259,14 @@ class PeopleList(balt.UIList):
 
 #------------------------------------------------------------------------------
 class PeopleDetails(_DetailsMixin, NotebookPanel):
+    @property
+    def displayed_item(self): return self._people_detail
+    @property
+    def file_infos(self): return self.peoplePanel.listData
 
     def __init__(self, parent):
         super(PeopleDetails, self).__init__(parent)
-        self.detailsItem = None # type: unicode
+        self._people_detail = None # type: unicode
         self.peoplePanel = parent.GetParent().GetParent()
         self.gName = RoTextCtrl(self, multiline=False)
         self.gText = TextCtrl(self, multiline=True)
@@ -3278,37 +3282,38 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
 
     def OnSpin(self):
         """Karma spin."""
-        if not self.detailsItem: return
+        if not self._people_detail: return
         karma = int(self.gKarma.GetValue())
-        text = self.peoplePanel.listData[self.detailsItem][2]
-        self.peoplePanel.listData[self.detailsItem] = (time.time(), karma, text)
-        self.peoplePanel.uiList.PopulateItem(item=self.detailsItem)
-        self.peoplePanel.listData.setChanged()
+        text = self.file_infos[self._people_detail][2]
+        self.file_infos[self._people_detail] = (time.time(), karma, text)
+        self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
+        self.file_infos.setChanged()
 
     def ClosePanel(self, destroy=False):
         """Saves details if they need saving."""
         if not self.gText.IsModified(): return
-        if not self.detailsItem or self.detailsItem not in self.peoplePanel.listData: return
-        mtime,karma,text = self.peoplePanel.listData[self.detailsItem]
-        self.peoplePanel.listData[self.detailsItem] = (time.time(), karma, self.gText.GetValue().strip())
-        self.peoplePanel.uiList.PopulateItem(item=self.detailsItem)
-        self.peoplePanel.listData.setChanged()
+        if not self.file_info: return
+        mtime, karma, text = self.file_infos[self._people_detail]
+        self.file_infos[self._people_detail] = (
+            time.time(), karma, self.gText.GetValue().strip())
+        self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
+        self.file_infos.setChanged()
 
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
-        item = self.detailsItem if fileName == 'SAME' else fileName
-        if item not in self.peoplePanel.listData: item = None
         self.ClosePanel()
-        if item is None:
-            self.gKarma.SetValue(0)
-            self.gName.SetValue(u'')
-            self.gText.Clear()
-        else:
-            karma,text = self.peoplePanel.listData[item][1:3]
-            self.gName.SetValue(item)
-            self.gKarma.SetValue(karma)
-            self.gText.SetValue(text)
-        self.detailsItem = item
+        item = super(PeopleDetails, self).SetFile(fileName)
+        self._people_detail = item
+        if not item: return
+        karma, text = self.peoplePanel.listData[item][1:3]
+        self.gName.SetValue(item)
+        self.gKarma.SetValue(karma)
+        self.gText.SetValue(text)
+
+    def _resetDetails(self):
+        self.gKarma.SetValue(0)
+        self.gName.SetValue(u'')
+        self.gText.Clear()
 
 class PeoplePanel(BashTab):
     """Panel for PeopleTank."""
