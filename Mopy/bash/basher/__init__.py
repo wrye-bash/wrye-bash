@@ -2714,18 +2714,16 @@ class InstallersDetails(_DetailsMixin, SashPanel):
     keyPrefix = 'bash.installers.details'
 
     @property
-    def displayed_item(self): return self.detailsItem
+    def displayed_item(self): return self._displayed_installer
     @property
-    def file_infos(self): return self.listData
-    @property
-    def file_info(self): return self.file_infos.get(self.displayed_item, None)
+    def file_infos(self): return self._idata
 
     def __init__(self,parent):
         """Initialize."""
         super(InstallersDetails, self).__init__(parent, isVertical=False)
-        self.installersPanel = installersPanel = parent.GetParent().GetParent()
-        self.listData = installersPanel.listData
-        self.detailsItem = None ##: FIXME
+        self.installersPanel = parent.GetParent().GetParent()
+        self._idata = self.installersPanel.listData
+        self._displayed_installer = None
         top, bottom = self.left, self.right
         self.commentsSplitter = commentsSplitter = self.splitter
         subSplitter = wx.SplitterWindow(top, style=splitterStyle)
@@ -2809,8 +2807,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         if event.GetId() == self.gNotebook.GetId():
             index = event.GetSelection()
             gPage,initialized = self.infoPages[index]
-            if self.detailsItem and not initialized:
-                self.RefreshInfoPage(index, self.listData[self.detailsItem])
+            if self._displayed_installer and not initialized:
+                self.RefreshInfoPage(index, self.file_info)
             event.Skip()
 
     def ClosePanel(self, destroy=False):
@@ -2819,23 +2817,20 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             sashPos = self.commentsSplitter.GetSashPosition()
             settings['bash.installers.commentsSplitterSashPos'] = sashPos
         settings['bash.installers.page'] = self.gNotebook.GetSelection()
-        if not self.detailsItem: return
-        if self.detailsItem not in self.listData: return
-        if not self.gComments.IsModified(): return
-        installer = self.listData[self.detailsItem]
+        installer = self.file_info
+        if not installer or not self.gComments.IsModified(): return
         installer.comments = self.gComments.GetValue()
-        self.listData.setChanged()
+        self._idata.setChanged()
 
     def SetFile(self, fileName='SAME'):
         """Refreshes detail view associated with data from item."""
-        if fileName == 'SAME': fileName = self.detailsItem
-        if fileName not in self.listData: fileName = None
-        if self.detailsItem is not None:
+        if self._displayed_installer is not None:
             self.ClosePanel() #--Save previous details
-        self.detailsItem = fileName
+        fileName = super(InstallersDetails, self).SetFile(fileName)
+        self._displayed_installer = fileName
         del self.espms[:]
         if fileName:
-            installer = self.listData[fileName]
+            installer = self._idata[fileName]
             #--Name
             self.gPackage.SetValue(fileName.s)
             #--Info Pages
@@ -2860,18 +2855,19 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                     [x not in installer.espmNots for x in names])
             #--Comments
             self.gComments.SetValue(installer.comments)
-        else:
-            self.gPackage.SetValue(u'')
-            for index,(gPage,state) in enumerate(self.infoPages):
-                self.infoPages[index][1] = True
-                gPage.SetValue(u'')
-            self.gSubList.Clear()
-            self.gEspmList.Clear()
-            self.gComments.SetValue(u'')
         self.gPackage.HideNativeCaret()
 
+    def _resetDetails(self):
+        self.gPackage.SetValue(u'')
+        for index, (gPage, state) in enumerate(self.infoPages):
+            self.infoPages[index][1] = True
+            gPage.SetValue(u'')
+        self.gSubList.Clear()
+        self.gEspmList.Clear()
+        self.gComments.SetValue(u'')
+
     def ShowPanel(self):
-        if hasattr(self, '_firstShow'): # FIXME - see supper, use splitter, sashPosKey, save rest of splitters
+        if hasattr(self, '_firstShow'): # FIXME - see supper, use splitter, sashPosKey,
             commentsHeight = self.gPackage.GetSize()[1]
             commentsSplitterSavedSashPos = settings.get(
                 'bash.installers.commentsSplitterSashPos', 0)
@@ -2961,9 +2957,9 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         elif pageName == 'gMismatched':
             gPage.SetValue(dumpFiles(installer.mismatchedFiles))
         elif pageName == 'gConflicts':
-            gPage.SetValue(self.listData.getConflictReport(installer, 'OVER'))
+            gPage.SetValue(self._idata.getConflictReport(installer, 'OVER'))
         elif pageName == 'gUnderrides':
-            gPage.SetValue(self.listData.getConflictReport(installer, 'UNDER'))
+            gPage.SetValue(self._idata.getConflictReport(installer, 'UNDER'))
         elif pageName == 'gDirty':
             gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
         elif pageName == 'gSkipped':
@@ -2977,27 +2973,23 @@ class InstallersDetails(_DetailsMixin, SashPanel):
     def refreshCurrent(self,installer):
         """Refreshes current item while retaining scroll positions."""
         installer.refreshDataSizeCrc()
-        installer.refreshStatus(self.listData)
-
+        installer.refreshStatus(self._idata)
         # Save scroll bar positions, because gList.RefreshUI will
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
         espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         subIndices = self.gSubList.GetSelections()
-
-        self.installersPanel.uiList.RefreshUI(files=[self.detailsItem]) ##: drop self.installersPanel
+        self.installersPanel.uiList.RefreshUI(files=[self.displayed_item])
         for subIndex in subIndices:
             self.gSubList.SetSelection(subIndex)
-
         # Reset the scroll bars back to their original position
         subScroll = subScrollPos - self.gSubList.GetScrollPos(wx.VERTICAL)
         self.gSubList.ScrollLines(subScroll)
-
         espmScroll = espmScrollPos - self.gEspmList.GetScrollPos(wx.VERTICAL)
         self.gEspmList.ScrollLines(espmScroll)
 
     def OnCheckSubItem(self,event):
         """Handle check/uncheck of item."""
-        installer = self.listData[self.detailsItem]
+        installer = self.file_info
         index = event.GetSelection()
         self.gSubList.SetSelection(index)
         for index in range(self.gSubList.GetCount()):
@@ -3025,8 +3017,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
 
     def OnCheckEspmItem(self,event):
         """Handle check/uncheck of item."""
-        installer = self.listData[self.detailsItem]
-        espmNots = installer.espmNots
+        espmNots = self.file_info.espmNots
         index = event.GetSelection()
         name = self.gEspmList.GetString(index).replace('&&','&')
         if name[0] == u'*':
@@ -3038,7 +3029,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             espmNots.add(espm)
         self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
         if not balt.getKeyState_Shift():
-            self.refreshCurrent(installer)
+            self.refreshCurrent(self.file_info)
 
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
