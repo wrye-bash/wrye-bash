@@ -1134,6 +1134,30 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     def displayed_item(self):
         return self.file_info.name if self.file_info else None
 
+    def OnEditFile(self):
+        """Event: Finished editing file name."""
+        if not self.file_info: return
+        #--Changed?
+        fileStr = self.file.GetValue()
+        if fileStr == self.fileStr: return
+        #--Extension Changed?
+        if fileStr[-4:].lower() != self.fileStr[-4:].lower():
+            balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
+            self.file.SetValue(self.fileStr)
+        #--Validate the filename - no need to check for extension again
+        elif not self._validate_filename(fileStr):
+            self.file.SetValue(self.fileStr)
+        #--Else file exists?
+        elif self.file_info.dir.join(fileStr).exists():
+            balt.showError(self,_(u"File %s already exists.") % fileStr)
+            self.file.SetValue(self.fileStr)
+        #--Okay?
+        else:
+            self.fileStr = fileStr
+            self.SetEdited()
+
+    def _validate_filename(self, fileStr): raise AbstractError
+
 class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     """Mod and Saves details panel, feature a master's list.
 
@@ -1298,26 +1322,8 @@ class ModDetails(_SashDetailsPanel):
         self._OnTextEdit(event, self.descriptionStr.replace(
             '\r\n', '\n').replace('\r', '\n'), self.description)
 
-    def OnEditFile(self):
-        if not self.modInfo: return
-        #--Changed?
-        fileStr = self.file.GetValue()
-        if fileStr == self.fileStr: return
-        #--Extension Changed?
-        if fileStr[-4:].lower() != self.fileStr[-4:].lower():
-            balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
-            self.file.SetValue(self.fileStr)
-        #--Validate the filename - no need to check for extension again
-        elif not BashFrame.modList.validate_filename(None, fileStr)[0]:
-            self.file.SetValue(self.fileStr)
-        #--Else file exists?
-        elif self.modInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u"File %s already exists.") % fileStr)
-            self.file.SetValue(self.fileStr)
-        #--Okay?
-        else:
-            self.fileStr = fileStr
-            self.SetEdited()
+    def _validate_filename(self, fileStr):
+        return BashFrame.modList.validate_filename(None, fileStr)[0]
 
     def OnEditAuthor(self):
         if not self.modInfo: return
@@ -1979,26 +1985,9 @@ class SaveDetails(_SashDetailsPanel):
             self.SetEdited()
         event.Skip()
 
-    def OnEditFile(self):
-        """Event: Finished editing file name."""
-        if not self.saveInfo: return
-        #--Changed?
-        fileStr = self.file.GetValue()
-        if fileStr == self.fileStr: return
-        #--Extension Changed?
-        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
-            balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
-        elif not BashFrame.saveList.validate_filename(None, fileStr,
-                _old_path=self.saveInfo.name)[0]:
-            self.file.SetValue(self.fileStr)
-        #--Else file exists?
-        elif self.saveInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u"File %s already exists.") % (fileStr,))
-            self.file.SetValue(self.fileStr)
-        #--Okay?
-        else:
-            self.fileStr = fileStr
-            self.SetEdited()
+    def _validate_filename(self, fileStr):
+        return BashFrame.saveList.validate_filename(
+            None, fileStr, _old_path=self.saveInfo.name)[0]
 
     def testChanges(self): # used by the master list when editing is disabled
         saveInfo = self.saveInfo
@@ -3203,26 +3192,8 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             self.SetEdited()
         event.Skip()
 
-    def OnEditFile(self):
-        """Event: Finished editing file name."""
-        if not self.BSAInfo: return
-        #--Changed?
-        fileStr = self.file.GetValue()
-        if fileStr == self.fileStr: return
-        #--Extension Changed?
-        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
-            balt.showError(self,_(u'Incorrect file extension: ')+fileStr[-3:])
-            self.file.SetValue(self.fileStr)
-        elif not self.bsaList.validate_filename(None, fileStr)[0]:
-            self.file.SetValue(self.fileStr)
-        #--Else file exists?
-        elif self.BSAInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u'File %s already exists.') % fileStr)
-            self.file.SetValue(self.fileStr)
-        #--Okay?
-        else:
-            self.fileStr = fileStr
-            self.SetEdited()
+    def _validate_filename(self, fileStr):
+        return self.bsaList.validate_filename(None, fileStr)[0]
 
     def DoSave(self):
         """Event: Clicked Save button."""
