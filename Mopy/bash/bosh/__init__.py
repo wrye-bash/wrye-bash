@@ -4605,8 +4605,8 @@ class Installer(object):
         if not exists: # the pickled package was deleted outside bash
             pass # don't do anything should be deleted from our data soon
         elif rescan:
-            dest_scr = self.refreshBasic(
-                package_path, bolt.Progress(), recalculate_project_crc=False)
+            dest_scr = self.refreshBasic(bolt.Progress(),
+                                         recalculate_project_crc=False)
         else: dest_scr = self.refreshDataSizeCrc()
         if exists and self.overrideSkips:
             InstallersData.overridden_skips.update(dest_scr.keys())
@@ -5099,15 +5099,15 @@ class Installer(object):
             self.extras_dict['root_path'] = rootStr # keeps case
             self.fileRootIdex = len(rootStr)
 
-    def refreshBasic(self, archive, progress, recalculate_project_crc=True):
-        return self._refreshBasic(archive, progress, recalculate_project_crc)
+    def refreshBasic(self, progress, recalculate_project_crc=True):
+        return self._refreshBasic(progress, recalculate_project_crc)
 
-    def _refreshBasic(self, archive, progress, recalculate_project_crc=True,
+    def _refreshBasic(self, progress, recalculate_project_crc=True,
                      _os_sep=os_sep, skips_start=tuple(
                 x.replace(os_sep, u'') for x in _silentSkipsStart)):
         """Extract file/size/crc and BAIN structure info from installer."""
         try:
-            self._refreshSource(archive, progress, recalculate_project_crc)
+            self._refreshSource(progress, recalculate_project_crc)
         except InstallerArchiveError:
             self.type = -1 # size, modified and some of fileSizeCrcs may be set
             return {}
@@ -5251,7 +5251,7 @@ class Installer(object):
         return self.__class__.__name__ + u"<" + repr(self.archive) + u">"
 
     #--ABSTRACT ---------------------------------------------------------------
-    def _refreshSource(self, archive, progress, recalculate_project_crc):
+    def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, and modified from source
         archive/directory. fileSizeCrcs is a list of tuples, one for _each_
         file in the archive or project directory. _refreshSource is called
@@ -5323,7 +5323,7 @@ class InstallerMarker(Installer):
 
     def structure_string(self): return _(u'Structure: N/A')
 
-    def _refreshSource(self, archive, progress, recalculate_project_crc):
+    def _refreshSource(self, progress, recalculate_project_crc):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
         pass
 
@@ -5342,7 +5342,7 @@ class InstallerMarker(Installer):
         del data[archive]
         return True, False, False
 
-    def refreshBasic(self, archive, progress, recalculate_project_crc=True):
+    def refreshBasic(self, progress, recalculate_project_crc=True):
         return {}
 
 #------------------------------------------------------------------------------
@@ -5357,10 +5357,11 @@ class InstallerArchive(Installer):
     type_string = _(u'Archive')
 
     #--File Operations --------------------------------------------------------
-    def _refreshSource(self, archive, progress, recalculate_project_crc):
+    def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh fileSizeCrcs, size, modified, crc, isSolid from archive."""
         #--Basic file info
-        self.size, self.modified = archive.size_mtime()
+        archive_path = bass.dirs['installers'].join(self.archive)
+        self.size, self.modified = archive_path.size_mtime()
         #--Get fileSizeCrcs
         fileSizeCrcs = self.fileSizeCrcs = []
         self.isSolid = False
@@ -5379,12 +5380,12 @@ class InstallerArchive(Installer):
                     fileSizeCrcs.append((_li.filepath, _li.size, _li.crc))
                     _li.cumCRC += _li.crc
                 _li.filepath = _li.size = _li.crc = _li.isdir = 0
-        with archive.unicodeSafe() as tempArch:
+        with archive_path.unicodeSafe() as tempArch:
             try:
                 bolt.list_archive(tempArch, _parse_archive_line)
                 self.crc = _li.cumCRC & 0xFFFFFFFFL
             except:
-                archive_msg = u"Unable to read archive '%s'." % archive.s
+                archive_msg = u"Unable to read archive '%s'." % archive_path.s
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
@@ -5462,7 +5463,7 @@ class InstallerArchive(Installer):
         data_sizeCrcDate.update(data_sizeCrcDate_update)
         return count
 
-    def unpackToProject(self,archive,project,progress=None):
+    def unpackToProject(self, project, progress=None):
         """Unpacks archive to build directory."""
         progress = progress or bolt.Progress()
         files = self.sortFiles([x[0] for x in self.fileSizeCrcs])
@@ -5472,7 +5473,8 @@ class InstallerArchive(Installer):
         if destDir.exists(): destDir.rmtree(safety=u'Installers')
         #--Extract
         progress(0,project.s+u'\n'+_(u'Extracting files...'))
-        self.unpackToTemp(archive,files,SubProgress(progress,0,0.9))
+        self.unpackToTemp(GPath(self.archive), files,
+                          SubProgress(progress, 0, 0.9))
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
@@ -5620,7 +5622,7 @@ class InstallerProject(Installer):
         for empty in empties: empty.removedirs()
         projectDir.makedirs() #--In case it just got wiped out.
 
-    def _refreshSource(self, archive, progress, recalculate_project_crc):
+    def _refreshSource(self, progress, recalculate_project_crc):
         """Refresh src_sizeCrcDate, fileSizeCrcs, size, modified, crc from
         project directory, set project_refreshed to True."""
         self.modified = self._refresh_from_project_dir(progress,
@@ -5675,16 +5677,19 @@ class InstallerProject(Installer):
         data_sizeCrcDate.update(data_sizeCrcDate_update)
         return count
 
-    def syncToData(self,package,projFiles):
-        """Copies specified projFiles from Oblivion\Data to project directory."""
+    def syncToData(self, projFiles):
+        """Copies specified projFiles from Oblivion\Data to project
+        directory.
+        :type projFiles: set[bolt.Path]"""
         srcDir = dirs['mods']
-        projFiles = set(projFiles)
-        srcProj = tuple((x,y) for x,y in self.refreshDataSizeCrc().iteritems() if x in projFiles)
+        srcProj = tuple(
+            (x, y) for x, y in self.refreshDataSizeCrc().iteritems() if
+            x in projFiles)
         if not srcProj: return 0,0
         #--Sync Files
         updated = removed = 0
         norm_ghost = Installer.getGhosted()
-        projDir = dirs['installers'].join(package)
+        projDir = dirs['installers'].join(self.archive)
         for src,proj in srcProj:
             srcFull = srcDir.join(norm_ghost.get(src,src))
             projFull = projDir.join(proj)
@@ -5694,7 +5699,7 @@ class InstallerProject(Installer):
             else:
                 srcFull.copyTo(projFull)
                 updated += 1
-        self.removeEmpties(package)
+        self.removeEmpties(self.archive)
         return updated,removed
 
     def packToArchive(self,project,archive,isSolid,blockSize,progress=None,release=False):
@@ -5988,9 +5993,7 @@ class InstallersData(_DataStore):
                 installer = self.get(package, None)
                 if not installer:
                     installer = self.setdefault(package, iClass(package))
-                apath = dirs['installers'].join(package)
-                sub_progress = SubProgress(progress, index, index + 1)
-                installer.refreshBasic(apath, sub_progress,
+                installer.refreshBasic(SubProgress(progress, index, index + 1),
                                        recalculate_project_crc=fullRefresh)
         if changed: self.crc_installer = dict((x.crc, x) for x in
                         self.itervalues() if isinstance(x, InstallerArchive))

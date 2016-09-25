@@ -2461,8 +2461,7 @@ class InstallersList(balt.UIList):
                         self.data_store.sorted_pairs(toRefresh)):
                     progress(index, _(u'Refreshing Packages...') + u'\n' +
                                     name.s)
-                    apath = bass.dirs['installers'].join(name)
-                    dest.update(installer.refreshBasic(apath,
+                    dest.update(installer.refreshBasic(
                         SubProgress(progress, index, index + 1),
                         recalculate_project_crc=calculate_projects_crc).keys())
                 self.data_store.hasChanged = True  # is it really needed ?

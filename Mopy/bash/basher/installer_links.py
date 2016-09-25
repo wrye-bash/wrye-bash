@@ -92,8 +92,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             self.idata.moveArchives([installer], src_installer.order + 1)
         installer_info = self.idata[installer]
         if is_project: # no need to call irefresh(what='I')
-            installer_path = self.idata.dir.join(installer) # bolt.Path
-            installer_info.refreshBasic(installer_path, progress=progress)
+            installer_info.refreshBasic(progress=progress)
         if do_refresh:
             self.idata.irefresh(what='NS')
         return installer_info
@@ -515,9 +514,8 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
         installer = self._selected_info
         installer.skipRefresh ^= True
         if not installer.skipRefresh:
-            installer.refreshBasic(
-                bass.dirs['installers'].join(installer.archive), progress=None,
-                recalculate_project_crc=False)
+            installer.refreshBasic(progress=None,
+                                   recalculate_project_crc=False)
             installer.refreshStatus(self.idata)
             self.idata.irefresh(what='N')
             self.window.RefreshUI()
@@ -992,7 +990,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     if not self._askYes(
                         _(u"%s already exists. Overwrite it?") % project.s,
                         default=False): continue
-                installer.unpackToProject(archive,project,SubProgress(progress,0,0.8))
+                installer.unpackToProject(project,SubProgress(progress,0,0.8))
                 self._get_refreshed(project, installer, progress=SubProgress(progress, 0.8, 0.99), do_refresh=False)
                 projects.append(project)
             if not projects: return
@@ -1031,16 +1029,13 @@ class InstallerProject_Sync(_SingleProject):
         message = (_(u'Update %s according to data directory?') + u'\n' + _(
             u'Files to delete:') + u'%d\n' + _(
             u'Files to update:') + u'%d') % (
-                      self._selected_info.s, len(missing), len(mismatched))
+                      self._selected_item.s, len(missing), len(mismatched))
         if not self._askWarning(message, title=self.text): return
         #--Sync it, baby!
         with balt.Progress(self.text, u'\n' + u' ' * 60) as progress:
             progress(0.1,_(u'Updating files.'))
-            self._selected_info.syncToData(self._selected_info,
-                                           missing | mismatched)
-            pProject = bass.dirs['installers'].join(self._selected_info)
-            self._selected_info.refreshBasic(pProject,
-                                             SubProgress(progress, 0.1, 0.99))
+            self._selected_info.syncToData(missing | mismatched)
+            self._selected_info.refreshBasic(SubProgress(progress, 0.1, 0.99))
             self.idata.irefresh(what='NS')
             self.window.RefreshUI()
 
