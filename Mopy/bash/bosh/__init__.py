@@ -3141,7 +3141,7 @@ class FileInfos(_DataStore):
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
-        for d in set(self.table.keys()) & deleted:
+        for d in set(self.table.keys()) & set(deleted):
             del self.table[d]
         return deleted
 
@@ -3206,6 +3206,14 @@ class INIInfos(FileInfos):
         dir_ = dirs['modsBash'].join(u'INI Data')
         dir_.makedirs()
         return dir_
+
+    def delete_Refresh(self, deleted, check_existence=False):
+        deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
+        if not deleted: return deleted
+        for d in deleted: # readd default tweaks YAK
+            if self.dirdef.join(d).isfile():
+                self[d] = self.factory(self.dirdef, d)
+        return deleted
 
 def _lo_cache(lord_func):
     """Decorator to make sure I sync modInfos cache with load_order cache
