@@ -173,8 +173,7 @@ class INI_Apply(EnabledLink):
                 self.window.data_store.ini.applyTweakFile(
                     bass.dirs['defaultTweaks'].join(item))
         if needsRefresh:
-            #--Refresh status of all the tweaks valid for this ini
-            self.window.RefreshUIValid(self.selected[0])
+            self.window.panel.ShowPanel()
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):

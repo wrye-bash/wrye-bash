@@ -1577,6 +1577,8 @@ class IniFile(object):
         self._settings_cache = self.__empty
         self._settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
+        self._deleted = False
+        self.updated = False # notify iniInfos which should clear this flag
 
     @classmethod
     def formatMatch(cls, path):
@@ -1604,10 +1606,7 @@ class IniFile(object):
         do a copy first !"""
         if not self.path.exists() or self.path.isdir():
             return ({}, {}) if with_deleted else {}
-        psize, pmtime = self.path.size_mtime()
-        if self._settings_cache is self.__empty or self._ini_size != psize \
-                or self._ini_mod_time != pmtime:
-            self._ini_size, self._ini_mod_time = psize, pmtime
+        if self.needs_update(_reset_cache=True):
             self._settings_cache_linenum, self._deleted_cache = \
                 self._getTweakFileSettings(self.path, lineNumbers=True)
             self._settings_cache = dict(
@@ -1617,6 +1616,27 @@ class IniFile(object):
             self._settings_cache_linenum
         if with_deleted: return cached, self._deleted_cache
         return cached
+
+    def needs_update(self, _reset_cache=False):
+        try:
+            psize, pmtime = self.path.size_mtime()
+            if self._deleted:
+                self.updated = True # restored
+                self._deleted = False
+        except OSError:
+            self._ini_size = self._ini_mod_time = 0
+            if not self._deleted:
+                # mark as deleted to avoid requesting updates on each refresh
+                self._deleted = self.updated = True
+                return True
+            return False # we already know it's deleted (used for game inis)
+        if self._settings_cache is self.__empty or self._ini_size != psize \
+                or self._ini_mod_time != pmtime:
+            if _reset_cache:
+                self._ini_size, self._ini_mod_time = psize, pmtime
+            self.updated = True
+            return True
+        return False
 
     def _getTweakFileSettings(self, tweakPath, lineNumbers=False):
         """Gets settings in a tweak file."""
@@ -2166,6 +2186,7 @@ class OblivionIni(IniFile):
             return False
         try:
             srcPath.copyTo(self.path)
+            for ini_info in iniInfos.itervalues(): ini_info.reset_status()
             return True
         except (OSError, IOError):
             error_msg = u'Failed to copy %s to %s' % (srcPath, self.path)
@@ -2774,7 +2795,6 @@ class INIInfo(FileInfo):
     def __init__(self,*args,**kwdargs):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
-        self.__target_ini = None # used in status only
         self.__ini_file = None
 
     @property
@@ -2785,8 +2805,7 @@ class INIInfo(FileInfo):
 
     @property
     def tweak_status(self):
-        self.__target_ini, old = self.getFileInfos().ini, self.__target_ini
-        if self._status is None or self.__target_ini != old: self.getStatus()
+        if self._status is None: self.getStatus()
         return self._status
 
     def getFileInfos(self): return iniInfos
@@ -2855,6 +2874,8 @@ class INIInfo(FileInfo):
         elif mismatch == 2:
             self._status = 10
         return self._status
+
+    def reset_status(self): self._status = None
 
     def listErrors(self):
         """Returns ini tweak errors as text."""
@@ -2943,7 +2964,7 @@ class TrackedFileInfos(DataDict):
 
        Uses absolute paths - the caller is responsible for passing them.
        """
-    # DEPRECATED: hack introduced to track BAIN installed files AND game inis
+    # DEPRECATED: hack introduced to track BAIN installed files
     tracked_dir = GPath(u'') # a mess with paths
 
     def __init__(self, factory=_AFileInfo):
@@ -3246,12 +3267,66 @@ class FileInfos(_DataStore):
 
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
+    """:type _ini: IniFile
+    :type data: dict[bolt.Path, IniInfo]"""
     file_pattern = re.compile(ur'\.ini$', re.I | re.U)
 
     def __init__(self):
         FileInfos.__init__(self, dirs['tweaks'], INIInfo)
         self.dirdef = dirs['defaultTweaks']
-        self.ini = oblivionIni
+        self._ini = None
+        # Check the list of target INIs, remove any that don't exist
+        # if target_inis is not an OrderedDict choice won't be set correctly
+        target_inis = settings['bash.ini.choices'] # type: OrderedDict
+        choice = settings['bash.ini.choice'] # type: int
+        if isinstance(target_inis, OrderedDict):
+            try:
+                previous_ini = target_inis.keys()[choice]
+            except IndexError:
+                choice, previous_ini = -1, None
+        else: # not an OrderedDict, updating from 306
+            choice, previous_ini = -1, None
+        for ini_name in target_inis.keys():
+            if ini_name == _(u'Browse...'): continue
+            path = target_inis[ini_name]
+            # If user started with non-translated, 'Browse...'
+            # will still be in here, but in English.  It wont get picked
+            # up by the previous check, so we'll just delete any non-Path
+            # objects.  That will take care of it.
+            if not isinstance(path,bolt.Path) or not path.isfile():
+                for iFile in gameInis: # don't remove game inis even if missing
+                    if iFile.path == path: continue
+                del target_inis[ini_name]
+                if ini_name is previous_ini:
+                    choice, previous_ini = -1, None
+        csChoices = [x.lower() for x in target_inis]
+        for iFile in gameInis: # add the game inis even if missing
+            if iFile.path.tail.cs not in csChoices:
+                target_inis[iFile.path.stail] = iFile.path
+        if _(u'Browse...') not in target_inis:
+            target_inis[_(u'Browse...')] = None
+        settings['bash.ini.choices'] = target_inis
+        if previous_ini: choice = target_inis.keys().index(previous_ini)
+        settings['bash.ini.choice'] = choice
+        if choice > 0:
+            self.ini = target_inis.values()[choice]
+        else: self.ini = oblivionIni.path
+
+    @property
+    def ini(self):
+        return self._ini
+    @ini.setter
+    def ini(self, ini_path):
+        """:type ini_path: bolt.Path"""
+        if self._ini is not None and self._ini.path == ini_path:
+            return # nothing to do
+        for iFile in gameInis:
+            if iFile.path == ini_path:
+                self._ini = iFile
+                break
+        else:
+            self._ini = BestIniFile(ini_path)
+        for ini_info in self.itervalues(): ini_info.reset_status()
 
     def _names(self): # Yak !
         names = {x for x in self.dirdef.list() if
@@ -3295,9 +3370,16 @@ class INIInfos(FileInfos):
             # items deleted outside Bash
             for d in set(self.table.keys()) & set(_deleted):
                 del self.table[d]
-        change = bool(_added) or bool(_updated) or bool(_deleted)
+        changed = self.ini.updated or self.ini.needs_update()
+        if changed: # reset the status of all infos and let RefreshUI set it
+            self.ini.updated = False
+            for ini_info in self.itervalues(): ini_info.reset_status()
+        elif _updated:
+            for ini_info in _updated: self[ini_info].reset_status()
+        # no need to reset status for added as it is already None
+        change = bool(_added) or bool(_updated) or bool(_deleted) or changed
         if not change: return change
-        return _added, _updated, _deleted
+        return _added, _updated, _deleted, changed
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
