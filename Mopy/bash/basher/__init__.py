@@ -711,7 +711,7 @@ class INITweakLineCtrl(INIListCtrl):
         self.SetColumnWidth(0,wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
-class INILineCtrl(INIListCtrl):
+class TargetINILineCtrl(INIListCtrl):
 
     def SetTweakLinesCtrl(self, control):
         self._contents = control
@@ -721,11 +721,11 @@ class INILineCtrl(INIListCtrl):
             if index == line[5]: return i
         return -1
 
-    def RefreshIniContents(self, resetScroll=False):
+    def RefreshIniContents(self, target_changed=False):
+        if target_changed:
+            self.DeleteAllItems()
         num = self.GetItemCount()
-        if resetScroll:
-            self.EnsureVisible(0)
-        try: #rework for when changing the ini - delete all !
+        try:
             with bosh.iniInfos.ini.path.open('r') as ini:
                 lines = ini.readlines()
                 for i,line in enumerate(lines):
@@ -737,13 +737,9 @@ class INILineCtrl(INIListCtrl):
                     self.DeleteItem(len(lines))
         except IOError:
             warn = True
-            if hasattr(Link.Frame, 'notebook'): # we may be called before
-                # the notebook is build, in INIPanel.__init__ > _SetBaseIni
-                page = Link.Frame.notebook.currentPage
-                if page != self.GetParent().GetParent().GetParent():
-                    warn = False
-            else: warn = False # we are booting - queue the warning cause it
-            # interrupts building of the UI !
+            page = Link.Frame.notebook.currentPage
+            if page != self.GetParent().GetParent().GetParent():
+                warn = False
             Link.Frame.queue_game_ini_missing()
             if warn: Link.Frame.warn_game_ini()
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
@@ -1560,7 +1556,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
             self.choice = self.target_inis.keys().index(previous_ini)
         self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
         #--Ini file
-        self.iniContents = INILineCtrl(right)
+        self.iniContents = TargetINILineCtrl(right)
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(right,self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
@@ -1637,7 +1633,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self._enable_buttons() # if a game ini was deleted will disable edit
         selected_inis = BashFrame.iniList.GetSelected()
         selected = selected_inis[0] if selected_inis else None
-        self.RefreshIniDetails(selected, resetScroll=target_changed)
+        self.RefreshIniDetails(selected, target_changed=target_changed)
         self.uiList.RefreshUI()
 
     def _enable_buttons(self):
@@ -1645,8 +1641,8 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self.button.Enable(not isGameIni)
         self.editButton.Enable(not isGameIni or self.current_ini_path.isfile())
 
-    def RefreshIniDetails(self, selected_tweak, resetScroll=False):
-        self.iniContents.RefreshIniContents(resetScroll)
+    def RefreshIniDetails(self, selected_tweak, target_changed=False):
+        self.iniContents.RefreshIniContents(target_changed)
         self.tweakContents.RefreshTweakLineCtrl(selected_tweak)
 
     def OnRemove(self):
