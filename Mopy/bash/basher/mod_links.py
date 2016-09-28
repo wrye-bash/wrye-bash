@@ -162,24 +162,31 @@ class Mod_OrderByName(EnabledLink):
         message = _(u'Reorder selected mods in alphabetical order?  The first '
             u'file will be given the date/time of the current earliest file '
             u'in the group, with consecutive files following at 1 minute '
-            u'increments.') + u'\n\n' + _(
-            u'Note that this operation cannot be undone.  Note also that '
-            u'some mods need to be in a specific order to work correctly, '
-            u'and this sort operation may break that order.')
+            u'increments.') if not load_order.using_txt_file() else _(
+            u'Reorder selected mods in alphabetical order starting at the '
+            u'lowest ordered?')
+        message += (u'\n\n' + _(
+            u'Note that some mods need to be in a specific order to work '
+            u'correctly, and this sort operation may break that order.'))
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  _(u'Sort Mods')): return
-        #--Get first time from first selected file.
-        modInfos = self.window.data_store
-        fileNames = self.selected
-        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
         #--Do it
-        fileNames.sort(key=lambda a: a.cext)
-        for fileName in fileNames:
-            modInfos[fileName].setmtime(newTime)
-            newTime += 60
-        #--Refresh
-        with load_order.Unlock():
-            modInfos.refresh(scanData=False, _modTimesChange=True)
+        self.selected.sort()
+        self.selected.sort(key=attrgetter('cext')) # sort esm first
+        if not load_order.using_txt_file():
+            #--Get first time from first selected file.
+            newTime = min(
+                bosh.modInfos[fileName].mtime for fileName in self.selected)
+            for fileName in self.selected:
+                bosh.modInfos[fileName].setmtime(newTime)
+                newTime += 60
+            #--Refresh
+            with load_order.Unlock():
+                bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
+        else:
+            lowest = load_order.get_ordered(self.selected)[0]
+            bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
+            bosh.modInfos.cached_lo_save_lo()
         self.window.RefreshUI(refreshSaves=True)
 
 class Mod_Redate(AppendableLink, ItemLink):

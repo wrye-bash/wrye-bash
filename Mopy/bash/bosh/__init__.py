@@ -3341,6 +3341,17 @@ class ModInfos(FileInfos):
             esm = mod
         return esm
 
+    def cached_lo_insert_at(self, first, modlist):
+        # hasty method for Mod_OrderByName
+        mod_set = set(modlist)
+        first_dex = self._lo_wip.index(first)
+        rest = self._lo_wip[first_dex:]
+        del self._lo_wip[first_dex:]
+        for mod in rest:
+            if mod in mod_set: continue
+            self._lo_wip.append(mod)
+        self._lo_wip[first_dex:first_dex] = modlist
+
     @staticmethod
     def hexIndexString(mod):
         return u'%02X' % (load_order.activeIndexCached(mod),) \
