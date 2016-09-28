@@ -332,3 +332,14 @@ def toggle_lock_load_order():
         lock = balt.askContinue(None, message, 'bash.load_order.lock_continue',
                                 title=_(u'Lock Load Order'))
     bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
+
+class Unlock(object):
+
+    def __enter__(self):
+        global locked
+        self.__locked = locked
+        locked = False
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        global locked
+        locked = self.__locked

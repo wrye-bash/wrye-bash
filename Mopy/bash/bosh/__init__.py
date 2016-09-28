@@ -3351,9 +3351,17 @@ class ModInfos(FileInfos):
         return names
 
     def refresh(self, scanData=True, _modTimesChange=False):
-        """Update file data for additions, removals and date changes."""
-        # TODO: make sure that calling two times this in a row second time
-        # ALWAYS returns False - was not true when autoghost run !
+        """Update file data for additions, removals and date changes.
+
+        See usages for how to use the scanData and _modTimesChange params.
+        _modTimesChange is not strictly needed after the lo rewrite,
+        as get_lo will always recalculate it - kept to help track places in
+        the code where timestamp load order may change.
+         NB: if an operation we performed changed the load order we do not want
+         lock load order to revert our own operation. So either call some of
+         the set_load_order methods, or guard refresh (which only *gets* load
+         order) with load_order.Unlock.
+        """
         hasChanged = deleted = False
         if scanData:
             change = FileInfos.refresh(self)

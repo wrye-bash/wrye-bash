@@ -168,7 +168,8 @@ class Mod_OrderByName(EnabledLink):
             modInfos[fileName].setmtime(newTime)
             newTime += 60
         #--Refresh
-        modInfos.refresh(scanData=False, _modTimesChange=True)
+        with load_order.Unlock():
+            modInfos.refresh(scanData=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 class Mod_Redate(AppendableLink, ItemLink):
@@ -200,7 +201,8 @@ class Mod_Redate(AppendableLink, ItemLink):
             fileInfo.setmtime(newTime)
             newTime += 60
         #--Refresh
-        modInfos.refresh(scanData=False, _modTimesChange=True)
+        with load_order.Unlock():
+            modInfos.refresh(scanData=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
