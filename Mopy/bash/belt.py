@@ -78,8 +78,7 @@ class WizardReturn(object):
 #  dynamically creates pages based on a script
 #---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
-    def __init__(self, parentWindow, idata, path, bAuto, bArchive, subs,
-                 pageSize, pos):
+    def __init__(self, parentWindow, installer, bAuto, subs, pageSize, pos):
         wiz.Wizard.__init__(self, parentWindow, title=_(u'Installer Wizard'),
                             pos=pos, style=wx.DEFAULT_DIALOG_STYLE |
                                            wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
@@ -97,29 +96,8 @@ class InstallerWizard(wiz.Wizard):
         self.finishing = False
 
         #parser that will spit out the pages
-        installer = idata[path]
-        if bArchive:
-            with balt.Progress(_(u'Extracting wizard files...'),u'\n'+u' '*60,abort=True) as progress:
-                # Extract the wizard, and any images as well
-                installer.unpackToTemp(path, [installer.hasWizard,
-                    u'*.bmp',            # BMP's
-                    u'*.jpg', u'*.jpeg', # JPEG's
-                    u'*.png',            # PNG's
-                    u'*.gif',            # GIF's
-                    u'*.pcx',            # PCX's
-                    u'*.pnm',            # PNM's
-                    u'*.tif', u'*.tiff', # TIFF's
-                    u'*.tga',            # TGA's
-                    u'*.iff',            # IFF's
-                    u'*.xpm',            # XPM's
-                    u'*.ico',            # ICO's
-                    u'*.cur',            # CUR's
-                    u'*.ani',            # ANI's
-                    ], bolt.SubProgress(progress,0,0.9), recurse=True)
-            self.wizard_file = installer.getTempDir().join(installer.hasWizard)
-        else:
-            self.wizard_file = idata.store_dir.join(path.s, installer.hasWizard)
-        self.parser = WryeParser(self, installer, subs, bArchive, path, bAuto)
+        self.wizard_file = installer.wizard_file()
+        self.parser = WryeParser(self, installer, subs, bAuto)
 
         #Intercept the changing event so we can implement 'blockChange'
         self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnChange)
@@ -685,7 +663,7 @@ class WryeParser(ScriptParser.Parser):
         }
     @staticmethod
     def codebox(lines,pre=True,br=True):
-        self = WryeParser(None,None,None,None,None,None,True)
+        self = WryeParser(None, None, None, None, codebox=True) ##: drop this !
         def colorize(text,color=u'black',link=True):
             href = text
             text = WryeParser.codeboxRemaps['Text'].get(text,text)
@@ -776,15 +754,15 @@ class WryeParser(ScriptParser.Parser):
             outLines = outLines[:lastBlank]
         return outLines
 
-    def __init__(self, parent, installer, subs, bArchive, path, bAuto, codebox=False):
+    def __init__(self, parent, installer, subs, bAuto, codebox=False):
         ScriptParser.Parser.__init__(self)
 
         if not codebox:
             self.parent = parent
             self.installer = installer
-            self.bArchive = bArchive
-            self._path = path
-            if installer.fileRootIdex:
+            self.bArchive = isinstance(installer, bosh.InstallerArchive)
+            self._path = bolt.GPath(installer.archive) if installer else None
+            if installer and installer.fileRootIdex:
                 root_path = installer.extras_dict.get('root_path', u'')
                 self._path = self._path.join(root_path)
             self.bAuto = bAuto

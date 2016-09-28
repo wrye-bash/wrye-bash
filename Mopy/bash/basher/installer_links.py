@@ -219,10 +219,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 subs.append(self.iPanel.gSubList.GetString(index))
             default, pageSize, pos = self._get_size_and_pos()
             try:
-                wizard = InstallerWizard(self.window, self.idata,
-                                         self._selected_item, self.bAuto,
-                                         self.isSingleArchive(), subs,
-                                         pageSize, pos)
+                wizard = InstallerWizard(self.window, self._selected_info,
+                                         self.bAuto, subs, pageSize, pos)
             except CancelError:
                 return
             balt.ensureDisplayed(wizard)
@@ -767,7 +765,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                         srcFull.copyTo(destFull)
                         curFile += 1
             else:
-                inst.unpackToTemp(package, curConflicts,
+                inst.unpackToTemp(curConflicts,
                     SubProgress(progress, curFile, curFile + len(curConflicts),
                                 len(curConflicts)))
                 inst.getTempDir().moveTo(ijoin(destDir, g_path))

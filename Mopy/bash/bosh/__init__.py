@@ -5267,6 +5267,7 @@ class Installer(object):
 
     def open_readme(self): pass
     def open_wizard(self): pass
+    def wizard_file(self): raise AbstractError
 
     def __repr__(self):
         return self.__class__.__name__ + u"<" + repr(self.archive) + u">"
@@ -5282,7 +5283,7 @@ class Installer(object):
         """
         raise AbstractError
 
-    def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Oblivion\Data directory."""
         raise AbstractError
 
@@ -5347,7 +5348,7 @@ class InstallerMarker(Installer):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
         pass
 
-    def install(self,name,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Oblivion\Data directory."""
         pass
 
@@ -5409,23 +5410,24 @@ class InstallerArchive(Installer):
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
-    def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
+    def unpackToTemp(self, fileNames, progress=None, recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
         from archive to self.tempDir. progress will be zeroed so pass a
         SubProgress in.
         fileNames: File names (not paths)."""
-        if not fileNames: raise ArgumentError(u'No files to extract for %s.' % archive.s)
+        if not fileNames: raise ArgumentError(
+            u'No files to extract for %s.' % self.archive)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
         with self.tempList.open('w',encoding='utf8') as out:
             out.write(u'\n'.join(fileNames))
-        apath = dirs['installers'].join(archive)
+        apath = dirs['installers'].join(self.archive)
         #--Ensure temp dir empty
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
             if progress:
                 progress.state = 0
-                progress(0, u'%s\n' %archive + _(u'Counting files...') + u'\n')
+                progress(0, u'%s\n' % self.archive + _(u'Counting files...') + u'\n')
                 numFiles = countFilesInArchive(arch, self.tempList, recurse)
                 progress.setFull(numFiles)
             #--Extract files
@@ -5433,13 +5435,13 @@ class InstallerArchive(Installer):
             command += u' @%s' % self.tempList.s
             if recurse: command += u' -r'
             try:
-                bolt.extract7z(command, archive, progress)
+                bolt.extract7z(command, GPath(self.archive), progress)
             finally:
                 self.tempList.remove()
                 bolt.clearReadOnly(self.getTempDir())
         #--Done -> don't clean out temp dir, it's going to be used soon
 
-    def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Game\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
@@ -5447,10 +5449,10 @@ class InstallerArchive(Installer):
         if not dest_src: return 0
         progress = progress if progress else bolt.Progress()
         #--Extract
-        progress(0,archive.s+u'\n'+_(u'Extracting files...'))
-        self.unpackToTemp(archive,dest_src.values(),SubProgress(progress,0,0.9))
+        progress(0, self.archive + u'\n' + _(u'Extracting files...'))
+        self.unpackToTemp(dest_src.values(), SubProgress(progress, 0, 0.9))
         #--Rearrange files
-        progress(0.9,archive.s+u'\n'+_(u'Organizing files...'))
+        progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
         unpackDir = self.getTempDir() #--returns directory used by unpackToTemp
         unpackDirJoin = unpackDir.join
         stageDir = self.newTempDir()  #--forgets the old temp dir, creates a new one
@@ -5493,8 +5495,7 @@ class InstallerArchive(Installer):
         if destDir.exists(): destDir.rmtree(safety=u'Installers')
         #--Extract
         progress(0,project.s+u'\n'+_(u'Extracting files...'))
-        self.unpackToTemp(GPath(self.archive), files,
-                          SubProgress(progress, 0, 0.9))
+        self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
@@ -5537,14 +5538,14 @@ class InstallerArchive(Installer):
     def open_readme(self):
         with balt.BusyCursor():
             # This is going to leave junk temp files behind...
-            self.unpackToTemp(GPath(self.archive), [self.hasReadme])
+            self.unpackToTemp([self.hasReadme])
         self.getTempDir().join(self.hasReadme).start()
 
     def open_wizard(self):
         with balt.BusyCursor():
             # This is going to leave junk temp files behind...
             try:
-                self.unpackToTemp(GPath(self.archive), [self.hasWizard])
+                self.unpackToTemp([self.hasWizard])
                 self.getTempDir().join(self.hasWizard).start()
             except:
                 # Don't clean up temp dir here.  Sometimes the editor
@@ -5552,6 +5553,27 @@ class InstallerArchive(Installer):
                 # Bash, and the file will be deleted before it opens.
                 # Just allow Bash's atexit function to clean it when quitting.
                 pass
+
+    def wizard_file(self):
+        with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
+                           abort=True) as progress:
+            # Extract the wizard, and any images as well
+            self.unpackToTemp([self.hasWizard,
+                u'*.bmp',            # BMP's
+                u'*.jpg', u'*.jpeg', # JPEG's
+                u'*.png',            # PNG's
+                u'*.gif',            # GIF's
+                u'*.pcx',            # PCX's
+                u'*.pnm',            # PNM's
+                u'*.tif', u'*.tiff', # TIFF's
+                u'*.tga',            # TGA's
+                u'*.iff',            # IFF's
+                u'*.xpm',            # XPM's
+                u'*.ico',            # ICO's
+                u'*.cur',            # CUR's
+                u'*.ani',            # ANI's
+                ], bolt.SubProgress(progress,0,0.9), recurse=True)
+        return self.getTempDir().join(self.hasWizard)
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -5660,7 +5682,7 @@ class InstallerProject(Installer):
         self.crc = cumCRC & 0xFFFFFFFFL
         self.project_refreshed = True
 
-    def install(self,name,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Oblivion\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
@@ -5668,7 +5690,7 @@ class InstallerProject(Installer):
         if not dest_src: return 0
         progress = progress if progress else bolt.Progress()
         progress.setFull(max(len(dest_src),1))
-        progress(0,name.stail+u'\n'+_(u'Moving files...'))
+        progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
         self.rmTempDir()
@@ -5677,7 +5699,7 @@ class InstallerProject(Installer):
         stageDataDirJoin = stageDataDir.join
         norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
-        srcDir = dirs['installers'].join(name)
+        srcDir = dirs['installers'].join(self.archive)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
         timestamps = load_order.install_last()
@@ -5789,6 +5811,9 @@ class InstallerProject(Installer):
 
     def open_wizard(self):
         bass.dirs['installers'].join(self.archive, self.hasWizard).start()
+
+    def wizard_file(self):
+        return bass.dirs['installers'].join(self.archive, self.hasWizard)
 
 #------------------------------------------------------------------------------
 from . import converters
@@ -6031,11 +6056,10 @@ class InstallersData(_DataStore):
         pending = []
         for i, (installer, destArchive) in enumerate(zip(installers,
                         destArchives)): # no izip - we may modify installers
-            name = GPath(installer.archive)
-            progress(i,name.s)
+            progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
             Installer.rmTempDir()
-            installer.unpackToTemp(name, [installer.hasBCF],
+            installer.unpackToTemp([installer.hasBCF],
                                    SubProgress(progress, i, i + 0.5))
             srcBcfFile = Installer.getTempDir().join(installer.hasBCF)
             bcfFile = dirs['converters'].join(u'temp-' + srcBcfFile.stail)
@@ -6481,7 +6505,7 @@ class InstallersData(_DataStore):
                 destFiles &= installer.missingFiles
             if destFiles:
                 self._createTweaks(destFiles, installer, tweaksCreated)
-                installer.install(archive, destFiles, self.data_sizeCrcDate,
+                installer.install(destFiles, self.data_sizeCrcDate,
                                   SubProgress(progress, index, index + 1))
                 mods_changed, inis_changed = InstallersData.updateTable(
                     destFiles, archive.s)
@@ -6651,7 +6675,7 @@ class InstallersData(_DataStore):
             progress(index, archive.s)
             if destFiles:
                 installer = self[archive]
-                installer.install(archive, destFiles, self.data_sizeCrcDate,
+                installer.install(destFiles, self.data_sizeCrcDate,
                                   SubProgress(progress, index, index + 1))
                 mods_changed, inis_changed = InstallersData.updateTable(
                      destFiles, archive.s)
