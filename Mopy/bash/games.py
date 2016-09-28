@@ -211,7 +211,8 @@ class Game(object):
         """Install mods last in load order (done by default when txt method
         used - for mod times method make sure we get the latest mod time)."""
         return lambda *args: None
-    def get_free_time(self, start_time, default_time='+1'): return time.time()
+    def get_free_time(self, start_time, default_time='+1', end_time=None):
+        raise NotImplementedError
 
     @staticmethod
     def _must_update_active(deleted, reordered): raise bolt.AbstractError
@@ -425,12 +426,10 @@ class TimestampGame(Game):
     """Oblivion and other games where load order is set using modification
     times.
 
-    :type _mod_mtime: dict[bolt.Path, int]
     :type _mtime_mods: dict[int, set[bolt.Path]]
     """
 
     allow_deactivate_master = True
-    _mod_mtime = {}
     _mtime_mods = defaultdict(set)
     _get_free_time_step = 1 # step by one second intervals
 
@@ -455,9 +454,9 @@ class TimestampGame(Game):
             maxi[0] += 60 # space at one minute intervals
         return timestamps
 
-    def get_free_time(self, start_time, default_time='+1'):
-        all_mtimes = set(self._mtime_mods)
-        end_time = start_time + 1000 # 1000 (seconds) is an arbitrary limit
+    def get_free_time(self, start_time, default_time='+1', end_time=None):
+        all_mtimes = set(x.mtime for x in self.mod_infos.itervalues())
+        end_time = end_time or (start_time + 1000) # 1000 (seconds) is an arbitrary limit
         while start_time < end_time:
             if not start_time in all_mtimes:
                 return start_time
@@ -499,11 +498,9 @@ class TimestampGame(Game):
         self._rebuild_mtimes_cache()
 
     def _rebuild_mtimes_cache(self):
-        self._mod_mtime.clear()
         self._mtime_mods.clear()
         for mod, info in self.mod_infos.iteritems():
             mtime = info.mtime
-            self._mod_mtime[mod] = mtime
             self._mtime_mods[mtime] |= {mod}
 
     def _persist_active_plugins(self, active, lord):
@@ -519,8 +516,9 @@ class TimestampGame(Game):
     def _fix_load_order(self, lord, quiet=False):
         _removedFiles, _addedFiles, _reordered = super(TimestampGame,
             self)._fix_load_order(lord, quiet)
-        if _addedFiles: # should not occur
-            bolt.deprint(u'Incomplete load order passed in to set_load_order')
+        if _addedFiles and not quiet: # should not occur, except if undoing
+            bolt.deprint(u'Incomplete load order passed in to set_load_order. '
+                         u'Missing: ' + u', '.join(x.s for x in _addedFiles))
             lord[:] = self.mod_infos.calculateLO(mods=lord)
         return _removedFiles, _addedFiles, _reordered
 

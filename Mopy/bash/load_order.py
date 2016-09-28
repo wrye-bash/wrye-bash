@@ -315,8 +315,8 @@ def has_load_order_conflict_active(mod_name):
     return game_handle.has_load_order_conflict_active(mod_name,
                                                       cached_lord.active)
 
-def get_free_time(start_time, default_time='+1'):
-    return game_handle.get_free_time(start_time, default_time=default_time)
+def get_free_time(start_time, default_time='+1', end_time=None):
+    return game_handle.get_free_time(start_time, default_time, end_time)
 
 def install_last(): return game_handle.install_last()
 
@@ -332,3 +332,14 @@ def toggle_lock_load_order():
         lock = balt.askContinue(None, message, 'bash.load_order.lock_continue',
                                 title=_(u'Lock Load Order'))
     bass.settings['bosh.modInfos.resetMTimes'] = locked = lock
+
+class Unlock(object):
+
+    def __enter__(self):
+        global locked
+        self.__locked = locked
+        locked = False
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        global locked
+        locked = self.__locked

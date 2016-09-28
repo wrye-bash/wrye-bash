@@ -75,6 +75,7 @@ reOblivion = re.compile(
     u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
+empty_path = GPath(u'')
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
 
 # Singletons, Constants -------------------------------------------------------
@@ -3134,7 +3135,7 @@ class FileInfos(_DataStore):
         srcPath.moveTo(destPath)
 
     #--Copy
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
+    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies member file to destDir. Will overwrite! Will update
         internal self.data for the file if copied inside self.dir but the
         client is responsible for calling the final refresh of the data store.
@@ -3144,7 +3145,6 @@ class FileInfos(_DataStore):
         """
         destDir.makedirs()
         if not destName: destName = fileName
-        destName = GPath(destName)
         srcPath = self[fileName].getPath()
         if destDir == self.dir and destName in self.data:
             destPath = self[destName].getPath()
@@ -3299,6 +3299,11 @@ class ModInfos(FileInfos):
                         active if active is not None else self._active_wip))
 
     @_lo_cache
+    def cached_lo_save_lo(self):
+        """Save load order when active did not change."""
+        load_order.save_lo(self._lo_wip)
+
+    @_lo_cache
     def cached_lo_save_all(self):
         """Write data to loadorder.txt file (and update plugins.txt too)."""
         dex = {x: i for i, x in enumerate(self._lo_wip) if
@@ -3312,7 +3317,41 @@ class ModInfos(FileInfos):
     @_lo_cache
     def redo_load_order(self): load_order.redo_load_order()
 
-    #--Load Order utility methods - be sure cache is valid when using them-----
+    #--Load Order utility methods - be sure cache is valid when using them
+    def cached_lo_insert_after(self, previous, new_mod):
+        previous_index = self._lo_wip.index(previous)
+        if not load_order.using_txt_file():
+            # set the mtime to avoid reordering all subsequent mods
+            try:
+                next_mod = self._lo_wip[previous_index + 1]
+            except IndexError: # last mod
+                next_mod = None
+            end_time = self[next_mod].mtime if next_mod else None
+            start_time  = self[previous].mtime
+            if end_time <= start_time: # can happen on esm/esp boundary
+                start_time = end_time - 60
+            set_time = load_order.get_free_time(start_time, end_time=end_time)
+            self[new_mod].setmtime(set_time)
+        self._lo_wip[previous_index + 1:previous_index + 1] = [new_mod]
+
+    def cached_lo_last_esm(self):
+        esm = self.masterName
+        for mod in self._lo_wip[1:]:
+            if not self[mod].isEsm(): return esm
+            esm = mod
+        return esm
+
+    def cached_lo_insert_at(self, first, modlist):
+        # hasty method for Mod_OrderByName
+        mod_set = set(modlist)
+        first_dex = self._lo_wip.index(first)
+        rest = self._lo_wip[first_dex:]
+        del self._lo_wip[first_dex:]
+        for mod in rest:
+            if mod in mod_set: continue
+            self._lo_wip.append(mod)
+        self._lo_wip[first_dex:first_dex] = modlist
+
     @staticmethod
     def hexIndexString(mod):
         return u'%02X' % (load_order.activeIndexCached(mod),) \
@@ -3351,14 +3390,24 @@ class ModInfos(FileInfos):
         return names
 
     def refresh(self, scanData=True, _modTimesChange=False):
-        """Update file data for additions, removals and date changes."""
-        # TODO: make sure that calling two times this in a row second time
-        # ALWAYS returns False - was not true when autoghost run !
+        """Update file data for additions, removals and date changes.
+
+        See usages for how to use the scanData and _modTimesChange params.
+        _modTimesChange is not strictly needed after the lo rewrite,
+        as get_lo will always recalculate it - kept to help track places in
+        the code where timestamp load order may change.
+         NB: if an operation we performed changed the load order we do not want
+         lock load order to revert our own operation. So either call some of
+         the set_load_order methods, or guard refresh (which only *gets* load
+         order) with load_order.Unlock.
+        """
         hasChanged = deleted = False
+        # Scan the data dir, getting info on added, deleted and modified files
         if scanData:
             change = FileInfos.refresh(self)
             if change: _added, _updated, deleted = change
             hasChanged = bool(change)
+        # If scanData is False and mods are added be sure to refresh manually
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
@@ -3890,32 +3939,31 @@ class ModInfos(FileInfos):
     def create_new_mod(self, newName, selected=(), masterless=False,
                        directory=u'', bashed_patch=False):
         directory = directory or self.dir
-        newInfo = self.factory(directory, GPath(newName))
-        if directory == self.dir:
-            mods = (self[x] for x in selected) if selected else self.itervalues()
-            newTime = max(x.mtime for x in mods)
-            newInfo.mtime = load_order.get_free_time(newTime, newTime)
-        else: newInfo.mtime = time.time()
+        new_name = GPath(newName)
+        newInfo = self.factory(directory, new_name)
         newFile = ModFile(newInfo)
         if not masterless:
-            newFile.tes4.masters = [GPath(bush.game.masterFiles[0])]
+            newFile.tes4.masters = [self.masterName]
         if bashed_patch:
             newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
         if directory == self.dir:
-            self[newInfo.name] = newInfo
-            newInfo.readHeader()
+            self.refreshFile(new_name) # add to self, refresh size etc
+            last_selected = load_order.get_ordered(selected)[
+                -1] if selected else self._lo_wip[-1]
+            self.cached_lo_insert_after(last_selected, new_name)
+            self.cached_lo_save_lo()
             self.refresh(scanData=False)
 
-    def generateNextBashedPatch(self):
+    def generateNextBashedPatch(self, selected_mods):
         """Attempt to create a new bashed patch, numbered from 0 to 9.  If
         a lowered number bashed patch exists, will create the next in the
         sequence."""
         for num in xrange(10):
             modName = GPath(u'Bashed Patch, %d.esp' % num)
             if modName not in self:
-                self.create_new_mod(modName, masterless=True,
-                                    bashed_patch=True)
+                self.create_new_mod(modName, selected=selected_mods,
+                                    masterless=True, bashed_patch=True)
                 return modName
         return None
 
@@ -4123,7 +4171,7 @@ class SaveInfos(FileInfos):
         FileInfos.rename(self,oldName,newName)
         CoSaves(self.dir,oldName).move(self.dir,newName)
 
-    def copy_info(self, fileName, destDir, destName=u'', set_mtime=None):
+    def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated pluggy file."""
         FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
         CoSaves(self.dir,fileName).copy(destDir,destName or fileName)

@@ -109,21 +109,21 @@ class Mod_CreateDummyMasters(OneItemLink):
                 u"master.  Are you sure you want to continue?") + u'\n\n' + _(
                 u"To remove these files later, use 'Clean Dummy Masters...'")
         if not self._askYes(msg, title=_(u'Create Files')): return
-        doCBash = False #settings['bash.CBashEnabled'] - something odd's going on, can't rename temp names
-        lastTime = bosh.modInfos[bosh.modInfos.masterName].mtime
+        doCBash = bass.settings['bash.CBashEnabled'] # something odd's going on, can't rename temp names
         if doCBash:
             newFiles = []
         refresh = []
+        # creates esp files - so place them correctly after the last esm
+        previous_master = bosh.modInfos.cached_lo_last_esm()
         for master in self._selected_info.header.masters:
             if master in bosh.modInfos:
-                lastTime = bosh.modInfos[master].mtime
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(self._selected_info.dir, master)
-            newInfo.mtime = load_order.get_free_time(lastTime, lastTime)
-            refresh.append(master)
+            refresh.append((master, newInfo, previous_master))
+            previous_master = master
             if doCBash:
-                # TODO: CBash doesn't handle unicode.  Make this make temp unicode safe
+                # TODO: CBash doesn't handle unicode.  Make temp unicode safe
                 # files, then rename them to the correct unicode name later
                 newFiles.append(newInfo.getPath().stail)
             else:
@@ -138,7 +138,17 @@ class Mod_CreateDummyMasters(OneItemLink):
                 modFile.TES4.author = u'BASHED DUMMY'
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
-        Link.Frame.RefreshData()
+        to_select = []
+        for mod, info, previous in refresh:
+            # add it to modInfos or lo_insert_after blows for timestamp games
+            bosh.modInfos.refreshFile(mod)
+            bosh.modInfos.cached_lo_insert_after(previous, mod)
+            to_select.append(mod)
+        bosh.modInfos.cached_lo_save_lo()
+        bosh.modInfos.refresh(scanData=False)
+        self.window.RefreshUI(refreshSaves=True)
+        self.window.SelectItemsNoCallback(to_select)
+        self.window.SelectAndShowItem(to_select[-1])
 
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
@@ -152,23 +162,31 @@ class Mod_OrderByName(EnabledLink):
         message = _(u'Reorder selected mods in alphabetical order?  The first '
             u'file will be given the date/time of the current earliest file '
             u'in the group, with consecutive files following at 1 minute '
-            u'increments.') + u'\n\n' + _(
-            u'Note that this operation cannot be undone.  Note also that '
-            u'some mods need to be in a specific order to work correctly, '
-            u'and this sort operation may break that order.')
+            u'increments.') if not load_order.using_txt_file() else _(
+            u'Reorder selected mods in alphabetical order starting at the '
+            u'lowest ordered?')
+        message += (u'\n\n' + _(
+            u'Note that some mods need to be in a specific order to work '
+            u'correctly, and this sort operation may break that order.'))
         if not self._askContinue(message, 'bash.sortMods.continue',
                                  _(u'Sort Mods')): return
-        #--Get first time from first selected file.
-        modInfos = self.window.data_store
-        fileNames = self.selected
-        newTime = min(modInfos[fileName].mtime for fileName in self.selected)
         #--Do it
-        fileNames.sort(key=lambda a: a.cext)
-        for fileName in fileNames:
-            modInfos[fileName].setmtime(newTime)
-            newTime += 60
-        #--Refresh
-        modInfos.refresh(scanData=False, _modTimesChange=True)
+        self.selected.sort()
+        self.selected.sort(key=attrgetter('cext')) # sort esm first
+        if not load_order.using_txt_file():
+            #--Get first time from first selected file.
+            newTime = min(
+                bosh.modInfos[fileName].mtime for fileName in self.selected)
+            for fileName in self.selected:
+                bosh.modInfos[fileName].setmtime(newTime)
+                newTime += 60
+            #--Refresh
+            with load_order.Unlock():
+                bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
+        else:
+            lowest = load_order.get_ordered(self.selected)[0]
+            bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
+            bosh.modInfos.cached_lo_save_lo()
         self.window.RefreshUI(refreshSaves=True)
 
 class Mod_Redate(AppendableLink, ItemLink):
@@ -200,7 +218,8 @@ class Mod_Redate(AppendableLink, ItemLink):
             fileInfo.setmtime(newTime)
             newTime += 60
         #--Refresh
-        modInfos.refresh(scanData=False, _modTimesChange=True)
+        with load_order.Unlock():
+            modInfos.refresh(scanData=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
@@ -1466,6 +1485,7 @@ class Mod_CopyToEsmp(EnabledLink):
 
     def Execute(self):
         modInfos, added = bosh.modInfos, []
+        save_lo = False
         for curName, fileInfo in ((x, modInfos[x]) for x in self.selected):
             newType = (fileInfo.isEsm() and u'esp') or u'esm'
             newName = curName.root + u'.' + newType # calls GPath internally
@@ -1479,19 +1499,24 @@ class Mod_CopyToEsmp(EnabledLink):
                 existing.makeBackup()
                 timeSource = newName
             #--New Time
-            newTime = modInfos[timeSource].mtime if timeSource else \
-                load_order.get_free_time(fileInfo.mtime)
+            newTime = modInfos[timeSource].mtime if timeSource else None
             #--Copy, set type, update mtime - will use ghosted path if needed
             modInfos.copy_info(curName, fileInfo.dir, newName,
                                set_mtime=newTime)
+            added.append(newName)
             newInfo = modInfos[newName]
             newInfo.setType(newType)
-            added.append(newName)
+            if timeSource is None: # otherwise it has a load order already !
+                modInfos.cached_lo_insert_after(modInfos.cached_lo_last_esm(),
+                                                newName)
+                save_lo = True
         #--Repopulate
         if added:
+            if save_lo: modInfos.cached_lo_save_lo()
             modInfos.refresh(scanData=False)
             self.window.RefreshUI(refreshSaves=True) # just in case
             self.window.SelectItemsNoCallback(added)
+            self.window.SelectAndShowItem(added[-1])
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):

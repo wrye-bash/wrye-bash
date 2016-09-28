@@ -1389,7 +1389,8 @@ class ModDetails(_SashDetailsPanel):
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
             self.SetFile(self.displayed_item)
-            bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
+            with load_order.Unlock():
+                bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI( # refresh saves if lo changed
                 refreshSaves=not load_order.using_txt_file())
             return
@@ -1428,7 +1429,8 @@ class ModDetails(_SashDetailsPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-        bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
+        with load_order.Unlock():
+            bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
             changeDate and not load_order.using_txt_file())
         BashFrame.modList.RefreshUI(refreshSaves=refreshSaves)
@@ -2789,12 +2791,8 @@ class InstallersPanel(SashTankPanel):
         """Refresh UI plus refresh mods state."""
         self.uiList.RefreshUI()
         if mods_changed:
-            locked = load_order.locked
-            try:
-                load_order.locked = False
+            with load_order.Unlock():
                 bosh.modInfos.refresh()
-            finally:
-                load_order.locked = locked
             BashFrame.modList.RefreshUI(refreshSaves=True)
             Link.Frame.warn_corrupted(warn_saves=False)
             Link.Frame.warn_load_order()

@@ -454,15 +454,12 @@ class App_BOSS(App_Button):
         super(App_BOSS, self).Execute()
         if bass.settings['BOSS.ClearLockTimes']:
             # Clear the saved times from before
-            locked = load_order.locked
-            try:
-                load_order.locked = False
+            with load_order.Unlock():
                 # Refresh to get the new load order that BOSS specified. If
                 # on timestamp method scan the data dir, if not loadorder.txt
                 # should have changed, refreshLoadOrder should detect that
-                bosh.modInfos.refresh(scanData=not bosh.load_order.using_txt_file())
-            finally:
-                load_order.locked = locked
+                bosh.modInfos.refresh(
+                    scanData=not bosh.load_order.using_txt_file())
             # Refresh UI, so WB is made aware of the changes to load order
             BashFrame.modList.RefreshUI(refreshSaves=True)
 
