@@ -25,7 +25,7 @@
 import re
 import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
-    ChoiceLink, MenuLink, CheckLink, Image, UIList_Rename
+    ChoiceLink, MenuLink, CheckLink, Image, UIList_Rename, OneItemLink
 from .. import bass, balt, bosh, bush
 from .import People_Link
 from ..bolt import GPath, LString
@@ -244,7 +244,7 @@ class Master_ClearRenames(ItemLink):
         bass.settings['bash.mods.renames'].clear()
         self.window.RefreshUI()
 
-class _Master_EditList(EnabledLink):
+class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
     def _enable(self): return self.window.allowEdit
 
@@ -261,8 +261,7 @@ class Master_ChangeTo(_Master_EditList):
 
     @balt.conversation
     def Execute(self):
-        itemId = self.selected[0]
-        masterInfo = self.window.data_store[itemId]
+        masterInfo = self._selected_info
         master_name = masterInfo.name
         #--File Dialog
         wildcard = _(u'%s Mod Files') % bush.game.displayName \
@@ -294,8 +293,7 @@ class Master_Disable(AppendableLink, _Master_EditList):
     def _append(self, window): return not window.fileInfo.isMod() #--Saves only
 
     def Execute(self):
-        itemId = self.selected[0]
-        masterInfo = self.window.data_store[itemId]
+        masterInfo = self._selected_info
         newName = GPath(re.sub(u'[mM]$', 'p', u'XX' + masterInfo.name.s))
         #--Save Name
         masterInfo.setName(newName)

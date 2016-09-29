@@ -1569,7 +1569,7 @@ class UIList(wx.Panel):
     #--Style params
     _editLabels = False # allow editing the labels - also enables F2 shortcut
     _sunkenBorder = True
-    _singleCell = False
+    _singleCell = False # allow only single selections (no ctrl/shift+click)
     #--Sorting
     nonReversibleCols = {'Load Order', 'Current Order'}
     _default_sort_col = 'File' # override as needed
