@@ -215,6 +215,17 @@ class SashPanel(NotebookPanel):
             )
         self.SetSizer(sizer)
 
+    def ShowPanel(self):
+        if self._firstShow:
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
+            self._firstShow = False
+
+    def ClosePanel(self, destroy=False):
+        if not self._firstShow and destroy: # if the panel was shown
+            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+
 class SashUIListPanel(SashPanel):
     listData = None
     _status_str = u'OVERRIDE:' + u' %d'
@@ -250,20 +261,18 @@ class SashUIListPanel(SashPanel):
 
     def ShowPanel(self):
         """Resize the columns if auto is on and set Status bar text. Also
-        sets the scroll bar and sash positions on first show."""
+        sets the scroll bar and sash positions on first show. Must be _after_
+        RefreshUI for scroll bar to be set correctly."""
         if self._firstShow:
+            super(SashUIListPanel, self).ShowPanel()
             self.uiList.SetScrollPosition()
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
-            self._firstShow = False
         self.uiList.autosizeColumns()
         self.uiList.Focus()
         self.SetStatusCount()
 
     def ClosePanel(self, destroy=False):
-        if not self._firstShow: # if the panel was shown
-            settings[self.sashPosKey] = self.splitter.GetSashPosition()
+        if not self._firstShow and destroy: # if the panel was shown
+            super(SashUIListPanel, self).ClosePanel(destroy)
             self.uiList.SaveScrollPosition(isVertical=self.isVertical)
         # the only SashPanels that do not have this attribute are ModDetails
         # and SaveDetails that use a MasterList whose data is initially {}
@@ -1214,13 +1223,10 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
 
     def ShowPanel(self):
         if self._firstShow:
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
+            super(_SashDetailsPanel, self).ShowPanel() # set sashPosition
             sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
                                    self.__class__.defaultSubSashPos)
             self.subSplitter.SetSashPosition(sashPos)
-            self._firstShow = False
         self.uilist.autosizeColumns()
 
     def ClosePanel(self, destroy=False):
@@ -2485,6 +2491,8 @@ class InstallersList(balt.UIList):
 #------------------------------------------------------------------------------
 class InstallersDetails(_DetailsMixin, SashPanel):
     keyPrefix = 'bash.installers.details'
+    defaultSashPos = - 128 # negative so it sets bottom panel's (comments) size
+    defaultSubSashPos = 0
 
     @property
     def displayed_item(self): return self._displayed_installer
@@ -2498,9 +2506,10 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self._idata = self.installersPanel.listData
         self._displayed_installer = None
         top, bottom = self.left, self.right
-        self.commentsSplitter = commentsSplitter = self.splitter
-        subSplitter = wx.SplitterWindow(top, style=splitterStyle)
-        checkListSplitter = wx.SplitterWindow(subSplitter, style=splitterStyle)
+        commentsSplitter = self.splitter
+        self.subSplitter = subSplitter = wx.SplitterWindow(top,
+                                                           style=splitterStyle)
+        self.checkListSplitter = wx.SplitterWindow(subSplitter, style=splitterStyle)
         #--Package
         self.gPackage = RoTextCtrl(top, noborder=True)
         #--Info Tabs
@@ -2525,14 +2534,14 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.gNotebook.SetSelection(settings['bash.installers.page'])
         self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
         #--Sub-Installers
-        subPackagesPanel = wx.Panel(checkListSplitter)
+        subPackagesPanel = wx.Panel(self.checkListSplitter)
         subPackagesLabel = StaticText(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
                                      kind='checklist')
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
         self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
-        espmsPanel = wx.Panel(checkListSplitter)
+        espmsPanel = wx.Panel(self.checkListSplitter)
         espmsLabel = StaticText(espmsPanel, _(u'Esp/m Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
@@ -2544,14 +2553,13 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         commentsLabel = StaticText(commentsPanel, _(u'Comments'))
         self.gComments = TextCtrl(commentsPanel, multiline=True)
         #--Splitter settings
-        checkListSplitter.SetMinimumPaneSize(50)
-        checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
-        checkListSplitter.SetSashGravity(0.5)
+        self.checkListSplitter.SetMinimumPaneSize(50)
+        self.checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+        self.checkListSplitter.SetSashGravity(0.5)
         subSplitter.SetMinimumPaneSize(50)
-        subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+        subSplitter.SplitHorizontally(self.gNotebook, self.checkListSplitter)
         subSplitter.SetSashGravity(0.5)
-        commentsHeight = self.gPackage.GetSize()[1]
-        commentsSplitter.SetMinimumPaneSize(commentsHeight)
+        commentsSplitter.SetMinimumPaneSize(-self.__class__.defaultSashPos)
         commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
         commentsSplitter.SetSashGravity(1.0)
         #--Layout
@@ -2585,9 +2593,12 @@ class InstallersDetails(_DetailsMixin, SashPanel):
 
     def ClosePanel(self, destroy=False, only_details=False):
         """Saves details if they need saving."""
-        if not self._firstShow and not only_details: # comments text box size
-            sashPos = self.commentsSplitter.GetSashPosition()
-            settings['bash.installers.commentsSplitterSashPos'] = sashPos
+        super(InstallersDetails, self).ClosePanel(destroy)
+        if not self._firstShow and not only_details: # save subsplitters
+            settings[self.__class__.keyPrefix + '.subSplitterSashPos'] = \
+                self.subSplitter.GetSashPosition()
+            settings[self.__class__.keyPrefix + '.checkListSplitterSashPos'] =\
+                self.checkListSplitter.GetSashPosition()
             settings['bash.installers.page'] = self.gNotebook.GetSelection()
         installer = self.file_info
         if not installer or not self.gComments.IsModified(): return
@@ -2640,17 +2651,14 @@ class InstallersDetails(_DetailsMixin, SashPanel):
 
     def ShowPanel(self):
         if self._firstShow:
-            commentsHeight = self.gPackage.GetSize()[1]
-            commentsSplitterSavedSashPos = settings.get(
-                'bash.installers.commentsSplitterSashPos', 0)
-            # restore saved comments text box size
-            if 0 == commentsSplitterSavedSashPos:
-                # same height as the gPackage control, from the bottom
-                self.commentsSplitter.SetSashPosition(-commentsHeight)
-            else:
-                self.commentsSplitter.SetSashPosition(
-                    commentsSplitterSavedSashPos)
-            self._firstShow = False
+            super(InstallersDetails, self).ShowPanel() # set sash position
+            sashPos = settings.get(
+                self.keyPrefix + '.checkListSplitterSashPos',
+                self.__class__.defaultSubSashPos)
+            self.checkListSplitter.SetSashPosition(sashPos)
+            sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
+                                   self.__class__.defaultSubSashPos)
+            self.subSplitter.SetSashPosition(sashPos)
 
     def RefreshInfoPage(self,index,installer):
         """Refreshes notebook page."""
@@ -2998,6 +3006,7 @@ class InstallersPanel(BashTab):
             if BashFrame.iniList is not None:
                 BashFrame.iniList.panel.RefreshPanel()
         bosh.BSAInfos.check_bsa_timestamps()
+
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
 
