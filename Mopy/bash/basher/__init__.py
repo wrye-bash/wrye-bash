@@ -1128,13 +1128,23 @@ class _EditableMixin(_DetailsMixin):
 
 class _EditableMixinOnFileInfos(_EditableMixin):
     """Bsa/Mods/Saves details, DEPRECATED: we need common data infos API!"""
+    _max_filename_chars = 256
+    _min_controls_width = 128
     @property
     def file_info(self): raise AbstractError
     @property
     def displayed_item(self):
         return self.file_info.name if self.file_info else None
 
-    def OnEditFile(self):
+    def __init__(self, masterPanel):
+        _EditableMixin.__init__(self, masterPanel)
+        #--File Name
+        self.file = TextCtrl(self.top, onKillFocus=self.OnFileEdited,
+                             onText=self.OnFileEdit,
+                             maxChars=self._max_filename_chars,
+                             size=(self._min_controls_width, -1))
+
+    def OnFileEdited(self):
         """Event: Finished editing file name."""
         if not self.file_info: return
         #--Changed?
@@ -1158,6 +1168,13 @@ class _EditableMixinOnFileInfos(_EditableMixin):
 
     def _validate_filename(self, fileStr): raise AbstractError
 
+    def OnFileEdit(self, event):
+        """Event: Editing filename."""
+        if not self.file_info: return
+        if not self.edited and self.fileStr != self.file.GetValue():
+            self.SetEdited()
+        event.Skip()
+
 class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     """Mod and Saves details panel, feature a master's list.
 
@@ -1171,7 +1188,15 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
                            style=wx.SW_BORDER | splitterStyle)
         self.top, self.bottom = self.left, self.right
         self.subSplitter = wx.SplitterWindow(self.bottom, style=splitterStyle)
+        # split the bottom panel into the master uilist and mod tags/save notes
         self.masterPanel = wx.Panel(self.subSplitter)
+        self._bottom_low_panel = wx.Panel(self.subSplitter)
+        # needed so subpanels do not collapse
+        self.subSplitter.SetMinimumPaneSize(64)
+        self.subSplitter.SplitHorizontally(self.masterPanel,
+                                           self._bottom_low_panel)
+        # max resize the top (masters) panel
+        self.subSplitter.SetSashGravity(1.0)
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
         #--Masters
         mod_or_save_panel = parent.GetParent().GetParent()
@@ -1181,7 +1206,6 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
             vspace(), hSizer(StaticText(self.masterPanel,_(u"Masters:"))),
             (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
             vspace(), hSizer(self.save, hspace(), self.cancel))
-        mastersSizer.SetSizeHints(self.masterPanel)
         self.masterPanel.SetSizer(mastersSizer)
 
     def ShowPanel(self):
@@ -1224,9 +1248,6 @@ class ModDetails(_SashDetailsPanel):
         textWidth = 200
         #--Version
         self.version = StaticText(top,u'v0.00')
-        #--File Name
-        self.file = TextCtrl(top, onKillFocus=self.OnEditFile,
-                             onText=self.OnFileEdit, maxChars=textWidth) # size=(textWidth,-1))
         #--Author
         self.author = TextCtrl(top, onKillFocus=self.OnEditAuthor,
                                onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
@@ -1235,15 +1256,14 @@ class ModDetails(_SashDetailsPanel):
                                  onKillFocus=self.OnEditModified,
                                  onText=self.OnModifiedEdit, maxChars=32)
         #--Description
-        self.description = TextCtrl(top, size=(textWidth, 150),
+        self.description = TextCtrl(top, size=(textWidth, 128),
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
                                     onText=self.OnDescrEdit, maxChars=511)
         #--Bash tags
-        tagPanel = wx.Panel(subSplitter)
         self.allTags = bosh.allTags
-        self.gTags = RoTextCtrl(tagPanel, autotooltip=False,
-                                size=(textWidth, 100))
+        self.gTags = RoTextCtrl(self._bottom_low_panel, autotooltip=False,
+                                size=(textWidth, 64))
         #--Layout
         detailsSizer = vSizer(vspace(),
             (hSizer(
@@ -1259,14 +1279,11 @@ class ModDetails(_SashDetailsPanel):
             (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
-        subSplitter.SetMinimumPaneSize(100)
-        subSplitter.SplitHorizontally(masterPanel,tagPanel)
-        subSplitter.SetSashGravity(0.5)
-        tagsSizer = vSizer(
-            vspace(), (StaticText(tagPanel,_(u"Bash Tags:"))),
-            (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
+        tagsSizer = vSizer(vspace(),
+            (StaticText(self._bottom_low_panel, _(u"Bash Tags:"))),
+            (hSizer((self.gTags, 1, wx.EXPAND)), 1, wx.EXPAND))
         tagsSizer.SetSizeHints(masterPanel)
-        tagPanel.SetSizer(tagsSizer)
+        self._bottom_low_panel.SetSizer(tagsSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
         #--Events
         self.gTags.Bind(wx.EVT_CONTEXT_MENU,
@@ -1312,8 +1329,6 @@ class ModDetails(_SashDetailsPanel):
         if not self.modInfo: return
         if not self.edited and value != control.GetValue(): self.SetEdited()
         event.Skip()
-    def OnFileEdit(self, event):
-        self._OnTextEdit(event, self.fileStr, self.file)
     def OnAuthorEdit(self, event):
         self._OnTextEdit(event, self.authorStr, self.author)
     def OnModifiedEdit(self, event):
@@ -1889,19 +1904,15 @@ class SaveDetails(_SashDetailsPanel):
         #--Data
         self.saveInfo = None
         textWidth = 200
-        #--File Name
-        self.file = TextCtrl(top, size=(textWidth, -1),
-                             onKillFocus=self.OnEditFile,
-                             onText=self.OnTextEdit, maxChars=256)
         #--Player Info
         self.playerInfo = StaticText(top,u" \n \n ")
         self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
-        notePanel = wx.Panel(subSplitter)
         #--Save Info
-        self.gInfo = TextCtrl(notePanel, size=(textWidth, 100), multiline=True,
-                              onText=self.OnInfoEdit, maxChars=2048)
+        self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 100),
+                              multiline=True, onText=self.OnInfoEdit,
+                              maxChars=2048)
         #--Layout
         detailsSizer = vSizer(
             vspace(), (self.file,0,wx.EXPAND),
@@ -1910,16 +1921,13 @@ class SaveDetails(_SashDetailsPanel):
             ,0,wx.EXPAND),
             vspace(), (self.picture,1,wx.EXPAND),
             )
+        detailsSizer.SetSizeHints(top)
+        top.SetSizer(detailsSizer)
         noteSizer = vSizer(
             (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
             )
-        detailsSizer.SetSizeHints(top)
-        top.SetSizer(detailsSizer)
-        subSplitter.SetMinimumPaneSize(100)
-        subSplitter.SplitHorizontally(masterPanel,notePanel)
-        subSplitter.SetSashGravity(1.0)
         noteSizer.SetSizeHints(masterPanel)
-        notePanel.SetSizer(noteSizer)
+        self._bottom_low_panel.SetSizer(noteSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
 
     def _resetDetails(self):
@@ -1977,13 +1985,6 @@ class SaveDetails(_SashDetailsPanel):
             bosh.saveInfos.table.setItem(self.saveInfo.name, 'info',
                                          self.gInfo.GetValue())
         event.Skip() # not strictly needed - no other handler for onKillFocus
-
-    def OnTextEdit(self,event):
-        """Event: Editing file or save name text."""
-        if not self.saveInfo: return
-        if not self.edited and self.fileStr != self.file.GetValue():
-            self.SetEdited()
-        event.Skip()
 
     def _validate_filename(self, fileStr):
         return BashFrame.saveList.validate_filename(
@@ -3138,10 +3139,6 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         _EditableMixinOnFileInfos.__init__(self, self.bottom)
         #--Data
         self.BSAInfo = None
-        #--File Name
-        self.file = TextCtrl(self.top, onText=self.OnTextEdit,
-                             onKillFocus=self.OnEditFile, maxChars=256)
-
         #--BSA Info
         self.gInfo = TextCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -3183,13 +3180,6 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         """Info field was edited."""
         if self.BSAInfo and self.gInfo.IsModified():
             bosh.bsaInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
-        event.Skip()
-
-    def OnTextEdit(self,event):
-        """Event: Editing file or save name text."""
-        if not self.BSAInfo : return
-        if not self.edited and self.fileStr != self.file.GetValue():
-            self.SetEdited()
         event.Skip()
 
     def _validate_filename(self, fileStr):
