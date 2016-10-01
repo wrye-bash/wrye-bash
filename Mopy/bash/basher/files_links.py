@@ -24,32 +24,18 @@
 
 import re
 from .. import bass, balt, bosh, bush, bolt, env
-from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, ChoiceLink, Link, \
     OneItemLink
+from ..bass import Resources
 from ..bolt import CancelError, SkipError, GPath, formatDate
 
-__all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
+__all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup',
            'File_Duplicate', 'File_Snapshot', 'File_Hide',
            'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Files_Open(ItemLink):
-    """Opens data directory in explorer."""
-    text = _(u'Open...')
-
-    def _initData(self, window, selection):
-        super(Files_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % window.data_store.store_dir.tail
-
-    def Execute(self):
-        """Handle selection."""
-        dir_ = self.window.data_store.store_dir
-        dir_.makedirs()
-        dir_.start()
-
 class Files_SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
 
