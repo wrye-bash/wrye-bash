@@ -1832,12 +1832,17 @@ class UIList(wx.Panel):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): # Ctrl+A
-            try:
-                self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
-                self.panel.ClearDetails() #omit this to leave displayed details
-                self._SelectAll()
-            finally:
-                self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+            if event.ShiftDown(): # de-select all
+                self.ClearSelected(clear_details=True)
+            else: # select all
+                try:
+                    self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                    # omit below to leave displayed details
+                    self.panel.ClearDetails()
+                    self.SelectItemAtIndex(-1) # -1 indicates 'all items'
+                finally:
+                    self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED,
+                                      self.OnItemSelected)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(event=event)
@@ -1871,7 +1876,7 @@ class UIList(wx.Panel):
             for i in colCount:
                 self.__gList.SetColumnWidth(i, -self.autoColWidths)
 
-    #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
+    #--Events skipped
     def OnLeftDown(self,event): event.Skip()
     def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
@@ -1930,9 +1935,6 @@ class UIList(wx.Panel):
         """Unselect all items."""
         self.SelectItemAtIndex(-1, False) # -1 indicates 'all items'
         if clear_details: self.panel.ClearDetails()
-
-    def _SelectAll(self): # only called after unbinding EVT_LIST_ITEM_SELECTED
-        self.SelectItemAtIndex(-1) # -1 indicates 'all items'
 
     def SelectLast(self):
         self.SelectItemAtIndex(self.__gList.GetItemCount() - 1)
