@@ -3632,11 +3632,13 @@ class BashFrame(wx.Frame):
     @property
     def statusBar(self): return self.GetStatusBar()
 
-    def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
+    def __init__(self, parent=None):
         #--Singleton
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, title=u'Wrye Bash', pos=pos, size=size)
+        wx.Frame.__init__(self, parent, title=u'Wrye Bash',
+                          pos=settings['bash.framePos'],
+                          size=settings['bash.frameSize'])
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
@@ -3708,30 +3710,28 @@ class BashFrame(wx.Frame):
         uacRestart = uac
         self.Close(True)
 
-    def SetTitle(self,title=None):
+    def SetTitle(*args, **kwargs):
         """Set title. Set to default if no title supplied."""
-        if not title:
-            ###Remove from Bash after CBash integrated
-            if bush.game.altName and settings['bash.useAltName']:
-                title = bush.game.altName + u' %s%s'
-            else:
-                title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
-            title = title % (settings['bash.version'],
-                _(u'(Standalone)') if settings['bash.standalone'] else u'')
-            if CBash:
-                title += u', CBash v%u.%u.%u: ' % (
-                    CBash.GetVersionMajor(), CBash.GetVersionMinor(),
-                    CBash.GetVersionRevision())
-            else:
-                title += u': '
-            maProfile = re.match(ur'Saves\\(.+)\\$',bosh.saveInfos.localSave,re.U)
-            if maProfile:
-                title += maProfile.group(1)
-            else:
-                title += _(u'Default')
-            if bosh.modInfos.voCurrent:
-                title += u' ['+bosh.modInfos.voCurrent+u']'
-        wx.Frame.SetTitle(self,title)
+        if bush.game.altName and settings['bash.useAltName']:
+            title = bush.game.altName + u' %s%s'
+        else:
+            title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
+        title = title % (settings['bash.version'],
+            _(u'(Standalone)') if settings['bash.standalone'] else u'')
+        if CBash:
+            title += u', CBash v%u.%u.%u: ' % (
+                CBash.GetVersionMajor(), CBash.GetVersionMinor(),
+                CBash.GetVersionRevision())
+        else:
+            title += u': '
+        maProfile = re.match(ur'Saves\\(.+)\\$',bosh.saveInfos.localSave,re.U)
+        if maProfile:
+            title += maProfile.group(1)
+        else:
+            title += _(u'Default')
+        if bosh.modInfos.voCurrent:
+            title += u' ['+bosh.modInfos.voCurrent+u']'
+        wx.Frame.SetTitle(args[0], title)
 
     def SetStatusCount(self, requestingPanel, countTxt):
         """Sets status bar count field."""
@@ -4006,9 +4006,7 @@ class BashApp(wx.App):
         self.InitVersion()
         #--MWFrame
         progress(0.8, _(u'Initializing Windows'))
-        frame = BashFrame( # Link.Frame global set here
-             pos=settings['bash.framePos'],
-             size=settings['bash.frameSize'])
+        frame = BashFrame() # Link.Frame global set here
         progress.Destroy()
         if splashScreen:
             splashScreen.Destroy()
