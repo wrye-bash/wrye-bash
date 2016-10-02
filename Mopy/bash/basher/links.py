@@ -31,7 +31,8 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import bass, balt, bush
 from ..cint import CBash
-from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems, UIList_OpenStore
+from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems, \
+    UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
 # modules below define the __all__ directive
 from .app_buttons import *
@@ -421,7 +422,7 @@ def InitModLinks():
         fileMenu.links.append(File_Snapshot())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(balt.UIList_Delete())
-        fileMenu.links.append(File_Hide())
+        fileMenu.links.append(UIList_Hide())
         fileMenu.links.append(Mod_Redate())
         fileMenu.links.append(Mod_OrderByName())
         fileMenu.links.append(SeparatorLink())
@@ -570,7 +571,7 @@ def InitSaveLinks():
         #fileMenu.links.append(File_Snapshot())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(balt.UIList_Delete())
-        fileMenu.links.append(File_Hide())
+        fileMenu.links.append(UIList_Hide())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
         fileMenu.links.append(Save_Rename())
@@ -633,7 +634,7 @@ def InitBSALinks():
         fileMenu.links.append(File_Duplicate())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(balt.UIList_Delete())
-        fileMenu.links.append(File_Hide())
+        fileMenu.links.append(UIList_Hide())
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
         BSAList.itemMenu.append(fileMenu)

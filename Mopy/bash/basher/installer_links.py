@@ -40,7 +40,7 @@ from .frames import InstallerProject_OmodConfigDialog
 from .. import bass, bolt, bosh, bush, balt
 from ..bass import Resources
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
-    UIList_Rename
+    UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
 from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
     SubProgress, LogFile, formatInteger, round_size
@@ -411,7 +411,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         self.window.RefreshUI()
         self.window.SelectAndShowItem(newName)
 
-class Installer_Hide(_InstallerLink):
+class Installer_Hide(_InstallerLink, UIList_Hide):
     """Hide selected Installers."""
     text = _(u'Hide...')
     help = _(
@@ -422,25 +422,6 @@ class Installer_Hide(_InstallerLink):
             if isinstance(self.idata[item],bosh.InstallerMarker):
                 return False
         return True
-
-    def Execute(self):
-        """Handle selection."""
-        if not bass.inisettings['SkipHideConfirmation']:
-            message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
-            if not self._askYes(message, _(u'Hide Files')): return
-        destDir = bass.dirs['modsBash'].join(u'Hidden')
-        for curName in self.selected:
-            newName = destDir.join(curName)
-            if newName.exists():
-                message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % curName)
-                if not self._askYes(message, _(u'Hide Files')): continue
-            #Move
-            with balt.BusyCursor():
-                file = bass.dirs['installers'].join(curName)
-                file.moveTo(newName)
-        self.idata.irefresh(what='ION')
-        self.window.RefreshUI()
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""

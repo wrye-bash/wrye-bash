@@ -24,14 +24,13 @@
 
 import re
 from .. import bass, balt, bosh, bush, bolt, env
-from ..balt import ItemLink, RadioLink, EnabledLink, ChoiceLink, Link, \
-    OneItemLink
+from ..balt import ItemLink, RadioLink, ChoiceLink, Link, OneItemLink
 from ..bass import Resources
 from ..bolt import CancelError, SkipError, GPath, formatDate
 
-__all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup',
-           'File_Duplicate', 'File_Snapshot', 'File_Hide',
-           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters']
+__all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
+           'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',
+           'File_ListMasters']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -170,46 +169,6 @@ class File_Duplicate(ItemLink):
             self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
             self.window.SelectAndShowItem(dests[-1])
-
-class File_Hide(ItemLink):
-    """Hide the file. (Move it to Bash/Hidden directory.)"""
-    text = _(u'Hide')
-
-    def _initData(self, window, selection):
-        super(File_Hide, self)._initData(window, selection)
-        self.help = _(u"Move %(filename)s to the Bash/Hidden directory.") % (
-            {'filename': selection[0]})
-
-    @balt.conversation
-    def Execute(self):
-        if not bass.inisettings['SkipHideConfirmation']:
-            message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
-            if not self._askYes(message, _(u'Hide Files')): return
-        #--Do it
-        destRoot = self.window.data_store.bash_dir.join(u'Hidden')
-        fileInfos = self.window.data_store
-        fileGroups = fileInfos.table.getColumn('group')
-        for fileName in self.selected:
-            destDir = destRoot
-            #--Use author subdirectory instead?
-            author = getattr(fileInfos[fileName].header,'author',u'NOAUTHOR') #--Hack for save files.
-            authorDir = destRoot.join(author)
-            if author and authorDir.isdir():
-                destDir = authorDir
-            #--Use group subdirectory instead?
-            elif fileName in fileGroups:
-                groupDir = destRoot.join(fileGroups[fileName])
-                if groupDir.isdir():
-                    destDir = groupDir
-            if destDir.join(fileName).exists():
-                message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % fileName.s)
-                if not self._askYes(message, _(u'Hide Files')): continue
-            #--Do it
-            fileInfos.move_info(fileName, destDir)
-        #--Refresh stuff
-        fileInfos.delete_Refresh(self.selected, check_existence=True)
-        self.window.RefreshUI(refreshSaves=True)
 
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""

@@ -2157,6 +2157,18 @@ class UIList(wx.Panel):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
+    def hide(self, keys):
+        for key in keys:
+            destDir = self.data_store.get_hide_dir(key)
+            if destDir.join(key).exists():
+                message = (_(u'A file named %s already exists in the hidden '
+                             u'files directory. Overwrite it?') % key.s)
+                if not askYes(self, message, _(u'Hide Files')): continue
+            #--Do it
+            with BusyCursor(): self.data_store.move_info(key, destDir)
+        #--Refresh stuff
+        self.data_store.delete_Refresh(keys, check_existence=True)
+
     # Generate unique filenames when duplicating files etc
     @staticmethod
     def _new_name(new_name, count):
@@ -2550,6 +2562,26 @@ class UIList_OpenStore(ItemLink):
         self.help = _(u"Open '%s'") % window.data_store.store_dir
 
     def Execute(self): self.window.open_data_store()
+
+class UIList_Hide(ItemLink):
+    """Hide the file (move it to the data store's Hidden directory)."""
+    text = _(u'Hide')
+
+    def _initData(self, window, selection):
+        super(UIList_Hide, self)._initData(window, selection)
+        self.hidden_dir = self.window.data_store.hidden_dir
+        self.help = _(u"Move %(filename)s to %(hidden_dir)s") % (
+            {'filename': selection[0], 'hidden_dir': self.hidden_dir})
+
+    @conversation
+    def Execute(self):
+        if not bass.inisettings['SkipHideConfirmation']:
+            message = _(u'Hide these files? Note that hidden files are simply '
+                        u'moved to the %(hidden_dir)s directory.') % (
+                          {'hidden_dir': self.hidden_dir})
+            if not self._askYes(message, _(u'Hide Files')): return
+        self.window.hide(self.selected)
+        self.window.RefreshUI(refreshSaves=True)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------

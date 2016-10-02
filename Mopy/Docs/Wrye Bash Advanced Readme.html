@@ -430,7 +430,8 @@ tab. The directories skipped are:
         <tr><td>TES Nexus...<td>Attempts to open the selected package's page on TES Nexus.  This command assumes that the trailing digits in a package's name is the package ID at the site.
         <tr><td>Skyrim Nexus...<td>Attempts to open the selected package's page on Skyrim Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.
         <tr><td>TES Alliance...<td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.
-        <tr><td colspan="2" id="bainHide">Hide...<td>Hides the package in the list, and moves it to the <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
+        <tr><td colspan="2" id="bainHide">Hide...<td>Hides the package in the list, and moves it to the
+            <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
         <tr><td colspan="2" id="bainRename">Rename...<td>Renames the selected package or marker.
         <tr><td colspan="2" id="bainRefresh">Refresh<td>As <a href="#bainRefresh">Quick Refresh</a> below. Refresh will however recalculate the
             <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all selected items <i>from scratch</i>, which is not what you usually need (for projects
@@ -626,7 +627,10 @@ tab. The directories skipped are:
         <tr><td id="modsDuplicate">Duplicate...<td>Creates a duplicate of the selected plugin in the Data folder.
         <tr><td id="modsSnapshot">Snapshot...<td>Creates a snapshot copy of the selected plugin in <code>Bash\Snapshots</code>. Snapshot filenames are appended with <code>-n</code> where n is a number between 01 and 99. Eg. the first snapshot of <code>Plugin.esp</code> is <code>Plugin-01.esp</code>. The number is incremented each time the plugin has a snapshot taken. Additionally, if there is a version line in the plugin's description field, then the snapshot number will be appended to the version number in the same manner.
         <tr><td>Delete<td><b>Permanently</b> deletes the selected plugin, and any backups of it, but not snapshots.
-        <tr><td>Hide<td>Moves the selected plugin to the <code>Bash\Hidden</code> subdirectory. If the plugin's group is defined and there is a Bash\Hidden subdirectory of the same name, the plugin will be placed there.
+        <tr><td>Hide<td>Moves the selected plugin to the <code>[Game] Mods/Bash Mod Data/Hidden</code> subdirectory. If the plugin's author
+            is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there. If not and the
+            plugin's group is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there
+            instead. Otherwise it will be placed inside Bash Mod Data/Hidden.
         <tr><td>Redate...<td>Change the modification time of the selected plugin. If more than one plugin is selected, then all the plugins will have their modification times altered, with the first in the list being set to the specified time and the rest at one minute intervals from that time.
         <tr><td>Sort<td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.
         <tr><td>Revert To Backup<td>Reverts the selected plugin to the last backup made of it.
@@ -1653,7 +1657,7 @@ and masterlist relative priority and role see the LOOT docs.
         <tr><td rowspan="8">File<td>Backup<td>Creates a backup of the selected save file in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up save file has <code>f</code> appended to its file extension, giving .essf.
         <tr><td>Duplicate...<td>Creates a duplicate of the selected save file in the saves folder.
         <tr><td>Delete<td>Permanently deletes the selected save file and any backups of it.
-        <tr><td>Hide<td>Moves the selected save file to the <code>Bash\Hidden</code> subdirectory.
+        <tr><td>Hide<td>Moves the selected save file to the <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code> directory.
         <tr><td>Revert to Backup<td>Reverts the selected save file to the last backup made of it.
         <tr><td>Revert to First Backup<td>Reverts the selected save file to the first backup made of it.
         <tr><td>Rename...<td>Rename the selected save file.

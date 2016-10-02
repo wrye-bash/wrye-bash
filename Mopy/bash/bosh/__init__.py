@@ -2953,6 +2953,14 @@ class _DataStore(DataDict):
         :rtype: bolt.Path"""
         raise AbstractError
 
+    @property
+    def hidden_dir(self):
+        """Return the folder where Bash should move the file info to hide it
+        :rtype: bolt.Path"""
+        return self.bash_dir.join(u'Hidden')
+
+    def get_hide_dir(self, name): return self.hidden_dir
+
 class FileInfos(_DataStore):
     """Common superclass for mod, ini, saves and bsa infos."""
     ##: we need a common API for this and TankData...
@@ -4009,6 +4017,22 @@ class ModInfos(FileInfos):
         """Moves member file to destDir."""
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.move_info(self, fileName, destDir)
+
+    def get_hide_dir(self, name):
+        dest_dir =self.hidden_dir
+        #--Use author subdirectory instead?
+        author = self[name].header.author
+        if author:
+            authorDir = dest_dir.join(author)
+            if authorDir.isdir():
+                return authorDir
+        #--Use group subdirectory instead?
+        file_group = self.table.getItem(name, 'group')
+        if file_group:
+            groupDir = dest_dir.join(file_group)
+            if groupDir.isdir():
+                return groupDir
+        return dest_dir
 
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
@@ -5877,6 +5901,9 @@ class InstallersData(_DataStore):
     @property
     def bash_dir(self): return dirs['bainData']
 
+    @property
+    def hidden_dir(self): return bass.dirs['modsBash'].join(u'Hidden')
+
     def add_marker(self, name, order):
         path = GPath(name)
         self[path] = InstallerMarker(path)
@@ -5989,6 +6016,10 @@ class InstallersData(_DataStore):
             installer.archive = destName.s
             installer.isActive = False
             self.moveArchives([destName], self[item].order + 1)
+
+    def move_info(self, filename, destDir):
+        # hasty method to use in UIList.hide(), see FileInfos.move_info()
+        self.store_dir.join(filename).moveTo(destDir.join(filename))
 
     #--Refresh Functions ------------------------------------------------------
     class _RefreshInfo(object):
