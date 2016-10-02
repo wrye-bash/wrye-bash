@@ -2191,7 +2191,13 @@ class UIList(wx.Panel):
 
     @staticmethod
     def _unhide_wildcard(): raise AbstractError
-    def unhide(self): raise AbstractError
+    def unhide(self):
+        srcDir = self.data_store.hidden_dir
+        wildcard = self._unhide_wildcard()
+        destDir = self.data_store.store_dir
+        srcPaths = askOpenMulti(self, _(u'Unhide files:'), defaultDir=srcDir,
+                                wildcard=wildcard)
+        return destDir, srcDir, srcPaths
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------

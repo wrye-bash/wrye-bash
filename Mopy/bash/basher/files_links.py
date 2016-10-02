@@ -74,13 +74,6 @@ class Files_Unhide(ItemLink):
                 self._showError(
                     _(u"You can't unhide files from this directory."))
                 return
-            #--Folder selection?
-            if srcFileName.csbody == u'.folder selection':
-                if newSrcDir == srcDir:
-                    #--Folder selection on the 'Hidden' folder
-                    return
-                (newSrcDir,srcFileName) = newSrcDir.headTail
-                srcPath = srcPath.head
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
             if destPath.exists() or (destPath + u'.ghost').exists():

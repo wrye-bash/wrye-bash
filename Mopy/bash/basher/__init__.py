@@ -987,14 +987,6 @@ class ModList(_ModsUIList):
         if Link.Frame.docBrowser:
             Link.Frame.docBrowser.SetMod(modName)
 
-    def unhide(self):
-        srcDir = bass.dirs['modsBash'].join(u'Hidden')
-        wildcard = self._unhide_wildcard()
-        destDir = self.data_store.store_dir
-        srcPaths = balt.askOpenMulti(self, _(u'Unhide files:'),
-                                     defaultDir=srcDir, wildcard=wildcard)
-        return destDir, srcDir, srcPaths
-
     @staticmethod
     def _unhide_wildcard():
         return bush.game.displayName + u' ' + _(
@@ -1857,14 +1849,6 @@ class SaveList(balt.UIList):
         if item_edited: self.SelectItem(item_edited)
         event.Veto() # needed ! clears new name from label on exception
 
-    def unhide(self):
-        srcDir = self.data_store.bash_dir.join(u'Hidden')
-        wildcard = self._unhide_wildcard()
-        destDir = self.data_store.store_dir
-        srcPaths = balt.askOpenMulti(self, _(u'Unhide files:'),
-                                     defaultDir=srcDir, wildcard=wildcard)
-        return destDir, srcDir, srcPaths
-
     @staticmethod
     def _unhide_wildcard():
         starred = u'*' + bush.game.ess.ext
@@ -2257,16 +2241,6 @@ class InstallersList(balt.UIList):
                     BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
             event.Veto()
-
-    def unhide(self):
-        srcDir = bass.dirs['modsBash'].join(u'Hidden')
-        wildcard = self._unhide_wildcard()
-        destDir = self.data_store.store_dir
-        srcPaths = balt.askOpenMulti(self, title=_(u'Unhide files:'),
-                                     defaultDir=srcDir,
-                                     defaultFile=u'.Folder Selection.',
-                                     wildcard=wildcard)
-        return destDir, srcDir, srcPaths
 
     @staticmethod
     def _unhide_wildcard():
