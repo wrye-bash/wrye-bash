@@ -3165,12 +3165,6 @@ class FileInfos(_DataStore):
                 self[destName].setmtime(set_mtime) # correctly update table
         return set_mtime
 
-    #--Move Exists
-    @staticmethod
-    def moveIsSafe(fileName,destDir):
-        """Bool: Safe to move file to destDir."""
-        return not destDir.join(fileName).exists()
-
     def save(self):
         # items deleted outside Bash
         for deleted in set(self.table.keys()) - set(self.keys()):

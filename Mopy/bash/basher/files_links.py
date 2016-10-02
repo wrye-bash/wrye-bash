@@ -221,7 +221,7 @@ class File_Hide(ItemLink):
                 groupDir = destRoot.join(fileGroups[fileName])
                 if groupDir.isdir():
                     destDir = groupDir
-            if not self.window.data_store.moveIsSafe(fileName,destDir):
+            if destDir.join(fileName).exists():
                 message = (_(u'A file named %s already exists in the hidden '
                              u'files directory. Overwrite it?') % fileName.s)
                 if not self._askYes(message, _(u'Hide Files')): continue
