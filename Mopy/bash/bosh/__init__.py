@@ -2939,7 +2939,11 @@ class _DataStore(DataDict):
 
     def delete(self, itemOrItems, **kwargs): raise AbstractError
     def delete_Refresh(self, deleted, check_existence=False):
-        raise AbstractError # Yak - absorb in refresh - add deleted parameter
+        # Yak - absorb in refresh - add deleted parameter
+        if check_existence:
+            deleted = set(
+                d for d in deleted if not self.store_dir.join(d).exists())
+        return deleted
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
@@ -3118,9 +3122,7 @@ class FileInfos(_DataStore):
                 self.delete_Refresh(tableUpdate.values())
 
     def delete_Refresh(self, deleted, check_existence=False):
-        if check_existence:
-            deleted = set(
-                d for d in deleted if not self.store_dir.join(d).exists())
+        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -5954,9 +5956,7 @@ class InstallersData(_DataStore):
                     self.delete_Refresh(deleted) # markers are already popped
 
     def delete_Refresh(self, deleted, check_existence=False):
-        if check_existence:
-            deleted.remove(
-                item for item in deleted if self.store_dir.join(item).exists())
+        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
         if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
