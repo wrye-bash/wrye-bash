@@ -24,7 +24,7 @@
 
 """This modules defines static data for use by bush, when TES V:
    Skyrim is set at the active game."""
-import re
+
 import struct
 from .constants import *
 from .default_tweaks import default_tweaks
@@ -276,8 +276,6 @@ masterFiles = [
     u'Skyrim.esm',
     u'Update.esm',
     ]
-
-namesPatcherMaster = re.compile(ur"^Skyrim.esm$",re.I|re.U)
 
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
 pklfile = r'bash\db\Skyrim_ids.pkl'

@@ -25,7 +25,6 @@
 """This modules defines static data for use by bush, when Fallout 4 is set as
    the active game."""
 
-import re
 import struct
 import itertools
 from .constants import *
@@ -273,8 +272,6 @@ saveProfilesKey = (u'General',u'SLocalSavePath')
 masterFiles = [
     u'Fallout4.esm',
     ]
-
-namesPatcherMaster = re.compile(ur"^Fallout4.esm$",re.I|re.U)
 
 #The pickle file for this game. Holds encoded GMST IDs from the big list below.
 pklfile = ur'bash\db\Fallout4_ids.pkl'

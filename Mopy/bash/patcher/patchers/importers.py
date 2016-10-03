@@ -2103,7 +2103,6 @@ class _ANamesPatcher(AImportPatcher):
     """Import names from source mods/files."""
     name = _(u'Import Names')
     text = _(u"Import names from source mods/files.")
-    autoRe = game.namesPatcherMaster
     autoKey = {u'Names'}
     logMsg =  u'\n=== ' + _(u'Renamed Items')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
