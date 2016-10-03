@@ -48,7 +48,10 @@ PBash_gui_patchers = [] #--All gui patchers classes for this game
 CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
 
 class PatchDialog(balt.Dialog):
-    """Bash Patch update dialog."""
+    """Bash Patch update dialog.
+
+    :type patchers: list[basher.gui_patchers._PatcherPanel]
+    """
 
     def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
         self.parent = parent
@@ -348,28 +351,40 @@ class PatchDialog(balt.Dialog):
                      isCBash=self.doCBash, win=self.parent,
                      outDir=bass.dirs['patches'])
 
+    __old_key = GPath(u'Saved Bashed Patch Configuration')
+    __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
         config_dat = self.patchInfo.name + _(u'_Configuration.dat')
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.parent, _(u'Import Bashed Patch configuration from:'), textDir, config_dat, u'*.dat', mustExist=True)
+        textPath = balt.askOpen(self.parent,
+                                _(u'Import Bashed Patch configuration from:'),
+                                textDir, config_dat, u'*.dat', mustExist=True)
         if not textPath: return
         table = bolt.Table(bolt.PickleDict(textPath))
-        #try the current Bashed Patch mode.
-        patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
-        if not patchConfigs: #try the old format:
-            patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
-            if patchConfigs:
-                if configIsCBash(patchConfigs) != self.doCBash:
-                    patchConfigs = self.UpdateConfig(patchConfigs)
-            else:   #try the non-current Bashed Patch mode:
-                patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
-                if patchConfigs:
-                    patchConfigs = self.UpdateConfig(patchConfigs)
-        if patchConfigs is None:
-            patchConfigs = {}
+        # try the current Bashed Patch mode.
+        patchConfigs = table.getItem(
+            GPath(self.__new_key % ([u'Python', u'CBash'][self.doCBash])),
+            'bash.patch.configs', {})
+        convert = False
+        if not patchConfigs: # try the non-current Bashed Patch mode
+            patchConfigs = table.getItem(
+                GPath(self.__new_key % ([u'CBash', u'Python'][self.doCBash])),
+                'bash.patch.configs', {})
+            convert = bool(patchConfigs)
+        if not patchConfigs: # try the old format
+            patchConfigs = table.getItem(self.__old_key, 'bash.patch.configs',
+                                         {})
+            convert = configIsCBash(patchConfigs) != self.doCBash
+        if not patchConfigs:
+            balt.showWarning(_(u'No patch config data found in %s') % textPath,
+                             _(u'Import Config'))
+            return
+        if convert:
+            patchConfigs = self.UpdateConfig(patchConfigs)
+            if patchConfigs is None: return
         for index,patcher in enumerate(self.patchers):
             patcher.SetIsFirstLoad(False)
             patcher.getConfig(patchConfigs)
@@ -389,10 +404,13 @@ class PatchDialog(balt.Dialog):
         self.SetOkEnable()
 
     def UpdateConfig(self, patchConfigs):
-        if not balt.askYes(self.parent,
-            _(u"Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)")
-                % ([u'CBash',u'Python'][self.doCBash],
-                   [u'Python',u'CBash'][self.doCBash])):
+        if not balt.askYes(self.parent, _(
+            u"Wrye Bash detects that the selected file was saved in Bash's "
+            u"%s mode, do you want Wrye Bash to attempt to adjust the "
+            u"configuration on import to work with %s mode (Good chance "
+            u"there will be a few mistakes)? (Otherwise this import will "
+            u"have no effect.)") % ([u'CBash', u'Python'][self.doCBash],
+                                    [u'Python', u'CBash'][self.doCBash])):
             return
         return self.ConvertConfig(patchConfigs)
 
@@ -408,7 +426,8 @@ class PatchDialog(balt.Dialog):
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
-        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
+        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
+                                                   'bash.patch.configs', {})
         if configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
         for index,patcher in enumerate(self.patchers):
