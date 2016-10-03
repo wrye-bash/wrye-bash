@@ -394,10 +394,6 @@ class PatchDialog(balt.Dialog):
                 % ([u'CBash',u'Python'][self.doCBash],
                    [u'Python',u'CBash'][self.doCBash])):
             return
-        if self.doCBash:
-            PatchFile.patchName = CBash_PatchFile.patchName
-        else:
-            CBash_PatchFile.patchName = PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
     @staticmethod

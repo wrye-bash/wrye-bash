@@ -467,13 +467,13 @@ class _ListPatcherPanel(_PatcherPanel):
         autoRe = self.__class__.autoRe
         autoKey = self.__class__.autoKey
         self.choiceMenu = self.__class__.choiceMenu
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(patch_files.executing_patch): continue
-            if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
-                autoItems.append(name)
-                if self.choiceMenu: self.get_set_choice(name)
+        mods_prior_to_patch = load_order.cached_lord.loadOrder[
+                        :load_order.loIndexCached(patch_files.executing_patch)]
+        for mod in mods_prior_to_patch:
+            if autoRe.match(mod.s) or (
+                        autoKey & bosh.modInfos[mod].getBashTags()):
+                autoItems.append(mod)
+                if self.choiceMenu: self.get_set_choice(mod)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
         for fileName in sorted(self.patches_set):
             if reFile.search(fileName.s):
@@ -786,12 +786,12 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         autoItems = []
         autoRe = self.__class__.autoRe
         autoKey = self.__class__.autoKey
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(patch_files.executing_patch): continue
-            if autoRe.match(name.s) or (autoKey & set(modInfo.getBashTags())):
-                autoItems.append(name)
+        mods_prior_to_patch = load_order.cached_lord.loadOrder[
+                        :load_order.loIndexCached(patch_files.executing_patch)]
+        for mod in mods_prior_to_patch:
+            if autoRe.match(mod.s) or (
+                        autoKey & bosh.modInfos[mod].getBashTags()):
+                autoItems.append(mod)
         return autoItems
 
 #------------------------------------------------------------------------------
@@ -848,12 +848,12 @@ class _MergerPanel(_ListPatcherPanel):
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            if dex(modInfo.name) >= dex(patch_files.executing_patch): continue
-            if (modInfo.name in bosh.modInfos.mergeable and
-                u'NoMerge' not in modInfo.getBashTags()):
-                autoItems.append(modInfo.name)
+        mods_prior_to_patch = load_order.cached_lord.loadOrder[
+                        :load_order.loIndexCached(patch_files.executing_patch)]
+        for mod in mods_prior_to_patch:
+            if (mod in bosh.modInfos.mergeable and
+                u'NoMerge' not in bosh.modInfos[mod].getBashTags()):
+                autoItems.append(mod)
         return autoItems
 
 class _GmstTweakerPanel(_TweakPatcherPanel):
@@ -1020,14 +1020,14 @@ from .patcher_dialog import PBash_gui_patchers, CBash_gui_patchers, \
 from importlib import import_module
 gamePatcher = import_module('.patcher', ##: move in bush.py !
                        package=bush.game.__name__)
-for name, typeInfo in gamePatcher.gameSpecificPatchers.items():
-    globals()[name] = type(name, (typeInfo.clazz, _PatcherPanel), {})
+for patcher_name, typeInfo in gamePatcher.gameSpecificPatchers.items():
+    globals()[patcher_name] = type(patcher_name, (typeInfo.clazz, _PatcherPanel), {})
     if typeInfo.twinPatcher:
-        otherPatcherDict[name] = typeInfo.twinPatcher
-for name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
-    globals()[name] = type(name, (typeInfo.clazz, _ListPatcherPanel), {})
+        otherPatcherDict[patcher_name] = typeInfo.twinPatcher
+for patcher_name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
+    globals()[patcher_name] = type(patcher_name, (typeInfo.clazz, _ListPatcherPanel), {})
     if typeInfo.twinPatcher:
-        otherPatcherDict[name] = typeInfo.twinPatcher
+        otherPatcherDict[patcher_name] = typeInfo.twinPatcher
 
 del import_module
 

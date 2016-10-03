@@ -45,8 +45,6 @@ executing_patch = None # type: bolt.Path
 class _PFile(object):
     """Base class of patch files - factoring out common code __WIP__. Wraps an
     executing bashed Patch."""
-    # TODO(ut): code is using class variable patchName - eradicate ! used
-    # in config phase before the _PFile is instantiated
     def __init__(self, patchers, patch_path):
         """:type patch_path: bolt.Path"""
         #--New attrs

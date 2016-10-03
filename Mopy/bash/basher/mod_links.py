@@ -908,18 +908,12 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         patch_files.executing_patch = self._selected_item
-        prog = None
-        if self.doCBash:
-            CBash_PatchFile.patchName = self._selected_item
-            prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
-        else:
-            PatchFile.patchName = self._selected_item
-            if bass.settings['bash.CBashEnabled']:
-                # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
-                prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
         mods_prior_to_patch = load_order.cached_lord.loadOrder[
                               :load_order.loIndexCached(self._selected_item)]
-        if prog is not None:
+        if self.doCBash or bass.settings['bash.CBashEnabled']:
+            # if doing a python patch but CBash is enabled, it's very likely
+            # that the merge info currently is from a CBash mode scan, rescan
+            prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
             with prog:
                 bosh.modInfos.rescanMergeable(mods_prior_to_patch, prog,
                                               self.doCBash)
