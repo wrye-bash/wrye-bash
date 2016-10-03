@@ -170,9 +170,6 @@ class AListPatcher(_Abstract_Patcher):
             for srcFile in self.srcs:
                 log(u"* " +srcFile.s)
 
-    #--Config Phase -----------------------------------------------------------
-    def _patchFile(self): raise bolt.AbstractError # TODO(ut) _PFile.class.patchName
-
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
         """Returns checked config items in list order."""

@@ -31,6 +31,7 @@ from .. import bass, bosh, bush, balt, load_order
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
     Links, SeparatorLink, CheckLink, Link, vspace
 from ..bolt import GPath
+from ..patcher import patch_files
 
 reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
@@ -469,7 +470,7 @@ class _ListPatcherPanel(_PatcherPanel):
         dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
             name = modInfo.name
-            if dex(name) >= dex(self._patchFile().patchName): continue
+            if dex(name) >= dex(patch_files.executing_patch): continue
             if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
                 autoItems.append(name)
                 if self.choiceMenu: self.get_set_choice(name)
@@ -788,7 +789,7 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
             name = modInfo.name
-            if dex(name) >= dex(self._patchFile().patchName): continue
+            if dex(name) >= dex(patch_files.executing_patch): continue
             if autoRe.match(name.s) or (autoKey & set(modInfo.getBashTags())):
                 autoItems.append(name)
         return autoItems
@@ -849,7 +850,7 @@ class _MergerPanel(_ListPatcherPanel):
         autoItems = []
         dex = load_order.loIndexCached
         for modInfo in bosh.modInfos.values():
-            if dex(modInfo.name) >= dex(self._patchFile().patchName): continue
+            if dex(modInfo.name) >= dex(patch_files.executing_patch): continue
             if (modInfo.name in bosh.modInfos.mergeable and
                 u'NoMerge' not in modInfo.getBashTags()):
                 autoItems.append(modInfo.name)

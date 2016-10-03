@@ -39,7 +39,7 @@ from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     OkButton
 from ..bolt import GPath, SubProgress, AbstractError, CancelError, formatDate
 from ..bosh import faces
-from ..patcher import configIsCBash, exportConfig
+from ..patcher import configIsCBash, exportConfig, patch_files
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..cint import CBash, FormID ##: CBash should be in bosh
@@ -907,6 +907,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             msg = msg % (self._selected_item.s, old_mode, new_mode)
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
+        patch_files.executing_patch = self._selected_item
         prog = None
         if self.doCBash:
             CBash_PatchFile.patchName = self._selected_item

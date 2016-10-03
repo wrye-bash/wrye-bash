@@ -33,13 +33,9 @@ from ...brec import MreRecord
 from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
     CBash_Patcher, AAliasesPatcher, AListPatcher, AImportPatcher, \
     APatchMerger, AUpdateReferences
-from ..patch_files import PatchFile, CBash_PatchFile
 
 # Patchers 1 ------------------------------------------------------------------
-class ListPatcher(AListPatcher,Patcher):
-
-    def _patchFile(self):
-        return PatchFile
+class ListPatcher(AListPatcher,Patcher): pass
 
 class CBash_ListPatcher(AListPatcher,CBash_Patcher):
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
@@ -50,10 +46,6 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
         # used in all subclasses except CBash_RacePatcher,
         # CBash_PatchMerger, CBash_UpdateReferences
         self.mod_count = collections.defaultdict(int)
-
-    #--Config Phase -----------------------------------------------------------
-    def _patchFile(self):
-        return CBash_PatchFile
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
