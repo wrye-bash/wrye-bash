@@ -386,21 +386,8 @@ class PatchDialog(balt.Dialog):
             patchConfigs = self.UpdateConfig(patchConfigs)
             if patchConfigs is None: return
         for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(False)
-            patcher.getConfig(patchConfigs)
+            patcher.import_config(patchConfigs)
             self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try:
-                        patcher.gList.Check(index,patcher.configChecks[item])
-                    except KeyError: pass#deprint(_(u'item %s not in saved configs') % (item))
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except: deprint(_(u'item %s not in saved configs') % item)
         self.SetOkEnable()
 
     def UpdateConfig(self, patchConfigs):

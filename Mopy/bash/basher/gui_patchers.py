@@ -27,7 +27,7 @@ import re
 from operator import itemgetter
 import wx
 # Internal
-from .. import bass, bosh, bush, balt, load_order
+from .. import bass, bosh, bush, balt, load_order, bolt
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
     Links, SeparatorLink, CheckLink, Link, vspace
 from ..bolt import GPath
@@ -132,6 +132,13 @@ class _PatcherPanel(object):
             else:
                 log(u'. ~~%s~~' % item)
                 clip.write(u'    %s\n' % item)
+
+    def import_config(self, patchConfigs, set_first_load=False):
+        self.SetIsFirstLoad(set_first_load)
+        self.getConfig(patchConfigs) # set isEnabled and load additional config
+        self._import_config()
+
+    def _import_config(self): pass
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
@@ -514,6 +521,15 @@ class _ListPatcherPanel(_PatcherPanel):
                 autoItems.append(fileName)
         return autoItems
 
+    def _import_config(self):
+        super(_ListPatcherPanel, self)._import_config()
+        for index, item in enumerate(self.items):
+            try:
+                self.gList.Check(index, self.configChecks[item])
+            except KeyError: # keys should be all bolt.Paths
+                bolt.deprint(_(u'item %s not in saved configs [%s]') % (
+                    item, u', '.join(map(repr, self.configChecks))))
+
 #------------------------------------------------------------------------------
 class _TweakPatcherPanel(_PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
@@ -786,6 +802,16 @@ class _TweakPatcherPanel(_PatcherPanel):
                     log(u'. ~~%s~~' % label)
                     clip.write(u'    %s\n' % label)
 
+    def _import_config(self):
+        super(_TweakPatcherPanel, self)._import_config()
+        for index, tweakie in enumerate(self.tweaks):
+            try:
+                self.gTweakList.Check(index, tweakie.isEnabled)
+                self.gTweakList.SetString(index, tweakie.getListLabel())
+            except Exception as err: bolt.deprint(_( ##: which exceptions do I get here ??
+                    u'Error importing Bashed patch configuration (error is: '
+                    u'%s). Item %s skipped.') % (err, tweakie))
+
 #------------------------------------------------------------------------------
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     """Only used in Race Patcher which features a double panel (source mods
@@ -898,6 +924,8 @@ class _ListsMergerPanel(_ListPatcherPanel):
         for item in conf.get('configItems', []):
             log(u'. __%s__' % self.getItemLabel(item))
             clip.write(u'    %s\n' % self.getItemLabel(item))
+
+    def _import_config(self): pass # TODO(ut): not handled yet!
 
 class _MergerPanel(_ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')
