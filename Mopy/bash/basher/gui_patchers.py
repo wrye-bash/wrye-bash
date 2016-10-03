@@ -218,7 +218,7 @@ class _ListPatcherPanel(_PatcherPanel):
     forceAuto = True
     forceItemCheck = False #--Force configChecked to True for all items
     #--List of possible choices for each config item. Item 0 is default.
-    choiceMenu = None
+    choiceMenu = None # only _ListsMergerPanel has it - move it there !
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     #--Compiled re used by getAutoItems
     autoRe = re.compile(ur"^UNDEFINED$", re.I | re.U)
@@ -509,21 +509,25 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
+        autoItems = self._get_auto_mods()
+        reFile = re.compile(
+            u'_(' + (u'|'.join(self.__class__.autoKey)) + ur')\.csv$', re.U)
+        for fileName in sorted(self.patches_set):
+            if reFile.search(fileName.s):
+                autoItems.append(fileName)
+        return autoItems
+
+    def _get_auto_mods(self):
         autoItems = []
         autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
         self.choiceMenu = self.__class__.choiceMenu
         mods_prior_to_patch = load_order.cached_lord.loadOrder[
                         :load_order.loIndexCached(patch_files.executing_patch)]
         for mod in mods_prior_to_patch:
             if autoRe.match(mod.s) or (
-                        autoKey & bosh.modInfos[mod].getBashTags()):
+                    self.__class__.autoKey & bosh.modInfos[mod].getBashTags()):
                 autoItems.append(mod)
                 if self.choiceMenu: self.get_set_choice(mod)
-        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
-        for fileName in sorted(self.patches_set):
-            if reFile.search(fileName.s):
-                autoItems.append(fileName)
         return autoItems
 
     def _import_config(self, default=False):
@@ -868,18 +872,9 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         return gConfigPanel
 
     #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self): ##: why this override ?
+    def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
-        mods_prior_to_patch = load_order.cached_lord.loadOrder[
-                        :load_order.loIndexCached(patch_files.executing_patch)]
-        for mod in mods_prior_to_patch:
-            if autoRe.match(mod.s) or (
-                        autoKey & bosh.modInfos[mod].getBashTags()):
-                autoItems.append(mod)
-        return autoItems
+        return self._get_auto_mods()
 
     def _log_config(self, conf, config, clip, log): ##: HACK - fix getAutoItems
         super(_ListPatcherPanel, self)._log_config(conf, config, clip, log)
