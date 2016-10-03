@@ -105,6 +105,34 @@ class _PatcherPanel(object):
         config['isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
 
+    def log_config(self, config, clip, log):
+        className = self.__class__.__name__
+        humanName = self.__class__.name
+        # Patcher in the config?
+        if not className in config: return
+        # Patcher active?
+        conf = config[className]
+        if not conf.get('isEnabled',False): return
+        # Active
+        log.setHeader(u'== ' + humanName)
+        clip.write(u'\n')
+        clip.write(u'== ' + humanName + u'\n')
+        self._log_config(conf, config, clip, log)
+
+    def _log_config(self, conf, config, clip, log):
+        items = conf.get('configItems', [])
+        if len(items) == 0:
+            log(u' ')
+        for item in conf.get('configItems', []):
+            checks = conf.get('configChecks', {})
+            checked = checks.get(item, False)
+            if checked:
+                log(u'* __%s__' % item)
+                clip.write(u' ** %s\n' % item)
+            else:
+                log(u'. ~~%s~~' % item)
+                clip.write(u'    %s\n' % item)
+
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
     # CONFIG DEFAULTS
@@ -167,6 +195,12 @@ class _AliasesPatcherPanel(_PatcherPanel):
         config = super(_AliasesPatcherPanel, self).saveConfig(configs)
         config['aliases'] = self.aliases
         return config
+
+    def _log_config(self, conf, config, clip, log):
+        aliases = conf.get('aliases', {})
+        for mod, alias in aliases.iteritems():
+            log(u'* __%s__ >> %s' % (mod.s, alias.s))
+            clip.write(u'  %s >> %s\n' % (mod.s, alias.s))
 
 #------------------------------------------------------------------------------
 class _ListPatcherPanel(_PatcherPanel):
@@ -738,6 +772,20 @@ class _TweakPatcherPanel(_PatcherPanel):
         self.isActive = len(self.enabledTweaks) > 0 ##: NOT HERE !!!!
         return config
 
+    def _log_config(self, conf, config, clip, log):
+        self.getConfig(config) # will set self.tweaks and load their config
+        for tweak in self.tweaks:
+            if tweak.key in conf:
+                enabled, value = conf.get(tweak.key, (False, u''))
+                label = tweak.getListLabel().replace(u'[[', u'[').replace(
+                    u']]', u']')
+                if enabled:
+                    log(u'* __%s__' % label)
+                    clip.write(u' ** %s\n' % label)
+                else:
+                    log(u'. ~~%s~~' % label)
+                    clip.write(u'    %s\n' % label)
+
 #------------------------------------------------------------------------------
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     """Only used in Race Patcher which features a double panel (source mods
@@ -794,6 +842,9 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
                 autoItems.append(mod)
         return autoItems
 
+    def _log_config(self, conf, config, clip, log): ##: HACK - fix getAutoItems
+        super(_ListPatcherPanel, self)._log_config(conf, config, clip, log)
+
 #------------------------------------------------------------------------------
 class _ImporterPatcherPanel(_ListPatcherPanel):
 
@@ -841,6 +892,12 @@ class _ListsMergerPanel(_ListPatcherPanel):
             return u'%s [%s]' % (item,u''.join(sorted(choice)))
         else:
             return item
+
+    def _log_config(self, conf, config, clip, log):
+        self.configChoices = conf.get('configChoices', {})
+        for item in conf.get('configItems', []):
+            log(u'. __%s__' % self.getItemLabel(item))
+            clip.write(u'    %s\n' % self.getItemLabel(item))
 
 class _MergerPanel(_ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')

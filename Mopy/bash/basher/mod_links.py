@@ -1070,59 +1070,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             log(u'Python')
             clip.write(u' ** Python\n')
         for patcher in patchers:
-            className = patcher.__class__.__name__
-            humanName = patcher.__class__.name
-            # Patcher in the config?
-            if not className in config: continue
-            # Patcher active?
-            conf = config[className]
-            if not conf.get('isEnabled',False): continue
-            # Active
-            log.setHeader(u'== '+humanName)
-            clip.write(u'\n')
-            clip.write(u'== '+humanName+u'\n')
-            # TODO(ut): move this logic to gui_patchers.py (config phase)
-            if isinstance(patcher, (base.CBash_MultiTweaker,
-                                    base.MultiTweaker)):
-                # Tweak patcher
-                patcher.getConfig(config)
-                for tweak in patcher.tweaks:
-                    if tweak.key in conf:
-                        enabled,value = conf.get(tweak.key,(False,u''))
-                        label = tweak.getListLabel().replace(u'[[',u'[').replace(u']]',u']')
-                        if enabled:
-                            log(u'* __%s__' % label)
-                            clip.write(u' ** %s\n' % label)
-                        else:
-                            log(u'. ~~%s~~' % label)
-                            clip.write(u'    %s\n' % label)
-            elif isinstance(patcher, (special.CBash_ListsMerger,
-                                      special.ListsMerger)):
-                # Leveled Lists
-                patcher.configChoices = conf.get('configChoices',{})
-                for item in conf.get('configItems',[]):
-                    log(u'. __%s__' % patcher.getItemLabel(item))
-                    clip.write(u'    %s\n' % patcher.getItemLabel(item))
-            elif isinstance(patcher, (base.CBash_AliasesPatcher,
-                                      base.AliasesPatcher)):
-                # Alias mod names
-                aliases = conf.get('aliases',{})
-                for mod in aliases:
-                    log(u'* __%s__ >> %s' % (mod.s, aliases[mod].s))
-                    clip.write(u'  %s >> %s\n' % (mod.s, aliases[mod].s))
-            else:
-                items = conf.get('configItems',[])
-                if len(items) == 0:
-                    log(u' ')
-                for item in conf.get('configItems',[]):
-                    checks = conf.get('configChecks',{})
-                    checked = checks.get(item,False)
-                    if checked:
-                        log(u'* __%s__' % item)
-                        clip.write(u' ** %s\n' % item)
-                    else:
-                        log(u'. ~~%s~~' % item)
-                        clip.write(u'    %s\n' % item)
+            patcher.log_config(config, clip, log)
         #-- Show log
         clip.write(u'[/xml][/spoiler]')
         balt.copyToClipboard(clip.getvalue())
