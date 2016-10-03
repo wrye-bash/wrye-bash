@@ -88,7 +88,6 @@ class _PatcherPanel(object):
         config for this patch stored in modInfos.table[patch][
         'bash.patch.configs']. If no config is saved then the class
         default_XXX values are used for the relevant attributes."""
-        # TODO(ut): eliminate other uses - move them to child classes
         config = configs.setdefault(self.__class__.__name__, {})
         self.isEnabled = config.get('isEnabled',
                                     self.__class__.default_isEnabled)
@@ -133,12 +132,12 @@ class _PatcherPanel(object):
                 log(u'. ~~%s~~' % item)
                 clip.write(u'    %s\n' % item)
 
-    def import_config(self, patchConfigs, set_first_load=False):
+    def import_config(self, patchConfigs, set_first_load=False, default=False):
         self.SetIsFirstLoad(set_first_load)
         self.getConfig(patchConfigs) # set isEnabled and load additional config
-        self._import_config()
+        self._import_config(default)
 
-    def _import_config(self): pass
+    def _import_config(self, default=False): pass
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
@@ -521,8 +520,11 @@ class _ListPatcherPanel(_PatcherPanel):
                 autoItems.append(fileName)
         return autoItems
 
-    def _import_config(self):
-        super(_ListPatcherPanel, self)._import_config()
+    def _import_config(self, default=False):
+        super(_ListPatcherPanel, self)._import_config(default)
+        if default:
+            self.SetItems(self.getAutoItems())
+            return
         for index, item in enumerate(self.items):
             try:
                 self.gList.Check(index, self.configChecks[item])
@@ -803,8 +805,8 @@ class _TweakPatcherPanel(_PatcherPanel):
                     log(u'. ~~%s~~' % label)
                     clip.write(u'    %s\n' % label)
 
-    def _import_config(self):
-        super(_TweakPatcherPanel, self)._import_config()
+    def _import_config(self, default=False):
+        super(_TweakPatcherPanel, self)._import_config(default)
         for index, tweakie in enumerate(self.tweaks):
             try:
                 self.gTweakList.Check(index, tweakie.isEnabled)
@@ -926,7 +928,9 @@ class _ListsMergerPanel(_ListPatcherPanel):
             log(u'. __%s__' % self.getItemLabel(item))
             clip.write(u'    %s\n' % self.getItemLabel(item))
 
-    def _import_config(self): pass # TODO(ut): not handled yet!
+    def _import_config(self, default=False): # TODO(ut):non default not handled
+        if default:
+            super(_ListsMergerPanel, self)._import_config(default)
 
 class _MergerPanel(_ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')

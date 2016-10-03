@@ -37,7 +37,7 @@ from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
     RevertToSavedButton, RevertButton, hspace, vspace
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
-    SkipError, deprint, Path
+    SkipError, Path
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 from ..patcher.base import AListPatcher
@@ -385,9 +385,13 @@ class PatchDialog(balt.Dialog):
         if convert:
             patchConfigs = self.UpdateConfig(patchConfigs)
             if patchConfigs is None: return
-        for index,patcher in enumerate(self.patchers):
-            patcher.import_config(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
+        self._load_config(patchConfigs)
+
+    def _load_config(self, patchConfigs, set_first_load=False, default=False):
+        for index, patcher in enumerate(self.patchers):
+            patcher.import_config(patchConfigs, set_first_load=set_first_load,
+                                  default=default)
+            self.gPatchers.Check(index, patcher.isEnabled)
         self.SetOkEnable()
 
     def UpdateConfig(self, patchConfigs):
@@ -417,39 +421,11 @@ class PatchDialog(balt.Dialog):
                                                    'bash.patch.configs', {})
         if configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(False)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-        self.SetOkEnable()
+        self._load_config(patchConfigs)
 
     def DefaultConfig(self):
         """Revert configuration back to default"""
-        patchConfigs = {}
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(True)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                patcher.SetItems(patcher.getAutoItems())
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-        self.SetOkEnable()
+        self._load_config({}, set_first_load=True, default=True)
 
     def SelectAll(self):
         """Select all patchers and entries in patchers with child entries."""
