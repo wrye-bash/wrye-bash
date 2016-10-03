@@ -354,7 +354,7 @@ class _ListPatcherPanel(_PatcherPanel):
         itemIndex = self.gList.HitTest(event.GetPosition())
         if itemIndex < 0: return
         self.gList.SetSelection(itemIndex)
-        choiceSet = self.getChoice(self.items[itemIndex])
+        choiceSet = self.get_set_choice(self.items[itemIndex])
         #--Build Menu
         class _OnItemChoice(CheckLink):
             def __init__(self, _text, index):
@@ -371,7 +371,7 @@ class _ListPatcherPanel(_PatcherPanel):
             if choice != u'Auto':
                 choiceSet.discard(u'Auto')
             elif u'Auto' in self.configChoices[item]:
-                self.getChoice(item)
+                self.get_set_choice(item)
             self.gList.SetString(itemIndex, self.getItemLabel(item))
         links = Links()
         for index,label in enumerate(self.choiceMenu):
@@ -426,10 +426,10 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Make sure configChoices are set (if choiceMenu exists).
         if self.choiceMenu:
             for item in self.configItems:
-                self.getChoice(item)
+                self.get_set_choice(item)
         #--AutoItems?
         if self.autoIsChecked:
-            self.getAutoItems()
+            self.getAutoItems() # calls get_set_choice which sets default
         return config
 
     def saveConfig(self, configs):
@@ -447,7 +447,7 @@ class _ListPatcherPanel(_PatcherPanel):
         config['autoIsChecked'] = self.autoIsChecked
         return config
 
-    def getChoice(self,item):
+    def get_set_choice(self, item):
         """Get default config choice."""
         return self.configChoices.setdefault(item,self.choiceMenu[0])
 
@@ -455,7 +455,7 @@ class _ListPatcherPanel(_PatcherPanel):
         """Returns label for item to be used in list"""
         item  = u'%s' % item # Path or basestring - YAK
         if self.choiceMenu:
-            return u'%s [%s]' % (item,self.getChoice(item))
+            return u'%s [%s]' % (item,self.get_set_choice(item))
         else:
             return item
 
@@ -471,7 +471,7 @@ class _ListPatcherPanel(_PatcherPanel):
             if dex(name) >= dex(self._patchFile().patchName): continue
             if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
                 autoItems.append(name)
-                if self.choiceMenu: self.getChoice(name)
+                if self.choiceMenu: self.get_set_choice(name)
         reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
         for fileName in sorted(self.patches_set):
             if reFile.search(fileName.s):
@@ -831,7 +831,7 @@ class _ListsMergerPanel(_ListPatcherPanel):
     default_isEnabled = True
     selectCommands = False
 
-    def getChoice(self,item):
+    def get_set_choice(self, item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
         if not isinstance(choice,set): choice = {u'Auto'}
