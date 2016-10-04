@@ -464,7 +464,7 @@ class MelMODS(MelBase):
         data = []
         dataAppend = data.append
         for x in xrange(count):
-            string = ins.readString32(size,readId)
+            string = ins.readString32(readId)
             fid = ins.unpackRef(readId)
             index, = ins.unpack('I',4,readId)
             dataAppend((string,fid,index))
@@ -660,15 +660,15 @@ class MelVmad(MelBase):
                 raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
             elif Type == 'PACK':
                 self.unk,count = ins.unpack('=bB',2,readId)
-                self.fileName = ins.readString16(-1,readId)
+                self.fileName = ins.readString16(readId)
                 count = bin(count).count('1')
             elif Type == 'PERK':
                 self.unk, = ins.unpack('=b',1,readId)
-                self.fileName = ins.readString16(-1,readId)
+                self.fileName = ins.readString16(readId)
                 count, = ins.unpack('=H',2,readId)
             elif Type == 'QUST':
                 self.unk,count = ins.unpack('=bH',3,readId)
-                self.fileName = ins.readString16(-1,readId)
+                self.fileName = ins.readString16(readId)
             elif Type == 'SCEN':
                 # SCEN record fragment scripts are by default stored in a SF file,
                 # i.e., a file named "SF_<editorID>_<formID>".
@@ -709,8 +709,8 @@ class MelVmad(MelBase):
 
         def loadData(self,ins,readId):
             self.unk, = ins.unpack('=b',1,readId)
-            self.scriptName = ins.readString16(-1,readId)
-            self.fragmentName = ins.readString16(-1,readId)
+            self.scriptName = ins.readString16(readId)
+            self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
             structPack = struct.pack
@@ -731,8 +731,8 @@ class MelVmad(MelBase):
 
         def loadData(self,ins,readId):
             self.index,self.unk1,self.unk2 = ins.unpack('=Hhb',4,readId)
-            self.scriptName = ins.readString16(-1,readId)
-            self.fragmentName = ins.readString16(-1,readId)
+            self.scriptName = ins.readString16(readId)
+            self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
             structPack = struct.pack
@@ -754,8 +754,8 @@ class MelVmad(MelBase):
 
         def loadData(self,ins,readId):
             self.index,self.unk1,self.logentry,self.unk2 = ins.unpack('=Hhib',9,readId)
-            self.scriptName = ins.readString16(-1,readId)
-            self.fragmentName = ins.readString16(-1,readId)
+            self.scriptName = ins.readString16(readId)
+            self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
             structPack = struct.pack
@@ -785,7 +785,7 @@ class MelVmad(MelBase):
         def loadData(self,ins,version,objFormat,readId):
             insUnpack = ins.unpack
             # Script Property
-            self.name = ins.readString16(-1,readId)
+            self.name = ins.readString16(readId)
             if version >= 4:
                 Type,self.status = insUnpack('=2B',2,readId)
             else:
@@ -801,7 +801,7 @@ class MelVmad(MelBase):
                 self.value = (fid,aid)
             elif Type == 2:
                 # String
-                self.value = ins.readString16(-1,readId)
+                self.value = ins.readString16(readId)
             elif Type == 3:
                 # Int32
                 self.value, = insUnpack('=i',4,readId)
@@ -823,7 +823,7 @@ class MelVmad(MelBase):
             elif Type == 12:
                 # List of Strings
                 count, = insUnpack('=I',4,readId)
-                self.value = [ins.readString16(-1,readId) for i in xrange(count)]
+                self.value = [ins.readString16(readId) for i in xrange(count)]
             elif Type == 13:
                 # List of Int32s
                 count, = insUnpack('=I',4,readId)
@@ -915,7 +915,7 @@ class MelVmad(MelBase):
             self.properties = []
             propAppend = self.properties.append
             # Script Entry
-            self.name = ins.readString16(-1,readId)
+            self.name = ins.readString16(readId)
             if version >= 4:
                 self.status,propCount = ins.unpack('=BH',3,readId)
             else:
