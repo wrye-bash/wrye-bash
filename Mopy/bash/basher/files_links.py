@@ -24,33 +24,18 @@
 
 import re
 from .. import bass, balt, bosh, bush, bolt, env
-from ..bass import Resources
 from ..balt import ItemLink, RadioLink, EnabledLink, ChoiceLink, Link, \
     OneItemLink
+from ..bass import Resources
 from ..bolt import CancelError, SkipError, GPath, formatDate
 
-__all__ = ['Files_SortBy', 'Files_Unhide', 'Files_Open', 'File_Backup',
+__all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup',
            'File_Duplicate', 'File_Snapshot', 'File_Hide',
-           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters',
-           'File_Open']
+           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Files_Open(ItemLink):
-    """Opens data directory in explorer."""
-    text = _(u'Open...')
-
-    def _initData(self, window, selection):
-        super(Files_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % window.data_store.dir.tail
-
-    def Execute(self):
-        """Handle selection."""
-        dir_ = self.window.data_store.dir
-        dir_.makedirs()
-        dir_.start()
-
 class Files_SortBy(RadioLink):
     """Sort files by specified key (sortCol)."""
 
@@ -79,11 +64,11 @@ class Files_Unhide(ItemLink):
         destDir = None
         if self.files_type == 'mod':
             wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
-            destDir = window.data_store.dir
+            destDir = window.data_store.store_dir
         elif self.files_type == 'save':
             wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
-            srcDir = window.data_store.bashDir.join(u'Hidden')
-            destDir = window.data_store.dir
+            srcDir = window.data_store.bash_dir.join(u'Hidden')
+            destDir = window.data_store.store_dir
         elif self.files_type == 'installer':
             wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
             destDir = bass.dirs['installers']
@@ -92,7 +77,7 @@ class Files_Unhide(ItemLink):
                 defaultFile=u'.Folder Selection.', wildcard=wildcard)
         else:
             wildcard = u'*.*'
-        isSave = (destDir == bosh.saveInfos.dir)
+        isSave = (destDir == bosh.saveInfos.store_dir)
         #--File dialog
         srcDir.makedirs()
         if not self.files_type == 'installer':
@@ -221,7 +206,7 @@ class File_Hide(ItemLink):
             message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
             if not self._askYes(message, _(u'Hide Files')): return
         #--Do it
-        destRoot = self.window.data_store.bashDir.join(u'Hidden')
+        destRoot = self.window.data_store.bash_dir.join(u'Hidden')
         fileInfos = self.window.data_store
         fileGroups = fileInfos.table.getColumn('group')
         for fileName in self.selected:
@@ -311,7 +296,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
         """Revert to Snapshot."""
         fileName = self._selected_item
         #--Snapshot finder
-        srcDir = self.window.data_store.bashDir.join(u'Snapshots')
+        srcDir = self.window.data_store.bash_dir.join(u'Snapshots')
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
@@ -346,17 +331,6 @@ class File_Backup(ItemLink):
         for item in self.selected:
             fileInfo = self.window.data_store[item]
             fileInfo.makeBackup(True)
-
-class File_Open(ItemLink):
-    """Open specified file(s)."""
-    text = _(u'Open...')
-
-    def _initData(self, window, selection):
-        super(File_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s' with the system's default program.") % selection[
-            0] if len(selection) == 1 else _(u'Open the selected files.')
-
-    def Execute(self): self.window.OpenSelected(selected=self.selected)
 
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""

@@ -118,7 +118,7 @@ class InstallerWizard(wiz.Wizard):
                     ], bolt.SubProgress(progress,0,0.9), recurse=True)
             self.wizard_file = installer.getTempDir().join(installer.hasWizard)
         else:
-            self.wizard_file = idata.dir.join(path.s, installer.hasWizard)
+            self.wizard_file = idata.store_dir.join(path.s, installer.hasWizard)
         self.parser = WryeParser(self, installer, subs, bArchive, path, bAuto)
 
         #Intercept the changing event so we can implement 'blockChange'

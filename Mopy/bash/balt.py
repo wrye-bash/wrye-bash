@@ -1841,6 +1841,8 @@ class UIList(wx.Panel):
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(event=event)
+        elif event.CmdDown() and code == ord('O'): # Ctrl+O
+            self.open_data_store()
         event.Skip()
 
     ##: Columns callbacks - belong to a ListCtrl mixin
@@ -1950,15 +1952,17 @@ class UIList(wx.Panel):
 
     def OpenSelected(self, selected=None):
         """Open selected files with default program."""
-        dataDir = self.data_store.dir
         selected = selected if selected else self.GetSelected()
         num = len(selected)
         if num > UIList.max_items_open and not askContinue(self,
             _(u'Trying to open %(num)s items - are you sure ?') % {'num': num},
             'bash.maxItemsOpen.continue'): return
-        for file_ in selected:
-            file_ = dataDir.join(file_)
-            if file_.exists(): file_.start()
+        for filename in selected:
+            filepath = self.data_store.store_dir.join(filename)
+            try:
+                filepath.start()
+            except OSError:
+                deprint(u'Failed to open %s', filepath, traceback=True)
 
     #--Sorting ----------------------------------------------------------------
     def SortItems(self, column=None, reverse='CURRENT'):
@@ -2141,6 +2145,15 @@ class UIList(wx.Panel):
         with ListBoxes(self, dialogTitle, msg, [message]) as dialog:
             if not dialog.askOkModal(): return []
             return dialog.getChecked(message[0], items)
+
+    def open_data_store(self):
+        try:
+            self.data_store.store_dir.start()
+            return
+        except OSError:
+            deprint(u'Creating %s' % self.data_store.store_dir)
+            self.data_store.store_dir.makedirs()
+        self.data_store.store_dir.start()
 
     # Generate unique filenames when duplicating files etc
     @staticmethod
@@ -2509,6 +2522,28 @@ class UIList_Rename(ItemLink):
     text = _(u'Rename...')
 
     def Execute(self): self.window.Rename(selected=self.selected)
+
+class UIList_OpenItems(ItemLink):
+    """Open specified file(s)."""
+    text = _(u'Open...')
+
+    @property
+    def help(self):
+        return _(u"Open '%s' with the system's default program.") % \
+               self.selected[0] if len(self.selected) == 1 else _(
+            u'Open the selected files.')
+
+    def Execute(self): self.window.OpenSelected(selected=self.selected)
+
+class UIList_OpenStore(ItemLink):
+    """Opens data directory in explorer."""
+    text = _(u'Open...')
+
+    def _initData(self, window, selection):
+        super(UIList_OpenStore, self)._initData(window, selection)
+        self.help = _(u"Open '%s'") % window.data_store.store_dir
+
+    def Execute(self): self.window.open_data_store()
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------

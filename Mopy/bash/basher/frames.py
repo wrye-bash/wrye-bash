@@ -250,7 +250,7 @@ class DocBrowser(wx.Frame):
         with docPath.open('w',encoding='utf-8-sig') as out:
             out.write(self.plainText.GetValue())
         if self.docIsWtxt:
-            docsDir = bosh.modInfos.dir.join(u'Docs')
+            docsDir = bosh.modInfos.store_dir.join(u'Docs')
             bolt.WryeText.genHtml(docPath, None, docsDir)
 
     def SetMod(self,modName=None):
@@ -286,9 +286,9 @@ class DocBrowser(wx.Frame):
             self.plainText.SetValue(u'')
             self.SetDocType('txt')
         elif not docPath.exists():
-            myTemplate = bosh.modInfos.dir.join(u'Docs',
+            myTemplate = bosh.modInfos.store_dir.join(u'Docs',
                                                 u'My Readme Template.txt')
-            bashTemplate = bosh.modInfos.dir.join(u'Docs',
+            bashTemplate = bosh.modInfos.store_dir.join(u'Docs',
                                                   u'Bash Readme Template.txt')
             if myTemplate.exists():
                 template = u''.join(myTemplate.open().readlines())
@@ -321,7 +321,7 @@ class DocBrowser(wx.Frame):
             htmlPath = self.docIsWtxt and docPath.root + u'.html'
             if htmlPath and (
                 not htmlPath.exists() or (docPath.mtime > htmlPath.mtime)):
-                docsDir = bosh.modInfos.dir.join(u'Docs')
+                docsDir = bosh.modInfos.store_dir.join(u'Docs')
                 bolt.WryeText.genHtml(docPath,None,docsDir)
             if not editing and htmlPath and htmlPath.exists() and \
                     bHaveComTypes:

@@ -76,13 +76,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
         else: return isinstance(self.idata[self.selected[0]],
                                 bosh.InstallerArchive)
 
-    def isSelectedArchives(self):
-        """Indicates whether or not selected is all archives."""
-        for selected in self.selected:
-            if not isinstance(self.idata[selected],
-                              bosh.InstallerArchive): return False
-        return True
-
     def _get_refreshed(self, installer, src_installer, is_project=True,
                        progress=None, do_refresh=True):
         new = installer not in self.idata
@@ -141,7 +134,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if not archive.s:
             self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
-        if self.idata.dir.join(archive).isdir():
+        if self.idata.store_dir.join(archive).isdir():
             self._showWarning(_(u'%s is a directory.') % archive.s)
             return
         if archive.cext not in bolt.writeExts:
@@ -394,7 +387,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     def Execute(self):
         """Duplicate selected Installer."""
         curName = self._selected_item
-        isdir = self.idata.dir.join(curName).isdir()
+        isdir = self.idata.store_dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
         else: root,ext = curName.rootExt
         newName = self.window.new_name(root + _(u' Copy') + ext)
@@ -409,7 +402,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         if newName in self.idata:
             self._showWarning(_(u"%s already exists.") % newName.s)
             return
-        if self.idata.dir.join(curName).isfile() and curName.cext != newName.cext:
+        if self.idata.store_dir.join(curName).isfile() and curName.cext != newName.cext:
             self._showWarning(_(u"%s does not have correct extension (%s).")
                               % (newName.s,curName.ext))
             return
@@ -599,20 +592,15 @@ class Installer_Move(_InstallerLink):
         self.window.RefreshUI()
         self.window.SelectAndShowItem(GPath(current_archive.archive), focus=True)
 
-class Installer_Open(_InstallerLink):
+class Installer_Open(balt.UIList_OpenItems, _InstallerLink):
     """Open selected file(s)."""
-    text = _(u'Open...')
 
     def _initData(self, window, selection):
         super(Installer_Open, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % selection[0] if len(selection) == 1 \
-            else _(u"Open selected files.")
         self.selected = [x for x in self.selected if
                          not isinstance(self.idata[x], bosh.InstallerMarker)]
 
     def _enable(self): return bool(self.selected)
-
-    def Execute(self): self.window.OpenSelected(selected=self.selected)
 
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
@@ -766,7 +754,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         if not numFiles:
             self._showOk(_(u'No conflicts detected for %s') % srcArchive)
             return
-        ijoin = self.idata.dir.join
+        ijoin = self.idata.store_dir.join
         def _copy_conflicts(curFile):
             inst = self.idata[package]
             if isinstance(inst, bosh.InstallerProject):
@@ -965,7 +953,10 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
         self.window = window # and the idata access is via self.window
-        return self.isSelectedArchives()
+        for selected in self.selected:
+            if not isinstance(self.idata[selected],
+                              bosh.InstallerArchive): return False
+        return True
 
     @balt.conversation
     def Execute(self):
@@ -983,7 +974,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     if not project.s or project.cext in bolt.readExts:
                         self._showWarning(_(u"%s is not a valid project name.") % result)
                         return
-                    if self.idata.dir.join(project).isfile():
+                    if self.idata.store_dir.join(project).isfile():
                         self._showWarning(_(u"%s is a file.") % project.s)
                         return
                 if project in self.idata:
@@ -1133,7 +1124,7 @@ class InstallerConverter_Create(_InstallerLink):
         readTypes = u'*%s' % u';*'.join(bolt.readExts)
         #--Select target archive
         destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
-                                    defaultDir=self.idata.dir,
+                                    defaultDir=self.idata.store_dir,
                                     wildcard=readTypes, mustExist=True)
         if not destArchive: return
         #--Error Checking

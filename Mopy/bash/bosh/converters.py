@@ -41,14 +41,13 @@ class ConvertersData(DataDict):
 
     def __init__(self, bain_data_dir, converters_dir_, dup_bcfs_dir,
                  corrupt_bcfs_dir, installers_dir_):
-        self.bashDir = bain_data_dir
         global converters_dir, installers_dir
         converters_dir = converters_dir_
         installers_dir = installers_dir_
         self.dup_bcfs_dir = dup_bcfs_dir
         self.corrupt_bcfs_dir = corrupt_bcfs_dir
         #--Persistent data
-        self.converterFile = PickleDict(self.bashDir.join(u'Converters.dat'))
+        self.converterFile = PickleDict(bain_data_dir.join(u'Converters.dat'))
         self.srcCRC_converters = {}
         self.bcfCRC_converter = {}
         #--Volatile

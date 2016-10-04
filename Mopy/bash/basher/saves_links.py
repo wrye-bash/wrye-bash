@@ -116,7 +116,8 @@ class Saves_ProfilesData(balt.ListEditorData):
                 _(u'Name must be between 1 and 64 characters long.'))
             return False
         #--Rename
-        oldDir,newDir = (self.baseSaves.join(dir) for dir in (oldName,newName))
+        oldDir, newDir = (self.baseSaves.join(subdir) for subdir in
+                          (oldName, newName))
         oldDir.moveTo(newDir)
         oldSaves,newSaves = ((u'Saves\\'+name+u'\\') for name in (oldName,newName))
         if bosh.saveInfos.localSave == oldSaves:
@@ -307,10 +308,10 @@ class Save_DiffMasters(EnabledLink):
     def _enable(self): return len(self.selected) in (1,2)
 
     def Execute(self):
-        oldNew = map(GPath,self.selected)
-        oldNew.sort(key = lambda x: bosh.saveInfos.dir.join(x).mtime)
+        oldNew = self.selected
+        oldNew.sort(key = lambda x: bosh.saveInfos[x].mtime)
         oldName = oldNew[0]
-        oldInfo = self.window.data_store[GPath(oldName)]
+        oldInfo = self.window.data_store[oldName]
         oldMasters = set(oldInfo.masterNames)
         if len(self.selected) == 1:
             newName = GPath(_(u'Active Masters'))
@@ -599,11 +600,10 @@ class Save_Move(ChoiceLink):
         self.extraItems = [_Default()]
 
     def MoveFiles(self,profile):
-        fileInfos = self.window.data_store
         destDir = bass.dirs['saveBase'].join(u'Saves')
         if profile != _(u'Default'):
             destDir = destDir.join(profile)
-        if destDir == fileInfos.dir:
+        if destDir == bosh.saveInfos.store_dir:
             self._showError(_(u"You can't move saves to the current profile!"))
             return
         savesTable = bosh.saveInfos.table

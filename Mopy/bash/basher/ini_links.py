@@ -110,8 +110,7 @@ class INI_FileOpenOrCopy(OneItemLink):
         if tweak_path.isfile():
             tweak_path.start()
         else: # default tweak, copy it
-            srcFile = bosh.iniInfos[self._selected_item].dir.join(
-                self._selected_item)
+            srcFile = self._selected_info.getPath()
             destFile = tweak_path
             env.shellMakeDirs(bass.dirs['tweaks'], self.window)
             env.shellCopy(srcFile, destFile, parent=self.window)
@@ -207,7 +206,7 @@ class INI_CreateNew(OneItemLink):
                              defaultFile=fileName,
                              wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
         if not path: return
-        bosh.iniInfos[pathFrom].dir.join(pathFrom).copyTo(path)
+        self._selected_info.getPath().copyTo(path)
         # Now edit it with the values from the target INI
         bosh.iniInfos.refresh()
         oldTarget = self.window.data_store.ini

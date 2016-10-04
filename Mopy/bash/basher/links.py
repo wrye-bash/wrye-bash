@@ -31,7 +31,7 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import bass, balt, bush
 from ..cint import CBash
-from ..balt import Image, MenuLink, SeparatorLink
+from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems, UIList_OpenStore
 from ..env import init_app_links
 # modules below define the __all__ directive
 from .app_buttons import *
@@ -225,7 +225,7 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(ColumnsMenu())
     #--Actions
     InstallersList.mainMenu.append(SeparatorLink())
-    InstallersList.mainMenu.append(Files_Open())
+    InstallersList.mainMenu.append(UIList_OpenStore())
     InstallersList.mainMenu.append(Installers_Refresh(full_refresh=False))
     InstallersList.mainMenu.append(Installers_Refresh(full_refresh=True))
     InstallersList.mainMenu.append(Installers_AddMarker())
@@ -342,7 +342,7 @@ def InitINILinks():
     INIList.mainMenu.append(ColumnsMenu())
     INIList.mainMenu.append(SeparatorLink())
     INIList.mainMenu.append(INI_AllowNewLines())
-    INIList.mainMenu.append(Files_Open())
+    INIList.mainMenu.append(UIList_OpenStore())
     INIList.mainMenu.append(INI_ListINIs())
     #--Item menu
     INIList.itemMenu.append(INI_Apply())
@@ -397,7 +397,7 @@ def InitModLinks():
             fileMenu.links.append(Mods_CreateBlank())
             fileMenu.links.append(Mods_CreateBlank(masterless=True))
             fileMenu.links.append(SeparatorLink())
-        fileMenu.links.append(Files_Open())
+        fileMenu.links.append(UIList_OpenStore())
         fileMenu.links.append(Files_Unhide('mod'))
         ModList.mainMenu.append(fileMenu)
     ModList.mainMenu.append(SeparatorLink())
@@ -560,7 +560,7 @@ def InitSaveLinks():
     SaveList.mainMenu.append(ColumnsMenu())
     #------------------------------------------
     SaveList.mainMenu.append(SeparatorLink())
-    SaveList.mainMenu.append(Files_Open())
+    SaveList.mainMenu.append(UIList_OpenStore())
     SaveList.mainMenu.append(Files_Unhide('save'))
     #--SaveList: Item Links
     if True: #--File
@@ -625,7 +625,7 @@ def InitBSALinks():
         sortMenu.links.append(Files_SortBy('Size'))
         BSAList.mainMenu.append(sortMenu)
     BSAList.mainMenu.append(SeparatorLink())
-    BSAList.mainMenu.append(Files_Open())
+    BSAList.mainMenu.append(UIList_OpenStore())
     BSAList.mainMenu.append(Files_Unhide('save'))
     #--BSAList: Item Links
     if True: #--File
@@ -643,7 +643,7 @@ def InitBSALinks():
 def InitScreenLinks():
     """Initialize screens tab menus."""
     #--SaveList: Column Links
-    ScreensList.mainMenu.append(Files_Open())
+    ScreensList.mainMenu.append(UIList_OpenStore())
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(ColumnsMenu())
     ScreensList.mainMenu.append(SeparatorLink())
@@ -657,7 +657,7 @@ def InitScreenLinks():
         ScreensList.mainMenu.append(SeparatorLink())
         ScreensList.mainMenu.append(qualityMenu)
     #--ScreensList: Item Links
-    ScreensList.itemMenu.append(File_Open())
+    ScreensList.itemMenu.append(UIList_OpenItems())
     ScreensList.itemMenu.append(Screen_Rename())
     ScreensList.itemMenu.append(balt.UIList_Delete())
     ScreensList.itemMenu.append(SeparatorLink())

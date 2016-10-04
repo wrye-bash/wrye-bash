@@ -303,7 +303,7 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def OnAdd(self):
         """Add button clicked."""
-        srcDir = bosh.modInfos.dir
+        srcDir = bosh.modInfos.store_dir
         wildcard = bush.game.displayName+_(u' Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
         #--File dialog
         title = _(u'Get ')+self.__class__.listLabel
@@ -311,8 +311,8 @@ class _ListPatcherPanel(_PatcherPanel):
         if not srcPaths: return
         #--Get new items
         for srcPath in srcPaths:
-            dir,name = srcPath.headTail
-            if dir == srcDir and name not in self.configItems:
+            folder, name = srcPath.headTail
+            if folder == srcDir and name not in self.configItems:
                 self.configItems.append(name)
         self.SetItems(self.configItems)
 
