@@ -96,7 +96,9 @@ screensData = None # type: ScreensData
 configHelpers = None # type: mods_metadata.ConfigHelpers
 
 #--Header tags
-reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
+reVersion = re.compile(
+  ur'^(version[:.]*|ver[:.]*|rev[:.]*|r[:.\s]+|v[:.\s]+) *([-0-9a-zA-Z.]*\+?)',
+  re.M | re.I | re.U)
 
 #--Mod Extensions
 reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
@@ -2415,7 +2417,7 @@ class FileInfo(_AFileInfo):
         separator = u'-'
         snapLast = [u'00']
         #--Look for old snapshots.
-        reSnap = re.compile(u'^'+root.s+u'[ -]([0-9\.]*[0-9]+)'+ext+u'$',re.U)
+        reSnap = re.compile(u'^'+root.s+u'[ -]([0-9.]*[0-9]+)'+ext+u'$',re.U)
         for fileName in destDir.list():
             maSnap = reSnap.match(fileName.s)
             if not maSnap: continue

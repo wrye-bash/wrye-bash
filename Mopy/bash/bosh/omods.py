@@ -89,7 +89,7 @@ class OmodFile:
         # Get contents of archive
         filesizes = dict()
         totalSize = 0
-        reFileSize = re.compile(ur'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
+        reFileSize = re.compile(ur'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
         reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
         with self.path.unicodeSafe() as tempOmod:

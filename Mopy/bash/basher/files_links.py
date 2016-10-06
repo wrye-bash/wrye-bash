@@ -196,8 +196,10 @@ class File_Snapshot(ItemLink):
             #--Extract version number
             fileRoot = fileName.root
             destRoot = destName.root
-            fileVersion = bolt.getMatch(re.search(ur'[ _]+v?([\.\d]+)$',fileRoot.s,re.U),1)
-            snapVersion = bolt.getMatch(re.search(ur'-[\d\.]+$',destRoot.s,re.U))
+            fileVersion = bolt.getMatch(
+                re.search(ur'[ _]+v?([.\d]+)$', fileRoot.s, re.U), 1)
+            snapVersion = bolt.getMatch(
+                re.search(ur'-[\d.]+$', destRoot.s, re.U))
             fileHedr = fileInfo.header
             if fileInfo.isMod() and (fileVersion or snapVersion) and bosh.reVersion.search(fileHedr.description):
                 if fileVersion and snapVersion:
