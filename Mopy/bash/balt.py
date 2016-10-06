@@ -23,6 +23,8 @@
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
+import re
+
 import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
@@ -2108,6 +2110,34 @@ class UIList(wx.Panel):
             index = self.GetIndex(selected[0])
             if index != -1:
                 self.__gList.EditLabel(index)
+
+    def validate_filename(self, event, has_digits=False, ext=u'',
+                          is_filename=True):
+        if event.IsEditCancelled(): return None, None
+        newName = event.GetLabel()
+        if not newName:
+            msg = _(u'Empty name !')
+            maPattern = None
+        else:
+            char = is_filename and bolt.Path.has_invalid_chars(newName)
+            if char:
+                msg = _(u'%(new_name)s contains invalid character (%(char)s)'
+                        ) % {'new_name': newName, 'char': char}
+                maPattern = None
+            else:
+                msg = _(u'Bad extension or file root: ') + newName
+                if ext: # require at least one char before extension
+                    regex = u'^(?=.+\.)(.*?)'
+                else:
+                    regex = u'^(.*?)'
+                if has_digits: regex += u'(\d*)'
+                regex += ext + u'$'
+                rePattern = re.compile(regex, re.I | re.U)
+                maPattern = rePattern.match(newName)
+        if not maPattern:
+            showError(self, msg)
+            event.Veto()
+        return maPattern, newName
 
     @conversation
     def DeleteItems(self, event=None, items=None,

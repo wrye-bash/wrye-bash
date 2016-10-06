@@ -433,7 +433,8 @@ tab. The directories skipped are:
         <tr><td>TES Alliance...<td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.
         <tr><td colspan="2" id="bainHide">Hide...<td>Hides the package in the list, and moves it to the
             <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
-        <tr><td colspan="2" id="bainRename">Rename...<td>Renames the selected package or marker.
+        <tr><td colspan="2" id="bainRename">Rename...<td>Renames the selected package(s) or marker(s). All selected items must be of the
+            same type. For archives the extension will remain the same.
         <tr><td colspan="2" id="bainRefresh">Refresh<td>As <a href="#bainRefresh">Quick Refresh</a> below. Refresh will however recalculate the
             <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all selected items <i>from scratch</i>, which is not what you usually need (for projects
             especially it will take much longer than for packages, cause to calculate the CRC of a project <i>all the individual CRCs</i> of <i>all</i> the files in the project folder must be
@@ -1661,7 +1662,8 @@ and masterlist relative priority and role see the LOOT docs.
         <tr><td>Hide<td>Moves the selected save file to the <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code> directory.
         <tr><td>Revert to Backup<td>Reverts the selected save file to the last backup made of it.
         <tr><td>Revert to First Backup<td>Reverts the selected save file to the first backup made of it.
-        <tr><td>Rename...<td>Rename the selected save file.
+        <tr><td>Rename...<td>Rename the selected save file. bak files are not supported and you can't change the extension (specifying
+            another extension will make the rename fail)
         <tr><td>Re-number Save(s)...<td>Allows the re-numbering of the selected save file(s). If more than one file is selected, the first
             will be renumbered to the given number and the others will be numbered in increments of one from the given number. The save name
             must be of the form <code>&lt;Save (case insensitive)>&lt;space>&lt;some digits>&lt;optional text>.&lt;save extension></code>
@@ -1785,7 +1787,10 @@ and masterlist relative priority and role see the LOOT docs.
     <tbody>
         <tr><td>Delete<td>Deletes the selected file(s).
         <tr><td>Convert<td>Converts the selected files to one of the following formats: JPEG, PNG, BMP, TIFF. If a file of the conversion format already exists with the same name as a file to be converted, the conversion will not take place for that file.
-        <tr><td>Rename<td>Renames the selected file(s). If multiple files are selected, they will be numbered sequentially. If a file already exists with the same name as a file's resulting name, that file will not be renamed.
+        <tr><td>Rename<td>Renames the selected file(s). If multiple files are selected, they will be numbered sequentially. If a file
+            already exists with the same name as a file's resulting name, that file will not be renamed. The extension will remain the same
+            and specifying a non image extension will make the rename operation fail - in short, leave the extension alone. Empty filenames
+            will also abort the rename.
 </table>
 
 <h2 id="launchers">Advanced Launchers</h2>
@@ -2019,6 +2024,7 @@ and masterlist relative priority and role see the LOOT docs.
         <tr><td><code>ctrl-o</code>
             <td>Opens the related data directory - for instance in the mods tab will open "Data/", in Ini Edits will open "Ini Tweaks/" etc.
         <tr><td><code>ctrl-c</code><td>Copies files to the clipboard (Mods, Saves, Installers, Screens)
+        <tr><td><code>F2</code><td>Rename file(s) (Saves, Installers, Screens) - see Rename menu items for details
         <tr><td><code>ctrl-z</code><td>Undo load order state change (Mods)
         <tr><td><code>ctrl-y</code><td>Redo load order state change (Mods)
 </table>

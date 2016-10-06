@@ -425,7 +425,8 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
-    help = _(u"Rename selected installer(s).")
+    help = _(u"Rename selected installer(s).") + u'  ' + _(
+        u'All selected installers must be of the same type')
 
     def _enable(self):
         ##Only enable if all selected items are of the same type

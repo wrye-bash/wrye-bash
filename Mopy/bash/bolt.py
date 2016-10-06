@@ -516,6 +516,7 @@ class Path(object):
 
     #--Class Vars/Methods -------------------------------------------
     sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
+    invalid_chars_re = re.compile(ur'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
     def getNorm(name):
@@ -539,6 +540,12 @@ class Path(object):
     def setcwd(self):
         """Set cwd."""
         os.chdir(self._s)
+
+    @staticmethod
+    def has_invalid_chars(string):
+        match = Path.invalid_chars_re.match(string)
+        if not match: return None
+        return match.groups()[1]
 
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced

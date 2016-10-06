@@ -105,6 +105,7 @@ _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
+imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
@@ -4366,7 +4367,9 @@ class PeopleData(_DataStore):
 
 #------------------------------------------------------------------------------
 class ScreensData(_DataStore):
-    reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
+    reImageExt = re.compile(
+        ur'\.(' + ur'|'.join(ext[1:] for ext in imageExts) + ur')$',
+        re.I | re.U)
 
     def __init__(self):
         self.store_dir = dirs['app']
@@ -4433,12 +4436,10 @@ class Installer(object):
     reReadMe = re.compile(
         ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
         ur'(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
-    reValidNamePattern = re.compile(ur'^([^/\\:*?"<>|]+?)(\d*)$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
     skipExts.update(set(readExts))
-    imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
     #--Regular game directories - needs update after bush.game has been set
@@ -4762,7 +4763,7 @@ class Installer(object):
             Installer._global_start_skips.append(bush.game.se.shortName.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if settings['bash.installers.skipImages']:
-            Installer._global_skip_extensions |= Installer.imageExts
+            Installer._global_skip_extensions |= imageExts
         Installer._init_executables_skips()
 
     @staticmethod
@@ -4941,7 +4942,6 @@ class Installer(object):
         archiveRoot = GPath(self.archive).sroot if isinstance(self,
                 InstallerArchive) else self.archive
         docExts = self.docExts
-        imageExts = self.imageExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -5278,9 +5278,6 @@ class Installer(object):
         return self.status != oldStatus or self.underrides != oldUnderrides
 
     #--Utility methods --------------------------------------------------------
-    def match_valid_name(self, newName):
-        return self.reValidNamePattern.match(newName)
-
     def size_or_mtime_changed(self, apath):
         return (self.size, self.modified) != apath.size_mtime()
 
@@ -5380,7 +5377,6 @@ class InstallerMarker(Installer):
     """Represents a marker installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
-    reValidNamePattern = re.compile(ur'^(.+?)(\d*)$', re.I | re.U)
 
     def __init__(self,archive):
         Installer.__init__(self,archive)
@@ -5425,8 +5421,6 @@ class InstallerArchiveError(bolt.BoltError): pass
 class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
-    reValidNamePattern = re.compile(
-        ur'^([^/\\:*?"<>|]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
     type_string = _(u'Archive')
 
     #--File Operations --------------------------------------------------------
@@ -5996,14 +5990,16 @@ class InstallersData(_DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def batchRename(self, selected, maPattern, refreshNeeded):
-        root, numStr = maPattern.groups()[:2]
+    def batchRename(self, selected, patterns, refreshNeeded):
+        root_numStrings = [pattern.groups()[:2] for pattern in patterns]
+        numStr = root_numStrings[0][1]
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        for archive in selected:
+        for archive, root_numStr in zip(selected, root_numStrings):
             refreshNeeded.append(
-                self[archive].renameInstaller(archive, root, numStr, self))
+                self[archive].renameInstaller(archive, root_numStr[0], numStr,
+                                              self))
             num += 1
             numStr = unicode(num).zfill(digits)
 

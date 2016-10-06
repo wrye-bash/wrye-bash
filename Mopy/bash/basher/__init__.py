@@ -1802,19 +1802,12 @@ class SaveList(balt.UIList):
 
     def OnLabelEdited(self, event):
         """Savegame renamed."""
-        if event.IsEditCancelled(): return
-        #--File Info
-        newName = event.GetLabel()
+        ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + \
+                    bush.game.ess.ext[1:-1] + u'r' + u'))'
+        maPattern, newName = self.validate_filename(event, ext=ext_group)
+        if not maPattern: return
         detail_item = self.panel.GetDetailsItem()
         item_edited = detail_item.name if detail_item else None
-        if not newName.lower().endswith(bush.game.ess.ext):
-            newName += bush.game.ess.ext
-        rePattern = re.compile(ur'^[^/\\:*?"<>|]+?$', re.I | re.U)
-        maPattern = rePattern.match(newName)
-        if not maPattern:
-            balt.showError(self, _(u'Bad extension or file root: ') + newName)
-            event.Veto()
-            return
         newFileName = newName
         selected = self.GetSelected()
         to_select = set(selected)
@@ -1846,7 +1839,7 @@ class SaveList(balt.UIList):
                                 new.moveTo(old)
                             if new.exists() and old.exists(): new.remove()
                         break
-        self.RefreshUI(files=to_select)
+        self.RefreshUI()
         #--Reselect the items - renamed or not
         self.SelectItemsNoCallback(to_select)
         if item_edited: self.SelectItem(item_edited)
@@ -2173,6 +2166,8 @@ class InstallersList(balt.UIList):
         installer_type = type(self.data_store[to_rename[0]])
         for item in to_rename[1:]:
             if not isinstance(self.data_store[item], installer_type):
+                balt.showError(self, _(
+                    u"Bash can't rename mixed installers types"))
                 event.Veto()
                 return
             #--Also, don't allow renaming the 'Last' marker
@@ -2217,19 +2212,23 @@ class InstallersList(balt.UIList):
 
     def OnLabelEdited(self, event):
         """Renamed some installers"""
-        if event.IsEditCancelled(): return
-        newName = event.GetLabel()
         selected = self.GetSelected()
-        maPattern = self.data_store[selected[0]].match_valid_name(newName)
-        if not maPattern:
-            balt.showError(self, _(u'Bad extension or file root: ') + newName)
-            event.Veto()
-            return
+        installables = self.data_store.filterInstallables(selected)
+        validate = partial(self.validate_filename, event, has_digits=True,
+                           is_filename=bool(installables))
+        patterns = []
+        for inst in selected:
+            if isinstance(self.data_store[inst], bosh.InstallerArchive):
+                maPattern, newName = validate(ext=u'((\.(7z|rar|zip|001))+)')
+            else:
+                maPattern, newName = validate()
+            if not maPattern: return
+            patterns.append(maPattern)
         #--Rename each installer, keeping the old extension (for archives)
         with balt.BusyCursor():
             refreshes, ex = [(False, False, False)], None
             try:
-                self.data_store.batchRename(selected, maPattern, refreshes)
+                self.data_store.batchRename(selected, patterns, refreshes)
             except (OSError, IOError) as ex:
                 pass
             finally:
@@ -3048,18 +3047,11 @@ class ScreensList(balt.UIList):
         self.OpenSelected(selected=[hitItem])
 
     def OnLabelEdited(self, event):
-        """Renamed a screenshot"""
-        if event.IsEditCancelled(): return
-        newName = event.GetLabel()
+        """Rename selected screenshots."""
+        maPattern, _newName = self.validate_filename(event, has_digits=True,
+         ext=u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)')
+        if not maPattern: return
         selected = self.GetSelected()
-        rePattern = re.compile(
-            ur'^([^/\\:*?"<>|]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',
-            re.I | re.U)
-        maPattern = rePattern.match(newName)
-        if not maPattern:
-            balt.showError(self,_(u'Bad extension or file root: ')+newName)
-            event.Veto()
-            return
         root,numStr = maPattern.groups()[:2]
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
