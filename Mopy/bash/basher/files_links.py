@@ -58,15 +58,12 @@ class Files_Unhide(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        destDir, srcDir, srcPaths = self.window.unhide()
-        isSave = (destDir == bosh.saveInfos.store_dir)
         #--File dialog
-        srcDir.makedirs()
+        destDir, srcDir, srcPaths = self.window.unhide()
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
         destFiles = []
-        coSavesMoves = {}
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
@@ -83,18 +80,14 @@ class Files_Unhide(ItemLink):
             else:
                 srcFiles.append(srcPath)
                 destFiles.append(destPath)
-                if isSave:
-                    coSavesMoves[destPath] = bosh.CoSaves(srcPath)
         #--Now move everything at once
         if not srcFiles:
             return
-        try:
-            env.shellMove(srcFiles, destFiles, parent=self.window)
-            for dest in coSavesMoves:
-                coSavesMoves[dest].move(dest)
-        except (CancelError,SkipError):
-            pass
-        Link.Frame.RefreshData()
+        moved = self.window.data_store.move_infos(srcFiles, destFiles,
+                                                  self.window)
+        if moved:
+            self.window.RefreshUI(refreshSaves=True)
+            self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------

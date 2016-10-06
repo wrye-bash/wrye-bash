@@ -52,7 +52,8 @@ from .mods_metadata import ConfigHelpers
 from ..bass import dirs, inisettings, tooldirs, reModExt
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    PermissionError, FileError, formatInteger, round_size
+    PermissionError, FileError, formatInteger, round_size, CancelError, \
+    SkipError
 from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from ..bolt import decode, encode
@@ -2961,6 +2962,14 @@ class _DataStore(DataDict):
 
     def get_hide_dir(self, name): return self.hidden_dir
 
+    def move_infos(self, sources, destinations, window):
+        # hasty hack for Files_Unhide, must absorb move_info
+        try:
+            env.shellMove(sources, destinations, parent=window)
+        except (CancelError, SkipError):
+            pass
+        return set(d.tail for d in destinations if d.exists())
+
 class FileInfos(_DataStore):
     """Common superclass for mod, ini, saves and bsa infos."""
     ##: we need a common API for this and TankData...
@@ -4018,6 +4027,12 @@ class ModInfos(FileInfos):
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.move_info(self, fileName, destDir)
 
+    def move_infos(self, sources, destinations, window):
+        moved = _DataStore.move_infos(self, sources, destinations, window)
+        self.refresh() # yak, it should have an "added" parameter
+        balt.Link.Frame.warn_corrupted(warn_saves=False)
+        return moved
+
     def get_hide_dir(self, name):
         dest_dir =self.hidden_dir
         #--Use author subdirectory instead?
@@ -4188,6 +4203,19 @@ class SaveInfos(FileInfos):
         """Copies savefile and associated pluggy file."""
         FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
         CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
+
+    def move_infos(self, sources, destinations, window):
+        # CoSaves sucks - operations should be atomic
+        moved = _DataStore.move_infos(self, sources, destinations, window)
+        for s, d in zip(sources, destinations):
+            if d.tail in moved: CoSaves(s).move(d)
+        for d in moved:
+            try:
+                self.refreshFile(d)
+            except FileError:
+                pass # will warn below
+        balt.Link.Frame.warn_corrupted(warn_mods=False, warn_strings=False)
+        return moved
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite!"""
@@ -6020,6 +6048,11 @@ class InstallersData(_DataStore):
     def move_info(self, filename, destDir):
         # hasty method to use in UIList.hide(), see FileInfos.move_info()
         self.store_dir.join(filename).moveTo(destDir.join(filename))
+
+    def move_infos(self, sources, destinations, window):
+        moved = _DataStore.move_infos(self, sources, destinations, window)
+        self.irefresh(what='I', pending=moved)
+        return moved
 
     #--Refresh Functions ------------------------------------------------------
     class _RefreshInfo(object):

@@ -3848,8 +3848,8 @@ class BashFrame(wx.Frame):
     #--Events ---------------------------------------------
     @balt.conversation
     def RefreshData(self, event=None, booting=False):
-        """Refreshes all data. Can be called manually, but is also triggered
-        by window activation event.""" # hunt down - performance sink !
+        """Refresh all data - window activation event callback, called also
+        on boot."""
         #--Ignore deactivation events.
         if event and not event.GetActive() or self.inRefreshData: return
         #--UPDATES-----------------------------------------
