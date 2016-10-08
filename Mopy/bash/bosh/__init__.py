@@ -5281,14 +5281,13 @@ class Installer(object):
     def size_or_mtime_changed(self, apath):
         return (self.size, self.modified) != apath.size_mtime()
 
-    @staticmethod
-    def _rename(archive, data, newName):
+    def _rename(self, data, newName):
         """Rename package or project."""
-        installer = data[archive]
-        if newName != archive:
+        g_path = GPath(self.archive)
+        if newName != g_path:
             newPath = dirs['installers'].join(newName)
             if not newPath.exists():
-                oldPath = dirs['installers'].join(archive)
+                oldPath = dirs['installers'].join(self.archive)
                 try:
                     oldPath.moveTo(newPath)
                 except (OSError, IOError):
@@ -5298,10 +5297,10 @@ class Installer(object):
                     if newPath.exists() and oldPath.exists():
                         newPath.remove()
                     raise
-                installer.archive = newName.s
+                self.archive = newName.s
                 #--Add the new archive to Bash and remove old one
-                data[newName] = installer
-                del data[archive]
+                data[newName] = self
+                del data[g_path]
                 #--Update the iniInfos & modInfos for 'installer'
                 mfiles = [x for x in modInfos.table.getColumn('installer') if
                           modInfos.table[x]['installer'] == oldPath.stail]
@@ -5365,7 +5364,7 @@ class Installer(object):
     @staticmethod
     def _list_package(apath, log): raise AbstractError
 
-    def renameInstaller(self, archive, root, numStr, data):
+    def renameInstaller(self, root, numStr, data):
         """Rename installer and return a three tuple specifying if a refresh in
         mods and ini lists is needed.
         :rtype: tuple
@@ -5400,14 +5399,14 @@ class InstallerMarker(Installer):
         """Install specified files to Oblivion\Data directory."""
         pass
 
-    def renameInstaller(self, archive, root, numStr, data):
-        installer = data[archive]
+    def renameInstaller(self, root, numStr, data):
         newName = GPath(u'==' + root.strip(u'=') + numStr + u'==')
+        archive = GPath(self.archive)
         if newName == archive:
             return False
         #--Add the marker to Bash and remove old one
-        installer.archive = newName.s
-        data[newName] = installer
+        self.archive = newName.s
+        data[newName] = self
         del data[archive]
         return True, False, False
 
@@ -5577,9 +5576,9 @@ class InstallerArchive(Installer):
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
 
-    def renameInstaller(self, archive, root, numStr, data):
-        newName = GPath(root + numStr + archive.ext)
-        return self._rename(archive, data, newName)
+    def renameInstaller(self, root, numStr, data):
+        newName = GPath(root + numStr + GPath(self.archive).ext)
+        return self._rename(data, newName)
 
     def open_readme(self):
         with balt.BusyCursor():
@@ -5848,9 +5847,9 @@ class InstallerProject(Installer):
                     log(u' ' * depth + entry)
         walkPath(apath.s, 0)
 
-    def renameInstaller(self, archive, root, numStr, data):
+    def renameInstaller(self, root, numStr, data):
         newName = GPath(root + numStr)
-        return self._rename(archive, data, newName)
+        return self._rename(data, newName)
 
     def open_readme(self):
         bass.dirs['installers'].join(self.archive, self.hasReadme).start()
@@ -5996,7 +5995,7 @@ class InstallersData(_DataStore):
         if numStr: numStr.zfill(digits)
         for archive in selected:
             refreshNeeded.append(
-                self[archive].renameInstaller(archive, root, numStr, self))
+                self[archive].renameInstaller(root, numStr, self))
             num += 1
             numStr = unicode(num).zfill(digits)
 
