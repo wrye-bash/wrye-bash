@@ -1405,7 +1405,10 @@ class ModDetails(_SashDetailsPanel):
             oldName,newName = modInfo.name,GPath(self.fileStr.strip())
             #--Bad name?
             if (bosh.modInfos.isBadFileName(newName.s) and
-                not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
+                not balt.askContinue(self,_(
+                    u'File name %s cannot be encoded to ASCII.  %s may not be '
+                    u'able to activate this plugin because of this.  Do you '
+                    u'want to rename the plugin anyway?')
                                      % (newName.s,bush.game.displayName),
                                      'bash.rename.isBadFileName.continue')
                 ):

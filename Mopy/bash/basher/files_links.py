@@ -23,10 +23,10 @@
 # =============================================================================
 
 import re
-from .. import bass, balt, bosh, bush, bolt, env
-from ..balt import ItemLink, RadioLink, ChoiceLink, Link, OneItemLink
+from .. import bass, balt, bosh, bush, bolt
+from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
 from ..bass import Resources
-from ..bolt import CancelError, SkipError, GPath, formatDate
+from ..bolt import GPath, formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
            'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',
