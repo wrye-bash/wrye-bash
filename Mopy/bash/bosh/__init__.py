@@ -5990,16 +5990,13 @@ class InstallersData(_DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def batchRename(self, selected, patterns, refreshNeeded):
-        root_numStrings = [pattern.groups()[:2] for pattern in patterns]
-        numStr = root_numStrings[0][1]
+    def batchRename(self, selected, root, refreshNeeded, numStr):
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        for archive, root_numStr in zip(selected, root_numStrings):
+        for archive in selected:
             refreshNeeded.append(
-                self[archive].renameInstaller(archive, root_numStr[0], numStr,
-                                              self))
+                self[archive].renameInstaller(archive, root, numStr, self))
             num += 1
             numStr = unicode(num).zfill(digits)
 

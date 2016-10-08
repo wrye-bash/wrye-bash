@@ -2113,7 +2113,7 @@ class UIList(wx.Panel):
 
     def validate_filename(self, event, has_digits=False, ext=u'',
                           is_filename=True):
-        if event.IsEditCancelled(): return None, None
+        if event.IsEditCancelled(): return None, None, None
         newName = event.GetLabel()
         if not newName:
             msg = _(u'Empty name !')
@@ -2137,7 +2137,9 @@ class UIList(wx.Panel):
         if not maPattern:
             showError(self, msg)
             event.Veto()
-        return maPattern, newName
+            return None, None, None
+        num_str = maPattern.groups()[1] if has_digits else None
+        return maPattern.groups()[0], newName, num_str
 
     @conversation
     def DeleteItems(self, event=None, items=None,

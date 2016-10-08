@@ -1800,12 +1800,13 @@ class SaveList(balt.UIList):
                                                        'pcLocation')),
     ])
 
+    __ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + bush.game.ess.ext[
+                                                           1:-1] + u'r' + u'))'
     def OnLabelEdited(self, event):
         """Savegame renamed."""
-        ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + \
-                    bush.game.ess.ext[1:-1] + u'r' + u'))'
-        maPattern, newName = self.validate_filename(event, ext=ext_group)
-        if not maPattern: return
+        root, newName, _numStr = self.validate_filename(event,
+                                                        ext=self.__ext_group)
+        if not root: return
         detail_item = self.panel.GetDetailsItem()
         item_edited = detail_item.name if detail_item else None
         newFileName = newName
@@ -2159,13 +2160,14 @@ class InstallersList(balt.UIList):
         #--TODO: add mouse  mouse tips
         self.mouseTexts[item] = text
 
+    __renaming_type = None # type of items currently being renamed
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
         to_rename = self.GetSelected()
         #--Only rename multiple items of the same type
-        installer_type = type(self.data_store[to_rename[0]])
+        self.__renaming_type = type(self.data_store[to_rename[0]])
         for item in to_rename[1:]:
-            if not isinstance(self.data_store[item], installer_type):
+            if not isinstance(self.data_store[item], self.__renaming_type):
                 balt.showError(self, _(
                     u"Bash can't rename mixed installers types"))
                 event.Veto()
@@ -2176,11 +2178,11 @@ class InstallersList(balt.UIList):
                 return
         self.edit_control.Bind(wx.EVT_CHAR, self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
-        if installer_type is bosh.InstallerMarker:
+        if self.__renaming_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
             self.edit_control.SetSelection(2, to)
         #--Archives, change the selection to not include the extension
-        elif installer_type is bosh.InstallerArchive:
+        elif self.__renaming_type is bosh.InstallerArchive:
             super(InstallersList, self).OnBeginEditLabel(event)
 
     def _OnEditLabelChar(self, event):
@@ -2199,10 +2201,9 @@ class InstallersList(balt.UIList):
                 lenNextLower = lenWithExt
             else:
                 lenNextLower = len(textNextLower.s)
-            selected = self.data_store[self.GetSelected()[0]]
-            if isinstance(selected, bosh.InstallerArchive):
+            if self.__renaming_type is bosh.InstallerArchive:
                 selection_span = (0, lenNextLower)
-            elif isinstance(selected, bosh.InstallerMarker):
+            elif self.__renaming_type is bosh.InstallerMarker:
                 selection_span = (2, lenWithExt - 2)
             else:
                 selection_span = (0, lenWithExt)
@@ -2216,19 +2217,16 @@ class InstallersList(balt.UIList):
         installables = self.data_store.filterInstallables(selected)
         validate = partial(self.validate_filename, event, has_digits=True,
                            is_filename=bool(installables))
-        patterns = []
-        for inst in selected:
-            if isinstance(self.data_store[inst], bosh.InstallerArchive):
-                maPattern, newName = validate(ext=u'((\.(7z|rar|zip|001))+)')
-            else:
-                maPattern, newName = validate()
-            if not maPattern: return
-            patterns.append(maPattern)
+        if self.__renaming_type is bosh.InstallerArchive:
+            root, _newName, numStr = validate(ext=u'((\.(7z|rar|zip|001))+)')
+        else:
+            root, _newName, numStr = validate()
+        if not root: return
         #--Rename each installer, keeping the old extension (for archives)
         with balt.BusyCursor():
             refreshes, ex = [(False, False, False)], None
             try:
-                self.data_store.batchRename(selected, patterns, refreshes)
+                self.data_store.batchRename(selected, root, refreshes, numStr)
             except (OSError, IOError) as ex:
                 pass
             finally:
@@ -3046,13 +3044,14 @@ class ScreensList(balt.UIList):
         if not hitItem: return
         self.OpenSelected(selected=[hitItem])
 
+    __ext_group = \
+        u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
     def OnLabelEdited(self, event):
         """Rename selected screenshots."""
-        maPattern, _newName = self.validate_filename(event, has_digits=True,
-         ext=u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)')
-        if not maPattern: return
+        root, _newName, numStr = self.validate_filename(event, has_digits=True,
+                                                        ext=self.__ext_group)
+        if not root: return
         selected = self.GetSelected()
-        root,numStr = maPattern.groups()[:2]
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
