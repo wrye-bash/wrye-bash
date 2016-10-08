@@ -612,7 +612,7 @@ class Save_Move(ChoiceLink):
         count = 0
         ask = True
         for fileName in self.selected:
-            if ask and not self.window.data_store.moveIsSafe(fileName,destDir):
+            if ask and destDir.join(fileName).exists():
                 message = (_(u'A file named %s already exists in %s. Overwrite it?')
                     % (fileName.s,profile))
                 result = self._askContinueShortTerm(message,

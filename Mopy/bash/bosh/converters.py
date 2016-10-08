@@ -522,7 +522,7 @@ class InstallerConverter(object):
         if len(self.missingFiles):
             #--Unpack missing files
             Installer.rmTempDir()
-            destInstaller.unpackToTemp(destArchive, self.missingFiles,
+            destInstaller.unpackToTemp(self.missingFiles,
                 SubProgress(progress, lastStep, lastStep + 0.2))
             lastStep += 0.2
             #--Move the temp dir to tempDir\BCF-Missing

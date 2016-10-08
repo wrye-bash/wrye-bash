@@ -52,7 +52,8 @@ from .mods_metadata import ConfigHelpers
 from ..bass import dirs, inisettings, tooldirs, reModExt
 from .. import patcher # for configIsCBash()
 from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    PermissionError, FileError, formatInteger, round_size
+    PermissionError, FileError, formatInteger, round_size, CancelError, \
+    SkipError
 from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
     deprint, sio, Path
 from ..bolt import decode, encode
@@ -2939,7 +2940,11 @@ class _DataStore(DataDict):
 
     def delete(self, itemOrItems, **kwargs): raise AbstractError
     def delete_Refresh(self, deleted, check_existence=False):
-        raise AbstractError # Yak - absorb in refresh - add deleted parameter
+        # Yak - absorb in refresh - add deleted parameter
+        if check_existence:
+            deleted = set(
+                d for d in deleted if not self.store_dir.join(d).exists())
+        return deleted
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
 
@@ -2948,6 +2953,22 @@ class _DataStore(DataDict):
         """Return the folder where Bash persists its data - create it on init!
         :rtype: bolt.Path"""
         raise AbstractError
+
+    @property
+    def hidden_dir(self):
+        """Return the folder where Bash should move the file info to hide it
+        :rtype: bolt.Path"""
+        return self.bash_dir.join(u'Hidden')
+
+    def get_hide_dir(self, name): return self.hidden_dir
+
+    def move_infos(self, sources, destinations, window):
+        # hasty hack for Files_Unhide, must absorb move_info
+        try:
+            env.shellMove(sources, destinations, parent=window)
+        except (CancelError, SkipError):
+            pass
+        return set(d.tail for d in destinations if d.exists())
 
 class FileInfos(_DataStore):
     """Common superclass for mod, ini, saves and bsa infos."""
@@ -3118,9 +3139,7 @@ class FileInfos(_DataStore):
                 self.delete_Refresh(tableUpdate.values())
 
     def delete_Refresh(self, deleted, check_existence=False):
-        if check_existence:
-            deleted = set(
-                d for d in deleted if not self.store_dir.join(d).exists())
+        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -3162,12 +3181,6 @@ class FileInfos(_DataStore):
                     set_mtime = srcPath.mtime + 1
                 self[destName].setmtime(set_mtime) # correctly update table
         return set_mtime
-
-    #--Move Exists
-    @staticmethod
-    def moveIsSafe(fileName,destDir):
-        """Bool: Safe to move file to destDir."""
-        return not destDir.join(fileName).exists()
 
     def save(self):
         # items deleted outside Bash
@@ -4014,6 +4027,28 @@ class ModInfos(FileInfos):
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.move_info(self, fileName, destDir)
 
+    def move_infos(self, sources, destinations, window):
+        moved = _DataStore.move_infos(self, sources, destinations, window)
+        self.refresh() # yak, it should have an "added" parameter
+        balt.Link.Frame.warn_corrupted(warn_saves=False)
+        return moved
+
+    def get_hide_dir(self, name):
+        dest_dir =self.hidden_dir
+        #--Use author subdirectory instead?
+        author = self[name].header.author
+        if author:
+            authorDir = dest_dir.join(author)
+            if authorDir.isdir():
+                return authorDir
+        #--Use group subdirectory instead?
+        file_group = self.table.getItem(name, 'group')
+        if file_group:
+            groupDir = dest_dir.join(file_group)
+            if groupDir.isdir():
+                return groupDir
+        return dest_dir
+
     #--Mod info/modify --------------------------------------------------------
     def getVersion(self, fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
@@ -4168,6 +4203,19 @@ class SaveInfos(FileInfos):
         """Copies savefile and associated pluggy file."""
         FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
         CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
+
+    def move_infos(self, sources, destinations, window):
+        # CoSaves sucks - operations should be atomic
+        moved = _DataStore.move_infos(self, sources, destinations, window)
+        for s, d in zip(sources, destinations):
+            if d.tail in moved: CoSaves(s).move(d)
+        for d in moved:
+            try:
+                self.refreshFile(d)
+            except FileError:
+                pass # will warn below
+        balt.Link.Frame.warn_corrupted(warn_mods=False, warn_strings=False)
+        return moved
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite!"""
@@ -5271,6 +5319,7 @@ class Installer(object):
 
     def open_readme(self): pass
     def open_wizard(self): pass
+    def wizard_file(self): raise AbstractError
 
     def __repr__(self):
         return self.__class__.__name__ + u"<" + repr(self.archive) + u">"
@@ -5286,7 +5335,7 @@ class Installer(object):
         """
         raise AbstractError
 
-    def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Oblivion\Data directory."""
         raise AbstractError
 
@@ -5351,7 +5400,7 @@ class InstallerMarker(Installer):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
         pass
 
-    def install(self,name,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Oblivion\Data directory."""
         pass
 
@@ -5413,23 +5462,24 @@ class InstallerArchive(Installer):
                 deprint(archive_msg, traceback=True)
                 raise InstallerArchiveError(archive_msg)
 
-    def unpackToTemp(self,archive,fileNames,progress=None,recurse=False):
+    def unpackToTemp(self, fileNames, progress=None, recurse=False):
         """Erases all files from self.tempDir and then extracts specified files
         from archive to self.tempDir. progress will be zeroed so pass a
         SubProgress in.
         fileNames: File names (not paths)."""
-        if not fileNames: raise ArgumentError(u'No files to extract for %s.' % archive.s)
+        if not fileNames: raise ArgumentError(
+            u'No files to extract for %s.' % self.archive)
         # expand wildcards in fileNames to get actual count of files to extract
         #--Dump file list
         with self.tempList.open('w',encoding='utf8') as out:
             out.write(u'\n'.join(fileNames))
-        apath = dirs['installers'].join(archive)
+        apath = dirs['installers'].join(self.archive)
         #--Ensure temp dir empty
         self.rmTempDir()
         with apath.unicodeSafe() as arch:
             if progress:
                 progress.state = 0
-                progress(0, u'%s\n' %archive + _(u'Counting files...') + u'\n')
+                progress(0, u'%s\n' % self.archive + _(u'Counting files...') + u'\n')
                 numFiles = countFilesInArchive(arch, self.tempList, recurse)
                 progress.setFull(numFiles)
             #--Extract files
@@ -5437,13 +5487,13 @@ class InstallerArchive(Installer):
             command += u' @%s' % self.tempList.s
             if recurse: command += u' -r'
             try:
-                bolt.extract7z(command, archive, progress)
+                bolt.extract7z(command, GPath(self.archive), progress)
             finally:
                 self.tempList.remove()
                 bolt.clearReadOnly(self.getTempDir())
         #--Done -> don't clean out temp dir, it's going to be used soon
 
-    def install(self,archive,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Game\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
@@ -5451,10 +5501,10 @@ class InstallerArchive(Installer):
         if not dest_src: return 0
         progress = progress if progress else bolt.Progress()
         #--Extract
-        progress(0,archive.s+u'\n'+_(u'Extracting files...'))
-        self.unpackToTemp(archive,dest_src.values(),SubProgress(progress,0,0.9))
+        progress(0, self.archive + u'\n' + _(u'Extracting files...'))
+        self.unpackToTemp(dest_src.values(), SubProgress(progress, 0, 0.9))
         #--Rearrange files
-        progress(0.9,archive.s+u'\n'+_(u'Organizing files...'))
+        progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
         unpackDir = self.getTempDir() #--returns directory used by unpackToTemp
         unpackDirJoin = unpackDir.join
         stageDir = self.newTempDir()  #--forgets the old temp dir, creates a new one
@@ -5497,8 +5547,7 @@ class InstallerArchive(Installer):
         if destDir.exists(): destDir.rmtree(safety=u'Installers')
         #--Extract
         progress(0,project.s+u'\n'+_(u'Extracting files...'))
-        self.unpackToTemp(GPath(self.archive), files,
-                          SubProgress(progress, 0, 0.9))
+        self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
@@ -5541,14 +5590,14 @@ class InstallerArchive(Installer):
     def open_readme(self):
         with balt.BusyCursor():
             # This is going to leave junk temp files behind...
-            self.unpackToTemp(GPath(self.archive), [self.hasReadme])
+            self.unpackToTemp([self.hasReadme])
         self.getTempDir().join(self.hasReadme).start()
 
     def open_wizard(self):
         with balt.BusyCursor():
             # This is going to leave junk temp files behind...
             try:
-                self.unpackToTemp(GPath(self.archive), [self.hasWizard])
+                self.unpackToTemp([self.hasWizard])
                 self.getTempDir().join(self.hasWizard).start()
             except:
                 # Don't clean up temp dir here.  Sometimes the editor
@@ -5556,6 +5605,27 @@ class InstallerArchive(Installer):
                 # Bash, and the file will be deleted before it opens.
                 # Just allow Bash's atexit function to clean it when quitting.
                 pass
+
+    def wizard_file(self):
+        with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
+                           abort=True) as progress:
+            # Extract the wizard, and any images as well
+            self.unpackToTemp([self.hasWizard,
+                u'*.bmp',            # BMP's
+                u'*.jpg', u'*.jpeg', # JPEG's
+                u'*.png',            # PNG's
+                u'*.gif',            # GIF's
+                u'*.pcx',            # PCX's
+                u'*.pnm',            # PNM's
+                u'*.tif', u'*.tiff', # TIFF's
+                u'*.tga',            # TGA's
+                u'*.iff',            # IFF's
+                u'*.xpm',            # XPM's
+                u'*.ico',            # ICO's
+                u'*.cur',            # CUR's
+                u'*.ani',            # ANI's
+                ], bolt.SubProgress(progress,0,0.9), recurse=True)
+        return self.getTempDir().join(self.hasWizard)
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -5664,7 +5734,7 @@ class InstallerProject(Installer):
         self.crc = cumCRC & 0xFFFFFFFFL
         self.project_refreshed = True
 
-    def install(self,name,destFiles,data_sizeCrcDate,progress=None):
+    def install(self, destFiles, data_sizeCrcDate, progress=None):
         """Install specified files to Oblivion\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
@@ -5672,7 +5742,7 @@ class InstallerProject(Installer):
         if not dest_src: return 0
         progress = progress if progress else bolt.Progress()
         progress.setFull(max(len(dest_src),1))
-        progress(0,name.stail+u'\n'+_(u'Moving files...'))
+        progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
         self.rmTempDir()
@@ -5681,7 +5751,7 @@ class InstallerProject(Installer):
         stageDataDirJoin = stageDataDir.join
         norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
-        srcDir = dirs['installers'].join(name)
+        srcDir = dirs['installers'].join(self.archive)
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
         timestamps = load_order.install_last()
@@ -5794,6 +5864,9 @@ class InstallerProject(Installer):
     def open_wizard(self):
         bass.dirs['installers'].join(self.archive, self.hasWizard).start()
 
+    def wizard_file(self):
+        return bass.dirs['installers'].join(self.archive, self.hasWizard)
+
 #------------------------------------------------------------------------------
 from . import converters
 from .converters import InstallerConverter
@@ -5855,6 +5928,9 @@ class InstallersData(_DataStore):
 
     @property
     def bash_dir(self): return dirs['bainData']
+
+    @property
+    def hidden_dir(self): return bass.dirs['modsBash'].join(u'Hidden')
 
     def add_marker(self, name, order):
         path = GPath(name)
@@ -5954,9 +6030,7 @@ class InstallersData(_DataStore):
                     self.delete_Refresh(deleted) # markers are already popped
 
     def delete_Refresh(self, deleted, check_existence=False):
-        if check_existence:
-            deleted.remove(
-                item for item in deleted if self.store_dir.join(item).exists())
+        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
         if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
@@ -5970,6 +6044,15 @@ class InstallersData(_DataStore):
             installer.archive = destName.s
             installer.isActive = False
             self.moveArchives([destName], self[item].order + 1)
+
+    def move_info(self, filename, destDir):
+        # hasty method to use in UIList.hide(), see FileInfos.move_info()
+        self.store_dir.join(filename).moveTo(destDir.join(filename))
+
+    def move_infos(self, sources, destinations, window):
+        moved = _DataStore.move_infos(self, sources, destinations, window)
+        self.irefresh(what='I', pending=moved)
+        return moved
 
     #--Refresh Functions ------------------------------------------------------
     class _RefreshInfo(object):
@@ -5992,7 +6075,14 @@ class InstallersData(_DataStore):
         True, triggering the rest of the refreshes in irefresh. Once
         refresh_info is calculated, deleted are removed, refreshBasic is
         called on added/updated files and crc_installer updated. If you
-        don't need that last step you may directly call refreshBasic."""
+        don't need that last step you may directly call refreshBasic.
+        :type progress: bolt.Progress | None
+        :type fullRefresh: bool
+        :type refresh_info: InstallersData._RefreshInfo | None
+        :type deleted: collections.Iterable[bolt.Path] | None
+        :type pending: collections.Iterable[bolt.Path] | None
+        :type projects: collections.Iterable[bolt.Path] | None
+        """
         # TODO(ut):we need to return the refresh_info for more granular control
         # in irefresh and also add extra processing for deleted files
         progress = progress or bolt.Progress()
@@ -6037,11 +6127,10 @@ class InstallersData(_DataStore):
         pending = []
         for i, (installer, destArchive) in enumerate(zip(installers,
                         destArchives)): # no izip - we may modify installers
-            name = GPath(installer.archive)
-            progress(i,name.s)
+            progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
             Installer.rmTempDir()
-            installer.unpackToTemp(name, [installer.hasBCF],
+            installer.unpackToTemp([installer.hasBCF],
                                    SubProgress(progress, i, i + 0.5))
             srcBcfFile = Installer.getTempDir().join(installer.hasBCF)
             bcfFile = dirs['converters'].join(u'temp-' + srcBcfFile.stail)
@@ -6487,7 +6576,7 @@ class InstallersData(_DataStore):
                 destFiles &= installer.missingFiles
             if destFiles:
                 self._createTweaks(destFiles, installer, tweaksCreated)
-                installer.install(archive, destFiles, self.data_sizeCrcDate,
+                installer.install(destFiles, self.data_sizeCrcDate,
                                   SubProgress(progress, index, index + 1))
                 mods_changed, inis_changed = InstallersData.updateTable(
                     destFiles, archive.s)
@@ -6657,7 +6746,7 @@ class InstallersData(_DataStore):
             progress(index, archive.s)
             if destFiles:
                 installer = self[archive]
-                installer.install(archive, destFiles, self.data_sizeCrcDate,
+                installer.install(destFiles, self.data_sizeCrcDate,
                                   SubProgress(progress, index, index + 1))
                 mods_changed, inis_changed = InstallersData.updateTable(
                      destFiles, archive.s)

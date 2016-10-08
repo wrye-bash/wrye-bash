@@ -24,14 +24,13 @@
 
 import re
 from .. import bass, balt, bosh, bush, bolt, env
-from ..balt import ItemLink, RadioLink, EnabledLink, ChoiceLink, Link, \
-    OneItemLink
+from ..balt import ItemLink, RadioLink, ChoiceLink, Link, OneItemLink
 from ..bass import Resources
 from ..bolt import CancelError, SkipError, GPath, formatDate
 
-__all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup',
-           'File_Duplicate', 'File_Snapshot', 'File_Hide',
-           'File_RevertToBackup', 'File_RevertToSnapshot', 'File_ListMasters']
+__all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
+           'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',
+           'File_ListMasters']
 
 #------------------------------------------------------------------------------
 # Files Links -----------------------------------------------------------------
@@ -55,39 +54,16 @@ class Files_Unhide(ItemLink):
 
     def __init__(self, files_type):
         super(Files_Unhide, self).__init__()
-        self.files_type = files_type # yak - move logic to the data model
         self.help = _(u"Unhides hidden %ss.") % files_type
 
+    @balt.conversation
     def Execute(self):
-        srcDir = bass.dirs['modsBash'].join(u'Hidden')
-        window = self.window
-        destDir = None
-        if self.files_type == 'mod':
-            wildcard = bush.game.displayName+u' '+_(u'Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
-            destDir = window.data_store.store_dir
-        elif self.files_type == 'save':
-            wildcard = bush.game.displayName+u' '+_(u'Save files')+u' (*.ess)|*.ess'
-            srcDir = window.data_store.bash_dir.join(u'Hidden')
-            destDir = window.data_store.store_dir
-        elif self.files_type == 'installer':
-            wildcard = bush.game.displayName+u' '+_(u'Mod Archives')+u' (*.7z;*.zip;*.rar)|*.7z;*.zip;*.rar'
-            destDir = bass.dirs['installers']
-            srcPaths = self._askOpenMulti(
-                title=_(u'Unhide files:'), defaultDir=srcDir,
-                defaultFile=u'.Folder Selection.', wildcard=wildcard)
-        else:
-            wildcard = u'*.*'
-        isSave = (destDir == bosh.saveInfos.store_dir)
         #--File dialog
-        srcDir.makedirs()
-        if not self.files_type == 'installer':
-            srcPaths = self._askOpenMulti(_(u'Unhide files:'),
-                                          defaultDir=srcDir, wildcard=wildcard)
+        destDir, srcDir, srcPaths = self.window.unhide()
         if not srcPaths: return
         #--Iterate over Paths
         srcFiles = []
         destFiles = []
-        coSavesMoves = {}
         for srcPath in srcPaths:
             #--Copy from dest directory?
             (newSrcDir,srcFileName) = srcPath.headTail
@@ -95,34 +71,23 @@ class Files_Unhide(ItemLink):
                 self._showError(
                     _(u"You can't unhide files from this directory."))
                 return
-            #--Folder selection?
-            if srcFileName.csbody == u'.folder selection':
-                if newSrcDir == srcDir:
-                    #--Folder selection on the 'Hidden' folder
-                    return
-                (newSrcDir,srcFileName) = newSrcDir.headTail
-                srcPath = srcPath.head
             #--File already unhidden?
             destPath = destDir.join(srcFileName)
-            if destPath.exists():
+            if destPath.exists() or (destPath + u'.ghost').exists():
                 self._showWarning(_(u"File skipped: %s. File is already "
                                     u"present.") % (srcFileName.s,))
             #--Move it?
             else:
                 srcFiles.append(srcPath)
                 destFiles.append(destPath)
-                if isSave:
-                    coSavesMoves[destPath] = bosh.CoSaves(srcPath)
         #--Now move everything at once
         if not srcFiles:
             return
-        try:
-            env.shellMove(srcFiles, destFiles, parent=window)
-            for dest in coSavesMoves:
-                coSavesMoves[dest].move(dest)
-        except (CancelError,SkipError):
-            pass
-        Link.Frame.RefreshData()
+        moved = self.window.data_store.move_infos(srcFiles, destFiles,
+                                                  self.window)
+        if moved:
+            self.window.RefreshUI(refreshSaves=True)
+            self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
 # File Links ------------------------------------------------------------------
@@ -190,46 +155,6 @@ class File_Duplicate(ItemLink):
             self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
             self.window.SelectAndShowItem(dests[-1])
-
-class File_Hide(ItemLink):
-    """Hide the file. (Move it to Bash/Hidden directory.)"""
-    text = _(u'Hide')
-
-    def _initData(self, window, selection):
-        super(File_Hide, self)._initData(window, selection)
-        self.help = _(u"Move %(filename)s to the Bash/Hidden directory.") % (
-            {'filename': selection[0]})
-
-    @balt.conversation
-    def Execute(self):
-        if not bass.inisettings['SkipHideConfirmation']:
-            message = _(u'Hide these files? Note that hidden files are simply moved to the Bash\\Hidden subdirectory.')
-            if not self._askYes(message, _(u'Hide Files')): return
-        #--Do it
-        destRoot = self.window.data_store.bash_dir.join(u'Hidden')
-        fileInfos = self.window.data_store
-        fileGroups = fileInfos.table.getColumn('group')
-        for fileName in self.selected:
-            destDir = destRoot
-            #--Use author subdirectory instead?
-            author = getattr(fileInfos[fileName].header,'author',u'NOAUTHOR') #--Hack for save files.
-            authorDir = destRoot.join(author)
-            if author and authorDir.isdir():
-                destDir = authorDir
-            #--Use group subdirectory instead?
-            elif fileName in fileGroups:
-                groupDir = destRoot.join(fileGroups[fileName])
-                if groupDir.isdir():
-                    destDir = groupDir
-            if not self.window.data_store.moveIsSafe(fileName,destDir):
-                message = (_(u'A file named %s already exists in the hidden '
-                             u'files directory. Overwrite it?') % fileName.s)
-                if not self._askYes(message, _(u'Hide Files')): continue
-            #--Do it
-            fileInfos.move_info(fileName, destDir)
-        #--Refresh stuff
-        fileInfos.delete_Refresh(self.selected, check_existence=True)
-        self.window.RefreshUI(refreshSaves=True)
 
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
@@ -332,46 +257,51 @@ class File_Backup(ItemLink):
             fileInfo = self.window.data_store[item]
             fileInfo.makeBackup(True)
 
-class File_RevertToBackup(ChoiceLink):
-    """Revert to last or first backup."""
+class _RevertBackup(OneItemLink):
+    text = _(u'Revert to Backup')
 
     def _initData(self, window, selection):
-        super(File_RevertToBackup, self)._initData(window, selection)
-        #--Backup Files
-        singleSelect = len(selection) == 1
-        self.fileInfo = window.data_store[selection[0]]
-        backup = self.fileInfo.bashDir.join(u'Backups', self.fileInfo.name)
-        firstBackup = backup + u'f'
-        #--Backup Item
-        _self = self
-        class _RevertBackup(EnabledLink):
-            text = _(u'Revert to Backup')
-            def _enable(self): return singleSelect and backup.exists()
-            def Execute(self): return _self.revert(backup)
-        #--First Backup item
-        class _RevertFirstBackup(EnabledLink):
-            text = _(u'Revert to First Backup')
-            def _enable(self): return singleSelect and firstBackup.exists()
-            def Execute(self): return _self.revert(firstBackup)
-        self.extraItems =[_RevertBackup(), _RevertFirstBackup()]
+        super(_RevertBackup, self)._initData(window, selection)
+        self.backup_path = self._selected_info.bashDir.join(
+            u'Backups', self._selected_item)
+        self.help = _(u"Revert %(file)s to its last backup") % {
+            'file': self._selected_item}
+
+    def _enable(self):
+        return super(_RevertBackup,
+                     self)._enable() and self.backup_path.exists()
 
     @balt.conversation
-    def revert(self, backup):
-        fileInfo = self.fileInfo
-        fileName = fileInfo.name
+    def Execute(self):
+        fileName = self._selected_item
         #--Warning box
-        message = _(u"Revert %s to backup dated %s?") % (fileName.s,
-            formatDate(backup.mtime))
-        if self._askYes(message, _(u'Revert to Backup')):
+        message = _(u"Revert %s to backup dated %s?") % (
+            fileName.s, formatDate(self.backup_path.mtime))
+        if self._askYes(message):
             with balt.BusyCursor():
-                dest = fileInfo.getPath() # care for ghosts !
+                dest = self._selected_info.getPath() # care for ghosts !
                 current_mtime = dest.mtime
-                backup.copyTo(dest)
-                fileInfo.setmtime(current_mtime) # do not change load order
-                if fileInfo.isEss(): #--Handle CoSave (.pluggy and .obse) files.
-                    bosh.CoSaves(backup).copy(dest)
+                self.backup_path.copyTo(dest)
+                # do not change load order for timestamp games - rest works ok
+                self._selected_info.setmtime(current_mtime)
+                if self._selected_info.isEss():
+                    #--Handle CoSave (.pluggy and .obse) files.
+                    bosh.CoSaves(self.backup_path).copy(dest)
                 try:
                     self.window.data_store.refreshFile(fileName)
                 except bosh.FileError:
                     self._showError(_(u'Old file is corrupt!'))
                 self.window.RefreshUI(files=[fileName], refreshSaves=False)
+
+class _RevertFirstBackup(_RevertBackup):
+    text = _(u'Revert to First Backup')
+
+    def _initData(self, window, selection):
+        super(_RevertFirstBackup, self)._initData(window, selection)
+        self.backup_path += u'f'
+        self.help = _(u"Revert %(file)s to its first backup") % {
+            'file': self._selected_item}
+
+class File_RevertToBackup(ChoiceLink):
+    """Revert to last or first backup."""
+    extraItems = [_RevertBackup(), _RevertFirstBackup()]

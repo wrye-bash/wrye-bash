@@ -1569,7 +1569,7 @@ class UIList(wx.Panel):
     #--Style params
     _editLabels = False # allow editing the labels - also enables F2 shortcut
     _sunkenBorder = True
-    _singleCell = False
+    _singleCell = False # allow only single selections (no ctrl/shift+click)
     #--Sorting
     nonReversibleCols = {'Load Order', 'Current Order'}
     _default_sort_col = 'File' # override as needed
@@ -1832,12 +1832,17 @@ class UIList(wx.Panel):
         """Char event: select all items, delete selected items, rename."""
         code = event.GetKeyCode()
         if event.CmdDown() and code == ord('A'): # Ctrl+A
-            try:
-                self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
-                self.panel.ClearDetails() #omit this to leave displayed details
-                self._SelectAll()
-            finally:
-                self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
+            if event.ShiftDown(): # de-select all
+                self.ClearSelected(clear_details=True)
+            else: # select all
+                try:
+                    self.__gList.Unbind(wx.EVT_LIST_ITEM_SELECTED)
+                    # omit below to leave displayed details
+                    self.panel.ClearDetails()
+                    self.SelectItemAtIndex(-1) # -1 indicates 'all items'
+                finally:
+                    self.__gList.Bind(wx.EVT_LIST_ITEM_SELECTED,
+                                      self.OnItemSelected)
         elif self.__class__._editLabels and code == wx.WXK_F2: self.Rename()
         elif code in wxDelete:
             with BusyCursor(): self.DeleteItems(event=event)
@@ -1871,7 +1876,7 @@ class UIList(wx.Panel):
             for i in colCount:
                 self.__gList.SetColumnWidth(i, -self.autoColWidths)
 
-    #--Events skipped##:de-register callbacks? register only if hasattr(OnXXX)?
+    #--Events skipped
     def OnLeftDown(self,event): event.Skip()
     def OnDClick(self,event): event.Skip()
     def OnChar(self,event): event.Skip()
@@ -1888,7 +1893,7 @@ class UIList(wx.Panel):
             return None
         return self.GetItem(hitItem)
 
-    #-- Item selection --------------------------------------------------------
+    #--Item selection ---------------------------------------------------------
     def _get_selected(self, lam=lambda i: i, __next_all=wx.LIST_NEXT_ALL,
                       __state_selected=wx.LIST_STATE_SELECTED):
         listCtrl, selected_list = self.__gList, []
@@ -1930,9 +1935,6 @@ class UIList(wx.Panel):
         """Unselect all items."""
         self.SelectItemAtIndex(-1, False) # -1 indicates 'all items'
         if clear_details: self.panel.ClearDetails()
-
-    def _SelectAll(self): # only called after unbinding EVT_LIST_ITEM_SELECTED
-        self.SelectItemAtIndex(-1) # -1 indicates 'all items'
 
     def SelectLast(self):
         self.SelectItemAtIndex(self.__gList.GetItemCount() - 1)
@@ -2155,6 +2157,18 @@ class UIList(wx.Panel):
             self.data_store.store_dir.makedirs()
         self.data_store.store_dir.start()
 
+    def hide(self, keys):
+        for key in keys:
+            destDir = self.data_store.get_hide_dir(key)
+            if destDir.join(key).exists():
+                message = (_(u'A file named %s already exists in the hidden '
+                             u'files directory. Overwrite it?') % key.s)
+                if not askYes(self, message, _(u'Hide Files')): continue
+            #--Do it
+            with BusyCursor(): self.data_store.move_info(key, destDir)
+        #--Refresh stuff
+        self.data_store.delete_Refresh(keys, check_existence=True)
+
     # Generate unique filenames when duplicating files etc
     @staticmethod
     def _new_name(new_name, count):
@@ -2174,6 +2188,16 @@ class UIList(wx.Panel):
         while dest_dir.join(new_name).exists() and count < 1000:
             new_name, count = UIList._new_name(base_name, count)
         return new_name
+
+    @staticmethod
+    def _unhide_wildcard(): raise AbstractError
+    def unhide(self):
+        srcDir = self.data_store.hidden_dir
+        wildcard = self._unhide_wildcard()
+        destDir = self.data_store.store_dir
+        srcPaths = askOpenMulti(self, _(u'Unhide files:'), defaultDir=srcDir,
+                                wildcard=wildcard)
+        return destDir, srcDir, srcPaths
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2544,6 +2568,26 @@ class UIList_OpenStore(ItemLink):
         self.help = _(u"Open '%s'") % window.data_store.store_dir
 
     def Execute(self): self.window.open_data_store()
+
+class UIList_Hide(ItemLink):
+    """Hide the file (move it to the data store's Hidden directory)."""
+    text = _(u'Hide')
+
+    def _initData(self, window, selection):
+        super(UIList_Hide, self)._initData(window, selection)
+        self.hidden_dir = self.window.data_store.hidden_dir
+        self.help = _(u"Move %(filename)s to %(hidden_dir)s") % (
+            {'filename': selection[0], 'hidden_dir': self.hidden_dir})
+
+    @conversation
+    def Execute(self):
+        if not bass.inisettings['SkipHideConfirmation']:
+            message = _(u'Hide these files? Note that hidden files are simply '
+                        u'moved to the %(hidden_dir)s directory.') % (
+                          {'hidden_dir': self.hidden_dir})
+            if not self._askYes(message, _(u'Hide Files')): return
+        self.window.hide(self.selected)
+        self.window.RefreshUI(refreshSaves=True)
 
 # wx Wrappers -----------------------------------------------------------------
 #------------------------------------------------------------------------------
