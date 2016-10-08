@@ -49,6 +49,7 @@
     <ol>
         <li><a href="#install-alternate">Alternative Install Locations</a>
         <li><a href="#install-components">Python Components</a>
+        <li><a href="#install-loot-api">LOOT API</a>
     </ol>
     <li><a href="#bain">Installers Tab</a>
     <ol>
@@ -181,6 +182,17 @@
             <li>The Bashed Patch build report will be displayed by opening the file in your default browser.
         </ul>
 </ul>
+
+<h3 id="install-loot-api">LOOT API</h3>
+<p>Wrye Bash comes with the LOOT API Python Module v1.2.0 bundled, but Python users can update to a more recent compatible version if one is available. To do so:
+<ol>
+    <li>Check if a more recent v1.x release is available on <a href="https://github.com/loot/loot-api-python/releases">GitHub</a>. Releases with a different major version number (releases are major.minor.patch) than the version Wrye Bash bundles are incompatible and cannot be upgraded to.
+    <li>Download and extract the release's <code>*.7z</code> file.
+    <li>Make sure Wrye Bash is not running.
+    <li>Copy the <code>loot_api.dll</code> and <code>loot_api.pyd</code> files you extracted into your Wrye Bash's <code>Mopy</code> folder, replacing the existing files.
+    <li>Start Wrye Bash.
+</ol>
+<p>Standalone users cannot upgrade their bundled LOOT API because its <code>loot_api.pyd</code> file is compiled into the standalone executable.
 
 <h2 id="bain">Installers Tab</h2>
 <h3 id="bain-ui">The User Interface In Detail</h3>
@@ -820,7 +832,7 @@ In decreasing priority the Bash tags sources are:
     <li>taglist.yaml (LOOT)
 </ol>
 
-<p>Bash comes with LOOT bundled, currently version 6. It will try and parse the masterlist and userlist files, if it finds them in
+<p>Bash comes with the LOOT API Python Module bundled, currently version 1.2.0. It will try and parse the masterlist and userlist files, if it finds them in
     <code>C:\Users\USER\AppData\Local\LOOT\GAME</code> directory. If that fails (the files are not there or come from a different LOOT version than
     the one Bash bundles) it will fallback to the <code>Mopy\Bash Patches\GAME\taglist.yaml</code> file, also bundled, keep it there. For userlist
 and masterlist relative priority and role see the LOOT docs.

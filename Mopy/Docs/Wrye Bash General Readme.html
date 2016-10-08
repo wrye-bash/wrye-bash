@@ -148,6 +148,7 @@
 <p><b>Windows Vista &amp; Windows 7 users:</b> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Install:
 <ol>
+	<li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
 	<li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q> or <q>Skyrim</q> depending on the game) so that the Mopy
 		directory appears in the game folder.
 	<li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
@@ -158,6 +159,7 @@
 		See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install-components">Python Components</a> section of the Advanced readme
 		for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
 		you may not need to install them again.
+	<li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
 	<li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q> or <q>Skyrim</q> depending on the game) so that the Mopy
 	directory appears by the game executable. See the
 	<a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
@@ -1198,9 +1200,9 @@ MemoryError</code>
 		<li>Usage: Wrye Bash uses this library to help in detecting character encodings use when reading and writing encoded Unicode strings.
 		<li>Modifications: Minor modifications to bring chardet in line with Python 2.7 - removed the EUCTWProber, from the MBCSGroupProber class.
 	</ul>
-	<li>LOOT API
+	<li>LOOT API Python Module
 	<ul>
-		<li>Website: <a href="https://github.com/loot/loot">GitHub</a>
+		<li>Website: <a href="https://github.com/loot/loot-api-python">GitHub</a>
 		<li>License: <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>
 		<li>Usage: Wrye Bash uses this library to retrieve Bash Tag suggestions and Dirty mod information from LOOT's plugin databases.
 	</ul>
