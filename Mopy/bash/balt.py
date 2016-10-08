@@ -2139,7 +2139,7 @@ class UIList(wx.Panel):
             event.Veto()
             return None, None, None
         num_str = maPattern.groups()[1] if has_digits else None
-        return maPattern.groups()[0], newName, num_str
+        return maPattern.groups()[0], GPath(newName), num_str
 
     @conversation
     def DeleteItems(self, event=None, items=None,

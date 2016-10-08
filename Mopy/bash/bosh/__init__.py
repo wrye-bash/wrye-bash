@@ -5364,7 +5364,7 @@ class Installer(object):
     @staticmethod
     def _list_package(apath, log): raise AbstractError
 
-    def renameInstaller(self, root, numStr, data):
+    def renameInstaller(self, name_new, data):
         """Rename installer and return a three tuple specifying if a refresh in
         mods and ini lists is needed.
         :rtype: tuple
@@ -5399,8 +5399,8 @@ class InstallerMarker(Installer):
         """Install specified files to Oblivion\Data directory."""
         pass
 
-    def renameInstaller(self, root, numStr, data):
-        newName = GPath(u'==' + root.strip(u'=') + numStr + u'==')
+    def renameInstaller(self, name_new, data):
+        newName = GPath(u'==' + name_new.s.strip(u'=') + u'==')
         archive = GPath(self.archive)
         if newName == archive:
             return False
@@ -5576,9 +5576,8 @@ class InstallerArchive(Installer):
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
 
-    def renameInstaller(self, root, numStr, data):
-        newName = GPath(root + numStr + GPath(self.archive).ext)
-        return self._rename(data, newName)
+    def renameInstaller(self, name_new, data):
+        return self._rename(data, name_new.root + GPath(self.archive).ext)
 
     def open_readme(self):
         with balt.BusyCursor():
@@ -5847,9 +5846,8 @@ class InstallerProject(Installer):
                     log(u' ' * depth + entry)
         walkPath(apath.s, 0)
 
-    def renameInstaller(self, root, numStr, data):
-        newName = GPath(root + numStr)
-        return self._rename(data, newName)
+    def renameInstaller(self, name_new, data):
+        return self._rename(data, name_new)
 
     def open_readme(self):
         bass.dirs['installers'].join(self.archive, self.hasReadme).start()
@@ -5988,16 +5986,6 @@ class InstallersData(_DataStore):
             self.dictFile.save()
             self.converters_data.save()
             self.hasChanged = False
-
-    def batchRename(self, selected, root, refreshNeeded, numStr):
-        num = int(numStr or  0)
-        digits = len(str(num + len(selected)))
-        if numStr: numStr.zfill(digits)
-        for archive in selected:
-            refreshNeeded.append(
-                self[archive].renameInstaller(root, numStr, self))
-            num += 1
-            numStr = unicode(num).zfill(digits)
 
     #--Dict Functions -----------------------------------------------------------
     def delete(self, items, **kwargs):

@@ -1809,26 +1809,21 @@ class SaveList(balt.UIList):
         if not root: return
         detail_item = self.panel.GetDetailsItem()
         item_edited = detail_item.name if detail_item else None
-        newFileName = newName
         selected = self.GetSelected()
-        to_select = set(selected)
-        for index, path in enumerate(selected):
-            if bosh.saveInfos.bak_file_pattern.match(path.s): continue
-            if index:
-                newFileName = newName.replace(bush.game.ess.ext, (
-                    u'%d' % index) + bush.game.ess.ext)
-            newFileName = GPath(newFileName)
-            if newFileName != path:
-                oldPath = bosh.saveInfos.store_dir.join(path)
+        to_select = set()
+        for save_key in selected:
+            if bosh.saveInfos.bak_file_pattern.match(save_key.s): continue
+            newFileName = self.new_name(newName)
+            if newFileName != save_key:
+                oldPath = bosh.saveInfos.store_dir.join(save_key)
                 newPath = bosh.saveInfos.store_dir.join(newFileName)
                 renames = [(oldPath, newPath)]
                 renames.extend(CoSaves.get_new_paths(oldPath, newPath))
                 if not newPath.exists():
                     try:
-                        bosh.saveInfos.rename(path, newFileName)
-                        to_select.discard(path)
+                        bosh.saveInfos.rename(save_key, newFileName)
                         to_select.add(newFileName)
-                        if path == item_edited:
+                        if save_key == item_edited:
                             item_edited = newFileName
                     except (OSError, IOError):
                         deprint('Renaming %s to %s failed'
@@ -1840,10 +1835,11 @@ class SaveList(balt.UIList):
                                 new.moveTo(old)
                             if new.exists() and old.exists(): new.remove()
                         break
-        self.RefreshUI()
-        #--Reselect the items - renamed or not
-        self.SelectItemsNoCallback(to_select)
-        if item_edited: self.SelectItem(item_edited)
+        if to_select:
+            self.RefreshUI()
+            #--Reselect the renamed items
+            self.SelectItemsNoCallback(to_select)
+            if item_edited: self.SelectItem(item_edited)
         event.Veto() # needed ! clears new name from label on exception
 
     @staticmethod
@@ -2211,22 +2207,30 @@ class InstallersList(balt.UIList):
         else:
             event.Skip()
 
+    __ext_group = \
+        u'(\.(' + ur'|'.join(ext[1:] for ext in bolt.readExts) + u')+)'
     def OnLabelEdited(self, event):
         """Renamed some installers"""
         selected = self.GetSelected()
         installables = self.data_store.filterInstallables(selected)
-        validate = partial(self.validate_filename, event, has_digits=True,
+        validate = partial(self.validate_filename, event,
                            is_filename=bool(installables))
         if self.__renaming_type is bosh.InstallerArchive:
-            root, _newName, numStr = validate(ext=u'((\.(7z|rar|zip|001))+)')
+            root, newName, _numStr = validate(ext=self.__ext_group)
         else:
-            root, _newName, numStr = validate()
+            root, newName, _numStr = validate()
         if not root: return
         #--Rename each installer, keeping the old extension (for archives)
         with balt.BusyCursor():
             refreshes, ex = [(False, False, False)], None
+            newselected = []
             try:
-                self.data_store.batchRename(selected, root, refreshes, numStr)
+                for package in selected:
+                    name_new = self.new_name(newName)
+                    refreshes.append(
+                        self.data_store[package].renameInstaller(
+                            name_new, self.data_store))
+                    if refreshes[-1][0]: newselected.append(name_new)
             except (OSError, IOError) as ex:
                 pass
             finally:
@@ -2240,6 +2244,8 @@ class InstallersList(balt.UIList):
                     # startup, and never initialized
                     BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
+                #--Reselected the renamed items
+                self.SelectItemsNoCallback(newselected)
             event.Veto()
 
     @staticmethod
