@@ -49,6 +49,11 @@ Unicode true
     Var Path_SkyrimSE
     Var Path_Ex1
     Var Path_Ex2
+    Var MSVC_Sub_Key
+    Var MSVC_Installed
+    Var MSVC_Major
+    Var MSVC_Minor
+    Var MSVC_Bld
 
     ;Game specific Data:
     Var Check_OB

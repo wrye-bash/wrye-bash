@@ -1,0 +1,67 @@
+plugins:
+  - name: 'Update.esm'
+    tag:
+      - Delev
+    dirty:
+      - crc: 0x8a234131
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 235
+        udr: 91
+  - name: 'Dawnguard.esm'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+    dirty:
+      - crc: 0x51fcdc8
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 628
+        udr: 82
+        nav: 57
+      - crc: 0xd2cf128
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 6
+        nav: 57
+  - name: 'Hearthfires.esm'
+    tag:
+      - Invent
+    dirty:
+      - crc: 0xfbd3fb4c
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 178
+        udr: 11
+        nav: 5
+  - name: 'Dragonborn.esm'
+    tag:
+      - Invent
+      - Relev
+    dirty:
+      - crc: 0xc7e30215
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 69
+        udr: 8
+        nav: 1
+  - name: 'Cutting Room Floor.esp'
+    tag:
+      - C.Location
+      - C.Owner
+      - C.RecordFlags
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Stats
+  - name: 'Open Cities Skyrim.esp'
+    tag:
+      - C.Location
+  - name: 'Alternate Start - Live Another Life.esp'
+    tag:
+      - C.Location
+  - name: 'SSEMerged.esp'
+    tag:
+      - NoMerge
