@@ -309,7 +309,7 @@ def test_permissions(path, permissions='rwcd'):
 
 # Shell (OS) File Operations --------------------------------------------------
 #------------------------------------------------------------------------------
-class FileOperationError(Exception):
+class FileOperationError(OSError):
     def __init__(self, errorCode):
         self.errno = errorCode
         Exception.__init__(self, u'FileOperationError: %i' % errorCode)

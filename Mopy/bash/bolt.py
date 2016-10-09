@@ -385,14 +385,10 @@ class CancelError(BoltError):
     def __init__(self,message=u'Action aborted by user.'):
         BoltError.__init__(self, message)
 
-class SkipError(BoltError):
+class SkipError(CancelError):
     """User pressed Skipped n operations."""
-    def __init__(self,count=None,message=u'%s actions skipped by user.'):
-        if count:
-            message = message % count
-        else:
-            message = u'Action skipped by user.'
-        BoltError.__init__(self,message)
+    def __init__(self):
+        CancelError.__init__(self, u'Action skipped by user.')
 
 #------------------------------------------------------------------------------
 class PermissionError(BoltError):

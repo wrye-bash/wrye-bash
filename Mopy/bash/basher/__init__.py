@@ -1417,8 +1417,11 @@ class ModDetails(_SashDetailsPanel):
                 ):
                 return
             settings.getChanged('bash.mods.renames')[oldName] = newName
-            bosh.modInfos.rename(oldName,newName)
-            fileName = newName
+            try:
+                bosh.modInfos.rename_info(oldName, newName)
+                fileName = newName
+            except (CancelError, OSError, IOError):
+                pass
         #--Change hedr/masters?
         if changeHedr or changeMasters:
             modInfo.header.author = self.authorStr.strip()
@@ -1819,38 +1822,19 @@ class SaveList(balt.UIList):
         root, newName, _numStr = self.validate_filename(event)
         if not root: return
         detail_item = self.panel.GetDetailsItem()
-        item_edited = detail_item.name if detail_item else None
+        item_edited = [detail_item.name if detail_item else None]
         selected = [s for s in self.GetSelected() if
                     not bosh.saveInfos.bak_file_pattern.match(s.s)] # YAK !
         to_select = set()
         for save_key in selected:
             newFileName = self.new_name(newName)
-            if newFileName != save_key:
-                oldPath = bosh.saveInfos.store_dir.join(save_key)
-                newPath = bosh.saveInfos.store_dir.join(newFileName)
-                renames = [(oldPath, newPath)]
-                renames.extend(CoSaves.get_new_paths(oldPath, newPath))
-                if not newPath.exists():
-                    try:
-                        bosh.saveInfos.rename(save_key, newFileName)
-                        to_select.add(newFileName)
-                        if save_key == item_edited:
-                            item_edited = newFileName
-                    except (OSError, IOError):
-                        deprint('Renaming %s to %s failed'
-                                % (oldPath, newPath), traceback=True)
-                        ##: WindowsError:[Error 32]The process cannot access...
-                        for old, new in renames:
-                            if new.exists() and not old.exists():
-                                # some cosave move failed, restore files
-                                new.moveTo(old)
-                            if new.exists() and old.exists(): new.remove()
-                        break
+            if not self._try_rename(save_key, newFileName, to_select,
+                                    item_edited): break
         if to_select:
             self.RefreshUI()
             #--Reselect the renamed items
             self.SelectItemsNoCallback(to_select)
-            if item_edited: self.SelectItem(item_edited)
+            if item_edited[0]: self.SelectItem(item_edited[0])
         event.Veto() # needed ! clears new name from label on exception
 
     @staticmethod
@@ -2045,7 +2029,10 @@ class SaveDetails(_SashDetailsPanel):
         #--Change Name?
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
-            bosh.saveInfos.rename(oldName,newName)
+            try:
+                bosh.saveInfos.rename_info(oldName, newName)
+            except (CancelError, OSError, IOError):
+                pass
         #--Change masters?
         if changeMasters:
             saveInfo.header.masters = self.uilist.GetNewMasters()
@@ -2241,10 +2228,9 @@ class InstallersList(balt.UIList):
                 for package in selected:
                     name_new = self.new_name(newName)
                     refreshes.append(
-                        self.data_store[package].renameInstaller(
-                            name_new, self.data_store))
+                        self.data_store.rename_info(package, name_new))
                     if refreshes[-1][0]: newselected.append(name_new)
-            except (OSError, IOError) as ex:
+            except (CancelError, OSError, IOError) as ex:
                 pass
             finally:
                 refreshNeeded, modsRefresh, iniRefresh = [
@@ -3075,30 +3061,17 @@ class ScreensList(balt.UIList):
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        screensDir = bosh.screensData.store_dir
         with balt.BusyCursor():
-            newselected = []
+            to_select = set()
             for screen in selected:
                 newName = GPath(root + numStr + screen.ext)
-                newPath = screensDir.join(newName)
-                oldPath = screensDir.join(screen)
-                if not newPath.exists():
-                    try:
-                        oldPath.moveTo(newPath)
-                        newselected.append(newName)
-                    except (OSError, IOError):
-                        deprint('Renaming %s to %s failed'
-                                % (oldPath, newPath), traceback=True)
-                        ##: WindowsError:[Error 32]The process cannot access...
-                        if newPath.exists() and oldPath.exists():
-                            newPath.remove()
-                        break
+                if not self._try_rename(screen, newName, to_select): break
                 num += 1
                 numStr = unicode(num).zfill(digits)
-            bosh.screensData.refresh()
-            self.RefreshUI()
-            #--Reselected the renamed items
-            self.SelectItemsNoCallback(newselected)
+            if to_select:
+                self.RefreshUI()
+                #--Reselected the renamed items
+                self.SelectItemsNoCallback(to_select)
             event.Veto()
 
     def OnChar(self,event):
@@ -3298,7 +3271,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         #--Change Name?
         if changeName:
             (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
-            bosh.bsaInfos.rename(oldName,newName)
+            bosh.bsaInfos.rename_info(oldName, newName)
         #--Done
         try:
             bosh.bsaInfos.refreshFile(BSAInfo.name)

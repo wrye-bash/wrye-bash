@@ -1889,6 +1889,18 @@ class UIList(wx.Panel):
         (self.__gList.GetEditControl()).SetSelection(0, to)
     def OnLabelEdited(self,event): event.Skip()
 
+    def _try_rename(self, key, newFileName, to_select, item_edited=None):
+        newPath = self.data_store.store_dir.join(newFileName)
+        if not newPath.exists():
+            try:
+                self.data_store.rename_info(key, newFileName)
+                to_select.add(newFileName)
+                if item_edited and key == item_edited[0]:
+                    item_edited[0] = newFileName
+            except (CancelError, OSError, IOError):
+                return False # break
+        return True # continue
+
     def _getItemClicked(self, event, on_icon=False):
         (hitItem, hitFlag) = self.__gList.HitTest(event.GetPosition())
         if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
