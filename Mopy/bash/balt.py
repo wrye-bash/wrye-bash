@@ -2111,10 +2111,12 @@ class UIList(wx.Panel):
             if index != -1:
                 self.__gList.EditLabel(index)
 
-    def validate_filename(self, event, has_digits=False, ext=u'',
-                          is_filename=True):
-        if event.IsEditCancelled(): return None, None, None
-        newName = event.GetLabel()
+    def validate_filename(self, event, name_new=None, has_digits=False,
+                          ext=u'', is_filename=True):
+        if name_new is None:
+            if event.IsEditCancelled(): return None, None, None
+            newName = event.GetLabel()
+        else: newName = name_new
         if not newName:
             msg = _(u'Empty name !')
             maPattern = None
@@ -2136,7 +2138,7 @@ class UIList(wx.Panel):
                 maPattern = rePattern.match(newName)
         if not maPattern:
             showError(self, msg)
-            event.Veto()
+            if event: event.Veto()
             return None, None, None
         num_str = maPattern.groups()[1] if has_digits else None
         return maPattern.groups()[0], GPath(newName), num_str

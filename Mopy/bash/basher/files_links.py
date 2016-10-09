@@ -130,7 +130,8 @@ class File_Duplicate(ItemLink):
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
             (root, ext) = to_duplicate.rootExt
-            if ext.lower() == u'.bak': ext = bush.game.ess.ext
+            if bosh.saveInfos.bak_file_pattern.match(to_duplicate.s):
+                continue #YAK!
             (destDir, wildcard) = (fileInfo.dir, u'*' + ext)
             destName = self.window.new_path(GPath(root + u' Copy' + ext),
                                             destDir)

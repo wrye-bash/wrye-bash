@@ -1311,6 +1311,9 @@ class ModDetails(_SashDetailsPanel):
         if fileStr[-4:].lower() != self.fileStr[-4:].lower():
             balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
             self.file.SetValue(self.fileStr)
+        #--Validate the filename - no need to check for extension again
+        elif not BashFrame.modList.validate_filename(None, fileStr)[0]:
+            self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.modInfo.dir.join(fileStr).exists():
             balt.showError(self,_(u"File %s already exists.") % fileStr)
@@ -1800,19 +1803,27 @@ class SaveList(balt.UIList):
                                                        'pcLocation')),
     ])
 
-    __ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + bush.game.ess.ext[
-                                                           1:-1] + u'r' + u'))'
+    __ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + \
+                  bush.game.ess.ext[1:-1] + u'r' + u'))' # add bak !!!
+    def validate_filename(self, event, name_new=None, has_digits=False,
+                          ext=u'', is_filename=True, _old_path=None):
+        if _old_path and bosh.saveInfos.bak_file_pattern.match(_old_path.s): ##: YAK add cosave support for bak
+            balt.showError(self, _(u'Renaming bak files is not supported.'))
+            return None, None, None
+        return super(SaveList, self).validate_filename(event, name_new,
+            has_digits=has_digits, ext=self.__ext_group,
+            is_filename=is_filename)
+
     def OnLabelEdited(self, event):
         """Savegame renamed."""
-        root, newName, _numStr = self.validate_filename(event,
-                                                        ext=self.__ext_group)
+        root, newName, _numStr = self.validate_filename(event)
         if not root: return
         detail_item = self.panel.GetDetailsItem()
         item_edited = detail_item.name if detail_item else None
-        selected = self.GetSelected()
+        selected = [s for s in self.GetSelected() if
+                    not bosh.saveInfos.bak_file_pattern.match(s.s)] # YAK !
         to_select = set()
         for save_key in selected:
-            if bosh.saveInfos.bak_file_pattern.match(save_key.s): continue
             newFileName = self.new_name(newName)
             if newFileName != save_key:
                 oldPath = bosh.saveInfos.store_dir.join(save_key)
@@ -2003,8 +2014,10 @@ class SaveDetails(_SashDetailsPanel):
         fileStr = self.file.GetValue()
         if fileStr == self.fileStr: return
         #--Extension Changed?
-        if self.fileStr[-4:].lower() not in (bush.game.ess.ext, u'.bak'):
+        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
             balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
+        elif not BashFrame.saveList.validate_filename(None, fileStr,
+                _old_path=self.saveInfo.name)[0]:
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.saveInfo.dir.join(fileStr).exists():
@@ -3261,8 +3274,10 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         fileStr = self.file.GetValue()
         if fileStr == self.fileStr: return
         #--Extension Changed?
-        if self.fileStr[-4:].lower() != u'.bsa':
+        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
             balt.showError(self,_(u'Incorrect file extension: ')+fileStr[-3:])
+            self.file.SetValue(self.fileStr)
+        elif not self.bsaList.validate_filename(None, fileStr)[0]:
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.BSAInfo.dir.join(fileStr).exists():
