@@ -385,14 +385,10 @@ class CancelError(BoltError):
     def __init__(self,message=u'Action aborted by user.'):
         BoltError.__init__(self, message)
 
-class SkipError(BoltError):
+class SkipError(CancelError):
     """User pressed Skipped n operations."""
-    def __init__(self,count=None,message=u'%s actions skipped by user.'):
-        if count:
-            message = message % count
-        else:
-            message = u'Action skipped by user.'
-        BoltError.__init__(self,message)
+    def __init__(self):
+        CancelError.__init__(self, u'Action skipped by user.')
 
 #------------------------------------------------------------------------------
 class PermissionError(BoltError):
@@ -516,6 +512,7 @@ class Path(object):
 
     #--Class Vars/Methods -------------------------------------------
     sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
+    invalid_chars_re = re.compile(ur'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
     def getNorm(name):
@@ -539,6 +536,12 @@ class Path(object):
     def setcwd(self):
         """Set cwd."""
         os.chdir(self._s)
+
+    @staticmethod
+    def has_invalid_chars(string):
+        match = Path.invalid_chars_re.match(string)
+        if not match: return None
+        return match.groups()[1]
 
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced

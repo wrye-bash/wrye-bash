@@ -36,7 +36,8 @@ from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
-from ..bolt import GPath, ArgumentError, SubProgress, BoltError, formatInteger
+from ..bolt import GPath, ArgumentError, SubProgress, BoltError, formatInteger, \
+    CancelError
 from ..bosh import faces
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
@@ -369,7 +370,10 @@ class Save_Renumber(EnabledLink):
             newFileName = u"%s%d%s" % (maPattern[0],newNumber,maPattern[2])
             if newFileName != name.s:
                 new_file_path = GPath(newFileName)
-                bosh.saveInfos.rename(name, new_file_path)
+                try:
+                    bosh.saveInfos.rename_info(name, new_file_path)
+                except (CancelError, OSError, IOError):
+                    break
                 newNumber += 1
                 to_select.append(new_file_path)
         if to_select:

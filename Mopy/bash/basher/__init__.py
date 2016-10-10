@@ -1311,6 +1311,9 @@ class ModDetails(_SashDetailsPanel):
         if fileStr[-4:].lower() != self.fileStr[-4:].lower():
             balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
             self.file.SetValue(self.fileStr)
+        #--Validate the filename - no need to check for extension again
+        elif not BashFrame.modList.validate_filename(None, fileStr)[0]:
+            self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.modInfo.dir.join(fileStr).exists():
             balt.showError(self,_(u"File %s already exists.") % fileStr)
@@ -1405,14 +1408,20 @@ class ModDetails(_SashDetailsPanel):
             oldName,newName = modInfo.name,GPath(self.fileStr.strip())
             #--Bad name?
             if (bosh.modInfos.isBadFileName(newName.s) and
-                not balt.askContinue(self,_(u'File name %s cannot be encoded to ASCII.  %s may not be able to activate this plugin because of this.  Do you want to rename the plugin anyway?')
+                not balt.askContinue(self,_(
+                    u'File name %s cannot be encoded to ASCII.  %s may not be '
+                    u'able to activate this plugin because of this.  Do you '
+                    u'want to rename the plugin anyway?')
                                      % (newName.s,bush.game.displayName),
                                      'bash.rename.isBadFileName.continue')
                 ):
                 return
             settings.getChanged('bash.mods.renames')[oldName] = newName
-            bosh.modInfos.rename(oldName,newName)
-            fileName = newName
+            try:
+                bosh.modInfos.rename_info(oldName, newName)
+                fileName = newName
+            except (CancelError, OSError, IOError):
+                pass
         #--Change hedr/masters?
         if changeHedr or changeMasters:
             modInfo.header.author = self.authorStr.strip()
@@ -1797,56 +1806,35 @@ class SaveList(balt.UIList):
                                                        'pcLocation')),
     ])
 
+    __ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + \
+                  bush.game.ess.ext[1:-1] + u'r' + u'))' # add bak !!!
+    def validate_filename(self, event, name_new=None, has_digits=False,
+                          ext=u'', is_filename=True, _old_path=None):
+        if _old_path and bosh.saveInfos.bak_file_pattern.match(_old_path.s): ##: YAK add cosave support for bak
+            balt.showError(self, _(u'Renaming bak files is not supported.'))
+            return None, None, None
+        return super(SaveList, self).validate_filename(event, name_new,
+            has_digits=has_digits, ext=self.__ext_group,
+            is_filename=is_filename)
+
     def OnLabelEdited(self, event):
         """Savegame renamed."""
-        if event.IsEditCancelled(): return
-        #--File Info
-        newName = event.GetLabel()
+        root, newName, _numStr = self.validate_filename(event)
+        if not root: return
         detail_item = self.panel.GetDetailsItem()
-        item_edited = detail_item.name if detail_item else None
-        if not newName.lower().endswith(bush.game.ess.ext):
-            newName += bush.game.ess.ext
-        rePattern = re.compile(ur'^[^/\\:*?"<>|]+?$', re.I | re.U)
-        maPattern = rePattern.match(newName)
-        if not maPattern:
-            balt.showError(self, _(u'Bad extension or file root: ') + newName)
-            event.Veto()
-            return
-        newFileName = newName
-        selected = self.GetSelected()
-        to_select = set(selected)
-        for index, path in enumerate(selected):
-            if bosh.saveInfos.bak_file_pattern.match(path.s): continue
-            if index:
-                newFileName = newName.replace(bush.game.ess.ext, (
-                    u'%d' % index) + bush.game.ess.ext)
-            newFileName = GPath(newFileName)
-            if newFileName != path:
-                oldPath = bosh.saveInfos.store_dir.join(path)
-                newPath = bosh.saveInfos.store_dir.join(newFileName)
-                renames = [(oldPath, newPath)]
-                renames.extend(CoSaves.get_new_paths(oldPath, newPath))
-                if not newPath.exists():
-                    try:
-                        bosh.saveInfos.rename(path, newFileName)
-                        to_select.discard(path)
-                        to_select.add(newFileName)
-                        if path == item_edited:
-                            item_edited = newFileName
-                    except (OSError, IOError):
-                        deprint('Renaming %s to %s failed'
-                                % (oldPath, newPath), traceback=True)
-                        ##: WindowsError:[Error 32]The process cannot access...
-                        for old, new in renames:
-                            if new.exists() and not old.exists():
-                                # some cosave move failed, restore files
-                                new.moveTo(old)
-                            if new.exists() and old.exists(): new.remove()
-                        break
-        self.RefreshUI(files=to_select)
-        #--Reselect the items - renamed or not
-        self.SelectItemsNoCallback(to_select)
-        if item_edited: self.SelectItem(item_edited)
+        item_edited = [detail_item.name if detail_item else None]
+        selected = [s for s in self.GetSelected() if
+                    not bosh.saveInfos.bak_file_pattern.match(s.s)] # YAK !
+        to_select = set()
+        for save_key in selected:
+            newFileName = self.new_name(newName)
+            if not self._try_rename(save_key, newFileName, to_select,
+                                    item_edited): break
+        if to_select:
+            self.RefreshUI()
+            #--Reselect the renamed items
+            self.SelectItemsNoCallback(to_select)
+            if item_edited[0]: self.SelectItem(item_edited[0])
         event.Veto() # needed ! clears new name from label on exception
 
     @staticmethod
@@ -2010,8 +1998,10 @@ class SaveDetails(_SashDetailsPanel):
         fileStr = self.file.GetValue()
         if fileStr == self.fileStr: return
         #--Extension Changed?
-        if self.fileStr[-4:].lower() not in (bush.game.ess.ext, u'.bak'):
+        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
             balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
+        elif not BashFrame.saveList.validate_filename(None, fileStr,
+                _old_path=self.saveInfo.name)[0]:
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.saveInfo.dir.join(fileStr).exists():
@@ -2039,7 +2029,10 @@ class SaveDetails(_SashDetailsPanel):
         #--Change Name?
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
-            bosh.saveInfos.rename(oldName,newName)
+            try:
+                bosh.saveInfos.rename_info(oldName, newName)
+            except (CancelError, OSError, IOError):
+                pass
         #--Change masters?
         if changeMasters:
             saveInfo.header.masters = self.uilist.GetNewMasters()
@@ -2163,13 +2156,16 @@ class InstallersList(balt.UIList):
         #--TODO: add mouse  mouse tips
         self.mouseTexts[item] = text
 
+    __renaming_type = None # type of items currently being renamed
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
         to_rename = self.GetSelected()
         #--Only rename multiple items of the same type
-        installer_type = type(self.data_store[to_rename[0]])
+        self.__renaming_type = type(self.data_store[to_rename[0]])
         for item in to_rename[1:]:
-            if not isinstance(self.data_store[item], installer_type):
+            if not isinstance(self.data_store[item], self.__renaming_type):
+                balt.showError(self, _(
+                    u"Bash can't rename mixed installers types"))
                 event.Veto()
                 return
             #--Also, don't allow renaming the 'Last' marker
@@ -2178,11 +2174,11 @@ class InstallersList(balt.UIList):
                 return
         self.edit_control.Bind(wx.EVT_CHAR, self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
-        if installer_type is bosh.InstallerMarker:
+        if self.__renaming_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
             self.edit_control.SetSelection(2, to)
         #--Archives, change the selection to not include the extension
-        elif installer_type is bosh.InstallerArchive:
+        elif self.__renaming_type is bosh.InstallerArchive:
             super(InstallersList, self).OnBeginEditLabel(event)
 
     def _OnEditLabelChar(self, event):
@@ -2201,10 +2197,9 @@ class InstallersList(balt.UIList):
                 lenNextLower = lenWithExt
             else:
                 lenNextLower = len(textNextLower.s)
-            selected = self.data_store[self.GetSelected()[0]]
-            if isinstance(selected, bosh.InstallerArchive):
+            if self.__renaming_type is bosh.InstallerArchive:
                 selection_span = (0, lenNextLower)
-            elif isinstance(selected, bosh.InstallerMarker):
+            elif self.__renaming_type is bosh.InstallerMarker:
                 selection_span = (2, lenWithExt - 2)
             else:
                 selection_span = (0, lenWithExt)
@@ -2212,22 +2207,30 @@ class InstallersList(balt.UIList):
         else:
             event.Skip()
 
+    __ext_group = \
+        u'(\.(' + ur'|'.join(ext[1:] for ext in bolt.readExts) + u')+)'
     def OnLabelEdited(self, event):
         """Renamed some installers"""
-        if event.IsEditCancelled(): return
-        newName = event.GetLabel()
         selected = self.GetSelected()
-        maPattern = self.data_store[selected[0]].match_valid_name(newName)
-        if not maPattern:
-            balt.showError(self, _(u'Bad extension or file root: ') + newName)
-            event.Veto()
-            return
+        installables = self.data_store.filterInstallables(selected)
+        validate = partial(self.validate_filename, event,
+                           is_filename=bool(installables))
+        if self.__renaming_type is bosh.InstallerArchive:
+            root, newName, _numStr = validate(ext=self.__ext_group)
+        else:
+            root, newName, _numStr = validate()
+        if not root: return
         #--Rename each installer, keeping the old extension (for archives)
         with balt.BusyCursor():
             refreshes, ex = [(False, False, False)], None
+            newselected = []
             try:
-                self.data_store.batchRename(selected, maPattern, refreshes)
-            except (OSError, IOError) as ex:
+                for package in selected:
+                    name_new = self.new_name(newName)
+                    refreshes.append(
+                        self.data_store.rename_info(package, name_new))
+                    if refreshes[-1][0]: newselected.append(name_new)
+            except (CancelError, OSError, IOError) as ex:
                 pass
             finally:
                 refreshNeeded, modsRefresh, iniRefresh = [
@@ -2240,6 +2243,8 @@ class InstallersList(balt.UIList):
                     # startup, and never initialized
                     BashFrame.iniList.RefreshUI()
                 self.RefreshUI()
+                #--Reselected the renamed items
+                self.SelectItemsNoCallback(newselected)
             event.Veto()
 
     @staticmethod
@@ -3044,48 +3049,29 @@ class ScreensList(balt.UIList):
         if not hitItem: return
         self.OpenSelected(selected=[hitItem])
 
+    __ext_group = \
+        u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
     def OnLabelEdited(self, event):
-        """Renamed a screenshot"""
-        if event.IsEditCancelled(): return
-        newName = event.GetLabel()
+        """Rename selected screenshots."""
+        root, _newName, numStr = self.validate_filename(event, has_digits=True,
+                                                        ext=self.__ext_group)
+        if not root: return
         selected = self.GetSelected()
-        rePattern = re.compile(
-            ur'^([^/\\:*?"<>|]+?)(\d*)((\.(jpg|jpeg|png|tif|bmp))+)$',
-            re.I | re.U)
-        maPattern = rePattern.match(newName)
-        if not maPattern:
-            balt.showError(self,_(u'Bad extension or file root: ')+newName)
-            event.Veto()
-            return
-        root,numStr = maPattern.groups()[:2]
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)
         digits = len(str(num + len(selected)))
         if numStr: numStr.zfill(digits)
-        screensDir = bosh.screensData.store_dir
         with balt.BusyCursor():
-            newselected = []
+            to_select = set()
             for screen in selected:
                 newName = GPath(root + numStr + screen.ext)
-                newPath = screensDir.join(newName)
-                oldPath = screensDir.join(screen)
-                if not newPath.exists():
-                    try:
-                        oldPath.moveTo(newPath)
-                        newselected.append(newName)
-                    except (OSError, IOError):
-                        deprint('Renaming %s to %s failed'
-                                % (oldPath, newPath), traceback=True)
-                        ##: WindowsError:[Error 32]The process cannot access...
-                        if newPath.exists() and oldPath.exists():
-                            newPath.remove()
-                        break
+                if not self._try_rename(screen, newName, to_select): break
                 num += 1
                 numStr = unicode(num).zfill(digits)
-            bosh.screensData.refresh()
-            self.RefreshUI()
-            #--Reselected the renamed items
-            self.SelectItemsNoCallback(newselected)
+            if to_select:
+                self.RefreshUI()
+                #--Reselected the renamed items
+                self.SelectItemsNoCallback(to_select)
             event.Veto()
 
     def OnChar(self,event):
@@ -3261,8 +3247,10 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         fileStr = self.file.GetValue()
         if fileStr == self.fileStr: return
         #--Extension Changed?
-        if self.fileStr[-4:].lower() != u'.bsa':
+        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
             balt.showError(self,_(u'Incorrect file extension: ')+fileStr[-3:])
+            self.file.SetValue(self.fileStr)
+        elif not self.bsaList.validate_filename(None, fileStr)[0]:
             self.file.SetValue(self.fileStr)
         #--Else file exists?
         elif self.BSAInfo.dir.join(fileStr).exists():
@@ -3283,7 +3271,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         #--Change Name?
         if changeName:
             (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
-            bosh.bsaInfos.rename(oldName,newName)
+            bosh.bsaInfos.rename_info(oldName, newName)
         #--Done
         try:
             bosh.bsaInfos.refreshFile(BSAInfo.name)

@@ -23,6 +23,8 @@
 # =============================================================================
 
 # Imports ---------------------------------------------------------------------
+import re
+
 import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
@@ -1887,6 +1889,18 @@ class UIList(wx.Panel):
         (self.__gList.GetEditControl()).SetSelection(0, to)
     def OnLabelEdited(self,event): event.Skip()
 
+    def _try_rename(self, key, newFileName, to_select, item_edited=None):
+        newPath = self.data_store.store_dir.join(newFileName)
+        if not newPath.exists():
+            try:
+                self.data_store.rename_info(key, newFileName)
+                to_select.add(newFileName)
+                if item_edited and key == item_edited[0]:
+                    item_edited[0] = newFileName
+            except (CancelError, OSError, IOError):
+                return False # break
+        return True # continue
+
     def _getItemClicked(self, event, on_icon=False):
         (hitItem, hitFlag) = self.__gList.HitTest(event.GetPosition())
         if hitItem < 0 or (on_icon and hitFlag != wx.LIST_HITTEST_ONITEMICON):
@@ -2108,6 +2122,38 @@ class UIList(wx.Panel):
             index = self.GetIndex(selected[0])
             if index != -1:
                 self.__gList.EditLabel(index)
+
+    def validate_filename(self, event, name_new=None, has_digits=False,
+                          ext=u'', is_filename=True):
+        if name_new is None:
+            if event.IsEditCancelled(): return None, None, None
+            newName = event.GetLabel()
+        else: newName = name_new
+        if not newName:
+            msg = _(u'Empty name !')
+            maPattern = None
+        else:
+            char = is_filename and bolt.Path.has_invalid_chars(newName)
+            if char:
+                msg = _(u'%(new_name)s contains invalid character (%(char)s)'
+                        ) % {'new_name': newName, 'char': char}
+                maPattern = None
+            else:
+                msg = _(u'Bad extension or file root: ') + newName
+                if ext: # require at least one char before extension
+                    regex = u'^(?=.+\.)(.*?)'
+                else:
+                    regex = u'^(.*?)'
+                if has_digits: regex += u'(\d*)'
+                regex += ext + u'$'
+                rePattern = re.compile(regex, re.I | re.U)
+                maPattern = rePattern.match(newName)
+        if not maPattern:
+            showError(self, msg)
+            if event: event.Veto()
+            return None, None, None
+        num_str = maPattern.groups()[1] if has_digits else None
+        return maPattern.groups()[0], GPath(newName), num_str
 
     @conversation
     def DeleteItems(self, event=None, items=None,

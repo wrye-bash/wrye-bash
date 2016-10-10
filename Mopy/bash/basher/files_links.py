@@ -23,10 +23,10 @@
 # =============================================================================
 
 import re
-from .. import bass, balt, bosh, bush, bolt, env
-from ..balt import ItemLink, RadioLink, ChoiceLink, Link, OneItemLink
+from .. import bass, balt, bosh, bush, bolt
+from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
 from ..bass import Resources
-from ..bolt import CancelError, SkipError, GPath, formatDate
+from ..bolt import GPath, formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
            'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',
@@ -130,7 +130,8 @@ class File_Duplicate(ItemLink):
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
             (root, ext) = to_duplicate.rootExt
-            if ext.lower() == u'.bak': ext = bush.game.ess.ext
+            if bosh.saveInfos.bak_file_pattern.match(to_duplicate.s):
+                continue #YAK!
             (destDir, wildcard) = (fileInfo.dir, u'*' + ext)
             destName = self.window.new_path(GPath(root + u' Copy' + ext),
                                             destDir)

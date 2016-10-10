@@ -105,6 +105,7 @@ _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
 reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
+imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
@@ -2947,6 +2948,35 @@ class _DataStore(DataDict):
         return deleted
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
+    # Renaming
+    def rename_info(self, oldName, newName):
+        try:
+            self._rename_operation(oldName, newName)
+        except (CancelError, OSError, IOError):
+            deprint(u'Renaming %s to %s failed' % (oldName, newName),
+                    traceback=True)
+            # When using moveTo I would get "WindowsError:[Error 32]The process
+            # cannot access ..." -  the code below was reverting the changes.
+            # With shellMove I mostly get CancelError so below not needed -
+            # except if a save is locked and user presses Skip - so cosaves are
+            # renamed! Error handling is still a WIP
+            for old, new in self._get_rename_paths(oldName, newName):
+                if new.exists() and not old.exists():
+                    # some cosave move failed, restore files
+                    new.moveTo(old)
+                if new.exists() and old.exists():
+                    # move copies then deletes, so the delete part failed
+                    new.remove()
+            raise
+
+    def _rename_operation(self, oldName, newName):
+        rename_paths = self._get_rename_paths(oldName, newName)
+        for tup in rename_paths[1:]: # if cosaves do not exist shellMove fails!
+            if not tup[0].exists(): rename_paths.remove(tup)
+        env.shellMove(*zip(*rename_paths))
+
+    def _get_rename_paths(self, oldName, newName):
+        return [tuple(map(self.store_dir.join, (oldName, newName)))]
 
     @property
     def bash_dir(self):
@@ -3068,18 +3098,19 @@ class FileInfos(_DataStore):
         """
         return cls.file_pattern.search(u'%s' % fileName)
 
+    def _get_rename_paths(self, oldName, newName):
+        return [(self[oldName].getPath(), self.store_dir.join(newName))]
+
     #--Rename
-    def rename(self,oldName,newName):
+    def _rename_operation(self, oldName, newName):
         """Renames member file from oldName to newName."""
         #--Update references
         fileInfo = self[oldName]
         #--File system
-        newPath = self.store_dir.join(newName)
         try:
-            if fileInfo.isGhost: newPath += u'.ghost'
+            if fileInfo.isGhost: newName += u'.ghost'
         except AttributeError: pass # not a mod info
-        oldPath = fileInfo.getPath()
-        env.shellMove(oldPath, newPath, parent=None)
+        _DataStore._rename_operation(self, oldName, newName)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -3986,11 +4017,11 @@ class ModInfos(FileInfos):
         self._lo_wip = [x for x in self._lo_wip if x not in to_remove]
         self._active_wip  = [x for x in self._active_wip if x not in to_remove]
 
-    def rename(self,oldName,newName):
+    def _rename_operation(self, oldName, newName):
         """Renames member file from oldName to newName."""
         isSelected = load_order.isActiveCached(oldName)
         if isSelected: self.lo_deactivate(oldName, doSave=False) # will save later
-        FileInfos.rename(self,oldName,newName)
+        FileInfos._rename_operation(self, oldName, newName)
         # rename in load order caches
         oldIndex = self._lo_wip.index(oldName)
         self._lo_caches_remove_mods([oldName])
@@ -4194,10 +4225,10 @@ class SaveInfos(FileInfos):
         kwargs['backupDir'] = self.bash_dir.join('Backups')
         CoSaves(self.store_dir, fileName).delete(**kwargs)
 
-    def rename(self,oldName,newName):
-        """Renames member file from oldName to newName."""
-        FileInfos.rename(self,oldName,newName)
-        CoSaves(self.store_dir, oldName).move(self.store_dir, newName)
+    def _get_rename_paths(self, oldName, newName):
+        renames = [tuple(map(self.store_dir.join, (oldName, newName)))]
+        renames.extend(CoSaves.get_new_paths(*renames[0]))
+        return renames
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated pluggy file."""
@@ -4278,8 +4309,11 @@ class SaveInfos(FileInfos):
             return fileName
         (root,ext) = fileName.rootExt
         newName = root + (bush.game.ess.ext if value else ext[:-1] + u'r')
-        self.rename(fileName,newName)
-        return newName
+        try:
+            self.rename_info(fileName, newName)
+            return newName
+        except (CancelError, OSError, IOError):
+            return fileName
 
 #------------------------------------------------------------------------------
 class BSAInfos(FileInfos):
@@ -4366,7 +4400,9 @@ class PeopleData(_DataStore):
 
 #------------------------------------------------------------------------------
 class ScreensData(_DataStore):
-    reImageExt = re.compile(ur'\.(bmp|jpg|jpeg|png|tif|gif)$', re.I | re.U)
+    reImageExt = re.compile(
+        ur'\.(' + ur'|'.join(ext[1:] for ext in imageExts) + ur')$',
+        re.I | re.U)
 
     def __init__(self):
         self.store_dir = dirs['app']
@@ -4403,6 +4439,11 @@ class ScreensData(_DataStore):
 
     def delete_Refresh(self, deleted, check_existence=False): self.refresh()
 
+    def _rename_operation(self, oldName, newName):
+        _DataStore._rename_operation(self, oldName, newName)
+        self[newName] = self[oldName]
+        del self[oldName]
+
 #------------------------------------------------------------------------------
 os_sep = unicode(os.path.sep)
 class Installer(object):
@@ -4433,12 +4474,10 @@ class Installer(object):
     reReadMe = re.compile(
         ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
         ur'(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
-    reValidNamePattern = re.compile(ur'^([^/\\:*?"<>|]+?)(\d*)$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
     skipExts.update(set(readExts))
-    imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp'}
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
     #--Regular game directories - needs update after bush.game has been set
@@ -4762,7 +4801,7 @@ class Installer(object):
             Installer._global_start_skips.append(bush.game.se.shortName.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if settings['bash.installers.skipImages']:
-            Installer._global_skip_extensions |= Installer.imageExts
+            Installer._global_skip_extensions |= imageExts
         Installer._init_executables_skips()
 
     @staticmethod
@@ -4941,7 +4980,6 @@ class Installer(object):
         archiveRoot = GPath(self.archive).sroot if isinstance(self,
                 InstallerArchive) else self.archive
         docExts = self.docExts
-        imageExts = self.imageExts
         docDirs = self.docDirs
         dataDirsPlus = self.dataDirsPlus
         dataDirsMinus = self.dataDirsMinus
@@ -5278,42 +5316,29 @@ class Installer(object):
         return self.status != oldStatus or self.underrides != oldUnderrides
 
     #--Utility methods --------------------------------------------------------
-    def match_valid_name(self, newName):
-        return self.reValidNamePattern.match(newName)
-
     def size_or_mtime_changed(self, apath):
         return (self.size, self.modified) != apath.size_mtime()
 
-    @staticmethod
-    def _rename(archive, data, newName):
+    def _installer_rename(self, data, newName):
         """Rename package or project."""
-        installer = data[archive]
-        if newName != archive:
+        g_path = GPath(self.archive)
+        if newName != g_path:
             newPath = dirs['installers'].join(newName)
             if not newPath.exists():
-                oldPath = dirs['installers'].join(archive)
-                try:
-                    oldPath.moveTo(newPath)
-                except (OSError, IOError):
-                    deprint('Renaming %s to %s failed' % (oldPath, newPath),
-                            traceback=True)
-                    ##: WindowsError: [Error 32] The process cannot access...
-                    if newPath.exists() and oldPath.exists():
-                        newPath.remove()
-                    raise
-                installer.archive = newName.s
+                _DataStore._rename_operation(data, g_path, newName)
                 #--Add the new archive to Bash and remove old one
-                data[newName] = installer
-                del data[archive]
+                data[newName] = self
+                del data[g_path]
                 #--Update the iniInfos & modInfos for 'installer'
                 mfiles = [x for x in modInfos.table.getColumn('installer') if
-                          modInfos.table[x]['installer'] == oldPath.stail]
+                          modInfos.table[x]['installer'] == self.archive]
                 ifiles = [x for x in iniInfos.table.getColumn('installer') if
-                          iniInfos.table[x]['installer'] == oldPath.stail]
+                          iniInfos.table[x]['installer'] == self.archive]
+                self.archive = newName.s # don't forget to rename !
                 for i in mfiles:
-                    modInfos.table[i]['installer'] = newPath.stail
+                    modInfos.table[i]['installer'] = self.archive
                 for i in ifiles:
-                    iniInfos.table[i]['installer'] = newPath.stail
+                    iniInfos.table[i]['installer'] = self.archive
                 return True, bool(mfiles), bool(ifiles)
         return False, False, False
 
@@ -5368,7 +5393,7 @@ class Installer(object):
     @staticmethod
     def _list_package(apath, log): raise AbstractError
 
-    def renameInstaller(self, archive, root, numStr, data):
+    def renameInstaller(self, name_new, data):
         """Rename installer and return a three tuple specifying if a refresh in
         mods and ini lists is needed.
         :rtype: tuple
@@ -5380,7 +5405,6 @@ class InstallerMarker(Installer):
     """Represents a marker installer entry."""
     __slots__ = tuple() #--No new slots
     type_string = _(u'Marker')
-    reValidNamePattern = re.compile(ur'^(.+?)(\d*)$', re.I | re.U)
 
     def __init__(self,archive):
         Installer.__init__(self,archive)
@@ -5404,14 +5428,14 @@ class InstallerMarker(Installer):
         """Install specified files to Oblivion\Data directory."""
         pass
 
-    def renameInstaller(self, archive, root, numStr, data):
-        installer = data[archive]
-        newName = GPath(u'==' + root.strip(u'=') + numStr + u'==')
+    def renameInstaller(self, name_new, data):
+        newName = GPath(u'==' + name_new.s.strip(u'=') + u'==')
+        archive = GPath(self.archive)
         if newName == archive:
             return False
         #--Add the marker to Bash and remove old one
-        installer.archive = newName.s
-        data[newName] = installer
+        self.archive = newName.s
+        data[newName] = self
         del data[archive]
         return True, False, False
 
@@ -5425,8 +5449,6 @@ class InstallerArchiveError(bolt.BoltError): pass
 class InstallerArchive(Installer):
     """Represents an archive installer entry."""
     __slots__ = tuple() #--No new slots
-    reValidNamePattern = re.compile(
-        ur'^([^/\\:*?"<>|]+?)(\d*)((\.(7z|rar|zip|001))+)$', re.I | re.U)
     type_string = _(u'Archive')
 
     #--File Operations --------------------------------------------------------
@@ -5583,9 +5605,9 @@ class InstallerArchive(Installer):
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
 
-    def renameInstaller(self, archive, root, numStr, data):
-        newName = GPath(root + numStr + archive.ext)
-        return self._rename(archive, data, newName)
+    def renameInstaller(self, name_new, data):
+        return self._installer_rename(data,
+                                      name_new.root + GPath(self.archive).ext)
 
     def open_readme(self):
         with balt.BusyCursor():
@@ -5854,9 +5876,8 @@ class InstallerProject(Installer):
                     log(u' ' * depth + entry)
         walkPath(apath.s, 0)
 
-    def renameInstaller(self, archive, root, numStr, data):
-        newName = GPath(root + numStr)
-        return self._rename(archive, data, newName)
+    def renameInstaller(self, name_new, data):
+        return self._installer_rename(data, name_new)
 
     def open_readme(self):
         bass.dirs['installers'].join(self.archive, self.hasReadme).start()
@@ -5996,16 +6017,8 @@ class InstallersData(_DataStore):
             self.converters_data.save()
             self.hasChanged = False
 
-    def batchRename(self, selected, maPattern, refreshNeeded):
-        root, numStr = maPattern.groups()[:2]
-        num = int(numStr or  0)
-        digits = len(str(num + len(selected)))
-        if numStr: numStr.zfill(digits)
-        for archive in selected:
-            refreshNeeded.append(
-                self[archive].renameInstaller(archive, root, numStr, self))
-            num += 1
-            numStr = unicode(num).zfill(digits)
+    def _rename_operation(self, oldName, newName):
+        return self[oldName].renameInstaller(newName, self)
 
     #--Dict Functions -----------------------------------------------------------
     def delete(self, items, **kwargs):

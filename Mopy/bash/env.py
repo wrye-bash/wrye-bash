@@ -309,7 +309,7 @@ def test_permissions(path, permissions='rwcd'):
 
 # Shell (OS) File Operations --------------------------------------------------
 #------------------------------------------------------------------------------
-class FileOperationError(Exception):
+class FileOperationError(OSError):
     def __init__(self, errorCode):
         self.errno = errorCode
         Exception.__init__(self, u'FileOperationError: %i' % errorCode)
@@ -353,7 +353,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     for i, path in enumerate(source):
         # just care for the star we feed it in Installer._move
         if path.s[-1] == u'*':
-            base_dir = GPath(source[-1].s[:-1]) # chop off the star
+            base_dir = GPath(source[i].s[:-1]) # chop off the star
             for j, item in enumerate(_os.listdir(base_dir.s)):
                 new_source.append(base_dir.join(item))
                 target[i + j: i + j] = [target[i]] # copy the target along
