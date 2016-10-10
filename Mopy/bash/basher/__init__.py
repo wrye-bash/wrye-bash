@@ -1143,6 +1143,9 @@ class _EditableMixinOnFileInfos(_EditableMixin):
                              onText=self.OnFileEdit,
                              maxChars=self._max_filename_chars,
                              size=(self._min_controls_width, -1))
+        uilist_panel = masterPanel.GetParent().GetParent().GetParent(
+            ).GetParent().GetParent().GetParent().GetParent()
+        self.panel_uilist = uilist_panel.uiList
 
     def OnFileEdited(self):
         """Event: Finished editing file name."""
@@ -1166,7 +1169,8 @@ class _EditableMixinOnFileInfos(_EditableMixin):
             self.fileStr = fileStr
             self.SetEdited()
 
-    def _validate_filename(self, fileStr): raise AbstractError
+    def _validate_filename(self, fileStr):
+        return self.panel_uilist.validate_filename(None, fileStr)[0]
 
     def OnFileEdit(self, event):
         """Event: Editing filename."""
@@ -1337,9 +1341,6 @@ class ModDetails(_SashDetailsPanel):
         self._OnTextEdit(event, self.descriptionStr.replace(
             '\r\n', '\n').replace('\r', '\n'), self.description)
 
-    def _validate_filename(self, fileStr):
-        return BashFrame.modList.validate_filename(None, fileStr)[0]
-
     def OnEditAuthor(self):
         if not self.modInfo: return
         authorStr = self.author.GetValue()
@@ -1462,7 +1463,8 @@ class ModDetails(_SashDetailsPanel):
             bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
             changeDate and not load_order.using_txt_file())
-        BashFrame.modList.RefreshUI(refreshSaves=refreshSaves)
+        self.panel_uilist.RefreshUI(refreshSaves=refreshSaves)
+        self.panel_uilist.SelectAndShowItem(self.modInfo.name)
 
     #--Bash Tags
     def ShowBashTagsMenu(self):
@@ -1474,7 +1476,7 @@ class ModDetails(_SashDetailsPanel):
         is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
                                               True)
         all_tags = self.allTags
-        def _refreshUI(): BashFrame.modList.RefreshUI(files=[mod_info.name],
+        def _refreshUI(): self.panel_uilist.RefreshUI(files=[mod_info.name],
                 refreshSaves=False) # why refresh saves when updating tags (?)
         def _isAuto():
             return bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags')
@@ -1992,7 +1994,7 @@ class SaveDetails(_SashDetailsPanel):
         event.Skip() # not strictly needed - no other handler for onKillFocus
 
     def _validate_filename(self, fileStr):
-        return BashFrame.saveList.validate_filename(
+        return self.panel_uilist.validate_filename(
             None, fileStr, _old_path=self.saveInfo.name)[0]
 
     def testChanges(self): # used by the master list when editing is disabled
@@ -2029,8 +2031,8 @@ class SaveDetails(_SashDetailsPanel):
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
         # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
-        BashFrame.saveList.RefreshUI()
-        BashFrame.saveList.SelectAndShowItem(self.saveInfo.name)
+        self.panel_uilist.RefreshUI()
+        self.panel_uilist.SelectAndShowItem(self.saveInfo.name)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
@@ -3139,8 +3141,6 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
                                          isVertical=False,
                                          style=wx.TAB_TRAVERSAL)
         self.top, self.bottom = self.left, self.right
-        bsaPanel = parent.GetParent().GetParent()
-        self.bsaList = bsaPanel.uiList
         _EditableMixinOnFileInfos.__init__(self, self.bottom)
         #--Data
         self.BSAInfo = None
@@ -3187,9 +3187,6 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             bosh.bsaInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
         event.Skip()
 
-    def _validate_filename(self, fileStr):
-        return self.bsaList.validate_filename(None, fileStr)[0]
-
     def DoSave(self):
         """Event: Clicked Save button."""
         BSAInfo = self.BSAInfo
@@ -3208,7 +3205,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-        self.bsaList.RefreshUI()
+        self.panel_uilist.RefreshUI()
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):
