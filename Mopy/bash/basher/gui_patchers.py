@@ -235,7 +235,7 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Layout
         gSizer = vSizer(
             (gText,), vspace(),
-            (balt.hsbSizer(gConfigPanel, self.__class__.listLabel,
+            (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
                 gManualSizer,gSelectSizer,
@@ -749,6 +749,7 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         gConfigPanel, gText = self._build_tweaks_list(gTipText, parent)
         #--Import List
         self.gList = balt.listBox(gConfigPanel, kind='checklist')
+        self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
