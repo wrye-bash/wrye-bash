@@ -113,7 +113,6 @@ class _SimpleImporter(ImportPatcher):
                                 except KeyError:
                                     id_data[fid].setdefault(attr,value)
             progress.plus()
-        temp_id_data = None
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
@@ -178,8 +177,7 @@ class _SimpleImporter(ImportPatcher):
             type_count[type] = 0
             records = modFileTops[type].records
             self._inner_loop(keep, records, type, type_count)
-        # noinspection PyUnusedLocal
-        id_data = None # cleanup to save memory
+        self.id_data.clear() # cleanup to save memory
         # Log
         self._patchLog(log,type_count)
 
@@ -402,6 +400,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
                     # keepWorld = True
             if keepWorld:
                 keep(worldBlock.world.fid)
+        self.cellData.clear()
         self._patchLog(log, count)
 
     def _plog(self,log,count): # type 1 but for logMsg % sum(count.values())...
@@ -653,7 +652,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
     def initPatchFile(self,patchFile,loadMods):
         super(ActorImporter, self).initPatchFile(patchFile, loadMods)
         #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
+        self.recAttrs_class = {}
         self.actorClasses = (MreRecord.type_class['NPC_'],MreRecord.type_class['CREA'])
         for recClass in (MreRecord.type_class[x] for x in ('NPC_',)):
             self.recAttrs_class[recClass] = {
@@ -772,7 +771,6 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                                     id_data.setdefault(fid, {})
                                     id_data[fid].update(temp_values)
             progress.plus()
-        temp_id_data = None
         self.longTypes = self.longTypes & set(
             x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
@@ -1114,6 +1112,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] += 1
+        self.data.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -1288,7 +1287,7 @@ class ImportFactions(_SimpleImporter, _AImportFactions):
             if type not in ('CREA','NPC_'): continue
             self.activeTypes.append(type)
             for longid,factions in aFid_factions.iteritems():
-                self.id_data[longid] = factions
+                id_factions[longid] = factions
         self.isActive = bool(self.activeTypes)
 
     def getReadClasses(self):
@@ -1795,6 +1794,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] += 1
+        self.id_deltas.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -2059,6 +2059,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] += 1
+        self.data.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -2224,6 +2225,7 @@ class NamesPatcher(ImportPatcher, _ANamesPatcher):
                     record.full = id_full[fid]
                     keep(fid)
                     type_count[act_type] += 1
+        self.id_full.clear()
         self._patchLog(log,type_count)
 
 class CBash_NamesPatcher(_RecTypeModLogging, _ANamesPatcher):
@@ -2410,6 +2412,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                     npc.setChanged()
                     keep(npc.fid)
                     count += 1
+        self.faceData.clear()
         self._patchLog(log,count)
 
     def _plog(self,log,count):
@@ -2562,6 +2565,7 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
                 keep(worldId)
                 keep(newRoad.fid)
                 worldsPatched.add((worldId[0].s,worldBlock.world.eid))
+        self.world_road.clear()
         self._patchLog(log,worldsPatched)
 
     def _plog(self,log,worldsPatched):
@@ -2777,6 +2781,7 @@ class StatsPatcher(ImportPatcher, _AStatsPatcher):
                     count += 1
                     counts[fid[0]] = 1 + counts.get(fid[0],0)
             allCounts.append((group,count,counts))
+        self.fid_attr_value.clear()
         self._patchLog(log, allCounts)
 
     def _plog(self,log,allCounts):
@@ -2910,6 +2915,7 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
             keep(fid)
             count += 1
             counts[fid[0]] = 1 + counts.get(fid[0],0)
+        self.id_stat.clear()
         allCounts.append(('SPEL',count,counts))
         self._patchLog(log, allCounts)
 
