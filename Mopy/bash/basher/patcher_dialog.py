@@ -431,29 +431,14 @@ class PatchDialog(balt.Dialog):
         """Select all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,True)
-            patcher.isEnabled = True
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue
-                for index, item in enumerate(patcher.items):
-                    patcher.gList.Check(index,True)
-                    patcher.configChecks[item] = True
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    patcher.gTweakList.Check(index,True)
-                    item.isEnabled = True
-            self.gExecute.Enable(True)
+            patcher.mass_select()
+        self.gExecute.Enable(True)
 
     def DeselectAll(self):
         """Deselect all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
-            patcher.isEnabled = False
-            if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
-            if hasattr(patcher, 'gList'):
-                patcher.gList.SetChecked([])
-                patcher.OnListCheck()
-            if hasattr(patcher, 'gTweakList'):
-                patcher.gTweakList.SetChecked([])
+            patcher.mass_select(select=False)
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
@@ -471,7 +456,6 @@ class PatchDialog(balt.Dialog):
         """Remotely enables a patcher.  Called from a particular patcher's OnCheck method."""
         index = self.patchers.index(patcher)
         self.gPatchers.Check(index)
-        patcher.isEnabled = True
         self.SetOkEnable()
 
     def _BoldPatcher(self,patcher):

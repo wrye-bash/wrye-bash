@@ -51,6 +51,7 @@ class _PatcherPanel(object):
     def _EnsurePatcherEnabled(self):
         if hasattr(self, '_checkPatcherFn'):
             self._checkPatcherFn(self)
+        self.isEnabled = True
 
     def _BoldPatcherLabel(self):
         if hasattr(self, '_boldPatcherFn'):
@@ -138,6 +139,8 @@ class _PatcherPanel(object):
         self._import_config(default)
 
     def _import_config(self, default=False): pass
+
+    def mass_select(self, select=True): self.isEnabled = select
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
@@ -442,6 +445,9 @@ class _ListPatcherPanel(_PatcherPanel):
         except AttributeError:
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
+
+    def mass_select(self, select=True):
+        self.SelectAll() if select else self.DeselectAll()
 
     #--Config Phase -----------------------------------------------------------
     def getConfig(self, configs):
@@ -772,6 +778,10 @@ class _TweakPatcherPanel(_PatcherPanel):
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
+    def mass_select(self, select=True):
+        super(_TweakPatcherPanel, self).mass_select(select)
+        self.TweakSelectAll() if select else self.TweakDeselectAll()
+
     #--Config Phase -----------------------------------------------------------
     def getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
@@ -931,6 +941,8 @@ class _ListsMergerPanel(_ListPatcherPanel):
     def _import_config(self, default=False): # TODO(ut):non default not handled
         if default:
             super(_ListsMergerPanel, self)._import_config(default)
+
+    def mass_select(self, select=True): self.isEnabled = select
 
 class _MergerPanel(_ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')
