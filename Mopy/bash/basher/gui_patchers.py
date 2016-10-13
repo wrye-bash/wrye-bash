@@ -527,8 +527,9 @@ class _ListPatcherPanel(_PatcherPanel):
             try:
                 self.gList.Check(index, self.configChecks[item])
             except KeyError: # keys should be all bolt.Paths
-                bolt.deprint(_(u'item %s not in saved configs [%s]') % (
-                    item, u', '.join(map(repr, self.configChecks))))
+                pass
+                # bolt.deprint(_(u'item %s not in saved configs [%s]') % (
+                #     item, u', '.join(map(repr, self.configChecks))))
 
 #------------------------------------------------------------------------------
 class _TweakPatcherPanel(_PatcherPanel):
@@ -808,9 +809,9 @@ class _TweakPatcherPanel(_PatcherPanel):
             try:
                 self.gTweakList.Check(index, tweakie.isEnabled)
                 self.gTweakList.SetString(index, tweakie.getListLabel())
-            except Exception as err: bolt.deprint(_( ##: which exceptions do I get here ??
-                    u'Error importing Bashed patch configuration (error is: '
-                    u'%s). Item %s skipped.') % (err, tweakie))
+            except KeyError: pass # no such key don't spam the log
+            except: bolt.deprint(_(u'Error importing Bashed patch '
+                u'configuration. Item %s skipped.') % tweakie, traceback=True)
 
 #------------------------------------------------------------------------------
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
