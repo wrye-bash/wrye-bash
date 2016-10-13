@@ -66,9 +66,11 @@ from ..parsers import LoadFactory, ModFile
 
 #--Settings
 settings = None
-
-allTags = bush.game.allTags
-allTagsSet = set(allTags)
+try:
+    allTags = bush.game.allTags
+    allTagsSet = set(allTags)
+except AttributeError: # 'NoneType' object has no attribute 'allTags'
+    pass
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 
@@ -1307,7 +1309,11 @@ def _delete(itemOrItems, **kwargs):
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
-    reSave = re.compile(ur'\.' + bush.game.ess.ext[1:] + '(f?)$', re.I | re.U)
+    try:
+        reSave = re.compile(ur'\.' + bush.game.ess.ext[1:] + '(f?)$',
+                            re.I | re.U)
+    except AttributeError: # 'NoneType' object has no attribute 'ess'
+        pass
 
     @staticmethod
     def getPaths(savePath):
@@ -4187,7 +4193,10 @@ class ModInfos(FileInfos):
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
-    _ext = ur'\.' + bush.game.ess.ext[1:]
+    try:
+        _ext = ur'\.' + bush.game.ess.ext[1:]
+    except AttributeError: # 'NoneType' object has no attribute 'ess'
+        _ext = u''
     file_pattern = re.compile(
         ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...) or
         _ext + ur'|' + _ext[:-1] + ur'r' + ur'))$', # enabled or disabled save
