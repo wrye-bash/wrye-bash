@@ -147,8 +147,8 @@ class ListsMerger(_AListsMerger, ListPatcher):
         modFile.convertToLongFids(self.listTypes)
         #--PreScan for later Relevs/Delevs?
         if modName in self.delevMasters:
-            for type in self.listTypes:
-                for levList in getattr(modFile,type).getActiveRecords():
+            for list_type in self.listTypes:
+                for levList in getattr(modFile,list_type).getActiveRecords():
                     masterItems = self.masterItems.setdefault(levList.fid,{})
                     masterItems[modName] = set(
                         [entry.listId for entry in levList.entries])
@@ -158,9 +158,9 @@ class ListsMerger(_AListsMerger, ListPatcher):
         isRelev = (u'Relev' in configChoice)
         isDelev = (u'Delev' in configChoice)
         #--Scan
-        for type in self.listTypes:
-            levLists = self.type_list[type]
-            newLevLists = getattr(modFile,type)
+        for list_type in self.listTypes:
+            levLists = self.type_list[list_type]
+            newLevLists = getattr(modFile,list_type)
             for newLevList in newLevLists.getActiveRecords():
                 listId = newLevList.fid
                 if listId in self.OverhaulUOPSkips and modName == \

@@ -953,7 +953,8 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(NPCAIPackagePatcher, self).initPatchFile(patchFile, loadMods)
-        self.data = {}
+        # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
+        self.id_merged_deleted = {}
         self.longTypes = {'CREA', 'NPC_'}
 
     def _insertPackage(self, data, fid, index, pkg, recordData):
@@ -988,7 +989,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                                         MreRecord.type_class['NPC_'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        data = self.data
+        mer_del = self.id_merged_deleted
         for index,srcMod in enumerate(self.srcs):
             tempData = {}
             if srcMod not in bosh.modInfos: continue
@@ -1030,47 +1031,48 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                             # then we don't care about older masters.
                             del tempData[fid]
                             continue
-                        if fid in data:
-                            if tempData[fid] == data[fid]['merged']: continue
+                        if fid in mer_del:
+                            if tempData[fid] == mer_del[fid]['merged']:
+                                continue
                         recordData = {'deleted':[],'merged':tempData[fid]}
                         for pkg in list(record.aiPackages):
                             if not pkg in tempData[fid]:
                                 recordData['deleted'].append(pkg)
-                        if not fid in data:
-                            data[fid] = recordData
+                        if not fid in mer_del:
+                            mer_del[fid] = recordData
                         else:
                             for pkg in recordData['deleted']:
-                                if pkg in data[fid]['merged']:
-                                    data[fid]['merged'].remove(pkg)
-                                data[fid]['deleted'].append(pkg)
-                            if data[fid]['merged'] == []:
+                                if pkg in mer_del[fid]['merged']:
+                                    mer_del[fid]['merged'].remove(pkg)
+                                mer_del[fid]['deleted'].append(pkg)
+                            if mer_del[fid]['merged'] == []:
                                 for pkg in recordData['merged']:
-                                    if pkg in data[fid]['deleted'] and not \
+                                    if pkg in mer_del[fid]['deleted'] and not \
                                       u'Actors.AIPackagesForceAdd' in bashTags:
                                         continue
-                                    data[fid]['merged'].append(pkg)
+                                    mer_del[fid]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
-                                if not pkg in data[fid]['merged']:  # so needs
+                                if not pkg in mer_del[fid]['merged']:# so needs
                                     #  to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if pkg in data[fid]['deleted'] and not \
+                                    if pkg in mer_del[fid]['deleted'] and not \
                                       u'Actors.AIPackagesForceAdd' in bashTags:
                                         continue  # previously deleted
-                                    self._insertPackage(data, fid, index, pkg,
-                                                        recordData)
+                                    self._insertPackage(mer_del, fid, index,
+                                                        pkg, recordData)
                                     continue # Done with this package
-                                elif index == data[fid]['merged'].index(
+                                elif index == mer_del[fid]['merged'].index(
                                         pkg) or (
                                     len(recordData['merged']) - index) == (
-                                    len(data[fid]['merged']) - data[fid][
+                                    len(mer_del[fid]['merged']) - mer_del[fid][
                                     'merged'].index(pkg)):
                                     continue  # pkg same in both lists.
                                 else:  # this import is later loading so we'll
                                     #  assume it is better order
-                                    data[fid]['merged'].remove(pkg)
-                                    self._insertPackage(data, fid, index, pkg,
-                                                     recordData)
+                                    mer_del[fid]['merged'].remove(pkg)
+                                    self._insertPackage(mer_del, fid, index,
+                                                        pkg, recordData)
             progress.plus()
 
     def getReadClasses(self):
@@ -1084,35 +1086,35 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
         """Add record from modFile."""
         if not self.isActive: return
-        data = self.data
+        merged_deleted = self.id_merged_deleted
         mapper = modFile.getLongMapper()
-        for type in ('NPC_','CREA'):
-            patchBlock = getattr(self.patchFile,type)
-            for record in getattr(modFile,type).getActiveRecords():
+        for rec_type in ('NPC_','CREA'):
+            patchBlock = getattr(self.patchFile,rec_type)
+            for record in getattr(modFile,rec_type).getActiveRecords():
                 fid = mapper(record.fid)
-                if fid in data:
-                    if list(record.aiPackages) != data[fid]['merged']:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                if not fid in merged_deleted: continue
+                if list(record.aiPackages) != merged_deleted[fid]['merged']:
+                    patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        data = self.data
+        merged_deleted = self.id_merged_deleted
         mod_count = collections.defaultdict(int)
-        for type in ('NPC_','CREA'):
-            for record in getattr(self.patchFile,type).records:
+        for rec_type in ('NPC_','CREA'):
+            for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
-                if not fid in data: continue
+                if not fid in merged_deleted: continue
                 changed = False
-                if record.aiPackages != data[fid]['merged']:
-                    record.aiPackages = data[fid]['merged']
+                if record.aiPackages != merged_deleted[fid]['merged']:
+                    record.aiPackages = merged_deleted[fid]['merged']
                     changed = True
                 if changed:
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] += 1
-        self.data.clear()
+        self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
@@ -1903,7 +1905,8 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(ImportActorsSpells, self).initPatchFile(patchFile, loadMods)
-        self.data = {}
+        # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
+        self.id_merged_deleted = {}
         self.longTypes = {'CREA', 'NPC_'}
 
     def initData(self,progress):
@@ -1914,7 +1917,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                                         MreRecord.type_class['NPC_'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        data = self.data
+        data = self.id_merged_deleted
         for index,srcMod in enumerate(self.srcs):
             tempData = {}
             if srcMod not in bosh.modInfos: continue
@@ -2030,28 +2033,28 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         if not self.isActive: return
-        data = self.data
+        merged_deleted = self.id_merged_deleted
         mapper = modFile.getLongMapper()
         for type in ('NPC_','CREA'):
             patchBlock = getattr(self.patchFile,type)
             for record in getattr(modFile,type).getActiveRecords():
                 fid = mapper(record.fid)
-                if fid in data:
-                    if list(record.spells) != data[fid]['merged']:
+                if fid in merged_deleted:
+                    if list(record.spells) != merged_deleted[fid]['merged']:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
 
     def buildPatch(self,log,progress): # buildPatch1:no modFileTops, for type..
         """Applies delta to patchfile."""
         if not self.isActive: return
         keep = self.patchFile.getKeeper()
-        data = self.data
+        merged_deleted = self.id_merged_deleted
         mod_count = collections.defaultdict(int)
-        for type in ('NPC_','CREA'):
-            for record in getattr(self.patchFile,type).records:
+        for rec_type in ('NPC_','CREA'):
+            for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
-                if not fid in data: continue
+                if not fid in merged_deleted: continue
                 changed = False
-                mergedSpells = sorted(data[fid]['merged'])
+                mergedSpells = sorted(merged_deleted[fid]['merged'])
                 if sorted(list(record.spells)) != mergedSpells:
                     record.spells = mergedSpells
                     changed = True
@@ -2059,7 +2062,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                     keep(record.fid)
                     mod = record.fid[0]
                     mod_count[mod] += 1
-        self.data.clear()
+        self.id_merged_deleted.clear()
         self._patchLog(log,mod_count)
 
     def _plog(self, log, mod_count): self._plog1(log, mod_count)
