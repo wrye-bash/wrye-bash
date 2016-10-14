@@ -38,6 +38,7 @@ reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
     selectCommands = True # whether this panel displays De/Select All
+    style = wx.TAB_TRAVERSAL
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
 
@@ -67,12 +68,12 @@ class _PatcherPanel(object):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent)
+        self.gConfigPanel = wx.Panel(parent, style=self.__class__.style)
         text = fill(self.text, 70)
-        gText = StaticText(gConfigPanel, text)
+        gText = StaticText(self.gConfigPanel, text)
         self.gSizer = VSizer(gText)
-        gConfigPanel.SetSizer(self.gSizer)
-        gConfigSizer.Add(gConfigPanel, 1, wx.EXPAND)
+        self.gConfigPanel.SetSizer(self.gSizer)
+        gConfigSizer.Add(self.gConfigPanel, 1, wx.EXPAND)
         return self.gConfigPanel
 
     def Layout(self):
@@ -474,35 +475,27 @@ class _ChoiceMenuMixin(object):
 #------------------------------------------------------------------------------
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
-    listLabel = _(u"Tweaks")
-    style = wx.TAB_TRAVERSAL
+    tweak_label = _(u"Tweaks")
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
-        gConfigPanel, gText= self._build_tweaks_list(gTipText, parent)
+        gConfigPanel = super(_TweakPatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
+        self._build_tweaks_list()
         gTweakSelectSizer = self._get_tweak_select_sizer()
         #--Layout
-        gSizer = vSizer(
-            (gText,), vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.listLabel,
+        self.gSizer.AddElements(vspace(),
+            (hsbSizer(gConfigPanel, self.__class__.tweak_label,
                 ((4,0),0,wx.EXPAND),
                 (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
                 gTweakSelectSizer,
                 ),1,wx.EXPAND),
             )
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
 
-    def _build_tweaks_list(self, gTipText, parent):
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(
-            parent, style=self.__class__.style)
-        text = fill(self.__class__.text, 70)
-        gText = StaticText(self.gConfigPanel, text)
-        self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
+    def _build_tweaks_list(self):
+        self.gTweakList = balt.listBox(self.gConfigPanel, kind='checklist')
         #--Events
         self.gTweakList.Bind(wx.EVT_CHECKLISTBOX, self.TweakOnListCheck)
         self.gTweakList.Bind(wx.EVT_MOTION, self.OnMouse)
@@ -511,7 +504,6 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         self.gTweakList.Bind(wx.EVT_RIGHT_UP, self.OnMouse)
         self.mouse_dex = -1
         self.mouse_pos = None
-        return gConfigPanel, gText
 
     def _get_tweak_select_sizer(self, ):
         if self.selectCommands:
@@ -749,39 +741,16 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     """Only used in Race Patcher which features a double panel (source mods
     and tweaks)."""
-    listLabel = _(u'Source Mods/Files')
-    style = 0
-    subLabel = _(u'Race Tweaks')
+    listLabel = _(u'Race Mods')
+    tweak_label = _(u'Race Tweaks')
     # CONFIG DEFAULTS
     default_isEnabled = True # isActive will be set to True in initPatchFile
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText): # TODO(ut): use super !
+    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
-        gConfigPanel, gText = self._build_tweaks_list(gTipText, parent)
-        #--Import List
-        self.gList = balt.listBox(gConfigPanel, kind='checklist')
-        self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
-        #--Buttons
-        gSelectSizer = self._get_select_sizer()
-        gTweakSelectSizer = self._get_tweak_select_sizer()
-        #--Layout
-        gSizer = vSizer(
-            (gText,), vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.listLabel,
-                ((4,0),0,wx.EXPAND),
-                (self.gList,1,wx.EXPAND|wx.TOP,2),
-                gSelectSizer,),1,wx.EXPAND), vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.subLabel,
-                ((4,0),0,wx.EXPAND),
-                (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
-                gTweakSelectSizer,),1,wx.EXPAND),
-            )
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
-        #--Initialize
-        self.SetItems(self.getAutoItems())
+        gConfigPanel = super(_DoublePatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
         return gConfigPanel
 
     #--Config Phase -----------------------------------------------------------
@@ -791,9 +760,9 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
 
     def _log_config(self, conf, config, clip, log):
         _ListPatcherPanel._log_config(self, conf, config, clip, log)
-        log.setHeader(u'== ' + self.subLabel)
+        log.setHeader(u'== ' + self.tweak_label)
         clip.write(u'\n')
-        clip.write(u'== ' + self.subLabel + u'\n')
+        clip.write(u'== ' + self.tweak_label + u'\n')
         _TweakPatcherPanel._log_config(self, conf, config, clip, log)
 
 #------------------------------------------------------------------------------
@@ -1069,11 +1038,9 @@ class CBash_UpdateReferences(base.CBash_UpdateReferences,
                              _ListPatcherPanel):
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
-class RacePatcher(races_multitweaks.RacePatcher, _DoublePatcherPanel):
-    listLabel = _(u'Race Mods')
+class RacePatcher(races_multitweaks.RacePatcher, _DoublePatcherPanel): pass
 class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,
-                        _DoublePatcherPanel):
-    listLabel = _(u'Race Mods')
+                        _DoublePatcherPanel): pass
 
 class ListsMerger(special.ListsMerger, _ListsMergerPanel): pass
 class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel): pass

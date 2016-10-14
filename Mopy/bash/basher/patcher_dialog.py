@@ -114,7 +114,7 @@ class PatchDialog(balt.Dialog):
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
+        self.Bind(wx.EVT_SIZE,self.OnSize) # save dialog size
         self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
         self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
         self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
@@ -442,10 +442,9 @@ class PatchDialog(balt.Dialog):
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
-    def OnSize(self,event): ##: needed ? event.Skip() ??
+    def OnSize(self,event):
         balt.sizes[self.__class__.__name__] = tuple(self.GetSize())
-        self.Layout()
-        self.currentPatcher.Layout()
+        event.Skip()
 
     def OnSelect(self,event):
         """Responds to patchers list selection."""
