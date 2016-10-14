@@ -151,8 +151,8 @@ class PatchDialog(balt.Dialog):
             gConfigSizer.Show(gConfigPanel,False)
         initial_select = min(len(self.patchers)-1,1)
         if initial_select >= 0:
-            self.gPatchers.Select(initial_select)
-            self.ShowPatcher(self.patchers[initial_select])
+            self.gPatchers.Select(initial_select) # does not fire the callback
+            self.ShowPatcher(self.patchers[initial_select]) # so this needed
         self.SetOkEnable()
 
     #--Core -------------------------------
@@ -471,7 +471,7 @@ class PatchDialog(balt.Dialog):
         patcher = self.patchers[index]
         patcher.isEnabled = self.gPatchers.IsChecked(index)
         self.gPatchers.SetSelection(index)
-        self.ShowPatcher(patcher)
+        self.ShowPatcher(patcher) # SetSelection does not fire the callback
         self.SetOkEnable()
 
     def OnMouse(self,event):
