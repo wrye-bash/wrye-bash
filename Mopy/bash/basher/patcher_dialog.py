@@ -84,9 +84,6 @@ class PatchDialog(balt.Dialog):
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            if u'UNDEFINED' in (patcher.__class__.name, patcher.__class__.group):
-                raise UncodedError(u'Name or group not defined for: %s' % patcher.__class__.__name__)
-            patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
             patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
@@ -451,14 +448,15 @@ class PatchDialog(balt.Dialog):
         itemDex = event.GetSelection()
         self.ShowPatcher(self.patchers[itemDex])
 
-    def _CheckPatcher(self,patcher):
-        """Remotely enables a patcher.  Called from a particular patcher's OnCheck method."""
+    def CheckPatcher(self, patcher):
+        """Enable a patcher - Called from a patcher's OnCheck method."""
         index = self.patchers.index(patcher)
         self.gPatchers.Check(index)
         self.SetOkEnable()
 
-    def _BoldPatcher(self,patcher):
-        """Set the patcher label to bold font.  Called from a patcher when it realizes it has something new in its list"""
+    def BoldPatcher(self, patcher):
+        """Set the patcher label to bold font.  Called from a patcher when
+        it realizes it has something new in its list"""
         index = self.patchers.index(patcher)
         font = self.gPatchers.GetFont()
         font.SetWeight(wx.FONTWEIGHT_BOLD)

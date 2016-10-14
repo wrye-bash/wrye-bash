@@ -42,21 +42,14 @@ class _PatcherPanel(object):
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
 
-    def SetCallbackFns(self,checkPatcherFn,boldPatcherFn):
-        self._checkPatcherFn = checkPatcherFn
-        self._boldPatcherFn = boldPatcherFn
-
     def SetIsFirstLoad(self,isFirstLoad):
         self._isFirstLoad = isFirstLoad
 
     def _EnsurePatcherEnabled(self):
-        if hasattr(self, '_checkPatcherFn'):
-            self._checkPatcherFn(self)
+        self.patch_dialog.CheckPatcher(self)
         self.isEnabled = True
 
-    def _BoldPatcherLabel(self):
-        if hasattr(self, '_boldPatcherFn'):
-            self._boldPatcherFn(self)
+    def _BoldPatcherLabel(self): self.patch_dialog.BoldPatcher(self)
 
     def _GetIsFirstLoad(self):
         if hasattr(self, '_isFirstLoad'):
@@ -65,8 +58,12 @@ class _PatcherPanel(object):
             return False
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
-        """Show config."""
+        """Show config.
+
+        :type parent: basher.patcher_dialog.PatchDialog
+        """
         if self.gConfigPanel: return self.gConfigPanel
+        self.patch_dialog = parent
         self.gTipText = gTipText
         self.gConfigPanel = wx.Panel(parent, style=self.__class__.style)
         text = fill(self.text, 70)
