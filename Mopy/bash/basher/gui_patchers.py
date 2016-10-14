@@ -409,9 +409,6 @@ class _ListPatcherPanel(_PatcherPanel):
         if self.__class__.forceItemCheck:
             for item in self.configItems:
                 self.configChecks[item] = True
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems()
         return config
 
     def saveConfig(self, configs):
@@ -808,8 +805,12 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         """Returns list of items to be used for automatic configuration."""
         return self._get_auto_mods()
 
-    def _log_config(self, conf, config, clip, log): ##: HACK - fix getAutoItems
-        super(_ListPatcherPanel, self)._log_config(conf, config, clip, log)
+    def _log_config(self, conf, config, clip, log):
+        _ListPatcherPanel._log_config(self, conf, config, clip, log)
+        log.setHeader(u'== ' + self.subLabel)
+        clip.write(u'\n')
+        clip.write(u'== ' + self.subLabel + u'\n')
+        _TweakPatcherPanel._log_config(self, conf, config, clip, log)
 
 #------------------------------------------------------------------------------
 class _ImporterPatcherPanel(_ListPatcherPanel):
