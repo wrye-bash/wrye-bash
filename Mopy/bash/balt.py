@@ -537,6 +537,16 @@ def vSizer(*elements):
     """Vertical sizer and elements."""
     return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
 
+class VSizer(wx.BoxSizer):
+    """Alpha sizer API attempt - don't use!"""
+
+    def __init__(self, *args):
+        super(VSizer, self).__init__(wx.VERTICAL)
+        _aSizer(self, *args)
+
+    def AddElements(self, *args):
+        _aSizer(self, *args)
+
 def hsbSizer(parent, box_label=u'', *elements):
     """A horizontal box sizer, but surrounded by a static box."""
     return _aSizer(wx.StaticBoxSizer(wx.StaticBox(parent, label=box_label),

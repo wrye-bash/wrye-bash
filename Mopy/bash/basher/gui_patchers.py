@@ -29,7 +29,7 @@ import wx
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
-    Links, SeparatorLink, CheckLink, Link, vspace
+    Links, SeparatorLink, CheckLink, Link, vspace, VSizer
 from ..bolt import GPath
 from ..patcher import patch_files
 
@@ -65,14 +65,14 @@ class _PatcherPanel(object):
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
-        if not self.gConfigPanel:
-            self.gTipText = gTipText
-            gConfigPanel = self.gConfigPanel = wx.Window(parent)
-            text = fill(self.text,70)
-            gText = StaticText(self.gConfigPanel,text)
-            gSizer = vSizer(gText)
-            gConfigPanel.SetSizer(gSizer)
-            gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
+        if self.gConfigPanel: return self.gConfigPanel
+        self.gTipText = gTipText
+        gConfigPanel = self.gConfigPanel = wx.Window(parent)
+        text = fill(self.text, 70)
+        gText = StaticText(gConfigPanel, text)
+        self.gSizer = VSizer(gText)
+        gConfigPanel.SetSizer(self.gSizer)
+        gConfigSizer.Add(gConfigPanel, 1, wx.EXPAND)
         return self.gConfigPanel
 
     def Layout(self):
@@ -150,15 +150,8 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
-        #--Tip
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent)
-        # CRUFT (ut) PBASH -> CBASH difference - kept PBash:
-        # -        text = fill(self.__class__.text,70)
-        # +        text = fill(self.text,70)
-        text = fill(self.text,70)
-        gText = StaticText(gConfigPanel,text)
+        gConfigPanel = super(_AliasesPatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
         #gExample = StaticText(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
@@ -166,12 +159,9 @@ class _AliasesPatcherPanel(_PatcherPanel):
                                       onKillFocus=self.OnEditAliases)
         self.SetAliasText()
         #--Sizing
-        gSizer = vSizer(
-            gText,
+        self.gSizer.AddElements(
             #(gExample,0,wx.EXPAND|wx.TOP,8),
             vspace(), (self.gAliases, 1, wx.EXPAND))
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return self.gConfigPanel
 
     def SetAliasText(self):
@@ -229,13 +219,10 @@ class _ListPatcherPanel(_PatcherPanel):
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
+        gConfigPanel = super(_ListPatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
         self.forceItemCheck = self.__class__.forceItemCheck
         self.selectCommands = self.__class__.selectCommands
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent)
-        text = fill(self.text,70)
-        gText = StaticText(self.gConfigPanel,text)
         if self.forceItemCheck:
             self.gList = balt.listBox(gConfigPanel, isSingle=False)
         else:
@@ -260,16 +247,13 @@ class _ListPatcherPanel(_PatcherPanel):
                 ),0,wx.EXPAND|wx.LEFT,4)
         gSelectSizer = self._get_select_sizer()
         #--Layout
-        gSizer = vSizer(
-            (gText,), vspace(),
+        self.gSizer.AddElements(vspace(),
             (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
                 gManualSizer,gSelectSizer,
                 ),1,wx.EXPAND),
             )
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
 
     def _get_select_sizer(self):
