@@ -765,12 +765,11 @@ class AssortedTweak_FogFix(AAssortedTweak_FogFix,MultiTweakItem):
         keep = patchFile.getKeeper()
         count = collections.defaultdict(int)
         for cellBlock in patchFile.CELL.cellBlocks:
-            for cellBlock in patchFile.CELL.cellBlocks:
-                cell = cellBlock.cell
-                if not (cell.fogNear or cell.fogFar or cell.fogClip):
-                    cell.fogNear = 0.0001
-                    keep(cell.fid)
-                    count[cell.fid[0]] += 1
+            cell = cellBlock.cell
+            if not (cell.fogNear or cell.fogFar or cell.fogClip):
+                cell.fogNear = 0.0001
+                keep(cell.fid)
+                count[cell.fid[0]] += 1
         self._patchLog(log, count)
 
 class CBash_AssortedTweak_FogFix(AAssortedTweak_FogFix,CBash_MultiTweakItem):

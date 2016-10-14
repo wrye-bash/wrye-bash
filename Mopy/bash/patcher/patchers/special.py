@@ -69,6 +69,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(ListsMerger, self).initPatchFile(patchFile, loadMods)
+        self.srcs_ordered = self.srcs
         self.srcs = set(self.srcs) & set(loadMods)
         self.listTypes = bush.game.listTypes
         self.type_list = dict([(type,{}) for type in self.listTypes])
@@ -137,7 +138,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
         """Add lists from modFile."""
         #--Level Masters (complete initialization)
         if self.levelers is None:
-            self.levelers = [leveler for leveler in self.getConfigChecked() if
+            self.levelers = [leveler for leveler in self.srcs_ordered if
                              leveler in self.patchFile.allSet]
             self.delevMasters = set()
             for leveler in self.levelers:
@@ -147,8 +148,8 @@ class ListsMerger(_AListsMerger, ListPatcher):
         modFile.convertToLongFids(self.listTypes)
         #--PreScan for later Relevs/Delevs?
         if modName in self.delevMasters:
-            for type in self.listTypes:
-                for levList in getattr(modFile,type).getActiveRecords():
+            for list_type in self.listTypes:
+                for levList in getattr(modFile,list_type).getActiveRecords():
                     masterItems = self.masterItems.setdefault(levList.fid,{})
                     masterItems[modName] = set(
                         [entry.listId for entry in levList.entries])
@@ -158,9 +159,9 @@ class ListsMerger(_AListsMerger, ListPatcher):
         isRelev = (u'Relev' in configChoice)
         isDelev = (u'Delev' in configChoice)
         #--Scan
-        for type in self.listTypes:
-            levLists = self.type_list[type]
-            newLevLists = getattr(modFile,type)
+        for list_type in self.listTypes:
+            levLists = self.type_list[list_type]
+            newLevLists = getattr(modFile,list_type)
             for newLevList in newLevLists.getActiveRecords():
                 listId = newLevList.fid
                 if listId in self.OverhaulUOPSkips and modName == \
@@ -523,7 +524,7 @@ class _AContentsChecker(SpecialPatcher):
 class ContentsChecker(_AContentsChecker,Patcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        Patcher.initPatchFile(self,patchFile,loadMods)
+        super(ContentsChecker, self).initPatchFile(patchFile, loadMods)
         self.contType_entryTypes = {
             'LVSP':'LVSP,SPEL'.split(','),
             'LVLC':'LVLC,NPC_,CREA'.split(','),
@@ -620,7 +621,7 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
 
     #--Config Phase -----------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
-        CBash_Patcher.initPatchFile(self,patchFile,loadMods)
+        super(CBash_ContentsChecker, self).initPatchFile(patchFile, loadMods)
         self.isActive = True
         self.type_validEntries = {'LVSP': {'LVSP', 'SPEL'},
                                 'LVLC': {'LVLC', 'NPC_', 'CREA'},

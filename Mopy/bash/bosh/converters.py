@@ -68,8 +68,8 @@ class ConvertersData(DataDict):
     def refreshConvertersNeeded(self):
         """Return True if refreshConverters is necessary."""
         self._prune_converters()
-        archives = set([])
-        scanned = set([])
+        archives = set()
+        scanned = set()
         convertersJoin = converters_dir.join
         converterGet = self.bcfPath_sizeCrcDate.get
         archivesAdd = archives.add

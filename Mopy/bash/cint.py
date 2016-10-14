@@ -14113,11 +14113,11 @@ type_record = dict([('BASE',ObBaseRecord),(None,None),('',None),
                     ('CSTY',ObCSTYRecord),('LSCR',ObLSCRRecord),('LVSP',ObLVSPRecord),
                     ('ANIO',ObANIORecord),('WATR',ObWATRRecord),('EFSH',ObEFSHRecord)])
 
-fnv_validTypes = set([])
+fnv_validTypes = set()
 
-fnv_aggregateTypes = set([])
+fnv_aggregateTypes = set()
 
-fnv_pickupables = set([])
+fnv_pickupables = set()
 
 fnv_type_record = dict([('BASE',FnvBaseRecord),(None,None),('',None),
                         ('GMST',FnvGMSTRecord),('TXST',FnvTXSTRecord),('MICN',FnvMICNRecord),

@@ -737,11 +737,8 @@ class MelGroup(MelBase):
         if target is None:
             target = self.getDefault()
             record.__setattr__(self.attr,target)
-        slots = []
-        slotsExtend = slots.extend
-        for element in self.elements:
-            slotsExtend(element.getSlotsUsed())
-        target.__slots__ = slots
+        target.__slots__ = [s for element in self.elements for s in
+                            element.getSlotsUsed()]
         self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
 
     def dumpData(self,record,out):
@@ -779,10 +776,8 @@ class MelGroups(MelGroup):
             record.__getattribute__(self.attr).append(target)
         else:
             target = record.__getattribute__(self.attr)[-1]
-        slots = []
-        for element in self.elements:
-            slots.extend(element.getSlotsUsed())
-        target.__slots__ = slots
+        target.__slots__ = [s for element in self.elements for s in
+                            element.getSlotsUsed()]
         self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
 
     def dumpData(self,record,out):
@@ -1208,11 +1203,7 @@ class MelSet:
 
     def getSlotsUsed(self):
         """This function returns all of the attributes used in record instances that use this instance."""
-        slots = []
-        slotsExtend = slots.extend
-        for element in self.elements:
-            slotsExtend(element.getSlotsUsed())
-        return slots
+        return [s for element in self.elements for s in element.getSlotsUsed()]
 
     def initRecord(self,record,header,ins,unpack):
         """Initialize record."""

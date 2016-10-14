@@ -1577,10 +1577,6 @@ cellRecFlags = {
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------
-graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'BSGN',
-                      'CLAS', 'CLOT', 'CREA', 'DOOR', 'EFSH', 'FLOR', 'FURN',
-                      'GRAS', 'INGR', 'KEYM', 'LIGH', 'LSCR', 'LTEX', 'MGEF',
-                      'MISC', 'REGN', 'SGST', 'SLGM', 'STAT', 'TREE', 'WEAP'}
 graphicsTypes = {
     "ACTI": ('model',),
     "ALCH": ('iconPath','model',),
@@ -1625,9 +1621,8 @@ graphicsTypes = {
     "TREE": ('iconPath','model',),
     "WEAP": ('iconPath','model',),
 }
-graphicsFidTypes = {
-    "MGEF": ('effectShader','enchantEffect','light',)
-}
+graphicsLongsTypes = set(graphicsTypes) # also MGEF (with different attributes)
+graphicsFidTypes = {"MGEF": ('effectShader', 'enchantEffect', 'light',)}
 graphicsModelAttrs = ('model',)
 #------------------------------------------------------------------------------
 # Inventory Patcher
@@ -1653,5 +1648,6 @@ record_type_name = {
     'MISC': _(u'Misc'),
     'SGST': _(u'Sigil Stones'),
     'SLGM': _(u'Soulgems'),
+    'SPEL': _(u'Spells'),
     'WEAP': _(u'Weapons'),
 }

@@ -153,6 +153,9 @@ class AListPatcher(_Abstract_Patcher):
         return self._patches_set
 
     def initPatchFile(self, patchFile, loadMods):
+        """Prepare to handle specified patch mod. All functions are called
+        after this. In addition to super implemenation this defines the
+        self.srcs AListPatcher attribute."""
         super(AListPatcher, self).initPatchFile(patchFile, loadMods)
         self.srcs = self.getConfigChecked()
         self.isActive = bool(self.srcs)
@@ -166,9 +169,6 @@ class AListPatcher(_Abstract_Patcher):
         else:
             for srcFile in self.srcs:
                 log(u"* " +srcFile.s)
-
-    #--Config Phase -----------------------------------------------------------
-    def _patchFile(self): raise bolt.AbstractError # TODO(ut) _PFile.class.patchName
 
     #--Patch Phase ------------------------------------------------------------
     def getConfigChecked(self):
@@ -294,9 +294,9 @@ class APatchMerger(AListPatcher):
         #--WARNING: Since other patchers may rely on the following update
         # during their initPatchFile section, it's important that PatchMerger
         # runs first or near first.
-        self._setMods(patchFile)
-
-    def _setMods(self, patchFile): raise bolt.AbstractError # override in subclasses
+        if not self.isActive: return
+        if self.isEnabled: #--Since other mods may rely on this
+            patchFile.setMods(None, self.srcs) # self.srcs set in initPatchFile
 
 class AUpdateReferences(AListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""

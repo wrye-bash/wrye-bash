@@ -2650,8 +2650,7 @@ class ModInfo(FileInfo):
 
     def getBashTags(self):
         """Returns any Bash flag keys."""
-        tags = modInfos.table.getItem(self.name,'bashTags',set([]))
-        return tags
+        return modInfos.table.getItem(self.name, 'bashTags', set())
 
     def getBashTagsDesc(self):
         """Returns any Bash flag keys."""
@@ -6197,7 +6196,7 @@ class InstallersData(_DataStore):
         """March through the Bash Installers dir scanning for new and modified
         projects/packages, skipping as necessary.
         :rtype: InstallersData._RefreshInfo"""
-        installers = set([])
+        installers = set()
         installersJoin = dirs['installers'].join
         pending, projects = set(), set()
         for item in installers_paths:

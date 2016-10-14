@@ -37,11 +37,14 @@ from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..record_groups import MobObjects
 
+# the currently executing patch set in _Mod_Patch_Update before showing the
+# dialog - used in getAutoItems, to get mods loading before the patch
+##: HACK ! replace with method param once gui_patchers are refactored
+executing_patch = None # type: bolt.Path
+
 class _PFile(object):
     """Base class of patch files - factoring out common code __WIP__. Wraps an
     executing bashed Patch."""
-    # TODO(ut): code is using class variable patchName - eradicate ! used
-    # in config phase before the _PFile is instantiated
     def __init__(self, patchers, patch_path):
         """:type patch_path: bolt.Path"""
         #--New attrs

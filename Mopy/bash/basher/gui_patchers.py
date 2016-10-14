@@ -27,10 +27,11 @@ import re
 from operator import itemgetter
 import wx
 # Internal
-from .. import bass, bosh, bush, balt, load_order
+from .. import bass, bosh, bush, balt, load_order, bolt
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
     Links, SeparatorLink, CheckLink, Link, vspace
 from ..bolt import GPath
+from ..patcher import patch_files
 
 reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 
@@ -50,6 +51,7 @@ class _PatcherPanel(object):
     def _EnsurePatcherEnabled(self):
         if hasattr(self, '_checkPatcherFn'):
             self._checkPatcherFn(self)
+        self.isEnabled = True
 
     def _BoldPatcherLabel(self):
         if hasattr(self, '_boldPatcherFn'):
@@ -87,7 +89,6 @@ class _PatcherPanel(object):
         config for this patch stored in modInfos.table[patch][
         'bash.patch.configs']. If no config is saved then the class
         default_XXX values are used for the relevant attributes."""
-        # TODO(ut): eliminate other uses - move them to child classes
         config = configs.setdefault(self.__class__.__name__, {})
         self.isEnabled = config.get('isEnabled',
                                     self.__class__.default_isEnabled)
@@ -103,6 +104,43 @@ class _PatcherPanel(object):
         config = configs[self.__class__.__name__] = {}
         config['isEnabled'] = self.isEnabled
         return config # return the config dict for this patcher to further edit
+
+    def log_config(self, config, clip, log):
+        className = self.__class__.__name__
+        humanName = self.__class__.name
+        # Patcher in the config?
+        if not className in config: return
+        # Patcher active?
+        conf = config[className]
+        if not conf.get('isEnabled',False): return
+        # Active
+        log.setHeader(u'== ' + humanName)
+        clip.write(u'\n')
+        clip.write(u'== ' + humanName + u'\n')
+        self._log_config(conf, config, clip, log)
+
+    def _log_config(self, conf, config, clip, log):
+        items = conf.get('configItems', [])
+        if len(items) == 0:
+            log(u' ')
+        for item in conf.get('configItems', []):
+            checks = conf.get('configChecks', {})
+            checked = checks.get(item, False)
+            if checked:
+                log(u'* __%s__' % item)
+                clip.write(u' ** %s\n' % item)
+            else:
+                log(u'. ~~%s~~' % item)
+                clip.write(u'    %s\n' % item)
+
+    def import_config(self, patchConfigs, set_first_load=False, default=False):
+        self.SetIsFirstLoad(set_first_load)
+        self.getConfig(patchConfigs) # set isEnabled and load additional config
+        self._import_config(default)
+
+    def _import_config(self, default=False): pass
+
+    def mass_select(self, select=True): self.isEnabled = select
 
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
@@ -167,6 +205,12 @@ class _AliasesPatcherPanel(_PatcherPanel):
         config['aliases'] = self.aliases
         return config
 
+    def _log_config(self, conf, config, clip, log):
+        aliases = conf.get('aliases', {})
+        for mod, alias in aliases.iteritems():
+            log(u'* __%s__ >> %s' % (mod.s, alias.s))
+            clip.write(u'  %s >> %s\n' % (mod.s, alias.s))
+
 #------------------------------------------------------------------------------
 class _ListPatcherPanel(_PatcherPanel):
     """Patcher panel with option to select source elements."""
@@ -174,7 +218,7 @@ class _ListPatcherPanel(_PatcherPanel):
     forceAuto = True
     forceItemCheck = False #--Force configChecked to True for all items
     #--List of possible choices for each config item. Item 0 is default.
-    choiceMenu = None
+    choiceMenu = None # only _ListsMergerPanel has it - move it there !
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     #--Compiled re used by getAutoItems
     autoRe = re.compile(ur"^UNDEFINED$", re.I | re.U)
@@ -222,20 +266,11 @@ class _ListPatcherPanel(_PatcherPanel):
                 vspace(12), self.gAdd,
                 vspace(4), self.gRemove,
                 ),0,wx.EXPAND|wx.LEFT,4)
-        if self.selectCommands:
-            self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
-                                     onButClick=self.SelectAll)
-            self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
-                                       onButClick=self.DeselectAll)
-            gSelectSizer = (vSizer(
-                vspace(12), self.gSelectAll,
-                vspace(4), self.gDeselectAll,
-                ),0,wx.EXPAND|wx.LEFT,4)
-        else: gSelectSizer = None
+        gSelectSizer = self._get_select_sizer()
         #--Layout
         gSizer = vSizer(
             (gText,), vspace(),
-            (balt.hsbSizer(gConfigPanel, self.__class__.listLabel,
+            (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
                 gManualSizer,gSelectSizer,
@@ -244,6 +279,16 @@ class _ListPatcherPanel(_PatcherPanel):
         gConfigPanel.SetSizer(gSizer)
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
+
+    def _get_select_sizer(self):
+        if not self.selectCommands: return None
+        self.gSelectAll = Button(self.gConfigPanel, _(u'Select All'),
+                                 onButClick=self.SelectAll)
+        self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'),
+                                   onButClick=self.DeselectAll)
+        return (vSizer(
+            vspace(12), self.gSelectAll, vspace(4), self.gDeselectAll),
+                0, wx.EXPAND | wx.LEFT, 4)
 
     def SetItems(self,items):
         """Set item to specified set of items."""
@@ -354,7 +399,7 @@ class _ListPatcherPanel(_PatcherPanel):
         itemIndex = self.gList.HitTest(event.GetPosition())
         if itemIndex < 0: return
         self.gList.SetSelection(itemIndex)
-        choiceSet = self.getChoice(self.items[itemIndex])
+        choiceSet = self.get_set_choice(self.items[itemIndex])
         #--Build Menu
         class _OnItemChoice(CheckLink):
             def __init__(self, _text, index):
@@ -371,7 +416,7 @@ class _ListPatcherPanel(_PatcherPanel):
             if choice != u'Auto':
                 choiceSet.discard(u'Auto')
             elif u'Auto' in self.configChoices[item]:
-                self.getChoice(item)
+                self.get_set_choice(item)
             self.gList.SetString(itemIndex, self.getItemLabel(item))
         links = Links()
         for index,label in enumerate(self.choiceMenu):
@@ -401,6 +446,9 @@ class _ListPatcherPanel(_PatcherPanel):
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
+    def mass_select(self, select=True):
+        self.SelectAll() if select else self.DeselectAll()
+
     #--Config Phase -----------------------------------------------------------
     def getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
@@ -426,10 +474,10 @@ class _ListPatcherPanel(_PatcherPanel):
         #--Make sure configChoices are set (if choiceMenu exists).
         if self.choiceMenu:
             for item in self.configItems:
-                self.getChoice(item)
+                self.get_set_choice(item)
         #--AutoItems?
         if self.autoIsChecked:
-            self.getAutoItems()
+            self.getAutoItems() # calls get_set_choice which sets default
         return config
 
     def saveConfig(self, configs):
@@ -447,7 +495,7 @@ class _ListPatcherPanel(_PatcherPanel):
         config['autoIsChecked'] = self.autoIsChecked
         return config
 
-    def getChoice(self,item):
+    def get_set_choice(self, item):
         """Get default config choice."""
         return self.configChoices.setdefault(item,self.choiceMenu[0])
 
@@ -455,28 +503,45 @@ class _ListPatcherPanel(_PatcherPanel):
         """Returns label for item to be used in list"""
         item  = u'%s' % item # Path or basestring - YAK
         if self.choiceMenu:
-            return u'%s [%s]' % (item,self.getChoice(item))
+            return u'%s [%s]' % (item,self.get_set_choice(item))
         else:
             return item
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
-        self.choiceMenu = self.__class__.choiceMenu
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(self._patchFile().patchName): continue
-            if autoRe.match(name.s) or (autoKey & modInfo.getBashTags()):
-                autoItems.append(name)
-                if self.choiceMenu: self.getChoice(name)
-        reFile = re.compile(u'_('+(u'|'.join(autoKey))+ur')\.csv$',re.U)
+        autoItems = self._get_auto_mods()
+        reFile = re.compile(
+            u'_(' + (u'|'.join(self.__class__.autoKey)) + ur')\.csv$', re.U)
         for fileName in sorted(self.patches_set):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)
         return autoItems
+
+    def _get_auto_mods(self):
+        autoItems = []
+        autoRe = self.__class__.autoRe
+        self.choiceMenu = self.__class__.choiceMenu
+        mods_prior_to_patch = load_order.cached_lord.loadOrder[
+                        :load_order.loIndexCached(patch_files.executing_patch)]
+        for mod in mods_prior_to_patch:
+            if autoRe.match(mod.s) or (
+                    self.__class__.autoKey & bosh.modInfos[mod].getBashTags()):
+                autoItems.append(mod)
+                if self.choiceMenu: self.get_set_choice(mod)
+        return autoItems
+
+    def _import_config(self, default=False):
+        super(_ListPatcherPanel, self)._import_config(default)
+        if default:
+            self.SetItems(self.getAutoItems())
+            return
+        for index, item in enumerate(self.items):
+            try:
+                self.gList.Check(index, self.configChecks[item])
+            except KeyError: # keys should be all bolt.Paths
+                pass
+                # bolt.deprint(_(u'item %s not in saved configs [%s]') % (
+                #     item, u', '.join(map(repr, self.configChecks))))
 
 #------------------------------------------------------------------------------
 class _TweakPatcherPanel(_PatcherPanel):
@@ -488,26 +553,15 @@ class _TweakPatcherPanel(_PatcherPanel):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
         #--Else...
-        gConfigPanel, gText = self._build_tweaks_list(gTipText, parent)
-        if self.selectCommands:
-            self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
-                                     onButClick=self.TweakSelectAll)
-            self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
-                                       onButClick=self.TweakDeselectAll)
-            gSelectSizer = (vSizer(
-                 vspace(12), self.gSelectAll,
-                 vspace(4), self.gDeselectAll,
-                ),0,wx.EXPAND|wx.LEFT,4)
-        else: gSelectSizer = None
-        #--Init GUI
-        self.SetTweaks()
+        gConfigPanel, gText= self._build_tweaks_list(gTipText, parent)
+        gTweakSelectSizer = self._get_tweak_select_sizer()
         #--Layout
         gSizer = vSizer(
             (gText,), vspace(),
             (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
-                gSelectSizer,
+                gTweakSelectSizer,
                 ),1,wx.EXPAND),
             )
         gConfigPanel.SetSizer(gSizer)
@@ -530,6 +584,21 @@ class _TweakPatcherPanel(_PatcherPanel):
         self.mouse_dex = -1
         self.mouse_pos = None
         return gConfigPanel, gText
+
+    def _get_tweak_select_sizer(self, ):
+        if self.selectCommands:
+            self.gTweakSelectAll = Button(self.gConfigPanel,
+                _(u'Select All'), onButClick=self.TweakSelectAll)
+            self.gTweakDeselectAll = Button(self.gConfigPanel,
+                _(u'Deselect All'), onButClick=self.TweakDeselectAll)
+            gTweakSelectSizer = (vSizer(
+                 vspace(12), self.gTweakSelectAll,
+                 vspace(4), self.gTweakDeselectAll,
+                ),0,wx.EXPAND|wx.LEFT,4)
+        else: gTweakSelectSizer = None
+        #--Init GUI
+        self.SetTweaks()
+        return gTweakSelectSizer
 
     @staticmethod
     def _label(label, value): # edit label text with value
@@ -713,6 +782,10 @@ class _TweakPatcherPanel(_PatcherPanel):
             pass #ListBox instead of CheckListBox
         self.gConfigPanel.GetParent().gPatchers.SetFocusFromKbd()
 
+    def mass_select(self, select=True):
+        super(_TweakPatcherPanel, self).mass_select(select)
+        self.TweakSelectAll() if select else self.TweakDeselectAll()
+
     #--Config Phase -----------------------------------------------------------
     def getConfig(self, configs):
         """Get config from configs dictionary and/or set to default."""
@@ -732,6 +805,30 @@ class _TweakPatcherPanel(_PatcherPanel):
         self.isActive = len(self.enabledTweaks) > 0 ##: NOT HERE !!!!
         return config
 
+    def _log_config(self, conf, config, clip, log):
+        self.getConfig(config) # will set self.tweaks and load their config
+        for tweak in self.tweaks:
+            if tweak.key in conf:
+                enabled, value = conf.get(tweak.key, (False, u''))
+                label = tweak.getListLabel().replace(u'[[', u'[').replace(
+                    u']]', u']')
+                if enabled:
+                    log(u'* __%s__' % label)
+                    clip.write(u' ** %s\n' % label)
+                else:
+                    log(u'. ~~%s~~' % label)
+                    clip.write(u'    %s\n' % label)
+
+    def _import_config(self, default=False):
+        super(_TweakPatcherPanel, self)._import_config(default)
+        for index, tweakie in enumerate(self.tweaks):
+            try:
+                self.gTweakList.Check(index, tweakie.isEnabled)
+                self.gTweakList.SetString(index, tweakie.getListLabel())
+            except KeyError: pass # no such key don't spam the log
+            except: bolt.deprint(_(u'Error importing Bashed patch '
+                u'configuration. Item %s skipped.') % tweakie, traceback=True)
+
 #------------------------------------------------------------------------------
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     """Only used in Race Patcher which features a double panel (source mods
@@ -749,26 +846,13 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         gConfigPanel, gText = self._build_tweaks_list(gTipText, parent)
         #--Import List
         self.gList = balt.listBox(gConfigPanel, kind='checklist')
+        self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
         self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
         self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
         #--Buttons
-        self.gSelectAll = Button(gConfigPanel, _(u'Select All'),
-                                 onButClick=self.SelectAll)
-        self.gDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
-                                   onButClick=self.DeselectAll)
-        gSelectSizer = (vSizer(
-             vspace(12), self.gSelectAll,
-             vspace(4), self.gDeselectAll,
-            ),0,wx.EXPAND|wx.LEFT,4)
-        self.gTweakSelectAll = Button(gConfigPanel, _(u'Select All'),
-                                      onButClick=self.TweakSelectAll)
-        self.gTweakDeselectAll = Button(gConfigPanel, _(u'Deselect All'),
-                                        onButClick=self.TweakDeselectAll)
-        gTweakSelectSizer = (vSizer(
-             vspace(12), self.gTweakSelectAll,
-             vspace(4), self.gTweakDeselectAll,
-            ),0,wx.EXPAND|wx.LEFT,4)
+        gSelectSizer = self._get_select_sizer()
+        gTweakSelectSizer = self._get_tweak_select_sizer()
         #--Layout
         gSizer = vSizer(
             (gText,), vspace(),
@@ -785,22 +869,15 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         #--Initialize
         self.SetItems(self.getAutoItems())
-        self.SetTweaks()
         return gConfigPanel
 
     #--Config Phase -----------------------------------------------------------
-    def getAutoItems(self): ##: why this override ?
+    def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        autoRe = self.__class__.autoRe
-        autoKey = self.__class__.autoKey
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            name = modInfo.name
-            if dex(name) >= dex(self._patchFile().patchName): continue
-            if autoRe.match(name.s) or (autoKey & set(modInfo.getBashTags())):
-                autoItems.append(name)
-        return autoItems
+        return self._get_auto_mods()
+
+    def _log_config(self, conf, config, clip, log): ##: HACK - fix getAutoItems
+        super(_ListPatcherPanel, self)._log_config(conf, config, clip, log)
 
 #------------------------------------------------------------------------------
 class _ImporterPatcherPanel(_ListPatcherPanel):
@@ -830,7 +907,7 @@ class _ListsMergerPanel(_ListPatcherPanel):
     default_isEnabled = True
     selectCommands = False
 
-    def getChoice(self,item):
+    def get_set_choice(self, item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
         if not isinstance(choice,set): choice = {u'Auto'}
@@ -850,18 +927,30 @@ class _ListsMergerPanel(_ListPatcherPanel):
         else:
             return item
 
+    def _log_config(self, conf, config, clip, log):
+        self.configChoices = conf.get('configChoices', {})
+        for item in conf.get('configItems', []):
+            log(u'. __%s__' % self.getItemLabel(item))
+            clip.write(u'    %s\n' % self.getItemLabel(item))
+
+    def _import_config(self, default=False): # TODO(ut):non default not handled
+        if default:
+            super(_ListsMergerPanel, self)._import_config(default)
+
+    def mass_select(self, select=True): self.isEnabled = select
+
 class _MergerPanel(_ListPatcherPanel):
     listLabel = _(u'Mergeable Mods')
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
         autoItems = []
-        dex = load_order.loIndexCached
-        for modInfo in bosh.modInfos.values():
-            if dex(modInfo.name) >= dex(self._patchFile().patchName): continue
-            if (modInfo.name in bosh.modInfos.mergeable and
-                u'NoMerge' not in modInfo.getBashTags()):
-                autoItems.append(modInfo.name)
+        mods_prior_to_patch = load_order.cached_lord.loadOrder[
+                        :load_order.loIndexCached(patch_files.executing_patch)]
+        for mod in mods_prior_to_patch:
+            if (mod in bosh.modInfos.mergeable and
+                u'NoMerge' not in bosh.modInfos[mod].getBashTags()):
+                autoItems.append(mod)
         return autoItems
 
 class _GmstTweakerPanel(_TweakPatcherPanel):
@@ -1028,14 +1117,14 @@ from .patcher_dialog import PBash_gui_patchers, CBash_gui_patchers, \
 from importlib import import_module
 gamePatcher = import_module('.patcher', ##: move in bush.py !
                        package=bush.game.__name__)
-for name, typeInfo in gamePatcher.gameSpecificPatchers.items():
-    globals()[name] = type(name, (typeInfo.clazz, _PatcherPanel), {})
+for patcher_name, typeInfo in gamePatcher.gameSpecificPatchers.items():
+    globals()[patcher_name] = type(patcher_name, (typeInfo.clazz, _PatcherPanel), {})
     if typeInfo.twinPatcher:
-        otherPatcherDict[name] = typeInfo.twinPatcher
-for name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
-    globals()[name] = type(name, (typeInfo.clazz, _ListPatcherPanel), {})
+        otherPatcherDict[patcher_name] = typeInfo.twinPatcher
+for patcher_name, typeInfo in gamePatcher.gameSpecificListPatchers.items():
+    globals()[patcher_name] = type(patcher_name, (typeInfo.clazz, _ListPatcherPanel), {})
     if typeInfo.twinPatcher:
-        otherPatcherDict[name] = typeInfo.twinPatcher
+        otherPatcherDict[patcher_name] = typeInfo.twinPatcher
 
 del import_module
 

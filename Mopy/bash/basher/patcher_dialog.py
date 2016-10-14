@@ -37,7 +37,7 @@ from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
     RevertToSavedButton, RevertButton, hspace, vspace
 from ..bolt import UncodedError, SubProgress, GPath, CancelError, BoltError, \
-    SkipError, deprint, Path
+    SkipError, Path
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 from ..patcher.base import AListPatcher
@@ -48,7 +48,10 @@ PBash_gui_patchers = [] #--All gui patchers classes for this game
 CBash_gui_patchers = [] #--All gui patchers classes for this game (CBash mode)
 
 class PatchDialog(balt.Dialog):
-    """Bash Patch update dialog."""
+    """Bash Patch update dialog.
+
+    :type patchers: list[basher.gui_patchers._PatcherPanel]
+    """
 
     def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
         self.parent = parent
@@ -348,56 +351,58 @@ class PatchDialog(balt.Dialog):
                      isCBash=self.doCBash, win=self.parent,
                      outDir=bass.dirs['patches'])
 
+    __old_key = GPath(u'Saved Bashed Patch Configuration')
+    __new_key = u'Saved Bashed Patch Configuration (%s)'
     def ImportConfig(self):
         """Import the configuration from a user selected dat file."""
         config_dat = self.patchInfo.name + _(u'_Configuration.dat')
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        textPath = balt.askOpen(self.parent, _(u'Import Bashed Patch configuration from:'), textDir, config_dat, u'*.dat', mustExist=True)
+        textPath = balt.askOpen(self.parent,
+                                _(u'Import Bashed Patch configuration from:'),
+                                textDir, config_dat, u'*.dat', mustExist=True)
         if not textPath: return
         table = bolt.Table(bolt.PickleDict(textPath))
-        #try the current Bashed Patch mode.
-        patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'Python',u'CBash'][self.doCBash])),'bash.patch.configs',{})
-        if not patchConfigs: #try the old format:
-            patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration'),'bash.patch.configs',{})
-            if patchConfigs:
-                if configIsCBash(patchConfigs) != self.doCBash:
-                    patchConfigs = self.UpdateConfig(patchConfigs)
-            else:   #try the non-current Bashed Patch mode:
-                patchConfigs = table.getItem(GPath(u'Saved Bashed Patch Configuration (%s)' % ([u'CBash',u'Python'][self.doCBash])),'bash.patch.configs',{})
-                if patchConfigs:
-                    patchConfigs = self.UpdateConfig(patchConfigs)
-        if patchConfigs is None:
-            patchConfigs = {}
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(False)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try:
-                        patcher.gList.Check(index,patcher.configChecks[item])
-                    except KeyError: pass#deprint(_(u'item %s not in saved configs') % (item))
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except: deprint(_(u'item %s not in saved configs') % item)
+        # try the current Bashed Patch mode.
+        patchConfigs = table.getItem(
+            GPath(self.__new_key % ([u'Python', u'CBash'][self.doCBash])),
+            'bash.patch.configs', {})
+        convert = False
+        if not patchConfigs: # try the non-current Bashed Patch mode
+            patchConfigs = table.getItem(
+                GPath(self.__new_key % ([u'CBash', u'Python'][self.doCBash])),
+                'bash.patch.configs', {})
+            convert = bool(patchConfigs)
+        if not patchConfigs: # try the old format
+            patchConfigs = table.getItem(self.__old_key, 'bash.patch.configs',
+                                         {})
+            convert = configIsCBash(patchConfigs) != self.doCBash
+        if not patchConfigs:
+            balt.showWarning(_(u'No patch config data found in %s') % textPath,
+                             _(u'Import Config'))
+            return
+        if convert:
+            patchConfigs = self.UpdateConfig(patchConfigs)
+            if patchConfigs is None: return
+        self._load_config(patchConfigs)
+
+    def _load_config(self, patchConfigs, set_first_load=False, default=False):
+        for index, patcher in enumerate(self.patchers):
+            patcher.import_config(patchConfigs, set_first_load=set_first_load,
+                                  default=default)
+            self.gPatchers.Check(index, patcher.isEnabled)
         self.SetOkEnable()
 
     def UpdateConfig(self, patchConfigs):
-        if not balt.askYes(self.parent,
-            _(u"Wrye Bash detects that the selected file was saved in Bash's %s mode, do you want Wrye Bash to attempt to adjust the configuration on import to work with %s mode (Good chance there will be a few mistakes)? (Otherwise this import will have no effect.)")
-                % ([u'CBash',u'Python'][self.doCBash],
-                   [u'Python',u'CBash'][self.doCBash])):
+        if not balt.askYes(self.parent, _(
+            u"Wrye Bash detects that the selected file was saved in Bash's "
+            u"%s mode, do you want Wrye Bash to attempt to adjust the "
+            u"configuration on import to work with %s mode (Good chance "
+            u"there will be a few mistakes)? (Otherwise this import will "
+            u"have no effect.)") % ([u'CBash', u'Python'][self.doCBash],
+                                    [u'Python', u'CBash'][self.doCBash])):
             return
-        if self.doCBash:
-            PatchFile.patchName = CBash_PatchFile.patchName
-        else:
-            CBash_PatchFile.patchName = PatchFile.patchName
         return self.ConvertConfig(patchConfigs)
 
     @staticmethod
@@ -412,70 +417,28 @@ class PatchDialog(balt.Dialog):
 
     def RevertConfig(self):
         """Revert configuration back to saved"""
-        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,'bash.patch.configs',{})
+        patchConfigs = bosh.modInfos.table.getItem(self.patchInfo.name,
+                                                   'bash.patch.configs', {})
         if configIsCBash(patchConfigs) and not self.doCBash:
             patchConfigs = self.ConvertConfig(patchConfigs)
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(False)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue #not handled yet!
-                for index, item in enumerate(patcher.items):
-                    try: patcher.gList.Check(index,patcher.configChecks[item])
-                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-        self.SetOkEnable()
+        self._load_config(patchConfigs)
 
     def DefaultConfig(self):
         """Revert configuration back to default"""
-        patchConfigs = {}
-        for index,patcher in enumerate(self.patchers):
-            patcher.SetIsFirstLoad(True)
-            patcher.getConfig(patchConfigs)
-            self.gPatchers.Check(index,patcher.isEnabled)
-            if hasattr(patcher, 'gList'):
-                patcher.SetItems(patcher.getAutoItems())
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    try:
-                        patcher.gTweakList.Check(index,item.isEnabled)
-                        patcher.gTweakList.SetString(index,item.getListLabel())
-                    except Exception as err: deprint(_(u'Error reverting Bashed patch configuration (error is: %s). Item %s skipped.') % (err,item))
-        self.SetOkEnable()
+        self._load_config({}, set_first_load=True, default=True)
 
     def SelectAll(self):
         """Select all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,True)
-            patcher.isEnabled = True
-            if hasattr(patcher, 'gList'):
-                if patcher.getName() == 'Leveled Lists': continue
-                for index, item in enumerate(patcher.items):
-                    patcher.gList.Check(index,True)
-                    patcher.configChecks[item] = True
-            if hasattr(patcher, 'gTweakList'):
-                for index, item in enumerate(patcher.tweaks):
-                    patcher.gTweakList.Check(index,True)
-                    item.isEnabled = True
-            self.gExecute.Enable(True)
+            patcher.mass_select()
+        self.gExecute.Enable(True)
 
     def DeselectAll(self):
         """Deselect all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
-            patcher.isEnabled = False
-            if patcher.getName() in [_(u'Leveled Lists'),_(u"Alias Mod Names")]: continue # special case that one.
-            if hasattr(patcher, 'gList'):
-                patcher.gList.SetChecked([])
-                patcher.OnListCheck()
-            if hasattr(patcher, 'gTweakList'):
-                patcher.gTweakList.SetChecked([])
+            patcher.mass_select(select=False)
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
@@ -493,7 +456,6 @@ class PatchDialog(balt.Dialog):
         """Remotely enables a patcher.  Called from a particular patcher's OnCheck method."""
         index = self.patchers.index(patcher)
         self.gPatchers.Check(index)
-        patcher.isEnabled = True
         self.SetOkEnable()
 
     def _BoldPatcher(self,patcher):

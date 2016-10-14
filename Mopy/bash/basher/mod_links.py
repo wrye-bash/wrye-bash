@@ -39,7 +39,7 @@ from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     OkButton
 from ..bolt import GPath, SubProgress, AbstractError, CancelError, formatDate
 from ..bosh import faces
-from ..patcher import configIsCBash, exportConfig
+from ..patcher import configIsCBash, exportConfig, patch_files
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..cint import CBash, FormID ##: CBash should be in bosh
@@ -907,18 +907,13 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             msg = msg % (self._selected_item.s, old_mode, new_mode)
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
-        prog = None
-        if self.doCBash:
-            CBash_PatchFile.patchName = self._selected_item
-            prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
-        else:
-            PatchFile.patchName = self._selected_item
-            if bass.settings['bash.CBashEnabled']:
-                # CBash is enabled, so it's very likely that the merge info currently is from a CBash mode scan
-                prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
+        patch_files.executing_patch = self._selected_item
         mods_prior_to_patch = load_order.cached_lord.loadOrder[
                               :load_order.loIndexCached(self._selected_item)]
-        if prog is not None:
+        if self.doCBash or bass.settings['bash.CBashEnabled']:
+            # if doing a python patch but CBash is enabled, it's very likely
+            # that the merge info currently is from a CBash mode scan, rescan
+            prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
             with prog:
                 bosh.modInfos.rescanMergeable(mods_prior_to_patch, prog,
                                               self.doCBash)
@@ -1075,59 +1070,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
             log(u'Python')
             clip.write(u' ** Python\n')
         for patcher in patchers:
-            className = patcher.__class__.__name__
-            humanName = patcher.__class__.name
-            # Patcher in the config?
-            if not className in config: continue
-            # Patcher active?
-            conf = config[className]
-            if not conf.get('isEnabled',False): continue
-            # Active
-            log.setHeader(u'== '+humanName)
-            clip.write(u'\n')
-            clip.write(u'== '+humanName+u'\n')
-            # TODO(ut): move this logic to gui_patchers.py (config phase)
-            if isinstance(patcher, (base.CBash_MultiTweaker,
-                                    base.MultiTweaker)):
-                # Tweak patcher
-                patcher.getConfig(config)
-                for tweak in patcher.tweaks:
-                    if tweak.key in conf:
-                        enabled,value = conf.get(tweak.key,(False,u''))
-                        label = tweak.getListLabel().replace(u'[[',u'[').replace(u']]',u']')
-                        if enabled:
-                            log(u'* __%s__' % label)
-                            clip.write(u' ** %s\n' % label)
-                        else:
-                            log(u'. ~~%s~~' % label)
-                            clip.write(u'    %s\n' % label)
-            elif isinstance(patcher, (special.CBash_ListsMerger,
-                                      special.ListsMerger)):
-                # Leveled Lists
-                patcher.configChoices = conf.get('configChoices',{})
-                for item in conf.get('configItems',[]):
-                    log(u'. __%s__' % patcher.getItemLabel(item))
-                    clip.write(u'    %s\n' % patcher.getItemLabel(item))
-            elif isinstance(patcher, (base.CBash_AliasesPatcher,
-                                      base.AliasesPatcher)):
-                # Alias mod names
-                aliases = conf.get('aliases',{})
-                for mod in aliases:
-                    log(u'* __%s__ >> %s' % (mod.s, aliases[mod].s))
-                    clip.write(u'  %s >> %s\n' % (mod.s, aliases[mod].s))
-            else:
-                items = conf.get('configItems',[])
-                if len(items) == 0:
-                    log(u' ')
-                for item in conf.get('configItems',[]):
-                    checks = conf.get('configChecks',{})
-                    checked = checks.get(item,False)
-                    if checked:
-                        log(u'* __%s__' % item)
-                        clip.write(u' ** %s\n' % item)
-                    else:
-                        log(u'. ~~%s~~' % item)
-                        clip.write(u'    %s\n' % item)
+            patcher.log_config(config, clip, log)
         #-- Show log
         clip.write(u'[/xml][/spoiler]')
         balt.copyToClipboard(clip.getvalue())
