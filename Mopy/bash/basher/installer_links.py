@@ -285,8 +285,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             ui_refresh[1] = True
             is_game_ini, target_path = False, bass.dirs['mods'].join(iniFile)
             for game_ini in bosh.gameInis:
-                if iniFile == game_ini.path.stail:
-                    target_path = game_ini.path
+                if iniFile == game_ini.abs_path.stail:
+                    target_path = game_ini.abs_path
                     is_game_ini = True
                     target_ini_file = game_ini
                     break

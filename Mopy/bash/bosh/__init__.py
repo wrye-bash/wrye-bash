@@ -1544,13 +1544,13 @@ class IniFile(object):
     defaultSection = u'General'
 
     def __init__(self, path):
-        self.path = path
+        self.abs_path = path
         self.isCorrupted = False
         #--Settings cache
         try:
-            self._ini_size, self._ini_mod_time = self.path.size_mtime()
+            self._file_size, self._file_mod_time = self.abs_path.size_mtime()
         except OSError:
-            self._ini_size = self._ini_mod_time = 0
+            self._file_size = self._file_mod_time = 0
         self._settings_cache = self.__empty
         self._settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
@@ -1581,11 +1581,11 @@ class IniFile(object):
     def getSettings(self, with_line_numbers=False, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
-        if not self.path.exists() or self.path.isdir():
+        if not self.abs_path.exists() or self.abs_path.isdir():
             return ({}, {}) if with_deleted else {}
         if self.needs_update(_reset_cache=True):
             self._settings_cache_linenum, self._deleted_cache = \
-                self._getTweakFileSettings(self.path, lineNumbers=True)
+                self._getTweakFileSettings(self.abs_path, lineNumbers=True)
             self._settings_cache = dict(
                 (k, dict((x, y[0]) for x, y in v.iteritems())) for k, v in
                 self._settings_cache_linenum.iteritems())
@@ -1596,21 +1596,21 @@ class IniFile(object):
 
     def needs_update(self, _reset_cache=False):
         try:
-            psize, pmtime = self.path.size_mtime()
+            psize, pmtime = self.abs_path.size_mtime()
             if self._deleted:
                 self.updated = True # restored
                 self._deleted = False
         except OSError:
-            self._ini_size = self._ini_mod_time = 0
+            self._file_size = self._file_mod_time = 0
             if not self._deleted:
                 # mark as deleted to avoid requesting updates on each refresh
                 self._deleted = self.updated = True
                 return True
             return False # we already know it's deleted (used for game inis)
-        if self._settings_cache is self.__empty or self._ini_size != psize \
-                or self._ini_mod_time != pmtime:
+        if self._settings_cache is self.__empty or self._file_size != psize \
+                or self._file_mod_time != pmtime:
             if _reset_cache:
-                self._ini_size, self._ini_mod_time = psize, pmtime
+                self._file_size, self._file_mod_time = psize, pmtime
             self.updated = True
             return True
         return False
@@ -1622,7 +1622,7 @@ class IniFile(object):
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings,deleted_settings
         default_section = self.__class__.defaultSection
-        if tweakPath != self.path:
+        if tweakPath != self.abs_path:
             encoding = 'utf-8'
             setCorrupted = False
         else:
@@ -1683,7 +1683,7 @@ class IniFile(object):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        if tweakPath != self.path:
+        if tweakPath != self.abs_path:
             encoding = 'utf-8'
         else:
             encoding = self.encoding
@@ -1753,7 +1753,7 @@ class IniFile(object):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
         full key=value line ending in newline char."""
-        if not self.path.isfile():
+        if not self.abs_path.isfile():
             return
         #--Ensure settings dicts are using LString's as keys
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
@@ -1766,8 +1766,8 @@ class IniFile(object):
         reSetting = self.reSetting
         #--Read init, write temp
         section = sectionSettings = None
-        with self.path.open('r') as iniFile:
-            with self.path.temp.open('w',encoding=self.encoding) as tmpFile:
+        with self.abs_path.open('r') as iniFile:
+            with self.abs_path.temp.open('w', encoding=self.encoding) as tmpFile:
                 tmpFileWrite = tmpFile.write
                 for line in iniFile:
                     try:
@@ -1828,14 +1828,14 @@ class IniFile(object):
                                 tmpFileWrite(u'%s=%s\n' % (setting,value))
                         tmpFileWrite(u'\n')
         #--Done
-        self.path.untemp()
+        self.abs_path.untemp()
 
     def applyTweakFile(self,tweakPath):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        if not self.path.isfile() or not tweakPath.isfile():
+        if not self.abs_path.isfile() or not tweakPath.isfile():
             return
-        if tweakPath != self.path:
+        if tweakPath != self.abs_path:
             encoding = 'utf-8'
         else:
             encoding = self.encoding
@@ -1873,7 +1873,7 @@ def BestIniFile(path):
     if not path:
         return oblivionIni
     for game_ini in gameInis:
-        if path == game_ini.path:
+        if path == game_ini.abs_path:
             return game_ini
     INICount = IniFile.formatMatch(path)
     OBSECount = OBSEIniFile.formatMatch(path)
@@ -2028,7 +2028,7 @@ class OBSEIniFile(IniFile):
         super(OBSEIniFile, self).saveSetting(section, key, value)
 
     def saveSettings(self,ini_settings,deleted_settings={}):
-        if not self.path.isfile():
+        if not self.abs_path.isfile():
             return
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
@@ -2046,8 +2046,8 @@ class OBSEIniFile(IniFile):
         setGSFormat = u'setGS %s %s\n'
         setNGSFormat = u'SetNumericGameSetting %s %s\n'
         section = {}
-        with self.path.open('r') as iniFile:
-            with self.path.temp.open('w') as tmpFile:
+        with self.abs_path.open('r') as iniFile:
+            with self.abs_path.temp.open('w') as tmpFile:
                 # Modify/Delete existing lines
                 for line in iniFile:
                     # Test if line is currently delted
@@ -2085,10 +2085,10 @@ class OBSEIniFile(IniFile):
                     section = ini_settings[sectionKey]
                     for setting in section:
                         tmpFile.write(section[setting])
-        self.path.untemp()
+        self.abs_path.untemp()
 
     def applyTweakFile(self,tweakPath):
-        if not self.path.isfile() or not tweakPath.isfile():
+        if not self.abs_path.isfile() or not tweakPath.isfile():
             return
         reDeleted = self.reDeleted
         reSet = self.reSet
@@ -2147,10 +2147,10 @@ class OblivionIni(IniFile):
     @balt.conversation
     def ask_create_game_ini(self, msg=u''):
         if self is not oblivionIni: return True
-        if self.path.exists(): return True
+        if self.abs_path.exists(): return True
         srcPath = dirs['app'].join(bush.game.defaultIniFile)
         default_path_exists = srcPath.exists()
-        msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.path}) + \
+        msg = _(u'%(ini_path)s does not exist.' % {'ini_path': self.abs_path}) + \
               u'\n\n' + ((msg + u'\n\n') if msg else u'')
         if default_path_exists:
             msg += _(u'Do you want Bash to create it by copying '
@@ -2162,7 +2162,7 @@ class OblivionIni(IniFile):
             balt.showError(None, msg, _(u'Missing game Ini'))
             return False
         try:
-            srcPath.copyTo(self.path)
+            srcPath.copyTo(self.abs_path)
             if balt.Link.Frame.iniList:
                 balt.Link.Frame.iniList.panel.ShowPanel(refresh_infos=False,
                                                         clean_targets=False)
@@ -2170,7 +2170,7 @@ class OblivionIni(IniFile):
                 iniInfos.refresh(refresh_infos=False)
             return True
         except (OSError, IOError):
-            error_msg = u'Failed to copy %s to %s' % (srcPath, self.path)
+            error_msg = u'Failed to copy %s to %s' % (srcPath, self.abs_path)
             deprint(error_msg, traceback=True)
             balt.showError(None, error_msg, _(u'Missing game Ini'))
         return False
@@ -3276,14 +3276,14 @@ class INIInfos(FileInfos):
             # objects.  That will take care of it.
             if not isinstance(path,bolt.Path) or not path.isfile():
                 for iFile in gameInis: # don't remove game inis even if missing
-                    if iFile.path == path: continue
+                    if iFile.abs_path == path: continue
                 del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
         csChoices = [x.lower() for x in _target_inis]
         for iFile in gameInis: # add the game inis even if missing
-            if iFile.path.tail.cs not in csChoices:
-                _target_inis[iFile.path.stail] = iFile.path
+            if iFile.abs_path.tail.cs not in csChoices:
+                _target_inis[iFile.abs_path.stail] = iFile.abs_path
         if _(u'Browse...') not in _target_inis:
             _target_inis[_(u'Browse...')] = None
         settings['bash.ini.choices'] = _target_inis
@@ -3291,7 +3291,7 @@ class INIInfos(FileInfos):
         settings['bash.ini.choice'] = choice
         if choice > 0:
             self.ini = _target_inis.values()[choice]
-        else: self.ini = oblivionIni.path
+        else: self.ini = oblivionIni.abs_path
 
     @property
     def ini(self):
@@ -3299,10 +3299,10 @@ class INIInfos(FileInfos):
     @ini.setter
     def ini(self, ini_path):
         """:type ini_path: bolt.Path"""
-        if self._ini is not None and self._ini.path == ini_path:
+        if self._ini is not None and self._ini.abs_path == ini_path:
             return # nothing to do
         for iFile in gameInis:
-            if iFile.path == ini_path:
+            if iFile.abs_path == ini_path:
                 self._ini = iFile
                 break
         else:
@@ -6116,7 +6116,7 @@ class InstallersData(_DataStore):
                  refresh_info=None, deleted=None, pending=None, projects=None):
         progress = progress or bolt.Progress()
         #--Archive invalidation
-        if settings.get('bash.bsaRedirection') and oblivionIni.path.exists():
+        if settings.get('bash.bsaRedirection') and oblivionIni.abs_path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
         changed = not self.loaded and self.__load(progress)

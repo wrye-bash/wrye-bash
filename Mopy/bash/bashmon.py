@@ -63,8 +63,8 @@ class Data:
     def update(self):
         """Check to see if saves directory has changed. If so, update paths."""
         ini = bosh.oblivionIni
-        if not self.savesDir or ini.mtime != ini.path.mtime:
-            ini.mtime = ini.path.mtime
+        if not self.savesDir or ini.mtime != ini.abs_path.mtime:
+            ini.mtime = ini.abs_path.mtime
             savesDir = bass.dirs['saveBase'].join(ini.getSetting(u'General', u'SLocalSavePath', u'Saves\\'))
             if savesDir != self.savesDir:
                 print u'\n'+_(u'Monitoring:'),savesDir.stail

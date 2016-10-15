@@ -730,7 +730,7 @@ class TargetINILineCtrl(INIListCtrl):
             self.DeleteAllItems()
         num = self.GetItemCount()
         try:
-            with bosh.iniInfos.ini.path.open('r') as ini:
+            with bosh.iniInfos.ini.abs_path.open('r') as ini:
                 lines = ini.readlines()
                 for i,line in enumerate(lines):
                     if i >= num:
@@ -1623,7 +1623,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
 
     def RefreshPanel(self, detail_item='SAME', focus_list=True):
         """Sets the target INI file to the current_ini_path."""
-        target_changed = bosh.iniInfos.ini.path != self.current_ini_path
+        target_changed = bosh.iniInfos.ini.abs_path != self.current_ini_path
         if target_changed:
             bosh.iniInfos.ini = self.current_ini_path
         self._enable_buttons() # if a game ini was deleted will disable edit
@@ -1652,7 +1652,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         for name, ini_path in self.target_inis.iteritems():
             if ini_path is not None and not ini_path.isfile():
                 for iFile in bosh.gameInis:
-                    if iFile.path == ini_path:
+                    if iFile.abs_path == ini_path:
                         break
                 else:
                     del self.target_inis[name]
@@ -3846,7 +3846,7 @@ class BashFrame(wx.Frame):
         elif self.oblivionIniMissing:
             self.oblivionIniMissing = False
             balt.showWarning(self, self._ini_missing % {
-                'ini': bosh.oblivionIni.path, 'game': bush.game.displayName},
+                'ini': bosh.oblivionIni.abs_path, 'game': bush.game.displayName},
                              _(u'Missing game Ini'))
 
     def _missingDocsDir(self):
