@@ -29,7 +29,7 @@ import wx
 # Internal
 from .. import bass, bosh, bush, balt, load_order, bolt
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
-    Links, SeparatorLink, CheckLink, Link, vspace
+    Links, SeparatorLink, CheckLink, Link, vspace, VSizer
 from ..bolt import GPath
 from ..patcher import patch_files
 
@@ -38,24 +38,18 @@ reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""
     selectCommands = True # whether this panel displays De/Select All
+    style = wx.TAB_TRAVERSAL
     # CONFIG DEFAULTS
     default_isEnabled = False # is the patcher enabled on a new bashed patch ?
-
-    def SetCallbackFns(self,checkPatcherFn,boldPatcherFn):
-        self._checkPatcherFn = checkPatcherFn
-        self._boldPatcherFn = boldPatcherFn
 
     def SetIsFirstLoad(self,isFirstLoad):
         self._isFirstLoad = isFirstLoad
 
     def _EnsurePatcherEnabled(self):
-        if hasattr(self, '_checkPatcherFn'):
-            self._checkPatcherFn(self)
+        self.patch_dialog.CheckPatcher(self)
         self.isEnabled = True
 
-    def _BoldPatcherLabel(self):
-        if hasattr(self, '_boldPatcherFn'):
-            self._boldPatcherFn(self)
+    def _BoldPatcherLabel(self): self.patch_dialog.BoldPatcher(self)
 
     def _GetIsFirstLoad(self):
         if hasattr(self, '_isFirstLoad'):
@@ -64,15 +58,19 @@ class _PatcherPanel(object):
             return False
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
-        """Show config."""
-        if not self.gConfigPanel:
-            self.gTipText = gTipText
-            gConfigPanel = self.gConfigPanel = wx.Window(parent)
-            text = fill(self.text,70)
-            gText = StaticText(self.gConfigPanel,text)
-            gSizer = vSizer(gText)
-            gConfigPanel.SetSizer(gSizer)
-            gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
+        """Show config.
+
+        :type parent: basher.patcher_dialog.PatchDialog
+        """
+        if self.gConfigPanel: return self.gConfigPanel
+        self.patch_dialog = parent
+        self.gTipText = gTipText
+        self.gConfigPanel = wx.Panel(parent, style=self.__class__.style)
+        text = fill(self.text, 70)
+        gText = StaticText(self.gConfigPanel, text)
+        self.gSizer = VSizer(gText)
+        self.gConfigPanel.SetSizer(self.gSizer)
+        gConfigSizer.Add(self.gConfigPanel, 1, wx.EXPAND)
         return self.gConfigPanel
 
     def Layout(self):
@@ -150,15 +148,8 @@ class _AliasesPatcherPanel(_PatcherPanel):
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
-        #--Tip
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent)
-        # CRUFT (ut) PBASH -> CBASH difference - kept PBash:
-        # -        text = fill(self.__class__.text,70)
-        # +        text = fill(self.text,70)
-        text = fill(self.text,70)
-        gText = StaticText(gConfigPanel,text)
+        gConfigPanel = super(_AliasesPatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
         #gExample = StaticText(gConfigPanel,
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
@@ -166,12 +157,9 @@ class _AliasesPatcherPanel(_PatcherPanel):
                                       onKillFocus=self.OnEditAliases)
         self.SetAliasText()
         #--Sizing
-        gSizer = vSizer(
-            gText,
+        self.gSizer.AddElements(
             #(gExample,0,wx.EXPAND|wx.TOP,8),
             vspace(), (self.gAliases, 1, wx.EXPAND))
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return self.gConfigPanel
 
     def SetAliasText(self):
@@ -217,8 +205,6 @@ class _ListPatcherPanel(_PatcherPanel):
     listLabel = _(u'Source Mods/Files')
     forceAuto = True
     forceItemCheck = False #--Force configChecked to True for all items
-    #--List of possible choices for each config item. Item 0 is default.
-    choiceMenu = None # only _ListsMergerPanel has it - move it there !
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     #--Compiled re used by getAutoItems
     autoRe = re.compile(ur"^UNDEFINED$", re.I | re.U)
@@ -231,24 +217,15 @@ class _ListPatcherPanel(_PatcherPanel):
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
+        gConfigPanel = super(_ListPatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
         self.forceItemCheck = self.__class__.forceItemCheck
         self.selectCommands = self.__class__.selectCommands
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(parent)
-        text = fill(self.text,70)
-        gText = StaticText(self.gConfigPanel,text)
         if self.forceItemCheck:
             self.gList = balt.listBox(gConfigPanel, isSingle=False)
         else:
             self.gList = balt.listBox(gConfigPanel, kind='checklist')
             self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
-        #--Events
-        self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
-        self.mouse_dex = -1
-        self.mouse_pos = None
         #--Manual controls
         if self.forceAuto:
             gManualSizer = None
@@ -268,16 +245,13 @@ class _ListPatcherPanel(_PatcherPanel):
                 ),0,wx.EXPAND|wx.LEFT,4)
         gSelectSizer = self._get_select_sizer()
         #--Layout
-        gSizer = vSizer(
-            (gText,), vspace(),
+        self.gSizer.AddElements(vspace(),
             (hsbSizer(gConfigPanel, self.__class__.listLabel,
                 ((4,0),0,wx.EXPAND),
                 (self.gList,1,wx.EXPAND|wx.TOP,2),
                 gManualSizer,gSelectSizer,
                 ),1,wx.EXPAND),
             )
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
 
     def _get_select_sizer(self):
@@ -373,60 +347,6 @@ class _ListPatcherPanel(_PatcherPanel):
         order."""
         return load_order.get_ordered(items)
 
-    #--Choice stuff ---------------------------------------
-    def OnMouse(self,event):
-        """Check mouse motion to detect right click event."""
-        if event.RightDown():
-            self.mouse_pos = event.GetPosition()
-            event.Skip()
-        elif event.RightUp() and self.mouse_pos:
-            self.ShowChoiceMenu(event)
-        elif event.Dragging():
-            if self.mouse_pos:
-                oldx, oldy = self.mouse_pos
-                x, y = event.GetPosition()
-                if max(abs(x - oldx), abs(y - oldy)) > 4:
-                    self.mouse_pos = None
-        else:
-            self.mouse_pos = None
-            event.Skip()
-
-    def ShowChoiceMenu(self,event):
-        """Displays a popup choice menu if applicable.
-        NOTE: Assume that configChoice returns a set of chosen items."""
-        if not self.choiceMenu: return
-        #--Item Index
-        itemIndex = self.gList.HitTest(event.GetPosition())
-        if itemIndex < 0: return
-        self.gList.SetSelection(itemIndex)
-        choiceSet = self.get_set_choice(self.items[itemIndex])
-        #--Build Menu
-        class _OnItemChoice(CheckLink):
-            def __init__(self, _text, index):
-                super(_OnItemChoice, self).__init__(_text)
-                self.index = index
-            def _check(self): return self.text in choiceSet
-            def Execute(self): _onItemChoice(self.index)
-        def _onItemChoice(dex):
-            """Handle choice menu selection."""
-            item = self.items[itemIndex]
-            choice = self.choiceMenu[dex]
-            choiceSet = self.configChoices[item]
-            choiceSet ^= {choice}
-            if choice != u'Auto':
-                choiceSet.discard(u'Auto')
-            elif u'Auto' in self.configChoices[item]:
-                self.get_set_choice(item)
-            self.gList.SetString(itemIndex, self.getItemLabel(item))
-        links = Links()
-        for index,label in enumerate(self.choiceMenu):
-            if label == u'----':
-                links.append(SeparatorLink())
-            else:
-                links.append(_OnItemChoice(label, index))
-        #--Show/Destroy Menu
-        links.PopupMenu(self.gList, Link.Frame, None)
-
     def SelectAll(self):
         """'Select All' Button was pressed, update all configChecks states."""
         try:
@@ -471,13 +391,6 @@ class _ListPatcherPanel(_PatcherPanel):
         if self.__class__.forceItemCheck:
             for item in self.configItems:
                 self.configChecks[item] = True
-        #--Make sure configChoices are set (if choiceMenu exists).
-        if self.choiceMenu:
-            for item in self.configItems:
-                self.get_set_choice(item)
-        #--AutoItems?
-        if self.autoIsChecked:
-            self.getAutoItems() # calls get_set_choice which sets default
         return config
 
     def saveConfig(self, configs):
@@ -495,17 +408,9 @@ class _ListPatcherPanel(_PatcherPanel):
         config['autoIsChecked'] = self.autoIsChecked
         return config
 
-    def get_set_choice(self, item):
-        """Get default config choice."""
-        return self.configChoices.setdefault(item,self.choiceMenu[0])
-
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""
-        item  = u'%s' % item # Path or basestring - YAK
-        if self.choiceMenu:
-            return u'%s [%s]' % (item,self.get_set_choice(item))
-        else:
-            return item
+        return u'%s' % item # Path or basestring - YAK
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
@@ -520,14 +425,12 @@ class _ListPatcherPanel(_PatcherPanel):
     def _get_auto_mods(self):
         autoItems = []
         autoRe = self.__class__.autoRe
-        self.choiceMenu = self.__class__.choiceMenu
         mods_prior_to_patch = load_order.cached_lord.loadOrder[
                         :load_order.loIndexCached(patch_files.executing_patch)]
         for mod in mods_prior_to_patch:
             if autoRe.match(mod.s) or (
                     self.__class__.autoKey & bosh.modInfos[mod].getBashTags()):
                 autoItems.append(mod)
-                if self.choiceMenu: self.get_set_choice(mod)
         return autoItems
 
     def _import_config(self, default=False):
@@ -543,47 +446,66 @@ class _ListPatcherPanel(_PatcherPanel):
                 # bolt.deprint(_(u'item %s not in saved configs [%s]') % (
                 #     item, u', '.join(map(repr, self.configChecks))))
 
+class _ChoiceMenuMixin(object):
+    #--List of possible choices for each config item. Item 0 is default.
+    _right_click_list = 'gList'
+
+    def _bind_mouse_events(self):
+        right_click_list = self.__getattribute__(self._right_click_list)
+        right_click_list.Bind(wx.EVT_MOTION, self.OnMouse)
+        right_click_list.Bind(wx.EVT_RIGHT_DOWN, self.OnMouse)
+        right_click_list.Bind(wx.EVT_RIGHT_UP, self.OnMouse)
+        self.mouse_pos = None
+
+    def OnMouse(self,event):
+        """Check mouse motion to detect right click event."""
+        if event.RightDown():
+            self.mouse_pos = event.GetPosition()
+            event.Skip()
+        elif event.RightUp() and self.mouse_pos:
+            self.ShowChoiceMenu(event)
+        elif event.Dragging():
+            if self.mouse_pos:
+                oldx, oldy = self.mouse_pos
+                x, y = event.GetPosition()
+                if max(abs(x - oldx), abs(y - oldy)) > 4:
+                    self.mouse_pos = None
+        else:
+            self.mouse_pos = None
+            event.Skip()
+
+    def ShowChoiceMenu(self, event): raise bolt.AbstractError
+
 #------------------------------------------------------------------------------
-class _TweakPatcherPanel(_PatcherPanel):
+class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
-    listLabel = _(u"Tweaks")
-    style = wx.TAB_TRAVERSAL
+    tweak_label = _(u"Tweaks")
+    _right_click_list = 'gTweakList'
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
-        gConfigPanel, gText= self._build_tweaks_list(gTipText, parent)
+        gConfigPanel = super(_TweakPatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
+        self._build_tweaks_list()
         gTweakSelectSizer = self._get_tweak_select_sizer()
         #--Layout
-        gSizer = vSizer(
-            (gText,), vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.listLabel,
+        self.gSizer.AddElements(vspace(),
+            (hsbSizer(gConfigPanel, self.__class__.tweak_label,
                 ((4,0),0,wx.EXPAND),
                 (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
                 gTweakSelectSizer,
                 ),1,wx.EXPAND),
             )
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
         return gConfigPanel
 
-    def _build_tweaks_list(self, gTipText, parent):
-        self.gTipText = gTipText
-        gConfigPanel = self.gConfigPanel = wx.Window(
-            parent, style=self.__class__.style)
-        text = fill(self.__class__.text, 70)
-        gText = StaticText(self.gConfigPanel, text)
-        self.gTweakList = balt.listBox(gConfigPanel, kind='checklist')
+    def _build_tweaks_list(self):
+        self.gTweakList = balt.listBox(self.gConfigPanel, kind='checklist')
         #--Events
         self.gTweakList.Bind(wx.EVT_CHECKLISTBOX, self.TweakOnListCheck)
-        self.gTweakList.Bind(wx.EVT_MOTION, self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW, self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN, self.TweakOnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_UP, self.TweakOnMouse)
+        self._bind_mouse_events()
+        self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         self.mouse_dex = -1
-        self.mouse_pos = None
-        return gConfigPanel, gText
 
     def _get_tweak_select_sizer(self, ):
         if self.selectCommands:
@@ -639,23 +561,12 @@ class _TweakPatcherPanel(_PatcherPanel):
         elif ensureEnabled:
             self._EnsurePatcherEnabled()
 
-    def TweakOnMouse(self,event):
+    def OnMouse(self, event):
         """Check mouse motion to detect right click event."""
-        if event.RightDown():
-            self.mouse_pos = event.GetPosition()
-            event.Skip()
-        elif event.RightUp() and self.mouse_pos:
-            self.ShowChoiceMenu(event)
-        elif event.Leaving():
+        if event.Leaving():
             self.gTipText.SetLabel(u'')
             self.mouse_pos = None
             event.Skip()
-        elif event.Dragging():
-            if self.mouse_pos:
-                oldx, oldy = self.mouse_pos
-                x, y = event.GetPosition()
-                if max(abs(x - oldx), abs(y - oldy)) > 4:
-                    self.mouse_pos = None
         elif event.Moving():
             mouseItem = self.gTweakList.HitTest(event.GetPosition())
             self.mouse_pos = None
@@ -670,8 +581,7 @@ class _TweakPatcherPanel(_PatcherPanel):
                     self.gTipText.SetLabel(u'')
             event.Skip()
         else:
-            self.mouse_pos = None
-            event.Skip()
+            super(_TweakPatcherPanel, self).OnMouse(event)
 
     def ShowChoiceMenu(self,event):
         """Displays a popup choice menu if applicable."""
@@ -833,42 +743,16 @@ class _TweakPatcherPanel(_PatcherPanel):
 class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
     """Only used in Race Patcher which features a double panel (source mods
     and tweaks)."""
-    listLabel = _(u'Source Mods/Files')
-    style = 0
-    subLabel = _(u'Race Tweaks')
+    listLabel = _(u'Race Mods')
+    tweak_label = _(u'Race Tweaks')
     # CONFIG DEFAULTS
     default_isEnabled = True # isActive will be set to True in initPatchFile
 
-    def GetConfigPanel(self,parent,gConfigSizer,gTipText): # TODO(ut): use super !
+    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
         if self.gConfigPanel: return self.gConfigPanel
-        #--Else...
-        gConfigPanel, gText = self._build_tweaks_list(gTipText, parent)
-        #--Import List
-        self.gList = balt.listBox(gConfigPanel, kind='checklist')
-        self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
-        self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
-        #--Buttons
-        gSelectSizer = self._get_select_sizer()
-        gTweakSelectSizer = self._get_tweak_select_sizer()
-        #--Layout
-        gSizer = vSizer(
-            (gText,), vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.listLabel,
-                ((4,0),0,wx.EXPAND),
-                (self.gList,1,wx.EXPAND|wx.TOP,2),
-                gSelectSizer,),1,wx.EXPAND), vspace(),
-            (hsbSizer(gConfigPanel, self.__class__.subLabel,
-                ((4,0),0,wx.EXPAND),
-                (self.gTweakList,1,wx.EXPAND|wx.TOP,2),
-                gTweakSelectSizer,),1,wx.EXPAND),
-            )
-        gConfigPanel.SetSizer(gSizer)
-        gConfigSizer.Add(gConfigPanel,1,wx.EXPAND)
-        #--Initialize
-        self.SetItems(self.getAutoItems())
+        gConfigPanel = super(_DoublePatcherPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
         return gConfigPanel
 
     #--Config Phase -----------------------------------------------------------
@@ -876,8 +760,12 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
         """Returns list of items to be used for automatic configuration."""
         return self._get_auto_mods()
 
-    def _log_config(self, conf, config, clip, log): ##: HACK - fix getAutoItems
-        super(_ListPatcherPanel, self)._log_config(conf, config, clip, log)
+    def _log_config(self, conf, config, clip, log):
+        _ListPatcherPanel._log_config(self, conf, config, clip, log)
+        log.setHeader(u'== ' + self.tweak_label)
+        clip.write(u'\n')
+        clip.write(u'== ' + self.tweak_label + u'\n')
+        _TweakPatcherPanel._log_config(self, conf, config, clip, log)
 
 #------------------------------------------------------------------------------
 class _ImporterPatcherPanel(_ListPatcherPanel):
@@ -896,7 +784,7 @@ class _ImporterPatcherPanel(_ListPatcherPanel):
             configs['ImportedMods'].update(importedMods)
         return config
 
-class _ListsMergerPanel(_ListPatcherPanel):
+class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
     listLabel = _(u'Override Delev/Relev Tags')
 
     #--Config Phase -----------------------------------------------------------
@@ -907,7 +795,7 @@ class _ListsMergerPanel(_ListPatcherPanel):
     default_isEnabled = True
     selectCommands = False
 
-    def get_set_choice(self, item):
+    def _get_set_choice(self, item):
         """Get default config choice."""
         choice = self.configChoices.get(item)
         if not isinstance(choice,set): choice = {u'Auto'}
@@ -926,6 +814,61 @@ class _ListsMergerPanel(_ListPatcherPanel):
             return u'%s [%s]' % (item,u''.join(sorted(choice)))
         else:
             return item
+
+    def GetConfigPanel(self,parent,gConfigSizer,gTipText):
+        if self.gConfigPanel: return self.gConfigPanel
+        gConfigPanel = super(_ListsMergerPanel, self).GetConfigPanel(parent,
+            gConfigSizer, gTipText)
+        self._bind_mouse_events()
+        return gConfigPanel
+
+    def getConfig(self, configs):
+        """Get config from configs dictionary and/or set to default."""
+        config = super(_ListsMergerPanel, self).getConfig(configs)
+        #--Make sure configChoices are set (as choiceMenu exists).
+        for item in self.configItems:
+            self._get_set_choice(item)
+        return config
+
+    def _get_auto_mods(self):
+        autoItems = super(_ListsMergerPanel, self)._get_auto_mods()
+        for mod in autoItems: self._get_set_choice(mod)
+        return autoItems
+
+    def ShowChoiceMenu(self,event):
+        """Displays a popup choice menu if applicable.
+        NOTE: Assume that configChoice returns a set of chosen items."""
+        #--Item Index
+        itemIndex = self.gList.HitTest(event.GetPosition())
+        if itemIndex < 0: return
+        self.gList.SetSelection(itemIndex)
+        choiceSet = self._get_set_choice(self.items[itemIndex])
+        #--Build Menu
+        class _OnItemChoice(CheckLink):
+            def __init__(self, _text, index):
+                super(_OnItemChoice, self).__init__(_text)
+                self.index = index
+            def _check(self): return self.text in choiceSet
+            def Execute(self): _onItemChoice(self.index)
+        def _onItemChoice(dex):
+            """Handle choice menu selection."""
+            item = self.items[itemIndex]
+            choice = self.choiceMenu[dex]
+            choiceSet = self.configChoices[item]
+            choiceSet ^= {choice}
+            if choice != u'Auto':
+                choiceSet.discard(u'Auto')
+            elif u'Auto' in self.configChoices[item]:
+                self._get_set_choice(item)
+            self.gList.SetString(itemIndex, self.getItemLabel(item))
+        links = Links()
+        for index,label in enumerate(self.choiceMenu):
+            if label == u'----':
+                links.append(SeparatorLink())
+            else:
+                links.append(_OnItemChoice(label, index))
+        #--Show/Destroy Menu
+        links.PopupMenu(self.gList, Link.Frame, None)
 
     def _log_config(self, conf, config, clip, log):
         self.configChoices = conf.get('configChoices', {})
@@ -1093,11 +1036,9 @@ class CBash_UpdateReferences(base.CBash_UpdateReferences,
                              _ListPatcherPanel):
     canAutoItemCheck = False #--GUI: Whether new items are checked by default.
 
-class RacePatcher(races_multitweaks.RacePatcher, _DoublePatcherPanel):
-    listLabel = _(u'Race Mods')
+class RacePatcher(races_multitweaks.RacePatcher, _DoublePatcherPanel): pass
 class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,
-                        _DoublePatcherPanel):
-    listLabel = _(u'Race Mods')
+                        _DoublePatcherPanel): pass
 
 class ListsMerger(special.ListsMerger, _ListsMergerPanel): pass
 class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel): pass

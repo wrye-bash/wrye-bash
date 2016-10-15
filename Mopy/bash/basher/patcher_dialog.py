@@ -84,9 +84,6 @@ class PatchDialog(balt.Dialog):
         self.patchers.sort(key=lambda a: groupOrder[a.__class__.group])
         for patcher in self.patchers:
             patcher.getConfig(patchConfigs) #--Will set patcher.isEnabled
-            if u'UNDEFINED' in (patcher.__class__.name, patcher.__class__.group):
-                raise UncodedError(u'Name or group not defined for: %s' % patcher.__class__.__name__)
-            patcher.SetCallbackFns(self._CheckPatcher, self._BoldPatcher)
             patcher.SetIsFirstLoad(isFirstLoad)
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
@@ -114,7 +111,7 @@ class PatchDialog(balt.Dialog):
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize)
+        self.Bind(wx.EVT_SIZE,self.OnSize) # save dialog size
         self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
         self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
         self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
@@ -151,8 +148,8 @@ class PatchDialog(balt.Dialog):
             gConfigSizer.Show(gConfigPanel,False)
         initial_select = min(len(self.patchers)-1,1)
         if initial_select >= 0:
-            self.gPatchers.Select(initial_select)
-            self.ShowPatcher(self.patchers[initial_select])
+            self.gPatchers.Select(initial_select) # does not fire the callback
+            self.ShowPatcher(self.patchers[initial_select]) # so this needed
         self.SetOkEnable()
 
     #--Core -------------------------------
@@ -442,24 +439,24 @@ class PatchDialog(balt.Dialog):
         self.gExecute.Enable(False)
 
     #--GUI --------------------------------
-    def OnSize(self,event): ##: needed ? event.Skip() ??
+    def OnSize(self,event):
         balt.sizes[self.__class__.__name__] = tuple(self.GetSize())
-        self.Layout()
-        self.currentPatcher.Layout()
+        event.Skip()
 
     def OnSelect(self,event):
         """Responds to patchers list selection."""
         itemDex = event.GetSelection()
         self.ShowPatcher(self.patchers[itemDex])
 
-    def _CheckPatcher(self,patcher):
-        """Remotely enables a patcher.  Called from a particular patcher's OnCheck method."""
+    def CheckPatcher(self, patcher):
+        """Enable a patcher - Called from a patcher's OnCheck method."""
         index = self.patchers.index(patcher)
         self.gPatchers.Check(index)
         self.SetOkEnable()
 
-    def _BoldPatcher(self,patcher):
-        """Set the patcher label to bold font.  Called from a patcher when it realizes it has something new in its list"""
+    def BoldPatcher(self, patcher):
+        """Set the patcher label to bold font.  Called from a patcher when
+        it realizes it has something new in its list"""
         index = self.patchers.index(patcher)
         font = self.gPatchers.GetFont()
         font.SetWeight(wx.FONTWEIGHT_BOLD)
@@ -471,7 +468,7 @@ class PatchDialog(balt.Dialog):
         patcher = self.patchers[index]
         patcher.isEnabled = self.gPatchers.IsChecked(index)
         self.gPatchers.SetSelection(index)
-        self.ShowPatcher(patcher)
+        self.ShowPatcher(patcher) # SetSelection does not fire the callback
         self.SetOkEnable()
 
     def OnMouse(self,event):
