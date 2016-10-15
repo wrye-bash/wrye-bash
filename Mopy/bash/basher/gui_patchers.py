@@ -448,7 +448,14 @@ class _ListPatcherPanel(_PatcherPanel):
 
 class _ChoiceMenuMixin(object):
     #--List of possible choices for each config item. Item 0 is default.
-    choiceMenu = None
+    _right_click_list = 'gList'
+
+    def _bind_mouse_events(self):
+        right_click_list = self.__getattribute__(self._right_click_list)
+        right_click_list.Bind(wx.EVT_MOTION, self.OnMouse)
+        right_click_list.Bind(wx.EVT_RIGHT_DOWN, self.OnMouse)
+        right_click_list.Bind(wx.EVT_RIGHT_UP, self.OnMouse)
+        self.mouse_pos = None
 
     def OnMouse(self,event):
         """Check mouse motion to detect right click event."""
@@ -473,6 +480,7 @@ class _ChoiceMenuMixin(object):
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
     """Patcher panel with list of checkable, configurable tweaks."""
     tweak_label = _(u"Tweaks")
+    _right_click_list = 'gTweakList'
 
     def GetConfigPanel(self,parent,gConfigSizer,gTipText):
         """Show config."""
@@ -495,12 +503,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         self.gTweakList = balt.listBox(self.gConfigPanel, kind='checklist')
         #--Events
         self.gTweakList.Bind(wx.EVT_CHECKLISTBOX, self.TweakOnListCheck)
-        self.gTweakList.Bind(wx.EVT_MOTION, self.OnMouse)
+        self._bind_mouse_events()
         self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_DOWN, self.OnMouse)
-        self.gTweakList.Bind(wx.EVT_RIGHT_UP, self.OnMouse)
         self.mouse_dex = -1
-        self.mouse_pos = None
 
     def _get_tweak_select_sizer(self, ):
         if self.selectCommands:
@@ -814,11 +819,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
         if self.gConfigPanel: return self.gConfigPanel
         gConfigPanel = super(_ListsMergerPanel, self).GetConfigPanel(parent,
             gConfigSizer, gTipText)
-        #--Events
-        self.gList.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_DOWN,self.OnMouse)
-        self.gList.Bind(wx.EVT_RIGHT_UP,self.OnMouse)
-        self.mouse_pos = None
+        self._bind_mouse_events()
         return gConfigPanel
 
     def getConfig(self, configs):
