@@ -44,9 +44,6 @@ from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
 from ..cint import CBash, FormID ##: CBash should be in bosh
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
-from ..patcher.patchers import base
-from ..patcher.patchers import special
-from ..patcher.patch_files import PatchFile, CBash_PatchFile
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_Groups', 'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme',

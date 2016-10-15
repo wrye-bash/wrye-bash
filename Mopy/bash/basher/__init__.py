@@ -71,7 +71,7 @@ from .. import bush, bosh, bolt, bass, env, load_order
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods, CoSaves, projects_walk_cache
+from ..bosh import omods, projects_walk_cache
 from ..cint import CBash
 
 startupinfo = bolt.startupinfo
@@ -4136,7 +4136,7 @@ class BashApp(wx.App):
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress(0.68, _(u'Generating Blank Bashed Patch'))
-                bosh.modInfos.generateNextBashedPatch()
+                bosh.modInfos.generateNextBashedPatch(selected_mods=())
 
     @staticmethod
     def InitVersion():
