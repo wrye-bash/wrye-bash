@@ -31,6 +31,7 @@ import atexit
 import os
 from time import time, sleep
 import sys
+import platform
 import traceback
 import StringIO
 
@@ -42,6 +43,7 @@ import bolt
 from bolt import GPath
 import env
 basher = balt = barb =  None
+is_standalone = hasattr(sys, 'frozen')
 
 #------------------------------------------------------------------------------
 def SetHomePath(homePath):
@@ -194,7 +196,7 @@ def exit():
         from basher import appRestart
         from basher import uacRestart
         if appRestart:
-            if not hasattr(sys,'frozen'):
+            if not is_standalone:
                 exePath = GPath(sys.executable)
                 sys.argv = [exePath.stail] + sys.argv
             if u'--restarting' not in sys.argv:
@@ -224,10 +226,10 @@ def exit():
             updateArgv(appRestart)
             try:
                 if uacRestart:
-                    if not hasattr(sys,'frozen'):
+                    if not is_standalone:
                         sys.argv = sys.argv[1:]
                     import win32api
-                    if hasattr(sys,'frozen'):
+                    if is_standalone:
                         win32api.ShellExecute(0,'runas',sys.argv[0],u' '.join(
                             '"%s"' % x for x in sys.argv[1:]),None,True)
                     else:
@@ -238,7 +240,7 @@ def exit():
                     return
                 else:
                     import subprocess
-                    if hasattr(sys,'frozen'):
+                    if is_standalone:
                         subprocess.Popen(sys.argv,close_fds=bolt.close_fds)
                     else:
                         subprocess.Popen(sys.argv,executable=exePath.s,
@@ -255,7 +257,9 @@ def exit():
 def dump_environment():
     import locale
     print u"Wrye Bash starting"
-    print u"Using Wrye Bash Version", bass.AppVersion
+    print u"Using Wrye Bash Version %s%s" % (
+        bass.AppVersion, (u' ' + _(u'(Standalone)')) if is_standalone else u'')
+    print u"OS info:", platform.platform()
     print u"Python version: %d.%d.%d" % (
         sys.version_info[0],sys.version_info[1],sys.version_info[2])
     try:
@@ -276,7 +280,7 @@ def dump_environment():
 def main():
     bolt.deprintOn = opts.debug
     # useful for understanding context of bug reports
-    if opts.debug or hasattr(sys,'frozen'):
+    if opts.debug or is_standalone:
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
