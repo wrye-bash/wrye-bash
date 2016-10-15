@@ -2536,10 +2536,10 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
         if not self._askContinue(message, 'bash.cleanMaster.continue',
                                  _(u'Clean Masters')): return
         modInfo = self.window.fileInfo
-        path = modInfo.getPath()
+        mpath = modInfo.getPath()
 
         with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
-            modFile = Current.addMod(path.stail)
+            modFile = Current.addMod(mpath.stail)
             Current.load()
             oldMasters = modFile.TES4.masters
             cleaned = modFile.CleanMasters()

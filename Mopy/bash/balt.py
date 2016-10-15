@@ -645,8 +645,8 @@ def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
     elif style & wx.FD_MULTIPLE:
         result = map(GPath,dialog.GetPaths())
         if mustExist:
-            for path in result:
-                if not path.exists():
+            for returned_path in result:
+                if not returned_path.exists():
                     result = False
                     break
     else:

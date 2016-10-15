@@ -98,8 +98,8 @@ class Data:
         """Clears all signal files."""
         for source in ('brz','plt'):
             for attr in 'ping,pong,request,completed,failed,shapeIsMale'.split(','):
-                path = getattr(self,source+'_'+attr)
-                path.remove()
+                source_path = getattr(self,source+'_'+attr)
+                source_path.remove()
 
     def setSignals(self,source='brz'):
         """Set signal source to brz or plt as appropriate."""
