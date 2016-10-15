@@ -490,8 +490,8 @@ class PageFinish(PageInstaller):
 
     def OnSelectIni(self, event):
         index = event.GetSelection()
-        path = bolt.GPath(self.listInis.GetString(index))
-        lines = generateTweakLines(self.parent.ret.IniEdits[path],path)
+        ini_path = bolt.GPath(self.listInis.GetString(index))
+        lines = generateTweakLines(self.parent.ret.IniEdits[ini_path],ini_path)
         self.listTweaks.Set(lines)
 # End PageFinish -------------------------------------
 
@@ -1221,14 +1221,14 @@ class WryeParser(ScriptParser.Parser):
         return String.rfind(sub, start, end)
     def fnGetFilename(self, String):
         try:
-            path = bolt.Path(String)
-            return path.stail
+            abspath = bolt.GPath(String)
+            return abspath.stail
         except:
             return u''
     def fnGetFolder(self, String):
         try:
-            path = bolt.Path(String)
-            return path.shead
+            abspath = bolt.GPath(String)
+            return abspath.shead
         except:
             return u''
 
@@ -1377,7 +1377,7 @@ class WryeParser(ScriptParser.Parser):
                 else:
                     # Archive
                     for file_, _size, _crc in self.installer.fileSizeCrcs:
-                        rel = bolt.Path(file_).relpath(subpackage)
+                        rel = bolt.GPath(file_).relpath(subpackage)
                         if not rel.s.startswith(u'..'):
                             List.append(rel.s)
                 List.sort()
