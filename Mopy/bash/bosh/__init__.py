@@ -1532,6 +1532,18 @@ class BsaFile:
         return reset,inval,intxt
 
 #------------------------------------------------------------------------------
+class AFile(object):
+    """Abstract file, supports caching - alpha."""
+
+    def __init__(self, abs_path):
+        self.abs_path = GPath(abs_path)
+        #--Settings cache
+        try:
+            self._file_size, self._file_mod_time = self.abs_path.size_mtime()
+        except OSError:
+            self._file_size = self._file_mod_time = 0
+
+#------------------------------------------------------------------------------
 class IniFile(object):
     """Any old ini file."""
     reComment = re.compile(u';.*',re.U)
