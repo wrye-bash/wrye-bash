@@ -4011,6 +4011,7 @@ class BashApp(wx.App):
         #--MWFrame
         progress(0.8, _(u'Initializing Windows'))
         frame = BashFrame() # Link.Frame global set here
+        progress(1.0)
         progress.Destroy()
         if splashScreen:
             splashScreen.Destroy()
