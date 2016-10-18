@@ -21,6 +21,11 @@
                 !insertmacro UninstallBash $Path_Skyrim "Skyrim"
             ${EndIf}
         ${EndIf}
+        ${If} $CheckState_Fallout4 == ${BST_CHECKED}
+            ${If} $Path_Fallout4 != $Empty
+                !insertmacro UninstallBash $Path_Fallout4 "Fallout4"
+            ${EndIf}
+        ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} $Path_Ex1 != $Empty
                 !insertmacro UninstallBash $Path_Ex1 "Extra Path 1"
@@ -34,14 +39,16 @@
 
 
         ;If it is a complete uninstall remove the shared data:
-        ReadRegStr $Path_OB HKLM "Software\Wrye Bash" "Oblivion Path"
-        ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
-        ReadRegStr $Path_Skyrim HKLM "Software\Wrye Bash" "Skyrim Path"
-        ReadRegStr $Path_Ex1 HKLM "Software\Wrye Bash" "Extra Path 1"
-        ReadRegStr $Path_Ex2 HKLM "Software\Wrye Bash" "Extra Path 2"
+        ReadRegStr $Path_OB       HKLM "Software\Wrye Bash" "Oblivion Path"
+        ReadRegStr $Path_Nehrim   HKLM "Software\Wrye Bash" "Nehrim Path"
+        ReadRegStr $Path_Skyrim   HKLM "Software\Wrye Bash" "Skyrim Path"
+        ReadRegStr $Path_Fallout4 HKLM "Software\Wrye Bash" "Fallout4 Path"
+        ReadRegStr $Path_Ex1      HKLM "Software\Wrye Bash" "Extra Path 1"
+        ReadRegStr $Path_Ex2      HKLM "Software\Wrye Bash" "Extra Path 2"
         ${If} $Path_OB == $Empty
             ${AndIf} $Path_Nehrim == $Empty
             ${AndIf} $Path_Skyrim == $Empty
+            ${AndIf} $Path_Fallout4 == $Empty
             ${AndIf} $Path_Ex1 == $Empty
             ${AndIf} $Path_Ex2 == $Empty
                 DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash"

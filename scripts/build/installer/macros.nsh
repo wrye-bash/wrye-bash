@@ -641,6 +641,10 @@
         Delete "${Path}\Mopy\INI Tweaks\Skyrim\Window Mode Top left, 20-225 [Skyrim].ini"
         Delete "${Path}\Mopy\INI Tweaks\Skyrim\Window Mode Top left, 5-5 ~Default [Skyrim].ini"
         Delete "${Path}\Mopy\INI Tweaks\Skyrim\Window Mode Top left, 5-60 [Skyrim].ini"
+        ; As of commit 3ade2c3 INI Tweaks are removed for Fallout 4
+        Delete "${Path}\Mopy\INI Tweaks\Fallout4\Modding, Enabled [Fallout4Prefs].ini"
+        Delete "${Path}\Mopy\INI Tweaks\Fallout4\Modding, Enabled [Fallout4].ini"
+        Delete "${Path}\Mopy\INI Tweaks\Fallout4\Modding, ~Default [Fallout4].ini"
     !macroend
 
 
