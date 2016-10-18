@@ -35,6 +35,8 @@ import collections
 import os
 import struct
 
+_bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
+
 class BSAHeader(object):
     __slots__ = ( # in the order encountered in the header
         'file_id', 'version', 'folder_record_offset', 'archive_flags',
@@ -125,37 +127,37 @@ class BSA(object):
                 file_records_block_size += ( # one byte for each folder name's size
                     self.bsa_header.folder_count
                     + self.bsa_header.total_folder_name_length)
-            file_records_block = memoryview(bsa_file.read(file_records_block_size))
+            file_records_block = memoryview(
+                bsa_file.read(file_records_block_size))
             # load the file names block
-            file_names_block = None
+            file_names = None
             if self.bsa_header.has_names_for_files():
-                file_names_block = memoryview(bsa_file.read(
-                    self.bsa_header.total_file_name_length))
+                file_names = bsa_file.read(
+                    self.bsa_header.total_file_name_length).split('\00')
             # close the file
-        file_records_index = names_record_index = 0
+        names_record_index = 0
         for folder_record in folder_records:
             folder_path = u'?%d' % folder_record.hash # hack - untested
             if has_folder_names:
-                name_size = struct.unpack_from('B', file_records_block, file_records_index)[0]
+                name_size = struct.unpack_from('B', file_records_block)[0]
                 ## TODO: decode
                 # discard null terminator below
-                folder_path = unicode(struct.unpack_from('%ds' % (name_size - 1),
-                    file_records_block, file_records_index + 1)[0])
-                file_records_index += name_size + 1
+                folder_path = unicode(
+                    file_records_block[1:name_size].tobytes(),
+                    encoding=_bsa_encoding)
+                file_records_block = file_records_block[name_size + 1:]
             current_folder = self.bsa_folders.setdefault(
                 folder_path, BSAFolder(folder_record)) # type: BSAFolder
+            file_records_index = 0
             for __ in xrange(folder_record.files_count):
                 rec = BSAFileRecord()
                 file_records_index = rec.load_record_from_buffer(
                     file_records_block, file_records_index)
                 file_name = u'?%d' % rec.hash
-                if file_names_block is not None:
-                    file_name_len = 0
-                    for b in file_names_block[names_record_index:]:
-                        if b != '\x00': file_name_len += 1
-                        else: break
-                    file_name = unicode(struct.unpack_from('%ds' % file_name_len,
-                        file_names_block,names_record_index)[0])
-                    names_record_index += file_name_len + 1
+                if file_names is not None:
+                    file_name = unicode(file_names[names_record_index],
+                                        encoding=_bsa_encoding)
+                    names_record_index += 1
                 current_folder.assets[file_name] = BSAAsset(
                     os.path.sep.join((folder_path, file_name)), rec)
+            file_records_block = file_records_block[file_records_index:]
