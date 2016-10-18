@@ -1740,7 +1740,7 @@ class IniFile(object):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
         full key=value line ending in newline char."""
-        if not self.path.exists() or not self.path.isfile():
+        if not self.path.isfile():
             return
         #--Ensure settings dicts are using LString's as keys
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
@@ -1820,9 +1820,7 @@ class IniFile(object):
     def applyTweakFile(self,tweakPath):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        if not self.path.exists() or not self.path.isfile():
-            return
-        if not tweakPath.exists() or not tweakPath.isfile():
+        if not self.path.isfile() or not tweakPath.isfile():
             return
         if tweakPath != self.path:
             encoding = 'utf-8'
@@ -2001,7 +1999,7 @@ class OBSEIniFile(IniFile):
         super(OBSEIniFile, self).saveSetting(section, key, value)
 
     def saveSettings(self,ini_settings,deleted_settings={}):
-        if not self.path.exists() or not self.path.isfile():
+        if not self.path.isfile():
             return
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
@@ -2057,9 +2055,7 @@ class OBSEIniFile(IniFile):
         self.path.untemp()
 
     def applyTweakFile(self,tweakPath):
-        if not self.path.exists() or not self.path.isfile():
-            return
-        if not tweakPath.exists() or not tweakPath.isfile():
+        if not self.path.isfile() or not tweakPath.isfile():
             return
         reDeleted = self.reDeleted
         reSet = self.reSet
