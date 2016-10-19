@@ -1905,10 +1905,14 @@ class SaveDetails(_SashDetailsPanel):
         self.saveInfo = None
         textWidth = 200
         #--Player Info
+        self._resetDetails()
         self.playerInfo = StaticText(top,u" \n \n ")
+        self._set_player_info_label()
         self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
-        self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
+        self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
+                                    style=wx.BORDER_SUNKEN, background=colors[
+                'screens.bkgd.image']) #--Native: 256x192
         #--Save Info
         self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 100),
                               multiline=True, onText=self.OnInfoEdit,
@@ -1923,7 +1927,8 @@ class SaveDetails(_SashDetailsPanel):
             )
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
-        noteSizer = vSizer(
+        noteSizer = vSizer(vspace(),
+            (StaticText(self._bottom_low_panel, _(u"Save Notes:"))),
             (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
             )
         noteSizer.SetSizeHints(masterPanel)
@@ -1956,13 +1961,7 @@ class SaveDetails(_SashDetailsPanel):
             self.coSaves = u'%s\n%s' % saveInfo.coSaves().getTags()
         #--Set Fields
         self.file.SetValue(self.fileStr)
-        self.playerInfo.SetLabel((self.playerNameStr+u'\n'+
-                                  _(u'Level')+u' %d, '+
-                                  _(u'Day')+u' %d, '+
-                                  _(u'Play')+u' %d:%02d\n%s') %
-                                 (self.playerLevel,int(self.gameDays),
-                                  self.playMinutes/60,(self.playMinutes%60),
-                                  self.curCellStr))
+        self._set_player_info_label()
         self.gCoSaves.SetLabel(self.coSaves)
         self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
@@ -1974,10 +1973,16 @@ class SaveDetails(_SashDetailsPanel):
             self.picture.SetBitmap(image.ConvertToBitmap())
         #--Info Box
         self.gInfo.DiscardEdits()
-        if fileName:
-            self.gInfo.SetValue(bosh.saveInfos.table.getItem(fileName,'info',_(u'Notes: ')))
-        else:
-            self.gInfo.SetValue(_(u'Notes: '))
+        note_text = bosh.saveInfos.table.getItem(fileName, 'info',
+                                                 u'') if fileName else u''
+        self.gInfo.SetValue(note_text)
+
+    def _set_player_info_label(self):
+        self.playerInfo.SetLabel((self.playerNameStr + u'\n' +
+            _(u'Level') + u' %d, ' + _(u'Day') + u' %d, ' +
+            _(u'Play') + u' %d:%02d\n%s') % (
+            self.playerLevel, int(self.gameDays), self.playMinutes / 60,
+            (self.playMinutes % 60), self.curCellStr))
 
     def OnInfoEdit(self,event):
         """Info field was edited."""
