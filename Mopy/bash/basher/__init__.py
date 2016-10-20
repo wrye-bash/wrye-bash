@@ -146,9 +146,6 @@ class People_Link(Link):
         """:rtype: bosh.PeopleData"""
         return self.window.data_store
 
-# Exceptions ------------------------------------------------------------------
-class BashError(BoltError): pass
-
 #--Information about the various Tabs
 tabInfo = {
     # InternalName: [className, title, instance]
