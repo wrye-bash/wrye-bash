@@ -193,9 +193,9 @@ class _DetailsViewMixin(NotebookPanel):
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
+    _sashGravity = 1.0
 
-    def __init__(self, parent, sashGravity=0.5, isVertical=True,
-                 style=splitterStyle):
+    def __init__(self, parent, isVertical=True, style=splitterStyle):
         super(SashPanel, self).__init__(parent)
         self.splitter = splitter = wx.SplitterWindow(self, style=style)
         self.left = wx.Panel(splitter)
@@ -205,7 +205,7 @@ class SashPanel(NotebookPanel):
         else:
             splitter.SplitHorizontally(self.left, self.right)
         self.isVertical = isVertical
-        splitter.SetSashGravity(sashGravity)
+        splitter.SetSashGravity(self._sashGravity)
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
@@ -231,10 +231,8 @@ class SashUIListPanel(SashPanel):
     _status_str = u'OVERRIDE:' + u' %d'
     _ui_list_type = None # type: type
 
-    def __init__(self, parent, sashGravity=0.5, isVertical=True,
-                 style=splitterStyle):
-        super(SashUIListPanel, self).__init__(parent, sashGravity, isVertical,
-                                              style)
+    def __init__(self, parent, isVertical=True, style=splitterStyle):
+        super(SashUIListPanel, self).__init__(parent, isVertical, style)
         self.uiList = self._ui_list_type(self.left, listData=self.listData,
                                          keyPrefix=self.keyPrefix, panel=self)
 
@@ -281,14 +279,12 @@ class SashUIListPanel(SashPanel):
 class BashTab(_DetailsViewMixin, SashUIListPanel):
     _details_panel_type = None # type: type
 
-    def __init__(self, parent, sashGravity=0.5, isVertical=True,
-                 style=splitterStyle):
-        super(BashTab, self).__init__(parent, sashGravity, isVertical,
-                                      style)
+    def __init__(self, parent, isVertical=True, style=splitterStyle):
+        super(BashTab, self).__init__(parent, isVertical, style)
         self.detailsPanel = self._details_panel_type(self.right)
         #--Layout
-        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND), ))
-        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND), ))
+        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
+        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1195,9 +1191,10 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     uiList of SashPanels.
     :type uilist: MasterList"""
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
+    _subsplitterSashGravity = 1.0 # max resize the top (masters) panel
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
+        SashPanel.__init__(self, parent, isVertical=False,
                            style=wx.SW_BORDER | splitterStyle)
         self.top, self.bottom = self.left, self.right
         self.subSplitter = wx.SplitterWindow(self.bottom, style=splitterStyle)
@@ -1208,8 +1205,7 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         self.subSplitter.SetMinimumPaneSize(64)
         self.subSplitter.SplitHorizontally(self.masterPanel,
                                            self._bottom_low_panel)
-        # max resize the top (masters) panel
-        self.subSplitter.SetSashGravity(1.0)
+        self.subSplitter.SetSashGravity(self._subsplitterSashGravity)
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
         #--Masters
         mod_or_save_panel = parent.GetParent().GetParent()
@@ -1271,7 +1267,6 @@ class ModDetails(_SashDetailsPanel):
                                     onKillFocus=self.OnEditDescription,
                                     onText=self.OnDescrEdit, maxChars=511)
         #--Bash tags
-        self.allTags = bosh.allTags
         self.gTags = RoTextCtrl(self._bottom_low_panel, autotooltip=False,
                                 size=(textWidth, 64))
         #--Layout
@@ -1481,7 +1476,6 @@ class ModDetails(_SashDetailsPanel):
         mod_tags = mod_info.getBashTags()
         is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
                                               True)
-        all_tags = self.allTags
         def _refreshUI(): self.panel_uilist.RefreshUI(files=[mod_info.name],
                 refreshSaves=False) # why refresh saves when updating tags (?)
         def _isAuto():
@@ -1535,7 +1529,7 @@ class ModDetails(_SashDetailsPanel):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
             @property
-            def _choices(self): return all_tags
+            def _choices(self): return bosh.allTags
         ##: Popup the menu - ChoiceLink should really be a Links subclass
         tagLinks = Links()
         tagLinks.append(_TagLinks())
@@ -1777,7 +1771,7 @@ class ModPanel(BashTab):
 
     def __init__(self,parent):
         self.listData = bosh.modInfos
-        super(ModPanel, self).__init__(parent, sashGravity=1.0)
+        super(ModPanel, self).__init__(parent)
         BashFrame.modList = self.uiList
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
@@ -1922,7 +1916,7 @@ class SaveDetails(_SashDetailsPanel):
                                     style=wx.BORDER_SUNKEN, background=colors[
                 'screens.bkgd.image']) #--Native: 256x192
         #--Save Info
-        self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 100),
+        self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 64),
                               multiline=True, onText=self.OnInfoEdit,
                               maxChars=2048)
         #--Layout
@@ -2056,7 +2050,7 @@ class SavePanel(BashTab):
             raise BoltError(u'Wrye Bash cannot read save games for %s.' %
                 bush.game.displayName)
         self.listData = bosh.saveInfos
-        super(SavePanel, self).__init__(parent, sashGravity=1.0)
+        super(SavePanel, self).__init__(parent)
         BashFrame.saveList = self.uiList
 
     def ClosePanel(self, destroy=False):
@@ -3146,9 +3140,8 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def allowDetailsEdit(self): return True
 
     def __init__(self, parent):
-        super(BSADetails, self).__init__(parent, sashGravity=1.0,
-                                         isVertical=False,
-                                         style=wx.TAB_TRAVERSAL)
+        SashPanel.__init__(self, parent, isVertical=False,
+                           style=wx.TAB_TRAVERSAL)
         self.top, self.bottom = self.left, self.right
         _EditableMixinOnFileInfos.__init__(self, self.bottom)
         #--Data
