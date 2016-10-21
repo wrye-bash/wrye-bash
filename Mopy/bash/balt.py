@@ -52,7 +52,8 @@ defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
 
-splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - doesn't seem to need this to work properly
+splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
+# makes borders stand out - we need something to that effect
 
 # wx Types
 wxPoint = wx.Point
@@ -3016,6 +3017,12 @@ class WryeBashSplashScreen(wx.SplashScreen):
         self.Hide()
         # The program might/will freeze without this line.
         event.Skip() # Make sure the default handler runs too...
+
+class Splitter(wx.SplitterWindow):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['style'] = kwargs.pop('style', splitterStyle)
+        super(Splitter, self).__init__(*args, **kwargs)
 
 class NotebookPanel(wx.Panel):
     """Parent class for notebook panels."""

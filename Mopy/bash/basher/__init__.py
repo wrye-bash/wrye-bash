@@ -85,7 +85,6 @@ from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import hspacer, hSizer, vSizer, hspace, vspace
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
-from ..balt import splitterStyle
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons, \
@@ -192,9 +191,9 @@ class SashPanel(NotebookPanel):
     defaultSashPos = minimumSize = 256
     _sashGravity = 1.0
 
-    def __init__(self, parent, isVertical=True, style=splitterStyle):
+    def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
-        self.splitter = splitter = wx.SplitterWindow(self, style=style)
+        self.splitter = splitter = balt.Splitter(self)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
@@ -228,8 +227,8 @@ class SashUIListPanel(SashPanel):
     _status_str = u'OVERRIDE:' + u' %d'
     _ui_list_type = None # type: type
 
-    def __init__(self, parent, isVertical=True, style=splitterStyle):
-        super(SashUIListPanel, self).__init__(parent, isVertical, style)
+    def __init__(self, parent, isVertical=True):
+        super(SashUIListPanel, self).__init__(parent, isVertical)
         self.uiList = self._ui_list_type(self.left, listData=self.listData,
                                          keyPrefix=self.keyPrefix, panel=self)
 
@@ -276,8 +275,8 @@ class SashUIListPanel(SashPanel):
 class BashTab(_DetailsViewMixin, SashUIListPanel):
     _details_panel_type = None # type: type
 
-    def __init__(self, parent, isVertical=True, style=splitterStyle):
-        super(BashTab, self).__init__(parent, isVertical, style)
+    def __init__(self, parent, isVertical=True):
+        super(BashTab, self).__init__(parent, isVertical)
         self.detailsPanel = self._details_panel_type(self.right)
         #--Layout
         self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
@@ -1191,10 +1190,9 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     _subsplitterSashGravity = 1.0 # max resize the top (masters) panel
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent, isVertical=False,
-                           style=wx.SW_BORDER | splitterStyle)
+        SashPanel.__init__(self, parent, isVertical=False)
         self.top, self.bottom = self.left, self.right
-        self.subSplitter = wx.SplitterWindow(self.bottom, style=splitterStyle)
+        self.subSplitter = balt.Splitter(self.bottom)
         # split the bottom panel into the master uilist and mod tags/save notes
         self.masterPanel = wx.Panel(self.subSplitter)
         self._bottom_low_panel = wx.Panel(self.subSplitter)
@@ -2498,9 +2496,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self._displayed_installer = None
         top, bottom = self.left, self.right
         commentsSplitter = self.splitter
-        self.subSplitter = subSplitter = wx.SplitterWindow(top,
-                                                           style=splitterStyle)
-        self.checkListSplitter = wx.SplitterWindow(subSplitter, style=splitterStyle)
+        self.subSplitter = subSplitter = balt.Splitter(top)
+        self.checkListSplitter = balt.Splitter(subSplitter)
         #--Package
         self.gPackage = RoTextCtrl(top, noborder=True)
         #--Info Tabs
@@ -3137,8 +3134,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def allowDetailsEdit(self): return True
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent, isVertical=False,
-                           style=wx.TAB_TRAVERSAL)
+        SashPanel.__init__(self, parent, isVertical=False)
         self.top, self.bottom = self.left, self.right
         _EditableMixinOnFileInfos.__init__(self, self.bottom)
         #--Data
