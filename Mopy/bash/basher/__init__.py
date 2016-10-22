@@ -3443,10 +3443,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             pageIndex = iMods
         self.SetSelection(pageIndex)
         self.currentPage = self.GetPage(self.GetSelection())
-        # callback was bound before SetSelection() selection - this triggered
-        # OnShowPage() - except if pageIndex was 0 (?!). Moved self.Bind() here
-        # as OnShowPage() is explicitly called in RefreshData
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Dragging
         self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
@@ -4017,6 +4013,10 @@ class BashApp(wx.App):
         frame.Maximize(settings['bash.frameMax'])
         frame.RefreshData(booting=True)
         balt.ensureDisplayed(frame)
+        # Moved notebook.Bind() callback here as OnShowPage() is explicitly
+        # called in RefreshData
+        frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
+                            frame.notebook.OnShowPage)
         frame.BindRefresh(bind=True)
 
     @staticmethod
