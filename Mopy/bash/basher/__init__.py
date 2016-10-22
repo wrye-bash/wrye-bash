@@ -1137,16 +1137,14 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     def displayed_item(self):
         return self.file_info.name if self.file_info else None
 
-    def __init__(self, masterPanel):
+    def __init__(self, masterPanel, ui_list_panel):
         _EditableMixin.__init__(self, masterPanel)
         #--File Name
         self.file = TextCtrl(self.top, onKillFocus=self.OnFileEdited,
                              onText=self.OnFileEdit,
                              maxChars=self._max_filename_chars,
                              size=(self._min_controls_width, -1))
-        uilist_panel = masterPanel.GetParent().GetParent().GetParent(
-            ).GetParent().GetParent().GetParent().GetParent()
-        self.panel_uilist = uilist_panel.uiList
+        self.panel_uilist = ui_list_panel.uiList
 
     def OnFileEdited(self):
         """Event: Finished editing file name."""
@@ -1201,9 +1199,10 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         self.subSplitter.SplitHorizontally(self.masterPanel,
                                            self._bottom_low_panel)
         self.subSplitter.SetSashGravity(self._subsplitterSashGravity)
-        _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
-        #--Masters
         mod_or_save_panel = parent.GetParent().GetParent()
+        _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
+                                           mod_or_save_panel)
+        #--Masters
         self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
                                  panel=mod_or_save_panel, detailsPanel=self)
         mastersSizer = vSizer(
@@ -3136,7 +3135,8 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def __init__(self, parent):
         SashPanel.__init__(self, parent, isVertical=False)
         self.top, self.bottom = self.left, self.right
-        _EditableMixinOnFileInfos.__init__(self, self.bottom)
+        bsa_panel = self.GetParent().GetParent().GetParent()
+        _EditableMixinOnFileInfos.__init__(self, self.bottom, bsa_panel)
         #--Data
         self.BSAInfo = None
         #--BSA Info
@@ -3214,7 +3214,6 @@ class BSAPanel(BashTab):
         self.listData = bosh.bsaInfos
         bosh.bsaInfos.refresh()
         super(BSAPanel, self).__init__(parent)
-        self.detailsPanel.Fit() ##: TEST - NEEDED ?/???
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.UIList):

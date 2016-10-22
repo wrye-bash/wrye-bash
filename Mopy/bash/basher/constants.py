@@ -342,6 +342,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Cell':80,
         },
     #Wrye Bash: BSAs
+    'bash.BSAs.cols': ['File', 'Modified', 'Size'],
     'bash.BSAs.colReverse': {
         'Modified':1,
         },
