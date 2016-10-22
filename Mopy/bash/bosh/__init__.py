@@ -2950,7 +2950,7 @@ class _DataStore(DataDict):
     # Renaming
     def rename_info(self, oldName, newName):
         try:
-            self._rename_operation(oldName, newName)
+            return self._rename_operation(oldName, newName)
         except (CancelError, OSError, IOError):
             deprint(u'Renaming %s to %s failed' % (oldName, newName),
                     traceback=True)
