@@ -214,7 +214,8 @@ class Save_LoadMasters(OneItemLink):
     def Execute(self):
         errorMessage = bosh.modInfos.lo_activate_exact(
             self._selected_info.masterNames)
-        BashFrame.modList.RefreshUI(refreshSaves=True)
+        BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
+        self.window.Focus()
         if errorMessage: self._showError(errorMessage, self._selected_item.s)
 
 #------------------------------------------------------------------------------

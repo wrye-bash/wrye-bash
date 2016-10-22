@@ -153,8 +153,8 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.CBashEnabled': True,
     'bash.backupPath': None,
     'bash.framePos': (-1,-1),
-    'bash.frameSize': (1024,600),
-    'bash.frameSize.min': (400,600),
+    'bash.frameSize': (1024, 512),
+    'bash.frameSize.min': (512, 512),
     'bash.frameMax': False, # True if maximized
     'bash.page':1,
     'bash.useAltName':True,
@@ -342,6 +342,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Cell':80,
         },
     #Wrye Bash: BSAs
+    'bash.BSAs.cols': ['File', 'Modified', 'Size'],
     'bash.BSAs.colReverse': {
         'Modified':1,
         },

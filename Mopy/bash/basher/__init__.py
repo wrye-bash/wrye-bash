@@ -80,12 +80,11 @@ startupinfo = bolt.startupinfo
 from .. import balt
 from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl, hspace, vspace, DnDStatusBar
+    SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
-from ..balt import hspacer, hSizer, vSizer
+from ..balt import hspacer, hSizer, vSizer, hspace, vspace
 from ..balt import colors, images, Image
 from ..balt import Links, ItemLink
-from ..balt import splitterStyle
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons, \
@@ -146,9 +145,6 @@ class People_Link(Link):
         """:rtype: bosh.PeopleData"""
         return self.window.data_store
 
-# Exceptions ------------------------------------------------------------------
-class BashError(BoltError): pass
-
 #--Information about the various Tabs
 tabInfo = {
     # InternalName: [className, title, instance]
@@ -161,96 +157,43 @@ tabInfo = {
     # 'BSAs':['BSAPanel', _(u"BSAs"), None],
 }
 
-# Windows ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class NotebookPanel(wx.Panel):
-    """Parent class for notebook panels."""
-    # UI settings keys prefix - used for sashPos and uiList gui settings
-    keyPrefix = 'OVERRIDE'
-    _status_str = u'OVERRIDE:' + u' %d'
-
-    def __init__(self, *args, **kwargs):
-        super(NotebookPanel, self).__init__(*args, **kwargs)
-        self._firstShow = True
-
-    def RefreshUIColors(self):
-        """Called to signal that UI color settings have changed."""
-        pass
-
-    def _sbCount(self): return self.__class__._status_str % len(self.listData)
-
-    def SetStatusCount(self):
-        """Sets status bar count field."""
-        Link.Frame.SetStatusCount(self, self._sbCount())
-
-    def ShowPanel(self):
-        """To be called when particular panel is changed to and/or shown for
-        first time.
-
-        Default version resizes the columns if auto is on and sets Status bar
-        text. It also sets the scroll bar and sash positions on first show.
-        """
-        if hasattr(self, '_firstShow'):
-            self.uiList.SetScrollPosition()
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
-            del self._firstShow
-        self.uiList.autosizeColumns()
-        self.SetStatusCount()
-
-    def ClosePanel(self, destroy=False):
-        """To be manually called when containing frame is closing. Use for
-        saving data, scrollpos, etc."""
-        if hasattr(self, 'listData'): # must be a _DataStore instance
-        # the only SashPanels that do not have this attribute are ModDetails
-        # and SaveDetails that use a MasterList whose data is initially {}
-            self.listData.save()
-
+# Panels ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class _DetailsViewMixin(object):
+class _DetailsViewMixin(NotebookPanel):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
-    This is a hasty mixin. I added it to SashPanel so UILists can call
-    SetDetails, RefreshDetails and ClearDetails on their panels. TODO !:
-     - just mix it only in classes that _do_ have a details view (as it is
-     even Details panels inherit it).
-     - drop hideous if detailsPanel is not self, due to Installers, People
-     using themselves as details (YAK!)
-    """
+    Mix it in to SashUIListPanel so UILists can call SetDetails, RefreshDetails
+    and ClearDetails on their panels."""
     detailsPanel = None
     def _setDetails(self, fileName):
-        if self.detailsPanel: self.detailsPanel.SetFile(
-            fileName=fileName)
+        self.detailsPanel.SetFile(fileName=fileName)
     def RefreshDetails(self): self._setDetails('SAME')
     def ClearDetails(self): self._setDetails(None)
     def SetDetails(self, fileName): self._setDetails(fileName)
 
     def RefreshUIColors(self):
         super(_DetailsViewMixin, self).RefreshUIColors()
-        if self.detailsPanel: self.detailsPanel.RefreshUIColors()
+        self.detailsPanel.RefreshUIColors()
 
     def ClosePanel(self, destroy=False):
+        self.detailsPanel.ClosePanel(destroy)
         super(_DetailsViewMixin, self).ClosePanel(destroy)
-        if self.detailsPanel and self.detailsPanel is not self:
-            self.detailsPanel.ClosePanel(destroy)
 
     def ShowPanel(self):
         super(_DetailsViewMixin, self).ShowPanel()
-        if self.detailsPanel and self.detailsPanel is not self:
-            self.detailsPanel.ShowPanel()
+        self.detailsPanel.ShowPanel()
 
-    def GetDetailsItem(self):
-        return self.detailsPanel.file_info if self.detailsPanel else None
+    def GetDetailsItem(self): return self.detailsPanel.file_info
 
-class SashPanel(_DetailsViewMixin, NotebookPanel):
+class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
+    _sashGravity = 1.0
 
-    def __init__(self, parent, sashGravity=0.5, isVertical=True,
-                 style=splitterStyle):
-        NotebookPanel.__init__(self, parent)
-        self.splitter = splitter = wx.SplitterWindow(self, style=style)
+    def __init__(self, parent, isVertical=True):
+        super(SashPanel, self).__init__(parent)
+        self.splitter = splitter = balt.Splitter(self)
         self.left = wx.Panel(splitter)
         self.right = wx.Panel(splitter)
         if isVertical:
@@ -258,7 +201,7 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
         else:
             splitter.SplitHorizontally(self.left, self.right)
         self.isVertical = isVertical
-        splitter.SetSashGravity(sashGravity)
+        splitter.SetSashGravity(self._sashGravity)
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
@@ -268,26 +211,76 @@ class SashPanel(_DetailsViewMixin, NotebookPanel):
             )
         self.SetSizer(sizer)
 
+    def ShowPanel(self):
+        if self._firstShow:
+            sashPos = settings.get(self.sashPosKey,
+                                   self.__class__.defaultSashPos)
+            self.splitter.SetSashPosition(sashPos)
+            self._firstShow = False
+
     def ClosePanel(self, destroy=False):
-        if not hasattr(self, '_firstShow'): # if the panel was shown
+        if not self._firstShow and destroy: # if the panel was shown
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
-            self.uiList.SaveScrollPosition(isVertical=self.isVertical)
-        super(SashPanel, self).ClosePanel(destroy)
+
+class SashUIListPanel(SashPanel):
+    listData = None
+    _status_str = u'OVERRIDE:' + u' %d'
+    _ui_list_type = None # type: type
+
+    def __init__(self, parent, isVertical=True):
+        super(SashUIListPanel, self).__init__(parent, isVertical)
+        self.uiList = self._ui_list_type(self.left, listData=self.listData,
+                                         keyPrefix=self.keyPrefix, panel=self)
+
+    def RefreshDetails(self):
+        """Called in UIList#RefreshUI on the panel attribute  - including
+        the INIList where there are no details to refresh."""
+
+    def ClearDetails(self):
+        """Called in UIList#OnKeyUp on the panel attribute  - including
+        the INIList where there are no details to refresh."""
 
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
                                       focus=True)
 
-#------------------------------------------------------------------------------
-class SashTankPanel(SashPanel):
+    def _sbCount(self): return self.__class__._status_str % len(self.listData)
 
-    def __init__(self, parent):
-        self.detailsItem = None
-        super(SashTankPanel,self).__init__(parent)
+    def SetStatusCount(self):
+        """Sets status bar count field."""
+        Link.Frame.SetStatusCount(self, self._sbCount())
+
+    def RefreshUIColors(self):
+        self.uiList.RefreshUI(focus_list=False)
+
+    def ShowPanel(self):
+        """Resize the columns if auto is on and set Status bar text. Also
+        sets the scroll bar and sash positions on first show. Must be _after_
+        RefreshUI for scroll bar to be set correctly."""
+        if self._firstShow:
+            super(SashUIListPanel, self).ShowPanel()
+            self.uiList.SetScrollPosition()
+        self.uiList.autosizeColumns()
+        self.uiList.Focus()
+        self.SetStatusCount()
 
     def ClosePanel(self, destroy=False):
-        self.SaveDetails()
-        super(SashTankPanel, self).ClosePanel(destroy)
+        if not self._firstShow and destroy: # if the panel was shown
+            super(SashUIListPanel, self).ClosePanel(destroy)
+            self.uiList.SaveScrollPosition(isVertical=self.isVertical)
+        # the only SashPanels that do not have this attribute are ModDetails
+        # and SaveDetails that use a MasterList whose data is initially {}
+        self.listData.save()
+
+class BashTab(_DetailsViewMixin, SashUIListPanel):
+    _details_panel_type = None # type: type
+
+    def __init__(self, parent, isVertical=True):
+        super(BashTab, self).__init__(parent, isVertical)
+        self.detailsPanel = self._details_panel_type(self.right)
+        #--Layout
+        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
+        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -898,7 +891,8 @@ class ModList(_ModsUIList):
     def RefreshUI(self, **kwargs):
         """Refresh UI for modList - always specify refreshSaves explicitly."""
         super(ModList, self).RefreshUI(**kwargs)
-        if kwargs.pop('refreshSaves', False): Link.Frame.saveListRefresh()
+        if kwargs.pop('refreshSaves', False):
+            Link.Frame.saveListRefresh(focus_list=False)
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -1134,49 +1128,99 @@ class _EditableMixin(_DetailsMixin):
     def DoCancel(self): self.SetFile(self.displayed_item)
 
 class _EditableMixinOnFileInfos(_EditableMixin):
-    """Bsa/Mods/Saves details, DEPRECATED: we need common data stores API!"""
+    """Bsa/Mods/Saves details, DEPRECATED: we need common data infos API!"""
+    _max_filename_chars = 256
+    _min_controls_width = 128
     @property
     def file_info(self): raise AbstractError
     @property
     def displayed_item(self):
         return self.file_info.name if self.file_info else None
 
+    def __init__(self, masterPanel, ui_list_panel):
+        _EditableMixin.__init__(self, masterPanel)
+        #--File Name
+        self.file = TextCtrl(self.top, onKillFocus=self.OnFileEdited,
+                             onText=self.OnFileEdit,
+                             maxChars=self._max_filename_chars,
+                             size=(self._min_controls_width, -1))
+        self.panel_uilist = ui_list_panel.uiList
+
+    def OnFileEdited(self):
+        """Event: Finished editing file name."""
+        if not self.file_info: return
+        #--Changed?
+        fileStr = self.file.GetValue()
+        if fileStr == self.fileStr: return
+        #--Extension Changed?
+        if fileStr[-4:].lower() != self.fileStr[-4:].lower():
+            balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
+            self.file.SetValue(self.fileStr)
+        #--Validate the filename - no need to check for extension again
+        elif not self._validate_filename(fileStr):
+            self.file.SetValue(self.fileStr)
+        #--Else file exists?
+        elif self.file_info.dir.join(fileStr).exists():
+            balt.showError(self,_(u"File %s already exists.") % fileStr)
+            self.file.SetValue(self.fileStr)
+        #--Okay?
+        else:
+            self.fileStr = fileStr
+            self.SetEdited()
+
+    def _validate_filename(self, fileStr):
+        return self.panel_uilist.validate_filename(None, fileStr)[0]
+
+    def OnFileEdit(self, event):
+        """Event: Editing filename."""
+        if not self.file_info: return
+        if not self.edited and self.fileStr != self.file.GetValue():
+            self.SetEdited()
+        event.Skip()
+
 class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
-    """Mod and Saves details panel, feature a master's list."""
+    """Mod and Saves details panel, feature a master's list.
+
+    I named the master list attribute 'uilist' to stand out from the usual
+    uiList of SashPanels.
+    :type uilist: MasterList"""
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
+    _subsplitterSashGravity = 1.0 # max resize the top (masters) panel
 
     def __init__(self, parent):
-        # TODO(ut) use super !! Initialize the UIList here !
-        SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
-                           style=wx.SW_BORDER | splitterStyle)
+        SashPanel.__init__(self, parent, isVertical=False)
         self.top, self.bottom = self.left, self.right
-        self.subSplitter = wx.SplitterWindow(self.bottom, style=splitterStyle)
+        self.subSplitter = balt.Splitter(self.bottom)
+        # split the bottom panel into the master uilist and mod tags/save notes
         self.masterPanel = wx.Panel(self.subSplitter)
-        _EditableMixinOnFileInfos.__init__(self, self.masterPanel)
-        #--Masters
+        self._bottom_low_panel = wx.Panel(self.subSplitter)
+        # needed so subpanels do not collapse
+        self.subSplitter.SetMinimumPaneSize(64)
+        self.subSplitter.SplitHorizontally(self.masterPanel,
+                                           self._bottom_low_panel)
+        self.subSplitter.SetSashGravity(self._subsplitterSashGravity)
         mod_or_save_panel = parent.GetParent().GetParent()
+        _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
+                                           mod_or_save_panel)
+        #--Masters
         self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
                                  panel=mod_or_save_panel, detailsPanel=self)
         mastersSizer = vSizer(
             vspace(), hSizer(StaticText(self.masterPanel,_(u"Masters:"))),
             (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
             vspace(), hSizer(self.save, hspace(), self.cancel))
-        mastersSizer.SetSizeHints(self.masterPanel)
         self.masterPanel.SetSizer(mastersSizer)
 
-    def ShowPanel(self): ##: does not call super
-        if hasattr(self, '_firstShow'):
-            sashPos = settings.get(self.sashPosKey,
-                                   self.__class__.defaultSashPos)
-            self.splitter.SetSashPosition(sashPos)
+    def ShowPanel(self):
+        if self._firstShow:
+            super(_SashDetailsPanel, self).ShowPanel() # set sashPosition
             sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
                                    self.__class__.defaultSubSashPos)
             self.subSplitter.SetSashPosition(sashPos)
-            del self._firstShow
         self.uilist.autosizeColumns()
 
-    def ClosePanel(self, destroy=False): ##: does not call super
-        if not hasattr(self, '_firstShow'):
+    def ClosePanel(self, destroy=False):
+        if not self._firstShow:
             # Mod details Sash Positions
             settings[self.sashPosKey] = self.splitter.GetSashPosition()
             settings[self.keyPrefix + '.subSplitterSashPos'] = \
@@ -1204,9 +1248,6 @@ class ModDetails(_SashDetailsPanel):
         textWidth = 200
         #--Version
         self.version = StaticText(top,u'v0.00')
-        #--File Name
-        self.file = TextCtrl(top, onKillFocus=self.OnEditFile,
-                             onText=self.OnFileEdit, maxChars=textWidth) # size=(textWidth,-1))
         #--Author
         self.author = TextCtrl(top, onKillFocus=self.OnEditAuthor,
                                onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
@@ -1215,15 +1256,13 @@ class ModDetails(_SashDetailsPanel):
                                  onKillFocus=self.OnEditModified,
                                  onText=self.OnModifiedEdit, maxChars=32)
         #--Description
-        self.description = TextCtrl(top, size=(textWidth, 150),
+        self.description = TextCtrl(top, size=(textWidth, 128),
                                     multiline=True, autotooltip=False,
                                     onKillFocus=self.OnEditDescription,
                                     onText=self.OnDescrEdit, maxChars=511)
         #--Bash tags
-        tagPanel = wx.Panel(subSplitter)
-        self.allTags = bosh.allTags
-        self.gTags = RoTextCtrl(tagPanel, autotooltip=False,
-                                size=(textWidth, 100))
+        self.gTags = RoTextCtrl(self._bottom_low_panel, autotooltip=False,
+                                size=(textWidth, 64))
         #--Layout
         detailsSizer = vSizer(vspace(),
             (hSizer(
@@ -1239,14 +1278,11 @@ class ModDetails(_SashDetailsPanel):
             (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
-        subSplitter.SetMinimumPaneSize(100)
-        subSplitter.SplitHorizontally(masterPanel,tagPanel)
-        subSplitter.SetSashGravity(0.5)
-        tagsSizer = vSizer(
-            vspace(), (StaticText(tagPanel,_(u"Bash Tags:"))),
-            (hSizer((self.gTags,1,wx.EXPAND)),1,wx.EXPAND))
+        tagsSizer = vSizer(vspace(),
+            (StaticText(self._bottom_low_panel, _(u"Bash Tags:"))),
+            (hSizer((self.gTags, 1, wx.EXPAND)), 1, wx.EXPAND))
         tagsSizer.SetSizeHints(masterPanel)
-        tagPanel.SetSizer(tagsSizer)
+        self._bottom_low_panel.SetSizer(tagsSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
         #--Events
         self.gTags.Bind(wx.EVT_CONTEXT_MENU,
@@ -1292,8 +1328,6 @@ class ModDetails(_SashDetailsPanel):
         if not self.modInfo: return
         if not self.edited and value != control.GetValue(): self.SetEdited()
         event.Skip()
-    def OnFileEdit(self, event):
-        self._OnTextEdit(event, self.fileStr, self.file)
     def OnAuthorEdit(self, event):
         self._OnTextEdit(event, self.authorStr, self.author)
     def OnModifiedEdit(self, event):
@@ -1301,27 +1335,6 @@ class ModDetails(_SashDetailsPanel):
     def OnDescrEdit(self, event):
         self._OnTextEdit(event, self.descriptionStr.replace(
             '\r\n', '\n').replace('\r', '\n'), self.description)
-
-    def OnEditFile(self):
-        if not self.modInfo: return
-        #--Changed?
-        fileStr = self.file.GetValue()
-        if fileStr == self.fileStr: return
-        #--Extension Changed?
-        if fileStr[-4:].lower() != self.fileStr[-4:].lower():
-            balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
-            self.file.SetValue(self.fileStr)
-        #--Validate the filename - no need to check for extension again
-        elif not BashFrame.modList.validate_filename(None, fileStr)[0]:
-            self.file.SetValue(self.fileStr)
-        #--Else file exists?
-        elif self.modInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u"File %s already exists.") % fileStr)
-            self.file.SetValue(self.fileStr)
-        #--Okay?
-        else:
-            self.fileStr = fileStr
-            self.SetEdited()
 
     def OnEditAuthor(self):
         if not self.modInfo: return
@@ -1445,7 +1458,8 @@ class ModDetails(_SashDetailsPanel):
             bosh.modInfos.refresh(scanData=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
             changeDate and not load_order.using_txt_file())
-        BashFrame.modList.RefreshUI(refreshSaves=refreshSaves)
+        self.panel_uilist.RefreshUI(refreshSaves=refreshSaves)
+        self.panel_uilist.SelectAndShowItem(self.modInfo.name)
 
     #--Bash Tags
     def ShowBashTagsMenu(self):
@@ -1456,8 +1470,7 @@ class ModDetails(_SashDetailsPanel):
         mod_tags = mod_info.getBashTags()
         is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
                                               True)
-        all_tags = self.allTags
-        def _refreshUI(): BashFrame.modList.RefreshUI(files=[mod_info.name],
+        def _refreshUI(): self.panel_uilist.RefreshUI(files=[mod_info.name],
                 refreshSaves=False) # why refresh saves when updating tags (?)
         def _isAuto():
             return bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags')
@@ -1510,18 +1523,20 @@ class ModDetails(_SashDetailsPanel):
                 super(_TagLinks, self).__init__()
                 self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
             @property
-            def _choices(self): return all_tags
+            def _choices(self): return bosh.allTags
         ##: Popup the menu - ChoiceLink should really be a Links subclass
         tagLinks = Links()
         tagLinks.append(_TagLinks())
         tagLinks.PopupMenu(self.gTags, Link.Frame, None)
 
 #------------------------------------------------------------------------------
-class INIPanel(SashPanel):
+class INIPanel(SashUIListPanel): # should have a details panel too !
     keyPrefix = 'bash.ini'
+    _ui_list_type = INIList
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent)
+        self.listData = bosh.iniInfos
+        super(INIPanel, self).__init__(parent)
         left,right = self.left, self.right
         #--Remove from list button
         self.button = balt.Button(right, _(u'Remove'),
@@ -1545,9 +1560,7 @@ class INIPanel(SashPanel):
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
         self.tweakName = RoTextCtrl(right, noborder=True, multiline=False)
         self.SetBaseIni(self.current_ini_path)
-        self.listData = bosh.iniInfos
-        self.uiList = BashFrame.iniList = INIList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
+        BashFrame.iniList = self.uiList # must be AFTER SetBaseIni, DUH
         self.comboBox = balt.ComboBox(right, value=self._ini_name,
                                       choices=self.choices.keys())
         #--Events
@@ -1576,8 +1589,7 @@ class INIPanel(SashPanel):
         right.SetSizer(rSizer)
         left.SetSizer(lSizer)
 
-    def RefreshUIColors(self):
-        self.RefreshPanel()
+    def RefreshUIColors(self): self.RefreshPanel()
 
     def SelectTweak(self, tweakFile):
         self.tweakName.SetValue(tweakFile.sbody)
@@ -1594,7 +1606,7 @@ class INIPanel(SashPanel):
     def ShowPanel(self):
         changed = self.trackedInfo.refreshTracked()
         if self.current_ini_path in changed:
-            self.RefreshPanel()
+            self.RefreshPanel() ##: move to iniInfos refresh - add focus param
         super(INIPanel, self).ShowPanel()
 
     def RefreshPanel(self):
@@ -1746,22 +1758,15 @@ class INIPanel(SashPanel):
         super(INIPanel, self).ClosePanel(destroy)
 
 #------------------------------------------------------------------------------
-class ModPanel(SashPanel):
+class ModPanel(BashTab):
     keyPrefix = 'bash.mods'
+    _ui_list_type = ModList
+    _details_panel_type = ModDetails
 
     def __init__(self,parent):
-        SashPanel.__init__(self, parent, sashGravity=1.0)
-        left,right = self.left, self.right
         self.listData = bosh.modInfos
-        self.detailsPanel = ModDetails(right)
-        self.uiList = BashFrame.modList = ModList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        #--Layout
-        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
-        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
-
-    def RefreshUIColors(self):
-        self.uiList.RefreshUI(refreshSaves=False) # refreshing colors
+        super(ModPanel, self).__init__(parent)
+        BashFrame.modList = self.uiList
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
         len(load_order.activeCached()), len(bosh.modInfos))
@@ -1895,19 +1900,19 @@ class SaveDetails(_SashDetailsPanel):
         #--Data
         self.saveInfo = None
         textWidth = 200
-        #--File Name
-        self.file = TextCtrl(top, size=(textWidth, -1),
-                             onKillFocus=self.OnEditFile,
-                             onText=self.OnTextEdit, maxChars=256)
         #--Player Info
+        self._resetDetails()
         self.playerInfo = StaticText(top,u" \n \n ")
+        self._set_player_info_label()
         self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
-        self.picture = balt.Picture(top,textWidth,192*textWidth/256,style=wx.BORDER_SUNKEN,background=colors['screens.bkgd.image']) #--Native: 256x192
-        notePanel = wx.Panel(subSplitter)
+        self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
+                                    style=wx.BORDER_SUNKEN, background=colors[
+                'screens.bkgd.image']) #--Native: 256x192
         #--Save Info
-        self.gInfo = TextCtrl(notePanel, size=(textWidth, 100), multiline=True,
-                              onText=self.OnInfoEdit, maxChars=2048)
+        self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 64),
+                              multiline=True, onText=self.OnInfoEdit,
+                              maxChars=2048)
         #--Layout
         detailsSizer = vSizer(
             vspace(), (self.file,0,wx.EXPAND),
@@ -1916,16 +1921,14 @@ class SaveDetails(_SashDetailsPanel):
             ,0,wx.EXPAND),
             vspace(), (self.picture,1,wx.EXPAND),
             )
-        noteSizer = vSizer(
-            (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
-            )
         detailsSizer.SetSizeHints(top)
         top.SetSizer(detailsSizer)
-        subSplitter.SetMinimumPaneSize(100)
-        subSplitter.SplitHorizontally(masterPanel,notePanel)
-        subSplitter.SetSashGravity(1.0)
+        noteSizer = vSizer(vspace(),
+            (StaticText(self._bottom_low_panel, _(u"Save Notes:"))),
+            (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
+            )
         noteSizer.SetSizeHints(masterPanel)
-        notePanel.SetSizer(noteSizer)
+        self._bottom_low_panel.SetSizer(noteSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
 
     def _resetDetails(self):
@@ -1954,13 +1957,7 @@ class SaveDetails(_SashDetailsPanel):
             self.coSaves = u'%s\n%s' % saveInfo.coSaves().getTags()
         #--Set Fields
         self.file.SetValue(self.fileStr)
-        self.playerInfo.SetLabel((self.playerNameStr+u'\n'+
-                                  _(u'Level')+u' %d, '+
-                                  _(u'Day')+u' %d, '+
-                                  _(u'Play')+u' %d:%02d\n%s') %
-                                 (self.playerLevel,int(self.gameDays),
-                                  self.playMinutes/60,(self.playMinutes%60),
-                                  self.curCellStr))
+        self._set_player_info_label()
         self.gCoSaves.SetLabel(self.coSaves)
         self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
@@ -1972,10 +1969,16 @@ class SaveDetails(_SashDetailsPanel):
             self.picture.SetBitmap(image.ConvertToBitmap())
         #--Info Box
         self.gInfo.DiscardEdits()
-        if fileName:
-            self.gInfo.SetValue(bosh.saveInfos.table.getItem(fileName,'info',_(u'Notes: ')))
-        else:
-            self.gInfo.SetValue(_(u'Notes: '))
+        note_text = bosh.saveInfos.table.getItem(fileName, 'info',
+                                                 u'') if fileName else u''
+        self.gInfo.SetValue(note_text)
+
+    def _set_player_info_label(self):
+        self.playerInfo.SetLabel((self.playerNameStr + u'\n' +
+            _(u'Level') + u' %d, ' + _(u'Day') + u' %d, ' +
+            _(u'Play') + u' %d:%02d\n%s') % (
+            self.playerLevel, int(self.gameDays), self.playMinutes / 60,
+            (self.playMinutes % 60), self.curCellStr))
 
     def OnInfoEdit(self,event):
         """Info field was edited."""
@@ -1984,33 +1987,9 @@ class SaveDetails(_SashDetailsPanel):
                                          self.gInfo.GetValue())
         event.Skip() # not strictly needed - no other handler for onKillFocus
 
-    def OnTextEdit(self,event):
-        """Event: Editing file or save name text."""
-        if not self.saveInfo: return
-        if not self.edited and self.fileStr != self.file.GetValue():
-            self.SetEdited()
-        event.Skip()
-
-    def OnEditFile(self):
-        """Event: Finished editing file name."""
-        if not self.saveInfo: return
-        #--Changed?
-        fileStr = self.file.GetValue()
-        if fileStr == self.fileStr: return
-        #--Extension Changed?
-        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
-            balt.showError(self,_(u"Incorrect file extension: ")+fileStr[-3:])
-        elif not BashFrame.saveList.validate_filename(None, fileStr,
-                _old_path=self.saveInfo.name)[0]:
-            self.file.SetValue(self.fileStr)
-        #--Else file exists?
-        elif self.saveInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u"File %s already exists.") % (fileStr,))
-            self.file.SetValue(self.fileStr)
-        #--Okay?
-        else:
-            self.fileStr = fileStr
-            self.SetEdited()
+    def _validate_filename(self, fileStr):
+        return self.panel_uilist.validate_filename(
+            None, fileStr, _old_path=self.saveInfo.name)[0]
 
     def testChanges(self): # used by the master list when editing is disabled
         saveInfo = self.saveInfo
@@ -2045,36 +2024,28 @@ class SaveDetails(_SashDetailsPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-            BashFrame.saveListRefresh()
-        else: # files=[saveInfo.name], Nope: deleted oldName drives _glist nuts
-            BashFrame.saveListRefresh()
+        # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
+        self.panel_uilist.RefreshUI()
+        self.panel_uilist.SelectAndShowItem(self.saveInfo.name)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
 
 #------------------------------------------------------------------------------
-class SavePanel(SashPanel):
+class SavePanel(BashTab):
     """Savegames tab."""
     keyPrefix = 'bash.saves'
     _status_str = _(u'Saves:') + u' %d'
+    _ui_list_type = SaveList
+    _details_panel_type = SaveDetails
 
     def __init__(self,parent):
         if not bush.game.ess.canReadBasic:
             raise BoltError(u'Wrye Bash cannot read save games for %s.' %
                 bush.game.displayName)
-        SashPanel.__init__(self, parent, sashGravity=1.0)
-        left,right = self.left, self.right
         self.listData = bosh.saveInfos
-        self.detailsPanel = SaveDetails(right)
-        self.uiList = BashFrame.saveList = SaveList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        #--Layout
-        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
-        left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
-
-    def RefreshUIColors(self):
-        self.uiList.RefreshUI()
-        super(SavePanel, self).RefreshUIColors()
+        super(SavePanel, self).__init__(parent)
+        BashFrame.saveList = self.uiList
 
     def ClosePanel(self, destroy=False):
         bosh.saveInfos.profiles.save()
@@ -2237,7 +2208,8 @@ class InstallersList(balt.UIList):
                     any(grouped) for grouped in zip(*refreshes)]
             #--Refresh UI
             if refreshNeeded or ex: # refresh the UI in case of an exception
-                if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False)
+                if modsRefresh: BashFrame.modList.RefreshUI(refreshSaves=False,
+                                                            focus_list=False)
                 if iniRefresh and BashFrame.iniList is not None:
                     # It will be None if the INI Edits Tab was hidden at
                     # startup, and never initialized
@@ -2505,41 +2477,28 @@ class InstallersList(balt.UIList):
         self.RefreshUI()
 
 #------------------------------------------------------------------------------
-class InstallersPanel(SashTankPanel):
-    """Panel for InstallersTank."""
-    espmMenu = Links()
-    subsMenu = Links()
-    keyPrefix = 'bash.installers'
+class InstallersDetails(_DetailsMixin, SashPanel):
+    keyPrefix = 'bash.installers.details'
+    defaultSashPos = - 128 # negative so it sets bottom panel's (comments) size
+    defaultSubSashPos = 0
 
-    ##: belong to InstallersDetails
     @property
-    def displayed_item(self): return self.detailsItem
+    def displayed_item(self): return self._displayed_installer
     @property
-    def file_infos(self): return self.listData
-    @property
-    def file_info(self): return self.file_infos.get(self.displayed_item, None)
+    def file_infos(self): return self._idata
 
     def __init__(self,parent):
         """Initialize."""
-        BashFrame.iPanel = self
-        self.listData = bosh.InstallersData()
-        SashTankPanel.__init__(self, parent)
-        left,right = self.left,self.right
-        self.commentsSplitter = commentsSplitter = \
-            wx.SplitterWindow(right, style=splitterStyle)
-        subSplitter = wx.SplitterWindow(commentsSplitter, style=splitterStyle)
-        checkListSplitter = wx.SplitterWindow(subSplitter, style=splitterStyle)
-        #--Refreshing
-        self._data_dir_scanned = False
-        self.refreshing = False
-        self.frameActivated = False
-        #--Contents
-        self.detailsPanel = self # YAK
-        self.uiList = InstallersList(left, listData=self.listData,
-                                     keyPrefix=self.keyPrefix, panel=self)
+        super(InstallersDetails, self).__init__(parent, isVertical=False)
+        self.installersPanel = parent.GetParent().GetParent()
+        self._idata = self.installersPanel.listData
+        self._displayed_installer = None
+        top, bottom = self.left, self.right
+        commentsSplitter = self.splitter
+        self.subSplitter = subSplitter = balt.Splitter(top)
+        self.checkListSplitter = balt.Splitter(subSplitter)
         #--Package
-        self.gPackage = RoTextCtrl(right, noborder=True)
-        self.gPackage.HideNativeCaret()
+        self.gPackage = RoTextCtrl(top, noborder=True)
         #--Info Tabs
         self.gNotebook = wx.Notebook(subSplitter,style=wx.NB_MULTILINE)
         self.gNotebook.SetSizeHints(100,100)
@@ -2562,14 +2521,14 @@ class InstallersPanel(SashTankPanel):
         self.gNotebook.SetSelection(settings['bash.installers.page'])
         self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
         #--Sub-Installers
-        subPackagesPanel = wx.Panel(checkListSplitter)
+        subPackagesPanel = wx.Panel(self.checkListSplitter)
         subPackagesLabel = StaticText(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
                                      kind='checklist')
         self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
         self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
-        espmsPanel = wx.Panel(checkListSplitter)
+        espmsPanel = wx.Panel(self.checkListSplitter)
         espmsLabel = StaticText(espmsPanel, _(u'Esp/m Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
@@ -2577,51 +2536,285 @@ class InstallersPanel(SashTankPanel):
         self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
         self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
-        commentsPanel = wx.Panel(commentsSplitter)
+        commentsPanel = wx.Panel(bottom)
         commentsLabel = StaticText(commentsPanel, _(u'Comments'))
         self.gComments = TextCtrl(commentsPanel, multiline=True)
         #--Splitter settings
-        checkListSplitter.SetMinimumPaneSize(50)
-        checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
-        checkListSplitter.SetSashGravity(0.5)
+        self.checkListSplitter.SetMinimumPaneSize(50)
+        self.checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
+        self.checkListSplitter.SetSashGravity(0.5)
         subSplitter.SetMinimumPaneSize(50)
-        subSplitter.SplitHorizontally(self.gNotebook, checkListSplitter)
+        subSplitter.SplitHorizontally(self.gNotebook, self.checkListSplitter)
         subSplitter.SetSashGravity(0.5)
-        commentsHeight = self.gPackage.GetSize()[1]
-        commentsSplitter.SetMinimumPaneSize(commentsHeight)
+        commentsSplitter.SetMinimumPaneSize(-self.__class__.defaultSashPos)
         commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
         commentsSplitter.SetSashGravity(1.0)
         #--Layout
-        subPackagesSizer = vSizer(subPackagesLabel, (self.gSubList,1,wx.EXPAND,2))
+        subPackagesSizer = vSizer(subPackagesLabel,(self.gSubList,1,wx.EXPAND))
         subPackagesSizer.SetSizeHints(subPackagesPanel)
         subPackagesPanel.SetSizer(subPackagesSizer)
-        espmsSizer = vSizer(espmsLabel, (self.gEspmList,1,wx.EXPAND,2))
+        espmsSizer = vSizer(espmsLabel, (self.gEspmList, 1, wx.EXPAND))
         espmsSizer.SetSizeHints(espmsPanel)
         espmsPanel.SetSizer(espmsSizer)
-        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND,2))
+        topSizer = vSizer(vspace(2),
+            (self.gPackage,0,wx.EXPAND|wx.LEFT,3),
+            (subSplitter,1,wx.EXPAND),
+            )
+        top.SetSizer(topSizer)
+        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND))
         commentsSizer.SetSizeHints(commentsPanel)
         commentsPanel.SetSizer(commentsSizer)
-        rightSizer = vSizer(
-            (self.gPackage,0,wx.GROW|wx.TOP|wx.LEFT,2),
-            (commentsSplitter,1,wx.EXPAND,2))
-        rightSizer.SetSizeHints(right)
-        right.SetSizer(rightSizer)
-        wx.LayoutAlgorithm().LayoutWindow(self, right)
-        leftSizer = vSizer(
-            (self.uiList,1,wx.EXPAND),
-            )
-        left.SetSizer(leftSizer)
-        wx.LayoutAlgorithm().LayoutWindow(self,left)
-        commentsSplitterSavedSashPos = settings.get('bash.installers.commentsSplitterSashPos', 0)
-        # restore saved comments text box size
-        if 0 == commentsSplitterSavedSashPos:
-            commentsSplitter.SetSashPosition(-commentsHeight)
-        else:
-            commentsSplitter.SetSashPosition(commentsSplitterSavedSashPos)
+        bottomSizer = vSizer(
+            (commentsPanel,1,wx.EXPAND))
+        bottomSizer.SetSizeHints(bottom)
+        bottom.SetSizer(bottomSizer)
 
-    def RefreshUIColors(self):
-        """Update any controls using custom colors."""
-        self.uiList.RefreshUI()
+    def OnShowInfoPage(self,event):
+        """A specific info page has been selected."""
+        if event.GetId() == self.gNotebook.GetId():
+            index = event.GetSelection()
+            gPage,initialized = self.infoPages[index]
+            if self._displayed_installer and not initialized:
+                self.RefreshInfoPage(index, self.file_info)
+            event.Skip()
+
+    def ClosePanel(self, destroy=False, only_details=False):
+        """Saves details if they need saving."""
+        super(InstallersDetails, self).ClosePanel(destroy)
+        if not self._firstShow and not only_details: # save subsplitters
+            settings[self.__class__.keyPrefix + '.subSplitterSashPos'] = \
+                self.subSplitter.GetSashPosition()
+            settings[self.__class__.keyPrefix + '.checkListSplitterSashPos'] =\
+                self.checkListSplitter.GetSashPosition()
+            settings['bash.installers.page'] = self.gNotebook.GetSelection()
+        installer = self.file_info
+        if not installer or not self.gComments.IsModified(): return
+        installer.comments = self.gComments.GetValue()
+        self._idata.setChanged()
+
+    def SetFile(self, fileName='SAME'):
+        """Refreshes detail view associated with data from item."""
+        if self._displayed_installer is not None:
+            self.ClosePanel(only_details=True) #--Save previous details
+        fileName = super(InstallersDetails, self).SetFile(fileName)
+        self._displayed_installer = fileName
+        del self.espms[:]
+        if fileName:
+            installer = self._idata[fileName]
+            #--Name
+            self.gPackage.SetValue(fileName.s)
+            #--Info Pages
+            currentIndex = self.gNotebook.GetSelection()
+            for index,(gPage,state) in enumerate(self.infoPages):
+                self.infoPages[index][1] = False
+                if index == currentIndex: self.RefreshInfoPage(index,installer)
+                else: gPage.SetValue(u'')
+            #--Sub-Packages
+            self.gSubList.Clear()
+            if len(installer.subNames) <= 2:
+                self.gSubList.Clear()
+            else:
+                balt.setCheckListItems(self.gSubList, [x.replace(u'&',u'&&') for x in installer.subNames[1:]], installer.subActives[1:])
+            #--Espms
+            if not installer.espms:
+                self.gEspmList.Clear()
+            else:
+                names = self.espms = sorted(installer.espms)
+                names.sort(key=lambda x: x.cext != u'.esm')
+                balt.setCheckListItems(self.gEspmList, [[u'',u'*'][installer.isEspmRenamed(x.s)]+x.s.replace(u'&',u'&&') for x in names],
+                    [x not in installer.espmNots for x in names])
+            #--Comments
+            self.gComments.SetValue(installer.comments)
+        self.gPackage.HideNativeCaret()
+
+    def _resetDetails(self):
+        self.gPackage.SetValue(u'')
+        for index, (gPage, state) in enumerate(self.infoPages):
+            self.infoPages[index][1] = True
+            gPage.SetValue(u'')
+        self.gSubList.Clear()
+        self.gEspmList.Clear()
+        self.gComments.SetValue(u'')
+
+    def ShowPanel(self):
+        if self._firstShow:
+            super(InstallersDetails, self).ShowPanel() # set sash position
+            sashPos = settings.get(
+                self.keyPrefix + '.checkListSplitterSashPos',
+                self.__class__.defaultSubSashPos)
+            self.checkListSplitter.SetSashPosition(sashPos)
+            sashPos = settings.get(self.keyPrefix + '.subSplitterSashPos',
+                                   self.__class__.defaultSubSashPos)
+            self.subSplitter.SetSashPosition(sashPos)
+
+    def RefreshInfoPage(self,index,installer):
+        """Refreshes notebook page."""
+        gPage,initialized = self.infoPages[index]
+        if initialized: return
+        else: self.infoPages[index][1] = True
+        pageName = gPage.GetName()
+        def dumpFiles(files, header=u'', isPath=True):
+            if files:
+                buff = StringIO.StringIO()
+                if isPath: files = [x.s for x in files]
+                else: files = list(files)
+                files = bosh.Installer.sortFiles(files)
+                if header: buff.write(header+u'\n')
+                for file in files:
+                    oldName = installer.getEspmName(file)
+                    buff.write(oldName)
+                    if oldName != file:
+                        buff.write(u' -> ')
+                        buff.write(file)
+                    buff.write(u'\n')
+                return buff.getvalue()
+            elif header:
+                return header+u'\n'
+            else:
+                return u''
+        if pageName == 'gGeneral':
+            info = u'== '+_(u'Overview')+u'\n'
+            info += _(u'Type: ') + installer.type_string + u'\n'
+            info += installer.structure_string() + u'\n'
+            nConfigured = len(installer.data_sizeCrc)
+            nMissing = len(installer.missingFiles)
+            nMismatched = len(installer.mismatchedFiles)
+            if isinstance(installer,bosh.InstallerProject):
+                info += _(u'Size:') + u' %s\n' % round_size(installer.size)
+            elif isinstance(installer,bosh.InstallerMarker):
+                info += _(u'Size:')+u' N/A\n'
+            elif isinstance(installer,bosh.InstallerArchive):
+                if installer.isSolid:
+                    if installer.blockSize:
+                        sSolid = _(u'Solid, Block Size: %d MB') % installer.blockSize
+                    elif installer.blockSize is None:
+                        sSolid = _(u'Solid, Block Size: Unknown')
+                    else:
+                        sSolid = _(u'Solid, Block Size: 7z Default')
+                else:
+                    sSolid = _(u'Non-solid')
+                info += _(u'Size: %s (%s)') % (
+                    round_size(installer.size), sSolid) + u'\n'
+            else:
+                info += _(u'Size: Unrecognized')+u'\n'
+            info += (_(u'Modified:')+u' %s\n' % formatDate(installer.modified),
+                     _(u'Modified:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+            info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,
+                     _(u'Data CRC:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+            info += (_(u'Files:') + u' %s\n' % installer.number_string(
+                installer.num_of_files, marker_string=u'N/A'))
+            info += (_(u'Configured:')+u' %s (%s)\n' % (
+                formatInteger(nConfigured), round_size(installer.unSize)),
+                     _(u'Configured:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
+            info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
+                nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
+            info += (_(u'  Missing:')+u' %s\n' % installer.number_string(
+                nMissing, marker_string=u'N/A'))
+            info += (_(u'  Conflicts:')+u' %s\n' % installer.number_string(
+                nMismatched, marker_string=u'N/A'))
+            info += '\n'
+            #--Infoboxes
+            gPage.SetValue(info + dumpFiles(installer.data_sizeCrc,
+                                            u'== ' + _(u'Configured Files')))
+        elif pageName == 'gMatched':
+            gPage.SetValue(dumpFiles(set(installer.data_sizeCrc) -
+                        installer.missingFiles - installer.mismatchedFiles))
+        elif pageName == 'gMissing':
+            gPage.SetValue(dumpFiles(installer.missingFiles))
+        elif pageName == 'gMismatched':
+            gPage.SetValue(dumpFiles(installer.mismatchedFiles))
+        elif pageName == 'gConflicts':
+            gPage.SetValue(self._idata.getConflictReport(installer, 'OVER'))
+        elif pageName == 'gUnderrides':
+            gPage.SetValue(self._idata.getConflictReport(installer, 'UNDER'))
+        elif pageName == 'gDirty':
+            gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
+        elif pageName == 'gSkipped':
+            gPage.SetValue(u'\n'.join((
+                dumpFiles(installer.skipExtFiles,
+                          u'== ' + _(u'Skipped (Extension)'), isPath=False),
+                dumpFiles(installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'),
+                          isPath=False),)) or _(u'[None]'))
+
+    #--Config
+    def refreshCurrent(self,installer):
+        """Refreshes current item while retaining scroll positions."""
+        installer.refreshDataSizeCrc()
+        installer.refreshStatus(self._idata)
+        # Save scroll bar positions, because gList.RefreshUI will
+        subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
+        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
+        subIndices = self.gSubList.GetSelections()
+        self.installersPanel.uiList.RefreshUI(files=[self.displayed_item])
+        for subIndex in subIndices:
+            self.gSubList.SetSelection(subIndex)
+        # Reset the scroll bars back to their original position
+        subScroll = subScrollPos - self.gSubList.GetScrollPos(wx.VERTICAL)
+        self.gSubList.ScrollLines(subScroll)
+        espmScroll = espmScrollPos - self.gEspmList.GetScrollPos(wx.VERTICAL)
+        self.gEspmList.ScrollLines(espmScroll)
+
+    def OnCheckSubItem(self,event):
+        """Handle check/uncheck of item."""
+        installer = self.file_info
+        index = event.GetSelection()
+        self.gSubList.SetSelection(index)
+        for index in range(self.gSubList.GetCount()):
+            installer.subActives[index+1] = self.gSubList.IsChecked(index)
+        if not balt.getKeyState_Shift():
+            self.refreshCurrent(installer)
+
+    def SelectionMenu(self,event):
+        """Handle right click in espm list."""
+        x = event.GetX()
+        y = event.GetY()
+        selected = self.gEspmList.HitTest((x,y))
+        self.gEspmList.SetSelection(selected)
+        #--Show/Destroy Menu
+        InstallersPanel.espmMenu.PopupMenu(self, Link.Frame, selected)
+
+    def SubsSelectionMenu(self,event):
+        """Handle right click in espm list."""
+        x = event.GetX()
+        y = event.GetY()
+        selected = self.gSubList.HitTest((x,y))
+        self.gSubList.SetSelection(selected)
+        #--Show/Destroy Menu
+        InstallersPanel.subsMenu.PopupMenu(self, Link.Frame, selected)
+
+    def OnCheckEspmItem(self,event):
+        """Handle check/uncheck of item."""
+        espmNots = self.file_info.espmNots
+        index = event.GetSelection()
+        name = self.gEspmList.GetString(index).replace('&&','&')
+        if name[0] == u'*':
+            name = name[1:]
+        espm = GPath(name)
+        if self.gEspmList.IsChecked(index):
+            espmNots.discard(espm)
+        else:
+            espmNots.add(espm)
+        self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
+        if not balt.getKeyState_Shift():
+            self.refreshCurrent(self.file_info)
+
+class InstallersPanel(BashTab):
+    """Panel for InstallersTank."""
+    espmMenu = Links()
+    subsMenu = Links()
+    keyPrefix = 'bash.installers'
+    _ui_list_type = InstallersList
+    _details_panel_type = InstallersDetails
+
+    def __init__(self,parent):
+        """Initialize."""
+        BashFrame.iPanel = self
+        self.listData = bosh.InstallersData()
+        super(InstallersPanel, self).__init__(parent)
+        #--Refreshing
+        self._data_dir_scanned = False
+        self.refreshing = False
+        self.frameActivated = False
 
     @balt.conversation
     def _first_run_set_enabled(self):
@@ -2646,7 +2839,7 @@ class InstallersPanel(SashTankPanel):
             self.refreshing = True
             self._refresh_installers_if_needed(refresh_ui, canCancel,
                                                fullRefresh, scan_data_dir)
-            if refresh_ui[0]: self.uiList.RefreshUI()
+            if refresh_ui[0]: self.uiList.RefreshUI(focus_list=False)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
@@ -2782,35 +2975,9 @@ class InstallersPanel(SashTankPanel):
                     except (CancelError, SkipError):
                         continue
 
-    def OnShowInfoPage(self,event):
-        """A specific info page has been selected."""
-        if event.GetId() == self.gNotebook.GetId():
-            index = event.GetSelection()
-            gPage,initialized = self.infoPages[index]
-            if self.detailsItem and not initialized:
-                self.RefreshInfoPage(index, self.listData[self.detailsItem])
-            event.Skip()
-
     def _sbCount(self):
         active = len(filter(lambda x: x.isActive, self.listData.itervalues()))
         return _(u'Packages:') + u' %d/%d' % (active, len(self.listData))
-
-    def ClosePanel(self, destroy=False):
-        if not hasattr(self, '_firstShow'): # save comments text box size
-            sashPos = self.commentsSplitter.GetSashPosition()
-            settings['bash.installers.commentsSplitterSashPos'] = sashPos
-        super(InstallersPanel, self).ClosePanel(destroy)
-
-    #--Details view (if it exists)
-    def SaveDetails(self):
-        """Saves details if they need saving."""
-        settings['bash.installers.page'] = self.gNotebook.GetSelection()
-        if not self.detailsItem: return
-        if self.detailsItem not in self.listData: return
-        if not self.gComments.IsModified(): return
-        installer = self.listData[self.detailsItem]
-        installer.comments = self.gComments.GetValue()
-        self.listData.setChanged()
 
     def RefreshUIMods(self, mods_changed, inis_changed):
         """Refresh UI plus refresh mods state."""
@@ -2818,7 +2985,7 @@ class InstallersPanel(SashTankPanel):
         if mods_changed:
             with load_order.Unlock():
                 bosh.modInfos.refresh()
-            BashFrame.modList.RefreshUI(refreshSaves=True)
+            BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
             Link.Frame.warn_corrupted(warn_saves=False)
             Link.Frame.warn_load_order()
         if inis_changed:
@@ -2826,205 +2993,6 @@ class InstallersPanel(SashTankPanel):
             if BashFrame.iniList is not None:
                 BashFrame.iniList.panel.RefreshPanel()
         bosh.BSAInfos.check_bsa_timestamps()
-
-    def SetFile(self, fileName='SAME'):
-        """Refreshes detail view associated with data from item."""
-        if fileName == 'SAME': fileName = self.detailsItem
-        if fileName not in self.listData: fileName = None
-        self.SaveDetails() #--Save previous details
-        self.detailsItem = fileName
-        del self.espms[:]
-        if fileName:
-            installer = self.listData[fileName]
-            #--Name
-            self.gPackage.SetValue(fileName.s)
-            #--Info Pages
-            currentIndex = self.gNotebook.GetSelection()
-            for index,(gPage,state) in enumerate(self.infoPages):
-                self.infoPages[index][1] = False
-                if index == currentIndex: self.RefreshInfoPage(index,installer)
-                else: gPage.SetValue(u'')
-            #--Sub-Packages
-            self.gSubList.Clear()
-            if len(installer.subNames) <= 2:
-                self.gSubList.Clear()
-            else:
-                balt.setCheckListItems(self.gSubList, [x.replace(u'&',u'&&') for x in installer.subNames[1:]], installer.subActives[1:])
-            #--Espms
-            if not installer.espms:
-                self.gEspmList.Clear()
-            else:
-                names = self.espms = sorted(installer.espms)
-                names.sort(key=lambda x: x.cext != u'.esm')
-                balt.setCheckListItems(self.gEspmList, [[u'',u'*'][installer.isEspmRenamed(x.s)]+x.s.replace(u'&',u'&&') for x in names],
-                    [x not in installer.espmNots for x in names])
-            #--Comments
-            self.gComments.SetValue(installer.comments)
-        else:
-            self.gPackage.SetValue(u'')
-            for index,(gPage,state) in enumerate(self.infoPages):
-                self.infoPages[index][1] = True
-                gPage.SetValue(u'')
-            self.gSubList.Clear()
-            self.gEspmList.Clear()
-            self.gComments.SetValue(u'')
-        self.gPackage.HideNativeCaret()
-
-    def RefreshInfoPage(self,index,installer):
-        """Refreshes notebook page."""
-        gPage,initialized = self.infoPages[index]
-        if initialized: return
-        else: self.infoPages[index][1] = True
-        pageName = gPage.GetName()
-        def dumpFiles(files, header=u'', isPath=True):
-            if files:
-                buff = StringIO.StringIO()
-                if isPath: files = [x.s for x in files]
-                else: files = list(files)
-                files = bosh.Installer.sortFiles(files)
-                if header: buff.write(header+u'\n')
-                for file in files:
-                    oldName = installer.getEspmName(file)
-                    buff.write(oldName)
-                    if oldName != file:
-                        buff.write(u' -> ')
-                        buff.write(file)
-                    buff.write(u'\n')
-                return buff.getvalue()
-            elif header:
-                return header+u'\n'
-            else:
-                return u''
-        if pageName == 'gGeneral':
-            info = u'== '+_(u'Overview')+u'\n'
-            info += _(u'Type: ') + installer.type_string + u'\n'
-            info += installer.structure_string() + u'\n'
-            nConfigured = len(installer.data_sizeCrc)
-            nMissing = len(installer.missingFiles)
-            nMismatched = len(installer.mismatchedFiles)
-            if isinstance(installer,bosh.InstallerProject):
-                info += _(u'Size:') + u' %s\n' % round_size(installer.size)
-            elif isinstance(installer,bosh.InstallerMarker):
-                info += _(u'Size:')+u' N/A\n'
-            elif isinstance(installer,bosh.InstallerArchive):
-                if installer.isSolid:
-                    if installer.blockSize:
-                        sSolid = _(u'Solid, Block Size: %d MB') % installer.blockSize
-                    elif installer.blockSize is None:
-                        sSolid = _(u'Solid, Block Size: Unknown')
-                    else:
-                        sSolid = _(u'Solid, Block Size: 7z Default')
-                else:
-                    sSolid = _(u'Non-solid')
-                info += _(u'Size: %s (%s)') % (
-                    round_size(installer.size), sSolid) + u'\n'
-            else:
-                info += _(u'Size: Unrecognized')+u'\n'
-            info += (_(u'Modified:')+u' %s\n' % formatDate(installer.modified),
-                     _(u'Modified:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'Data CRC:')+u' %08X\n' % installer.crc,
-                     _(u'Data CRC:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'Files:') + u' %s\n' % installer.number_string(
-                installer.num_of_files, marker_string=u'N/A'))
-            info += (_(u'Configured:')+u' %s (%s)\n' % (
-                formatInteger(nConfigured), round_size(installer.unSize)),
-                     _(u'Configured:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
-            info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
-                nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
-            info += (_(u'  Missing:')+u' %s\n' % installer.number_string(
-                nMissing, marker_string=u'N/A'))
-            info += (_(u'  Conflicts:')+u' %s\n' % installer.number_string(
-                nMismatched, marker_string=u'N/A'))
-            info += '\n'
-            #--Infoboxes
-            gPage.SetValue(info + dumpFiles(installer.data_sizeCrc,
-                                            u'== ' + _(u'Configured Files')))
-        elif pageName == 'gMatched':
-            gPage.SetValue(dumpFiles(set(installer.data_sizeCrc) -
-                        installer.missingFiles - installer.mismatchedFiles))
-        elif pageName == 'gMissing':
-            gPage.SetValue(dumpFiles(installer.missingFiles))
-        elif pageName == 'gMismatched':
-            gPage.SetValue(dumpFiles(installer.mismatchedFiles))
-        elif pageName == 'gConflicts':
-            gPage.SetValue(self.listData.getConflictReport(installer, 'OVER'))
-        elif pageName == 'gUnderrides':
-            gPage.SetValue(self.listData.getConflictReport(installer, 'UNDER'))
-        elif pageName == 'gDirty':
-            gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
-        elif pageName == 'gSkipped':
-            gPage.SetValue(u'\n'.join((
-                dumpFiles(installer.skipExtFiles,
-                          u'== ' + _(u'Skipped (Extension)'), isPath=False),
-                dumpFiles(installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'),
-                          isPath=False),)) or _(u'[None]'))
-
-    #--Config
-    def refreshCurrent(self,installer):
-        """Refreshes current item while retaining scroll positions."""
-        installer.refreshDataSizeCrc()
-        installer.refreshStatus(self.listData)
-
-        # Save scroll bar positions, because gList.RefreshUI will
-        subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
-        espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
-        subIndices = self.gSubList.GetSelections()
-
-        self.uiList.RefreshUI(files=[self.detailsItem])
-        for subIndex in subIndices:
-            self.gSubList.SetSelection(subIndex)
-
-        # Reset the scroll bars back to their original position
-        subScroll = subScrollPos - self.gSubList.GetScrollPos(wx.VERTICAL)
-        self.gSubList.ScrollLines(subScroll)
-
-        espmScroll = espmScrollPos - self.gEspmList.GetScrollPos(wx.VERTICAL)
-        self.gEspmList.ScrollLines(espmScroll)
-
-    def OnCheckSubItem(self,event):
-        """Handle check/uncheck of item."""
-        installer = self.listData[self.detailsItem]
-        index = event.GetSelection()
-        self.gSubList.SetSelection(index)
-        for index in range(self.gSubList.GetCount()):
-            installer.subActives[index+1] = self.gSubList.IsChecked(index)
-        if not balt.getKeyState_Shift():
-            self.refreshCurrent(installer)
-
-    def SelectionMenu(self,event):
-        """Handle right click in espm list."""
-        x = event.GetX()
-        y = event.GetY()
-        selected = self.gEspmList.HitTest((x,y))
-        self.gEspmList.SetSelection(selected)
-        #--Show/Destroy Menu
-        InstallersPanel.espmMenu.PopupMenu(self, Link.Frame, selected)
-
-    def SubsSelectionMenu(self,event):
-        """Handle right click in espm list."""
-        x = event.GetX()
-        y = event.GetY()
-        selected = self.gSubList.HitTest((x,y))
-        self.gSubList.SetSelection(selected)
-        #--Show/Destroy Menu
-        InstallersPanel.subsMenu.PopupMenu(self, Link.Frame, selected)
-
-    def OnCheckEspmItem(self,event):
-        """Handle check/uncheck of item."""
-        installer = self.listData[self.detailsItem]
-        espmNots = installer.espmNots
-        index = event.GetSelection()
-        name = self.gEspmList.GetString(index).replace('&&','&')
-        if name[0] == u'*':
-            name = name[1:]
-        espm = GPath(name)
-        if self.gEspmList.IsChecked(index):
-            espmNots.discard(espm)
-        else:
-            espmNots.add(espm)
-        self.gEspmList.SetSelection(index)    # so that (un)checking also selects (moves the highlight)
-        if not balt.getKeyState_Shift():
-            self.refreshCurrent(installer)
 
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
@@ -3097,7 +3065,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         super(ScreensDetails, self).__init__(parent)
         self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
-        parent.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
+        self.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
 
     @property
     def displayed_item(self): return self.displayed_screen
@@ -3119,35 +3087,22 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
     def RefreshUIColors(self):
         self.screenshot_control.SetBackground(colors['screens.bkgd.image'])
 
-    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
-    def ShowPanel(self): pass
-
-class ScreensPanel(SashPanel):
+class ScreensPanel(BashTab):
     """Screenshots tab."""
     keyPrefix = 'bash.screens'
     _status_str = _(u'Screens:') + u' %d'
+    _ui_list_type = ScreensList
+    _details_panel_type = ScreensDetails
 
     def __init__(self,parent):
         """Initialize."""
-        SashPanel.__init__(self, parent)
-        left,right = self.left,self.right
-        #--Contents
         self.listData = bosh.screensData = bosh.ScreensData()
-        self.detailsPanel = ScreensDetails(right)
-        self.uiList = ScreensList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        #--Layout
-        left.SetSizer(hSizer((self.uiList,1,wx.GROW)))
-        wx.LayoutAlgorithm().LayoutWindow(self,right)
-
-    def RefreshUIColors(self):
-        self.uiList.RefreshUI()
-        super(ScreensPanel, self).RefreshUIColors()
+        super(ScreensPanel, self).__init__(parent)
 
     def ShowPanel(self):
         """Panel is shown. Update self.data."""
         if bosh.screensData.refresh():
-            self.uiList.RefreshUI()
+            self.uiList.RefreshUI(focus_list=False)
         super(ScreensPanel, self).ShowPanel()
 
 #------------------------------------------------------------------------------
@@ -3178,18 +3133,12 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     def allowDetailsEdit(self): return True
 
     def __init__(self, parent):
-        SashPanel.__init__(self, parent, sashGravity=1.0, isVertical=False,
-                           style=wx.TAB_TRAVERSAL)
+        SashPanel.__init__(self, parent, isVertical=False)
         self.top, self.bottom = self.left, self.right
-        bsaPanel = parent.GetParent().GetParent()
-        self.bsaList = bsaPanel.uiList
-        _EditableMixinOnFileInfos.__init__(self, self.bottom)
+        bsa_panel = self.GetParent().GetParent().GetParent()
+        _EditableMixinOnFileInfos.__init__(self, self.bottom, bsa_panel)
         #--Data
         self.BSAInfo = None
-        #--File Name
-        self.file = TextCtrl(self.top, onText=self.OnTextEdit,
-                             onKillFocus=self.OnEditFile, maxChars=256)
-
         #--BSA Info
         self.gInfo = TextCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -3233,34 +3182,6 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
             bosh.bsaInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
         event.Skip()
 
-    def OnTextEdit(self,event):
-        """Event: Editing file or save name text."""
-        if not self.BSAInfo : return
-        if not self.edited and self.fileStr != self.file.GetValue():
-            self.SetEdited()
-        event.Skip()
-
-    def OnEditFile(self):
-        """Event: Finished editing file name."""
-        if not self.BSAInfo: return
-        #--Changed?
-        fileStr = self.file.GetValue()
-        if fileStr == self.fileStr: return
-        #--Extension Changed?
-        if self.fileStr[-4:].lower() != fileStr[-4:].lower():
-            balt.showError(self,_(u'Incorrect file extension: ')+fileStr[-3:])
-            self.file.SetValue(self.fileStr)
-        elif not self.bsaList.validate_filename(None, fileStr)[0]:
-            self.file.SetValue(self.fileStr)
-        #--Else file exists?
-        elif self.BSAInfo.dir.join(fileStr).exists():
-            balt.showError(self,_(u'File %s already exists.') % fileStr)
-            self.file.SetValue(self.fileStr)
-        #--Okay?
-        else:
-            self.fileStr = fileStr
-            self.SetEdited()
-
     def DoSave(self):
         """Event: Clicked Save button."""
         BSAInfo = self.BSAInfo
@@ -3279,33 +3200,20 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)
-        self.bsaList.RefreshUI()
-
-    def ClosePanel(self, destroy=False): pass # for _DetailsViewMixin.detailsPanel.ClosePanel
-    def ShowPanel(self): pass
+        self.panel_uilist.RefreshUI()
 
 #------------------------------------------------------------------------------
-class BSAPanel(SashPanel):
+class BSAPanel(BashTab):
     """BSA info tab."""
     keyPrefix = 'bash.BSAs'
     _status_str = _(u'BSAs:') + u' %d'
+    _ui_list_type = BSAList
+    _details_panel_type = BSADetails
 
     def __init__(self,parent):
-        super(BSAPanel, self).__init__(parent)
-        left,right = self.left, self.right
         self.listData = bosh.bsaInfos
         bosh.bsaInfos.refresh()
-        self.uiList = BSAList(
-            left, listData=self.listData, keyPrefix=self.keyPrefix, panel=self)
-        self.detailsPanel = BSADetails(right)
-        #--Layout
-        right.SetSizer(hSizer((self.detailsPanel,1,wx.EXPAND)))
-        left.SetSizer(hSizer((self.uiList,2,wx.EXPAND)))
-        self.detailsPanel.Fit()
-
-    def ClosePanel(self, destroy=False):
-        super(BSAPanel, self).ClosePanel(destroy)
-        # bosh.bsaInfos.profiles.save()
+        super(BSAPanel, self).__init__(parent)
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.UIList):
@@ -3335,75 +3243,78 @@ class PeopleList(balt.UIList):
         item_format.icon_key = u'karma%+d' % self.data_store[item][1]
 
 #------------------------------------------------------------------------------
-class PeoplePanel(SashTankPanel):
+class PeopleDetails(_DetailsMixin, NotebookPanel):
+    @property
+    def displayed_item(self): return self._people_detail
+    @property
+    def file_infos(self): return self.peoplePanel.listData
+
+    def __init__(self, parent):
+        super(PeopleDetails, self).__init__(parent)
+        self._people_detail = None # type: unicode
+        self.peoplePanel = parent.GetParent().GetParent()
+        self.gName = RoTextCtrl(self, multiline=False)
+        self.gText = TextCtrl(self, multiline=True)
+        self.gKarma = spinCtrl(self,u'0',min=-5,max=5,onSpin=self.OnSpin)
+        self.gKarma.SetSizeHints(40,-1)
+        #--Layout
+        self.SetSizer(vSizer(
+            (hSizer((self.gName, 1, wx.GROW),
+                    (self.gKarma, 0, wx.GROW),
+                    ), 0, wx.GROW),
+            vspace(), (self.gText, 1, wx.GROW),
+        ))
+
+    def OnSpin(self):
+        """Karma spin."""
+        if not self._people_detail: return
+        karma = int(self.gKarma.GetValue())
+        text = self.file_infos[self._people_detail][2]
+        self.file_infos[self._people_detail] = (time.time(), karma, text)
+        self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
+        self.file_infos.setChanged()
+
+    def ClosePanel(self, destroy=False):
+        """Saves details if they need saving."""
+        if not self.gText.IsModified(): return
+        if not self.file_info: return
+        mtime, karma, text = self.file_infos[self._people_detail]
+        self.file_infos[self._people_detail] = (
+            time.time(), karma, self.gText.GetValue().strip())
+        self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
+        self.file_infos.setChanged()
+
+    def SetFile(self, fileName='SAME'):
+        """Refreshes detail view associated with data from item."""
+        self.ClosePanel()
+        item = super(PeopleDetails, self).SetFile(fileName)
+        self._people_detail = item
+        if not item: return
+        karma, text = self.peoplePanel.listData[item][1:3]
+        self.gName.SetValue(item)
+        self.gKarma.SetValue(karma)
+        self.gText.SetValue(text)
+
+    def _resetDetails(self):
+        self.gKarma.SetValue(0)
+        self.gName.SetValue(u'')
+        self.gText.Clear()
+
+class PeoplePanel(BashTab):
     """Panel for PeopleTank."""
     keyPrefix = 'bash.people'
     _status_str = _(u'People:') + u' %d'
+    _ui_list_type = PeopleList
+    _details_panel_type = PeopleDetails
 
     def __init__(self,parent):
         """Initialize."""
         self.listData = bosh.PeopleData()
-        SashTankPanel.__init__(self, parent)
-        left,right = self.left,self.right
-        #--Contents
-        self.detailsPanel = self # YAK
-        self.uiList = PeopleList(left, listData=self.listData,
-                                 keyPrefix=self.keyPrefix, panel=self)
-        self.gName = RoTextCtrl(right, multiline=False)
-        self.gText = TextCtrl(right, multiline=True)
-        self.gKarma = spinCtrl(right,u'0',min=-5,max=5,onSpin=self.OnSpin)
-        self.gKarma.SetSizeHints(40,-1)
-        #--Layout
-        right.SetSizer(vSizer(
-            (hSizer(
-                (self.gName,1,wx.GROW),
-                (self.gKarma,0,wx.GROW),
-                ),0,wx.GROW),
-            vspace(), (self.gText, 1, wx.GROW),
-            ))
-        left.SetSizer(vSizer((self.uiList,1,wx.GROW)))
-        wx.LayoutAlgorithm().LayoutWindow(self, right)
+        super(PeoplePanel, self).__init__(parent)
 
     def ShowPanel(self):
-        if self.listData.refresh(): self.uiList.RefreshUI()
+        if self.listData.refresh(): self.uiList.RefreshUI(focus_list=False)
         super(PeoplePanel, self).ShowPanel()
-
-    def OnSpin(self):
-        """Karma spin."""
-        if not self.detailsItem: return
-        karma = int(self.gKarma.GetValue())
-        text = self.listData[self.detailsItem][2]
-        self.listData[self.detailsItem] = (time.time(), karma, text)
-        self.uiList.PopulateItem(item=self.detailsItem)
-        self.listData.setChanged()
-
-    #--Details view (if it exists)
-    def SaveDetails(self):
-        """Saves details if they need saving."""
-        if not self.gText.IsModified(): return
-        if not self.detailsItem or self.detailsItem not in self.listData: return
-        mtime,karma,text = self.listData[self.detailsItem]
-        self.listData[self.detailsItem] = (time.time(), karma, self.gText.GetValue().strip())
-        self.uiList.PopulateItem(item=self.detailsItem)
-        self.listData.setChanged()
-
-    def SetFile(self, fileName='SAME'):
-        """Refreshes detail view associated with data from item."""
-        item = self.detailsItem if fileName == 'SAME' else fileName
-        if item not in self.listData: item = None
-        self.SaveDetails()
-        if item is None:
-            self.gKarma.SetValue(0)
-            self.gName.SetValue(u'')
-            self.gText.Clear()
-        else:
-            karma,text = self.listData[item][1:3]
-            self.gName.SetValue(item)
-            self.gKarma.SetValue(karma)
-            self.gText.SetValue(text)
-        self.detailsItem = item
-
-    def RefreshUIColors(self): self.uiList.RefreshUI()
 
 #------------------------------------------------------------------------------
 #--Tabs menu
@@ -3531,10 +3442,6 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
             pageIndex = iMods
         self.SetSelection(pageIndex)
         self.currentPage = self.GetPage(self.GetSelection())
-        # callback was bound before SetSelection() selection - this triggered
-        # OnShowPage() - except if pageIndex was 0 (?!). Moved self.Bind() here
-        # as OnShowPage() is explicitly called in RefreshData
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowPage)
         #--Dragging
         self.Bind(balt.EVT_NOTEBOOK_DRAGGED, self.OnTabDragged)
         #--Setup Popup menu for Right Click on a Tab
@@ -3720,11 +3627,13 @@ class BashFrame(wx.Frame):
     @property
     def statusBar(self): return self.GetStatusBar()
 
-    def __init__(self, parent=None, pos=balt.defPos, size=(400, 500)):
+    def __init__(self, parent=None):
         #--Singleton
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, title=u'Wrye Bash', pos=pos, size=size)
+        wx.Frame.__init__(self, parent, title=u'Wrye Bash',
+                          pos=settings['bash.framePos'],
+                          size=settings['bash.frameSize'])
         minSize = settings['bash.frameSize.min']
         self.SetSizeHints(minSize[0],minSize[1])
         self.SetTitle()
@@ -3796,30 +3705,28 @@ class BashFrame(wx.Frame):
         uacRestart = uac
         self.Close(True)
 
-    def SetTitle(self,title=None):
+    def SetTitle(*args, **kwargs):
         """Set title. Set to default if no title supplied."""
-        if not title:
-            ###Remove from Bash after CBash integrated
-            if bush.game.altName and settings['bash.useAltName']:
-                title = bush.game.altName + u' %s%s'
-            else:
-                title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
-            title = title % (settings['bash.version'],
-                _(u'(Standalone)') if settings['bash.standalone'] else u'')
-            if CBash:
-                title += u', CBash v%u.%u.%u: ' % (
-                    CBash.GetVersionMajor(), CBash.GetVersionMinor(),
-                    CBash.GetVersionRevision())
-            else:
-                title += u': '
-            maProfile = re.match(ur'Saves\\(.+)\\$',bosh.saveInfos.localSave,re.U)
-            if maProfile:
-                title += maProfile.group(1)
-            else:
-                title += _(u'Default')
-            if bosh.modInfos.voCurrent:
-                title += u' ['+bosh.modInfos.voCurrent+u']'
-        wx.Frame.SetTitle(self,title)
+        if bush.game.altName and settings['bash.useAltName']:
+            title = bush.game.altName + u' %s%s'
+        else:
+            title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
+        title = title % (settings['bash.version'],
+            _(u'(Standalone)') if settings['bash.standalone'] else u'')
+        if CBash:
+            title += u', CBash v%u.%u.%u: ' % (
+                CBash.GetVersionMajor(), CBash.GetVersionMinor(),
+                CBash.GetVersionRevision())
+        else:
+            title += u': '
+        maProfile = re.match(ur'Saves\\(.+)\\$',bosh.saveInfos.localSave,re.U)
+        if maProfile:
+            title += maProfile.group(1)
+        else:
+            title += _(u'Default')
+        if bosh.modInfos.voCurrent:
+            title += u' ['+bosh.modInfos.voCurrent+u']'
+        wx.Frame.SetTitle(args[0], title)
 
     def SetStatusCount(self, requestingPanel, countTxt):
         """Sets status bar count field."""
@@ -3856,13 +3763,14 @@ class BashFrame(wx.Frame):
             popInis = 'ALL'
         #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
         bosh.BSAInfos.check_bsa_timestamps()
-        #--Repopulate
+        #--Repopulate, focus will be set in ShowPanel
         if popMods:
-            BashFrame.modList.RefreshUI(refreshSaves=True) # True just in case
+            BashFrame.modList.RefreshUI(refreshSaves=True, # True just in case
+                                        focus_list=False)
         elif popSaves:
-            BashFrame.saveListRefresh()
+            BashFrame.saveListRefresh(focus_list=False)
         if popInis and self.iniList:
-            BashFrame.iniList.RefreshUI()
+            BashFrame.iniList.RefreshUI(focus_list=False)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel()
@@ -4046,8 +3954,9 @@ class BashFrame(wx.Frame):
                     path.remove()
 
     @staticmethod
-    def saveListRefresh():
-        if BashFrame.saveList: BashFrame.saveList.RefreshUI()
+    def saveListRefresh(focus_list):
+        if BashFrame.saveList:
+            BashFrame.saveList.RefreshUI(focus_list=focus_list)
 
 #------------------------------------------------------------------------------
 def GetBashVersion():
@@ -4092,9 +4001,8 @@ class BashApp(wx.App):
         self.InitVersion()
         #--MWFrame
         progress(0.8, _(u'Initializing Windows'))
-        frame = BashFrame( # Link.Frame global set here
-             pos=settings['bash.framePos'],
-             size=settings['bash.frameSize'])
+        frame = BashFrame() # Link.Frame global set here
+        progress(1.0)
         progress.Destroy()
         if splashScreen:
             splashScreen.Destroy()
@@ -4104,6 +4012,10 @@ class BashApp(wx.App):
         frame.Maximize(settings['bash.frameMax'])
         frame.RefreshData(booting=True)
         balt.ensureDisplayed(frame)
+        # Moved notebook.Bind() callback here as OnShowPage() is explicitly
+        # called in RefreshData
+        frame.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
+                            frame.notebook.OnShowPage)
         frame.BindRefresh(bind=True)
 
     @staticmethod
@@ -4131,7 +4043,7 @@ class BashApp(wx.App):
         bosh.iniInfos.refresh()
         # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
         bosh.bsaInfos = bosh.BSAInfos()
-        # screens, messages and Tank datas are refreshed() upon panel showing
+        # screens/people/installers data are refreshed upon showing the panel
         #--Patch check
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:

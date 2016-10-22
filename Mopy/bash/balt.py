@@ -52,7 +52,8 @@ defVal = wx.DefaultValidator
 defPos = wx.DefaultPosition
 defSize = wx.DefaultSize
 
-splitterStyle = wx.BORDER_NONE|wx.SP_LIVE_UPDATE#|wx.FULL_REPAINT_ON_RESIZE - doesn't seem to need this to work properly
+splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
+# makes borders stand out - we need something to that effect
 
 # wx Types
 wxPoint = wx.Point
@@ -1787,6 +1788,7 @@ class UIList(wx.Panel):
         # B) Rework details: add 'select' tuple parameter (ex 'detail', duh) to
         # allow specifying detail item - for now use heuristics (len(files))
         files = kwargs.pop('files', self.__all)
+        focus_list = kwargs.pop('focus_list', True)
         if files is self.__all:
             self.PopulateItems()
         else:  #--Iterable
@@ -1799,6 +1801,10 @@ class UIList(wx.Panel):
         if len(files) == 1: self.SelectItem(files[0])
         else: self.panel.RefreshDetails()
         self.panel.SetStatusCount()
+        if focus_list: self.Focus()
+
+    def Focus(self):
+        self.__gList.SetFocus()
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
@@ -1970,7 +1976,7 @@ class UIList(wx.Panel):
 
     def EnsureVisibleIndex(self, dex, focus=False):
         self.__gList.Focus(dex) if focus else self.__gList.EnsureVisible(dex)
-        self.__gList.SetFocus()
+        self.Focus()
 
     def SelectAndShowItem(self, item, deselectOthers=False, focus=True):
         self.SelectItem(item, deselectOthers=deselectOthers)
@@ -3011,3 +3017,29 @@ class WryeBashSplashScreen(wx.SplashScreen):
         self.Hide()
         # The program might/will freeze without this line.
         event.Skip() # Make sure the default handler runs too...
+
+class Splitter(wx.SplitterWindow):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['style'] = kwargs.pop('style', splitterStyle)
+        super(Splitter, self).__init__(*args, **kwargs)
+
+class NotebookPanel(wx.Panel):
+    """Parent class for notebook panels."""
+    # UI settings keys prefix - used for sashPos and uiList gui settings
+    keyPrefix = 'OVERRIDE'
+
+    def __init__(self, *args, **kwargs):
+        super(NotebookPanel, self).__init__(*args, **kwargs)
+        self._firstShow = True
+
+    def RefreshUIColors(self):
+        """Called to signal that UI color settings have changed."""
+
+    def ShowPanel(self):
+        """To be called when particular panel is changed to and/or shown for
+        first time."""
+
+    def ClosePanel(self, destroy=False):
+        """To be manually called when containing frame is closing. Use for
+        saving data, scrollpos, etc - also used in BashFrame#SaveSettings."""

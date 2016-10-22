@@ -214,9 +214,10 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             subs = []
             oldRemaps = copy.copy(installer.remaps)
             installer.remaps = {}
-            self.iPanel.refreshCurrent(installer)
-            for index in xrange(self.iPanel.gSubList.GetCount()):
-                subs.append(self.iPanel.gSubList.GetString(index))
+            idetails = self.iPanel.detailsPanel
+            idetails.refreshCurrent(installer)
+            for index in xrange(idetails.gSubList.GetCount()):
+                subs.append(idetails.gSubList.GetString(index))
             default, pageSize, pos = self._get_size_and_pos()
             try:
                 wizard = InstallerWizard(self.window, self._selected_info,
@@ -228,30 +229,30 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         self._save_size_pos(default, ret)
         if ret.Canceled:
             installer.remaps = oldRemaps
-            self.iPanel.refreshCurrent(installer)
+            idetails.refreshCurrent(installer)
             return
         #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
-        for index in xrange(self.iPanel.gSubList.GetCount()):
+        for index in xrange(idetails.gSubList.GetCount()):
             select = installer.subNames[index + 1] in ret.SelectSubPackages
-            self.iPanel.gSubList.Check(index, select)
+            idetails.gSubList.Check(index, select)
             installer.subActives[index + 1] = select
-        self.iPanel.refreshCurrent(installer)
+        idetails.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
-        espms = self.iPanel.gEspmList.GetStrings()
+        espms = idetails.gEspmList.GetStrings()
         espms = [x.replace(u'&&',u'&') for x in espms]
         installer.espmNots = set()
-        for index, espm in enumerate(self.iPanel.espms):
+        for index, espm in enumerate(idetails.espms):
             if espms[index] in ret.SelectEspms:
-                self.iPanel.gEspmList.Check(index, True)
+                idetails.gEspmList.Check(index, True)
             else:
-                self.iPanel.gEspmList.Check(index, False)
+                idetails.gEspmList.Check(index, False)
                 installer.espmNots.add(espm)
-        self.iPanel.refreshCurrent(installer)
+        idetails.refreshCurrent(installer)
         #Rename the espms that need renaming
         for oldName in ret.RenameEspms:
             installer.setEspmName(oldName, ret.RenameEspms[oldName])
-        self.iPanel.refreshCurrent(installer)
+        idetails.refreshCurrent(installer)
         #Install if necessary
         if ret.Install:
             if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
@@ -274,7 +275,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                     out.write(line+u'\n')
             bosh.iniInfos.refresh()
             bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            if BashFrame.iniList is not None: BashFrame.iniList.RefreshUI()
+            if BashFrame.iniList is not None:
+                BashFrame.iniList.RefreshUI(focus_list=False)
             if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
                 if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
                     # Can only automatically apply ini tweaks if the ini was actually installed.  Since
@@ -774,17 +776,19 @@ class Installer_CopyConflicts(_SingleInstallable):
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
 #------------------------------------------------------------------------------
-class _Installer_Details_Link(balt.ItemLink):
-
-    def _initData(self, window, selection):
-        super(_Installer_Details_Link, self)._initData(window, selection)
-        self._installer = self.window.GetDetailsItem()
-
-class Installer_Espm_SelectAll(EnabledLink, _Installer_Details_Link):
-    """Select All Esp/ms in installer for installation."""
-    text = _(u'Select All')
+class _Installer_Details_Link(EnabledLink):
 
     def _enable(self): return len(self.window.espms) != 0
+
+    def _initData(self, window, selection):
+        """:type window: bosh.InstallersDetails
+        :type selection: int"""
+        super(_Installer_Details_Link, self)._initData(window, selection)
+        self._installer = self.window.file_info
+
+class Installer_Espm_SelectAll(_Installer_Details_Link):
+    """Select All Esp/ms in installer for installation."""
+    text = _(u'Select All')
 
     def Execute(self):
         self._installer.espmNots = set()
@@ -792,11 +796,9 @@ class Installer_Espm_SelectAll(EnabledLink, _Installer_Details_Link):
             self.window.gEspmList.Check(i, True)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_DeselectAll(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_DeselectAll(_Installer_Details_Link):
     """Deselect All Esp/ms in installer for installation."""
     text = _(u'Deselect All')
-
-    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
         espmNots = self._installer.espmNots = set()
@@ -806,7 +808,7 @@ class Installer_Espm_DeselectAll(EnabledLink, _Installer_Details_Link):
             espmNots.add(espm)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_Rename(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_Rename(_Installer_Details_Link):
     """Changes the installed name for an Esp/m."""
     text = _(u'Rename...')
 
@@ -825,7 +827,7 @@ class Installer_Espm_Rename(EnabledLink, _Installer_Details_Link):
         self._installer.setEspmName(curName, newName + _file.cext)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_Reset(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_Reset(_Installer_Details_Link):
     """Resets the installed name for an Esp/m."""
     text = _(u'Reset Name')
 
@@ -841,21 +843,17 @@ class Installer_Espm_Reset(EnabledLink, _Installer_Details_Link):
         self._installer.resetEspmName(self.curName)
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_ResetAll(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_ResetAll(_Installer_Details_Link):
     """Resets all renamed Esp/ms."""
     text = _(u'Reset All Names')
-
-    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
         self._installer.resetAllEspmNames()
         self.window.refreshCurrent(self._installer)
 
-class Installer_Espm_List(EnabledLink, _Installer_Details_Link):
+class Installer_Espm_List(_Installer_Details_Link):
     """Lists all Esp/ms in installer for user information/w/e."""
     text = _(u'List Esp/ms')
-
-    def _enable(self): return len(self.window.espms) != 0
 
     def Execute(self):
         subs = (_(u'Esp/m List for %s:') % self._installer.archive +
@@ -872,7 +870,7 @@ class Installer_Espm_List(EnabledLink, _Installer_Details_Link):
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
 #------------------------------------------------------------------------------
-class _Installer_Subs(EnabledLink, _Installer_Details_Link):
+class _Installer_Subs(_Installer_Details_Link):
     def _enable(self): return self.window.gSubList.GetCount() > 1
 
 class Installer_Subs_SelectAll(_Installer_Subs):
