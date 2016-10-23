@@ -339,6 +339,7 @@ class ImportFaceDialog(balt.Dialog):
         bitmap = (itemImagePath.exists() and
                   Image(itemImagePath.s, imageType=JPEG).GetBitmap()) or None
         self.picture.SetBitmap(bitmap)
+        self.listBox.SetSelection(itemDex)
 
     def DoImport(self):
         """Imports selected face into save file."""

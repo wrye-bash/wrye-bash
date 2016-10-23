@@ -148,8 +148,8 @@ class PatchDialog(balt.Dialog):
             gConfigSizer.Show(gConfigPanel,False)
         initial_select = min(len(self.patchers)-1,1)
         if initial_select >= 0:
-            self.gPatchers.Select(initial_select) # does not fire the callback
-            self.ShowPatcher(self.patchers[initial_select]) # so this needed
+            self.gPatchers.SetSelection(initial_select) # callback not fired
+            self.ShowPatcher(self.patchers[initial_select]) # so this is needed
         self.SetOkEnable()
 
     #--Core -------------------------------
@@ -447,6 +447,7 @@ class PatchDialog(balt.Dialog):
         """Responds to patchers list selection."""
         itemDex = event.GetSelection()
         self.ShowPatcher(self.patchers[itemDex])
+        self.gPatchers.SetSelection(itemDex)
 
     def CheckPatcher(self, patcher):
         """Enable a patcher - Called from a patcher's OnCheck method."""

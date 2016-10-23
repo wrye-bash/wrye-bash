@@ -267,7 +267,7 @@ class PageSelect(PageInstaller):
             self._enableForward(False)
             for index, default in enumerate(defaultMap):
                 if default:
-                    self.listOptions.Select(index)
+                    self.listOptions.SetSelection(index)
                     self.Selection(index)
                     break
         sizerBoxes.Add(self.listOptions, 1, wx.ALL|wx.EXPAND)
@@ -289,6 +289,7 @@ class PageSelect(PageInstaller):
     def OnSelect(self, event):
         """:type event: wx._core.CommandEvent"""
         index = event.GetSelection()
+        self.listOptions.SetSelection(index) # event.Skip() won't do
         self.Selection(index)
 
     def OnDoubleClick(self, event):
@@ -494,6 +495,8 @@ class PageFinish(PageInstaller):
         ini_path = bolt.GPath(self.listInis.GetString(index))
         lines = generateTweakLines(self.parent.ret.IniEdits[ini_path],ini_path)
         self.listTweaks.Set(lines)
+        self.listInis.SetSelection(index)
+
 # End PageFinish -------------------------------------
 
 
