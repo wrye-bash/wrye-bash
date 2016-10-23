@@ -404,8 +404,8 @@ class PageFinish(PageInstaller):
         #--Subpackages and Espms
         subPackageSizer = balt.vSizer(
             balt.StaticText(self, _(u'Sub-Packages')), vspace(2))
-        self.listSubs = balt.listBox(self, choices=subs, kind='checklist')
-        self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
+        self.listSubs = balt.listBox(self, choices=subs, kind='checklist',
+                                     onCheck=self.OnSelectSubs)
         for index,key in enumerate(subs):
             key = key.replace(u'&&',u'&')
             if subsList[key]:
@@ -413,8 +413,8 @@ class PageFinish(PageInstaller):
                 self.parent.ret.SelectSubPackages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
         espmSizer = balt.vSizer(balt.StaticText(self, _(u'Esp/ms')), vspace(2))
-        self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist')
-        self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
+        self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist',
+                                      onCheck=self.OnSelectEspms)
         for index,key in enumerate(espms):
             if espmsList[key]:
                 self.listEspms.Check(index, True)

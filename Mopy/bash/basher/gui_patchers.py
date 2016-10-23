@@ -224,8 +224,8 @@ class _ListPatcherPanel(_PatcherPanel):
         if self.forceItemCheck:
             self.gList = balt.listBox(gConfigPanel, isSingle=False)
         else:
-            self.gList = balt.listBox(gConfigPanel, kind='checklist')
-            self.gList.Bind(wx.EVT_CHECKLISTBOX,self.OnListCheck)
+            self.gList = balt.listBox(gConfigPanel, kind='checklist',
+                                      onCheck=self.OnListCheck)
         #--Manual controls
         if self.forceAuto:
             gManualSizer = None
@@ -500,9 +500,9 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
         return gConfigPanel
 
     def _build_tweaks_list(self):
-        self.gTweakList = balt.listBox(self.gConfigPanel, kind='checklist')
+        self.gTweakList = balt.listBox(self.gConfigPanel, kind='checklist',
+                                       onCheck=self.TweakOnListCheck)
         #--Events
-        self.gTweakList.Bind(wx.EVT_CHECKLISTBOX, self.TweakOnListCheck)
         self._bind_mouse_events()
         self.gTweakList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
         self.mouse_dex = -1

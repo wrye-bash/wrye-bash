@@ -498,6 +498,8 @@ def listBox(parent, choices=None, **kwargs):
         parent, style=style)
     callback = kwargs.pop('onSelect', None)
     if callback: gListBox.Bind(wx.EVT_LISTBOX, callback)
+    callback = kwargs.pop('onCheck', None)
+    if callback: gListBox.Bind(wx.EVT_CHECKLISTBOX, callback)
     return gListBox
 
 def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
