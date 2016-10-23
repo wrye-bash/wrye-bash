@@ -315,7 +315,7 @@ class PageSelect(PageInstaller):
             self.bmpItem.SetBitmap(None)
             self.bmpItem.SetCursor(wx.StockCursor(wx.CURSOR_ARROW))
         self.bmpItem.Thaw()
-        self.Layout()
+        # self.Layout() # the bitmap would change size and sho blurred
 
     def OnNext(self):
         temp = []
