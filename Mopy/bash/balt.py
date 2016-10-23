@@ -1215,7 +1215,8 @@ class TabDragMixin(object):
 #------------------------------------------------------------------------------
 class Picture(wx.Window):
     """Picture panel."""
-    def __init__(self, parent,width,height,scaling=1,style=0,background=wx.MEDIUM_GREY_BRUSH):
+    def __init__(self, parent, width, height, scaling=1,
+                 style=wx.BORDER_SUNKEN, background=wx.MEDIUM_GREY_BRUSH):
         """Initialize."""
         wx.Window.__init__(self, parent, defId,size=(width,height),style=style)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)

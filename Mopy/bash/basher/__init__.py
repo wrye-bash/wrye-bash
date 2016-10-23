@@ -1907,8 +1907,7 @@ class SaveDetails(_SashDetailsPanel):
         self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
-                                    style=wx.BORDER_SUNKEN, background=colors[
-                'screens.bkgd.image']) #--Native: 256x192
+            background=colors['screens.bkgd.image']) #--Native: 256x192
         #--Save Info
         self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 64),
                               multiline=True, onText=self.OnInfoEdit,
