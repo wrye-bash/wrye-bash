@@ -1270,6 +1270,7 @@ class Picture(wx.Window):
         del dc
         self.Refresh()
         self.Update()
+        if event: event.Skip()
 
     def OnPaint(self, event):
         dc = wx.BufferedPaintDC(self, self.buffer)
