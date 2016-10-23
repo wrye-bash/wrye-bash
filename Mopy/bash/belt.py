@@ -24,6 +24,7 @@
 
 """Specific parser for Wrye Bash."""
 import collections
+from functools import partial
 
 import ScriptParser         # generic parser class
 import bass
@@ -255,14 +256,14 @@ class PageSelect(PageInstaller):
         if parent.parser.choiceIdex < len(parent.parser.choices):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
             defaultMap = [choice in oldChoices for choice in listItems]
+        list_box = partial(balt.listBox, self, choices=listItems,
+                           isHScroll=True, onSelect=self.OnSelect)
         if bMany:
-            self.listOptions = balt.listBox(self, choices=listItems,
-                                            isHScroll=True, kind='checklist')
+            self.listOptions = list_box(kind='checklist')
             for index, default in enumerate(defaultMap):
                 self.listOptions.Check(index, default)
         else:
-            self.listOptions = balt.listBox(self, choices=listItems,
-                                            isHScroll=True)
+            self.listOptions = list_box()
             self._enableForward(False)
             for index, default in enumerate(defaultMap):
                 if default:
@@ -282,11 +283,11 @@ class PageSelect(PageInstaller):
         sizerMain.AddGrowableCol(0)
         self.Layout()
 
-        self.listOptions.Bind(wx.EVT_LISTBOX, self.OnSelect)
         self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
 
     def OnSelect(self, event):
+        """:type event: wx._core.CommandEvent"""
         index = event.GetSelection()
         self.Selection(index)
 
@@ -429,8 +430,8 @@ class PageFinish(PageInstaller):
         #--Ini tweaks
         sizerTweaks = balt.vSizer(balt.StaticText(self, _(u'Ini Tweaks:')),
                                   vspace(2))
-        self.listInis = balt.listBox(self, choices=[x.s for x in iniedits.keys()])
-        self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
+        self.listInis = balt.listBox(self, onSelect=self.OnSelectIni,
+                                     choices=[x.s for x in iniedits.keys()])
         sizerTweaks.Add(self.listInis,1,wx.EXPAND)
         sizerContents = balt.vSizer(balt.StaticText(self, u''), vspace(2))
         self.listTweaks = balt.listBox(self)

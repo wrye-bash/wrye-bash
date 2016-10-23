@@ -97,7 +97,8 @@ class PatchDialog(balt.Dialog):
                                             onButClick=self.DeselectAll)
         cancelButton = CancelButton(self)
         self.gPatchers = balt.listBox(self, choices=patcherNames,
-                                      isSingle=True, kind='checklist')
+                                      isSingle=True, kind='checklist',
+                                      onSelect=self.OnSelect)
         self.gExportConfig = SaveAsButton(self, label=_(u'Export'),
                                           onButClick=self.ExportConfig)
         self.gImportConfig = OpenButton(self, label=_(u'Import'),
@@ -112,7 +113,6 @@ class PatchDialog(balt.Dialog):
         self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize) # save dialog size
-        self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
         self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
         self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)

@@ -70,9 +70,9 @@ class DocBrowser(wx.Frame):
         self.SetSizeHints(250,250)
         #--Mod Name
         self.modNameBox = RoTextCtrl(self, multiline=False)
-        self.modNameList = balt.listBox(self, choices=sorted(
-            x.s for x in self.docs.keys()), isSort=True)
-        self.modNameList.Bind(wx.EVT_LISTBOX,self.DoSelectMod)
+        self.modNameList = balt.listBox(self,
+            choices=sorted(x.s for x in self.docs.keys()), isSort=True,
+            onSelect=self.DoSelectMod)
         #--Application Icons
         self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc
