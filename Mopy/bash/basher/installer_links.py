@@ -315,7 +315,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:
             if BashFrame.iniList is not None:
-                BashFrame.iniList.panel.add_target(new_targets)
+                BashFrame.iniList.panel.add_targets(new_targets)
                 BashFrame.iniList.panel.AddOrSelectIniDropDown(
                     target_path) # will set bosh.iniInfos.ini
                 BashFrame.iniList.RefreshUIValid(lastApplied, focus_list=False)

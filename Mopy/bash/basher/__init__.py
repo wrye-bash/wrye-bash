@@ -1609,7 +1609,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
         if changes:
-            if changes[3]:
+            if changes[3]: # target ini changed, see if deleted
                 path = self.current_ini_path
                 if not path.isfile():
                     for iFile in bosh.gameInis:
@@ -1624,7 +1624,6 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     def RefreshPanel(self):
         self._SetBaseIni()
         self.comboBox.SetItems(self.SortChoices())
-        self.comboBox.SetSelection(self.choice)
 
     def _SetBaseIni(self):
         """Sets the target INI file to the current_ini_path."""
@@ -1635,6 +1634,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         selected = selected_inis[0] if selected_inis else None
         self.RefreshIniDetails(selected, target_changed=target_changed)
         self.uiList.RefreshUI()
+        self.comboBox.SetSelection(self.choice)
 
     def _enable_buttons(self):
         isGameIni = bosh.iniInfos.ini in bosh.gameInis
@@ -1651,7 +1651,6 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         self.choice -= 1
         del self.target_inis[selection]
         self.comboBox.SetItems(self.SortChoices())
-        self.comboBox.SetSelection(self.choice)
         self._SetBaseIni()
 
     def OnEdit(self):
@@ -1678,7 +1677,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         stati = self.uiList.CountTweakStatus()
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
-    def add_target(self, paths):
+    def add_targets(self, paths):
         for path in paths:
             if path.stail not in self.target_inis:
                 current_choice = self.ini_name
@@ -1686,15 +1685,14 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 self.comboBox.SetItems(self.SortChoices())
                 self.choice = self.target_inis.keys().index(current_choice)
 
-    def AddOrSelectIniDropDown(self, path): ## will refersh the UI !!
+    def AddOrSelectIniDropDown(self, path): # will refersh the UI !
         if path.stail not in self.target_inis:
             self.target_inis[path.stail] = path
             self.comboBox.SetItems(self.SortChoices())
-        else:
+        else: # just needed for when we are called from _apply_tweaks (duh)
             if self.choice == self.target_inis.keys().index(path.stail):
                 return
         self.choice = self.target_inis.keys().index(path.stail)
-        self.comboBox.SetSelection(self.choice)
         self._SetBaseIni()
 
     def OnSelectDropDown(self,event):
@@ -1708,19 +1706,12 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                                    _(u'Config files')+u' (*.cfg)|*.cfg',
                                    ])
             path = balt.askOpen(self,defaultDir=self.lastDir,wildcard=wildcard,mustExist=True)
-            if not path:
+            if path: self.lastDir = path.shead
+            if not path or (path.stail in self.target_inis and # reselected
+                    self.choice == self.target_inis.keys().index(path.stail)):
                 self.comboBox.SetSelection(self.choice)
                 return
-            # Make sure the 'new' file isn't already in the list
-            if path.stail in self.target_inis:
-                new_choice = self.target_inis.keys().index(path.stail)
-                refresh = new_choice != self.choice
-                self.choice = new_choice
-                self.comboBox.SetSelection(self.choice) ## will not refresh !!!
-                if refresh:
-                    self._SetBaseIni()
-                return
-            self.lastDir = path.shead
+        # new file or selected an existing one different from current choice
         self.AddOrSelectIniDropDown(path)
 
     def ClosePanel(self, destroy=False):
