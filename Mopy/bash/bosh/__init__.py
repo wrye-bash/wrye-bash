@@ -6927,7 +6927,7 @@ class InstallersData(_DataStore):
                     if showLower and (order > srcBSAOrder) != isHigher:
                         isHigher = (order > srcBSAOrder)
                         buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
-                    buff.write(u'==%d== %s : %s\n' % (order, package, bsa))
+                    buff.write(u'==%X== %s : %s\n' % (order, package, bsa))
                     # Print files
                     for file in srcFiles:
                         buff.write(u'%s \n' % file)
