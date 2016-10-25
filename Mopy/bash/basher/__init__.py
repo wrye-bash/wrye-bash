@@ -668,15 +668,24 @@ class INITweakLineCtrl(INIListCtrl):
         super(INITweakLineCtrl, self).__init__(parent)
         self.tweakLines = []
         self.iniContents = self._contents = iniContents
+        self._ini_detail = None
 
     def _get_selected_line(self, index): return self.tweakLines[index][5]
 
     def RefreshTweakLineCtrl(self, tweakPath):
+        if tweakPath == 'SAME':
+            if not self._ini_detail in bosh.iniInfos:
+                tweakPath = None
+            else:
+                tweakPath = self._ini_detail
         if tweakPath is None:
             self.DeleteAllItems()
+            self._ini_detail = None
             return
-        tweakPath = bosh.iniInfos[tweakPath].getPath()
-        self.tweakLines = bosh.iniInfos.ini.getTweakFileLines(tweakPath)
+        self._ini_detail = tweakPath
+        # TODO(ut) avoid if ini tweak did not change
+        abs_tweak_path = bosh.iniInfos[tweakPath].getPath()
+        self.tweakLines = bosh.iniInfos.ini.getTweakFileLines(abs_tweak_path)
         num = self.GetItemCount()
         updated = set()
         for i,line in enumerate(self.tweakLines):
@@ -1619,10 +1628,7 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         if target_changed:
             bosh.iniInfos.ini = self.current_ini_path
         self._enable_buttons() # if a game ini was deleted will disable edit
-        selected_inis = BashFrame.iniList.GetSelected()
-        #TODO(ut) should get currently displayed - we need details panel API
-        selected = selected_inis[0] if selected_inis else None
-        self.RefreshIniDetails(selected, target_changed=target_changed)
+        self.RefreshIniDetails('SAME', target_changed=target_changed)
         self.uiList.RefreshUI()
         self.comboBox.SetSelection(self.choice)
 

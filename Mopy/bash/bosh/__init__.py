@@ -3279,19 +3279,19 @@ class INIInfos(FileInfos):
         self.dirdef = dirs['defaultTweaks']
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
-        # if target_inis is not an OrderedDict choice won't be set correctly
-        target_inis = settings['bash.ini.choices'] # type: OrderedDict
+        # if _target_inis is not an OrderedDict choice won't be set correctly
+        _target_inis = settings['bash.ini.choices'] # type: OrderedDict
         choice = settings['bash.ini.choice'] # type: int
-        if isinstance(target_inis, OrderedDict):
+        if isinstance(_target_inis, OrderedDict):
             try:
-                previous_ini = target_inis.keys()[choice]
+                previous_ini = _target_inis.keys()[choice]
             except IndexError:
                 choice, previous_ini = -1, None
         else: # not an OrderedDict, updating from 306
             choice, previous_ini = -1, None
-        for ini_name in target_inis.keys():
+        for ini_name in _target_inis.keys():
             if ini_name == _(u'Browse...'): continue
-            path = target_inis[ini_name]
+            path = _target_inis[ini_name]
             # If user started with non-translated, 'Browse...'
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
@@ -3299,20 +3299,20 @@ class INIInfos(FileInfos):
             if not isinstance(path,bolt.Path) or not path.isfile():
                 for iFile in gameInis: # don't remove game inis even if missing
                     if iFile.path == path: continue
-                del target_inis[ini_name]
+                del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
-        csChoices = [x.lower() for x in target_inis]
+        csChoices = [x.lower() for x in _target_inis]
         for iFile in gameInis: # add the game inis even if missing
             if iFile.path.tail.cs not in csChoices:
-                target_inis[iFile.path.stail] = iFile.path
-        if _(u'Browse...') not in target_inis:
-            target_inis[_(u'Browse...')] = None
-        settings['bash.ini.choices'] = target_inis
-        if previous_ini: choice = target_inis.keys().index(previous_ini)
+                _target_inis[iFile.path.stail] = iFile.path
+        if _(u'Browse...') not in _target_inis:
+            _target_inis[_(u'Browse...')] = None
+        settings['bash.ini.choices'] = _target_inis
+        if previous_ini: choice = _target_inis.keys().index(previous_ini)
         settings['bash.ini.choice'] = choice
         if choice > 0:
-            self.ini = target_inis.values()[choice]
+            self.ini = _target_inis.values()[choice]
         else: self.ini = oblivionIni.path
 
     @property
