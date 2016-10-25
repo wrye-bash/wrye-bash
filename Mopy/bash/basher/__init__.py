@@ -1608,29 +1608,19 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     def ShowPanel(self, refresh_infos=True, refresh_target=True, **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
-        if changes:
-            if changes[3]: # target ini changed, see if deleted
-                path = self.current_ini_path
-                if not path.isfile():
-                    for iFile in bosh.gameInis:
-                        if iFile.path == path:
-                            break
-                    else:
-                        del self.target_inis[self.ini_name]
-                        self.choice -= 1
+        self._clean_targets()
+        if changes: # we need this to be more granular
             self.RefreshPanel()
         super(INIPanel, self).ShowPanel()
 
     def RefreshPanel(self):
-        self._SetBaseIni()
-        self.comboBox.SetItems(self.SortChoices())
-
-    def _SetBaseIni(self):
         """Sets the target INI file to the current_ini_path."""
         target_changed = bosh.iniInfos.ini.path != self.current_ini_path
-        if target_changed: bosh.iniInfos.ini = self.current_ini_path
+        if target_changed:
+            bosh.iniInfos.ini = self.current_ini_path
         self._enable_buttons() # if a game ini was deleted will disable edit
         selected_inis = BashFrame.iniList.GetSelected()
+        #TODO(ut) should get currently displayed - we need details panel API
         selected = selected_inis[0] if selected_inis else None
         self.RefreshIniDetails(selected, target_changed=target_changed)
         self.uiList.RefreshUI()
@@ -1647,11 +1637,23 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
 
     def OnRemove(self):
         """Called when the 'Remove' button is pressed."""
-        selection = self.comboBox.GetValue()
+        del self.target_inis[self.ini_name]
         self.choice -= 1
-        del self.target_inis[selection]
         self.comboBox.SetItems(self.SortChoices())
-        self._SetBaseIni()
+        self.RefreshPanel()
+
+    def _clean_targets(self):
+        resort = False
+        for name, ini_path in self.target_inis.iteritems():
+            if ini_path is not None and not ini_path.isfile():
+                for iFile in bosh.gameInis:
+                    if iFile.path == ini_path:
+                        break
+                else:
+                    del self.target_inis[name]
+                    self.choice -= 1
+                    resort = True
+        if resort: self.comboBox.SetItems(self.SortChoices())
 
     def OnEdit(self):
         """Called when the 'Edit' button is pressed."""
@@ -1686,14 +1688,14 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 self.choice = self.target_inis.keys().index(current_choice)
 
     def AddOrSelectIniDropDown(self, path): # will refersh the UI !
-        if path.stail not in self.target_inis:
+        if path.stail not in self.target_inis: # added
             self.target_inis[path.stail] = path
-            self.comboBox.SetItems(self.SortChoices())
+            self.comboBox.SetItems(self.SortChoices()) # to set self._choise
         else: # just needed for when we are called from _apply_tweaks (duh)
             if self.choice == self.target_inis.keys().index(path.stail):
                 return
         self.choice = self.target_inis.keys().index(path.stail)
-        self._SetBaseIni()
+        self.RefreshPanel()
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
