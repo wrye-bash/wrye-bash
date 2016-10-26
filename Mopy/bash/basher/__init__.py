@@ -645,7 +645,7 @@ class INIList(balt.UIList):
         choice = self.panel.current_ini_path.tail
         if not self.warn_tweak_game_ini(choice): return
         target.applyTweakFile(tweak.getPath())
-        self.panel.ShowPanel(refresh_infos=False)
+        self.panel.ShowPanel(refresh_infos=False, clean_targets=False)
 
     @staticmethod
     @balt.conversation
@@ -1614,10 +1614,11 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     @property
     def ini_name(self): return self.target_inis.keys()[self.choice]
 
-    def ShowPanel(self, refresh_infos=True, refresh_target=True, **kwargs):
+    def ShowPanel(self, refresh_infos=True, refresh_target=True,
+                  clean_targets=True, **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
-        self._clean_targets()
+        if clean_targets: self._clean_targets()
         if changes: # we need this to be more granular
             self.RefreshPanel()
         super(INIPanel, self).ShowPanel()
@@ -3741,7 +3742,8 @@ class BashFrame(wx.Frame):
             BashFrame.saveListRefresh(focus_list=False)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
-        self.notebook.currentPage.ShowPanel(refresh_infos=not booting)
+        self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
+                                            clean_targets=not booting)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self.warn_load_order()

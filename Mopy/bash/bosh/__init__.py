@@ -2187,7 +2187,8 @@ class OblivionIni(IniFile):
         try:
             srcPath.copyTo(self.path)
             if balt.Link.Frame.iniList:
-                balt.Link.Frame.iniList.panel.ShowPanel(refresh_infos=False)
+                balt.Link.Frame.iniList.panel.ShowPanel(refresh_infos=False,
+                                                        clean_targets=False)
             else:
                 iniInfos.refresh(refresh_infos=False)
             return True
