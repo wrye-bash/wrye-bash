@@ -583,11 +583,6 @@ class INIList(balt.UIList):
         tweaklist += u'[/xml][/spoiler]\n'
         return tweaklist
 
-    def RefreshUIValid(self, tweak, focus_list=True):
-        valid = [k for k, v in self.data_store.iteritems() if v.tweak_status >= 0]
-        self.RefreshUI(files=valid, focus_list=focus_list)
-        if tweak: self.panel.RefreshIniDetails(tweak)
-
     @staticmethod
     def filterOutDefaultTweaks(tweaks):
         """Filter out default tweaks from tweaks iterable."""
@@ -1600,7 +1595,9 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         right.SetSizer(rSizer)
         left.SetSizer(lSizer)
 
-    def RefreshUIColors(self): self.RefreshPanel()
+    def RefreshUIColors(self):
+        self.RefreshIniDetails('SAME', target_changed=False)
+        self.uiList.RefreshUI()
 
     def SelectTweak(self, tweakFile):
         self.tweakName.SetValue(tweakFile.sbody)
@@ -1615,22 +1612,23 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     def ini_name(self): return self.target_inis.keys()[self.choice]
 
     def ShowPanel(self, refresh_infos=True, refresh_target=True,
-                  clean_targets=True, **kwargs):
+                  clean_targets=True, detail_item='SAME', focus_list=True,
+                  **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
         if clean_targets: self._clean_targets()
         if changes: # we need this to be more granular
-            self.RefreshPanel()
+            self.RefreshPanel(detail_item, focus_list=focus_list)
         super(INIPanel, self).ShowPanel()
 
-    def RefreshPanel(self):
+    def RefreshPanel(self, detail_item='SAME', focus_list=True):
         """Sets the target INI file to the current_ini_path."""
         target_changed = bosh.iniInfos.ini.path != self.current_ini_path
         if target_changed:
             bosh.iniInfos.ini = self.current_ini_path
         self._enable_buttons() # if a game ini was deleted will disable edit
-        self.RefreshIniDetails('SAME', target_changed=target_changed)
-        self.uiList.RefreshUI()
+        self.RefreshIniDetails(detail_item, target_changed=target_changed)
+        self.uiList.RefreshUI(focus_list=focus_list)
         self.comboBox.SetSelection(self.choice)
 
     def _enable_buttons(self):
@@ -1703,6 +1701,9 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
                 return
         self.choice = self.target_inis.keys().index(path.stail)
         self.RefreshPanel()
+
+    def set_choice(self, target_path):
+        self.choice = self.target_inis.keys().index(target_path.stail)
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
@@ -2966,7 +2967,7 @@ class InstallersPanel(BashTab):
         if inis_changed:
             bosh.iniInfos.refresh(refresh_target=False)
             if BashFrame.iniList is not None:
-                BashFrame.iniList.panel.RefreshPanel()
+                BashFrame.iniList.panel.RefreshPanel(focus_list=False)
         bosh.BSAInfos.check_bsa_timestamps()
 
 #------------------------------------------------------------------------------

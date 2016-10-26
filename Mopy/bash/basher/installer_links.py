@@ -316,13 +316,15 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         if lastApplied is not None:
             if BashFrame.iniList is not None:
                 BashFrame.iniList.panel.add_targets(new_targets)
-                BashFrame.iniList.panel.AddOrSelectIniDropDown(
-                    target_path) # will set bosh.iniInfos.ini
-                BashFrame.iniList.RefreshUIValid(lastApplied, focus_list=False)
+                BashFrame.iniList.panel.set_choice(target_path)
+                BashFrame.iniList.panel.ShowPanel(refresh_infos=False,
+                    clean_targets=False, detail_item=lastApplied,
+                    focus_list=False)
             else:
                 targets = bass.settings['bash.ini.choices']
                 for target in new_targets:
                     if target.tail not in targets: targets[target.tail] = target ##: we must sort!
+            ui_refresh[1] = False
         if len(manuallyApply) > 0:
             message = balt.fill(_(
                 u'The following INI Tweaks were not automatically applied.  '
