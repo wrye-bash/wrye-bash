@@ -355,6 +355,16 @@ if CBash:
     CBash.RedirectMessages(LoggingCallback)
     CBash.AllowRaising(RaiseCallback)
 
+class CBashApi (object):
+    Enabled = CBash is not None
+
+    VersionMajor = _CGetVersionMajor()
+    VersionMinor = _CGetVersionMinor()
+    VersionRevision = _CGetVersionRevision()
+    VersionInfo = (VersionMajor, VersionMinor, VersionRevision)
+
+    VersionText = u'v%u.%u.%u' % VersionInfo
+
 #Helper functions
 class API_FIELDS(object):
     """These fields MUST be defined in the same order as in CBash's Common.h"""
