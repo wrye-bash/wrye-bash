@@ -42,7 +42,7 @@ from ..bosh import faces
 from ..patcher import configIsCBash, exportConfig, patch_files
 from .frames import DocBrowser
 from .constants import JPEG, settingDefaults
-from ..cint import CBash, FormID ##: CBash should be in bosh
+from ..cint import CBashApi, FormID
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
@@ -1057,7 +1057,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         clip.write(u'== '+_(u'Patch Mode')+u'\n')
         if doCBash:
             if bass.settings['bash.CBashEnabled']:
-                msg = u'CBash v%u.%u.%u' % (CBash.GetVersionMajor(),CBash.GetVersionMinor(),CBash.GetVersionRevision())
+                msg = u'CBash %s' % (CBashApi.VersionText,)
             else:
                 # It's a CBash patch config, but CBash.dll is unavailable (either by -P command line, or it's not there)
                 msg = u'CBash'
@@ -1648,7 +1648,8 @@ class Mod_Fids_Replace(OneItemLink):
         u"lists according to a Replacers.csv file.")
 
     @staticmethod
-    def _parser(): return CBash_FidReplacer() if CBash else FidReplacer()
+    def _parser():
+        return CBash_FidReplacer() if CBashApi.Enabled else FidReplacer()
 
     def Execute(self):
         if not self._askContinue(self.message, 'bash.formIds.replace.continue',
@@ -1815,7 +1816,8 @@ class Mod_ActorLevels_Export(_Mod_Export_Link):
     text = _(u'NPC Levels...')
     help = _(u"Export NPC level info from mod to text file.")
 
-    def _parser(self): return CBash_ActorLevels() if CBash else ActorLevels()
+    def _parser(self):
+        return CBash_ActorLevels() if CBashApi.Enabled else ActorLevels()
 
     def Execute(self): # overrides _Mod_Export_Link
         message = (_(u'This command will export the level info for NPCs whose level is offset with respect to the PC.  The exported file can be edited with most spreadsheet programs and then reimported.')
@@ -1838,7 +1840,8 @@ class Mod_ActorLevels_Import(_Mod_Import_Link):
     continueKey = 'bash.actorLevels.import.continue'
     noChange = _(u'No relevant NPC levels to import.')
 
-    def _parser(self): return CBash_ActorLevels() if CBash else ActorLevels()
+    def _parser(self):
+        return CBash_ActorLevels() if CBashApi.Enabled else ActorLevels()
 
 #------------------------------------------------------------------------------
 from ..parsers import FactionRelations, CBash_FactionRelations
@@ -1852,7 +1855,8 @@ class Mod_FactionRelations_Export(_Mod_Export_Link):
     help = _(u'Export faction relations from mod to text file')
 
     def _parser(self):
-        return CBash_FactionRelations() if CBash else FactionRelations()
+        return CBash_FactionRelations() if CBashApi.Enabled else \
+            FactionRelations()
 
 class Mod_FactionRelations_Import(_Mod_Import_Link):
     """Imports faction relations from text file to mod."""
@@ -1869,7 +1873,8 @@ class Mod_FactionRelations_Import(_Mod_Import_Link):
     noChange = _(u'No relevant faction relations to import.')
 
     def _parser(self):
-        return CBash_FactionRelations() if CBash else FactionRelations()
+        return CBash_FactionRelations() if CBashApi.Enabled else \
+            FactionRelations()
 
 #------------------------------------------------------------------------------
 from ..parsers import ActorFactions, CBash_ActorFactions
@@ -1883,7 +1888,7 @@ class Mod_Factions_Export(_Mod_Export_Link):
     help = _(u'Export factions from mod to text file')
 
     def _parser(self):
-        return CBash_ActorFactions() if CBash else ActorFactions()
+        return CBash_ActorFactions() if CBashApi.Enabled else ActorFactions()
 
 class Mod_Factions_Import(_Mod_Import_Link):
     """Imports factions from text file to mod."""
@@ -1899,7 +1904,7 @@ class Mod_Factions_Import(_Mod_Import_Link):
     noChange = _(u'No relevant faction ranks to import.')
 
     def _parser(self):
-        return CBash_ActorFactions() if CBash else ActorFactions()
+        return CBash_ActorFactions() if CBashApi.Enabled else ActorFactions()
 
     def _log(self, changed, fileName):
          with bolt.sio() as buff:
@@ -1916,7 +1921,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
     text = _(u'Scripts...')
     help = _(u'Export scripts from mod to text file')
 
-    def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
+    def _parser(self):
+        return CBash_ScriptText() if CBashApi.Enabled else ScriptText()
 
     def Execute(self): # overrides _Mod_Export_Link
         fileName = self.selected[0]
@@ -1984,7 +1990,8 @@ class Mod_Scripts_Import(_Mod_Import_Link):
     continueKey = 'bash.scripts.import.continue'
     progressTitle = _(u'Import Scripts')
 
-    def _parser(self): return CBash_ScriptText() if CBash else ScriptText()
+    def _parser(self):
+        return CBash_ScriptText() if CBashApi.Enabled else ScriptText()
 
     def Execute(self):
         if not self._askContinueImport(): return
@@ -2044,7 +2051,8 @@ class Mod_Stats_Export(_Mod_Export_Link):
     text = _(u'Stats...')
     help = _(u'Export stats from mod to text file')
 
-    def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
+    def _parser(self):
+        return CBash_ItemStats() if CBashApi.Enabled else ItemStats()
 
 class Mod_Stats_Import(_Mod_Import_Link):
     """Import stats from text file."""
@@ -2058,7 +2066,8 @@ class Mod_Stats_Import(_Mod_Import_Link):
     continueKey = 'bash.stats.import.continue'
     noChange = _(u"No relevant stats to import.")
 
-    def _parser(self): return CBash_ItemStats() if CBash else ItemStats()
+    def _parser(self):
+        return CBash_ItemStats() if CBashApi.Enabled else ItemStats()
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
@@ -2078,7 +2087,8 @@ class Mod_Prices_Export(_Mod_Export_Link):
     text = _(u'Prices...')
     help = _(u'Export item prices from mod to text file')
 
-    def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
+    def _parser(self):
+        return CBash_ItemPrices() if CBashApi.Enabled else ItemPrices()
 
 class Mod_Prices_Import(_Mod_Import_Link):
     """Import prices from text file or other mod."""
@@ -2093,7 +2103,8 @@ class Mod_Prices_Import(_Mod_Import_Link):
     noChange = _(u'No relevant prices to import.')
     supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
 
-    def _parser(self): return CBash_ItemPrices() if CBash else ItemPrices()
+    def _parser(self):
+        return CBash_ItemPrices() if CBashApi.Enabled else ItemPrices()
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
@@ -2114,7 +2125,8 @@ class Mod_SigilStoneDetails_Export(_Mod_Export_Link):
     help = _(u'Export Sigil Stone details from mod to text file')
 
     def _parser(self):
-        return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
+        return CBash_SigilStoneDetails() if CBashApi.Enabled else \
+            SigilStoneDetails()
 
 class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     """Import Sigil Stone details from text file."""
@@ -2131,7 +2143,8 @@ class Mod_SigilStoneDetails_Import(_Mod_Import_Link):
     noChange = _(u'No relevant Sigil Stone details to import.')
 
     def _parser(self):
-        return CBash_SigilStoneDetails() if CBash else SigilStoneDetails()
+        return CBash_SigilStoneDetails() if CBashApi.Enabled else \
+            SigilStoneDetails()
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
@@ -2159,8 +2172,8 @@ class Mod_SpellRecords_Export(_Mod_Export_Link):
                    )
         doDetailed = self._askYes(message, _(u'Export Spells'),
                                   questionIcon=True)
-        return CBash_SpellRecords(detailed=doDetailed) if CBash else \
-            SpellRecords(detailed=doDetailed)
+        return CBash_SpellRecords(detailed=doDetailed) if CBashApi.Enabled \
+            else SpellRecords(detailed=doDetailed)
 
 class Mod_SpellRecords_Import(_Mod_Import_Link):
     """Import Spell details from text file."""
@@ -2182,8 +2195,8 @@ class Mod_SpellRecords_Import(_Mod_Import_Link):
                    )
         doDetailed = self._askYes(message, _(u'Import Spell details'),
                                   questionIcon=True)
-        return CBash_SpellRecords(detailed=doDetailed) if CBash else \
-            SpellRecords(detailed=doDetailed)
+        return CBash_SpellRecords(detailed=doDetailed) if CBashApi.Enabled \
+            else SpellRecords(detailed=doDetailed)
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
@@ -2205,7 +2218,8 @@ class Mod_IngredientDetails_Export(_Mod_Export_Link):
     help = _(u'Export Ingredient details from mod to text file')
 
     def _parser(self):
-        return CBash_IngredientDetails() if CBash else IngredientDetails()
+        return CBash_IngredientDetails() if CBashApi.Enabled else \
+            IngredientDetails()
 
 class Mod_IngredientDetails_Import(_Mod_Import_Link):
     """Import Ingredient details from text file."""
@@ -2221,7 +2235,8 @@ class Mod_IngredientDetails_Import(_Mod_Import_Link):
     noChange = _(u'No relevant Ingredient details to import.')
 
     def _parser(self):
-        return CBash_IngredientDetails() if CBash else IngredientDetails()
+        return CBash_IngredientDetails() if CBashApi.Enabled else \
+            IngredientDetails()
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
@@ -2242,7 +2257,8 @@ class Mod_EditorIds_Export(_Mod_Export_Link):
     text = _(u'Editor Ids...')
     help = _(u'Export faction editor ids from mod to text file')
 
-    def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
+    def _parser(self):
+        return CBash_EditorIds() if CBashApi.Enabled else EditorIds()
 
 class Mod_EditorIds_Import(_Mod_Import_Link):
     """Import editor ids from text file."""
@@ -2255,7 +2271,8 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
     text = _(u'Editor Ids...')
     help = _(u'Import faction editor ids from text file')
 
-    def _parser(self): return CBash_EditorIds() if CBash else EditorIds()
+    def _parser(self):
+        return CBash_EditorIds() if CBashApi.Enabled else EditorIds()
 
     def Execute(self):
         if not self._askContinueImport(): return
@@ -2316,7 +2333,8 @@ class Mod_FullNames_Export(_Mod_Export_Link):
     text = _(u'Names...')
     help = _(u'Export full names from mod to text file')
 
-    def _parser(self): return CBash_FullNames() if CBash else FullNames()
+    def _parser(self):
+        return CBash_FullNames() if CBashApi.Enabled else FullNames()
 
 class Mod_FullNames_Import(_Mod_Import_Link):
     """Import full names from text file or other mod."""
@@ -2331,7 +2349,8 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     help = _(u'Import full names from text file or other mod')
     supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
 
-    def _parser(self): return CBash_FullNames() if CBash else FullNames()
+    def _parser(self):
+        return CBash_FullNames() if CBashApi.Enabled else FullNames()
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:
@@ -2347,11 +2366,12 @@ class Mod_FullNames_Import(_Mod_Import_Link):
 
 # CBash only Import/Export ----------------------------------------------------
 class _Mod_Export_Link_CBash(_Mod_Export_Link, EnabledLink):
-    def _enable(self): return bool(CBash)
+    def _enable(self): return CBashApi.Enabled
 
 class _Mod_Import_Link_CBash(_Mod_Import_Link):
     def _enable(self):
-        return super(_Mod_Import_Link_CBash, self)._enable() and bool(CBash)
+        return super(_Mod_Import_Link_CBash, self)._enable() and \
+               CBashApi.Enabled
 
 #------------------------------------------------------------------------------
 from ..parsers import CBash_MapMarkers
@@ -2437,7 +2457,8 @@ class Mod_ItemData_Export(_Mod_Export_Link): # CRUFT
     help = _(u'Export pretty much complete item data from mod to text file')
 
     def _parser(self):
-        return CBash_CompleteItemData() if CBash else CompleteItemData()
+        return CBash_CompleteItemData() if CBashApi.Enabled else \
+            CompleteItemData()
 
 class Mod_ItemData_Import(_Mod_Import_Link): # CRUFT
     """Import stats from text file or other mod."""

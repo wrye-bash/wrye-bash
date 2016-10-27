@@ -30,7 +30,7 @@ from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BashStatusBar, BashNotebook
 from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import bass, balt, bush
-from ..cint import CBash
+from ..cint import CBashApi
 from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems, \
     UIList_OpenStore, UIList_Hide
 from ..env import init_app_links
@@ -455,10 +455,10 @@ def InitModLinks():
     if bush.game.esp.canBash:
         ModList.itemMenu.append(SeparatorLink())
         ModList.itemMenu.append(Mod_MarkMergeable(False))
-        if CBash:
+        if CBashApi.Enabled:
             ModList.itemMenu.append(Mod_MarkMergeable(True))
         ModList.itemMenu.append(Mod_Patch_Update(False))
-        if CBash:
+        if CBashApi.Enabled:
             ModList.itemMenu.append(Mod_Patch_Update(True))
         ModList.itemMenu.append(Mod_ListPatchConfig())
         ModList.itemMenu.append(Mod_ExportPatchConfig())

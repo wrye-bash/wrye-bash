@@ -59,7 +59,7 @@ from ..bolt import LString, GPath, Flags, DataDict, SubProgress, cstrip, \
 from ..bolt import decode, encode
 from ..bolt import defaultExt, compressionSettings, countFilesInArchive, readExts
 # cint
-from ..cint import ObCollection, CBash
+from ..cint import ObCollection, CBashApi
 from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
     getFormIndices
 from ..parsers import LoadFactory, ModFile
@@ -3568,8 +3568,8 @@ class ModInfos(FileInfos):
     def rescanMergeable(self,names,progress,doCBash=None):
         """Will rescan specified mods."""
         if doCBash is None:
-            doCBash = bool(CBash)
-        elif doCBash and not bool(CBash):
+            doCBash = CBashApi.Enabled
+        elif doCBash and not CBashApi.Enabled:
             doCBash = False
         is_mergeable = isCBashMergeable if doCBash else isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')

@@ -72,7 +72,7 @@ from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
 from ..bosh import omods, projects_walk_cache
-from ..cint import CBash
+from ..cint import CBashApi
 
 startupinfo = bolt.startupinfo
 
@@ -3715,10 +3715,8 @@ class BashFrame(wx.Frame):
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
         title = title % (settings['bash.version'],
             _(u'(Standalone)') if settings['bash.standalone'] else u'')
-        if CBash:
-            title += u', CBash v%u.%u.%u: ' % (
-                CBash.GetVersionMajor(), CBash.GetVersionMinor(),
-                CBash.GetVersionRevision())
+        if CBashApi.Enabled:
+            title += u', CBash %s: ' % (CBashApi.VersionText,)
         else:
             title += u': '
         maProfile = re.match(ur'Saves\\(.+)\\$',bosh.saveInfos.localSave,re.U)
@@ -4079,7 +4077,7 @@ class BashApp(wx.App):
             settings['bash.version'] = GetBashVersion()
             # rescan mergeability on version upgrade to detect new mergeable
             bosh.modInfos.rescanMergeable(bosh.modInfos.data, bolt.Progress())
-        settings['bash.CBashEnabled'] = bool(CBash)
+        settings['bash.CBashEnabled'] = CBashApi.Enabled
 
 # Initialization --------------------------------------------------------------
 from .gui_patchers import initPatchers
