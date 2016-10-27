@@ -549,9 +549,9 @@ class INIList(balt.UIList):
     _extra_sortings = [_sortValidFirst]
     #--Labels
     labels = OrderedDict([
-        ('File',      lambda self, path: path.s),
-        ('Installer', lambda self, path: self.data_store.table.getItem(
-                                                   path, 'installer', u'')),
+        ('File',      lambda self, p: p.s),
+        ('Installer', lambda self, p: self.data_store.table.getItem(
+                                                   p, 'installer', u'')),
     ])
 
     def CountTweakStatus(self):
@@ -770,18 +770,18 @@ class ModList(_ModsUIList):
     _sunkenBorder = False
     #--Labels
     labels = OrderedDict([
-        ('File',       lambda self, path: self.data_store.masterWithVersion(path.s)),
-        ('Load Order', lambda self, path: self.data_store.hexIndexString(path)),
-        ('Rating',     lambda self, path: self._get(path)('rating', u'')),
-        ('Group',      lambda self, path: self._get(path)('group', u'')),
-        ('Installer',  lambda self, path: self._get(path)('installer', u'')),
-        ('Modified',   lambda self, path: formatDate(self.data_store[path].mtime)),
-        ('Size',       lambda self, path: round_size(self.data_store[path].size)),
-        ('Author',     lambda self, path: self.data_store[path].header.author if
-                                      self.data_store[path].header else u'-'),
-        ('CRC',        lambda self, path:
-                                        u'%08X' % self.data_store[path].cachedCrc()),
-        ('Mod Status', lambda self, path: self.data_store[path].txt_status()),
+        ('File',       lambda self, p: self.data_store.masterWithVersion(p.s)),
+        ('Load Order', lambda self, p: self.data_store.hexIndexString(p)),
+        ('Rating',     lambda self, p: self._get(p)('rating', u'')),
+        ('Group',      lambda self, p: self._get(p)('group', u'')),
+        ('Installer',  lambda self, p: self._get(p)('installer', u'')),
+        ('Modified',   lambda self, p: formatDate(self.data_store[p].mtime)),
+        ('Size',       lambda self, p: round_size(self.data_store[p].size)),
+        ('Author',     lambda self, p: self.data_store[p].header.author if
+                                       self.data_store[p].header else u'-'),
+        ('CRC',        lambda self, p:
+                                    u'%08X' % self.data_store[p].cachedCrc()),
+        ('Mod Status', lambda self, p: self.data_store[p].txt_status()),
     ])
 
     #-- Drag and Drop-----------------------------------------------------
@@ -1801,14 +1801,14 @@ class SaveList(balt.UIList):
         playMinutes = saveInfo.header.gameTicks / 60000
         return u'%d:%02d' % (playMinutes/60, (playMinutes % 60))
     labels = OrderedDict([
-        ('File',     lambda self, path: path.s),
-        ('Modified', lambda self, path: formatDate(self.data_store[path].mtime)),
-        ('Size',     lambda self, path: round_size(self.data_store[path].size)),
-        ('PlayTime', lambda self, path: self._playTime(self.data_store[path])),
-        ('Player',   lambda self, path: self._headInfo(self.data_store[path],
-                                                       'pcName')),
-        ('Cell',     lambda self, path: self._headInfo(self.data_store[path],
-                                                       'pcLocation')),
+        ('File',     lambda self, p: p.s),
+        ('Modified', lambda self, p: formatDate(self.data_store[p].mtime)),
+        ('Size',     lambda self, p: round_size(self.data_store[p].size)),
+        ('PlayTime', lambda self, p: self._playTime(self.data_store[p])),
+        ('Player',   lambda self, p: self._headInfo(self.data_store[p],
+                                                    'pcName')),
+        ('Cell',     lambda self, p: self._headInfo(self.data_store[p],
+                                                    'pcLocation')),
     ])
 
     __ext_group = u'(\.(' + bush.game.ess.ext[1:] + u'|' + \
@@ -1907,8 +1907,7 @@ class SaveDetails(_SashDetailsPanel):
         self.gCoSaves = StaticText(top,u'--\n--')
         #--Picture
         self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
-                                    style=wx.BORDER_SUNKEN, background=colors[
-                'screens.bkgd.image']) #--Native: 256x192
+            background=colors['screens.bkgd.image']) #--Native: 256x192
         #--Save Info
         self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 64),
                               multiline=True, onText=self.OnInfoEdit,
@@ -2081,12 +2080,12 @@ class InstallersList(balt.UIList):
     _extra_sortings = [_sortStructure, _sortActive, _sortProjects]
     #--Labels
     labels = OrderedDict([
-        ('Package',  lambda self, path: path.s),
-        ('Order',    lambda self, path: unicode(self.data_store[path].order)),
-        ('Modified', lambda self, path: formatDate(self.data_store[path].modified)),
-        ('Size',     lambda self, path: self.data_store[path].size_string()),
-        ('Files',    lambda self, path: self.data_store[path].number_string(
-            self.data_store[path].num_of_files)),
+        ('Package',  lambda self, p: p.s),
+        ('Order',    lambda self, p: unicode(self.data_store[p].order)),
+        ('Modified', lambda self, p: formatDate(self.data_store[p].modified)),
+        ('Size',     lambda self, p: self.data_store[p].size_string()),
+        ('Files',    lambda self, p: self.data_store[p].number_string(
+            self.data_store[p].num_of_files)),
     ])
     #--DnD
     _dndList, _dndFiles, _dndColumns = True, True, ['Order']
@@ -2526,16 +2525,16 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         subPackagesPanel = wx.Panel(self.checkListSplitter)
         subPackagesLabel = StaticText(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
-                                     kind='checklist')
-        self.gSubList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckSubItem)
+                                     kind='checklist',
+                                     onCheck=self.OnCheckSubItem)
         self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(self.checkListSplitter)
         espmsLabel = StaticText(espmsPanel, _(u'Esp/m Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
-                                      kind='checklist')
-        self.gEspmList.Bind(wx.EVT_CHECKLISTBOX,self.OnCheckEspmItem)
+                                      kind='checklist',
+                                      onCheck=self.OnCheckEspmItem)
         self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
         #--Comments
         commentsPanel = wx.Panel(bottom)
@@ -3008,7 +3007,7 @@ class ScreensList(balt.UIList):
                  }
     #--Labels
     labels = OrderedDict([
-        ('File',     lambda self, path: path.s),
+        ('File',     lambda self, p: p.s),
         # ('Modified', lambda self, path: formatDate(self.data_store[path][1])), # unused
     ])
 
@@ -3118,9 +3117,9 @@ class BSAList(balt.UIList):
                  }
     #--Labels
     labels = OrderedDict([
-        ('File',     lambda self, path: path.s),
-        ('Modified', lambda self, path: formatDate(self.data_store[path].mtime)),
-        ('Size',     lambda self, path: round_size(self.data_store[path].size)),
+        ('File',     lambda self, p: p.s),
+        ('Modified', lambda self, p: formatDate(self.data_store[p].mtime)),
+        ('Size',     lambda self, p: round_size(self.data_store[p].size)),
     ])
 
 #------------------------------------------------------------------------------
@@ -3945,13 +3944,13 @@ class BashFrame(wx.Frame):
             settings.setChanged('bash.colors')
         #--Clean backup
         for fileInfos in (bosh.modInfos,bosh.saveInfos):
-            goodRoots = set(path.root for path in fileInfos.keys())
+            goodRoots = set(p.root for p in fileInfos.keys())
             backupDir = fileInfos.bash_dir.join(u'Backups')
             if not backupDir.isdir(): continue
             for name in backupDir.list():
-                path = backupDir.join(name)
-                if name.root not in goodRoots and path.isfile():
-                    path.remove()
+                back_path = backupDir.join(name)
+                if name.root not in goodRoots and back_path.isfile():
+                    back_path.remove()
 
     @staticmethod
     def saveListRefresh(focus_list):

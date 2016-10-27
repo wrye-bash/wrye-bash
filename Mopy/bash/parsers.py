@@ -1178,7 +1178,10 @@ class CBash_FidReplacer:
 class FullNames:
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
-    defaultTypes = bush.game.namesTypes # PYDEV ERROR
+    try:
+        defaultTypes = bush.game.namesTypes # PYDEV ERROR
+    except AttributeError: # 'NoneType' object has no attribute 'namesTypes'
+        pass
 
     def __init__(self,types=None,aliases=None):
         self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
@@ -1363,7 +1366,10 @@ class CBash_FullNames:
 class ItemStats:
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
-    class_attrs = bush.game.statsTypes
+    try:
+        class_attrs = bush.game.statsTypes
+    except AttributeError: # 'NoneType' object has no attribute 'statsTypes'
+        pass
 
     @staticmethod
     def sstr(value):
@@ -1516,7 +1522,10 @@ class ItemStats:
 class CBash_ItemStats:
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
-    class_attrs = bush.game.statsTypes
+    try:
+        class_attrs = bush.game.statsTypes
+    except AttributeError: # 'NoneType' object has no attribute 'statsTypes'
+        pass
 
     @staticmethod
     def sstr(value):

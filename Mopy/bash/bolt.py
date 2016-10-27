@@ -1374,7 +1374,7 @@ class MainFunctions:
         #--Separate out keywords args
         keywords = {}
         argDex = 0
-        reKeyArg  = re.compile(ur'^\-(\D\w+)',re.U)
+        reKeyArg  = re.compile(ur'^-(\D\w+)',re.U)
         reKeyBool = re.compile(ur'^\+(\D\w+)',re.U)
         while argDex < len(args):
             arg = args[argDex]
@@ -2393,7 +2393,7 @@ class WryeText:
         headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
         headFormatNA = u"<h%d>%s</h%d>\n"
         #--List
-        reWryeList = re.compile(ur'( *)([-x!?\.\+\*o])(.*)',re.U)
+        reWryeList = re.compile(ur'( *)([-x!?.+*o])(.*)',re.U)
         #--Code
         reCode = re.compile(ur'\[code\](.*?)\[/code\]',re.I|re.U)
         reCodeStart = re.compile(ur'(.*?)\[code\](.*?)$',re.I|re.U)
@@ -2450,8 +2450,8 @@ class WryeText:
         #--Preformatting
         #--Links
         reLink = re.compile(ur'\[\[(.*?)\]\]',re.U)
-        reHttp = re.compile(ur' (http://[_~a-zA-Z0-9\./%-]+)',re.U)
-        reWww = re.compile(ur' (www\.[_~a-zA-Z0-9\./%-]+)',re.U)
+        reHttp = re.compile(ur' (http://[_~a-zA-Z0-9./%-]+)',re.U)
+        reWww = re.compile(ur' (www\.[_~a-zA-Z0-9./%-]+)',re.U)
         reWd = re.compile(ur'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')),re.U)
         rePar = re.compile(ur'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)',re.U)
         reFullLink = re.compile(ur'(:|#|\.[a-zA-Z0-9]{2,4}$)',re.U)

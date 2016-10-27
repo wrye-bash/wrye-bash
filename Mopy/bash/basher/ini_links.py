@@ -201,16 +201,16 @@ class INI_CreateNew(OneItemLink):
         """Handle creating a new INI tweak."""
         pathFrom = self._selected_item
         fileName = pathFrom.sbody + u' - Copy' + pathFrom.ext
-        path = self._askSave(title=_(u'Copy Tweak with current settings...'),
-                             defaultDir=bass.dirs['tweaks'],
-                             defaultFile=fileName,
-                             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
-        if not path: return
-        self._selected_info.getPath().copyTo(path)
+        tweak_path = self._askSave(
+            title=_(u'Copy Tweak with current settings...'),
+            defaultDir=bass.dirs['tweaks'], defaultFile=fileName,
+            wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
+        if not tweak_path: return
+        self._selected_info.getPath().copyTo(tweak_path)
         # Now edit it with the values from the target INI
         bosh.iniInfos.refresh()
         oldTarget = self.window.data_store.ini
-        target = bosh.BestIniFile(path)
+        target = bosh.BestIniFile(tweak_path)
         settings = copy.copy(target.getSettings())
         new_settings = oldTarget.getSettings()
         for section in settings:
@@ -221,4 +221,4 @@ class INI_CreateNew(OneItemLink):
                             setting]
         target.saveSettings(settings)
         self.window.RefreshUI()
-        self.window.SelectAndShowItem(path.tail)
+        self.window.SelectAndShowItem(tweak_path.tail)

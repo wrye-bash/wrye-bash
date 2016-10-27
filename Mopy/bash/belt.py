@@ -24,6 +24,7 @@
 
 """Specific parser for Wrye Bash."""
 import collections
+from functools import partial
 
 import ScriptParser         # generic parser class
 import bass
@@ -255,18 +256,18 @@ class PageSelect(PageInstaller):
         if parent.parser.choiceIdex < len(parent.parser.choices):
             oldChoices = parent.parser.choices[parent.parser.choiceIdex]
             defaultMap = [choice in oldChoices for choice in listItems]
+        list_box = partial(balt.listBox, self, choices=listItems,
+                           isHScroll=True, onSelect=self.OnSelect)
         if bMany:
-            self.listOptions = balt.listBox(self, choices=listItems,
-                                            isHScroll=True, kind='checklist')
+            self.listOptions = list_box(kind='checklist')
             for index, default in enumerate(defaultMap):
                 self.listOptions.Check(index, default)
         else:
-            self.listOptions = balt.listBox(self, choices=listItems,
-                                            isHScroll=True)
+            self.listOptions = list_box()
             self._enableForward(False)
             for index, default in enumerate(defaultMap):
                 if default:
-                    self.listOptions.Select(index)
+                    self.listOptions.SetSelection(index)
                     self.Selection(index)
                     break
         sizerBoxes.Add(self.listOptions, 1, wx.ALL|wx.EXPAND)
@@ -282,12 +283,13 @@ class PageSelect(PageInstaller):
         sizerMain.AddGrowableCol(0)
         self.Layout()
 
-        self.listOptions.Bind(wx.EVT_LISTBOX, self.OnSelect)
         self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
         self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
 
     def OnSelect(self, event):
+        """:type event: wx._core.CommandEvent"""
         index = event.GetSelection()
+        self.listOptions.SetSelection(index) # event.Skip() won't do
         self.Selection(index)
 
     def OnDoubleClick(self, event):
@@ -403,8 +405,8 @@ class PageFinish(PageInstaller):
         #--Subpackages and Espms
         subPackageSizer = balt.vSizer(
             balt.StaticText(self, _(u'Sub-Packages')), vspace(2))
-        self.listSubs = balt.listBox(self, choices=subs, kind='checklist')
-        self.listSubs.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectSubs)
+        self.listSubs = balt.listBox(self, choices=subs, kind='checklist',
+                                     onCheck=self.OnSelectSubs)
         for index,key in enumerate(subs):
             key = key.replace(u'&&',u'&')
             if subsList[key]:
@@ -412,8 +414,8 @@ class PageFinish(PageInstaller):
                 self.parent.ret.SelectSubPackages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
         espmSizer = balt.vSizer(balt.StaticText(self, _(u'Esp/ms')), vspace(2))
-        self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist')
-        self.listEspms.Bind(wx.EVT_CHECKLISTBOX, self.OnSelectEspms)
+        self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist',
+                                      onCheck=self.OnSelectEspms)
         for index,key in enumerate(espms):
             if espmsList[key]:
                 self.listEspms.Check(index, True)
@@ -429,8 +431,8 @@ class PageFinish(PageInstaller):
         #--Ini tweaks
         sizerTweaks = balt.vSizer(balt.StaticText(self, _(u'Ini Tweaks:')),
                                   vspace(2))
-        self.listInis = balt.listBox(self, choices=[x.s for x in iniedits.keys()])
-        self.listInis.Bind(wx.EVT_LISTBOX, self.OnSelectIni)
+        self.listInis = balt.listBox(self, onSelect=self.OnSelectIni,
+                                     choices=[x.s for x in iniedits.keys()])
         sizerTweaks.Add(self.listInis,1,wx.EXPAND)
         sizerContents = balt.vSizer(balt.StaticText(self, u''), vspace(2))
         self.listTweaks = balt.listBox(self)
@@ -490,9 +492,11 @@ class PageFinish(PageInstaller):
 
     def OnSelectIni(self, event):
         index = event.GetSelection()
-        path = bolt.GPath(self.listInis.GetString(index))
-        lines = generateTweakLines(self.parent.ret.IniEdits[path],path)
+        ini_path = bolt.GPath(self.listInis.GetString(index))
+        lines = generateTweakLines(self.parent.ret.IniEdits[ini_path],ini_path)
         self.listTweaks.Set(lines)
+        self.listInis.SetSelection(index)
+
 # End PageFinish -------------------------------------
 
 
@@ -1221,14 +1225,14 @@ class WryeParser(ScriptParser.Parser):
         return String.rfind(sub, start, end)
     def fnGetFilename(self, String):
         try:
-            path = bolt.Path(String)
-            return path.stail
+            abspath = bolt.GPath(String)
+            return abspath.stail
         except:
             return u''
     def fnGetFolder(self, String):
         try:
-            path = bolt.Path(String)
-            return path.shead
+            abspath = bolt.GPath(String)
+            return abspath.shead
         except:
             return u''
 
@@ -1377,7 +1381,7 @@ class WryeParser(ScriptParser.Parser):
                 else:
                     # Archive
                     for file_, _size, _crc in self.installer.fileSizeCrcs:
-                        rel = bolt.Path(file_).relpath(subpackage)
+                        rel = bolt.GPath(file_).relpath(subpackage)
                         if not rel.s.startswith(u'..'):
                             List.append(rel.s)
                 List.sort()

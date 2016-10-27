@@ -498,6 +498,8 @@ def listBox(parent, choices=None, **kwargs):
         parent, style=style)
     callback = kwargs.pop('onSelect', None)
     if callback: gListBox.Bind(wx.EVT_LISTBOX, callback)
+    callback = kwargs.pop('onCheck', None)
+    if callback: gListBox.Bind(wx.EVT_CHECKLISTBOX, callback)
     return gListBox
 
 def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
@@ -645,8 +647,8 @@ def askOpen(parent,title=u'',defaultDir=u'',defaultFile=u'',wildcard=u'',style=w
     elif style & wx.FD_MULTIPLE:
         result = map(GPath,dialog.GetPaths())
         if mustExist:
-            for path in result:
-                if not path.exists():
+            for returned_path in result:
+                if not returned_path.exists():
                     result = False
                     break
     else:
@@ -1215,7 +1217,8 @@ class TabDragMixin(object):
 #------------------------------------------------------------------------------
 class Picture(wx.Window):
     """Picture panel."""
-    def __init__(self, parent,width,height,scaling=1,style=0,background=wx.MEDIUM_GREY_BRUSH):
+    def __init__(self, parent, width, height, scaling=1,
+                 style=wx.BORDER_SUNKEN, background=wx.MEDIUM_GREY_BRUSH):
         """Initialize."""
         wx.Window.__init__(self, parent, defId,size=(width,height),style=style)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
@@ -1269,6 +1272,7 @@ class Picture(wx.Window):
         del dc
         self.Refresh()
         self.Update()
+        if event: event.Skip()
 
     def OnPaint(self, event):
         dc = wx.BufferedPaintDC(self, self.buffer)

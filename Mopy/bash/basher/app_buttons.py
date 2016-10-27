@@ -500,9 +500,10 @@ class TESCS_Button(App_Button):
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + CSE
-        path = bass.dirs['mods'].join(u'obse', u'plugins', u'Construction Set Extender.dll')
-        if path.exists():
-            version = path.strippedVersion
+        cse_path = bass.dirs['mods'].join(u'obse', u'plugins',
+                                          u'Construction Set Extender.dll')
+        if cse_path.exists():
+            version = cse_path.strippedVersion
             if version != (0,):
                 version = u'.'.join([u'%i'%x for x in version])
             else:

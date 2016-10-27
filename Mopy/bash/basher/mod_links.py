@@ -750,8 +750,8 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
         super(Mod_Ghost, self)._initData(window, selection)
         if len(selection) == 1:
             self.help = _(u"Ghost/Unghost selected mod.  Active mods can't be ghosted")
-            self.path = selection[0]
-            self.fileInfo = bosh.modInfos[self.path]
+            self.mname = selection[0]
+            self.fileInfo = bosh.modInfos[self.mname]
             self.isGhost = self.fileInfo.isGhost
             self.text = _(u"Ghost") if not self.isGhost else _(u"Unghost")
         else:
@@ -761,7 +761,7 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     def _enable(self):
         # only enable ghosting for one item if not active
         if len(self.selected) == 1 and not self.isGhost:
-            return not load_order.isActiveCached(self.path)
+            return not load_order.isActiveCached(self.mname)
         return True
 
     def Execute(self):
@@ -769,9 +769,9 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
         if len(self.selected) == 1:
             # toggle - ghosting only enabled if plugin is inactive
             if not self.isGhost: # ghosting - override allowGhosting with True
-                bosh.modInfos.table.setItem(self.path,'allowGhosting',True)
+                bosh.modInfos.table.setItem(self.mname, 'allowGhosting', True)
             self.fileInfo.setGhost(not self.isGhost)
-            files.append(self.path)
+            files.append(self.mname)
         else:
             files = self._loop()
         self.window.RefreshUI(files=files, refreshSaves=False)
@@ -2536,10 +2536,10 @@ class MasterList_CleanMasters(AppendableLink, ItemLink): # CRUFT
         if not self._askContinue(message, 'bash.cleanMaster.continue',
                                  _(u'Clean Masters')): return
         modInfo = self.window.fileInfo
-        path = modInfo.getPath()
+        mpath = modInfo.getPath()
 
         with ObCollection(ModsPath=bass.dirs['mods'].s) as Current:
-            modFile = Current.addMod(path.stail)
+            modFile = Current.addMod(mpath.stail)
             Current.load()
             oldMasters = modFile.TES4.masters
             cleaned = modFile.CleanMasters()

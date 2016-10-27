@@ -97,7 +97,9 @@ class PatchDialog(balt.Dialog):
                                             onButClick=self.DeselectAll)
         cancelButton = CancelButton(self)
         self.gPatchers = balt.listBox(self, choices=patcherNames,
-                                      isSingle=True, kind='checklist')
+                                      isSingle=True, kind='checklist',
+                                      onSelect=self.OnSelect,
+                                      onCheck=self.OnCheck)
         self.gExportConfig = SaveAsButton(self, label=_(u'Export'),
                                           onButClick=self.ExportConfig)
         self.gImportConfig = OpenButton(self, label=_(u'Import'),
@@ -112,8 +114,6 @@ class PatchDialog(balt.Dialog):
         self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
         self.Bind(wx.EVT_SIZE,self.OnSize) # save dialog size
-        self.gPatchers.Bind(wx.EVT_LISTBOX, self.OnSelect)
-        self.gPatchers.Bind(wx.EVT_CHECKLISTBOX, self.OnCheck)
         self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
         self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
@@ -148,8 +148,8 @@ class PatchDialog(balt.Dialog):
             gConfigSizer.Show(gConfigPanel,False)
         initial_select = min(len(self.patchers)-1,1)
         if initial_select >= 0:
-            self.gPatchers.Select(initial_select) # does not fire the callback
-            self.ShowPatcher(self.patchers[initial_select]) # so this needed
+            self.gPatchers.SetSelection(initial_select) # callback not fired
+            self.ShowPatcher(self.patchers[initial_select]) # so this is needed
         self.SetOkEnable()
 
     #--Core -------------------------------
@@ -447,6 +447,7 @@ class PatchDialog(balt.Dialog):
         """Responds to patchers list selection."""
         itemDex = event.GetSelection()
         self.ShowPatcher(self.patchers[itemDex])
+        self.gPatchers.SetSelection(itemDex)
 
     def CheckPatcher(self, patcher):
         """Enable a patcher - Called from a patcher's OnCheck method."""

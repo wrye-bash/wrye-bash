@@ -31,8 +31,8 @@ failedOmods = set()
 
 def extractOmodsNeeded(installers_paths=()):
     """Return true if .omod files are present, requiring extraction."""
-    for path in installers_paths:
-        if path.cext == u'.omod' and path not in failedOmods:
+    for inst_path in installers_paths:
+        if inst_path.cext == u'.omod' and inst_path not in failedOmods:
             return True
     return False
 
@@ -89,7 +89,7 @@ class OmodFile:
         # Get contents of archive
         filesizes = dict()
         totalSize = 0
-        reFileSize = re.compile(ur'[0-9]{4}\-[0-9]{2}\-[0-9]{2}\s+[0-9]{2}\:[0-9]{2}\:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
+        reFileSize = re.compile(ur'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
         reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
         with self.path.unicodeSafe() as tempOmod:

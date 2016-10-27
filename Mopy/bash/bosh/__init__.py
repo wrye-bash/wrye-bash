@@ -66,9 +66,11 @@ from ..parsers import LoadFactory, ModFile
 
 #--Settings
 settings = None
-
-allTags = bush.game.allTags
-allTagsSet = set(allTags)
+try:
+    allTags = bush.game.allTags
+    allTagsSet = set(allTags)
+except AttributeError: # 'NoneType' object has no attribute 'allTags'
+    pass
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 
@@ -96,15 +98,22 @@ screensData = None # type: ScreensData
 configHelpers = None # type: mods_metadata.ConfigHelpers
 
 #--Header tags
-reVersion = re.compile(ur'^(version[:\.]*|ver[:\.]*|rev[:\.]*|r[:\.\s]+|v[:\.\s]+) *([-0-9a-zA-Z\.]*\+?)',re.M|re.I|re.U)
+reVersion = re.compile(
+  ur'^(version[:.]*|ver[:.]*|rev[:.]*|r[:.\s]+|v[:.\s]+) *([-0-9a-zA-Z.]*\+?)',
+  re.M | re.I | re.U)
 
 #--Mod Extensions
 reComment = re.compile(u'#.*',re.U) ##: used in OBSEIniFile ??
 reExGroup = re.compile(u'(.*?),',re.U)
 _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
-reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?(\.7z|\.zip|\.rar|\.7z\.001|)$',re.I|re.U)
-reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?(\.7z|\.zip|\.rar|)$',re.I|re.U)
+__exts = ur'((\.(' + ur'|'.join(ext[1:] for ext in bolt.readExts) + ur'))|)$'
+reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
+    ur'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
+    + __exts, re.I | re.U)
+reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?'
+    + __exts, re.I | re.U)
+del __exts
 imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
 #------------------------------------------------------------------------------
@@ -1300,7 +1309,11 @@ def _delete(itemOrItems, **kwargs):
 
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
-    reSave = re.compile(ur'\.' + bush.game.ess.ext[1:] + '(f?)$', re.I | re.U)
+    try:
+        reSave = re.compile(ur'\.' + bush.game.ess.ext[1:] + '(f?)$',
+                            re.I | re.U)
+    except AttributeError: # 'NoneType' object has no attribute 'ess'
+        pass
 
     @staticmethod
     def getPaths(savePath):
@@ -1740,7 +1753,7 @@ class IniFile(object):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
         full key=value line ending in newline char."""
-        if not self.path.exists() or not self.path.isfile():
+        if not self.path.isfile():
             return
         #--Ensure settings dicts are using LString's as keys
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
@@ -1820,9 +1833,7 @@ class IniFile(object):
     def applyTweakFile(self,tweakPath):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        if not self.path.exists() or not self.path.isfile():
-            return
-        if not tweakPath.exists() or not tweakPath.isfile():
+        if not self.path.isfile() or not tweakPath.isfile():
             return
         if tweakPath != self.path:
             encoding = 'utf-8'
@@ -2001,7 +2012,7 @@ class OBSEIniFile(IniFile):
         super(OBSEIniFile, self).saveSetting(section, key, value)
 
     def saveSettings(self,ini_settings,deleted_settings={}):
-        if not self.path.exists() or not self.path.isfile():
+        if not self.path.isfile():
             return
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
@@ -2057,9 +2068,7 @@ class OBSEIniFile(IniFile):
         self.path.untemp()
 
     def applyTweakFile(self,tweakPath):
-        if not self.path.exists() or not self.path.isfile():
-            return
-        if not tweakPath.exists() or not tweakPath.isfile():
+        if not self.path.isfile() or not tweakPath.isfile():
             return
         reDeleted = self.reDeleted
         reSet = self.reSet
@@ -2414,7 +2423,7 @@ class FileInfo(_AFileInfo):
         separator = u'-'
         snapLast = [u'00']
         #--Look for old snapshots.
-        reSnap = re.compile(u'^'+root.s+u'[ -]([0-9\.]*[0-9]+)'+ext+u'$',re.U)
+        reSnap = re.compile(u'^'+root.s+u'[ -]([0-9.]*[0-9]+)'+ext+u'$',re.U)
         for fileName in destDir.list():
             maSnap = reSnap.match(fileName.s)
             if not maSnap: continue
@@ -4184,7 +4193,10 @@ class ModInfos(FileInfos):
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
-    _ext = ur'\.' + bush.game.ess.ext[1:]
+    try:
+        _ext = ur'\.' + bush.game.ess.ext[1:]
+    except AttributeError: # 'NoneType' object has no attribute 'ess'
+        _ext = u''
     file_pattern = re.compile(
         ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...) or
         _ext + ur'|' + _ext[:-1] + ur'r' + ur'))$', # enabled or disabled save
@@ -6924,7 +6936,7 @@ class InstallersData(_DataStore):
                     if showLower and (order > srcBSAOrder) != isHigher:
                         isHigher = (order > srcBSAOrder)
                         buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
-                    buff.write(u'==%d== %s : %s\n' % (order, package, bsa))
+                    buff.write(u'==%X== %s : %s\n' % (order, package, bsa))
                     # Print files
                     for file in srcFiles:
                         buff.write(u'%s \n' % file)
