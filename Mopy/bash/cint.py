@@ -358,12 +358,12 @@ if _CBash:
 class CBashApi (object):
     Enabled = _CBash is not None
 
-    VersionMajor = _CGetVersionMajor()
-    VersionMinor = _CGetVersionMinor()
-    VersionRevision = _CGetVersionRevision()
+    VersionMajor = _CGetVersionMajor() if Enabled else 0
+    VersionMinor = _CGetVersionMinor() if Enabled else 0
+    VersionRevision = _CGetVersionRevision() if Enabled else 0
     VersionInfo = (VersionMajor, VersionMinor, VersionRevision)
 
-    VersionText = u'v%u.%u.%u' % VersionInfo
+    VersionText = u'v%u.%u.%u' % VersionInfo if Enabled else ''
 
 #Helper functions
 class API_FIELDS(object):
