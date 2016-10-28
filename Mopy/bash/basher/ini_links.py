@@ -140,15 +140,13 @@ class INI_Apply(EnabledLink):
 
     def _initData(self, window, selection):
         super(INI_Apply, self)._initData(window, selection)
-        self.iniPanel = self.window.panel
-        ini = self.iniPanel.comboBox.GetValue()
         if len(selection) == 1:
             tweak = selection[0]
             self.help = _(u"Applies '%(tweak)s' to '%(ini)s'.") % {
-                'tweak': tweak, 'ini': ini}
+                'tweak': tweak, 'ini': self.window.current_ini_name}
         else:
             self.help = _(u"Applies selected tweaks to '%(ini)s'.") % {
-            'ini': ini}
+            'ini': self.window.current_ini_name}
 
     def _enable(self):
         if not bass.settings['bash.ini.allowNewLines']:
@@ -160,9 +158,9 @@ class INI_Apply(EnabledLink):
 
     def Execute(self):
         """Handle applying INI Tweaks."""
-        #-- If we're applying to Oblivion.ini, show the warning
-        choice = self.iniPanel.current_ini_path.tail
-        if not self.window.warn_tweak_game_ini(choice): return
+        #--If we're applying to Oblivion.ini, show the warning
+        if not self.window.warn_tweak_game_ini(self.window.current_ini_name):
+            return
         needsRefresh = False
         for item in self.selected:
             #--No point applying a tweak that's already applied
@@ -175,8 +173,8 @@ class INI_Apply(EnabledLink):
                 self.window.data_store.ini.applyTweakFile(
                     bass.dirs['defaultTweaks'].join(item))
         if needsRefresh:
-            #--Refresh status of all the tweaks valid for this ini
-            self.window.RefreshUIValid(self.selected[0])
+            self.window.panel.ShowPanel(refresh_infos=False,
+                                        clean_targets=False)
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):
@@ -186,13 +184,12 @@ class INI_CreateNew(OneItemLink):
 
     def _initData(self, window, selection):
         super(INI_CreateNew, self)._initData(window, selection)
-        ini = self.window.panel.comboBox.GetValue()
         if not len(selection) == 1:
             self.help = _(u'Please choose one Ini Tweak')
         else:
-            self.help = _(
-                u"Creates a new tweak based on '%(tweak)s' but with values "
-                u"from '%(ini)s'.") % {'tweak': (selection[0]), 'ini': ini}
+            self.help = _(u"Creates a new tweak based on '%(tweak)s' but with "
+                          u"values from '%(ini)s'.") % {
+                'tweak': (selection[0]), 'ini': self.window.current_ini_name}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
                               bosh.iniInfos[self.selected[0]].tweak_status >= 0
@@ -210,7 +207,7 @@ class INI_CreateNew(OneItemLink):
         # Now edit it with the values from the target INI
         bosh.iniInfos.refresh()
         oldTarget = self.window.data_store.ini
-        target = bosh.BestIniFile(tweak_path)
+        target = bosh.iniInfos[tweak_path.tail].ini_info_file
         settings = copy.copy(target.getSettings())
         new_settings = oldTarget.getSettings()
         for section in settings:

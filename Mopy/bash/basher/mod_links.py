@@ -142,7 +142,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             bosh.modInfos.cached_lo_insert_after(previous, mod)
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
-        bosh.modInfos.refresh(scanData=False)
+        bosh.modInfos.refresh(refresh_infos=False)
         self.window.RefreshUI(refreshSaves=True)
         self.window.SelectItemsNoCallback(to_select)
         self.window.SelectAndShowItem(to_select[-1])
@@ -179,7 +179,7 @@ class Mod_OrderByName(EnabledLink):
                 newTime += 60
             #--Refresh
             with load_order.Unlock():
-                bosh.modInfos.refresh(scanData=False, _modTimesChange=True)
+                bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
         else:
             lowest = load_order.get_ordered(self.selected)[0]
             bosh.modInfos.cached_lo_insert_at(lowest, self.selected)
@@ -216,7 +216,7 @@ class Mod_Redate(AppendableLink, ItemLink):
             newTime += 60
         #--Refresh
         with load_order.Unlock():
-            modInfos.refresh(scanData=False, _modTimesChange=True)
+            modInfos.refresh(refresh_infos=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
@@ -1453,7 +1453,7 @@ class Mod_CopyToEsmp(EnabledLink):
         #--Repopulate
         if added:
             if save_lo: modInfos.cached_lo_save_lo()
-            modInfos.refresh(scanData=False)
+            modInfos.refresh(refresh_infos=False)
             self.window.RefreshUI(refreshSaves=True) # just in case
             self.window.SelectItemsNoCallback(added)
             self.window.SelectAndShowItem(added[-1])

@@ -55,11 +55,11 @@ class ColorDialog(balt.Dialog):
         def _display_text(k):
             return _(self._keys_to_tabs[k.split('.')[0]]) + colorInfo[k][0]
         self.text_key = dict((_display_text(x), x) for x in keys)
-        choices = self.text_key.keys()
-        choices.sort(key=unicode.lower)
-        choice = choices[0]
+        colored = self.text_key.keys()
+        colored.sort(key=unicode.lower)
+        choice = colored[0]
         choiceKey = self.text_key[choice]
-        self.comboBox = balt.ComboBox(self, value=choice, choices=choices)
+        self.comboBox = balt.ComboBox(self, value=choice, choices=colored)
         #--Color Picker
         self.picker = wx.ColourPickerCtrl(self)
         self.picker.SetColour(colors[choiceKey])

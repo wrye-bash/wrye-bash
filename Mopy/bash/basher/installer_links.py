@@ -254,57 +254,84 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             installer.setEspmName(oldName, ret.RenameEspms[oldName])
         idetails.refreshCurrent(installer)
         #Install if necessary
-        if ret.Install:
-            if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
-                title, doIt = _(u'Annealing...'), self.idata.bain_anneal
-            else: #Install, if it's not installed
-                title, doIt = _(u'Installing...'), self.idata.bain_install
-            ui_refresh = [False, False]
-            try:
+        ui_refresh = [False, False]
+        try:
+            if ret.Install:
+                if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
+                    title, doIt = _(u'Annealing...'), self.idata.bain_anneal
+                else: #Install, if it's not installed
+                    title, doIt = _(u'Installing...'), self.idata.bain_install
                 with balt.Progress(title, u'\n'+u' '*60) as progress:
                     doIt(self.selected, ui_refresh, progress)
-            finally:
-                self.iPanel.RefreshUIMods(*ui_refresh)
+            self._apply_tweaks(installer, ret, ui_refresh)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+    def _apply_tweaks(self, installer, ret, ui_refresh):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
+        new_targets = set()
         for iniFile in ret.IniEdits:
-            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' % (installer.archive, iniFile.sbody))
+            outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
+                (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
-                for line in generateTweakLines(ret.IniEdits[iniFile],iniFile):
-                    out.write(line+u'\n')
-            bosh.iniInfos.refresh()
-            bosh.iniInfos.table.setItem(outFile.tail, 'installer', installer.archive)
-            if BashFrame.iniList is not None:
-                BashFrame.iniList.RefreshUI(focus_list=False)
-            if iniFile in installer.data_sizeCrc or any([iniFile == x for x in bush.game.iniFiles]):
-                if not ret.Install and not any([iniFile == x for x in bush.game.iniFiles]):
-                    # Can only automatically apply ini tweaks if the ini was actually installed.  Since
-                    # BAIN is setup to not auto install after the wizard, we'll show a message telling the
-                    # User what tweaks to apply manually.
-                    manuallyApply.append((outFile,iniFile))
+                for line in generateTweakLines(ret.IniEdits[iniFile], iniFile):
+                    out.write(line + u'\n')
+            bosh.iniInfos.refreshFile(outFile.tail) # add it to the iniInfos
+            bosh.iniInfos.table.setItem(outFile.tail, 'installer',
+                                        installer.archive)
+            # trigger refresh UI and unnecessary bosh.iniInfos.refresh()
+            ui_refresh[1] = True
+            is_game_ini, target_path = False, bass.dirs['mods'].join(iniFile)
+            for game_ini in bosh.gameInis:
+                if iniFile == game_ini.path.stail:
+                    target_path = game_ini.path
+                    is_game_ini = True
+                    target_ini_file = game_ini
+                    break
+            else: target_ini_file = None
+            if iniFile in installer.data_sizeCrc or is_game_ini:
+                if not ret.Install and not is_game_ini:
+                    # Can only automatically apply ini tweaks if the ini was
+                    # actually installed.  Since BAIN is setup to not auto
+                    # install after the wizard, we'll show a message telling
+                    # the User what tweaks to apply manually.
+                    manuallyApply.append((outFile, iniFile))
                     continue
                 # Editing an INI file from this installer is ok, but editing
                 # Oblivion.ini give a warning message
                 if not INIList.warn_tweak_game_ini(iniFile): continue
-                if BashFrame.iniList is not None:
-                    BashFrame.iniList.panel.AddOrSelectIniDropDown(
-                        bass.dirs['mods'].join(iniFile))
-                if bosh.iniInfos[outFile.tail].tweak_status in (20, -10):
+                target_ini_file = target_ini_file or bosh.BestIniFile(target_path)
+                if bosh.iniInfos[outFile.tail].getStatus(target_ini_file) in (20, -10):
                     continue # applied or invalid
-                bosh.iniInfos.ini.applyTweakFile(outFile)
+                target_ini_file.applyTweakFile(outFile)
                 lastApplied = outFile.tail
+                if not is_game_ini: new_targets.add(target_path)
             else:
-                # We wont automatically apply tweaks to anything other than Oblivion.ini or an ini from
-                # this installer
-                manuallyApply.append((outFile,iniFile))
+                # We wont automatically apply tweaks to anything other than
+                # Oblivion.ini or an ini from this installer
+                manuallyApply.append((outFile, iniFile))
         #--Refresh after all the tweaks are applied
-        if lastApplied is not None and BashFrame.iniList is not None:
-            BashFrame.iniList.RefreshUIValid(lastApplied)
+        if lastApplied is not None:
+            if BashFrame.iniList is not None:
+                BashFrame.iniList.panel.add_targets(new_targets)
+                BashFrame.iniList.panel.set_choice(target_path)
+                BashFrame.iniList.panel.ShowPanel(refresh_infos=False,
+                    clean_targets=False, detail_item=lastApplied,
+                    focus_list=False)
+            else:
+                targets = bass.settings['bash.ini.choices']
+                for target in new_targets:
+                    if target.tail not in targets: targets[target.tail] = target ##: we must sort!
+            ui_refresh[1] = False
         if len(manuallyApply) > 0:
-            message = balt.fill(_(u'The following INI Tweaks were not automatically applied.  Be sure to apply them after installing the package.'))
+            message = balt.fill(_(
+                u'The following INI Tweaks were not automatically applied.  '
+                u'Be sure to apply them after installing the package.'))
             message += u'\n\n'
-            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s for x in manuallyApply])
+            message += u'\n'.join([u' * ' + x[0].stail + u'\n   TO: ' + x[1].s
+                                   for x in manuallyApply])
             self._showInfo(message)
 
     @staticmethod
@@ -515,20 +542,21 @@ class Installer_Install(_InstallLink):
                 try:
                     tweaks = self.idata.bain_install(self._installables,
                         ui_refresh, progress, last, override)
-                    ui_refresh[1] |= bool(tweaks)
                 except (CancelError,SkipError):
                     pass
                 except StateError as e:
                     self._showError(u'%s'%e)
                 else: # no error occurred
-                    if tweaks:
-                        msg = _(u'The following INI Tweaks were created, '
-                                u'because the existing INI was different than '
-                                u'what BAIN installed:') + u'\n' + u'\n'.join(
-                                [u' * %s\n' % x.stail for (x, y) in tweaks])
-                        self._showInfo(msg, title=_(u'INI Tweaks'))
+                    self._warn_mismatched_ini_tweaks_created(tweaks)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
+
+    def _warn_mismatched_ini_tweaks_created(self, tweaks):
+        if tweaks:
+            msg = _(u'The following INI Tweaks were created, because the '
+                u'existing INI was different than what BAIN installed:') + \
+                u'\n' + u'\n'.join([u' * %s\n' % x.stail for (x, y) in tweaks])
+            self._showInfo(msg, title=_(u'INI Tweaks'))
 
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""

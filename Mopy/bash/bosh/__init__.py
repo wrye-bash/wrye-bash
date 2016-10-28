@@ -1577,6 +1577,8 @@ class IniFile(object):
         self._settings_cache = self.__empty
         self._settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
+        self._deleted = False
+        self.updated = False # notify iniInfos which should clear this flag
 
     @classmethod
     def formatMatch(cls, path):
@@ -1604,12 +1606,9 @@ class IniFile(object):
         do a copy first !"""
         if not self.path.exists() or self.path.isdir():
             return ({}, {}) if with_deleted else {}
-        psize, pmtime = self.path.size_mtime()
-        if self._settings_cache is self.__empty or self._ini_size != psize \
-                or self._ini_mod_time != pmtime:
-            self._ini_size, self._ini_mod_time = psize, pmtime
+        if self.needs_update(_reset_cache=True):
             self._settings_cache_linenum, self._deleted_cache = \
-                self.getTweakFileSettings(self.path, lineNumbers=True)
+                self._getTweakFileSettings(self.path, lineNumbers=True)
             self._settings_cache = dict(
                 (k, dict((x, y[0]) for x, y in v.iteritems())) for k, v in
                 self._settings_cache_linenum.iteritems())
@@ -1618,7 +1617,28 @@ class IniFile(object):
         if with_deleted: return cached, self._deleted_cache
         return cached
 
-    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
+    def needs_update(self, _reset_cache=False):
+        try:
+            psize, pmtime = self.path.size_mtime()
+            if self._deleted:
+                self.updated = True # restored
+                self._deleted = False
+        except OSError:
+            self._ini_size = self._ini_mod_time = 0
+            if not self._deleted:
+                # mark as deleted to avoid requesting updates on each refresh
+                self._deleted = self.updated = True
+                return True
+            return False # we already know it's deleted (used for game inis)
+        if self._settings_cache is self.__empty or self._ini_size != psize \
+                or self._ini_mod_time != pmtime:
+            if _reset_cache:
+                self._ini_size, self._ini_mod_time = psize, pmtime
+            self.updated = True
+            return True
+        return False
+
+    def _getTweakFileSettings(self, tweakPath, lineNumbers=False):
         """Gets settings in a tweak file."""
         ini_settings = {}
         deleted_settings = {}
@@ -1631,14 +1651,16 @@ class IniFile(object):
         else:
             encoding = self.encoding
             setCorrupted = True
-        reComment = IniFile.reComment
-        reSection = IniFile.reSection
-        reDeleted = IniFile.reDeletedSetting
-        reSetting = IniFile.reSetting
+        reComment = self.__class__.reComment
+        reSection = self.__class__.reSection
+        reDeleted = self.__class__.reDeletedSetting
+        reSetting = self.__class__.reSetting
         if lineNumbers:
-            def makeSetting(match,lineNo): return match.group(2).strip(),lineNo
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip(), j
         else:
-            def makeSetting(match,lineNo): return match.group(2).strip()
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip()
         #--Read ini file
         with tweakPath.open('r') as iniFile:
             sectionSettings = None
@@ -1660,7 +1682,7 @@ class IniFile(object):
                         sectionSettings = ini_settings.setdefault(LString(
                             default_section), {})
                         if setCorrupted: self.isCorrupted = True
-                    sectionSettings[LString(maSetting.group(1))] = makeSetting(maSetting,i)
+                    _add_setting(i, maSetting, sectionSettings)
                 elif maDeleted:
                     if not section: continue
                     deleted_settings.setdefault(section,{})[LString(maDeleted.group(1))] = i
@@ -1688,7 +1710,8 @@ class IniFile(object):
             encoding = 'utf-8'
         else:
             encoding = self.encoding
-        iniSettings,deletedSettings = self.getSettings(with_line_numbers=True, with_deleted=True)
+        iniSettings, deletedSettings = self.getSettings(with_line_numbers=True,
+                                                        with_deleted=True)
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -1869,11 +1892,12 @@ class IniFile(object):
 
 #------------------------------------------------------------------------------
 def BestIniFile(path):
+    """:rtype: IniFile"""
     if not path:
         return oblivionIni
-    for ini in gameInis:
-        if path == ini.path:
-            return ini
+    for game_ini in gameInis:
+        if path == game_ini.path:
+            return game_ini
     INICount = IniFile.formatMatch(path)
     OBSECount = OBSEIniFile.formatMatch(path)
     if INICount >= OBSECount:
@@ -1904,17 +1928,23 @@ class OBSEIniFile(IniFile):
         elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
-    def getTweakFileSettings(self,tweakPath,lineNumbers=False):
+    def _getTweakFileSettings(self, tweakPath, lineNumbers=False):
         """Get the settings in the ini script."""
         ini_settings = {}
         deleted_settings = {}
         if not tweakPath.exists() or tweakPath.isdir():
             return ini_settings,deleted_settings
-        reDeleted = self.reDeleted
-        reComment = self.reComment
-        reSet = self.reSet
-        reSetGS = self.reSetGS
-        reSetNGS = self.reSetNGS
+        reDeleted = self.__class__.reDeleted
+        reComment = self.__class__.reComment
+        reSet     = self.__class__.reSet
+        reSetGS   = self.__class__.reSetGS
+        reSetNGS  = self.__class__.reSetNGS
+        if lineNumbers:
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip(), j
+        else:
+            def _add_setting(j, match, _section):
+                _section[LString(match.group(1))] = match.group(2).strip()
         with tweakPath.open('r') as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
@@ -1928,28 +1958,19 @@ class OBSEIniFile(IniFile):
                         section = ini_settings.setdefault(bolt.LString(u']set['),{})
                     else:
                         section = deleted_settings.setdefault(LString(u']set['),{})
-                    if lineNumbers:
-                        section[LString(maSet.group(1))] = (maSet.group(2).strip(),i)
-                    else:
-                        section[LString(maSet.group(1))] = maSet.group(2).strip()
+                    _add_setting(i, maSet, section)
                 elif maSetGS:
                     if not maDeleted:
                         section = ini_settings.setdefault(bolt.LString(u']setGS['),{})
                     else:
                         section = deleted_settings.setdefault(LString(u']setGS['),{})
-                    if lineNumbers:
-                        section[LString(maSetGS.group(1))] = (maSetGS.group(2).strip(),i)
-                    else:
-                        section[LString(maSetGS.group(1))] = maSetGS.group(2).strip()
+                    _add_setting(i, maSetGS, section)
                 elif maSetNGS:
                     if not maDeleted:
                         section = ini_settings.setdefault(bolt.LString(u']SetNumericGameSetting['),{})
                     else:
                         section = deleted_settings.setdefault(LString(u']SetNumericGameSetting['),{})
-                    if lineNumbers:
-                        section[LString(maSetNGS.group(1))] = (maSetNGS.group(2).strip(),i)
-                    else:
-                        section[LString(maSetNGS.group(1))] = maSetNGS.group(2).strip()
+                    _add_setting(i, maSetNGS, section)
         return ini_settings,deleted_settings
 
     def getTweakFileLines(self,tweakPath):
@@ -1963,12 +1984,13 @@ class OBSEIniFile(IniFile):
             -10: doesn't exist in the ini
               0: does exist, but it's a heading or something else without a value
              10: does exist, but value isn't the same
-             20: deos exist, and value is the same
+             20: does exist, and value is the same
         ini_line_number = line number in the ini that this tweak applies to"""
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        iniSettings,deletedSettings = self.getTweakFileSettings(self.path,True)
+        iniSettings, deletedSettings = self.getSettings(with_line_numbers=True,
+                                                        with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
@@ -2141,8 +2163,8 @@ class OblivionIni(IniFile):
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
-        # oblivion.ini was not found in the game directory or bUseMyGamesDirectory was not set."""
-        # default to user profile directory"""
+        # oblivion.ini was not found in the game directory or
+        # bUseMyGamesDirectory was not set.  Default to user profile directory
         IniFile.__init__(self, dirs['saveBase'].join(name))
 
     @balt.conversation
@@ -2164,6 +2186,11 @@ class OblivionIni(IniFile):
             return False
         try:
             srcPath.copyTo(self.path)
+            if balt.Link.Frame.iniList:
+                balt.Link.Frame.iniList.panel.ShowPanel(refresh_infos=False,
+                                                        clean_targets=False)
+            else:
+                iniInfos.refresh(refresh_infos=False)
             return True
         except (OSError, IOError):
             error_msg = u'Failed to copy %s to %s' % (srcPath, self.path)
@@ -2172,13 +2199,6 @@ class OblivionIni(IniFile):
         return False
 
     #--BSA Redirection --------------------------------------------------------
-    def _getBsaRedirection(self):
-        """Returns True if BSA redirection is active."""
-        section,key = bush.game.ini.bsaRedirection
-        if not section or not key: return False
-        sArchives = self.getSetting(section,key,u'')
-        return bool([x for x in sArchives.split(u',') if x.strip().lower() in self.bsaRedirectors])
-
     def setBsaRedirection(self,doRedirect=True):
         """Activate or deactivate BSA redirection - game ini must exist!"""
         section,key = bush.game.ini.bsaRedirection
@@ -2187,7 +2207,11 @@ class OblivionIni(IniFile):
         aiBsaMTime = time.mktime((2006, 1, 2, 0, 0, 0, 0, 2, 0))
         if aiBsa.exists() and aiBsa.mtime > aiBsaMTime:
             aiBsa.mtime = aiBsaMTime
-        if doRedirect == self._getBsaRedirection():
+        # check if BSA redirection is active
+        sArchives = self.getSetting(section, key, u'')
+        is_bsa_redirection_active = any(x for x in sArchives.split(u',')
+            if x.strip().lower() in self.bsaRedirectors)
+        if doRedirect == is_bsa_redirection_active:
             return
         # Skyrim does not have an Archive Invalidation File
         if doRedirect and not aiBsa.exists():
@@ -2771,20 +2795,32 @@ class ModInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 class INIInfo(FileInfo):
+    """DEPRECATED ! IniInfos should contain IniFiles directly !!"""
     def __init__(self,*args,**kwdargs):
         FileInfo.__init__(self,*args,**kwdargs) ##: has a lot of stuff that has nothing to do with inis !
         self._status = None
-        self.__target_ini = None # used in status only
+        self.__ini_file = None
+
+    @property
+    def ini_info_file(self): # init once when we need it
+        if self.__ini_file is None:
+            self.__ini_file = BestIniFile(self.getPath())
+        return self.__ini_file
 
     @property
     def tweak_status(self):
-        self.__target_ini, old = self.getFileInfos().ini, self.__target_ini
-        if self._status is None or self.__target_ini != old: self.getStatus()
+        if self._status is None: self.getStatus()
         return self._status
 
     def getFileInfos(self): return iniInfos
 
-    def getStatus(self):
+    _ini_types, _obse_ini_types = {IniFile, OblivionIni}, {OBSEIniFile}
+    def _incompatible(self, other):
+        if type(self.ini_info_file) not in self._obse_ini_types:
+            return type(other) in self._obse_ini_types
+        return type(other) not in self._obse_ini_types
+
+    def getStatus(self, target_ini=None):
         """Returns status of the ini tweak:
         20: installed (green with check)
         15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
@@ -2792,41 +2828,42 @@ class INIInfo(FileInfo):
         0: not installed (green)
         -10: invalid tweak file (red).
         Also caches the value in self._status"""
-        path = self.getPath()
         infos = self.getFileInfos()
-        ini = infos.ini
-        tweak,tweak_deleted = ini.getTweakFileSettings(path)
-        if not tweak:
+        target_ini = target_ini or infos.ini
+        tweak_settings = self.ini_info_file.getSettings()
+        if self._incompatible(target_ini) or not tweak_settings:
             self._status = -10
             return -10
         match = False
         mismatch = 0
-        ini_settings = ini.getSettings()
-        for key in tweak:
-            if key not in ini_settings:
+        ini_settings = target_ini.getSettings()
+        this = infos.table.getItem(self.getPath().tail, 'installer')
+        for section_key in tweak_settings:
+            if section_key not in ini_settings:
                 self._status = -10
                 return -10
-            settingsKey = ini_settings[key]
-            tweakKey = tweak[key]
-            for item in tweakKey:
-                if item not in settingsKey:
+            target_section = ini_settings[section_key]
+            tweak_section = tweak_settings[section_key]
+            for item in tweak_section:
+                if item not in target_section:
                     self._status = -10
                     return -10
-                if tweakKey[item] != settingsKey[item]:
+                if tweak_section[item] != target_section[item]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another
                         # ini tweak that is applied, and from the same installer
                         mismatch = 2
+                        if this is None: continue
                         for name, ini_info in infos.iteritems():
                             if self is ini_info: continue
-                            this = infos.table.getItem(path.tail,'installer')
                             other = infos.table.getItem(name, 'installer')
                             if this != other: continue
                             # It's from the same installer
-                            other_settings, other_deletes = \
-                                ini.getTweakFileSettings(ini_info.getPath())
-                            value = other_settings.get(key,{}).get(item)
-                            if value == settingsKey[item]:
+                            other_ini_file = ini_info.ini_info_file
+                            if self._incompatible(other_ini_file): continue
+                            other_settings = other_ini_file.getSettings()
+                            value = other_settings.get(section_key,{}).get(item)
+                            if value == target_section[item]:
                                 # The other tweak has the setting we're worried about
                                 mismatch = 1
                                 break
@@ -2842,48 +2879,38 @@ class INIInfo(FileInfo):
             self._status = 10
         return self._status
 
+    def reset_status(self): self._status = None
+
     def listErrors(self):
         """Returns ini tweak errors as text."""
-        #--Setup
-        path = self.getPath()
-        ini = iniInfos.ini
-        tweak,deletes = ini.getTweakFileSettings(path)
-        ini_settings = ini.getSettings()
-        text = [u'%s:' % path.stail]
-
-        if len(tweak) == 0:
-            tweak = BestIniFile(path)
-            if isinstance(ini,(OblivionIni,IniFile)):
-                # Target is a "true" INI format file
-                if isinstance(tweak,(OblivionIni,IniFile)):
-                    # Tweak is also a "true" INI format
+        ini_infos_ini = iniInfos.ini
+        text = [u'%s:' % self.getPath().stail]
+        if self._incompatible(ini_infos_ini):
+            text.append(u' '+_(u'Format mismatch:') + u'\n  ')
+            if type(self.ini_info_file) in self._obse_ini_types:
+                text.append(_(u'Target format: INI') + u'\n  ' +
+                            _(u'Tweak format: Batch Script'))
+            else:
+                text.append(_(u'Target format: Batch Script') + u'\n  ' +
+                            _(u'Tweak format: INI'))
+        else:
+            tweak_settings = self.ini_info_file.getSettings()
+            ini_settings = ini_infos_ini.getSettings()
+            if len(tweak_settings) == 0:
+                if type(self.ini_info_file) not in self._obse_ini_types:
                     text.append(_(u' No valid INI format lines.'))
                 else:
-                    text.append((u' '+_(u'Format mismatch:')
-                                 + u'\n  ' +
-                                 _(u'Target format: INI')
-                                 + u'\n  ' +
-                                 _(u'Tweak format: Batch Script')))
-            else:
-                if isinstance(tweak,OBSEIniFile):
                     text.append(_(u' No valid Batch Script format lines.'))
-                else:
-                    text.append((u' '+_(u'Format mismatch:')
-                                 + u'\n  ' +
-                                 _(u'Target format: Batch Script')
-                                 + u'\n  ' +
-                                 _(u'Tweak format: INI')))
-        else:
-            for key in tweak:
-                if key not in ini_settings:
-                    text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
-                else:
-                    for item in tweak[key]:
-                        if item not in ini_settings[key]:
-                            text.append(u' [%s] %s' % (key, item))
+            else:
+                for key in tweak_settings:
+                    if key not in ini_settings:
+                        text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
+                    else:
+                        for item in tweak_settings[key]:
+                            if item not in ini_settings[key]:
+                                text.append(u' [%s] %s' % (key, item))
         if len(text) == 1:
             text.append(u' None')
-
         with sio() as out:
             log = bolt.LogFile(out)
             for line in text:
@@ -2941,7 +2968,7 @@ class TrackedFileInfos(DataDict):
 
        Uses absolute paths - the caller is responsible for passing them.
        """
-    # DEPRECATED: hack introduced to track BAIN installed files AND game inis
+    # DEPRECATED: hack introduced to track BAIN installed files
     tracked_dir = GPath(u'') # a mess with paths
 
     def __init__(self, factory=_AFileInfo):
@@ -3045,9 +3072,8 @@ class FileInfos(_DataStore):
         self.table = bolt.Table(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
 
-    def __init__(self, dir_, factory=FileInfo, dirdef=None):
+    def __init__(self, dir_, factory=FileInfo):
         """Init with specified directory and specified factory type."""
-        self.dirdef = dirdef
         self.factory=factory
         self._initDB(dir_)
 
@@ -3064,19 +3090,13 @@ class FileInfos(_DataStore):
 
     #--Refresh
     def _names(self): # performance intensive - dirdef stuff needs rethinking
-        if self.dirdef:
-            # Default items
-            names = {x for x in self.dirdef.list() if
-                     self.dirdef.join(x).isfile() and self.rightFileType(x)}
-        else:
-            names = set()
+        names = set()
         if self.store_dir.exists():
-            # Normal folder items
             names |= {x for x in self.store_dir.list() if
                 self.store_dir.join(x).isfile() and self.rightFileType(x)}
         return list(names)
 
-    def refresh(self, scanData=True):
+    def refresh(self, refresh_infos=True):
         """Refresh from file directory."""
         oldNames = set(self.data) | set(self.corrupted)
         newNames = set()
@@ -3084,10 +3104,7 @@ class FileInfos(_DataStore):
         _updated = set()
         names = self._names()
         for name in names:
-            if self.dirdef and not self.store_dir.join(name).isfile():
-                fileInfo = self.factory(self.dirdef,name)
-            else:
-                fileInfo = self.factory(self.store_dir, name)
+            fileInfo = self.factory(self.store_dir, name)
             name = fileInfo.name #--Might have '.ghost' lopped off.
             if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
             oldInfo = self.get(name) # None if name was in corrupted
@@ -3142,7 +3159,7 @@ class FileInfos(_DataStore):
         try:
             if fileInfo.isGhost: newName += u'.ghost'
         except AttributeError: pass # not a mod info
-        _DataStore._rename_operation(self, oldName, newName)
+        super(FileInfos, self)._rename_operation(oldName, newName)
         #--FileInfo
         fileInfo.name = newName
         #--FileInfos
@@ -3202,7 +3219,8 @@ class FileInfos(_DataStore):
                 self.delete_Refresh(tableUpdate.values())
 
     def delete_Refresh(self, deleted, check_existence=False):
-        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
+        deleted = super(FileInfos, self).delete_Refresh(deleted,
+                                                        check_existence)
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -3253,11 +3271,126 @@ class FileInfos(_DataStore):
 
 #------------------------------------------------------------------------------
 class INIInfos(FileInfos):
+    """:type _ini: IniFile
+    :type data: dict[bolt.Path, IniInfo]"""
     file_pattern = re.compile(ur'\.ini$', re.I | re.U)
 
     def __init__(self):
-        FileInfos.__init__(self, dirs['tweaks'], INIInfo, dirs['defaultTweaks'])
-        self.ini = oblivionIni
+        FileInfos.__init__(self, dirs['tweaks'], INIInfo)
+        self.dirdef = dirs['defaultTweaks']
+        self._ini = None
+        # Check the list of target INIs, remove any that don't exist
+        # if _target_inis is not an OrderedDict choice won't be set correctly
+        _target_inis = settings['bash.ini.choices'] # type: OrderedDict
+        choice = settings['bash.ini.choice'] # type: int
+        if isinstance(_target_inis, OrderedDict):
+            try:
+                previous_ini = _target_inis.keys()[choice]
+            except IndexError:
+                choice, previous_ini = -1, None
+        else: # not an OrderedDict, updating from 306
+            choice, previous_ini = -1, None
+        for ini_name in _target_inis.keys():
+            if ini_name == _(u'Browse...'): continue
+            path = _target_inis[ini_name]
+            # If user started with non-translated, 'Browse...'
+            # will still be in here, but in English.  It wont get picked
+            # up by the previous check, so we'll just delete any non-Path
+            # objects.  That will take care of it.
+            if not isinstance(path,bolt.Path) or not path.isfile():
+                for iFile in gameInis: # don't remove game inis even if missing
+                    if iFile.path == path: continue
+                del _target_inis[ini_name]
+                if ini_name is previous_ini:
+                    choice, previous_ini = -1, None
+        csChoices = [x.lower() for x in _target_inis]
+        for iFile in gameInis: # add the game inis even if missing
+            if iFile.path.tail.cs not in csChoices:
+                _target_inis[iFile.path.stail] = iFile.path
+        if _(u'Browse...') not in _target_inis:
+            _target_inis[_(u'Browse...')] = None
+        settings['bash.ini.choices'] = _target_inis
+        if previous_ini: choice = _target_inis.keys().index(previous_ini)
+        settings['bash.ini.choice'] = choice
+        if choice > 0:
+            self.ini = _target_inis.values()[choice]
+        else: self.ini = oblivionIni.path
+
+    @property
+    def ini(self):
+        return self._ini
+    @ini.setter
+    def ini(self, ini_path):
+        """:type ini_path: bolt.Path"""
+        if self._ini is not None and self._ini.path == ini_path:
+            return # nothing to do
+        for iFile in gameInis:
+            if iFile.path == ini_path:
+                self._ini = iFile
+                break
+        else:
+            self._ini = BestIniFile(ini_path)
+        for ini_info in self.itervalues(): ini_info.reset_status()
+
+    def _names(self): # Yak !
+        names = {x for x in self.dirdef.list() if
+                 self.dirdef.join(x).isfile() and self.rightFileType(x)}
+        if self.store_dir.exists():
+            # Normal folder items
+            names |= {x for x in self.store_dir.list() if
+                self.store_dir.join(x).isfile() and self.rightFileType(x)}
+        return list(names)
+
+    def _refresh_infos(self):
+        """Refresh from file directory."""
+        oldNames = set(self.data)
+        newNames = set()
+        _added = set()
+        _updated = set()
+        names = self._names()
+        for name in names:
+            if not self.store_dir.join(name).isfile():
+                fileInfo = self.factory(self.dirdef, name)
+            else:
+                fileInfo = self.factory(self.store_dir, name)
+            name = fileInfo.name
+            if name in newNames:
+                deprint(u'%s appears twice (%s)' % (name, fileInfo.getPath()))
+                continue
+            oldInfo = self.get(name) # None if name was in corrupted
+            isAdded = name not in oldNames
+            if oldInfo is not None:
+                isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
+            else: isUpdated = False
+            if isAdded or isUpdated:
+                self[name] = fileInfo
+                if isAdded: _added.add(name)
+                elif isUpdated: _updated.add(name)
+            newNames.add(name)
+        _deleted = oldNames - newNames
+        for name in _deleted:
+            self.pop(name, None)
+        if _deleted:
+            # items deleted outside Bash
+            for d in set(self.table.keys()) & set(_deleted):
+                del self.table[d]
+        return _added, _deleted, _updated
+
+    def refresh(self, refresh_infos=True, refresh_target=True):
+        _added = _deleted = _updated = set()
+        if refresh_infos:
+            _added, _deleted, _updated = self._refresh_infos()
+        changed = refresh_target and (
+            self.ini.updated or self.ini.needs_update())
+        if changed: # reset the status of all infos and let RefreshUI set it
+            self.ini.updated = False
+            for ini_info in self.itervalues(): ini_info.reset_status()
+        elif _updated:
+            for ini_info in _updated: self[ini_info].reset_status()
+        # no need to reset status for added as it is already None
+        change = bool(_added) or bool(_updated) or bool(_deleted) or changed
+        if not change: return change
+        return _added, _updated, _deleted, changed
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
@@ -3464,10 +3597,10 @@ class ModInfos(FileInfos):
         names.sort(key=lambda x: x.cext == u'.ghost')
         return names
 
-    def refresh(self, scanData=True, _modTimesChange=False):
+    def refresh(self, refresh_infos=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes.
 
-        See usages for how to use the scanData and _modTimesChange params.
+        See usages for how to use the refresh_infos and _modTimesChange params.
         _modTimesChange is not strictly needed after the lo rewrite,
         as get_lo will always recalculate it - kept to help track places in
         the code where timestamp load order may change.
@@ -3478,11 +3611,11 @@ class ModInfos(FileInfos):
         """
         hasChanged = deleted = False
         # Scan the data dir, getting info on added, deleted and modified files
-        if scanData:
+        if refresh_infos:
             change = FileInfos.refresh(self)
             if change: _added, _updated, deleted = change
             hasChanged = bool(change)
-        # If scanData is False and mods are added be sure to refresh manually
+        # If refresh_infos is False and mods are added _do_ manually refresh
         _modTimesChange = _modTimesChange and not load_order.using_txt_file()
         lo_changed = self.refreshLoadOrder(
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
@@ -4026,7 +4159,7 @@ class ModInfos(FileInfos):
                 -1] if selected else self._lo_wip[-1]
             self.cached_lo_insert_after(last_selected, new_name)
             self.cached_lo_save_lo()
-            self.refresh(scanData=False)
+            self.refresh(refresh_infos=False)
 
     def generateNextBashedPatch(self, selected_mods):
         """Attempt to create a new bashed patch, numbered from 0 to 9.  If
@@ -4091,7 +4224,7 @@ class ModInfos(FileInfos):
         FileInfos.move_info(self, fileName, destDir)
 
     def move_infos(self, sources, destinations, window):
-        moved = _DataStore.move_infos(self, sources, destinations, window)
+        moved = super(ModInfos, self).move_infos(sources, destinations, window)
         self.refresh() # yak, it should have an "added" parameter
         balt.Link.Frame.warn_corrupted(warn_saves=False)
         return moved
@@ -4249,9 +4382,9 @@ class SaveInfos(FileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, scanData=True):
+    def refresh(self, refresh_infos=True):
         self._refreshLocalSave()
-        return scanData and FileInfos.refresh(self)
+        return refresh_infos and FileInfos.refresh(self)
 
     def delete(self, fileName, **kwargs):
         """Deletes savefile and associated pluggy file."""
@@ -4272,7 +4405,7 @@ class SaveInfos(FileInfos):
 
     def move_infos(self, sources, destinations, window):
         # CoSaves sucks - operations should be atomic
-        moved = _DataStore.move_infos(self, sources, destinations, window)
+        moved = super(SaveInfos,self).move_infos(sources, destinations, window)
         for s, d in zip(sources, destinations):
             if d.tail in moved: CoSaves(s).move(d)
         for d in moved:
@@ -4475,7 +4608,7 @@ class ScreensData(_DataStore):
     def delete_Refresh(self, deleted, check_existence=False): self.refresh()
 
     def _rename_operation(self, oldName, newName):
-        _DataStore._rename_operation(self, oldName, newName)
+        super(ScreensData, self)._rename_operation(oldName, newName)
         self[newName] = self[oldName]
         del self[oldName]
 
@@ -6078,7 +6211,8 @@ class InstallersData(_DataStore):
                     self.delete_Refresh(deleted) # markers are already popped
 
     def delete_Refresh(self, deleted, check_existence=False):
-        deleted = _DataStore.delete_Refresh(self, deleted, check_existence)
+        deleted = super(InstallersData, self).delete_Refresh(deleted,
+                                                             check_existence)
         if deleted: self.irefresh(what='I', deleted=deleted)
 
     def copy_installer(self,item,destName,destDir=None):
@@ -6098,7 +6232,8 @@ class InstallersData(_DataStore):
         self.store_dir.join(filename).moveTo(destDir.join(filename))
 
     def move_infos(self, sources, destinations, window):
-        moved = _DataStore.move_infos(self, sources, destinations, window)
+        moved = super(InstallersData, self).move_infos(sources, destinations,
+                                                       window)
         self.irefresh(what='I', pending=moved)
         return moved
 
@@ -6537,17 +6672,17 @@ class InstallersData(_DataStore):
         installing, a tweak file will be generated. Call me *before*
         installing the new inis then call _editTweaks() to populate the tweaks.
         """
-        for relPath in destFiles:
-            if (not relPath.cext in (u'.ini', u'.cfg') or
+        dest_files = (x for x in destFiles if x .cext in (u'.ini', u'.cfg') and
                 # don't create ini tweaks for overridden ini tweaks...
-                relPath.head.cs == u'ini tweaks'): continue
+                x.head.cs != u'ini tweaks')
+        for relPath in dest_files:
             oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
             newCrc = installer.data_sizeCrc.get(relPath, (None, None))[1]
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
             iniAbsDataPath = dirs['mods'].join(relPath)
             # Create a copy of the old one
             baseName = dirs['tweaks'].join(u'%s, ~Old Settings [%s].ini' % (
-                iniAbsDataPath.sbody, iniAbsDataPath.sbody))
+                iniAbsDataPath.sbody, installer.archive))
             tweakPath = self.__tweakPath(baseName)
             iniAbsDataPath.copyTo(tweakPath)
             tweaksCreated.add((tweakPath, iniAbsDataPath))
@@ -6634,6 +6769,7 @@ class InstallersData(_DataStore):
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
+            refresh_ui[1] |= bool(tweaksCreated)
         return tweaksCreated
 
     def sorted_pairs(self, package_keys=None, reverse=False):
