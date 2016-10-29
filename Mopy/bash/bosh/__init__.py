@@ -557,29 +557,6 @@ class SaveHeader:
             obse.safeSave()
 
 #------------------------------------------------------------------------------
-class BSAHeader:
-    """Represents selected info from a Tes4BSA file."""
-    def __init__(self,path=None):
-        self.folderCount = 0
-        self.fileCount = 0
-        self.lenFolderNames = 0
-        self.lenFileNames = 0
-        self.fileFlags = 0
-        if path: self.load(path)
-
-    def load(self,path):
-        """Extract info from save file."""
-        with path.open('rb') as ins:
-            try:
-                #--Header
-                ins.seek(4*4)
-                (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
-            #--Errors
-            except:
-                raise BSAFileError(path.tail,u'File header is corrupted.')
-        #--Done
-
-#------------------------------------------------------------------------------
 class SaveFile:
     """Represents a Tes4 Save file."""
     recordFlags = Flags(0L,Flags.getNames(
