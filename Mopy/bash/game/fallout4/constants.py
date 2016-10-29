@@ -284,5 +284,7 @@ inventoryTypes = ('NPC_','CONT',)
 FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Record type to name dictionary
-
 record_type_name = {}
+
+# xEdit menu string and key for expert setting
+xEdit_expert = (_(u'FO4Edit Expert'), 'fo4View.iKnowWhatImDoing')

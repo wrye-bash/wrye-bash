@@ -303,8 +303,7 @@ def must_be_active_if_present():
         set() if game_handle.allow_deactivate_master else {
             game_handle.master_path})
 
-def using_txt_file():
-    return bush.game.fsName == u'Fallout4' or bush.game.fsName == u'Skyrim'
+def using_txt_file(): return bush.game.using_txt_file
 
 # Timestamp games helpers
 def has_load_order_conflict(mod_name):

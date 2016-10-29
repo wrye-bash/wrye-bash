@@ -62,6 +62,12 @@ nexusUrl = u''  #-- URL
 nexusName = u'' #-- Long Name
 nexusKey u''    #-- Key for the "always ask this question" setting in settings.dat
 
+# Bsa info
+allow_reset_bsa_timestamps = False
+
+# Load order info
+using_txt_file = True
+
 #--Construction Set information
 class cs:
     shortName = u''                  # Abbreviated name
