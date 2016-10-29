@@ -4498,7 +4498,8 @@ class BSAInfos(FileInfos):
 
     @staticmethod
     def check_bsa_timestamps():
-        if bush.game.fsName != 'Skyrim' and inisettings['ResetBSATimestamps']:
+        if bush.game.allow_reset_bsa_timestamps and \
+                inisettings['ResetBSATimestamps']:
             if bsaInfos.refresh():
                 bsaInfos.resetBSAMTimes()
 

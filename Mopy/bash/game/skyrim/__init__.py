@@ -68,6 +68,9 @@ nexusUrl = u'http://www.nexusmods.com/skyrim/'
 nexusName = u'Skyrim Nexus'
 nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
+# Bsa info
+allow_reset_bsa_timestamps = False
+
 #--Creation Kit Set information
 class cs:
     shortName = u'CK'                # Abbreviated name

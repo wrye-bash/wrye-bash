@@ -63,6 +63,9 @@ nexusUrl = u'http://oblivion.nexusmods.com/'
 nexusName = u'TES Nexus'
 nexusKey = 'bash.installers.openTesNexus.continue'
 
+# Bsa info
+allow_reset_bsa_timestamps = True
+
 #--Construction Set information
 class cs:
     shortName = u'TESCS'             # Abbreviated name
