@@ -66,6 +66,9 @@ nexusKey = 'bash.installers.openTesNexus.continue'
 # Bsa info
 allow_reset_bsa_timestamps = True
 
+# Load order info
+using_txt_file = False
+
 #--Construction Set information
 class cs:
     shortName = u'TESCS'             # Abbreviated name

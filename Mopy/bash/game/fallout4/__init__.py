@@ -62,6 +62,9 @@ nexusKey = 'bash.installers.openFallout4Nexus.continue'
 # Bsa info
 allow_reset_bsa_timestamps = False
 
+# Load order info
+using_txt_file = True
+
 #--Creation Kit Set information
 class cs:
     ## TODO:  When the Fallout 4 Creation Kit is actually released, double check
