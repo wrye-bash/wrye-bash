@@ -3807,15 +3807,15 @@ class BashFrame(wx.Frame):
         message = []
         corruptMods = set(bosh.modInfos.corrupted.keys())
         if warn_mods and not corruptMods <= self.knownCorrupted:
-            m = [_(u'Corrupted Mods'),
-                 _(u'The following mod files have corrupted headers: ')]
+            m = [_(u'Plugin warnings'),
+                 _(u'The following mod files have unrecognized headers: ')]
             m.extend(sorted(corruptMods))
             message.append(m)
             self.knownCorrupted |= corruptMods
         corruptSaves = set(bosh.saveInfos.corrupted.keys())
         if warn_saves and not corruptSaves <= self.knownCorrupted:
-            m = [_(u'Corrupted Saves'),
-                 _(u'The following save files have corrupted headers: ')]
+            m = [_(u'Save game warnings'),
+                 _(u'The following save files have unrecognized header formats: ')]
             m.extend(sorted(corruptSaves))
             message.append(m)
             self.knownCorrupted |= corruptSaves
@@ -3823,8 +3823,7 @@ class BashFrame(wx.Frame):
             x.header.version, 6) not in bush.game.esp.validHeaderVersions])
         if warn_mods and not invalidVersions <= self.knownInvalidVerions:
             m = [_(u'Unrecognized Versions'),
-                 _(u'The following mods have unrecognized TES4 header '
-                   u'versions: ')]
+                 _(u'The following mods have unrecognized header versions: ')]
             m.extend(sorted(invalidVersions))
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
@@ -3836,9 +3835,8 @@ class BashFrame(wx.Frame):
             bosh.modInfos.new_missing_strings.clear()
         if message:
             ListBoxes.Display(
-              self, _(u'Warning: Corrupt/Unrecognized Files'),
-              _(u'Some files have corrupted headers or TES4 header versions:'),
-              message, liststyle='list', canCancel=False)
+              self, _(u'Warnings'), _(u'The following warnings were found:'),
+            message, liststyle='list', canCancel=False)
 
     _ini_missing = _(u"%(ini)s does not exist yet.  %(game)s will create this "
         u"file on first run.  INI tweaks will not be usable until then.")
