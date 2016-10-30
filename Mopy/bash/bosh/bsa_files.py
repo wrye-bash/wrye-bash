@@ -37,20 +37,47 @@ import struct
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
 
+# Exceptions ------------------------------------------------------------------
+class BSAError(Exception): pass
+
+class BSAVersionError(BSAError):
+
+    def __init__(self, version, expected_version):
+        super(BSAVersionError, self).__init__(
+            u'Unexpected version %r - expected %r' % (
+                version, expected_version))
+
+# Headers
 class BSAHeader(object):
     __slots__ = ( # in the order encountered in the header
-        'file_id', 'version', 'folder_record_offset', 'archive_flags',
+        'file_id', 'version', 'folder_records_offset', 'archive_flags',
         'folder_count', 'file_count', 'total_folder_name_length',
         'total_file_name_length', 'file_flags', )
+    formats = ['4s'] + ['I'] * 9
+    bsa_magic = 'BSA\x00'
+    header_size = 36
 
     def load_header(self, ins):
-        for attr in BSAHeader.__slots__:
-            self.__setattr__(attr, struct.unpack('I', ins.read(4))[0])
+        for fmt, attr in zip(self.__class__.formats, BSAHeader.__slots__):
+            self.__setattr__(attr, struct.unpack(fmt, ins.read(
+                struct.calcsize(fmt)))[0])
+        # error checking
+        if self.file_id != self.__class__.bsa_magic:
+            raise BSAError(u'Magic wrong: %r' % self.file_id)
+        if self.folder_records_offset != self.__class__.header_size:
+            raise BSAError(u'Header size wrong: %r. Should be %r' % (
+                self.folder_records_offset, self.__class__.header_size))
+        if self.version != self.__class__.bsa_version:
+            raise BSAVersionError(self.version, self.__class__.version)
 
     def has_names_for_folders(self): return self.archive_flags & 1
     def has_names_for_files(self): return self.archive_flags & 2
     def is_compressed(self): return self.archive_flags & 4
     def is_xbox(self): return self.archive_flags & 64
+
+class OblivionBSAHeader(BSAHeader):
+    __slots__ = ()
+    bsa_version = int('0x67', 16)
 
 class _HashedRecord(object):
     __slots__ = ('hash',)
@@ -107,9 +134,10 @@ class BSAAsset(object):
     def __unicode__(self): return unicode(self.filename)
 
 class BSA(object):
+    header_type = BSAHeader
 
     def __init__(self, abs_path):
-        self.bsa_header = BSAHeader()
+        self.bsa_header = self.__class__.header_type()
         folder_records = []
         self.bsa_folders = collections.OrderedDict() # keep folder order
         with open(abs_path, 'rb') as bsa_file:
@@ -161,3 +189,6 @@ class BSA(object):
                 current_folder.assets[file_name] = BSAAsset(
                     os.path.sep.join((folder_path, file_name)), rec)
             file_records_block = file_records_block[file_records_index:]
+
+class OblivionBsa(BSA):
+    header_type = OblivionBSAHeader
