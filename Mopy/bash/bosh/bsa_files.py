@@ -128,11 +128,16 @@ class SkyrimSeBsaHeader(BsaHeader):
 # Records ---------------------------------------------------------------------
 class _HashedRecord(object):
     __slots__ = ('hash',)
+    formats = ['Q']
 
     def load_record(self, ins):
-        self.hash = struct.unpack('Q', ins.read(8))[0]
-        for attr in self.__class__.__slots__:
-            self.__setattr__(attr, struct.unpack('I', ins.read(4))[0])
+        fmt = _HashedRecord.formats[0]
+        self.hash = struct.unpack(fmt, ins.read(struct.calcsize(fmt)))[0]
+
+    def load_record_from_buffer(self, memview, start):
+        fmt = _HashedRecord.formats[0]
+        self.hash = struct.unpack_from(fmt, memview, start)[0]
+        return start + struct.calcsize(fmt)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__): return self.hash == other.hash
@@ -148,11 +153,32 @@ class _HashedRecord(object):
         return NotImplemented
     def __le__(self, other): return not (self > other)
 
-class BSAFolderRecord(_HashedRecord):
-    __slots__ = ('files_count', 'file_records_offset',)
+# BSAs
+class _BsaHashedRecord(_HashedRecord):
+    __slots__ = ()
 
-class BSAFileRecord(_HashedRecord):
+    def load_record(self, ins):
+        super(_BsaHashedRecord, self).load_record(ins)
+        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
+            self.__setattr__(attr, struct.unpack(fmt, ins.read(
+                struct.calcsize(fmt)))[0])
+
+    def load_record_from_buffer(self, memview, start):
+        start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
+                                                                      start)
+        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
+            self.__setattr__(attr, struct.unpack_from(fmt, memview, start)[0])
+            start += struct.calcsize(fmt)
+        return start
+
+class BSAFolderRecord(_BsaHashedRecord):
+    __slots__ = ('files_count', 'file_records_offset',)
+    formats = ['I'] + ['I']
+
+class BSAFileRecord(_BsaHashedRecord):
     __slots__ = ('file_data_size', 'raw_file_data_offset',)
+    formats = ['I'] + ['I']
+
 
     def load_record_from_buffer(self, memview, start):
         self.hash = struct.unpack_from('Q', memview, start)[0]
