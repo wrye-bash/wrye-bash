@@ -250,16 +250,21 @@ class Ba2Folder(object):
     def __init__(self):
         self.assets = collections.OrderedDict() # keep files order
 
-class BSA(object):
+# Files -----------------------------------------------------------------------
+class _BSA(object):
     header_type = BsaHeader
 
     def __init__(self, abs_path):
         self.bsa_header = self.__class__.header_type()
-        folder_records = []
         self.bsa_folders = collections.OrderedDict() # keep folder order
-        self._load_bsa(abs_path, folder_records)
+        self._load_bsa(abs_path)
 
-    def _load_bsa(self, abs_path, folder_records):
+    def _load_bsa(self, abs_path): raise NotImplementedError
+
+class BSA(_BSA):
+
+    def _load_bsa(self, abs_path):
+        folder_records = []
         with open(abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
@@ -310,13 +315,8 @@ class BSA(object):
                     os.path.sep.join((folder_path, file_name)), rec)
             file_records_block = file_records_block[file_records_index:]
 
-class BA2(object):
+class BA2(_BSA):
     header_type = Ba2Header
-
-    def __init__(self, abs_path):
-        self.bsa_header = self.__class__.header_type()
-        self.bsa_folders = collections.OrderedDict() # keep folder order
-        self._load_bsa(abs_path)
 
     def _load_bsa(self, abs_path):
         with open(abs_path, 'rb') as bsa_file:
