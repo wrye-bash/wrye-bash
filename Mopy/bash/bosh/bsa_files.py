@@ -269,12 +269,11 @@ class Ba2Folder(object):
 # Files -----------------------------------------------------------------------
 class _BSA(object):
     header_type = BsaHeader
-    _empty_filenames = []
 
     def __init__(self, abs_path, names_only=True):
         self.bsa_header = self.__class__.header_type()
         self.bsa_folders = collections.OrderedDict() # keep folder order
-        self._filenames = _BSA._empty_filenames
+        self._filenames = []
         if not names_only:
             self._load_bsa(abs_path)
         else:
@@ -344,19 +343,45 @@ class BSA(_BSA):
                 self.bsa_header.total_folder_name_length)
         return file_records_block_size
 
-    def _load_bsa_light(self, abs_path):
+    def _load_bsa_light(self, abs_path): # TODO use filenames from data block !
+        # we assume that has_names_for_files()/folders are True
+        folder_records = [] # we need those to parse the folder names
         with open(abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
-            # load the file names block
-            if self.bsa_header.has_names_for_files():
-                bsa_file.seek(
-                    self.header_type.header_size +
-                    self.bsa_header.folder_count *
-                    BSAFolderRecord.total_record_size() +
-                    self.__calculate_file_records_size())
-                self._filenames = bsa_file.read(
-                    self.bsa_header.total_file_name_length).split('\00')
+            # load the folder records from input stream
+            for __ in xrange(self.bsa_header.folder_count):
+                rec = BSAFolderRecord()
+                rec.load_record(bsa_file)
+                folder_records.append(rec)
+            # load the file record block to parse later
+            file_records_block_size = self.__calculate_file_records_size()
+            file_records_block = memoryview(
+                bsa_file.read(file_records_block_size))
+            file_names = bsa_file.read(
+                self.bsa_header.total_file_name_length).split('\00')
+            # close the file
+        names_record_index = 0
+        _filenames = []
+        for folder_record in folder_records:
+            folder_path = u'?%d' % folder_record.hash # hack - untested
+            if self.bsa_header.has_names_for_folders():
+                name_size = struct.unpack_from('B', file_records_block)[0]
+                ## TODO: decode
+                # discard null terminator below
+                folder_path = unicode(
+                    file_records_block[1:name_size].tobytes(),
+                    encoding=_bsa_encoding)
+                file_records_block = file_records_block[name_size + 1 +
+                    folder_record.files_count *
+                    self.file_record_type.total_record_size():]
+            for __ in xrange(folder_record.files_count):
+                file_name = unicode(file_names[names_record_index],
+                                    encoding=_bsa_encoding)
+                _filenames.append(os.path.sep.join(
+                    (folder_path, file_name)))
+                names_record_index += 1
+        self._filenames = _filenames
 
 class BA2(_BSA):
     header_type = Ba2Header
@@ -397,20 +422,22 @@ class BA2(_BSA):
                                                         file_records[index])
 
     def _load_bsa_light(self, abs_path):
-            with open(abs_path, 'rb') as bsa_file:
-                # load the header from input stream
-                self.bsa_header.load_header(bsa_file)
-                # load the file names block
-                bsa_file.seek(self.bsa_header.b2a_name_table_offset)
-                file_names_block = memoryview(bsa_file.read())
-                # close the file
-            for index in xrange(self.bsa_header.b2a_num_files):
-                name_size = struct.unpack_from('H', file_names_block)[0]
-                file_name = unicode(
-                    file_names_block[2:name_size + 2].tobytes(),
-                    encoding=_bsa_encoding)
-                self._filenames.append(file_name)
-                file_names_block = file_names_block[name_size + 2:]
+        with open(abs_path, 'rb') as bsa_file:
+            # load the header from input stream
+            self.bsa_header.load_header(bsa_file)
+            # load the file names block
+            bsa_file.seek(self.bsa_header.b2a_name_table_offset)
+            file_names_block = memoryview(bsa_file.read())
+            # close the file
+        _filenames = []
+        for index in xrange(self.bsa_header.b2a_num_files):
+            name_size = struct.unpack_from('H', file_names_block)[0]
+            file_name = unicode(
+                file_names_block[2:name_size + 2].tobytes(),
+                encoding=_bsa_encoding)
+            _filenames.append(file_name)
+            file_names_block = file_names_block[name_size + 2:]
+        self._filenames = _filenames
 
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader
