@@ -2948,14 +2948,13 @@ class TrackedFileInfos(DataDict):
     # DEPRECATED: hack introduced to track BAIN installed files
     tracked_dir = GPath(u'') # a mess with paths
 
-    def __init__(self, factory=_AFileInfo):
-        self.factory = factory
+    def __init__(self):
         self.data = {}
 
     def refreshTracked(self):
         changed = set()
         for name, tracked in self.items():
-            fileInfo = self.factory(self.tracked_dir, name)
+            fileInfo = _AFileInfo(self.tracked_dir, name)
             filePath = fileInfo.getPath()
             if not filePath.exists(): # untrack - runs on first run !!
                 self.pop(name, None)
@@ -2966,8 +2965,7 @@ class TrackedFileInfos(DataDict):
         return changed
 
     def track(self, absPath, factory=None): # cf FileInfos.refreshFile
-        factory = factory or self.factory
-        fileInfo = factory(self.tracked_dir, absPath)
+        fileInfo = _AFileInfo(self.tracked_dir, absPath)
         # fileInfo.readHeader() #ModInfo: will blow if absPath doesn't exist
         self[absPath] = fileInfo
 
@@ -4187,7 +4185,7 @@ class ModInfos(FileInfos):
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
         for d in map(self.store_dir.join, deleted): # we need absolute paths
-            InstallersData.miscTrackedFiles.track(d, factory=self.factory)
+            InstallersData.miscTrackedFiles.track(d)
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
         self._refreshBadNames()
