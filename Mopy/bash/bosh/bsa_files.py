@@ -139,6 +139,10 @@ class _HashedRecord(object):
         self.hash = struct.unpack_from(fmt[0], memview, start)[0]
         return start + fmt[1]
 
+    @classmethod
+    def total_record_size(cls):
+        return _HashedRecord.formats[0][1]
+
     def __eq__(self, other):
         if isinstance(other, self.__class__): return self.hash == other.hash
         return NotImplemented
@@ -171,6 +175,11 @@ class _BsaHashedRecord(_HashedRecord):
             start += fmt[1]
         return start
 
+    @classmethod
+    def total_record_size(cls):
+        return super(_BsaHashedRecord, cls).total_record_size() + sum(
+            f[1] for f in cls.formats)
+
 class BSAFolderRecord(_BsaHashedRecord):
     __slots__ = ('files_count', 'file_records_offset',)
     formats = ['I'] + ['I']
@@ -182,28 +191,34 @@ class BSAFileRecord(_BsaHashedRecord):
     formats = list((f, struct.calcsize(f)) for f in formats)
 
 # BA2s
-class B2aFileRecordCommon(_HashedRecord):
+class _B2aFileRecordCommon(_HashedRecord):
     __slots__ = ('file_extension', 'dir_hash', )
     formats = ['4s'] + ['I']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
     def load_record(self, ins):
-        super(B2aFileRecordCommon, self).load_record(ins)
-        for fmt, attr in zip(B2aFileRecordCommon.formats,
-                             B2aFileRecordCommon.__slots__):
+        super(_B2aFileRecordCommon, self).load_record(ins)
+        for fmt, attr in zip(_B2aFileRecordCommon.formats,
+                             _B2aFileRecordCommon.__slots__):
             self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
-        start = super(B2aFileRecordCommon, self).load_record_from_buffer(
+        start = super(_B2aFileRecordCommon, self).load_record_from_buffer(
             memview, start)
-        for fmt, attr in zip(B2aFileRecordCommon.formats,
-                             B2aFileRecordCommon.__slots__):
+        for fmt, attr in zip(_B2aFileRecordCommon.formats,
+                             _B2aFileRecordCommon.__slots__):
             self.__setattr__(attr,
                              struct.unpack_from(fmt[0], memview, start)[0])
             start += fmt[1]
         return start
 
-class B2aFileRecordGeneral(B2aFileRecordCommon):
+    @classmethod
+    def total_record_size(cls): # unused !
+        return super(_B2aFileRecordCommon, cls).total_record_size()  + sum(
+            f[1] for f in _B2aFileRecordCommon.formats) + sum(
+            f[1] for f in cls.formats)
+
+class B2aFileRecordGeneral(_B2aFileRecordCommon):
     __slots__ = ('unk0C', 'offset', 'packed_size', 'unpacked_size', 'unk20')
     formats = ['I'] + ['Q'] + ['I'] * 3
     formats = list((f, struct.calcsize(f)) for f in formats)
@@ -214,7 +229,7 @@ class B2aFileRecordGeneral(B2aFileRecordCommon):
                              B2aFileRecordGeneral.__slots__):
             self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
 
-class B2aFileRecordTexture(B2aFileRecordCommon):
+class B2aFileRecordTexture(_B2aFileRecordCommon):
     __slots__ = ('unk0C', 'num_of_chunks', 'chunk_header_size', 'height',
                  'width', 'num_mips', 'format', 'unk16')
     formats = ['B'] + ['B'] + ['H'] * 3 + ['B'] + ['B'] + ['H']#TODO(ut) verify
@@ -262,6 +277,7 @@ class _BSA(object):
     def _load_bsa(self, abs_path): raise NotImplementedError
 
 class BSA(_BSA):
+    file_record_type = BSAFileRecord
 
     def _load_bsa(self, abs_path):
         folder_records = []
@@ -274,12 +290,7 @@ class BSA(_BSA):
                 rec.load_record(bsa_file)
                 folder_records.append(rec)
             # load the file record block to parse later
-            has_folder_names = self.bsa_header.has_names_for_folders()
-            file_records_block_size = 16 * self.bsa_header.file_count
-            if has_folder_names:
-                file_records_block_size += ( # one byte for each folder name's size
-                    self.bsa_header.folder_count
-                    + self.bsa_header.total_folder_name_length)
+            file_records_block_size = self.__calculate_file_records_size()
             file_records_block = memoryview(
                 bsa_file.read(file_records_block_size))
             # load the file names block
@@ -289,6 +300,7 @@ class BSA(_BSA):
                     self.bsa_header.total_file_name_length).split('\00')
             # close the file
         names_record_index = 0
+        has_folder_names = self.bsa_header.has_names_for_folders()
         for folder_record in folder_records:
             folder_path = u'?%d' % folder_record.hash # hack - untested
             if has_folder_names:
@@ -314,6 +326,15 @@ class BSA(_BSA):
                 current_folder.assets[file_name] = BSAAsset(
                     os.path.sep.join((folder_path, file_name)), rec)
             file_records_block = file_records_block[file_records_index:]
+
+    def __calculate_file_records_size(self):
+        file_records_block_size = self.file_record_type.total_record_size() \
+                                  * self.bsa_header.file_count
+        if self.bsa_header.has_names_for_folders():
+            file_records_block_size += (# one byte for each folder name's size
+                self.bsa_header.folder_count +
+                self.bsa_header.total_folder_name_length)
+        return file_records_block_size
 
 class BA2(_BSA):
     header_type = Ba2Header
