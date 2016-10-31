@@ -123,10 +123,6 @@ class SaveFileError(FileError):
     """TES4 Save File Error: File is corrupted."""
     pass
 
-class BSAFileError(FileError):
-    """TES4 BSA File Error: File is corrupted."""
-    pass
-
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):
     """NPC change record."""
@@ -1560,9 +1556,12 @@ class AFile(object):
             return False # we should not call needs_update on deleted files
         if self._file_size != psize or self._file_mod_time != pmtime:
             if _reset_cache:
-                self._file_size, self._file_mod_time = psize, pmtime
+                self._reset_cache(psize, pmtime)
             return True
         return False
+
+    def _reset_cache(self, psize, pmtime):
+        self._file_size, self._file_mod_time = psize, pmtime
 
 #------------------------------------------------------------------------------
 class IniFile(object):
@@ -2987,12 +2986,43 @@ class SaveInfo(_BackupMixin, FileInfo):
         return save_paths
 
 #------------------------------------------------------------------------------
-class BSAInfo(_BackupMixin, FileInfo):
+from . import bsa_files
+from .bsa_files import BSAError
+
+try:
+    _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
+except AttributeError:
+    _bsa_type = bsa_files.ABsa
+
+class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
+    _default_mtime = time.mktime(
+        time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
+
+    def __init__(self, parent_dir, bsa_name):
+        super(BSAInfo, self).__init__(parent_dir, bsa_name)
+        self._assets = frozenset(self._filenames)
+        self._reset_bsa_mtime()
+
     def getFileInfos(self): return bsaInfos
 
-    def resetMTime(self,mtime=u'01-01-2006 00:00:00'):
-        mtime = time.mktime(time.strptime(mtime,u'%m-%d-%Y %H:%M:%S'))
-        self.setmtime(mtime)
+    def needs_update(self, _reset_cache=True):
+        changed = super(BSAInfo, self).needs_update(_reset_cache)
+        self._reset_bsa_mtime()
+        return changed
+
+    def _reset_cache(self, psize, pmtime):
+        super(BSAInfo, self)._reset_cache(pmtime, psize)
+        self.load_bsa_light(self.abs_path)
+        self._assets = frozenset(self._filenames)
+
+    def _reset_bsa_mtime(self):
+        if bush.game.allow_reset_bsa_timestamps and inisettings[
+            'ResetBSATimestamps']:
+            if self._file_mod_time != self._default_mtime:
+                self.setmtime(self._default_mtime)
+
+    # API
+    def has_asset(self, asset_path): return asset_path in self._assets
 
 #------------------------------------------------------------------------------
 class TrackedFileInfos(DataDict):
@@ -3691,8 +3721,8 @@ class ModInfos(FileInfos):
         """Refreshes which mods are supposed to have strings files, but are
         missing them (=CTD). For Skyrim you need to have a valid load order."""
         oldBad = self.missing_strings
-        bad = set(fileName for fileName, fileInfo in self.iteritems() if
-                  fileInfo.isMissingStrings())
+        bad = set(fileName for fileName in self.keys() if
+                  self.isMissingStrings(fileName))
         new = bad - oldBad
         self.missing_strings = bad
         self.new_missing_strings = new
@@ -4101,30 +4131,24 @@ class ModInfos(FileInfos):
         if modInfo.header.flags1.hasStrings:
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
-            bsaPaths = self.extra_bsas(modInfo)
-            bsaFiles = {}
+            bsaPaths = self.extra_bsas(modInfo, existing=False)
             for dir_, join, format_str in bush.game.esp.stringsFiles:
                 fname = format_str % {'body': sbody, 'ext': ext,
                                       'language': language}
-                assetPath = GPath(u'').join(*join).join(fname)
+                assetPath = empty_path.join(*join).join(fname)
                 # Check loose files first
                 if dirs[dir_].join(assetPath).exists():
                     continue
                 # Check in BSA's next
                 found = False
                 for path in bsaPaths:
-                    if not path.exists():
+                    try:
+                        bsa_info = bsaInfos[path.tail] # type: BSAInfo
+                        if bsa_info.has_asset(assetPath.cs): # Lowercase !
+                            found = True
+                            break
+                    except KeyError: # not existing or corrupted
                         continue
-                    bsaFile = bsaFiles.get(path,None)
-                    if not bsaFile:
-                        try:
-                            bsaFile = libbsa.BSAHandle(path)
-                            bsaFiles[path] = bsaFile
-                        except:
-                            continue
-                    if bsaFile.IsAssetInBSA(assetPath):
-                        found = True
-                        break
                 if not found:
                     return True
         return False
@@ -4145,7 +4169,10 @@ class ModInfos(FileInfos):
             iniFiles = [oblivionIni]
         return iniFiles
 
-    def extra_bsas(self, mod_info, descending=False):
+    def extra_bsas(self, mod_info, descending=False, existing=True):
+        """Return a list of existing bsa paths to get assets from.
+        :rtype: list[bolt.Path]
+        """
         bsaPaths = [mod_info.getBsaPath()]
         iniFiles = self._ini_files(descending=descending)
         for iniFile in iniFiles:
@@ -4155,7 +4182,7 @@ class ModInfos(FileInfos):
                 extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
                 if descending: extraBsa.reverse()
                 bsaPaths.extend(extraBsa)
-        return [x for x in bsaPaths if x.exists() and x.isfile()]
+        return [x for x in bsaPaths if not existing or x.isfile()]
 
     def hasBadMasterNames(self,modName):
         """True if there mod has master's with unencodable names."""
@@ -4528,15 +4555,41 @@ class BSAInfos(FileInfos):
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
 
-    def resetBSAMTimes(self):
-        for bsa in self.itervalues(): bsa.resetMTime()
-
-    @staticmethod
-    def check_bsa_timestamps():
-        if bush.game.allow_reset_bsa_timestamps and \
-                inisettings['ResetBSATimestamps']:
-            if bsaInfos.refresh():
-                bsaInfos.resetBSAMTimes()
+    def refresh(self, refresh_infos=True):
+        """Refresh from file directory."""
+        oldNames = set(self.data) | set(self.corrupted)
+        newNames = set()
+        _added = set()
+        _updated = set()
+        names = self._names()
+        for name in names:
+            oldInfo = self.get(name) # None if name was in corrupted or new one
+            isAdded = name not in oldNames
+            isUpdated = False
+            try:
+                if oldInfo is not None:
+                    isUpdated = not isAdded and oldInfo.needs_update()
+                else: # added or known corrupted, get a new info
+                    oldInfo = self.factory(self.store_dir, name)
+                self[name] = oldInfo
+                self.corrupted.pop(name,None)
+                if isAdded: _added.add(name)
+                elif isUpdated: _updated.add(name)
+            except BSAError as e: # old still corrupted, or new(ly) corrupted
+                self.corrupted[name] = e.message
+                self.pop(name, None)
+                continue
+            finally:
+                newNames.add(name) # corrupted or not it's in new names
+        _deleted = oldNames - newNames
+        for name in _deleted:
+            # Can run into multiple pops if one of the files is corrupted
+            self.pop(name, None); self.corrupted.pop(name, None)
+            # items deleted outside Bash, otherwise delete_Refresh did this
+            self.table.pop(name, None)
+        change = bool(_added) or bool(_updated) or bool(_deleted)
+        if not change: return change
+        return _added, _updated, _deleted
 
 #------------------------------------------------------------------------------
 class PeopleData(_DataStore):

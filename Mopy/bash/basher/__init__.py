@@ -2972,7 +2972,7 @@ class InstallersPanel(BashTab):
             bosh.iniInfos.refresh(refresh_target=False)
             if BashFrame.iniList is not None:
                 BashFrame.iniList.panel.RefreshPanel(focus_list=False)
-        bosh.BSAInfos.check_bsa_timestamps()
+        bosh.bsaInfos.refresh() # TODO(ut) : add bsas_changed param! (or rather move this inside BAIN)
 
 #------------------------------------------------------------------------------
 class ScreensList(balt.UIList):
@@ -3194,6 +3194,7 @@ class BSAPanel(BashTab):
         self.listData = bosh.bsaInfos
         bosh.bsaInfos.refresh()
         super(BSAPanel, self).__init__(parent)
+        BashFrame.bsaList = self.uiList
 
 #------------------------------------------------------------------------------
 class PeopleList(balt.UIList):
@@ -3602,6 +3603,7 @@ class BashFrame(wx.Frame):
     saveList = None
     iniList = None
     modList = None
+    bsaList = None
     # Panels - use sparingly
     iPanel = None # BAIN panel
 
@@ -3728,23 +3730,26 @@ class BashFrame(wx.Frame):
         if event and not event.GetActive() or self.inRefreshData: return
         #--UPDATES-----------------------------------------
         self.inRefreshData = True
-        popMods = popSaves = None
+        popMods = popSaves = popBsas = None
         #--Config helpers
         bosh.configHelpers.refreshBashTags()
+        #--Check bsas, needed to detect string files in modInfos refresh...
+        if not booting and bosh.bsaInfos.refresh():
+            popBsas = 'ALL'
         #--Check plugins.txt and mods directory...
         if not booting and bosh.modInfos.refresh():
             popMods = 'ALL'
         #--Check savegames directory...
         if not booting and bosh.saveInfos.refresh():
             popSaves = 'ALL'
-        #--Ensure BSA timestamps are good - Don't touch this for Skyrim though.
-        bosh.BSAInfos.check_bsa_timestamps()
         #--Repopulate, focus will be set in ShowPanel
         if popMods:
             BashFrame.modList.RefreshUI(refreshSaves=True, # True just in case
                                         focus_list=False)
         elif popSaves:
             BashFrame.saveListRefresh(focus_list=False)
+        if popBsas:
+            BashFrame.bsaListRefresh(focus_list=False)
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
@@ -3933,6 +3938,11 @@ class BashFrame(wx.Frame):
         if BashFrame.saveList:
             BashFrame.saveList.RefreshUI(focus_list=focus_list)
 
+    @staticmethod
+    def bsaListRefresh(focus_list):
+        if BashFrame.bsaList:
+            BashFrame.bsaList.RefreshUI(focus_list=focus_list)
+
 #------------------------------------------------------------------------------
 def GetBashVersion():
     return bass.AppVersion
@@ -4005,19 +4015,21 @@ class BashApp(wx.App):
     @staticmethod
     def InitData(progress):
         """Initialize all data. Called by Init()."""
-        progress(0.05, _(u'Initializing ModInfos'))
         bosh.gameInis = tuple(bosh.OblivionIni(x) for x in bush.game.iniFiles)
+        progress(0.05, _(u'Initializing BsaInfos'))
+        #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
+        bosh.bsaInfos = bosh.BSAInfos()
+        bosh.bsaInfos.refresh()
+        progress(0.20, _(u'Initializing ModInfos'))
         bosh.oblivionIni = bosh.gameInis[0]
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
-        progress(0.3, _(u'Initializing SaveInfos'))
+        progress(0.50, _(u'Initializing SaveInfos'))
         bosh.saveInfos = bosh.SaveInfos()
         bosh.saveInfos.refresh()
-        progress(0.4, _(u'Initializing IniInfos'))
+        progress(0.60, _(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh(refresh_target=False)
-        # bsaInfos is used in BashFrame.warnTooManyModsBsas() and RefreshData()
-        bosh.bsaInfos = bosh.BSAInfos()
         # screens/people/installers data are refreshed upon showing the panel
         #--Patch check
         if bush.game.esp.canBash:

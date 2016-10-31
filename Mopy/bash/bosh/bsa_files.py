@@ -36,6 +36,7 @@ import os
 import struct
 import sys
 from functools import partial
+from . import AFile
 from ..bolt import deprint
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
@@ -286,10 +287,11 @@ class Ba2Folder(object):
         self.assets = collections.OrderedDict() # keep files order
 
 # Files -----------------------------------------------------------------------
-class _BSA(object):
+class ABsa(AFile):
     header_type = BsaHeader
 
     def __init__(self, abs_path, names_only=True):
+        super(ABsa, self).__init__(abs_path)
         self.bsa_header = self.__class__.header_type()
         self.bsa_folders = collections.OrderedDict() # keep folder order
         self._filenames = []
@@ -309,7 +311,7 @@ class _BSA(object):
     def _load_bsa(self, abs_path): raise NotImplementedError
     def load_bsa_light(self, abs_path): raise NotImplementedError
 
-class BSA(_BSA):
+class BSA(ABsa):
     """Bsa file. Notes:
     - We assume that has_names_for_files() is True, although we allow for
     has_names_for_folders() to be False (untested).
@@ -398,7 +400,7 @@ class BSA(_BSA):
             self.file_record_type.total_record_size())
         folders[folder_path] = folder_record
 
-class BA2(_BSA):
+class BA2(ABsa):
     header_type = Ba2Header
 
     def _load_bsa(self, abs_path):
@@ -464,3 +466,15 @@ class SkyrimSeBsa(BSA):
     folder_record_type = BSASkyrimSEFolderRecord
 
 class Fallout4Ba2(BA2): pass
+
+# Factory
+def get_bsa_type(game_fsName):
+    """:rtype: type"""
+    if game_fsName == u'Oblivion':
+        return OblivionBsa
+    elif game_fsName in {u'Skyrim', u'Fallout3', u'FalloutNV'}:
+        return SkyrimBsa
+    elif game_fsName == u'Skyrim Special Edition':
+        return SkyrimSeBsa
+    elif game_fsName == u'Fallout4':
+        return Fallout4Ba2
