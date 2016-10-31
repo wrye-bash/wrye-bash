@@ -181,14 +181,50 @@ class BSAFileRecord(_BsaHashedRecord):
     formats = ['I'] + ['I']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
+# BA2s
+class B2aFileRecordCommon(_HashedRecord):
+    __slots__ = ('file_extension', 'dir_hash', )
+    formats = ['4s'] + ['I']
+    formats = list((f, struct.calcsize(f)) for f in formats)
+
+    def load_record(self, ins):
+        super(B2aFileRecordCommon, self).load_record(ins)
+        for fmt, attr in zip(B2aFileRecordCommon.formats,
+                             B2aFileRecordCommon.__slots__):
+            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
-        self.hash = struct.unpack_from('Q', memview, start)[0]
-        start += 8
-        for attr in self.__class__.__slots__:
-            self.__setattr__(attr, struct.unpack_from('I', memview, start)[0])
-            start += 4
+        start = super(B2aFileRecordCommon, self).load_record_from_buffer(
+            memview, start)
+        for fmt, attr in zip(B2aFileRecordCommon.formats,
+                             B2aFileRecordCommon.__slots__):
+            self.__setattr__(attr,
+                             struct.unpack_from(fmt[0], memview, start)[0])
+            start += fmt[1]
         return start
+
+class B2aFileRecordGeneral(B2aFileRecordCommon):
+    __slots__ = ('unk0C', 'offset', 'packed_size', 'unpacked_size', 'unk20')
+    formats = ['I'] + ['Q'] + ['I'] * 3
+    formats = list((f, struct.calcsize(f)) for f in formats)
+
+    def load_record(self, ins):
+        super(B2aFileRecordGeneral, self).load_record(ins)
+        for fmt, attr in zip(B2aFileRecordGeneral.formats,
+                             B2aFileRecordGeneral.__slots__):
+            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+
+class B2aFileRecordTexture(B2aFileRecordCommon):
+    __slots__ = ('unk0C', 'num_of_chunks', 'chunk_header_size', 'height',
+                 'width', 'num_mips', 'format', 'unk16')
+    formats = ['B'] + ['B'] + ['H'] * 3 + ['B'] + ['B'] + ['H']#TODO(ut) verify
+    formats = list((f, struct.calcsize(f)) for f in formats)
+
+    def load_record(self, ins):
+        super(B2aFileRecordTexture, self).load_record(ins)
+        for fmt, attr in zip(B2aFileRecordGeneral.formats,
+                             B2aFileRecordGeneral.__slots__):
+            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
@@ -208,6 +244,11 @@ class BSAAsset(object):
 
     def __repr__(self): return repr(self.filename)
     def __unicode__(self): return unicode(self.filename)
+
+class Ba2Folder(object):
+
+    def __init__(self):
+        self.assets = collections.OrderedDict() # keep files order
 
 class BSA(object):
     header_type = BsaHeader
@@ -269,6 +310,49 @@ class BSA(object):
                     os.path.sep.join((folder_path, file_name)), rec)
             file_records_block = file_records_block[file_records_index:]
 
+class BA2(object):
+    header_type = Ba2Header
+
+    def __init__(self, abs_path):
+        self.bsa_header = self.__class__.header_type()
+        self.bsa_folders = collections.OrderedDict() # keep folder order
+        self._load_bsa(abs_path)
+
+    def _load_bsa(self, abs_path):
+        with open(abs_path, 'rb') as bsa_file:
+            # load the header from input stream
+            self.bsa_header.load_header(bsa_file)
+            # load the folder records from input stream
+            if self.bsa_header.b2a_files_type == 'GNRL':
+                file_record_type = B2aFileRecordGeneral
+            else:
+                file_record_type = B2aFileRecordTexture
+            file_records = []
+            for __ in xrange(self.bsa_header.b2a_num_files):
+                rec = file_record_type()
+                rec.load_record(bsa_file)
+                file_records.append(rec)
+            # load the file names block
+            bsa_file.seek(self.bsa_header.b2a_name_table_offset)
+            file_names_block = memoryview(bsa_file.read())
+            # close the file
+        current_folder_name = current_folder = None
+        for index in xrange(self.bsa_header.b2a_num_files):
+            name_size = struct.unpack_from('H', file_names_block)[0]
+            file_name = unicode(file_names_block[2:name_size + 2].tobytes(),
+                    encoding=_bsa_encoding)
+            file_names_block = file_names_block[name_size + 2:]
+            folder_dex = file_name.rfind(u'\\')
+            if folder_dex == -1:
+                folder_name = u''
+            else:
+                folder_name = file_name[:folder_dex]
+            if current_folder_name != folder_name:
+                current_folder = self.bsa_folders.setdefault(folder_name,
+                                                             Ba2Folder())
+            current_folder.assets[file_name] = BSAAsset(file_name,
+                                                        file_records[index])
+
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader
 
@@ -277,3 +361,5 @@ class SkyrimBsa(BSA):
 
 class SkyrimSeBsa(BSA):
     header_type = SkyrimSeBsaHeader
+
+class Fallout4Ba2(BA2): pass
