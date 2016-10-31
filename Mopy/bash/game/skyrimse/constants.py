@@ -98,3 +98,6 @@ allBethFiles |= {u'Skyrim - Textures6.bsa', u'Skyrim - Patch.bsa',
                  u'Skyrim - Meshes0.bsa',
                  u'Scripts\\Source\\Backup\\QF_C00JorrvaskrFight_000BC0BD_BACKUP_05272016_113715AM.psc',
                  u'Scripts\\Source\\Backup\\QF_C00_0004B2D9_BACKUP_05272016_113428AM.psc'}
+
+# xEdit menu string and key for expert setting
+xEdit_expert = (_(u'SSEEdit Expert'), 'sseView.iKnowWhatImDoing')
