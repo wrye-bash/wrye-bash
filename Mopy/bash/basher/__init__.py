@@ -3102,7 +3102,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
     """BSAfile details panel."""
 
     @property
-    def file_info(self): return self.BSAInfo
+    def file_info(self): return self._bsa_info
     @property
     def file_infos(self): return bosh.bsaInfos
     @property
@@ -3114,7 +3114,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         bsa_panel = self.GetParent().GetParent().GetParent()
         _EditableMixinOnFileInfos.__init__(self, self.bottom, bsa_panel)
         #--Data
-        self.BSAInfo = None
+        self._bsa_info = None
         #--BSA Info
         self.gInfo = TextCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
@@ -3132,16 +3132,16 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.bottom.SetSizer(infoSizer)
 
     def _resetDetails(self):
-        self.BSAInfo = None
+        self._bsa_info = None
         self.fileStr = u''
 
     def SetFile(self, fileName='SAME'):
         """Set file to be viewed."""
         fileName = super(BSADetails, self).SetFile(fileName)
         if fileName:
-            BSAInfo = self.BSAInfo = bosh.bsaInfos[fileName]
+            self._bsa_info = bosh.bsaInfos[fileName]
             #--Remember values for edit checks
-            self.fileStr = BSAInfo.name.s
+            self.fileStr = self._bsa_info.name.s
         #--Set Fields
         self.file.SetValue(self.fileStr)
         #--Info Box
@@ -3154,25 +3154,25 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
 
     def OnInfoEdit(self,event):
         """Info field was edited."""
-        if self.BSAInfo and self.gInfo.IsModified():
-            bosh.bsaInfos.table.setItem(self.BSAInfo.name,'info',self.gInfo.GetValue())
+        if self._bsa_info and self.gInfo.IsModified():
+            bosh.bsaInfos.table.setItem(self._bsa_info.name, 'info', self.gInfo.GetValue())
         event.Skip()
 
     def DoSave(self):
         """Event: Clicked Save button."""
-        BSAInfo = self.BSAInfo
         #--Change Tests
-        changeName = (self.fileStr != BSAInfo.name)
+        changeName = (self.fileStr != self._bsa_info.name)
         #--Backup
-        BSAInfo.makeBackup()
+        self._bsa_info.makeBackup()
         #--Change Name?
         if changeName:
-            (oldName,newName) = (BSAInfo.name,GPath(self.fileStr.strip()))
+            (oldName, newName) = (
+                self._bsa_info.name, GPath(self.fileStr.strip()))
             bosh.bsaInfos.rename_info(oldName, newName)
         #--Done
         try:
-            bosh.bsaInfos.refreshFile(BSAInfo.name)
-            self.SetFile(self.BSAInfo.name)
+            bosh.bsaInfos.refreshFile(self._bsa_info.name)
+            self.SetFile(self._bsa_info.name)
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             self.SetFile(None)

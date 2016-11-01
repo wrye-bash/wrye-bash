@@ -136,9 +136,9 @@ class BackupSettings(BaseBackupSettings):
                     self.files[tmpdir.join(name)] = path.join(name)
 
         #backup image files if told to
-        def _isChanged(abs_path, rel_path):
+        def _isChanged(ab_path, rel_path):
             for ver_list in images_list.values():
-                if  ver_list.get(rel_path.s, -1) == abs_path.size: return False
+                if  ver_list.get(rel_path.s, -1) == ab_path.size: return False
             return True
         if backup_images: # 1 is changed images only, 2 is all images
             onlyChanged = backup_images == 1

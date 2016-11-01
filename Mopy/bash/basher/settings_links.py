@@ -227,18 +227,18 @@ class Settings_Colors(ItemLink):
 
 #------------------------------------------------------------------------------
 class Settings_IconSize(RadioLink):
-    def __init__(self, size):
+    def __init__(self, sb_icon_size):
         super(Settings_IconSize, self).__init__()
-        self.size = size
-        self.text = unicode(size)
-        self.help = _(u"Sets the status bar icons to %(size)s pixels") % (
-            {'size': unicode(size)})
+        self.sb_icon_size = sb_icon_size
+        self.text = unicode(sb_icon_size)
+        self.help = _(u"Sets the status bar icons to %(sb_icon_size)s pixels") % (
+            {'sb_icon_size': unicode(sb_icon_size)})
 
     def _check(self):
-        return self.size == bass.settings['bash.statusbar.iconSize']
+        return self.sb_icon_size == bass.settings['bash.statusbar.iconSize']
 
     def Execute(self):
-        bass.settings['bash.statusbar.iconSize'] = self.size
+        bass.settings['bash.statusbar.iconSize'] = self.sb_icon_size
         Link.Frame.statusBar.UpdateIconSizes()
 
 #------------------------------------------------------------------------------
