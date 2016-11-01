@@ -6974,26 +6974,26 @@ class InstallersData(_DataStore):
                         refresh_ui): # we do _not_ remove Ini Tweaks/*
         emptyDirs = set()
         def isMod(p): return reModExt.search(p.s) is not None
-        for file in removes:
+        for filename in removes:
             # don't remove files in Wrye Bash-related directories
-            if file.cs.startswith(skipPrefixes): continue
-            path = dirs['mods'].join(file)
+            if filename.cs.startswith(skipPrefixes): continue
+            full_path = dirs['mods'].join(filename)
             try:
-                if path.exists():
-                    path.moveTo(destDir.join(file))
-                    if not refresh_ui[0]: refresh_ui[0] = isMod(path)
+                if full_path.exists():
+                    full_path.moveTo(destDir.join(filename))
+                    if not refresh_ui[0]: refresh_ui[0] = isMod(full_path)
                 else: # Try if it's a ghost - belongs to modInfos...
-                    path = GPath(path.s + u'.ghost')
-                    if path.exists():
-                        path.moveTo(destDir.join(file))
+                    full_path = GPath(full_path.s + u'.ghost')
+                    if full_path.exists():
+                        full_path.moveTo(destDir.join(filename))
                         refresh_ui[0] = True
                     else: continue # don't pop if file was not removed
-                data_sizeCrcDate.pop(file,None)
-                emptyDirs.add(path.head)
+                data_sizeCrcDate.pop(filename, None)
+                emptyDirs.add(full_path.head)
             except:
                 # It's not imperative that files get moved, so ignore errors
                 deprint(u'Clean Data: moving %s to % s failed' % (
-                            path, destDir), traceback=True)
+                            full_path, destDir), traceback=True)
         for emptyDir in emptyDirs:
             if emptyDir.isdir() and not emptyDir.list():
                 emptyDir.removedirs()

@@ -1685,21 +1685,21 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
         return _(u'Tweaks:') + u' %d/%d' % (stati[0], sum(stati[:-1]))
 
     def add_targets(self, paths):
-        for path in paths:
-            if path.stail not in self.target_inis:
+        for abs_target_path in paths:
+            if abs_target_path.stail not in self.target_inis:
                 current_choice = self.ini_name
-                self.target_inis[path.stail] = path
+                self.target_inis[abs_target_path.stail] = abs_target_path
                 self.comboBox.SetItems(self.SortChoices())
                 self.choice = self.target_inis.keys().index(current_choice)
 
-    def AddOrSelectIniDropDown(self, path): # will refersh the UI !
-        if path.stail not in self.target_inis: # added
-            self.target_inis[path.stail] = path
-            self.comboBox.SetItems(self.SortChoices()) # to set self._choise
+    def AddOrSelectIniDropDown(self, apath): # will refresh the UI !
+        if apath.stail not in self.target_inis: # added
+            self.target_inis[apath.stail] = apath
+            self.comboBox.SetItems(self.SortChoices()) # to set self.choice
         else: # just needed for when we are called from _apply_tweaks (duh)
-            if self.choice == self.target_inis.keys().index(path.stail):
+            if self.choice == self.target_inis.keys().index(apath.stail):
                 return
-        self.choice = self.target_inis.keys().index(path.stail)
+        self.choice = self.target_inis.keys().index(apath.stail)
         self.RefreshPanel()
 
     def set_choice(self, target_path):
@@ -1708,21 +1708,23 @@ class INIPanel(SashUIListPanel): # should have a details panel too !
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
         selection = event.GetString()
-        path = self.target_inis[selection]
-        if path is None:
+        full_path = self.target_inis[selection]
+        if full_path is None:
             # 'Browse...'
-            wildcard =  u'|'.join([_(u'Supported files')+u' (*.ini,*.cfg)|*.ini;*.cfg',
-                                   _(u'INI files')+u' (*.ini)|*.ini',
-                                   _(u'Config files')+u' (*.cfg)|*.cfg',
-                                   ])
-            path = balt.askOpen(self,defaultDir=self.lastDir,wildcard=wildcard,mustExist=True)
-            if path: self.lastDir = path.shead
-            if not path or (path.stail in self.target_inis and # reselected
-                    self.choice == self.target_inis.keys().index(path.stail)):
+            wildcard =  u'|'.join(
+                [_(u'Supported files') + u' (*.ini,*.cfg)|*.ini;*.cfg',
+                 _(u'INI files') + u' (*.ini)|*.ini',
+                 _(u'Config files') + u' (*.cfg)|*.cfg', ])
+            full_path = balt.askOpen(self, defaultDir=self.lastDir,
+                                     wildcard=wildcard, mustExist=True)
+            if full_path: self.lastDir = full_path.shead
+            if not full_path or ( # reselected the current target ini
+                full_path.stail in self.target_inis and
+                self.choice == self.target_inis.keys().index(full_path.stail)):
                 self.comboBox.SetSelection(self.choice)
                 return
         # new file or selected an existing one different from current choice
-        self.AddOrSelectIniDropDown(path)
+        self.AddOrSelectIniDropDown(full_path)
 
     def ClosePanel(self, destroy=False):
         settings['bash.ini.choices'] = self.target_inis

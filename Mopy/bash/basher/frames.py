@@ -211,13 +211,13 @@ class DocBrowser(wx.Frame):
             docsDir = bass.settings['bash.modDocs.dir'] or bass.dirs['mods']
             fileName = GPath(u'')
         #--Dialog
-        path = balt.askOpen(self,_(u'Select doc for %s:') % modName.s,
+        doc_path = balt.askOpen(self,_(u'Select doc for %s:') % modName.s,
             docsDir,fileName, u'*.*',mustExist=True)
-        if not path: return
-        bass.settings['bash.modDocs.dir'] = path.head
+        if not doc_path: return
+        bass.settings['bash.modDocs.dir'] = doc_path.head
         if modName not in self.docs:
             self.modNameList.Append(modName.s)
-        self.docs[modName] = path
+        self.docs[modName] = doc_path
         self.SetMod(modName)
 
     def DoRename(self):
@@ -226,18 +226,18 @@ class DocBrowser(wx.Frame):
         oldPath = self.docs[modName]
         (workDir,fileName) = oldPath.headTail
         #--Dialog
-        path = balt.askSave(self, _(u'Rename file to:'), workDir, fileName,
-                            u'*.*')
-        if not path or path == oldPath: return
+        dest_path = balt.askSave(self, _(u'Rename file to:'), workDir,
+                                 fileName, u'*.*')
+        if not dest_path or dest_path == oldPath: return
         #--OS renaming
-        path.remove()
-        oldPath.moveTo(path)
+        dest_path.remove()
+        oldPath.moveTo(dest_path)
         if self.docIsWtxt:
-            oldHtml, newHtml = (x.root+u'.html' for x in (oldPath,path))
+            oldHtml, newHtml = (x.root+u'.html' for x in (oldPath,dest_path))
             if oldHtml.exists(): oldHtml.moveTo(newHtml)
             else: newHtml.remove()
         #--Remember change
-        self.docs[modName] = path
+        self.docs[modName] = dest_path
         self.SetMod(modName)
 
     def DoSave(self):
