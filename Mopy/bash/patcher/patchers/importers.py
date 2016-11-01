@@ -49,7 +49,8 @@ class _SimpleImporter(ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(_SimpleImporter, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--(attribute-> value) dicts keyed by long fid.
+        #--(attribute-> value) dicts keyed by long fid.
+        self.id_data = collections.defaultdict(dict)
         self.srcClasses = set() #--Record classes actually provided by src
         # mods/files.
         self.classestemp = set()
@@ -115,7 +116,6 @@ class _SimpleImporter(ImportPatcher):
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
                             else:
-                                if fid not in id_data: id_data[fid] = dict()
                                 try:
                                     id_data[fid][attr] = temp_id_data[fid][attr]
                                 except KeyError:
@@ -767,8 +767,6 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                                                    record):
                                     continue
                                 else:
-                                    if fid not in id_data: id_data[
-                                        fid] = dict()
                                     try:
                                         id_data[fid][attr] = temp_id_data[fid][
                                             attr]
@@ -783,7 +781,6 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                                         keep = True
                                     temp_values[subattr] = value[subattr]
                                 if keep:
-                                    id_data.setdefault(fid, {})
                                     id_data[fid].update(temp_values)
             progress.plus()
         self.longTypes = self.longTypes & set(
