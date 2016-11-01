@@ -103,7 +103,7 @@ class LoadOrder(object):
     def __ne__(self, other): return not (self == other)
     def __hash__(self): return hash((self._loadOrder, self._active))
 
-    def lindex(self, path): return self.__mod_loIndex[path] # KeyError
+    def lindex(self, mname): return self.__mod_loIndex[mname] # KeyError
     def lorder(self, paths):
         """Return a tuple containing the given paths in their load order.
         :param paths: iterable of paths that must all have a load order
@@ -111,7 +111,7 @@ class LoadOrder(object):
         :rtype: tuple
         """
         return tuple(sorted(paths, key=self.__mod_loIndex.__getitem__))
-    def activeIndex(self, path): return self.__mod_actIndex[path]
+    def activeIndex(self, mname): return self.__mod_actIndex[mname]
 
     def __getstate__(self): # we pickle _activeOrdered to avoid recreating it
         return {'_activeOrdered': self._activeOrdered,

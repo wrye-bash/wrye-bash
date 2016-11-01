@@ -38,12 +38,12 @@ def extractOmodsNeeded(installers_paths=()):
 
 class OmodFile:
     """Class for extracting data from OMODs."""
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, omod_path):
+        self.omod_path = omod_path
 
-    def readConfig(self,path):
+    def readConfig(self, conf_path):
         """Read info about the omod from the 'config' file"""
-        with bolt.BinaryFile(path.s) as omod_config:
+        with bolt.BinaryFile(conf_path.s) as omod_config:
             self.version = omod_config.readByte() # OMOD version
             self.modName = decode(omod_config.readNetString()) # Mod name
             self.major = omod_config.readInt32() # Mod major version - getting weird numbers here though
@@ -62,8 +62,8 @@ class OmodFile:
             else:
                 self.build = -1
 
-    def writeInfo(self, path, filename, readme, script):
-        with path.open('w') as file:
+    def writeInfo(self, dest_path, filename, readme, script):
+        with dest_path.open('w') as file:
             file.write(encode(filename))
             file.write('\n\n[basic info]\n')
             file.write('Name: ')
@@ -92,7 +92,7 @@ class OmodFile:
         reFileSize = re.compile(ur'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
         reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
-        with self.path.unicodeSafe() as tempOmod:
+        with self.omod_path.unicodeSafe() as tempOmod:
             cmd7z = [bolt.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
             with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
@@ -120,11 +120,11 @@ class OmodFile:
 
             # Extract the files
             reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
-            progress(0, self.path.stail+u'\n'+_(u'Extracting...'))
+            progress(0, self.omod_path.stail + u'\n' + _(u'Extracting...'))
 
             subprogress = bolt.SubProgress(progress, 0, 0.4)
             current = 0
-            with self.path.unicodeSafe() as tempOmod:
+            with self.omod_path.unicodeSafe() as tempOmod:
                 cmd7z = [bolt.exe7z,u'e',u'-r',u'-sccUTF-8',tempOmod.s,u'-o%s' % extractDir.s]
                 with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                     for line in ins:
@@ -133,31 +133,31 @@ class OmodFile:
                         if maExtracting:
                             name = maExtracting.group(1).strip().strip(u'\r')
                             size = sizes[name]
-                            subprogress(float(current)/total,self.path.stail+u'\n'+_(u'Extracting...')+u'\n'+name)
+                            subprogress(float(current) / total, self.omod_path.stail + u'\n' + _(u'Extracting...') + u'\n' + name)
                             current += size
 
             # Get compression type
-            progress(0.4,self.path.stail+u'\n'+_(u'Reading config'))
+            progress(0.4, self.omod_path.stail + u'\n' + _(u'Reading config'))
             self.readConfig(extractDir.join(u'config'))
 
             # Collect OMOD conversion data
             ocdDir = stageDir.join(u'omod conversion data')
-            progress(0.46, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\ninfo.txt')
-            self.writeInfo(ocdDir.join(u'info.txt'), self.path.stail, extractDir.join(u'readme').exists(), extractDir.join(u'script').exists())
-            progress(0.47, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscript')
+            progress(0.46, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\ninfo.txt')
+            self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail, extractDir.join(u'readme').exists(), extractDir.join(u'script').exists())
+            progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
             if extractDir.join(u'script').exists():
                 with bolt.BinaryFile(extractDir.join(u'script').s) as input:
                     with ocdDir.join(u'script.txt').open('w') as output:
                         output.write(input.readNetString())
-            progress(0.48, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nreadme.rtf')
+            progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
             if extractDir.join(u'readme').exists():
                 with bolt.BinaryFile(extractDir.join(u'readme').s) as input:
                     with ocdDir.join(u'readme.rtf').open('w') as output:
                         output.write(input.readNetString())
-            progress(0.49, self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nscreenshot')
+            progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
             if extractDir.join(u'image').exists():
                 extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
-            progress(0.5,self.path.stail+u'\n'+_(u'Creating omod conversion data')+u'\nconfig')
+            progress(0.5, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nconfig')
             extractDir.join(u'config').moveTo(ocdDir.join(u'config'))
 
             # Extract the files
@@ -176,7 +176,7 @@ class OmodFile:
                 if extractDir.join(u'data.crc').exists() and extractDir.join(u'data').exists():
                     dataProgress = bolt.SubProgress(subprogress, subprogress.state, 1)
                     extract(extractDir.join(u'data.crc'),extractDir.join(u'data'),tempOut,dataProgress)
-                progress(1,self.path.stail+u'\n'+_(u'Extracted'))
+                progress(1, self.omod_path.stail + u'\n' + _(u'Extracted'))
 
             # Move files to final directory
             env.shellMove(stageDir, outDir.head, parent=None,
@@ -195,12 +195,12 @@ class OmodFile:
         if len(fileNames) == 0: return
 
         # Extracted data stream is saved as a file named 'a'
-        progress(0,self.path.tail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
+        progress(0, self.omod_path.tail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
         cmd = [bolt.exe7z,u'e',u'-r',u'-sccUTF-8',dataPath.s,u'-o%s' % outPath.s]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files
-        progress(0.7,self.path.stail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
+        progress(0.7, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
         self.splitStream(outPath.join(u'a'), outPath, fileNames, sizes,
                          bolt.SubProgress(progress,0.7,1.0,len(fileNames))
                          )
@@ -211,10 +211,10 @@ class OmodFile:
 
     def splitStream(self, streamPath, outDir, fileNames, sizes, progress):
         # Split the uncompressed stream into files
-        progress(0, self.path.stail+u'\n'+_(u'Unpacking %s') % streamPath.stail)
+        progress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail)
         with streamPath.open('rb') as file:
             for i,name in enumerate(fileNames):
-                progress(i,self.path.stail+u'\n'+_(u'Unpacking %s')%streamPath.stail+u'\n'+name)
+                progress(i, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % streamPath.stail + u'\n' + name)
                 outFile = outDir.join(name)
                 with outFile.open('wb') as output:
                     output.write(file.read(sizes[i]))
@@ -227,7 +227,7 @@ class OmodFile:
 
         # Extract data stream to an uncompressed stream
         subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
-        subprogress(0,self.path.stail+u'\n'+_(u'Unpacking %s') % dataPath.stail)
+        subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
         with dataPath.open('rb') as file:
             done = 0
             with bolt.BinaryFile(outPath.join(dataPath.sbody+u'.tmp').s,'wb') as output:
@@ -265,16 +265,16 @@ class OmodFile:
         outPath.join(dataPath.sbody+u'.uncomp').remove()
         outPath.join(dataPath.sbody+u'.tmp').remove()
 
-    def getFile_CrcSizes(self, path):
+    @staticmethod
+    def getFile_CrcSizes(crc_file_path):
         fileNames = list()
         crcs = list()
         sizes = list()
-
-        with bolt.BinaryFile(path.s) as file:
-            while file.tell() < path.size:
-                fileNames.append(file.readNetString())
-                crcs.append(file.readInt32())
-                sizes.append(file.readInt64())
+        with bolt.BinaryFile(crc_file_path.s) as crc_file:
+            while crc_file.tell() < crc_file_path.size:
+                fileNames.append(crc_file.readNetString())
+                crcs.append(crc_file.readInt32())
+                sizes.append(crc_file.readInt64())
         return fileNames,crcs,sizes
 
 class OmodConfig:

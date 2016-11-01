@@ -90,9 +90,9 @@ class ConvertersData(DataDict):
 
     #--Converters
     @staticmethod
-    def validConverterName(path):
-        return path.cext in defaultExt and (
-            path.csbody[-4:] == u'-bcf' or u'-bcf-' in path.csbody)
+    def validConverterName(path_name):
+        return path_name.cext in defaultExt and (
+            path_name.csbody[-4:] == u'-bcf' or u'-bcf-' in path_name.csbody)
 
     def refreshConverters(self, progress=None, fullRefresh=False):
         """Refresh converter status, and move duplicate BCFs out of the way."""
@@ -301,10 +301,10 @@ class InstallerConverter(object):
                 map(self.__setattr__, self.persistBCF, cPickle.load(translator))
                 if fullLoad:
                     map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
-        with self.fullPath.unicodeSafe() as path:
+        with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
             command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
-                bolt.exe7z, path.s)
+                bolt.exe7z, converter_path.s)
             bolt.wrapPopenOut(command, translate, errorMsg=
                 u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
 

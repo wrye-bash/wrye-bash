@@ -168,9 +168,9 @@ def InitStatusBar():
     badIcons = [Image(bass.dirs['images'].join(u'x.png'))] * 3
     def iconList(fileName):
         return [Image(fileName, ICO, x) for x in (16, 24, 32)]
-    for path, icon, description in init_app_links(dirApps, badIcons, iconList):
+    for pth, icon, description in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(
-                App_Button((path, ()), icon, description, canHide=False))
+                App_Button((pth, ()), icon, description, canHide=False))
     #--Final couple
     BashStatusBar.buttons.append(
         App_Button((bass.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',

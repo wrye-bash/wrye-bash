@@ -7513,75 +7513,79 @@ def isCBashMergeable(modInfo,verbose=True):
 # Initialization --------------------------------------------------------------
 from ..env import get_personal_path, get_local_app_data_path
 
-def getPersonalPath(bashIni, path):
+def getPersonalPath(bashIni, my_docs_path):
     #--Determine User folders from Personal and Local Application Data directories
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
-    if path:
-        path = GPath(path)
+    if my_docs_path:
+        my_docs_path = GPath(my_docs_path)
         sErrorInfo = _(u"Folder path specified on command line (-p)")
-    elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and not bashIni.get(u'General', u'sPersonalPath') == u'.':
-        path = GPath(bashIni.get('General', 'sPersonalPath').strip())
-        sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
+    elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and \
+            not bashIni.get(u'General', u'sPersonalPath') == u'.':
+        my_docs_path = GPath(bashIni.get('General', 'sPersonalPath').strip())
+        sErrorInfo = _(
+            u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
     else:
-        path, sErrorInfo = get_personal_path()
+        my_docs_path, sErrorInfo = get_personal_path()
     #  If path is relative, make absolute
-    if not path.isabs():
-        path = dirs['app'].join(path)
+    if not my_docs_path.isabs():
+        my_docs_path = dirs['app'].join(my_docs_path)
     #  Error check
-    if not path.exists():
-        raise BoltError(u"Personal folder does not exist.\nPersonal folder: %s\nAdditional info:\n%s"
-            % (path.s, sErrorInfo))
-    return path
+    if not my_docs_path.exists():
+        raise BoltError(u"Personal folder does not exist.\n"
+                        u"Personal folder: %s\nAdditional info:\n%s"
+                        % (my_docs_path.s, sErrorInfo))
+    return my_docs_path
 
-def getLocalAppDataPath(bashIni, path):
+def getLocalAppDataPath(bashIni, app_data_local_path):
     #--Determine User folders from Personal and Local Application Data directories
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
-    if path:
-        path = GPath(path)
+    if app_data_local_path:
+        app_data_local_path = GPath(app_data_local_path)
         sErrorInfo = _(u"Folder path specified on command line (-l)")
     elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
-        path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
+        app_data_local_path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
         sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sLocalAppDataPath'
     else:
-        path, sErrorInfo = get_local_app_data_path()
+        app_data_local_path, sErrorInfo = get_local_app_data_path()
     #  If path is relative, make absolute
-    if not path.isabs():
-        path = dirs['app'].join(path)
+    if not app_data_local_path.isabs():
+        app_data_local_path = dirs['app'].join(app_data_local_path)
     #  Error check
-    if not path.exists():
+    if not app_data_local_path.exists():
         raise BoltError(u"Local AppData folder does not exist.\nLocal AppData folder: %s\nAdditional info:\n%s"
-            % (path.s, sErrorInfo))
-    return path
+                        % (app_data_local_path.s, sErrorInfo))
+    return app_data_local_path
 
 def getOblivionModsPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sOblivionMods'):
-        path = GPath(bashIni.get(u'General',u'sOblivionMods').strip())
+        ob_mods_path = GPath(bashIni.get(u'General', u'sOblivionMods').strip())
         src = [u'[General]', u'sOblivionMods']
     else:
-        path = GPath(GPath(u'..').join(u'%s Mods' % bush.game.fsName))
+        ob_mods_path = GPath(GPath(u'..').join(u'%s Mods' % bush.game.fsName))
         src = u'Relative Path'
-    if not path.isabs(): path = dirs['app'].join(path)
-    return path, src
+    if not ob_mods_path.isabs(): ob_mods_path = dirs['app'].join(ob_mods_path)
+    return ob_mods_path, src
 
 def getBainDataPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sInstallersData'):
-        path = GPath(bashIni.get(u'General',u'sInstallersData').strip())
+        idata_path = GPath(bashIni.get(u'General', u'sInstallersData').strip())
         src = [u'[General]', u'sInstallersData']
-        if not path.isabs(): path = dirs['app'].join(path)
+        if not idata_path.isabs(): idata_path = dirs['app'].join(idata_path)
     else:
-        path = dirs['installers'].join(u'Bash')
+        idata_path = dirs['installers'].join(u'Bash')
         src = u'Relative Path'
-    return path, src
+    return idata_path, src
 
 def getBashModDataPath(bashIni):
     if bashIni and bashIni.has_option(u'General',u'sBashModData'):
-        path = GPath(bashIni.get(u'General',u'sBashModData').strip())
-        if not path.isabs(): path = dirs['app'].join(path)
+        mod_data_path = GPath(bashIni.get(u'General', u'sBashModData').strip())
+        if not mod_data_path.isabs():
+            mod_data_path = dirs['app'].join(mod_data_path)
         src = [u'[General]', u'sBashModData']
     else:
-        path, src = getOblivionModsPath(bashIni)
-        path = path.join(u'Bash Mod Data')
-    return path, src
+        mod_data_path, src = getOblivionModsPath(bashIni)
+        mod_data_path = mod_data_path.join(u'Bash Mod Data')
+    return mod_data_path, src
 
 def getLegacyPath(newPath, oldPath, srcNew=None, srcOld=None):
     return (oldPath,newPath)[newPath.isdir() or not oldPath.isdir()]
@@ -7928,7 +7932,7 @@ def initLogFile():
                     u'initialized.') % (
                   bolt.timestamp(), inisettings['KeepLog']) + u'\r\n')
 
-def initBosh(personal='', localAppData='', bashIni=None):
+def initBosh(personal=empty_path, localAppData=empty_path, bashIni=None):
     #--Bash Ini
     if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni, personal, localAppData)

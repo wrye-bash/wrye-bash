@@ -179,12 +179,12 @@ class People_Export(ItemLink, People_Link):
     def Execute(self):
         textDir = bass.settings.get('bash.workDir', bass.dirs['app'])
         #--File dialog
-        path = self._askSave(title=_(u'Export people to text file:'),
+        export_path = self._askSave(title=_(u'Export people to text file:'),
                              defaultDir=textDir, defaultFile=u'People.txt',
                              wildcard=u'*.txt')
-        if not path: return
-        bass.settings['bash.workDir'] = path.head
-        self.pdata.dumpText(path,self.selected)
+        if not export_path: return
+        bass.settings['bash.workDir'] = export_path.head
+        self.pdata.dumpText(export_path, self.selected)
         self._showInfo(_(u'Records exported: %d.') % len(self.selected),
                        title=self.dialogTitle)
 
@@ -198,12 +198,12 @@ class People_Import(ItemLink, People_Link):
     def Execute(self):
         textDir = bass.settings.get('bash.workDir', bass.dirs['app'])
         #--File dialog
-        path = self._askOpen(title=_(u'Import people from text file:'),
-                             defaultDir=textDir, wildcard=u'*.txt',
-                             mustExist=True)
-        if not path: return
-        bass.settings['bash.workDir'] = path.head
-        newNames = self.pdata.loadText(path)
+        import_path = self._askOpen(title=_(u'Import people from text file:'),
+                                    defaultDir=textDir, wildcard=u'*.txt',
+                                    mustExist=True)
+        if not import_path: return
+        bass.settings['bash.workDir'] = import_path.head
+        newNames = self.pdata.loadText(import_path)
         self._showInfo(_(u"People imported: %d") % len(newNames),
                        title=self.dialogTitle)
         self.window.RefreshUI()
