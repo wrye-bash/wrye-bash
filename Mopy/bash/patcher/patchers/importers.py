@@ -116,10 +116,7 @@ class _SimpleImporter(ImportPatcher):
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
                             else:
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
+                                id_data[fid][attr] = value
             progress.plus()
         self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
@@ -767,11 +764,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                                                    record):
                                     continue
                                 else:
-                                    try:
-                                        id_data[fid][attr] = temp_id_data[fid][
-                                            attr]
-                                    except KeyError:
-                                        id_data[fid].setdefault(attr,value)
+                                    id_data[fid][attr] = value
                             elif isinstance(attr,(list,tuple,set)):
                                 temp_values = {}
                                 keep = False
