@@ -359,7 +359,7 @@ class MasterList(_ModsUIList):
         #--Data/Items
         self.edited = False
         self.detailsPanel = detailsPanel
-        self.fileInfo = None
+        self._master_info = None
         self.loadOrderNames = [] # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + '.allowEdit'
         if isinstance(detailsPanel, SaveDetails): # yak ! fix #192
@@ -382,24 +382,24 @@ class MasterList(_ModsUIList):
         if val:
             self.InitEdit()
         else:
-            self.SetFileInfo(self.fileInfo)
+            self.SetFileInfo(self._master_info)
             self.detailsPanel.testChanges() # disable buttons if no other edits
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
 
     #--Set ModInfo
-    def SetFileInfo(self,fileInfo):
+    def SetFileInfo(self, master_info):
         self.ClearSelected()
         self.edited = False
-        self.fileInfo = fileInfo
+        self._master_info = master_info
         self.data_store.clear()
         self.DeleteAll()
-        #--Null fileInfo?
-        if not fileInfo:
+        #--Null master_info?
+        if not master_info:
             return
         #--Fill data and populate
-        for mi, masters_name in enumerate(fileInfo.header.masters):
+        for mi, masters_name in enumerate(master_info.header.masters):
             masterInfo = bosh.MasterInfo(masters_name, 0)
             self.data_store[mi] = masterInfo
         self._reList()
@@ -498,7 +498,7 @@ class MasterList(_ModsUIList):
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
-        if self.fileInfo: super(MasterList, self).DoColumnMenu(event, column)
+        if self._master_info: super(MasterList, self).DoColumnMenu(event, column)
 
     def OnLeftDown(self,event):
         if self.allowEdit: self.InitEdit()
@@ -902,13 +902,13 @@ class ModList(_ModsUIList):
         """Handle doubleclicking a mod in the Mods List."""
         hitItem = self._getItemClicked(event)
         if not hitItem: return
-        fileInfo = self.data_store[hitItem]
+        modInfo = self.data_store[hitItem]
         if not Link.Frame.docBrowser:
             from .frames import DocBrowser
             DocBrowser().Show()
             settings['bash.modDocs.show'] = True
         #balt.ensureDisplayed(docBrowser)
-        Link.Frame.docBrowser.SetMod(fileInfo.name)
+        Link.Frame.docBrowser.SetMod(modInfo.name)
         Link.Frame.docBrowser.Raise()
 
     def OnChar(self,event):

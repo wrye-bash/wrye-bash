@@ -2517,102 +2517,6 @@ class ModInfo(FileInfo):
             crc = modInfos.table.getItem(self.name,'crc')
         return crc
 
-    def txt_status(self):
-        if load_order.isActiveCached(self.name): return _(u'Active')
-        elif self.name in modInfos.merged: return _(u'Merged')
-        elif self.name in modInfos.imported: return _(u'Imported')
-        else: return _(u'Non-Active')
-
-    def hasTimeConflict(self):
-        """True if there is another mod with the same mtime."""
-        return load_order.has_load_order_conflict(self.name)
-
-    def hasActiveTimeConflict(self):
-        """True if has an active mtime conflict with another mod."""
-        return load_order.has_load_order_conflict_active(self.name)
-
-    def hasBadMasterNames(self):
-        """True if has a master with un unencodable name in cp1252."""
-        return modInfos.hasBadMasterNames(self.name)
-
-    def isMissingStrings(self):
-        return modInfos.isMissingStrings(self.name)
-
-    def isExOverLoaded(self):
-        """True if belongs to an exclusion group that is overloaded."""
-        maExGroup = reExGroup.match(self.name.s)
-        if not (load_order.isActiveCached(self.name) and maExGroup):
-            return False
-        else:
-            exGroup = maExGroup.group(1)
-            return len(modInfos.exGroup_mods[exGroup]) > 1
-
-    def getBsaPath(self):
-        """Returns path to plugin's BSA, if it were to exists."""
-        return self.getPath().root.root+u'.bsa'
-
-    def hasBsa(self):
-        """Returns True if plugin has an associated BSA."""
-        return self.getBsaPath().exists()
-
-    def getIniPath(self):
-        """Returns path to plugin's INI, if it were to exists."""
-        return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
-
-    def getStringsPaths(self,language=u'English'):
-        """If Strings Files are available as loose files, just point to those, otherwise
-           extract needed files from BSA if needed."""
-        baseDirJoin = self.getPath().head.join
-        files = []
-        sbody,ext = self.name.sbody,self.name.ext
-        for _dir, join, format_str in bush.game.esp.stringsFiles:
-            fname = format_str % {'body': sbody, 'ext': ext,
-                                  'language': language}
-            assetPath = GPath(u'').join(*join).join(fname)
-            files.append(assetPath)
-        extract = set()
-        paths = set()
-        #--Check for Loose Files first
-        for filepath in files:
-            loose = baseDirJoin(filepath)
-            if not loose.exists():
-                extract.add(filepath)
-            else:
-                paths.add(loose)
-        #--If there were some missing Loose Files
-        if extract:
-            bsaPaths = modInfos.extra_bsas(self, descending=True)
-            bsaFiles = {}
-            targetJoin = dirs['bsaCache'].join
-            for filepath in extract:
-                found = False
-                for path in bsaPaths:
-                    bsaFile = bsaFiles.get(path,None)
-                    if not bsaFile:
-                        try:
-                            bsaFile = libbsa.BSAHandle(path)
-                            bsaFiles[path] = bsaFile
-                        except:
-                            deprint(u'   Error loading BSA file:',path.stail,traceback=True)
-                            continue
-                    if bsaFile.IsAssetInBSA(filepath):
-                        target = targetJoin(path.tail)
-                        #--Extract
-                        try:
-                            bsaFile.ExtractAsset(filepath,target)
-                        except libbsa.LibbsaError as e:
-                            raise ModError(self.name,u"Could not extract Strings File from '%s': %s" % (path.stail,e))
-                        paths.add(target.join(filepath))
-                        found = True
-                if not found:
-                    raise ModError(self.name,u"Could not locate Strings File '%s'" % filepath.stail)
-        return paths
-
-    def hasResources(self):
-        """Returns (hasBsa,hasVoices) booleans according to presence of corresponding resources."""
-        voicesPath = self.dir.join(u'Sound',u'Voice',self.name)
-        return [self.hasBsa(),voicesPath.exists()]
-
     def setmtime(self,mtime=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
         mtime = FileInfo.setmtime(self,mtime)
@@ -2769,6 +2673,104 @@ class ModInfo(FileInfo):
         self.header.description = description
         self.header.setChanged()
         self.writeHeader()
+
+    #--Helpers ----------------------------------------------------------------
+    def txt_status(self):
+        if load_order.isActiveCached(self.name): return _(u'Active')
+        elif self.name in modInfos.merged: return _(u'Merged')
+        elif self.name in modInfos.imported: return _(u'Imported')
+        else: return _(u'Non-Active')
+
+    def hasTimeConflict(self):
+        """True if there is another mod with the same mtime."""
+        return load_order.has_load_order_conflict(self.name)
+
+    def hasActiveTimeConflict(self):
+        """True if has an active mtime conflict with another mod."""
+        return load_order.has_load_order_conflict_active(self.name)
+
+    def hasBadMasterNames(self):
+        """True if has a master with un unencodable name in cp1252."""
+        return modInfos.hasBadMasterNames(self.name)
+
+    def isMissingStrings(self):
+        return modInfos.isMissingStrings(self.name)
+
+    def isExOverLoaded(self):
+        """True if belongs to an exclusion group that is overloaded."""
+        maExGroup = reExGroup.match(self.name.s)
+        if not (load_order.isActiveCached(self.name) and maExGroup):
+            return False
+        else:
+            exGroup = maExGroup.group(1)
+            return len(modInfos.exGroup_mods[exGroup]) > 1
+
+    def getBsaPath(self):
+        """Returns path to plugin's BSA, if it were to exists."""
+        return self.getPath().root.root+u'.bsa'
+
+    def hasBsa(self):
+        """Returns True if plugin has an associated BSA."""
+        return self.getBsaPath().exists()
+
+    def getIniPath(self):
+        """Returns path to plugin's INI, if it were to exists."""
+        return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
+
+    def getStringsPaths(self,language=u'English'):
+        """If Strings Files are available as loose files, just point to
+        those, otherwise extract needed files from BSA if needed."""
+        baseDirJoin = self.getPath().head.join
+        files = []
+        sbody,ext = self.name.sbody,self.name.ext
+        for _dir, join, format_str in bush.game.esp.stringsFiles:
+            fname = format_str % {'body': sbody, 'ext': ext,
+                                  'language': language}
+            assetPath = GPath(u'').join(*join).join(fname)
+            files.append(assetPath)
+        extract = set()
+        paths = set()
+        #--Check for Loose Files first
+        for filepath in files:
+            loose = baseDirJoin(filepath)
+            if not loose.exists():
+                extract.add(filepath)
+            else:
+                paths.add(loose)
+        #--If there were some missing Loose Files
+        if extract:
+            bsaPaths = modInfos.extra_bsas(self, descending=True)
+            bsaFiles = {}
+            targetJoin = dirs['bsaCache'].join
+            for filepath in extract:
+                found = False
+                for path in bsaPaths:
+                    bsaFile = bsaFiles.get(path,None)
+                    if not bsaFile:
+                        try:
+                            bsaFile = libbsa.BSAHandle(path)
+                            bsaFiles[path] = bsaFile
+                        except:
+                            deprint(u'   Error loading BSA file:',path.stail,traceback=True)
+                            continue
+                    if bsaFile.IsAssetInBSA(filepath):
+                        target = targetJoin(path.tail)
+                        #--Extract
+                        try:
+                            bsaFile.ExtractAsset(filepath,target)
+                        except libbsa.LibbsaError as e:
+                            raise ModError(self.name,u"Could not extract Strings File from '%s': %s" % (path.stail,e))
+                        paths.add(target.join(filepath))
+                        found = True
+                if not found:
+                    raise ModError(self.name,u"Could not locate Strings File '%s'" % filepath.stail)
+        return paths
+
+    def hasResources(self):
+        """Returns (hasBsa,hasVoices) booleans according to presence of
+        corresponding resources."""
+        voicesPath = self.dir.join(u'Sound',u'Voice',self.name)
+        return [self.hasBsa(),voicesPath.exists()]
 
 #------------------------------------------------------------------------------
 class INIInfo(FileInfo):
@@ -2964,7 +2966,7 @@ class TrackedFileInfos(DataDict):
                 changed.add(name)
         return changed
 
-    def track(self, absPath, factory=None): # cf FileInfos.refreshFile
+    def track(self, absPath): # cf FileInfos.refreshFile
         fileInfo = _AFileInfo(self.tracked_dir, absPath)
         # fileInfo.readHeader() #ModInfo: will blow if absPath doesn't exist
         self[absPath] = fileInfo
