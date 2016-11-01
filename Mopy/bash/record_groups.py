@@ -262,10 +262,9 @@ class MobObjects(MobBase):
 
     def keepRecords(self,keepIds):
         """Keeps records with fid in set keepIds. Discards the rest."""
-        nullFid = (bosh.modInfos.masterName, 0)
-        self.records = [record for record in self.records if
-                        (record.fid in keepIds if not record.isKeyedByEid else
-                        (record.fid == nullFid and record.eid in keepIds))]
+        self.records = [record for record in self.records if (record.fid == (
+            record.isKeyedByEid and bosh.modInfos.masterName,
+            0) and record.eid in keepIds) or record.fid in keepIds]
         self.id_records.clear()
         self.setChanged()
 
