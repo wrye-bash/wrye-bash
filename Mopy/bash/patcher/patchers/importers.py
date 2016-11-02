@@ -49,7 +49,8 @@ class _SimpleImporter(ImportPatcher):
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(_SimpleImporter, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--(attribute-> value) dicts keyed by long fid.
+        #--(attribute-> value) dicts keyed by long fid.
+        self.id_data = collections.defaultdict(dict)
         self.srcClasses = set() #--Record classes actually provided by src
         # mods/files.
         self.classestemp = set()
@@ -59,8 +60,8 @@ class _SimpleImporter(ImportPatcher):
         #--Needs Longs
         self.longTypes = set(self.__class__.long_types or self.rec_attrs)
 
-    def _init_data_loop(self, mapper, recAttrs, recClass, srcFile, srcMod,
-                        temp_id_data):
+    def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
+        recAttrs = self.recAttrs_class[recClass]
         for record in srcFile.tops[recClass.classType].getActiveRecords():
             fid = mapper(record.fid)
             temp_id_data[fid] = dict(
@@ -74,9 +75,9 @@ class _SimpleImporter(ImportPatcher):
         """
         if not self.isActive: return
         id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(x.classType for x in recAttrs_class)
+        loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
+        longTypes = self.longTypes & set(
+            x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         for index,srcMod in enumerate(self.srcs):
@@ -88,12 +89,12 @@ class _SimpleImporter(ImportPatcher):
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
+            for recClass in self.recAttrs_class:
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
-                self._init_data_loop(mapper, recAttrs, recClass, srcFile,
-                                     srcMod, temp_id_data)
+                self._init_data_loop(mapper, recClass, srcFile, srcMod,
+                                     temp_id_data)
             for master in masters:
                 if not master in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -105,7 +106,7 @@ class _SimpleImporter(ImportPatcher):
                     masterFile.convertToLongFids(longTypes)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
+                for recClass in self.recAttrs_class:
                     if recClass.classType not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
@@ -115,13 +116,10 @@ class _SimpleImporter(ImportPatcher):
                         for attr, value in temp_id_data[fid].iteritems():
                             if value == record.__getattribute__(attr): continue
                             else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
+                                id_data[fid][attr] = value
             progress.plus()
-        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.longTypes = self.longTypes & set(
+            x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
@@ -509,8 +507,8 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
         self.recFidAttrs_class = {MreRecord.type_class[recType]: attrs for
                         recType, attrs in game.graphicsFidTypes.iteritems()}
 
-    def _init_data_loop(self, mapper, recAttrs, recClass, srcFile, srcMod,
-                        temp_id_data):
+    def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
+        recAttrs = self.recAttrs_class[recClass]
         recFidAttrs = self.recFidAttrs_class.get(recClass, None)
         for record in srcFile.tops[recClass.classType].getActiveRecords():
             fid = mapper(record.fid)
@@ -699,19 +697,15 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
             u'Actors.Skeleton': ('model',),
         }
     }
-    try:
-        actorClasses = (MreRecord.type_class['NPC_'], MreRecord.type_class['CREA'])
-    except KeyError:
-        pass # fallout 4
 
     #--Patch Phase ------------------------------------------------------------
     def initData(self,progress):
-        """Get graphics from source files."""
+        """Get actors from source files."""
         if not self.isActive: return
         id_data = self.id_data
-        loadFactory = LoadFactory(False,MreRecord.type_class['NPC_'],
-                                        MreRecord.type_class['CREA'])
-        longTypes =self.longTypes & set(x.classType for x in self.actorClasses)
+        loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
+        longTypes = self.longTypes & set(
+            x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         for index,srcMod in enumerate(self.srcs):
@@ -723,26 +717,12 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
-            for actorClass in self.actorClasses:
-                if actorClass.classType not in srcFile.tops: continue
-                self.srcClasses.add(actorClass)
-                self.classestemp.add(actorClass)
-                attrs = set(reduce(operator.add,
-                               (self.recAttrs_class[actorClass][bashKey]
-                                for bashKey in srcInfo.getBashTags() if
-                                bashKey in self.recAttrs_class[actorClass])))
-                for record in srcFile.tops[
-                    actorClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    temp_id_data[fid] = dict()
-                    for attr in attrs:
-                        if isinstance(attr,basestring):
-                            temp_id_data[fid][attr] = \
-                                reduce(getattr,attr.split('.'),record)
-                        elif isinstance(attr,(list,tuple,set)):
-                            temp_id_data[fid][attr] = dict(
-                            (subattr,reduce(getattr,subattr.split('.'),record))
-                                    for subattr in attr)
+            for recClass in self.recAttrs_class:
+                if recClass.classType not in srcFile.tops: continue
+                self.srcClasses.add(recClass)
+                self.classestemp.add(recClass)
+                self._init_data_loop(mapper, recClass, srcFile, srcMod,
+                                     temp_id_data)
             for master in masters:
                 if not master in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -754,11 +734,11 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                     masterFile.convertToLongFids(longTypes)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                for actorClass in self.actorClasses:
-                    if actorClass.classType not in masterFile.tops: continue
-                    if actorClass not in self.classestemp: continue
+                for recClass in self.recAttrs_class:
+                    if recClass.classType not in masterFile.tops: continue
+                    if recClass not in self.classestemp: continue
                     for record in masterFile.tops[
-                        actorClass.classType].getActiveRecords():
+                        recClass.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -767,13 +747,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                                                    record):
                                     continue
                                 else:
-                                    if fid not in id_data: id_data[
-                                        fid] = dict()
-                                    try:
-                                        id_data[fid][attr] = temp_id_data[fid][
-                                            attr]
-                                    except KeyError:
-                                        id_data[fid].setdefault(attr,value)
+                                    id_data[fid][attr] = value
                             elif isinstance(attr,(list,tuple,set)):
                                 temp_values = {}
                                 keep = False
@@ -783,12 +757,28 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                                         keep = True
                                     temp_values[subattr] = value[subattr]
                                 if keep:
-                                    id_data.setdefault(fid, {})
                                     id_data[fid].update(temp_values)
             progress.plus()
         self.longTypes = self.longTypes & set(
             x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
+
+    def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
+        mod_tags = srcFile.fileInfo.getBashTags()
+        common_tags = set(self.recAttrs_class[recClass]) & mod_tags
+        attrs = set(reduce(operator.add,
+            (self.recAttrs_class[recClass][tag] for tag in common_tags)))
+        for record in srcFile.tops[recClass.classType].getActiveRecords():
+            fid = mapper(record.fid)
+            temp_id_data[fid] = dict()
+            for attr in attrs:
+                if isinstance(attr, basestring):
+                    temp_id_data[fid][attr] = reduce(getattr, attr.split('.'),
+                                                     record)
+                elif isinstance(attr, (list, tuple, set)):
+                    temp_id_data[fid][attr] = dict(
+                        (subattr, reduce(getattr, subattr.split('.'), record))
+                        for subattr in attr)
 
     def scanModFile(self, modFile, progress): # scanModFile1: reduce(...)
         """Scan mod file against source data."""
@@ -1898,7 +1888,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                                         MreRecord.type_class['NPC_'])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
-        data = self.id_merged_deleted
+        mer_del = self.id_merged_deleted
         for index,srcMod in enumerate(self.srcs):
             tempData = {}
             if srcMod not in bosh.modInfos: continue
@@ -1935,70 +1925,70 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                             # if subrecord is identical to the last master then we don't care about older masters.
                             del tempData[fid]
                             continue
-                        if fid in data:
-                            if tempData[fid] == data[fid]['merged']: continue
+                        if fid in mer_del:
+                            if tempData[fid] == mer_del[fid]['merged']: continue
                         recordData = {'deleted':[],'merged':tempData[fid]}
                         for spell in list(record.spells):
                             if not spell in tempData[fid]:
                                 recordData['deleted'].append(spell)
-                        if not fid in data:
-                            data[fid] = recordData
+                        if not fid in mer_del:
+                            mer_del[fid] = recordData
                         else:
                             for spell in recordData['deleted']:
-                                if spell in data[fid]['merged']:
-                                    data[fid]['merged'].remove(spell)
-                                data[fid]['deleted'].append(spell)
-                            if data[fid]['merged'] == []:
+                                if spell in mer_del[fid]['merged']:
+                                    mer_del[fid]['merged'].remove(spell)
+                                mer_del[fid]['deleted'].append(spell)
+                            if mer_del[fid]['merged'] == []:
                                 for spell in recordData['merged']:
-                                    if spell in data[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue
-                                    data[fid]['merged'].append(spell)
+                                    if spell in mer_del[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue
+                                    mer_del[fid]['merged'].append(spell)
                                 continue
                             for index, spell in enumerate(recordData['merged']):
-                                if not spell in data[fid]['merged']: # so needs to be added... (unless deleted that is)
+                                if not spell in mer_del[fid]['merged']: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
-                                    if spell in data[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
+                                    if spell in mer_del[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
-                                        data[fid]['merged'].insert(0,spell) #insert as first item
+                                        mer_del[fid]['merged'].insert(0, spell) #insert as first item
                                     elif index == (len(recordData['merged'])-1):
-                                        data[fid]['merged'].append(spell) #insert as last item
+                                        mer_del[fid]['merged'].append(spell) #insert as last item
                                     else: #figure out a good spot to insert it based on next or last recognized item (ugly ugly ugly)
                                         i = index - 1
                                         while i >= 0:
-                                            if recordData['merged'][i] in data[fid]['merged']:
-                                                slot = data[fid]['merged'].index(recordData['merged'][i])+1
-                                                data[fid]['merged'].insert(slot, spell)
+                                            if recordData['merged'][i] in mer_del[fid]['merged']:
+                                                slot = mer_del[fid]['merged'].index(recordData['merged'][i]) + 1
+                                                mer_del[fid]['merged'].insert(slot, spell)
                                                 break
                                             i -= 1
                                         else:
                                             i = index + 1
                                             while i != len(recordData['merged']):
-                                                if recordData['merged'][i] in data[fid]['merged']:
-                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
-                                                    data[fid]['merged'].insert(slot, spell)
+                                                if recordData['merged'][i] in mer_del[fid]['merged']:
+                                                    slot = mer_del[fid]['merged'].index(recordData['merged'][i])
+                                                    mer_del[fid]['merged'].insert(slot, spell)
                                                     break
                                                 i += 1
                                     continue # Done with this package
-                                elif index == data[fid]['merged'].index(spell) or (len(recordData['merged'])-index) == (len(data[fid]['merged'])-data[fid]['merged'].index(spell)): continue #spell same in both lists.
+                                elif index == mer_del[fid]['merged'].index(spell) or (len(recordData['merged'])-index) == (len(mer_del[fid]['merged'])-mer_del[fid]['merged'].index(spell)): continue #spell same in both lists.
                                 else: #this import is later loading so we'll assume it is better order
-                                    data[fid]['merged'].remove(spell)
+                                    mer_del[fid]['merged'].remove(spell)
                                     if index == 0:
-                                        data[fid]['merged'].insert(0,spell) #insert as first item
+                                        mer_del[fid]['merged'].insert(0, spell) #insert as first item
                                     elif index == (len(recordData['merged'])-1):
-                                        data[fid]['merged'].append(spell) #insert as last item
+                                        mer_del[fid]['merged'].append(spell) #insert as last item
                                     else:
                                         i = index - 1
                                         while i >= 0:
-                                            if recordData['merged'][i] in data[fid]['merged']:
-                                                slot = data[fid]['merged'].index(recordData['merged'][i]) + 1
-                                                data[fid]['merged'].insert(slot, spell)
+                                            if recordData['merged'][i] in mer_del[fid]['merged']:
+                                                slot = mer_del[fid]['merged'].index(recordData['merged'][i]) + 1
+                                                mer_del[fid]['merged'].insert(slot, spell)
                                                 break
                                             i -= 1
                                         else:
                                             i = index + 1
                                             while i != len(recordData['merged']):
-                                                if recordData['merged'][i] in data[fid]['merged']:
-                                                    slot = data[fid]['merged'].index(recordData['merged'][i])
-                                                    data[fid]['merged'].insert(slot, spell)
+                                                if recordData['merged'][i] in mer_del[fid]['merged']:
+                                                    slot = mer_del[fid]['merged'].index(recordData['merged'][i])
+                                                    mer_del[fid]['merged'].insert(slot, spell)
                                                     break
                                                 i += 1
             progress.plus()
