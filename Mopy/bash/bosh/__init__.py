@@ -1534,14 +1534,24 @@ class BsaFile:
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - alpha."""
+    _with_ctime = False # HACK ctime may not be needed
 
     def __init__(self, abs_path):
-        self.abs_path = GPath(abs_path)
+        self._abs_path = GPath(abs_path)
         #--Settings cache
         try:
-            self._file_size, self._file_mod_time = self.abs_path.size_mtime()
+            if self._with_ctime:
+                self._file_size, self._file_mod_time, self.ctime = \
+                    self.abs_path.size_mtime_ctime()
+            else:
+                self._file_size, self._file_mod_time = \
+                    self.abs_path.size_mtime()
         except OSError:
             self._file_size = self._file_mod_time = 0
+            if self._with_ctime: self.ctime = 0
+
+    @property
+    def abs_path(self): return self._abs_path
 
 #------------------------------------------------------------------------------
 class IniFile(object):
@@ -2299,21 +2309,22 @@ class MasterInfo:
         return self.__class__.__name__ + u"<" + repr(self.name) + u">"
 
 #------------------------------------------------------------------------------
-class _AFileInfo:
+class _AFileInfo(AFile):
     """Abstract File."""
+    _with_ctime = True # HACK ctime may not be needed
+
     def __init__(self, parent_dir, name):
         self.dir = GPath(parent_dir)
-        self.name = GPath(name)
-        try:
-            self.size, self.mtime, self.ctime = \
-                self.getPath().size_mtime_ctime()
-        except OSError:
-            self.ctime = self.mtime = time.time()
-            self.size = 0
+        self.name = GPath(name) # ghost must be lopped off
+        super(_AFileInfo, self).__init__(parent_dir.join(name))
 
-    def getPath(self):
-        """Returns joined dir and name."""
-        return self.dir.join(self.name)
+    ##: DEPRECATED-------------------------------------------------------------
+    def getPath(self): return self.abs_path
+    @property
+    def mtime(self): return self._file_mod_time
+    @property
+    def size(self): return self._file_size
+    #--------------------------------------------------------------------------
 
     def sameAs(self,fileInfo):
         """Return true if other fileInfo refers to same file as this fileInfo."""
@@ -2322,13 +2333,12 @@ class _AFileInfo:
                 (self.ctime == fileInfo.ctime) and
                 (self.name == fileInfo.name))
 
-    def setmtime(self,mtime=0):
+    def setmtime(self, set_time=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
-        mtime = int(mtime or self.mtime)
-        path = self.getPath()
-        path.mtime = mtime
-        self.mtime = path.mtime
-        return mtime
+        set_time = int(set_time or self.mtime)
+        self.abs_path.mtime = set_time
+        self._file_mod_time = set_time
+        return set_time
 
     def __repr__(self):
         return self.__class__.__name__ + u"<" + repr(self.name) + u">"
@@ -2370,7 +2380,8 @@ class FileInfo(_AFileInfo):
         return self.name.cext == bush.game.ess.ext
 
     def info_refresh(self):
-        self.size, self.mtime, self.ctime = self.getPath().size_mtime_ctime()
+        self._file_size, self._file_mod_time, self.ctime = \
+            self.abs_path.size_mtime_ctime()
         if self.header: self.readHeader() # if not header remains None
 
     def readHeader(self):
@@ -2529,11 +2540,11 @@ class ModInfo(FileInfo):
             crc = modInfos.table.getItem(self.name,'crc')
         return crc
 
-    def setmtime(self,mtime=0):
+    def setmtime(self, set_time=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
-        mtime = FileInfo.setmtime(self,mtime)
+        set_time = FileInfo.setmtime(self, set_time)
         # Prevent re-calculating the File CRC
-        modInfos.table.setItem(self.name,'crc_mtime',mtime)
+        modInfos.table.setItem(self.name,'crc_mtime', set_time)
 
     # Ghosting and ghosting related overrides ---------------------------------
     def sameAs(self, fileInfo):
@@ -2543,11 +2554,10 @@ class ModInfo(FileInfo):
         except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
             return False
 
-    def getPath(self):
+    @property
+    def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
-        path = FileInfo.getPath(self)
-        if self.isGhost: path += u'.ghost'
-        return path
+        return (self._abs_path + u'.ghost') if self.isGhost else self._abs_path
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
