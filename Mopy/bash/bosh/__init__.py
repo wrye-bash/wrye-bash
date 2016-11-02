@@ -1553,6 +1553,17 @@ class AFile(object):
     @property
     def abs_path(self): return self._abs_path
 
+    def needs_update(self, _reset_cache=True):
+        try:
+            psize, pmtime = self.abs_path.size_mtime()
+        except OSError:
+            return False # we should not call needs_update on deleted files
+        if self._file_size != psize or self._file_mod_time != pmtime:
+            if _reset_cache:
+                self._file_size, self._file_mod_time = psize, pmtime
+            return True
+        return False
+
 #------------------------------------------------------------------------------
 class IniFile(object):
     """Any old ini file."""
