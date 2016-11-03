@@ -66,16 +66,11 @@ class MreMato(MelRecord):
             if size == 52:
                 MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
-            elif size == 28:
-                unpacked = ins.unpack('7f',size,readId)
+            elif size == 48: # old skyrim record
+                raise ModSizeError(record.inName, readId, 52, size, True,
+                                   oldSkyrim=True)
             else:
-                raise ModSizeError(record.inName,readId,48,size,True)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
+                raise ModSizeError(record.inName,readId,52,size,True)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -104,15 +99,10 @@ class MreMovt(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 40:
-                raise ModSizeError(record.inName,readId,44,size,True)
+                raise ModSizeError(record.inName, readId, 44, size, True,
+                                   oldSkyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,44,size,True)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -182,7 +172,7 @@ class MreStat(MelRecord):
     """Static model record."""
     classType = 'STAT'
 
-    LtexSnowFlags = Flags(0L,Flags.getNames(
+    StatSnowFlags = Flags(0L,Flags.getNames(
             (0, 'consideredSnow'),
         ))
 
@@ -192,23 +182,18 @@ class MreStat(MelRecord):
             if size == 12:
                 MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
-            elif size == 8:
-                unpacked = ins.unpack('fI',size,readId)
+            elif size == 8: # old skyrim record
+                raise ModSizeError(record.inName, readId, 12, size, True,
+                                   oldSkyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,12,size,True)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
 
     melSet = MelSet(
         MelString('EDID','eid'),
         MelBounds(),
         MelModel(),
         MelStatDnam('DNAM','fIB3s','maxAngle30to120',(FID,'material'),
-                    (LtexSnowFlags,'snowflag',0L),('unkStat1',null3),),
+                    (StatSnowFlags,'snowflag',0L),('unkStat1',null3),),
         # Contains null-terminated mesh filename followed by random data
         # up to 260 bytes and repeats 4 times
         MelBase('MNAM','distantLOD'),
@@ -224,6 +209,18 @@ class MreWatr(MelRecord):
             (0, 'causesDamage'),
         ))
 
+    class MelWatrDnam(MelStruct):
+        """Handle older truncated DNAM for WATR subrecord."""
+        def loadData(self, record, ins, sub_type, size, readId):
+            if size == 232:
+                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+                return
+            elif size == 228: # old skyrim record
+                raise ModSizeError(record.inName, readId, 232, size, True,
+                                   oldSkyrim=True)
+            else:
+                raise ModSizeError(record.inName,readId,232,size,True)
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
@@ -238,7 +235,7 @@ class MreWatr(MelRecord):
         MelFid('XNAM','spell',),
         MelFid('INAM','imageSpace',),
         MelStruct('DATA','H','damagePerSecond'),
-        MelStruct('DNAM','7f4s2f3Bs3Bs3Bs4s44f','unknown1','unknown2','unknown3',
+        MelWatrDnam('DNAM','7f4s2f3Bs3Bs3Bs4s44f','unknown1','unknown2','unknown3',
                   'unknown4','specularPropertiesSunSpecularPower',
                   'waterPropertiesReflectivityAmount',
                   'waterPropertiesFresnelAmount',('unknown5',null4),
@@ -362,15 +359,10 @@ class MreWeap(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size, readId)
                 return
             elif size == 16: # old skyrim record
-                raise ModSizeError(record.inName,readId,24,size,True)
+                raise ModSizeError(record.inName, readId, 24, size, True,
+                                   oldSkyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,24,size,True)
-            unpacked += self.defaults[len(unpacked):]
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if callable(action): value = action(value)
-                setter(attr,value)
-            if self._debug: print unpacked
 
     melSet = MelSet(
         MelString('EDID','eid'),

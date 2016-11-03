@@ -123,15 +123,22 @@ class ModReadError(ModError):
 #------------------------------------------------------------------------------
 class ModSizeError(ModError):
     """TES4 Error: Record/subrecord has wrong size."""
-    def __init__(self,inName,recType,readSize,maxSize,exactSize=True):
+
+    def __init__(self, inName, recType, readSize, maxSize, exactSize=True,
+                 **kwdargs):
         self.recType = recType
         self.readSize = readSize
         self.maxSize = maxSize
         self.exactSize = exactSize
+        if kwdargs.get('oldSkyrim', False):
+            messageForm = (u'\nWrye Bash SSE expects a newer format for %s '
+                u'than found.\nLoad and save %s with the Skyrim SE CK\n' % (
+                                recType, inName))
+        else: messageForm = u''
         if exactSize:
-            messageForm = u'%s: Expected size == %d, but got: %d '
+            messageForm += u'%s: Expected size == %d, but got: %d '
         else:
-            messageForm = u'%s: Expected size <= %d, but got: %d '
+            messageForm += u'%s: Expected size <= %d, but got: %d '
         ModError.__init__(self,inName.s,messageForm % (recType,readSize,maxSize))
 
 #------------------------------------------------------------------------------
