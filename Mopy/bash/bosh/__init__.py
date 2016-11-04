@@ -7134,36 +7134,34 @@ class InstallersData(_DataStore):
         getBSAOrder = lambda b: load_order.activeCached().index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
+            def _filter_bsas(li): return filter(BSAInfos.rightFileType, li)
+            is_act = load_order.isActiveCached
+            def _bsa_mod_active(li): return [b for b in li if
+                        is_act(b.root + ".esp")] ##: or is_act(b.root + ".esm")
             # Create list of active BSA files in srcInstaller
-            srcFiles = srcInstaller.data_sizeCrc
-            srcBSAFiles = [x for x in srcFiles.keys() if x.ext == u'.' + bush.game.bsa_extension]
-#            print("Ordered: {}".format(load_order.activeCached()))
-            activeSrcBSAFiles = [x for x in srcBSAFiles if load_order.isActiveCached(x.root + ".esp")]
-            try:
-                bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]
-#                print("BSA Paths: {}".format(bsas))
-            except:
-                deprint(u'   Error loading BSA srcFiles: ',activeSrcBSAFiles,traceback=True)
+            srcBSAFiles = _filter_bsas(srcInstaller.data_sizeCrc)
+            activeSrcBSAFiles = _bsa_mod_active(srcBSAFiles)
+            bsas = [(x, bsaInfos[x]) for x in activeSrcBSAFiles if
+                    x in bsaInfos.keys()]
             # Create list of all assets in BSA files for srcInstaller
             srcBSAContents = []
-            for x,y in bsas: srcBSAContents.extend(y.GetAssets('.+'))
-#            print("srcBSAContents: {}".format(srcBSAContents))
-
+            for x,y in bsas: srcBSAContents.extend(y._filenames)
             # Create a list of all active BSA Files except the ones in srcInstaller
             activeBSAFiles = []
             for package, installer in self.iteritems():
                 if installer.order == srcOrder: continue
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))
-                BSAFiles = [x for x in installer.data_sizeCrc if x.ext == u'.' + bush.game.bsa_extension]
-                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(
-                    dirs['mods'].join(x.s))) for x in BSAFiles if load_order.isActiveCached(x.root + ".esp")])
+                inst_bsas = _filter_bsas(installer.data_sizeCrc)
+                activeBSAFiles.extend([(package, x, bsaInfos[x])
+                    for x in inst_bsas if x in bsaInfos.keys() and
+                        load_order.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
-            for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
-                curAssets = bsaHandle.GetAssets('.+')
+            for package, bsaPath, bsa_info in sorted(activeBSAFiles,key=getBSAOrder):
+                curAssets = bsa_info._filenames
 #                print("Current Assets: {}".format(curAssets))
-                curConflicts = Installer.sortFiles([x.s for x in curAssets if x in srcBSAContents])
+                curConflicts = Installer.sortFiles([x for x in curAssets if x in srcBSAContents])
 #                print("Current Conflicts: {}".format(curConflicts))
                 if curConflicts: bsaConflicts.append((package, bsaPath, curConflicts))
 #        print("BSA Conflicts: {}".format(bsaConflicts))
