@@ -2707,7 +2707,7 @@ class ModInfo(FileInfo):
 
     def getBsaPath(self):
         """Returns path to plugin's BSA, if it were to exists."""
-        return self.getPath().root.root+u'.bsa'
+        return self.getPath().root.root + u'.' + bush.game.bsa_extension
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
@@ -4463,7 +4463,11 @@ class SaveInfos(FileInfos):
 #------------------------------------------------------------------------------
 class BSAInfos(FileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
-    file_pattern = re.compile(ur'\.bsa(.ghost)?$', re.I | re.U)
+    try:
+        file_pattern = re.compile(ur'\.' + bush.game.bsa_extension + ur'$',
+                                  re.I | re.U)
+    except AttributeError:
+        pass
 
     def __init__(self): FileInfos.__init__(self, dirs['mods'], BSAInfo)
 
@@ -4613,7 +4617,11 @@ class Installer(object):
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
-    reDataFile = re.compile(ur'(\.(esp|esm|bsa|ini))$', re.I | re.U)
+    try:
+        reDataFile = re.compile(ur'(\.(esp|esm|' + bush.game.bsa_extension +
+                                ur'|ini))$', re.I | re.U)
+    except AttributeError: # YAK
+        reDataFile = re.compile(ur'(\.(esp|esm|bsa|ini))$', re.I | re.U)
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
@@ -7021,7 +7029,7 @@ class InstallersData(_DataStore):
         if showBSA:
             # Create list of active BSA files in srcInstaller
             srcFiles = srcInstaller.data_sizeCrc
-            srcBSAFiles = [x for x in srcFiles.keys() if x.ext == ".bsa"]
+            srcBSAFiles = [x for x in srcFiles.keys() if x.ext == u'.' + bush.game.bsa_extension]
 #            print("Ordered: {}".format(load_order.activeCached()))
             activeSrcBSAFiles = [x for x in srcBSAFiles if load_order.isActiveCached(x.root + ".esp")]
             try:
@@ -7040,7 +7048,7 @@ class InstallersData(_DataStore):
                 if installer.order == srcOrder: continue
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))
-                BSAFiles = [x for x in installer.data_sizeCrc if x.ext == ".bsa"]
+                BSAFiles = [x for x in installer.data_sizeCrc if x.ext == u'.' + bush.game.bsa_extension]
                 activeBSAFiles.extend([(package, x, libbsa.BSAHandle(
                     dirs['mods'].join(x.s))) for x in BSAFiles if load_order.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts

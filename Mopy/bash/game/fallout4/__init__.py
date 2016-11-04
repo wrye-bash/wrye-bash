@@ -61,6 +61,7 @@ nexusKey = 'bash.installers.openFallout4Nexus.continue'
 
 # Bsa info
 allow_reset_bsa_timestamps = False
+bsa_extension = ur'ba2'
 
 # Load order info
 using_txt_file = True

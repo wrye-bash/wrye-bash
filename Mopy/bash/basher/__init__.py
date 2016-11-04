@@ -1370,12 +1370,14 @@ class ModDetails(_SashDetailsPanel):
             self.descriptionStr = self.description.GetValue() ##: .replace('\n', 'r\n')
             self.SetEdited()
 
-    bsaAndVoice = _(u'This mod has an associated archive (%s.bsa) and an '
+    bsaAndVoice = _(u'This mod has an associated archive (%s.' +
+                    bush.game.bsa_extension + u') and an '
         u'associated voice directory (Sound\\Voices\\%s), which will become '
         u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that the '
         u'BSA archive may also contain a voice directory (Sound\\Voices\\%s), '
         u'which would remain detached even if the archive name is adjusted.')
-    bsa = _(u'This mod has an associated archive (%s.bsa), which will become '
+    bsa = _(u'This mod has an associated archive (%s.' +
+                    bush.game.bsa_extension + u'), which will become '
         u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that this '
         u'BSA archive may contain a voice directory (Sound\\Voices\\%s), which'
         u' would remain detached even if the archive file name is adjusted.')

@@ -70,6 +70,7 @@ nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
 # Bsa info
 allow_reset_bsa_timestamps = False
+bsa_extension = ur'bsa'
 
 # Load order info
 using_txt_file = True

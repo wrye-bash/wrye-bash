@@ -100,13 +100,15 @@ class File_Duplicate(ItemLink):
         self.text = (_(u'Duplicate'),_(u'Duplicate...'))[len(selection) == 1]
         self.help = _(u"Make a copy of '%s'") % (selection[0])
 
-    _bsaAndVoice = _(u"This mod has an associated archive (%s.bsa) and an "
+    _bsaAndVoice = _(u"This mod has an associated archive (%s." +
+                    bush.game.bsa_extension + u") and an "
         u"associated voice directory (Sound\\Voices\\%s), which will not be "
         u"attached to the duplicate mod.") + u'\n\n' + _(u'Note that the BSA '
         u'archive may also contain a voice directory (Sound\\Voices\\%s), '
         u'which would remain detached even if a duplicate archive were also '
         u'created.')
-    _bsa = _(u'This mod has an associated archive (%s.bsa), which will not be '
+    _bsa = _(u'This mod has an associated archive (%s.' +
+                    bush.game.bsa_extension + u'), which will not be '
         u'attached to the duplicate mod.') + u'\n\n' + _(u'Note that this BSA '
         u'archive may contain a voice directory (Sound\\Voices\\%s), which '
         u'would remain detached even if a duplicate archive were also created.'
