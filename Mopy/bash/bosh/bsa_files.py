@@ -172,7 +172,7 @@ class _HashedRecord(object):
         return NotImplemented
     def __le__(self, other): return not (self > other)
 
-    def __repr__(self): return repr(self.hash)
+    def __repr__(self): return repr(hex(self.hash))
 
 # BSAs
 class _BsaHashedRecord(_HashedRecord):
@@ -200,6 +200,11 @@ class _BsaHashedRecord(_HashedRecord):
 class BSAFolderRecord(_BsaHashedRecord):
     __slots__ = ('files_count', 'file_records_offset',)
     formats = ['I'] + ['I']
+    formats = list((f, struct.calcsize(f)) for f in formats)
+
+class BSASkyrimSEFolderRecord(_BsaHashedRecord):
+    __slots__ = ('files_count', 'unknown_int', 'file_records_offset',)
+    formats = ['I'] + ['I'] + ['Q']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
 class BSAFileRecord(_BsaHashedRecord):
@@ -307,6 +312,7 @@ class _BSA(object):
 
 class BSA(_BSA):
     file_record_type = BSAFileRecord
+    folder_record_type = BSAFolderRecord
 
     def _load_bsa(self, abs_path):
         # FIXME drop __calculate_file_records_size
@@ -316,7 +322,7 @@ class BSA(_BSA):
             self.bsa_header.load_header(bsa_file)
             # load the folder records from input stream
             for __ in xrange(self.bsa_header.folder_count):
-                rec = BSAFolderRecord()
+                rec = self.__class__.folder_record_type()
                 rec.load_record(bsa_file)
                 folder_records.append(rec)
             # load the file record block to parse later
@@ -374,7 +380,7 @@ class BSA(_BSA):
             self.bsa_header.load_header(bsa_file)
             # load the folder records from input stream
             for __ in xrange(self.bsa_header.folder_count):
-                rec = BSAFolderRecord()
+                rec = self.__class__.folder_record_type()
                 rec.load_record(bsa_file)
                 folder_records.append(rec)
             # load the file record block
@@ -470,5 +476,6 @@ class SkyrimBsa(BSA):
 
 class SkyrimSeBsa(BSA):
     header_type = SkyrimSeBsaHeader
+    folder_record_type = BSASkyrimSEFolderRecord
 
 class Fallout4Ba2(BA2): pass
