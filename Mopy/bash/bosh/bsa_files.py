@@ -34,6 +34,7 @@ __author__ = 'Utumno'
 import collections
 import os
 import struct
+import sys
 from ..bolt import deprint
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
@@ -52,6 +53,18 @@ class BSAFlagError(BSAError):
 
     def __init__(self, msg, flag):
         super(BSAFlagError, self).__init__(msg +  u' (flag %d) unset' % flag)
+
+class BSADecodingError(BSAError):
+
+    def __init__(self, string):
+        super(BSADecodingError, self).__init__(
+            u'Undecodable string %r' % string)
+
+def _decode_path(string_path):
+    try:
+        return unicode(string_path, encoding=_bsa_encoding)
+    except UnicodeDecodeError:
+        raise BSADecodingError(string_path)
 
 # Headers ---------------------------------------------------------------------
 class _Header(object):
@@ -277,10 +290,16 @@ class _BSA(object):
         self.bsa_header = self.__class__.header_type()
         self.bsa_folders = collections.OrderedDict() # keep folder order
         self._filenames = []
-        if not names_only:
-            self._load_bsa(abs_path)
-        else:
-            self._load_bsa_light(abs_path)
+        self.__load(abs_path, names_only)
+
+    def __load(self, abs_path, names_only):
+        try:
+            if not names_only:
+                self._load_bsa(u'%s' % abs_path) # accept string or Path
+            else:
+                self._load_bsa_light(u'%s' % abs_path)
+        except struct.error as e:
+            raise BSAError, e.message, sys.exc_info()[2]
 
     # Abstract
     def _load_bsa(self, abs_path): raise NotImplementedError
@@ -316,11 +335,9 @@ class BSA(_BSA):
             folder_path = u'?%d' % folder_record.hash # hack - untested
             if has_folder_names:
                 name_size = struct.unpack_from('B', file_records_block)[0]
-                ## TODO: decode
                 # discard null terminator below
-                folder_path = unicode(
-                    file_records_block[1:name_size].tobytes(),
-                    encoding=_bsa_encoding)
+                folder_path = _decode_path(
+                    file_records_block[1:name_size].tobytes())
                 file_records_block = file_records_block[name_size + 1:]
             current_folder = self.bsa_folders.setdefault(
                 folder_path, BSAFolder(folder_record)) # type: BSAFolder
@@ -331,8 +348,7 @@ class BSA(_BSA):
                     file_records_block, file_records_index)
                 file_name = u'?%d' % rec.hash
                 if file_names is not None:
-                    file_name = unicode(file_names[names_record_index],
-                                        encoding=_bsa_encoding)
+                    file_name = _decode_path(file_names[names_record_index])
                     names_record_index += 1
                 current_folder.assets[file_name] = BSAAsset(
                     os.path.sep.join((folder_path, file_name)), rec)
@@ -366,11 +382,9 @@ class BSA(_BSA):
                 folder_path = u'?%d' % folder_record.hash # hack - untested
                 if self.bsa_header.has_names_for_folders():
                     name_size = struct.unpack('B', bsa_file.read(1))[0]
-                    ## TODO: decode
-                    folder_path = unicode(
+                    folder_path = _decode_path(
                         struct.unpack('%ds' % (name_size - 1),
-                                      bsa_file.read(name_size - 1))[0],
-                        encoding=_bsa_encoding)
+                                      bsa_file.read(name_size - 1))[0])
                     total_names_length += name_size
                 # discard null terminator and file record blocks
                 bsa_file.read(self.bsa_header.has_names_for_folders() +
@@ -388,8 +402,7 @@ class BSA(_BSA):
         names_record_index = 0
         for folder_path, folder_record in path_folder_record.iteritems():
             for __ in xrange(folder_record.files_count):
-                file_name = unicode(file_names[names_record_index],
-                                    encoding=_bsa_encoding)
+                file_name = _decode_path(file_names[names_record_index])
                 _filenames.append(os.path.sep.join((folder_path, file_name)))
                 names_record_index += 1
         self._filenames = _filenames
@@ -418,8 +431,8 @@ class BA2(_BSA):
         current_folder_name = current_folder = None
         for index in xrange(self.bsa_header.b2a_num_files):
             name_size = struct.unpack_from('H', file_names_block)[0]
-            file_name = unicode(file_names_block[2:name_size + 2].tobytes(),
-                    encoding=_bsa_encoding)
+            file_name = _decode_path(
+                file_names_block[2:name_size + 2].tobytes())
             file_names_block = file_names_block[name_size + 2:]
             folder_dex = file_name.rfind(u'\\')
             if folder_dex == -1:
@@ -443,9 +456,8 @@ class BA2(_BSA):
         _filenames = []
         for index in xrange(self.bsa_header.b2a_num_files):
             name_size = struct.unpack_from('H', file_names_block)[0]
-            file_name = unicode(
-                file_names_block[2:name_size + 2].tobytes(),
-                encoding=_bsa_encoding)
+            file_name = _decode_path(
+                file_names_block[2:name_size + 2].tobytes())
             _filenames.append(file_name)
             file_names_block = file_names_block[name_size + 2:]
         self._filenames = _filenames
