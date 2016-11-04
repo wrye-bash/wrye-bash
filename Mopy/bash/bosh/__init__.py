@@ -2359,7 +2359,6 @@ class FileInfo(_AFileInfo):
 
     def __init__(self, parent_dir, name):
         _AFileInfo.__init__(self, parent_dir, name)
-        self.bashDir = self.getFileInfos().bash_dir
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
@@ -2386,9 +2385,6 @@ class FileInfo(_AFileInfo):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         return (self.isMod() and self.header and
                 self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
-
-    def isEss(self):
-        return self.name.cext == bush.game.ess.ext
 
     def info_refresh(self):
         self._file_size, self._file_mod_time, self.ctime = \
@@ -2437,6 +2433,13 @@ class FileInfo(_AFileInfo):
         """Writes header to file, overwriting old header."""
         raise AbstractError
 
+    def coCopy(self,oldPath,newPath):
+        """Copies co files corresponding to oldPath to newPath.
+        Provided so that SaveFileInfo can override for its cofiles."""
+        pass
+
+class _BackupMixin(FileInfo): # this should become a real mixin - under #336
+
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
@@ -2462,21 +2465,26 @@ class FileInfo(_AFileInfo):
 
     def makeBackup(self, forceBackup=False):
         """Creates backup(s) of file."""
-        backupDir = self.bashDir.join(u'Backups')
+        backupDir = self.backup_dir
         self._doBackup(backupDir,forceBackup)
         #--Done
         self.madeBackup = True
 
-    def coCopy(self,oldPath,newPath):
-        """Copies co files corresponding to oldPath to newPath.
-        Provided so that SaveFileInfo can override for its cofiles."""
-        pass
+    def _backup_paths(self):
+        return [(self.backup_dir.join(self.name), self.getPath())]
+
+    def revert_backup(self):
+        backup_paths = self._backup_paths()
+        for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
+            if not tup[0].exists(): backup_paths.remove(tup)
+        env.shellCopy(*zip(*backup_paths))
+        # do not change load order for timestamp games - rest works ok
+        self.setmtime(self._file_mod_time)
+        self.getFileInfos().refreshFile(self.name)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
-        if not self in self.getFileInfos().values():
-            raise StateError(u"Can't get snapshot parameters for file outside main directory.")
-        destDir = self.bashDir.join(u'Snapshots')
+        destDir = self.snapshot_dir
         destDir.makedirs()
         (root,ext) = self.name.rootExt
         separator = u'-'
@@ -2503,11 +2511,19 @@ class FileInfo(_AFileInfo):
         destName = root+separator+(u'.'.join(snapLast))+ext
         return destDir,destName,(root+u'*'+ext).s
 
+    @property
+    def backup_dir(self):
+        return self.getFileInfos().bash_dir.join(u'Backups')
+
+    @property
+    def snapshot_dir(self):
+        return self.getFileInfos().bash_dir.join(u'Snapshots')
+
 #------------------------------------------------------------------------------
 reReturns = re.compile(u'\r{2,}',re.U)
 reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
-class ModInfo(FileInfo):
+class ModInfo(_BackupMixin, FileInfo):
     """An esp/m file."""
 
     def __init__(self, parent_dir, name):
@@ -2840,7 +2856,7 @@ class INIInfo(FileInfo):
         0: not installed (green)
         -10: invalid tweak file (red).
         Also caches the value in self._status"""
-        infos = self.getFileInfos()
+        infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.ini_info_file.getSettings()
         if self._incompatible(target_ini) or not tweak_settings:
@@ -2930,7 +2946,7 @@ class INIInfo(FileInfo):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-class SaveInfo(FileInfo):
+class SaveInfo(_BackupMixin, FileInfo):
     def getFileInfos(self): return saveInfos
 
     def getStatus(self):
@@ -2965,8 +2981,13 @@ class SaveInfo(FileInfo):
         """Returns CoSaves instance corresponding to self."""
         return CoSaves(self.getPath())
 
+    def _backup_paths(self):
+        save_paths = super(SaveInfo, self)._backup_paths()
+        save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
+        return save_paths
+
 #------------------------------------------------------------------------------
-class BSAInfo(FileInfo):
+class BSAInfo(_BackupMixin, FileInfo):
     def getFileInfos(self): return bsaInfos
 
     def resetMTime(self,mtime=u'01-01-2006 00:00:00'):

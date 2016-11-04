@@ -267,8 +267,8 @@ class _RevertBackup(OneItemLink):
 
     def _initData(self, window, selection):
         super(_RevertBackup, self)._initData(window, selection)
-        self.backup_path = self._selected_info.bashDir.join(
-            u'Backups', self._selected_item)
+        self.backup_path = self._selected_info.backup_dir.join(
+            self._selected_item)
         self.help = _(u"Revert %(file)s to its last backup") % {
             'file': self._selected_item}
 
@@ -278,25 +278,18 @@ class _RevertBackup(OneItemLink):
 
     @balt.conversation
     def Execute(self):
-        fileName = self._selected_item
         #--Warning box
         message = _(u"Revert %s to backup dated %s?") % (
-            fileName.s, formatDate(self.backup_path.mtime))
-        if self._askYes(message):
-            with balt.BusyCursor():
-                dest = self._selected_info.getPath() # care for ghosts !
-                current_mtime = dest.mtime
-                self.backup_path.copyTo(dest)
-                # do not change load order for timestamp games - rest works ok
-                self._selected_info.setmtime(current_mtime)
-                if self._selected_info.isEss():
-                    #--Handle CoSave (.pluggy and .obse) files.
-                    bosh.CoSaves(self.backup_path).copy(dest)
-                try:
-                    self.window.data_store.refreshFile(fileName)
-                except bosh.FileError:
-                    self._showError(_(u'Old file is corrupt!'))
-                self.window.RefreshUI(files=[fileName], refreshSaves=False)
+            self._selected_item.s, formatDate(self.backup_path.mtime))
+        if not self._askYes(message): return
+        with balt.BusyCursor():
+            try:
+                self._selected_info.revert_backup()
+                self.window.RefreshUI(files=[self._selected_item],
+                                      refreshSaves=False)
+            except bosh.FileError:
+                self._showError(_(u'Old file is corrupt!'))
+                self.window.RefreshUI(refreshSaves=True)
 
 class _RevertFirstBackup(_RevertBackup):
     text = _(u'Revert to First Backup')
