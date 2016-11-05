@@ -94,6 +94,7 @@ class ess:
     @staticmethod
     def load(ins,header):
         """Extract info from save file."""
+        def unpack_str16(): return ins.read(struct.unpack('H', ins.read(2))[0])
         #--Header
         if ins.read(13) != 'TESV_SAVEGAME':
             raise Exception(u'Save file is not a Skyrim save game.')
@@ -102,22 +103,18 @@ class ess:
         # This would be Key, if $C Skyrim SE otherwise Skyrim
         header.version, = struct.unpack('I',ins.read(4))
         saveNumber, = struct.unpack('I',ins.read(4))
-        size, = struct.unpack('H',ins.read(2))
-        header.pcName = ins.read(size) # wbLenString, 2 of previous size
+        header.pcName = unpack_str16()
         header.pcLevel, = struct.unpack('I',ins.read(4))
-        size, = struct.unpack('H',ins.read(2))
-        header.pcLocation = ins.read(size) # Save Cell
+        header.pcLocation = unpack_str16()
         # Begin Game Time
-        size, = struct.unpack('H',ins.read(2))
-        header.gameDate = ins.read(size) # Save Duration
+        header.gameDate = unpack_str16()
         # gameDate format: hours.minutes.seconds
         hours,minutes,seconds = [int(x) for x in header.gameDate.split('.')]
         playSeconds = hours*60*60 + minutes*60 + seconds
         header.gameDays = float(playSeconds)/(24*60*60)
         header.gameTicks = playSeconds * 1000
         # End Game Time
-        size, = struct.unpack('H',ins.read(2))
-        header.pcRace = ins.read(size) # Player Race
+        header.pcRace = unpack_str16() # Player Race
         header.pcSex, = struct.unpack('H',ins.read(2)) # Player Sex
         # Read unknown 16 bytes
         unk3 = ins.read(16)
@@ -126,8 +123,9 @@ class ess:
         ssHeight, = struct.unpack('I',ins.read(4))
         if header.version == 12:
             unk2Bytes = ins.read(2)
-        if ins.tell() != headerSize + 17:
-            raise Exception(u'New Save game header size (%s) not as expected (%s).' % (ins.tell()-17,headerSize))
+        if ins.tell() != headerSize + 17: raise Exception(
+            u'New Save game header size (%s) not as expected (%s).' % (
+                ins.tell() - 17, headerSize))
         #--Image Data
         if header.version == 12:
             # Skyrim SE is in 32bit RGB, Bash is expecting 24bit RGB
@@ -155,10 +153,10 @@ class ess:
         del header.masters[:]
         numMasters, = struct.unpack('B',ins.read(1))
         for count in xrange(numMasters):
-            size, = struct.unpack('H',ins.read(2))
-            header.masters.append(ins.read(size))
-        if ins.tell() != header.mastersStart + mastersSize:
-            raise Exception(u'Save game masters size (%i) not as expected (%i).' % (ins.tell()-header.mastersStart,mastersSize))
+            header.masters.append(unpack_str16())
+        if ins.tell() != header.mastersStart + mastersSize: raise Exception(
+            u'Save game masters size (%i) not as expected (%i).' % (
+            ins.tell() - header.mastersStart, mastersSize))
 
     @staticmethod
     def writeMasters(ins,out,header):
