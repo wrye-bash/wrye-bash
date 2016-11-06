@@ -306,7 +306,7 @@ class _BSA(object):
         except struct.error as e:
             raise BSAError, e.message, sys.exc_info()[2]
 
-    # Abstract
+    # Abstract - _load_bsa is not used externally, may be removed
     def _load_bsa(self, abs_path): raise NotImplementedError
     def _load_bsa_light(self, abs_path): raise NotImplementedError
 
@@ -315,8 +315,8 @@ class BSA(_BSA):
     folder_record_type = BSAFolderRecord
 
     def _load_bsa(self, abs_path):
-        # FIXME drop __calculate_file_records_size
         folder_records = []
+        total_names_length = 0
         with open(abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
@@ -325,49 +325,42 @@ class BSA(_BSA):
                 rec = self.__class__.folder_record_type()
                 rec.load_record(bsa_file)
                 folder_records.append(rec)
-            # load the file record block to parse later
-            file_records_block_size = self.__calculate_file_records_size()
-            file_records_block = memoryview(
-                bsa_file.read(file_records_block_size))
-            # load the file names block
-            file_names = None
-            if self.bsa_header.has_names_for_files():
-                file_names = bsa_file.read(
-                    self.bsa_header.total_file_name_length).split('\00')
+            # load the file record block
+            self.bsa_folders.clear()
+            file_records = []
+            for folder_record in folder_records:
+                folder_path = u'?%d' % folder_record.hash # hack - untested
+                if self.bsa_header.has_names_for_folders():
+                    name_size = struct.unpack('B', bsa_file.read(1))[0]
+                    folder_path = _decode_path(
+                        struct.unpack('%ds' % (name_size - 1),
+                                      bsa_file.read(name_size - 1))[0])
+                    total_names_length += name_size
+                    bsa_file.read(1)
+                # discard null terminator and file record blocks
+                self.bsa_folders[folder_path] = BSAFolder(folder_record)
+                for __ in xrange(folder_record.files_count):
+                    rec = BSAFileRecord()
+                    rec.load_record(bsa_file)
+                    file_records.append(rec)
+            if total_names_length != self.bsa_header.total_folder_name_length:
+                deprint(u'%s reports wrong folder names length %d'
+                        u' - actual: %d (number of folders is %d)' % (
+                            abs_path, self.bsa_header.total_folder_name_length,
+                            total_names_length, self.bsa_header.folder_count))
+            file_names = bsa_file.read(
+                self.bsa_header.total_file_name_length).split('\00') # has an empty string at the end
             # close the file
-        names_record_index = 0
-        has_folder_names = self.bsa_header.has_names_for_folders()
-        for folder_record in folder_records:
-            folder_path = u'?%d' % folder_record.hash # hack - untested
-            if has_folder_names:
-                name_size = struct.unpack_from('B', file_records_block)[0]
-                # discard null terminator below
-                folder_path = _decode_path(
-                    file_records_block[1:name_size].tobytes())
-                file_records_block = file_records_block[name_size + 1:]
-            current_folder = self.bsa_folders.setdefault(
-                folder_path, BSAFolder(folder_record)) # type: BSAFolder
-            file_records_index = 0
-            for __ in xrange(folder_record.files_count):
-                rec = BSAFileRecord()
-                file_records_index = rec.load_record_from_buffer(
-                    file_records_block, file_records_index)
+        names_record_index = file_records_index = 0
+        for folder_path, bsa_folder in self.bsa_folders.iteritems():
+            for __ in xrange(bsa_folder.folder_record.files_count):
+                rec = file_records[file_records_index]
                 file_name = u'?%d' % rec.hash
                 if file_names is not None:
                     file_name = _decode_path(file_names[names_record_index])
                     names_record_index += 1
-                current_folder.assets[file_name] = BSAAsset(
+                bsa_folder.assets[file_name] = BSAAsset(
                     os.path.sep.join((folder_path, file_name)), rec)
-            file_records_block = file_records_block[file_records_index:]
-
-    def __calculate_file_records_size(self):
-        file_records_block_size = self.file_record_type.total_record_size() \
-                                  * self.bsa_header.file_count
-        if self.bsa_header.has_names_for_folders():
-            file_records_block_size += (# one byte for each folder name's size
-                self.bsa_header.folder_count +
-                self.bsa_header.total_folder_name_length)
-        return file_records_block_size
 
     def _load_bsa_light(self, abs_path): # TODO use filenames from data block !
         # we assume that has_names_for_files()/folders are True
