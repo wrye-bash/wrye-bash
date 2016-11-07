@@ -359,7 +359,7 @@ class MasterList(_ModsUIList):
         #--Data/Items
         self.edited = False
         self.detailsPanel = detailsPanel
-        self._master_info = None
+        self.fileInfo = None
         self.loadOrderNames = [] # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + '.allowEdit'
         if isinstance(detailsPanel, SaveDetails): # yak ! fix #192
@@ -382,24 +382,24 @@ class MasterList(_ModsUIList):
         if val:
             self.InitEdit()
         else:
-            self.SetFileInfo(self._master_info)
+            self.SetFileInfo(self.fileInfo)
             self.detailsPanel.testChanges() # disable buttons if no other edits
 
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
 
     #--Set ModInfo
-    def SetFileInfo(self, master_info):
+    def SetFileInfo(self,fileInfo):
         self.ClearSelected()
         self.edited = False
-        self._master_info = master_info
+        self.fileInfo = fileInfo
         self.data_store.clear()
         self.DeleteAll()
-        #--Null master_info?
-        if not master_info:
+        #--Null fileInfo?
+        if not fileInfo:
             return
         #--Fill data and populate
-        for mi, masters_name in enumerate(master_info.header.masters):
+        for mi, masters_name in enumerate(fileInfo.header.masters):
             masterInfo = bosh.MasterInfo(masters_name, 0)
             self.data_store[mi] = masterInfo
         self._reList()
@@ -498,7 +498,7 @@ class MasterList(_ModsUIList):
 
     #--Column Menu
     def DoColumnMenu(self, event, column=None):
-        if self._master_info: super(MasterList, self).DoColumnMenu(event, column)
+        if self.fileInfo: super(MasterList, self).DoColumnMenu(event, column)
 
     def OnLeftDown(self,event):
         if self.allowEdit: self.InitEdit()
