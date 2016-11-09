@@ -656,7 +656,7 @@ class Path(object):
         """Temp file path.  If unicodeSafe is True, the returned
         temp file will be a fileName that can be passes through Popen
         (Popen automatically tries to encode the name)"""
-        baseDir = GPath(tempfile.gettempdir()).join(u'WryeBash_temp')
+        baseDir = GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc)).join(u'WryeBash_temp')
         baseDir.makedirs()
         dirJoin = baseDir.join
         if unicodeSafe:
@@ -693,7 +693,7 @@ class Path(object):
 
     @staticmethod
     def baseTempDir():
-        return GPath(tempfile.gettempdir())
+        return GPath(unicode(tempfile.gettempdir(), Path.sys_fs_enc))
 
     @property
     def backup(self):
