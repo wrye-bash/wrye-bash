@@ -1542,16 +1542,15 @@ class IniFile(object):
     def getSetting(self, section, key, default):
         """Gets a single setting from the file."""
         section,key = map(bolt.LString,(section,key))
-        ini_settings = self.getSettings()
-        if section in ini_settings:
-            return ini_settings[section].get(key, (default,))[0]
-        else:
+        try:
+            return self.getSettings()[section][key][0]
+        except KeyError:
             return default
 
     def getSettings(self, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
-        if not self.abs_path.exists() or self.abs_path.isdir():
+        if not self.abs_path.isfile():
             return ({}, {}) if with_deleted else {}
         if self.needs_update(_reset_cache=True):
             self._settings_cache_linenum, self._deleted_cache = \
@@ -1585,15 +1584,11 @@ class IniFile(object):
         """Gets settings in a tweak file."""
         ini_settings = {}
         deleted_settings = {}
-        if not tweakPath.exists() or tweakPath.isdir():
+        if not tweakPath.isfile():
             return ini_settings,deleted_settings
         default_section = self.__class__.defaultSection
-        if tweakPath != self.abs_path:
-            encoding = 'utf-8'
-            setCorrupted = False
-        else:
-            encoding = self.encoding
-            setCorrupted = True
+        encoding = self.encoding
+        setCorrupted = True
         reComment = self.__class__.reComment
         reSection = self.__class__.reSection
         reDeleted = self.__class__.reDeletedSetting
@@ -1921,7 +1916,7 @@ class OBSEIniFile(IniFile):
              20: does exist, and value is the same
         ini_line_number = line number in the ini that this tweak applies to"""
         lines = []
-        if not tweakPath.exists() or tweakPath.isdir():
+        if not tweakPath.isfile():
             return lines
         iniSettings, deletedSettings = self.getSettings(with_deleted=True)
         reDeleted = self.reDeleted
