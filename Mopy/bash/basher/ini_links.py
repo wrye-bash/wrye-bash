@@ -216,6 +216,8 @@ class INI_CreateNew(OneItemLink):
                     if setting in new_settings[section]:
                         settings[section][setting] = new_settings[section][
                             setting]
+        for k,v in settings.items(): # drop line numbers
+            settings[k] = dict((sett, val[0]) for sett, val in v.iteritems())
         target.saveSettings(settings)
         self.window.RefreshUI()
         self.window.SelectAndShowItem(tweak_path.tail)

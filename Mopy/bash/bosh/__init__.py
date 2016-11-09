@@ -1522,7 +1522,6 @@ class IniFile(object):
             self._file_size, self._file_mod_time = self.abs_path.size_mtime()
         except OSError:
             self._file_size = self._file_mod_time = 0
-        self._settings_cache = self.__empty
         self._settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
         self._deleted = False
@@ -1540,30 +1539,26 @@ class IniFile(object):
                         break
         return count
 
-    def getSetting(self,section,key,default=None):
+    def getSetting(self, section, key, default):
         """Gets a single setting from the file."""
         section,key = map(bolt.LString,(section,key))
         ini_settings = self.getSettings()
         if section in ini_settings:
-            return ini_settings[section].get(key,default)
+            return ini_settings[section].get(key, (default,))[0]
         else:
             return default
 
-    def getSettings(self, with_line_numbers=False, with_deleted=False):
+    def getSettings(self, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
         if not self.abs_path.exists() or self.abs_path.isdir():
             return ({}, {}) if with_deleted else {}
         if self.needs_update(_reset_cache=True):
             self._settings_cache_linenum, self._deleted_cache = \
-                self._getTweakFileSettings(self.abs_path, lineNumbers=True)
-            self._settings_cache = dict(
-                (k, dict((x, y[0]) for x, y in v.iteritems())) for k, v in
-                self._settings_cache_linenum.iteritems())
-        cached = self._settings_cache if not with_line_numbers else \
-            self._settings_cache_linenum
-        if with_deleted: return cached, self._deleted_cache
-        return cached
+                self._getTweakFileSettings(self.abs_path)
+        if with_deleted:
+            return self._settings_cache_linenum, self._deleted_cache
+        return self._settings_cache_linenum
 
     def needs_update(self, _reset_cache=False):
         try:
@@ -1578,15 +1573,15 @@ class IniFile(object):
                 self._deleted = self.updated = True
                 return True
             return False # we already know it's deleted (used for game inis)
-        if self._settings_cache is self.__empty or self._file_size != psize \
-                or self._file_mod_time != pmtime:
+        if self._settings_cache_linenum is self.__empty or \
+                    self._file_size != psize or self._file_mod_time != pmtime:
             if _reset_cache:
                 self._file_size, self._file_mod_time = psize, pmtime
             self.updated = True
             return True
         return False
 
-    def _getTweakFileSettings(self, tweakPath, lineNumbers=False):
+    def _getTweakFileSettings(self, tweakPath):
         """Gets settings in a tweak file."""
         ini_settings = {}
         deleted_settings = {}
@@ -1603,12 +1598,8 @@ class IniFile(object):
         reSection = self.__class__.reSection
         reDeleted = self.__class__.reDeletedSetting
         reSetting = self.__class__.reSetting
-        if lineNumbers:
-            def _add_setting(j, match, _section):
-                _section[LString(match.group(1))] = match.group(2).strip(), j
-        else:
-            def _add_setting(j, match, _section):
-                _section[LString(match.group(1))] = match.group(2).strip()
+        def _add_setting(j, match, _section):
+            _section[LString(match.group(1))] = match.group(2).strip(), j
         #--Read ini file
         with tweakPath.open('r') as iniFile:
             sectionSettings = None
@@ -1658,8 +1649,7 @@ class IniFile(object):
             encoding = 'utf-8'
         else:
             encoding = self.encoding
-        iniSettings, deletedSettings = self.getSettings(with_line_numbers=True,
-                                                        with_deleted=True)
+        iniSettings, deletedSettings = self.getSettings(with_deleted=True)
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -1869,14 +1859,14 @@ class OBSEIniFile(IniFile):
         occur in a normal ini"""
         IniFile.__init__(self, path)
 
-    def getSetting(self,section,key,default=None):
+    def getSetting(self, section, key, default):
         lstr = LString(section)
         if lstr == u'set': section = u']set['
         elif lstr == u'setGS': section = u']setGS['
         elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
-    def _getTweakFileSettings(self, tweakPath, lineNumbers=False):
+    def _getTweakFileSettings(self, tweakPath):
         """Get the settings in the ini script."""
         ini_settings = {}
         deleted_settings = {}
@@ -1887,12 +1877,8 @@ class OBSEIniFile(IniFile):
         reSet     = self.__class__.reSet
         reSetGS   = self.__class__.reSetGS
         reSetNGS  = self.__class__.reSetNGS
-        if lineNumbers:
-            def _add_setting(j, match, _section):
-                _section[LString(match.group(1))] = match.group(2).strip(), j
-        else:
-            def _add_setting(j, match, _section):
-                _section[LString(match.group(1))] = match.group(2).strip()
+        def _add_setting(j, match, _section):
+            _section[LString(match.group(1))] = match.group(2).strip(), j
         with tweakPath.open('r') as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
@@ -1937,8 +1923,7 @@ class OBSEIniFile(IniFile):
         lines = []
         if not tweakPath.exists() or tweakPath.isdir():
             return lines
-        iniSettings, deletedSettings = self.getSettings(with_line_numbers=True,
-                                                        with_deleted=True)
+        iniSettings, deletedSettings = self.getSettings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
@@ -2814,7 +2799,7 @@ class INIInfo(FileInfo):
                 if item not in target_section:
                     self._status = -10
                     return -10
-                if tweak_section[item] != target_section[item]:
+                if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another
                         # ini tweak that is applied, and from the same installer
@@ -2827,9 +2812,9 @@ class INIInfo(FileInfo):
                             # It's from the same installer
                             other_ini_file = ini_info.ini_info_file
                             if self._incompatible(other_ini_file): continue
-                            other_settings = other_ini_file.getSettings()
-                            value = other_settings.get(section_key,{}).get(item)
-                            if value == target_section[item]:
+                            value = other_ini_file.getSetting(
+                                section_key, item, None)
+                            if value == target_section[item][0]:
                                 # The other tweak has the setting we're worried about
                                 mismatch = 1
                                 break
