@@ -255,7 +255,7 @@ class Settings_StatusBar_ShowVersions(CheckLink):
             if isinstance(button, App_Button):
                 if button.gButton:
                     button.gButton.SetToolTip(tooltip(button.tip))
-        if bass.settings['bash.obse.on']:
+        if BashStatusBar.obseButton.button_state:
             for button in App_Button.obseButtons:
                 button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
 

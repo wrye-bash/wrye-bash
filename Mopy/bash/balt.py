@@ -235,10 +235,10 @@ class ColorChecks(ImageList):
             for status in (u'purple', u'blue', u'green', u'orange', u'yellow',
                            u'red'):
                 shortKey = status + u'.' + state
-                imageKey = u'checkbox.' + shortKey
-                file = GPath(bass.dirs['images'].join(
+                image_key = u'checkbox.' + shortKey
+                img = GPath(bass.dirs['images'].join(
                     u'checkbox_' + status + u'_' + state + u'.png'))
-                image = images[imageKey] = Image(file, Image.typesDict['png'])
+                image = images[image_key] = Image(img, Image.typesDict['png'])
                 self.Add(image, shortKey)
 
     def Get(self,status,on):

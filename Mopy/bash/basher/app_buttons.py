@@ -26,7 +26,7 @@ import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, Links, bitmapButton, images, \
+from ..balt import ItemLink, Link, Links, bitmapButton, \
     SeparatorLink, tooltip, BoolLink, staticBitmap
 from ..bolt import GPath
 from ..env import getJava
@@ -70,7 +70,7 @@ class StatusBar_Button(ItemLink):
 
     def GetBitmapButton(self, window, style, **kwdargs):
         """Create and return gui button - you must define imageKey - WIP overrides"""
-        image = kwdargs.pop('image', None) or images[self.imageKey %
+        image = kwdargs.pop('image', None) or balt.images[self.imageKey %
                         bass.settings['bash.statusbar.iconSize']].GetBitmap()
         kwdargs['onRClick'] = kwdargs.pop('onRClick', None) or self.DoPopupMenu
         kwdargs['onBBClick'] = self.Execute
@@ -194,8 +194,7 @@ class App_Button(StatusBar_Button):
               image=self.images[idex].GetBitmap())
         if self.obseTip is not None:
             App_Button.obseButtons.append(self)
-            exeObse = bass.dirs['app'].join(bush.game.se.exe)
-            if bass.settings.get('bash.obse.on',False) and exeObse.exists():
+            if BashStatusBar.obseButton.button_state:
                 self.gButton.SetToolTip(tooltip(self.obseTip))
         return self.gButton
 
@@ -241,11 +240,13 @@ class App_Button(StatusBar_Button):
         elif self.isExe:
             exeObse = bass.dirs['app'].join(bush.game.se.exe)
             exeLaa = bass.dirs['app'].join(bush.game.laa.exe)
-            if exeLaa.exists() and bass.settings.get('bash.laa.on',True) and self.exePath.tail == bush.game.exe:
+            if BashStatusBar.laaButton.button_state and \
+                            self.exePath.tail == bush.game.exe:
                 # Should use the LAA Launcher
                 exePath = exeLaa
                 args = [exePath.s]
-            elif self.obseArg is not None and bass.settings.get('bash.obse.on',False) and exeObse.exists():
+            elif self.obseArg is not None and \
+                    BashStatusBar.obseButton.button_state:
                 if bass.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
                     exePath = self.exePath
                 else:
@@ -452,7 +453,7 @@ class Game_Button(App_Button):
     @property
     def tip(self):
         tip = self._tip + u' ' + self.version if self.version else self._tip
-        if bass.dirs['app'].join(bush.game.laa.exe).exists() and bass.settings.get('bash.laa.on', True):
+        if BashStatusBar.laaButton.button_state:
             tip += u' + ' + bush.game.laa.name
         return tip
 
@@ -463,7 +464,7 @@ class Game_Button(App_Button):
         # + OBSE
         tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + LAA
-        if bass.dirs['app'].join(bush.game.laa.exe).exists() and bass.settings.get('bash.laa.on', True):
+        if BashStatusBar.laaButton.button_state:
             tip += u' + ' + bush.game.laa.name
         return tip
 
@@ -496,70 +497,84 @@ class TESCS_Button(App_Button):
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBar_Button):
-    def SetState(self, state=None): raise bolt.AbstractError
+    _state_key = u'OVERRIDE' # bass settings key for button state (un/checked)
+    _state_img_key = u'OVERRIDE' # image key with state and size placeholders
+    _default_state = True
+
+    @property
+    def tip(self): raise bolt.AbstractError
+
+    def SetState(self, state=None):
+        """Set state related info. If newState != None, sets to new state
+        first. For convenience, returns state when done."""
+        if state is None: #--Default
+            self.button_state = self.button_state
+        elif state == -1: #--Invert
+            self.button_state = True ^ self.button_state
+        if self.gButton:
+            self.gButton.SetBitmapLabel(balt.images[self.imageKey %
+                        bass.settings['bash.statusbar.iconSize']].GetBitmap())
+            self.gButton.SetToolTip(tooltip(self.tip))
+
+    @property
+    def button_state(self): return self._present and bass.settings.get(
+        self._state_key, self._default_state)
+    @button_state.setter
+    def button_state(self, val):
+        bass.settings[self._state_key] = val
+
+    @property
+    def imageKey(self): return self.__class__._state_img_key % (
+        [u'off', u'on'][self.button_state], u'%d')
+
     @property
     def _present(self): return True
 
     def GetBitmapButton(self, window, style, **kwdargs):
         if not self._present: return None
-        super(_StatefulButton, self).GetBitmapButton(window, style, **kwdargs)
         self.SetState()
-        return self.gButton
-
-class Obse_Button(_StatefulButton):
-    """Obse on/off state button."""
-    imageKey = u'checkbox.green.off.%s'
-    @property
-    def _present(self): return bass.dirs['app'].join(bush.game.se.exe).exists()
-
-    def SetState(self,state=None):
-        """Sets state related info. If newState != none, sets to new state first.
-        For convenience, returns state when done."""
-        if state is None: #--Default
-            state = bass.settings.get('bash.obse.on',True)
-        elif state == -1: #--Invert
-            state = not bass.settings.get('bash.obse.on',False)
-        bass.settings['bash.obse.on'] = state
-        if bush.game.laa.launchesSE and not state and BashStatusBar.laaButton.gButton is not None:
-            # 4GB Launcher automatically launches the SE, so turning of the SE
-            # required turning off the 4GB Launcher as well
-            BashStatusBar.laaButton.SetState(state)
-        # BitmapButton
-        image = images[(u'checkbox.green.off.%s'%bass.settings['bash.statusbar.iconSize'],
-                        u'checkbox.green.on.%s'%bass.settings['bash.statusbar.iconSize'])[state]]
-        tip = ((_(u"%s %s Disabled"),_(u"%s %s Enabled"))[state]) % (bush.game.se.shortName, self.obseVersion)
-        self.gButton.SetBitmapLabel(image.GetBitmap())
-        self.gButton.SetToolTip(tooltip(tip))
-        self.UpdateToolTips(state)
-
-    @staticmethod
-    def UpdateToolTips(state=None):
-        if state is None:
-            state = bass.settings.get('bash.obse.on',True)
-        tipAttr = ('tip','obseTip')[state]
-        for button in App_Button.obseButtons:
-            button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,u'')))
-        return state
+        return super(_StatefulButton, self).GetBitmapButton(window, style,
+                                                            **kwdargs)
 
     def Execute(self):
         """Invert state."""
         self.SetState(-1)
 
+class Obse_Button(_StatefulButton):
+    """Obse on/off state button."""
+    _state_key = 'bash.obse.on'
+    _state_img_key = u'checkbox.green.%s.%s'
+    @property
+    def _present(self): return bass.dirs['app'].join(bush.game.se.exe).exists()
+
+    def SetState(self,state=None):
+        super(Obse_Button, self).SetState(state)
+        if bush.game.laa.launchesSE and not state and BashStatusBar.laaButton.gButton is not None:
+            # 4GB Launcher automatically launches the SE, so turning of the SE
+            # required turning off the 4GB Launcher as well
+            BashStatusBar.laaButton.SetState(state)
+        self.UpdateToolTips()
+        return state
+
+    @property
+    def tip(self): return ((_(u"%s %s Disabled"), _(u"%s %s Enabled"))[
+        self.button_state]) % (bush.game.se.shortName, self.obseVersion)
+
+    def UpdateToolTips(self):
+        tipAttr = ('tip', 'obseTip')[self.button_state]
+        for button in App_Button.obseButtons:
+            button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,u'')))
+
 class LAA_Button(_StatefulButton):
     """4GB Launcher on/off state button."""
-    imageKey = u'checkbox.blue.off.%s'
+    _state_key = 'bash.laa.on'
+    _state_img_key = u'checkbox.blue.%s.%s'
     @property
     def _present(self):
         return bass.dirs['app'].join(bush.game.laa.exe).exists()
 
     def SetState(self,state=None):
-        """Sets state related info.  If newState != none, sets to new state first.
-        For convenience, returns state when done."""
-        if state is None: #--Default
-            state = bass.settings.get('bash.laa.on',True)
-        elif state == -1: #--Invert
-            state = not bass.settings.get('bash.laa.on',False)
-        bass.settings['bash.laa.on'] = state
+        super(LAA_Button, self).SetState(state)
         if bush.game.laa.launchesSE and BashStatusBar.obseButton.gButton is not None:
             if state:
                 # If the 4gb launcher launches the SE, enable the SE when enabling this
@@ -567,37 +582,26 @@ class LAA_Button(_StatefulButton):
             else:
                 # We need the obse button to update the tooltips anyway
                 BashStatusBar.obseButton.UpdateToolTips()
-        # BitmapButton
-        image = images[(u'checkbox.blue.off.%s'%bass.settings['bash.statusbar.iconSize'],
-                        u'checkbox.blue.on.%s'%bass.settings['bash.statusbar.iconSize'])[state]]
-        tip = bush.game.laa.name + (_(u' Disabled'),_(u' Enabled'))[state]
-        if self.gButton:
-            self.gButton.SetBitmapLabel(image.GetBitmap())
-            self.gButton.SetToolTip(tooltip(tip))
         return state
+
+    @property
+    def tip(self): return bush.game.laa.name + (
+        _(u' Disabled'), _(u' Enabled'))[self.button_state]
 
 #------------------------------------------------------------------------------
 class AutoQuit_Button(_StatefulButton):
     """Button toggling application closure when launching Oblivion."""
-    imageKey = u'checkbox.red.off.%s'
+    _state_key = 'bash.autoQuit.on'
+    _state_img_key = u'checkbox.red.%s.%s'
+    _default_state = False
 
-    def SetState(self,state=None):
-        """Sets state related info. If newState != none, sets to new state first.
-        For convenience, returns state when done."""
-        if state is None: #--Default
-            state = bass.settings.get('bash.autoQuit.on',False)
-        elif state == -1: #--Invert
-            state = not bass.settings.get('bash.autoQuit.on',False)
-        bass.settings['bash.autoQuit.on'] = state
-        image = images[(u'checkbox.red.off.%s'%bass.settings['bash.statusbar.iconSize'],
-                        u'checkbox.red.x.%s'%bass.settings['bash.statusbar.iconSize'])[state]]
-        tip = (_(u"Auto-Quit Disabled"),_(u"Auto-Quit Enabled"))[state]
-        self.gButton.SetBitmapLabel(image.GetBitmap())
-        self.gButton.SetToolTip(tooltip(tip))
+    @property
+    def imageKey(self): return self._state_img_key % (
+        [u'off', u'x'][self.button_state], u'%d')
 
-    def Execute(self):
-        """Invert state."""
-        self.SetState(-1)
+    @property
+    def tip(self): return (_(u"Auto-Quit Disabled"), _(u"Auto-Quit Enabled"))[
+        self.button_state]
 
 #------------------------------------------------------------------------------
 class App_Help(StatusBar_Button):
