@@ -27,6 +27,7 @@
 import re
 import struct
 from .constants import *
+from .default_tweaks import default_tweaks
 from ... import brec
 from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, MreInfo, \
     MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, MreLvsp, MreEnch, \

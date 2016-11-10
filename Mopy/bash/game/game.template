@@ -28,6 +28,7 @@
 import re
 import struct
 from .constants import * # WIP
+from .default_tweaks import default_tweaks
 from ... import brec
 
 #--Name of the game

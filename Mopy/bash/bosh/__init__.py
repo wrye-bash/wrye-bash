@@ -1829,19 +1829,18 @@ class DefaultIniFile(IniFile):
     """A default ini tweak - hardcoded."""
     __empty = OrderedDict()
 
-    # noinspection PyMissingConstructor
-    def __init__(self, path, settings_dict=__empty):
-        self.abs_path = path
+    def __init__(self, path, settings_dict=__empty): # CALL SUPER
+        self.abs_path = GPath(path)
         self._file_size = self._file_mod_time = 0 # hrmph, 0 ?
         #--Settings cache
         self.lines, current_line = [], 0
         self._settings_cache_linenum = OrderedDict()
         for sect, setts in settings_dict.iteritems():
-            self.lines.append(u'[' + sect + u']')
+            self.lines.append('[' + str(sect) + ']')
             self._settings_cache_linenum[LString(sect)] = OrderedDict()
             current_line += 1
             for sett, val in setts.iteritems():
-                self.lines.append(sett + u'=' + val)
+                self.lines.append(str(sett) + '=' + str(val))
                 self._settings_cache_linenum[LString(sect)][LString(sett)] = (
                     LString(val), current_line)
                 current_line += 1
@@ -1860,7 +1859,6 @@ class DefaultIniFile(IniFile):
     def saveSetting(self,section,key,value): raise AbstractError
     def saveSettings(self,ini_settings,deleted_settings={}):
         raise AbstractError
-    def applyTweakFile(self,tweakPath): raise AbstractError
 
 #------------------------------------------------------------------------------
 def BestIniFile(path):
@@ -2268,7 +2266,7 @@ class _AFileInfo(AFile):
     def __init__(self, parent_dir, name, load_cache=False):
         self.dir = GPath(parent_dir)
         self.name = GPath(name) # ghost must be lopped off
-        super(_AFileInfo, self).__init__(parent_dir.join(name), load_cache)
+        super(_AFileInfo, self).__init__(self.dir.join(name), load_cache)
 
     ##: DEPRECATED-------------------------------------------------------------
     def getPath(self): return self.abs_path
@@ -2776,6 +2774,10 @@ class INIInfo(FileInfo):
             self.__ini_file = BestIniFile(self.getPath())
         return self.__ini_file
 
+    @ini_info_file.setter
+    def ini_info_file(self, val):
+        self.__ini_file = val
+
     @property
     def tweak_status(self):
         if self._status is None: self.getStatus()
@@ -3100,7 +3102,7 @@ class FileInfos(_DataStore):
             raise
 
     #--Refresh
-    def _names(self): # performance intensive - dirdef stuff needs rethinking
+    def _names(self): # performance intensive
         names = set()
         if self.store_dir.exists():
             names |= {x for x in self.store_dir.list() if
@@ -3285,10 +3287,14 @@ class INIInfos(FileInfos):
     """:type _ini: IniFile
     :type data: dict[bolt.Path, IniInfo]"""
     file_pattern = re.compile(ur'\.ini$', re.I | re.U)
+    try:
+        _default_tweaks = dict((GPath(k), DefaultIniFile(k, v)) for k, v in
+                               bush.game.default_tweaks.iteritems())
+    except AttributeError:
+        _default_tweaks = {}
 
     def __init__(self):
         FileInfos.__init__(self, dirs['tweaks'], INIInfo)
-        self.dirdef = dirs['defaultTweaks']
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -3343,15 +3349,6 @@ class INIInfos(FileInfos):
             self._ini = BestIniFile(ini_path)
         for ini_info in self.itervalues(): ini_info.reset_status()
 
-    def _names(self): # Yak !
-        names = {x for x in self.dirdef.list() if
-                 self.dirdef.join(x).isfile() and self.rightFileType(x)}
-        if self.store_dir.exists():
-            # Normal folder items
-            names |= {x for x in self.store_dir.list() if
-                self.store_dir.join(x).isfile() and self.rightFileType(x)}
-        return list(names)
-
     def _refresh_infos(self):
         """Refresh from file directory."""
         oldNames = set(self.data)
@@ -3360,10 +3357,7 @@ class INIInfos(FileInfos):
         _updated = set()
         names = self._names()
         for name in names:
-            if not self.store_dir.join(name).isfile():
-                fileInfo = self.factory(self.dirdef, name)
-            else:
-                fileInfo = self.factory(self.store_dir, name)
+            fileInfo = self.factory(self.store_dir, name)
             name = fileInfo.name
             if name in newNames:
                 deprint(u'%s appears twice (%s)' % (name, fileInfo.getPath()))
@@ -3383,6 +3377,16 @@ class INIInfos(FileInfos):
             self.pop(name, None)
             # items deleted outside Bash, otherwise delete_Refresh did this
             self.table.pop(name, None)
+        # re-add default tweaks
+        for k in self.keys():
+            if k not in newNames: del self[k]
+        set_keys = set(self.keys())
+        for k, d in self._default_tweaks.iteritems():
+            if k not in set_keys:
+                default_info = self.setdefault(k, self.factory(u'', k))
+                default_info.ini_info_file = d
+                if k in _deleted: # we restore default over copy
+                    _updated.add(k)
         return _added, _deleted, _updated
 
     def refresh(self, refresh_infos=True, refresh_target=True):
@@ -3407,9 +3411,11 @@ class INIInfos(FileInfos):
     def delete_Refresh(self, deleted, check_existence=False):
         deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
         if not deleted: return deleted
-        for d in deleted: # readd default tweaks YAK
-            if self.dirdef.join(d).isfile():
-                self[d] = self.factory(self.dirdef, d)
+        set_keys = set(self.keys())
+        for k, d in self._default_tweaks.iteritems(): # readd default tweaks
+            if k not in set_keys:
+                default_info = self.setdefault(k, self.factory(u'', k))
+                default_info.ini_info_file = d
         return deleted
 
     def get_tweak_lines_infos(self, tweakPath):
@@ -7680,7 +7686,6 @@ def initDirs(bashIni, personal, localAppData):
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches', bush.game.fsName)
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
-    dirs['defaultTweaks'] = dirs['mopy'].join(u'INI Tweaks', bush.game.fsName)
 
     #  Personal
     personal = getPersonalPath(bashIni,personal)
