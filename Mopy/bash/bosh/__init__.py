@@ -1825,6 +1825,43 @@ class IniFile(object):
                 deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
 
+class DefaultIniFile(IniFile):
+    """A default ini tweak - hardcoded."""
+    __empty = OrderedDict()
+
+    # noinspection PyMissingConstructor
+    def __init__(self, path, settings_dict=__empty):
+        self.abs_path = path
+        self._file_size = self._file_mod_time = 0 # hrmph, 0 ?
+        #--Settings cache
+        self.lines, current_line = [], 0
+        self._settings_cache_linenum = OrderedDict()
+        for sect, setts in settings_dict.iteritems():
+            self.lines.append(u'[' + sect + u']')
+            self._settings_cache_linenum[LString(sect)] = OrderedDict()
+            current_line += 1
+            for sett, val in setts.iteritems():
+                self.lines.append(sett + u'=' + val)
+                self._settings_cache_linenum[LString(sect)][LString(sett)] = (
+                    LString(val), current_line)
+                current_line += 1
+        self._deleted_cache = self.__empty
+
+    def getSettings(self, with_deleted=False):
+        if with_deleted:
+            return self._settings_cache_linenum, self._deleted_cache
+        return self._settings_cache_linenum
+
+    def read_ini_lines(self): return self.lines
+
+    # YAK! track uses!
+    def needs_update(self, _reset_cache=False): raise AbstractError
+    def _getTweakFileSettings(self, tweakPath): raise AbstractError
+    def saveSetting(self,section,key,value): raise AbstractError
+    def saveSettings(self,ini_settings,deleted_settings={}):
+        raise AbstractError
+    def applyTweakFile(self,tweakPath): raise AbstractError
+
 #------------------------------------------------------------------------------
 def BestIniFile(path):
     """:rtype: IniFile"""
