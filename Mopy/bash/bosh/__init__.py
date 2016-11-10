@@ -2783,6 +2783,10 @@ class INIInfo(FileInfo):
         if self._status is None: self.getStatus()
         return self._status
 
+    @property
+    def is_default_tweak(self):
+        return isinstance(self.ini_info_file, DefaultIniFile)
+
     def getFileInfos(self): return iniInfos
 
     def read_ini_lines(self): return self.ini_info_file.read_ini_lines()
@@ -3421,6 +3425,17 @@ class INIInfos(FileInfos):
     def get_tweak_lines_infos(self, tweakPath):
         tweak_lines = self[tweakPath].read_ini_lines()
         return self._ini.get_lines_infos(tweak_lines)
+
+    def open_or_copy(self, tweak):
+        info = self[tweak] # type: INIInfo
+        if info.is_default_tweak:
+            with open(self.store_dir.join(tweak).s, 'w') as ini_file:
+                ini_file.write('\n'.join(info.ini_info_file.read_ini_lines()))
+            self[tweak] = self.factory(self.store_dir, tweak)
+            return True # refresh
+        else:
+            info.getPath().start()
+            return False
 
 def _lo_cache(lord_func):
     """Decorator to make sure I sync modInfos cache with load_order cache

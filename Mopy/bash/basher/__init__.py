@@ -586,12 +586,11 @@ class INIList(balt.UIList):
     @staticmethod
     def filterOutDefaultTweaks(tweaks):
         """Filter out default tweaks from tweaks iterable."""
-        return filter(lambda x: bass.dirs['tweaks'].join(x).isfile(), tweaks)
+        return filter(lambda x: not bosh.iniInfos[x].is_default_tweak, tweaks)
 
     def _toDelete(self, items):
         items = super(INIList, self)._toDelete(items)
-        return self.filterOutDefaultTweaks(items) # will refilter if coming
-        # from INI_Delete - expensive but I can't allow default tweaks deletion
+        return self.filterOutDefaultTweaks(items)
 
     def set_item_format(self, ini_name, item_format):
         iniInfo = self.data_store[ini_name]
