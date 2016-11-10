@@ -1622,7 +1622,16 @@ class IniFile(object):
                     deleted_settings.setdefault(section,{})[LString(maDeleted.group(1))] = i
         return ini_settings,deleted_settings
 
-    def getTweakFileLines(self,tweakPath):
+    def read_ini_lines(self):
+        try: #TODO(ut) parse getSettings instead-see constructing default tweak
+            with self.abs_path.open('r') as f:
+                return f.readlines()
+        except OSError:
+            deprint(u'Error reading ini file %s' % self.abs_path,
+                    traceback=True)
+            return []
+
+    def getTweakFileLines(self, tweak_lines):
         """Get a line by line breakdown of the tweak file, in this format:
         [(fulltext,section,setting,value,status,ini_line_number, deleted)]
         where:
@@ -1638,66 +1647,62 @@ class IniFile(object):
         ini_line_number = line number in the ini that this tweak applies to
         deleted: deleted line (?)"""
         lines = []
-        if not tweakPath.exists() or tweakPath.isdir():
-            return lines
-        if tweakPath != self.abs_path:
-            encoding = 'utf-8'
-        else:
-            encoding = self.encoding
+        encoding = 'utf-8'
         iniSettings, deletedSettings = self.getSettings(with_deleted=True)
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
         reSetting = self.reSetting
         #--Read ini file
-        with tweakPath.open('r') as iniFile:
-            section = LString(self.__class__.defaultSection)
-            for i,line in enumerate(iniFile.readlines()):
-                try:
-                    line = unicode(line,encoding)
-                except UnicodeDecodeError:
-                    line = unicode(line,'cp1252')
-                maDeletedSetting = reDeleted.match(line)
-                stripped = reComment.sub(u'',line).strip()
-                maSection = reSection.match(stripped)
-                maSetting = reSetting.match(stripped)
-                deleted = False
-                setting = None
-                value = LString(u'')
-                status = 0
-                lineNo = -1
-                if maSection:
-                    section = LString(maSection.group(1))
-                    if section not in iniSettings:
-                        status = -10
-                elif maSetting:
-                    if section in iniSettings:
-                        setting = LString(maSetting.group(1))
-                        if setting in iniSettings[section]:
-                            value = LString(maSetting.group(2).strip())
-                            lineNo = iniSettings[section][setting][1]
-                            if iniSettings[section][setting][0] == value:
-                                status = 20
-                            else:
-                                status = 10
+        section = LString(self.__class__.defaultSection)
+        for i, line in enumerate(tweak_lines):
+            try:
+                line = unicode(line, encoding)
+            except UnicodeDecodeError:
+                line = unicode(line, 'cp1252')
+            maDeletedSetting = reDeleted.match(line)
+            stripped = reComment.sub(u'', line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
+            deleted = False
+            setting = None
+            value = LString(u'')
+            status = 0
+            lineNo = -1
+            if maSection:
+                section = LString(maSection.group(1))
+                if section not in iniSettings:
+                    status = -10
+            elif maSetting:
+                if section in iniSettings:
+                    setting = LString(maSetting.group(1))
+                    if setting in iniSettings[section]:
+                        value = LString(maSetting.group(2).strip())
+                        lineNo = iniSettings[section][setting][1]
+                        if iniSettings[section][setting][0] == value:
+                            status = 20
                         else:
-                            status = -10
-                        setting = setting._s
+                            status = 10
                     else:
                         status = -10
-                elif maDeletedSetting:
-                    setting = LString(maDeletedSetting.group(1))
-                    status = 20
-                    if section in iniSettings and setting in iniSettings[section]:
-                        lineNo = iniSettings[section][setting][1]
-                        status = 10
-                    elif section in deletedSettings and setting in deletedSettings[section]:
-                        lineNo = deletedSettings[section][setting]
-                    deleted = True
+                    setting = setting._s
                 else:
-                    if stripped:
-                        status = -10
-                lines.append((line.rstrip(),section._s,setting,value._s,status,lineNo,deleted))
+                    status = -10
+            elif maDeletedSetting:
+                setting = LString(maDeletedSetting.group(1))
+                status = 20
+                if section in iniSettings and setting in iniSettings[section]:
+                    lineNo = iniSettings[section][setting][1]
+                    status = 10
+                elif section in deletedSettings and setting in deletedSettings[
+                    section]:
+                    lineNo = deletedSettings[section][setting]
+                deleted = True
+            else:
+                if stripped:
+                    status = -10
+            lines.append((line.rstrip(), section._s, setting, value._s, status,
+                          lineNo, deleted))
         return lines
 
     def saveSetting(self,section,key,value):
@@ -1902,7 +1907,7 @@ class OBSEIniFile(IniFile):
                     _add_setting(i, maSetNGS, section)
         return ini_settings,deleted_settings
 
-    def getTweakFileLines(self,tweakPath):
+    def getTweakFileLines(self, tweak_lines):
         """Get a line by line breakdown of the tweak file, in this format:
         [(fulltext,section,setting,value,status,ini_line_number)]
         where:
@@ -1916,8 +1921,6 @@ class OBSEIniFile(IniFile):
              20: does exist, and value is the same
         ini_line_number = line number in the ini that this tweak applies to"""
         lines = []
-        if not tweakPath.isfile():
-            return lines
         iniSettings, deletedSettings = self.getSettings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
@@ -1928,47 +1931,46 @@ class OBSEIniFile(IniFile):
         setGSSection = LString(u']setGS[')
         setNGSSection = LString(u']SetNumericGameSetting[')
         section = u''
-        with tweakPath.open('r') as iniFile:
-            for line in iniFile:
-                # Check for deleted lines
-                maDeleted = reDeleted.match(line)
-                if maDeleted: stripped = maDeleted.group(1)
-                else: stripped = line
-                stripped = reComment.sub(u'',stripped).strip()
-                # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-                for regex,section in [(reSet,setSection),
-                                      (reSetGS,setGSSection),
-                                      (reSetNGS,setNGSSection)]:
-                    match = regex.match(stripped)
-                    if match:
-                        groups = match.groups()
-                        break
+        for line in tweak_lines:
+            # Check for deleted lines
+            maDeleted = reDeleted.match(line)
+            if maDeleted: stripped = maDeleted.group(1)
+            else: stripped = line
+            stripped = reComment.sub(u'',stripped).strip()
+            # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
+            for regex,section in [(reSet,setSection),
+                                  (reSetGS,setGSSection),
+                                  (reSetNGS,setNGSSection)]:
+                match = regex.match(stripped)
+                if match:
+                    groups = match.groups()
+                    break
+            else:
+                if stripped:
+                    # Some other kind of line
+                    lines.append((line.strip('\r\n'),u'',u'',u'',-10,-1,False))
                 else:
-                    if stripped:
-                        # Some other kind of line
-                        lines.append((line.strip('\r\n'),u'',u'',u'',-10,-1,False))
-                    else:
-                        # Just a comment line
-                        lines.append((line.strip('\r\n'),u'',u'',u'',0,-1,False))
-                    continue
-                status = 0
-                setting = LString(groups[0].strip())
-                value = LString(groups[1].strip())
-                lineNo = -1
-                if section in iniSettings and setting in iniSettings[section]:
-                    item = iniSettings[section][setting]
-                    lineNo = item[1]
-                    if maDeleted:          status = 10
-                    elif item[0] == value: status = 20
-                    else:                  status = 10
-                elif section in deletedSettings and setting in deletedSettings[section]:
-                    item = deletedSettings[section][setting]
-                    lineNo = item[1]
-                    if maDeleted: status = 20
-                    else:         status = 10
-                else:
-                    status = -10
-                lines.append((line.strip(),section,setting,value,status,lineNo,bool(maDeleted)))
+                    # Just a comment line
+                    lines.append((line.strip('\r\n'),u'',u'',u'',0,-1,False))
+                continue
+            status = 0
+            setting = LString(groups[0].strip())
+            value = LString(groups[1].strip())
+            lineNo = -1
+            if section in iniSettings and setting in iniSettings[section]:
+                item = iniSettings[section][setting]
+                lineNo = item[1]
+                if maDeleted:          status = 10
+                elif item[0] == value: status = 20
+                else:                  status = 10
+            elif section in deletedSettings and setting in deletedSettings[section]:
+                item = deletedSettings[section][setting]
+                lineNo = item[1]
+                if maDeleted: status = 20
+                else:         status = 10
+            else:
+                status = -10
+            lines.append((line.strip(),section,setting,value,status,lineNo,bool(maDeleted)))
         return lines
 
     def saveSetting(self,section,key,value):
@@ -2759,6 +2761,8 @@ class INIInfo(FileInfo):
         return self._status
 
     def getFileInfos(self): return iniInfos
+
+    def read_ini_lines(self): return self.ini_info_file.read_ini_lines()
 
     _ini_types, _obse_ini_types = {IniFile, OblivionIni}, {OBSEIniFile}
     def _incompatible(self, other):
@@ -6723,8 +6727,10 @@ class InstallersData(_DataStore):
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
             lines = []
+            with tweakPath.open('r') as tweak:
+                tweak_lines = tweak.readlines()
             for (text, section, setting, value, status, lineNo,
-                 deleted) in iniFile.getTweakFileLines(tweakPath):
+                 deleted) in iniFile.getTweakFileLines(tweak_lines):
                 if status in (10, -10):
                     # A setting that exists in both INI's, but is different,
                     # or a setting that doesn't exist in the new INI.
