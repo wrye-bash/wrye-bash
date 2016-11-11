@@ -98,7 +98,7 @@ class INI_FileOpenOrCopy(OneItemLink):
         if not len(selection) == 1:
             self.text = _(u'Open/Copy...')
             self.help = _(u'Only one INI file can be opened or copied at a time.')
-        elif bass.dirs['tweaks'].join(selection[0]).isfile():
+        elif not bosh.iniInfos[selection[0]].is_default_tweak:
             self.text = _(u'Open...')
             self.help = _(u"Open '%s' with the system's default program.") % selection[0]
         else:
@@ -106,15 +106,7 @@ class INI_FileOpenOrCopy(OneItemLink):
             self.help = _(u"Make an editable copy of the default tweak '%s'.") % selection[0]
 
     def Execute(self):
-        tweak_path = bass.dirs['tweaks'].join(self._selected_item)
-        if tweak_path.isfile():
-            tweak_path.start()
-        else: # default tweak, copy it
-            srcFile = self._selected_info.getPath()
-            destFile = tweak_path
-            env.shellMakeDirs(bass.dirs['tweaks'], self.window)
-            env.shellCopy(srcFile, destFile, parent=self.window)
-            bosh.iniInfos.refresh()
+        if bosh.iniInfos.open_or_copy(self._selected_item):
             self.window.RefreshUI()
 
 #------------------------------------------------------------------------------
@@ -164,14 +156,10 @@ class INI_Apply(EnabledLink):
         needsRefresh = False
         for item in self.selected:
             #--No point applying a tweak that's already applied
-            if bosh.iniInfos[item].tweak_status == 20: continue
+            ini_info = bosh.iniInfos[item] # type: bosh.INIInfo
+            if ini_info.tweak_status == 20: continue
             needsRefresh = True
-            if bass.dirs['tweaks'].join(item).isfile():
-                self.window.data_store.ini.applyTweakFile(
-                    bass.dirs['tweaks'].join(item))
-            else:
-                self.window.data_store.ini.applyTweakFile(
-                    bass.dirs['defaultTweaks'].join(item))
+            bosh.iniInfos.ini.applyTweakFile(ini_info.read_ini_lines())
         if needsRefresh:
             self.window.panel.ShowPanel(refresh_infos=False,
                                         clean_targets=False)
@@ -216,6 +204,8 @@ class INI_CreateNew(OneItemLink):
                     if setting in new_settings[section]:
                         settings[section][setting] = new_settings[section][
                             setting]
+        for k,v in settings.items(): # drop line numbers
+            settings[k] = dict((sett, val[0]) for sett, val in v.iteritems())
         target.saveSettings(settings)
         self.window.RefreshUI()
         self.window.SelectAndShowItem(tweak_path.tail)

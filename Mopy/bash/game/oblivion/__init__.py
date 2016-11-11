@@ -28,6 +28,7 @@
 import re
 import struct
 from .constants import *
+from .default_tweaks import default_tweaks
 from ... import brec
 from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, \
     MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, \

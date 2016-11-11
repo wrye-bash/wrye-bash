@@ -3988,7 +3988,7 @@ class ModFile(object):
             self.strings.clear()
             if unpack and self.tes4.flags1[7] and loadStrings:
                 stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
-                lang = bosh.oblivionIni.getSetting(u'General',u'sLanguage',u'English')
+                lang = bosh.oblivionIni.get_ini_language()
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
                 stringsProgress.setFull(max(len(stringsPaths),1))
                 for i,path in enumerate(stringsPaths):

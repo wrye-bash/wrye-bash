@@ -459,9 +459,8 @@ class PatchDialog(balt.Dialog):
         """Set the patcher label to bold font.  Called from a patcher when
         it realizes it has something new in its list"""
         index = self.patchers.index(patcher)
-        font = self.gPatchers.GetFont()
-        font.SetWeight(wx.FONTWEIGHT_BOLD)
-        self.gPatchers.SetItemFont(index, font)
+        get_font = self.gPatchers.GetFont()
+        self.gPatchers.SetItemFont(index, balt.Font.Style(get_font, bold=True))
 
     def OnCheck(self,event):
         """Toggle patcher activity state."""

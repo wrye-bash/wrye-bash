@@ -454,7 +454,7 @@ class MasterList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.ghosted'
         if self.allowEdit:
             if masterInfo.oldName in settings['bash.mods.renames']:
-                item_format.font = Resources.fonts.bold
+                item_format.strong = True
         #--Image
         status = self.GetMasterStatus(mi)
         oninc = load_order.isActiveCached(masters_name) or (
@@ -586,12 +586,11 @@ class INIList(balt.UIList):
     @staticmethod
     def filterOutDefaultTweaks(tweaks):
         """Filter out default tweaks from tweaks iterable."""
-        return filter(lambda x: bass.dirs['tweaks'].join(x).isfile(), tweaks)
+        return filter(lambda x: not bosh.iniInfos[x].is_default_tweak, tweaks)
 
     def _toDelete(self, items):
         items = super(INIList, self)._toDelete(items)
-        return self.filterOutDefaultTweaks(items) # will refilter if coming
-        # from INI_Delete - expensive but I can't allow default tweaks deletion
+        return self.filterOutDefaultTweaks(items)
 
     def set_item_format(self, ini_name, item_format):
         iniInfo = self.data_store[ini_name]
@@ -619,6 +618,10 @@ class INIList(balt.UIList):
             if not settings['bash.ini.allowNewLines']: icon = 20
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
+        if iniInfo.is_default_tweak:
+            mousetext = _(u'Default Bash Tweak') + (
+                (u'.  ' + mousetext) if mousetext else u'')
+            item_format.italics = True
         self.mouseTexts[ini_name] = mousetext
         item_format.icon_key = icon, checkMark
         #--Font/BG Color
@@ -630,7 +633,7 @@ class INIList(balt.UIList):
         event.Skip()
         hitItem = self._getItemClicked(event, on_icon=True)
         if not hitItem: return
-        tweak = bosh.iniInfos[hitItem]
+        tweak = bosh.iniInfos[hitItem] # type: bosh.INIInfo
         if tweak.tweak_status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         target, gameIni = self.data_store.ini, bosh.oblivionIni
@@ -639,7 +642,7 @@ class INIList(balt.UIList):
             return
         choice = self.panel.current_ini_path.tail
         if not self.warn_tweak_game_ini(choice): return
-        target.applyTweakFile(tweak.getPath())
+        target.applyTweakFile(tweak.read_ini_lines())
         self.panel.ShowPanel(refresh_infos=False, clean_targets=False)
 
     @staticmethod
@@ -679,8 +682,7 @@ class INITweakLineCtrl(INIListCtrl):
             return
         self._ini_detail = tweakPath
         # TODO(ut) avoid if ini tweak did not change
-        abs_tweak_path = bosh.iniInfos[tweakPath].getPath()
-        self.tweakLines = bosh.iniInfos.ini.getTweakFileLines(abs_tweak_path)
+        self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
         num = self.GetItemCount()
         updated = set()
         for i,line in enumerate(self.tweakLines):
@@ -855,7 +857,7 @@ class ModList(_ModsUIList):
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
         #should mod be deactivated
         if u'Deactivate' in fileBashTags:
-            item_format.font = Resources.fonts.italic
+            item_format.italics = True
         #--Text BG
         if mod_name in bosh.modInfos.bad_names:
             item_format.back_key ='mods.bkgd.doubleTime.exists'
@@ -4010,7 +4012,6 @@ class BashApp(wx.App):
         Resources.bashRed = Resources.bashRed.GetIconBundle()
         Resources.bashDocBrowser = Resources.bashDocBrowser.GetIconBundle()
         Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
-        Resources.fonts = balt.fonts()
 
     @staticmethod
     def InitData(progress):
