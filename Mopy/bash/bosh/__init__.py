@@ -1705,11 +1705,6 @@ class IniFile(object):
                           lineNo, deleted))
         return lines
 
-    def saveSetting(self,section,key,value):
-        """Changes a single setting in the file."""
-        ini_settings = {section:{key:value}}
-        self.saveSettings(ini_settings)
-
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
@@ -1856,7 +1851,6 @@ class DefaultIniFile(IniFile):
     def needs_update(self, _reset_cache=False): raise AbstractError
     @classmethod
     def _get_settings(cls, tweakPath): raise AbstractError
-    def saveSetting(self,section,key,value): raise AbstractError
     def saveSettings(self,ini_settings,deleted_settings={}):
         raise AbstractError
 
@@ -1992,13 +1986,6 @@ class OBSEIniFile(IniFile):
             lines.append((line.strip(),section,setting,value,status,lineNo,bool(maDeleted)))
         return lines
 
-    def saveSetting(self,section,key,value):
-        lstr = LString(section)
-        if lstr == u'set': section = u']set['
-        elif lstr == u'setGS': section = u']setGS['
-        elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
-        super(OBSEIniFile, self).saveSetting(section, key, value)
-
     def saveSettings(self,ini_settings,deleted_settings={}):
         if not self.abs_path.isfile():
             return
@@ -2114,6 +2101,14 @@ class OblivionIni(IniFile):
         # oblivion.ini was not found in the game directory or
         # bUseMyGamesDirectory was not set.  Default to user profile directory
         IniFile.__init__(self, dirs['saveBase'].join(name))
+
+    def saveSetting(self,section,key,value):
+        """Changes a single setting in the file."""
+        ini_settings = {section:{key:value}}
+        self.saveSettings(ini_settings)
+
+    def get_ini_language(self):
+        return self.getSetting(u'General', u'sLanguage', u'English')
 
     @balt.conversation
     def ask_create_game_ini(self, msg=u''):
@@ -4101,7 +4096,7 @@ class ModInfos(FileInfos):
         """True if the mod says it has .STRINGS files, but the files are missing."""
         modInfo = self[modName]
         if modInfo.header.flags1.hasStrings:
-            language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
+            language = oblivionIni.get_ini_language()
             sbody,ext = modName.sbody,modName.ext
             bsaPaths = self.extra_bsas(modInfo, existing=False)
             for dir_, join, format_str in bush.game.esp.stringsFiles:
@@ -5226,7 +5221,7 @@ class Installer(object):
         else:
             renameStrings = settings['bash.installers.renameStrings'] if bush.game.esp.stringsFiles else False
             bethFilesSkip = not settings['bash.installers.autoRefreshBethsoft']
-        language = oblivionIni.getSetting(u'General',u'sLanguage',u'English') if renameStrings else u''
+        language = oblivionIni.get_ini_language() if renameStrings else u''
         languageLower = language.lower()
         hasExtraData = self.hasExtraData
         if type_ == 2: # exclude u'' from active subpackages
@@ -7470,7 +7465,7 @@ def pbash_mergeable_no_load(modInfo, verbose):
     if modInfo.isMissingStrings():
         if not verbose: return False
         reasons += u'\n.    '+_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
-            modInfo.name.sbody, oblivionIni.getSetting('General','sLanguage',u'English'))
+            modInfo.name.sbody, oblivionIni.get_ini_language())
     if reasons: return reasons
     return True
 
