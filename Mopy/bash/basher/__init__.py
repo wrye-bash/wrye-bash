@@ -630,7 +630,7 @@ class INIList(balt.UIList):
         event.Skip()
         hitItem = self._getItemClicked(event, on_icon=True)
         if not hitItem: return
-        tweak = bosh.iniInfos[hitItem]
+        tweak = bosh.iniInfos[hitItem] # type: bosh.INIInfo
         if tweak.tweak_status == 20: return # already applied
         #-- If we're applying to Oblivion.ini, show the warning
         target, gameIni = self.data_store.ini, bosh.oblivionIni
@@ -639,7 +639,7 @@ class INIList(balt.UIList):
             return
         choice = self.panel.current_ini_path.tail
         if not self.warn_tweak_game_ini(choice): return
-        target.applyTweakFile(tweak.getPath())
+        target.applyTweakFile(tweak.read_ini_lines())
         self.panel.ShowPanel(refresh_infos=False, clean_targets=False)
 
     @staticmethod

@@ -164,14 +164,10 @@ class INI_Apply(EnabledLink):
         needsRefresh = False
         for item in self.selected:
             #--No point applying a tweak that's already applied
-            if bosh.iniInfos[item].tweak_status == 20: continue
+            ini_info = bosh.iniInfos[item] # type: bosh.INIInfo
+            if ini_info.tweak_status == 20: continue
             needsRefresh = True
-            if bass.dirs['tweaks'].join(item).isfile():
-                self.window.data_store.ini.applyTweakFile(
-                    bass.dirs['tweaks'].join(item))
-            else:
-                self.window.data_store.ini.applyTweakFile(
-                    bass.dirs['defaultTweaks'].join(item))
+            bosh.iniInfos.ini.applyTweakFile(ini_info.read_ini_lines())
         if needsRefresh:
             self.window.panel.ShowPanel(refresh_infos=False,
                                         clean_targets=False)

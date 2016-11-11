@@ -1792,10 +1792,10 @@ class IniFile(object):
         #--Done
         self.abs_path.untemp()
 
-    def applyTweakFile(self,tweakPath):
+    def applyTweakFile(self, tweak_lines):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        if not self.abs_path.isfile() or not tweakPath.isfile():
+        if not self.abs_path.isfile():
             return
         encoding = 'utf-8'
         reDeleted = self.reDeletedSetting
@@ -1803,27 +1803,26 @@ class IniFile(object):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read Tweak file
-        with tweakPath.open('r') as tweakFile:
-            ini_settings = {}
-            deleted_settings = {}
-            section = sectionSettings = None
-            for line in tweakFile:
-                try:
-                    line = unicode(line,encoding)
-                except UnicodeDecodeError:
-                    line = unicode(line,'cp1252')
-                maDeleted = reDeleted.match(line)
-                stripped = reComment.sub(u'',line).strip()
-                maSection = reSection.match(stripped)
-                maSetting = reSetting.match(stripped)
-                if maSection:
-                    section = LString(maSection.group(1))
-                    sectionSettings = ini_settings[section] = {}
-                elif maSetting:
-                    if line[-1:] != u'\n': line += u'\r\n' #--Make sure has trailing new line
-                    sectionSettings[LString(maSetting.group(1))] = line
-                elif maDeleted:
-                    deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
+        ini_settings = {}
+        deleted_settings = {}
+        section = sectionSettings = None
+        for line in tweak_lines:
+            try:
+                line = unicode(line,encoding)
+            except UnicodeDecodeError:
+                line = unicode(line,'cp1252')
+            maDeleted = reDeleted.match(line)
+            stripped = reComment.sub(u'',line).strip()
+            maSection = reSection.match(stripped)
+            maSetting = reSetting.match(stripped)
+            if maSection:
+                section = LString(maSection.group(1))
+                sectionSettings = ini_settings[section] = {}
+            elif maSetting:
+                if line[-1:] != u'\n': line += u'\r\n' #--Make sure has trailing new line
+                sectionSettings[LString(maSetting.group(1))] = line
+            elif maDeleted:
+                deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
 
 #------------------------------------------------------------------------------
@@ -2026,8 +2025,8 @@ class OBSEIniFile(IniFile):
                         tmpFile.write(section[setting])
         self.abs_path.untemp()
 
-    def applyTweakFile(self,tweakPath):
-        if not self.abs_path.isfile() or not tweakPath.isfile():
+    def applyTweakFile(self, tweak_lines):
+        if not self.abs_path.isfile():
             return
         reDeleted = self.reDeleted
         reSet = self.reSet
@@ -2038,31 +2037,30 @@ class OBSEIniFile(IniFile):
         setSection = LString(u']set[')
         setGSSection = LString(u']setGS[')
         setNGSSection = LString(u']SetNumericGameSetting[')
-        with tweakPath.open('r') as tweakFile:
-            for line in tweakFile:
-                # Check for deleted lines
-                maDeleted = reDeleted.match(line)
-                if maDeleted:
-                    stripped = maDeleted.group(1)
-                    settings_ = deleted_settings
-                else:
-                    stripped = line
-                    settings_ = ini_settings
-                # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
-                stripped = reComment.sub(u'',stripped).strip()
-                for regex,sectionKey in [(reSet,setSection),
-                                         (reSetGS,setGSSection),
-                                         (reSetNGS,setNGSSection)]:
-                    match = regex.match(stripped)
-                    if match:
-                        setting = LString(match.group(1))
-                        break
-                else:
-                    continue
-                # Save the setting for applying
-                section = settings_.setdefault(sectionKey,{})
-                if line[-1] != u'\n': line += u'\r\n'
-                section[setting] = line
+        for line in tweak_lines:
+            # Check for deleted lines
+            maDeleted = reDeleted.match(line)
+            if maDeleted:
+                stripped = maDeleted.group(1)
+                settings_ = deleted_settings
+            else:
+                stripped = line
+                settings_ = ini_settings
+            # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
+            stripped = reComment.sub(u'',stripped).strip()
+            for regex,sectionKey in [(reSet,setSection),
+                                     (reSetGS,setGSSection),
+                                     (reSetNGS,setNGSSection)]:
+                match = regex.match(stripped)
+                if match:
+                    setting = LString(match.group(1))
+                    break
+            else:
+                continue
+            # Save the setting for applying
+            section = settings_.setdefault(sectionKey,{})
+            if line[-1] != u'\n': line += u'\r\n'
+            section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
 
 #------------------------------------------------------------------------------

@@ -305,7 +305,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 target_ini_file = target_ini_file or bosh.BestIniFile(target_path)
                 if bosh.iniInfos[outFile.tail].getStatus(target_ini_file) in (20, -10):
                     continue # applied or invalid
-                target_ini_file.applyTweakFile(outFile)
+                target_ini_file.applyTweakFile(
+                    bosh.iniInfos[outFile.tail].read_ini_lines())
                 lastApplied = outFile.tail
                 if not is_game_ini: new_targets.add(target_path)
             else:
