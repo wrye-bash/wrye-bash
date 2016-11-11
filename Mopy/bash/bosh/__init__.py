@@ -123,10 +123,6 @@ class SaveFileError(FileError):
     """TES4 Save File Error: File is corrupted."""
     pass
 
-class BSAFileError(FileError):
-    """TES4 BSA File Error: File is corrupted."""
-    pass
-
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):
     """NPC change record."""
@@ -1422,15 +1418,6 @@ class BsaFile:
                 hash,fileName = fileInfo[0],fileInfo[3]
                 trueHash = getHash(fileName)
 
-    def firstBackup(self,progress):
-        """Make first backup, just in case!"""
-        backupDir = modInfos.bash_dir.join(u'Backups')
-        backupDir.makedirs()
-        backup = backupDir.join(self.path.tail)+u'f'
-        if not backup.exists():
-            progress(0,_(u"Backing up BSA file. This will take a while..."))
-            self.path.copyTo(backup)
-
     @staticmethod
     def updateAIText(files=None):
         """Update aiText with specified files (or remove, if files == None)."""
@@ -1479,57 +1466,41 @@ class BsaFile:
         self.updateAIText()
         return resetCount
 
-    def invalidate(self,progress=None):
-        """Invalidates entries in BSA archive and regenerates Archive Invalidation.txt."""
-        reRepTexture = re.compile(ur'(?<!_[gn])\.dds',re.I|re.U)
-        with bolt.StructFile(self.path.s,'r+b') as ios:
-            #--Rehash
-            reset,inval,intxt = [],[],[]
-            folderInfos = self.folderInfos
-            getHash = BsaFile.getHash
-            trueHashes = set()
-            def setHash(filePos,newHash):
-                ios.seek(filePos)
-                ios.pack('Q',newHash)
-                return newHash
-            for folderInfo in folderInfos:
-                folderName = folderInfo[-2]
-                #--Actual directory files
-                diskPath = modInfos.store_dir.join(folderName)
-                diskFiles = set(x.s.lower() for x in diskPath.list())
-                trueHashes.clear()
-                nextHash = 0 #--But going in reverse order, physical 'next' == loop 'prev'
-                for fileInfo in reversed(folderInfo[-1]):
-                    hash,size,offset,fileName,filePos = fileInfo
-                    #--NOT a Path object.
-                    fullPath = os.path.join(folderName,fileName)
-                    trueHash = getHash(fileName)
-                    plusCE = trueHash + 0xCE
-                    plusE = trueHash + 0xE
-                    #--No invalidate?
-                    if not (fileName in diskFiles and reRepTexture.search(fileName)):
-                        if hash != trueHash:
-                            setHash(filePos,trueHash)
-                            reset.append(fullPath)
-                        nextHash = trueHash
-                    #--Invalidate one way or another...
-                    elif not nextHash or (plusCE < nextHash and plusCE not in trueHashes):
-                        nextHash = setHash(filePos,plusCE)
-                        inval.append(fullPath)
-                    elif plusE < nextHash and plusE not in trueHashes:
-                        nextHash = setHash(filePos,plusE)
-                        inval.append(fullPath)
-                    else:
-                        if hash != trueHash:
-                            setHash(filePos,trueHash)
-                        nextHash = trueHash
-                        intxt.append(fullPath)
-                    trueHashes.add(trueHash)
-        #--Save/Cleanup
-        self.resetOblivionBSAMTimes()
-        self.updateAIText(intxt)
-        #--Done
-        return reset,inval,intxt
+#------------------------------------------------------------------------------
+class AFile(object):
+    """Abstract file, supports caching - alpha."""
+    _with_ctime = False # HACK ctime may not be needed
+
+    def __init__(self, abs_path, load_cache=False):
+        self._abs_path = GPath(abs_path)
+        #--Settings cache
+        try:
+            if self._with_ctime:
+                self._file_size, self._file_mod_time, self.ctime = \
+                    self.abs_path.size_mtime_ctime()
+            else:
+                self._file_size, self._file_mod_time = \
+                    self.abs_path.size_mtime()
+        except OSError:
+            self._file_size = self._file_mod_time = 0
+            if self._with_ctime: self.ctime = 0
+
+    @property
+    def abs_path(self): return self._abs_path
+
+    def needs_update(self, _reset_cache=True):
+        try:
+            psize, pmtime = self.abs_path.size_mtime()
+        except OSError:
+            return False # we should not call needs_update on deleted files
+        if self._file_size != psize or self._file_mod_time != pmtime:
+            if _reset_cache:
+                self._reset_cache(psize, pmtime)
+            return True
+        return False
+
+    def _reset_cache(self, psize, pmtime):
+        self._file_size, self._file_mod_time = psize, pmtime
 
 #------------------------------------------------------------------------------
 class IniFile(object):
@@ -2287,21 +2258,22 @@ class MasterInfo:
         return self.__class__.__name__ + u"<" + repr(self.name) + u">"
 
 #------------------------------------------------------------------------------
-class _AFileInfo:
+class _AFileInfo(AFile):
     """Abstract File."""
-    def __init__(self, parent_dir, name):
-        self.dir = GPath(parent_dir)
-        self.name = GPath(name)
-        try:
-            self.size, self.mtime, self.ctime = \
-                self.getPath().size_mtime_ctime()
-        except OSError:
-            self.ctime = self.mtime = time.time()
-            self.size = 0
+    _with_ctime = True # HACK ctime may not be needed
 
-    def getPath(self):
-        """Returns joined dir and name."""
-        return self.dir.join(self.name)
+    def __init__(self, parent_dir, name, load_cache=False):
+        self.dir = GPath(parent_dir)
+        self.name = GPath(name) # ghost must be lopped off
+        super(_AFileInfo, self).__init__(parent_dir.join(name), load_cache)
+
+    ##: DEPRECATED-------------------------------------------------------------
+    def getPath(self): return self.abs_path
+    @property
+    def mtime(self): return self._file_mod_time
+    @property
+    def size(self): return self._file_size
+    #--------------------------------------------------------------------------
 
     def sameAs(self,fileInfo):
         """Return true if other fileInfo refers to same file as this fileInfo."""
@@ -2310,13 +2282,12 @@ class _AFileInfo:
                 (self.ctime == fileInfo.ctime) and
                 (self.name == fileInfo.name))
 
-    def setmtime(self,mtime=0):
+    def setmtime(self, set_time=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
-        mtime = int(mtime or self.mtime)
-        path = self.getPath()
-        path.mtime = mtime
-        self.mtime = path.mtime
-        return mtime
+        set_time = int(set_time or self.mtime)
+        self.abs_path.mtime = set_time
+        self._file_mod_time = set_time
+        return set_time
 
     def __repr__(self):
         return self.__class__.__name__ + u"<" + repr(self.name) + u">"
@@ -2326,7 +2297,6 @@ class FileInfo(_AFileInfo):
 
     def __init__(self, parent_dir, name):
         _AFileInfo.__init__(self, parent_dir, name)
-        self.bashDir = self.getFileInfos().bash_dir
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
@@ -2354,11 +2324,9 @@ class FileInfo(_AFileInfo):
         return (self.isMod() and self.header and
                 self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
-    def isEss(self):
-        return self.name.cext == bush.game.ess.ext
-
     def info_refresh(self):
-        self.size, self.mtime, self.ctime = self.getPath().size_mtime_ctime()
+        self._file_size, self._file_mod_time, self.ctime = \
+            self.abs_path.size_mtime_ctime()
         if self.header: self.readHeader() # if not header remains None
 
     def readHeader(self):
@@ -2403,6 +2371,13 @@ class FileInfo(_AFileInfo):
         """Writes header to file, overwriting old header."""
         raise AbstractError
 
+    def coCopy(self,oldPath,newPath):
+        """Copies co files corresponding to oldPath to newPath.
+        Provided so that SaveFileInfo can override for its cofiles."""
+        pass
+
+class _BackupMixin(FileInfo): # this should become a real mixin - under #336
+
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
         #--Skip backup?
@@ -2428,21 +2403,26 @@ class FileInfo(_AFileInfo):
 
     def makeBackup(self, forceBackup=False):
         """Creates backup(s) of file."""
-        backupDir = self.bashDir.join(u'Backups')
+        backupDir = self.backup_dir
         self._doBackup(backupDir,forceBackup)
         #--Done
         self.madeBackup = True
 
-    def coCopy(self,oldPath,newPath):
-        """Copies co files corresponding to oldPath to newPath.
-        Provided so that SaveFileInfo can override for its cofiles."""
-        pass
+    def _backup_paths(self):
+        return [(self.backup_dir.join(self.name), self.getPath())]
+
+    def revert_backup(self):
+        backup_paths = self._backup_paths()
+        for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
+            if not tup[0].exists(): backup_paths.remove(tup)
+        env.shellCopy(*zip(*backup_paths))
+        # do not change load order for timestamp games - rest works ok
+        self.setmtime(self._file_mod_time)
+        self.getFileInfos().refreshFile(self.name)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
-        if not self in self.getFileInfos().values():
-            raise StateError(u"Can't get snapshot parameters for file outside main directory.")
-        destDir = self.bashDir.join(u'Snapshots')
+        destDir = self.snapshot_dir
         destDir.makedirs()
         (root,ext) = self.name.rootExt
         separator = u'-'
@@ -2469,11 +2449,19 @@ class FileInfo(_AFileInfo):
         destName = root+separator+(u'.'.join(snapLast))+ext
         return destDir,destName,(root+u'*'+ext).s
 
+    @property
+    def backup_dir(self):
+        return self.getFileInfos().bash_dir.join(u'Backups')
+
+    @property
+    def snapshot_dir(self):
+        return self.getFileInfos().bash_dir.join(u'Snapshots')
+
 #------------------------------------------------------------------------------
 reReturns = re.compile(u'\r{2,}',re.U)
 reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
-class ModInfo(FileInfo):
+class ModInfo(_BackupMixin, FileInfo):
     """An esp/m file."""
 
     def __init__(self, parent_dir, name):
@@ -2517,11 +2505,11 @@ class ModInfo(FileInfo):
             crc = modInfos.table.getItem(self.name,'crc')
         return crc
 
-    def setmtime(self,mtime=0):
+    def setmtime(self, set_time=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""
-        mtime = FileInfo.setmtime(self,mtime)
+        set_time = FileInfo.setmtime(self, set_time)
         # Prevent re-calculating the File CRC
-        modInfos.table.setItem(self.name,'crc_mtime',mtime)
+        modInfos.table.setItem(self.name,'crc_mtime', set_time)
 
     # Ghosting and ghosting related overrides ---------------------------------
     def sameAs(self, fileInfo):
@@ -2531,11 +2519,10 @@ class ModInfo(FileInfo):
         except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
             return False
 
-    def getPath(self):
+    @property
+    def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
-        path = FileInfo.getPath(self)
-        if self.isGhost: path += u'.ghost'
-        return path
+        return (self._abs_path + u'.ghost') if self.isGhost else self._abs_path
 
     def setGhost(self,isGhost):
         """Sets file to/from ghost mode. Returns ghost status at end."""
@@ -2807,7 +2794,7 @@ class INIInfo(FileInfo):
         0: not installed (green)
         -10: invalid tweak file (red).
         Also caches the value in self._status"""
-        infos = self.getFileInfos()
+        infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.ini_info_file.getSettings()
         if self._incompatible(target_ini) or not tweak_settings:
@@ -2897,7 +2884,7 @@ class INIInfo(FileInfo):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-class SaveInfo(FileInfo):
+class SaveInfo(_BackupMixin, FileInfo):
     def getFileInfos(self): return saveInfos
 
     def getStatus(self):
@@ -2932,13 +2919,55 @@ class SaveInfo(FileInfo):
         """Returns CoSaves instance corresponding to self."""
         return CoSaves(self.getPath())
 
+    def _backup_paths(self):
+        save_paths = super(SaveInfo, self)._backup_paths()
+        save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
+        return save_paths
+
 #------------------------------------------------------------------------------
-class BSAInfo(FileInfo):
+from . import bsa_files
+from .bsa_files import BSAError
+
+try:
+    _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
+except AttributeError:
+    _bsa_type = bsa_files.ABsa
+
+class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
+    _default_mtime = time.mktime(
+        time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
+    _assets = frozenset()
+
+    def __init__(self, parent_dir, bsa_name):
+        super(BSAInfo, self).__init__(parent_dir, bsa_name)
+        self._reset_bsa_mtime()
+
     def getFileInfos(self): return bsaInfos
 
-    def resetMTime(self,mtime=u'01-01-2006 00:00:00'):
-        mtime = time.mktime(time.strptime(mtime,u'%m-%d-%Y %H:%M:%S'))
-        self.setmtime(mtime)
+    def needs_update(self, _reset_cache=True):
+        changed = super(BSAInfo, self).needs_update(_reset_cache)
+        self._reset_bsa_mtime()
+        return changed
+
+    def _reset_cache(self, psize, pmtime):
+        super(BSAInfo, self)._reset_cache(pmtime, psize)
+        self._assets = self.__class__._assets
+
+    def _reset_bsa_mtime(self):
+        if bush.game.allow_reset_bsa_timestamps and inisettings[
+            'ResetBSATimestamps']:
+            if self._file_mod_time != self._default_mtime:
+                self.setmtime(self._default_mtime)
+
+    # API
+    def has_asset(self, asset_path): return asset_path in self.assets
+
+    @property
+    def assets(self):
+        if self._assets is self.__class__._assets:
+            self.load_bsa_light(self.abs_path)
+            self._assets = frozenset(self._filenames)
+        return self._assets
 
 #------------------------------------------------------------------------------
 class TrackedFileInfos(DataDict):
@@ -3637,8 +3666,8 @@ class ModInfos(FileInfos):
         """Refreshes which mods are supposed to have strings files, but are
         missing them (=CTD). For Skyrim you need to have a valid load order."""
         oldBad = self.missing_strings
-        bad = set(fileName for fileName, fileInfo in self.iteritems() if
-                  fileInfo.isMissingStrings())
+        bad = set(fileName for fileName in self.keys() if
+                  self.isMissingStrings(fileName))
         new = bad - oldBad
         self.missing_strings = bad
         self.new_missing_strings = new
@@ -4047,30 +4076,24 @@ class ModInfos(FileInfos):
         if modInfo.header.flags1.hasStrings:
             language = oblivionIni.getSetting(u'General',u'sLanguage',u'English')
             sbody,ext = modName.sbody,modName.ext
-            bsaPaths = self.extra_bsas(modInfo)
-            bsaFiles = {}
+            bsaPaths = self.extra_bsas(modInfo, existing=False)
             for dir_, join, format_str in bush.game.esp.stringsFiles:
                 fname = format_str % {'body': sbody, 'ext': ext,
                                       'language': language}
-                assetPath = GPath(u'').join(*join).join(fname)
+                assetPath = empty_path.join(*join).join(fname)
                 # Check loose files first
                 if dirs[dir_].join(assetPath).exists():
                     continue
                 # Check in BSA's next
                 found = False
                 for path in bsaPaths:
-                    if not path.exists():
+                    try:
+                        bsa_info = bsaInfos[path.tail] # type: BSAInfo
+                        if bsa_info.has_asset(assetPath.cs): # Lowercase !
+                            found = True
+                            break
+                    except KeyError: # not existing or corrupted
                         continue
-                    bsaFile = bsaFiles.get(path,None)
-                    if not bsaFile:
-                        try:
-                            bsaFile = libbsa.BSAHandle(path)
-                            bsaFiles[path] = bsaFile
-                        except:
-                            continue
-                    if bsaFile.IsAssetInBSA(assetPath):
-                        found = True
-                        break
                 if not found:
                     return True
         return False
@@ -4091,7 +4114,10 @@ class ModInfos(FileInfos):
             iniFiles = [oblivionIni]
         return iniFiles
 
-    def extra_bsas(self, mod_info, descending=False):
+    def extra_bsas(self, mod_info, descending=False, existing=True):
+        """Return a list of existing bsa paths to get assets from.
+        :rtype: list[bolt.Path]
+        """
         bsaPaths = [mod_info.getBsaPath()]
         iniFiles = self._ini_files(descending=descending)
         for iniFile in iniFiles:
@@ -4101,7 +4127,7 @@ class ModInfos(FileInfos):
                 extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
                 if descending: extraBsa.reverse()
                 bsaPaths.extend(extraBsa)
-        return [x for x in bsaPaths if x.exists() and x.isfile()]
+        return [x for x in bsaPaths if not existing or x.isfile()]
 
     def hasBadMasterNames(self,modName):
         """True if there mod has master's with unencodable names."""
@@ -4474,15 +4500,41 @@ class BSAInfos(FileInfos):
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
 
-    def resetBSAMTimes(self):
-        for bsa in self.itervalues(): bsa.resetMTime()
-
-    @staticmethod
-    def check_bsa_timestamps():
-        if bush.game.allow_reset_bsa_timestamps and \
-                inisettings['ResetBSATimestamps']:
-            if bsaInfos.refresh():
-                bsaInfos.resetBSAMTimes()
+    def refresh(self, refresh_infos=True):
+        """Refresh from file directory."""
+        oldNames = set(self.data) | set(self.corrupted)
+        newNames = set()
+        _added = set()
+        _updated = set()
+        names = self._names()
+        for name in names:
+            oldInfo = self.get(name) # None if name was in corrupted or new one
+            isAdded = name not in oldNames
+            isUpdated = False
+            try:
+                if oldInfo is not None:
+                    isUpdated = not isAdded and oldInfo.needs_update()
+                else: # added or known corrupted, get a new info
+                    oldInfo = self.factory(self.store_dir, name)
+                self[name] = oldInfo
+                self.corrupted.pop(name,None)
+                if isAdded: _added.add(name)
+                elif isUpdated: _updated.add(name)
+            except BSAError as e: # old still corrupted, or new(ly) corrupted
+                self.corrupted[name] = e.message
+                self.pop(name, None)
+                continue
+            finally:
+                newNames.add(name) # corrupted or not it's in new names
+        _deleted = oldNames - newNames
+        for name in _deleted:
+            # Can run into multiple pops if one of the files is corrupted
+            self.pop(name, None); self.corrupted.pop(name, None)
+            # items deleted outside Bash, otherwise delete_Refresh did this
+            self.table.pop(name, None)
+        change = bool(_added) or bool(_updated) or bool(_deleted)
+        if not change: return change
+        return _added, _updated, _deleted
 
 #------------------------------------------------------------------------------
 class PeopleData(_DataStore):
@@ -7027,36 +7079,34 @@ class InstallersData(_DataStore):
         getBSAOrder = lambda b: load_order.activeCached().index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
+            def _filter_bsas(li): return filter(BSAInfos.rightFileType, li)
+            is_act = load_order.isActiveCached
+            def _bsa_mod_active(li): return [b for b in li if
+                        is_act(b.root + ".esp")] ##: or is_act(b.root + ".esm")
             # Create list of active BSA files in srcInstaller
-            srcFiles = srcInstaller.data_sizeCrc
-            srcBSAFiles = [x for x in srcFiles.keys() if x.ext == u'.' + bush.game.bsa_extension]
-#            print("Ordered: {}".format(load_order.activeCached()))
-            activeSrcBSAFiles = [x for x in srcBSAFiles if load_order.isActiveCached(x.root + ".esp")]
-            try:
-                bsas = [(x, libbsa.BSAHandle(dirs['mods'].join(x.s))) for x in activeSrcBSAFiles]
-#                print("BSA Paths: {}".format(bsas))
-            except:
-                deprint(u'   Error loading BSA srcFiles: ',activeSrcBSAFiles,traceback=True)
+            srcBSAFiles = _filter_bsas(srcInstaller.data_sizeCrc)
+            activeSrcBSAFiles = _bsa_mod_active(srcBSAFiles)
+            bsas = [(x, bsaInfos[x]) for x in activeSrcBSAFiles if
+                    x in bsaInfos.keys()]
             # Create list of all assets in BSA files for srcInstaller
             srcBSAContents = []
-            for x,y in bsas: srcBSAContents.extend(y.GetAssets('.+'))
-#            print("srcBSAContents: {}".format(srcBSAContents))
-
+            for x,y in bsas: srcBSAContents.extend(y.assets)
             # Create a list of all active BSA Files except the ones in srcInstaller
             activeBSAFiles = []
             for package, installer in self.iteritems():
                 if installer.order == srcOrder: continue
                 if not installer.isActive: continue
 #                print("Current Package: {}".format(package))
-                BSAFiles = [x for x in installer.data_sizeCrc if x.ext == u'.' + bush.game.bsa_extension]
-                activeBSAFiles.extend([(package, x, libbsa.BSAHandle(
-                    dirs['mods'].join(x.s))) for x in BSAFiles if load_order.isActiveCached(x.root + ".esp")])
+                inst_bsas = _filter_bsas(installer.data_sizeCrc)
+                activeBSAFiles.extend([(package, x, bsaInfos[x])
+                    for x in inst_bsas if x in bsaInfos.keys() and
+                        load_order.isActiveCached(x.root + ".esp")])
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
-            for package, bsaPath, bsaHandle in sorted(activeBSAFiles,key=getBSAOrder):
-                curAssets = bsaHandle.GetAssets('.+')
+            for package, bsaPath, bsa_info in sorted(activeBSAFiles,key=getBSAOrder):
+                curAssets = bsa_info.assets
 #                print("Current Assets: {}".format(curAssets))
-                curConflicts = Installer.sortFiles([x.s for x in curAssets if x in srcBSAContents])
+                curConflicts = Installer.sortFiles([x for x in curAssets if x in srcBSAContents])
 #                print("Current Conflicts: {}".format(curConflicts))
                 if curConflicts: bsaConflicts.append((package, bsaPath, curConflicts))
 #        print("BSA Conflicts: {}".format(bsaConflicts))
