@@ -1475,58 +1475,6 @@ class BsaFile:
         self.updateAIText()
         return resetCount
 
-    def invalidate(self,progress=None):
-        """Invalidates entries in BSA archive and regenerates Archive Invalidation.txt."""
-        reRepTexture = re.compile(ur'(?<!_[gn])\.dds',re.I|re.U)
-        with bolt.StructFile(self.path.s,'r+b') as ios:
-            #--Rehash
-            reset,inval,intxt = [],[],[]
-            folderInfos = self.folderInfos
-            getHash = BsaFile.getHash
-            trueHashes = set()
-            def setHash(filePos,newHash):
-                ios.seek(filePos)
-                ios.pack('Q',newHash)
-                return newHash
-            for folderInfo in folderInfos:
-                folderName = folderInfo[-2]
-                #--Actual directory files
-                diskPath = modInfos.store_dir.join(folderName)
-                diskFiles = set(x.s.lower() for x in diskPath.list())
-                trueHashes.clear()
-                nextHash = 0 #--But going in reverse order, physical 'next' == loop 'prev'
-                for fileInfo in reversed(folderInfo[-1]):
-                    hash,size,offset,fileName,filePos = fileInfo
-                    #--NOT a Path object.
-                    fullPath = os.path.join(folderName,fileName)
-                    trueHash = getHash(fileName)
-                    plusCE = trueHash + 0xCE
-                    plusE = trueHash + 0xE
-                    #--No invalidate?
-                    if not (fileName in diskFiles and reRepTexture.search(fileName)):
-                        if hash != trueHash:
-                            setHash(filePos,trueHash)
-                            reset.append(fullPath)
-                        nextHash = trueHash
-                    #--Invalidate one way or another...
-                    elif not nextHash or (plusCE < nextHash and plusCE not in trueHashes):
-                        nextHash = setHash(filePos,plusCE)
-                        inval.append(fullPath)
-                    elif plusE < nextHash and plusE not in trueHashes:
-                        nextHash = setHash(filePos,plusE)
-                        inval.append(fullPath)
-                    else:
-                        if hash != trueHash:
-                            setHash(filePos,trueHash)
-                        nextHash = trueHash
-                        intxt.append(fullPath)
-                    trueHashes.add(trueHash)
-        #--Save/Cleanup
-        self.resetOblivionBSAMTimes()
-        self.updateAIText(intxt)
-        #--Done
-        return reset,inval,intxt
-
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - alpha."""
