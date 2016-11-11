@@ -679,8 +679,7 @@ class INITweakLineCtrl(INIListCtrl):
             return
         self._ini_detail = tweakPath
         # TODO(ut) avoid if ini tweak did not change
-        tweak_lines = bosh.iniInfos[tweakPath].read_ini_lines()
-        self.tweakLines = bosh.iniInfos.ini.getTweakFileLines(tweak_lines)
+        self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
         num = self.GetItemCount()
         updated = set()
         for i,line in enumerate(self.tweakLines):

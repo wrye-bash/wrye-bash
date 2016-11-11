@@ -1631,8 +1631,9 @@ class IniFile(object):
                     traceback=True)
             return []
 
-    def getTweakFileLines(self, tweak_lines):
-        """Get a line by line breakdown of the tweak file, in this format:
+    def get_lines_infos(self, tweak_lines):
+        """Analyse the tweak lines based on self settings and type. Return a
+        list of line info tuples in this format:
         [(fulltext,section,setting,value,status,ini_line_number, deleted)]
         where:
         fulltext = full line of text from the ini
@@ -1796,10 +1797,7 @@ class IniFile(object):
         Note: Will ONLY apply settings that already exist."""
         if not self.abs_path.isfile() or not tweakPath.isfile():
             return
-        if tweakPath != self.abs_path:
-            encoding = 'utf-8'
-        else:
-            encoding = self.encoding
+        encoding = 'utf-8'
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
         reSection = self.reSection
@@ -1907,19 +1905,7 @@ class OBSEIniFile(IniFile):
                     _add_setting(i, maSetNGS, section)
         return ini_settings,deleted_settings
 
-    def getTweakFileLines(self, tweak_lines):
-        """Get a line by line breakdown of the tweak file, in this format:
-        [(fulltext,section,setting,value,status,ini_line_number)]
-        where:
-        fulltext = full line of text from the ini
-        setting = the setting that is being edited
-        value = the value the setting is being set to
-        status:
-            -10: doesn't exist in the ini
-              0: does exist, but it's a heading or something else without a value
-             10: does exist, but value isn't the same
-             20: does exist, and value is the same
-        ini_line_number = line number in the ini that this tweak applies to"""
+    def get_lines_infos(self, tweak_lines):
         lines = []
         iniSettings, deletedSettings = self.getSettings(with_deleted=True)
         reDeleted = self.reDeleted
@@ -3360,10 +3346,8 @@ class INIInfos(FileInfos):
         _deleted = oldNames - newNames
         for name in _deleted:
             self.pop(name, None)
-        if _deleted:
-            # items deleted outside Bash
-            for d in set(self.table.keys()) & set(_deleted):
-                del self.table[d]
+            # items deleted outside Bash, otherwise delete_Refresh did this
+            self.table.pop(name, None)
         return _added, _deleted, _updated
 
     def refresh(self, refresh_infos=True, refresh_target=True):
@@ -3392,6 +3376,10 @@ class INIInfos(FileInfos):
             if self.dirdef.join(d).isfile():
                 self[d] = self.factory(self.dirdef, d)
         return deleted
+
+    def get_tweak_lines_infos(self, tweakPath):
+        tweak_lines = self[tweakPath].read_ini_lines()
+        return self._ini.get_lines_infos(tweak_lines)
 
 def _lo_cache(lord_func):
     """Decorator to make sure I sync modInfos cache with load_order cache
@@ -6730,7 +6718,7 @@ class InstallersData(_DataStore):
             with tweakPath.open('r') as tweak:
                 tweak_lines = tweak.readlines()
             for (text, section, setting, value, status, lineNo,
-                 deleted) in iniFile.getTweakFileLines(tweak_lines):
+                 deleted) in iniFile.get_lines_infos(tweak_lines):
                 if status in (10, -10):
                     # A setting that exists in both INI's, but is different,
                     # or a setting that doesn't exist in the new INI.
