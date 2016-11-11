@@ -69,7 +69,7 @@ def _decode_path(string_path):
 
 # Headers ---------------------------------------------------------------------
 class _Header(object):
-    __slots__ = ('file_id', 'version', )
+    __slots__ = ('file_id', 'version')
     formats = ['4s', 'I']
     bsa_magic = 'BSA\x00'
     bsa_version = int('0x67', 16)
@@ -86,7 +86,7 @@ class BsaHeader(_Header):
     __slots__ = ( # in the order encountered in the header
          'folder_records_offset', 'archive_flags', 'folder_count',
          'file_count', 'total_folder_name_length', 'total_file_name_length',
-         'file_flags',)
+         'file_flags')
     formats = ['I'] * 8
     header_size = 36
 
@@ -111,8 +111,8 @@ class BsaHeader(_Header):
 
 class Ba2Header(_Header):
     __slots__ = ( # in the order encountered in the header
-        'b2a_files_type', 'b2a_num_files', 'b2a_name_table_offset', )
-    formats = ['4s'] + ['I'] + ['Q']
+        'b2a_files_type', 'b2a_num_files', 'b2a_name_table_offset')
+    formats = ['4s', 'I', 'Q']
     bsa_magic = 'BTDX'
     file_types = {'GNRL', 'DX10'} # GNRL=General, DX10=Textures
     bsa_version = int('0x01', 16)
@@ -199,24 +199,24 @@ class _BsaHashedRecord(_HashedRecord):
             f[1] for f in cls.formats)
 
 class BSAFolderRecord(_BsaHashedRecord):
-    __slots__ = ('files_count', 'file_records_offset',)
-    formats = ['I'] + ['I']
+    __slots__ = ('files_count', 'file_records_offset')
+    formats = ['I', 'I']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
 class BSASkyrimSEFolderRecord(_BsaHashedRecord):
-    __slots__ = ('files_count', 'unknown_int', 'file_records_offset',)
-    formats = ['I'] + ['I'] + ['Q']
+    __slots__ = ('files_count', 'unknown_int', 'file_records_offset')
+    formats = ['I', 'I', 'Q']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
 class BSAFileRecord(_BsaHashedRecord):
-    __slots__ = ('file_data_size', 'raw_file_data_offset',)
-    formats = ['I'] + ['I']
+    __slots__ = ('file_data_size', 'raw_file_data_offset')
+    formats = ['I', 'I']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
 # BA2s
 class _B2aFileRecordCommon(_HashedRecord):
     __slots__ = ('file_extension', 'dir_hash', )
-    formats = ['4s'] + ['I']
+    formats = ['4s', 'I']
     formats = list((f, struct.calcsize(f)) for f in formats)
 
     def load_record(self, ins):
@@ -243,7 +243,7 @@ class _B2aFileRecordCommon(_HashedRecord):
 
 class B2aFileRecordGeneral(_B2aFileRecordCommon):
     __slots__ = ('unk0C', 'offset', 'packed_size', 'unpacked_size', 'unk20')
-    formats = ['I'] + ['Q'] + ['I'] * 3
+    formats = ['I', 'Q'] + ['I'] * 3
     formats = list((f, struct.calcsize(f)) for f in formats)
 
     def load_record(self, ins):
@@ -270,9 +270,6 @@ class BSAFolder(object):
     def __init__(self, folder_record):
         self.folder_record = folder_record
         self.assets = collections.OrderedDict() # keep files order
-
-    def __repr__(self):
-        return repr(tuple(repr(a) for a in self.assets.itervalues()))
 
 class BSAAsset(object):
 
@@ -302,9 +299,9 @@ class _BSA(object):
     def __load(self, abs_path, names_only):
         try:
             if not names_only:
-                self._load_bsa(u'%s' % abs_path) # accept string or Path
+                self._load_bsa(abs_path)
             else:
-                self.load_bsa_light(u'%s' % abs_path)
+                self.load_bsa_light(abs_path)
         except struct.error as e:
             raise BSAError, e.message, sys.exc_info()[2]
 
@@ -365,7 +362,7 @@ class BSA(_BSA):
 
     def _read_bsa_file(self, abs_path, folder_records, read_file_record):
         total_names_length = 0
-        with open(abs_path, 'rb') as bsa_file:
+        with open(u'%s' % abs_path, 'rb') as bsa_file: # accept string or Path
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
             # load the folder records from input stream
@@ -405,7 +402,7 @@ class BA2(_BSA):
     header_type = Ba2Header
 
     def _load_bsa(self, abs_path):
-        with open(abs_path, 'rb') as bsa_file:
+        with open(u'%s' % abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
             # load the folder records from input stream
@@ -440,7 +437,7 @@ class BA2(_BSA):
                                                         file_records[index])
 
     def load_bsa_light(self, abs_path):
-        with open(abs_path, 'rb') as bsa_file:
+        with open(u'%s' % abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
             # load the file names block
