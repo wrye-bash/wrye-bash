@@ -1532,7 +1532,7 @@ class AFile(object):
     """Abstract file, supports caching - alpha."""
     _with_ctime = False # HACK ctime may not be needed
 
-    def __init__(self, abs_path):
+    def __init__(self, abs_path, load_cache=False):
         self._abs_path = GPath(abs_path)
         #--Settings cache
         try:
@@ -2323,10 +2323,10 @@ class _AFileInfo(AFile):
     """Abstract File."""
     _with_ctime = True # HACK ctime may not be needed
 
-    def __init__(self, parent_dir, name):
+    def __init__(self, parent_dir, name, load_cache=False):
         self.dir = GPath(parent_dir)
         self.name = GPath(name) # ghost must be lopped off
-        super(_AFileInfo, self).__init__(parent_dir.join(name))
+        super(_AFileInfo, self).__init__(parent_dir.join(name), load_cache)
 
     ##: DEPRECATED-------------------------------------------------------------
     def getPath(self): return self.abs_path
@@ -2997,10 +2997,10 @@ except AttributeError:
 class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
+    _assets = frozenset()
 
     def __init__(self, parent_dir, bsa_name):
         super(BSAInfo, self).__init__(parent_dir, bsa_name)
-        self._assets = frozenset(self._filenames)
         self._reset_bsa_mtime()
 
     def getFileInfos(self): return bsaInfos
@@ -3012,8 +3012,7 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
 
     def _reset_cache(self, psize, pmtime):
         super(BSAInfo, self)._reset_cache(pmtime, psize)
-        self.load_bsa_light(self.abs_path)
-        self._assets = frozenset(self._filenames)
+        self._assets = self.__class__._assets
 
     def _reset_bsa_mtime(self):
         if bush.game.allow_reset_bsa_timestamps and inisettings[
@@ -3022,7 +3021,14 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
                 self.setmtime(self._default_mtime)
 
     # API
-    def has_asset(self, asset_path): return asset_path in self._assets
+    def has_asset(self, asset_path): return asset_path in self.assets
+
+    @property
+    def assets(self):
+        if self._assets is self.__class__._assets:
+            self.load_bsa_light(self.abs_path)
+            self._assets = frozenset(self._filenames)
+        return self._assets
 
 #------------------------------------------------------------------------------
 class TrackedFileInfos(DataDict):
@@ -7145,7 +7151,7 @@ class InstallersData(_DataStore):
                     x in bsaInfos.keys()]
             # Create list of all assets in BSA files for srcInstaller
             srcBSAContents = []
-            for x,y in bsas: srcBSAContents.extend(y._filenames)
+            for x,y in bsas: srcBSAContents.extend(y.assets)
             # Create a list of all active BSA Files except the ones in srcInstaller
             activeBSAFiles = []
             for package, installer in self.iteritems():
@@ -7159,7 +7165,7 @@ class InstallersData(_DataStore):
             # Calculate all conflicts and save them in bsaConflicts
 #            print("Active BSA Files: {}".format(activeBSAFiles))
             for package, bsaPath, bsa_info in sorted(activeBSAFiles,key=getBSAOrder):
-                curAssets = bsa_info._filenames
+                curAssets = bsa_info.assets
 #                print("Current Assets: {}".format(curAssets))
                 curConflicts = Installer.sortFiles([x for x in curAssets if x in srcBSAContents])
 #                print("Current Conflicts: {}".format(curConflicts))

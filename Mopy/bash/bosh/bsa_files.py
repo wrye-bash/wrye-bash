@@ -290,13 +290,13 @@ class Ba2Folder(object):
 class ABsa(AFile):
     header_type = BsaHeader
 
-    def __init__(self, abs_path, names_only=True):
+    def __init__(self, abs_path, load_cache=False, names_only=True):
         super(ABsa, self).__init__(abs_path)
         self.bsa_header = self.__class__.header_type()
         self.bsa_folders = collections.OrderedDict() # keep folder order
         self._filenames = []
         self.total_names_length = 0 # reported wrongly at times - calculate it
-        self.__load(abs_path, names_only)
+        if load_cache: self.__load(abs_path, names_only)
 
     def __load(self, abs_path, names_only):
         try:
