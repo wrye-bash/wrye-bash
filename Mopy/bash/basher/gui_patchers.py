@@ -140,6 +140,10 @@ class _PatcherPanel(object):
 
     def mass_select(self, select=True): self.isEnabled = select
 
+    def _bold(self, index, cntrl):
+        get_font = self.gConfigPanel.GetFont()
+        cntrl.SetItemFont(index, balt.Font.Style(get_font, bold=True))
+
 #------------------------------------------------------------------------------
 class _AliasesPatcherPanel(_PatcherPanel):
     # CONFIG DEFAULTS
@@ -287,9 +291,7 @@ class _ListPatcherPanel(_PatcherPanel):
                         patcherOn = True
                     if not isFirstLoad:
                         # indicate that this is a new item by bolding it and its parent patcher
-                        font = self.gConfigPanel.GetFont()
-                        font.SetWeight(wx.FONTWEIGHT_BOLD)
-                        self.gList.SetItemFont(index, font)
+                        self._bold(index, self.gList)
                         patcherBold = True
                 self.gList.Check(index,self.configChecks.setdefault(item,effectiveDefaultItemCheck))
         self.configItems = items
@@ -540,9 +542,7 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
             self.gTweakList.Check(index,tweak.isEnabled)
             if not isFirstLoad and tweak.isNew():
                 # indicate that this is a new item by bolding it and its parent patcher
-                font = self.gConfigPanel.GetFont()
-                font.SetWeight(wx.FONTWEIGHT_BOLD)
-                self.gTweakList.SetItemFont(index, font)
+                self._bold(index, self.gTweakList)
                 patcherBold = True
         if patcherBold:
             self._BoldPatcherLabel()

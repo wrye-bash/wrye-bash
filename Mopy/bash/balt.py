@@ -59,14 +59,14 @@ splitterStyle = wx.SP_LIVE_UPDATE # | wx.SP_3DSASH # ugly but
 wxPoint = wx.Point
 wxSize = wx.Size
 
-def fonts():
-    font_default = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    font_bold = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    font_italic = wx.SystemSettings_GetFont(wx.SYS_DEFAULT_GUI_FONT)
-    font_bold.SetWeight(wx.FONTWEIGHT_BOLD)
-    font_italic.SetStyle(wx.FONTSTYLE_SLANT)
-    Fonts = namedtuple('Fonts', ['default', 'bold', 'italic'])
-    return Fonts(font_default, font_bold, font_italic)
+class Font(wx.Font):
+
+    @staticmethod
+    def Style(font_, bold=False, slant=False, underline=False):
+        if bold: font_.SetWeight(wx.FONTWEIGHT_BOLD)
+        if slant: font_.SetStyle(wx.FONTSTYLE_SLANT)
+        if underline: font_.SetUnderlined()
+        return font_
 
 # Settings --------------------------------------------------------------------
 __unset = bolt.Settings(dictFile=None) # type information
@@ -1729,7 +1729,8 @@ class UIList(wx.Panel):
             self.icon_key = None
             self.back_key = 'default.bkgd'
             self.text_key = 'default.text'
-            self.font = Resources.fonts.default
+            self.strong = False
+            self.italics = False
             self.underline = False
 
     def set_item_format(self, item, item_format):
@@ -1753,9 +1754,8 @@ class UIList(wx.Panel):
         else: gItem.SetTextColour(self.__gList.GetTextColour())
         if df.back_key: gItem.SetBackgroundColour(colors[df.back_key])
         else: gItem.SetBackgroundColour(self._defaultTextBackground)
-        font = gItem.GetFont()
-        font.SetUnderlined(df.underline)
-        gItem.SetFont(font)
+        gItem.SetFont(Font.Style(gItem.GetFont(), bold=df.strong,
+                                 slant=df.italics, underline=df.underline))
         self.__gList.SetItem(gItem)
 
     def PopulateItems(self):

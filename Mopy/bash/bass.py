@@ -49,7 +49,6 @@ def GetBashIni(iniPath=None, reload_=False): ##: needs work
     return bashIni
 
 class Resources: # this belongs to basher but leads to cyclic imports, so...
-    fonts = None
     #--Icon Bundles
     bashRed = None
     bashBlue = None

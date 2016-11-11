@@ -454,7 +454,7 @@ class MasterList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.ghosted'
         if self.allowEdit:
             if masterInfo.oldName in settings['bash.mods.renames']:
-                item_format.font = Resources.fonts.bold
+                item_format.strong = True
         #--Image
         status = self.GetMasterStatus(mi)
         oninc = load_order.isActiveCached(masters_name) or (
@@ -618,6 +618,10 @@ class INIList(balt.UIList):
             if not settings['bash.ini.allowNewLines']: icon = 20
             else: icon = 0
             mousetext = _(u'Tweak is invalid')
+        if iniInfo.is_default_tweak:
+            mousetext = _(u'Default Bash Tweak') + (
+                (u'.  ' + mousetext) if mousetext else u'')
+            item_format.italics = True
         self.mouseTexts[ini_name] = mousetext
         item_format.icon_key = icon, checkMark
         #--Font/BG Color
@@ -853,7 +857,7 @@ class ModList(_ModsUIList):
         elif checkMark == 3: mouseText += _(u"Imported into Bashed Patch.  ")
         #should mod be deactivated
         if u'Deactivate' in fileBashTags:
-            item_format.font = Resources.fonts.italic
+            item_format.italics = True
         #--Text BG
         if mod_name in bosh.modInfos.bad_names:
             item_format.back_key ='mods.bkgd.doubleTime.exists'
@@ -4008,7 +4012,6 @@ class BashApp(wx.App):
         Resources.bashRed = Resources.bashRed.GetIconBundle()
         Resources.bashDocBrowser = Resources.bashDocBrowser.GetIconBundle()
         Resources.bashMonkey = Resources.bashMonkey.GetIconBundle()
-        Resources.fonts = balt.fonts()
 
     @staticmethod
     def InitData(progress):
