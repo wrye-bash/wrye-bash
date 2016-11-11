@@ -1553,8 +1553,8 @@ class IniFile(object):
         if not self.abs_path.isfile():
             return ({}, {}) if with_deleted else {}
         if self.needs_update(_reset_cache=True):
-            self._settings_cache_linenum, self._deleted_cache = \
-                self._getTweakFileSettings(self.abs_path)
+            self._settings_cache_linenum, self._deleted_cache, \
+                self.isCorrupted = self._get_settings(self.abs_path)
         if with_deleted:
             return self._settings_cache_linenum, self._deleted_cache
         return self._settings_cache_linenum
@@ -1580,19 +1580,18 @@ class IniFile(object):
             return True
         return False
 
-    def _getTweakFileSettings(self, tweakPath):
+    @classmethod
+    def _get_settings(cls, tweakPath):
         """Gets settings in a tweak file."""
         ini_settings = {}
         deleted_settings = {}
-        if not tweakPath.isfile():
-            return ini_settings,deleted_settings
-        default_section = self.__class__.defaultSection
-        encoding = self.encoding
-        setCorrupted = True
-        reComment = self.__class__.reComment
-        reSection = self.__class__.reSection
-        reDeleted = self.__class__.reDeletedSetting
-        reSetting = self.__class__.reSetting
+        default_section = cls.defaultSection
+        encoding = cls.encoding
+        isCorrupted = False
+        reComment = cls.reComment
+        reSection = cls.reSection
+        reDeleted = cls.reDeletedSetting
+        reSetting = cls.reSetting
         def _add_setting(j, match, _section):
             _section[LString(match.group(1))] = match.group(2).strip(), j
         #--Read ini file
@@ -1615,12 +1614,12 @@ class IniFile(object):
                     if sectionSettings is None:
                         sectionSettings = ini_settings.setdefault(LString(
                             default_section), {})
-                        if setCorrupted: self.isCorrupted = True
+                        isCorrupted = True
                     _add_setting(i, maSetting, sectionSettings)
                 elif maDeleted:
                     if not section: continue
                     deleted_settings.setdefault(section,{})[LString(maDeleted.group(1))] = i
-        return ini_settings,deleted_settings
+        return ini_settings, deleted_settings, isCorrupted
 
     def read_ini_lines(self):
         try: #TODO(ut) parse getSettings instead-see constructing default tweak
@@ -1855,7 +1854,8 @@ class DefaultIniFile(IniFile):
 
     # YAK! track uses!
     def needs_update(self, _reset_cache=False): raise AbstractError
-    def _getTweakFileSettings(self, tweakPath): raise AbstractError
+    @classmethod
+    def _get_settings(cls, tweakPath): raise AbstractError
     def saveSetting(self,section,key,value): raise AbstractError
     def saveSettings(self,ini_settings,deleted_settings={}):
         raise AbstractError
@@ -1898,17 +1898,16 @@ class OBSEIniFile(IniFile):
         elif lstr == u'SetNumericGameSetting': section = u']SetNumericGameSetting['
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
-    def _getTweakFileSettings(self, tweakPath):
+    @classmethod
+    def _get_settings(cls, tweakPath):
         """Get the settings in the ini script."""
         ini_settings = {}
         deleted_settings = {}
-        if not tweakPath.exists() or tweakPath.isdir():
-            return ini_settings,deleted_settings
-        reDeleted = self.__class__.reDeleted
-        reComment = self.__class__.reComment
-        reSet     = self.__class__.reSet
-        reSetGS   = self.__class__.reSetGS
-        reSetNGS  = self.__class__.reSetNGS
+        reDeleted = cls.reDeleted
+        reComment = cls.reComment
+        reSet     = cls.reSet
+        reSetGS   = cls.reSetGS
+        reSetNGS  = cls.reSetNGS
         def _add_setting(j, match, _section):
             _section[LString(match.group(1))] = match.group(2).strip(), j
         with tweakPath.open('r') as iniFile:
@@ -1937,7 +1936,7 @@ class OBSEIniFile(IniFile):
                     else:
                         section = deleted_settings.setdefault(LString(u']SetNumericGameSetting['),{})
                     _add_setting(i, maSetNGS, section)
-        return ini_settings,deleted_settings
+        return ini_settings, deleted_settings, False
 
     def get_lines_infos(self, tweak_lines):
         lines = []
