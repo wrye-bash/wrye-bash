@@ -1418,15 +1418,6 @@ class BsaFile:
                 hash,fileName = fileInfo[0],fileInfo[3]
                 trueHash = getHash(fileName)
 
-    def firstBackup(self,progress):
-        """Make first backup, just in case!"""
-        backupDir = modInfos.bash_dir.join(u'Backups')
-        backupDir.makedirs()
-        backup = backupDir.join(self.path.tail)+u'f'
-        if not backup.exists():
-            progress(0,_(u"Backing up BSA file. This will take a while..."))
-            self.path.copyTo(backup)
-
     @staticmethod
     def updateAIText(files=None):
         """Update aiText with specified files (or remove, if files == None)."""
