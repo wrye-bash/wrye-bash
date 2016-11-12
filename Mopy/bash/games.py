@@ -648,13 +648,6 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
-    must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
-                                 bolt.GPath(u'DLCworkshop01.esm'),
-                                 bolt.GPath(u'DLCCoast.esm'),
-                                 bolt.GPath(u'DLCWorkshop02.esm'),
-                                 bolt.GPath(u'DLCWorkshop03.esm'),
-                                 bolt.GPath(u'DLCNukaWorld.esm'),)
-
     def load_order_changed(self): return self._plugins_txt_modified()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
@@ -678,7 +671,7 @@ class AsteriskGame(Game):
         return list(lo), list(active)
 
     def _persist_load_order(self, lord, active):
-        assert active # must at least contain Fallout4.esm
+        assert active # must at least contain the master esm for these games
         self._write_plugins_txt(lord, active)
 
     def _persist_active_plugins(self, active, lord):
@@ -704,11 +697,31 @@ class AsteriskGame(Game):
     def _write_modfile(self, path, lord, active):
         _write_plugins_txt_(path, lord, active, _star=True)
 
+# AsteriskGame overrides
+class Fallout4(AsteriskGame):
+
+    must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
+                                 bolt.GPath(u'DLCworkshop01.esm'),
+                                 bolt.GPath(u'DLCCoast.esm'),
+                                 bolt.GPath(u'DLCWorkshop02.esm'),
+                                 bolt.GPath(u'DLCWorkshop03.esm'),
+                                 bolt.GPath(u'DLCNukaWorld.esm'),)
+
+class SkyrimSE(AsteriskGame):
+
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
+                                 bolt.GPath(u'Dawnguard.esm'),
+                                 bolt.GPath(u'Hearthfires.esm'),
+                                 bolt.GPath(u'Dragonborn.esm'),)
+
+# Game factory
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
     if name == u'Skyrim':
         return TextfileGame(mod_infos, plugins_txt_path, loadorder_txt_path)
+    elif name == u'Skyrim Special Edition':
+        return SkyrimSE(mod_infos, plugins_txt_path)
     elif name == u'Fallout4':
-        return AsteriskGame(mod_infos, plugins_txt_path)
+        return Fallout4(mod_infos, plugins_txt_path)
     else:
         return TimestampGame(mod_infos, plugins_txt_path)
 
