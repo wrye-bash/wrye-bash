@@ -42,8 +42,16 @@ from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, MreInfo, \
     MreLctn, MreTact, MreBptd, MreDobj, MreLscr, MreDlvw, MreTree, MreWatr, \
     MreFlor, MreEyes, MreWeap, MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, \
     MreLcrt, MreStat, MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, \
-    MreIpct, MreAspc, MreRela, MreEfsh, MreSnct, MreOtft
-from ...brec import MreGlob, BaseRecordHeader, ModError
+    MreIpct, MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MreVoli, MreLens, \
+    ModError
+from ...brec import MreGlob, BaseRecordHeader
+# Common with Skyrim
+from ..skyrim import patchURL, patchTip, allow_reset_bsa_timestamps, \
+    bsa_extension, using_txt_file, cs, se, sd, sp, se_sd, ge, laa, dontSkip, \
+    dontSkipDirs, ini, pklfile, wryeBashDataFiles, wryeBashDataDirs, \
+    ignoreDataFiles, ignoreDataFilePrefixes, ignoreDataDirs, CBash_patchers, \
+    weaponTypes, raceNames, raceShortNames, raceHairMale, raceHairFemale, \
+    SkipBAINRefresh, supports_mod_inis
 
 #--Name of the game to use in UI.
 displayName = u'Skyrim Special Edition'
@@ -60,110 +68,12 @@ exe = u'SkyrimSE.exe'
 #--Registry keys to read to find the install location
 regInstallKeys = (u'Bethesda Softworks\\Skyrim Special Edition', u'Installed Path')
 
-#--patch information
-patchURL = u'' # Update via steam
-patchTip = u'Update via Steam'
-
 #--URL to the Nexus site for this game
-nexusUrl = u'http://www.nexusmods.com/skyrim/'
-nexusName = u'Skyrim Nexus'
-nexusKey = 'bash.installers.openSkyrimNexus.continue'
+nexusUrl = u'http://www.nexusmods.com/skyrimspecialedition/'
+nexusName = u'Skyrim SE Nexus'
+nexusKey = 'bash.installers.openSkyrimSeNexus.continue'
 
 # Bsa info
-allow_reset_bsa_timestamps = False
-bsa_extension = ur'bsa'
-
-#--Creation Kit Set information
-class cs:
-    shortName = u'CK'                # Abbreviated name
-    longName = u'Creation Kit'       # Full name
-    exe = u'CreationKit.exe'         # Executable to run
-    seArgs = None # u'-editor'       # Argument to pass to the SE to load the CS # Not yet needed
-    imageName = u'creationkit%s.png' # Image name template for the status bar
-
-#--Script Extender information
-class se:
-    shortName = u'SKSE'                      # Abbreviated name
-    longName = u'Skyrim Script Extender'     # Full name
-    exe = u'skse_loader.exe'                 # Exe to run
-    steamExe = u'skse_loader.exe'            # Exe to run if a steam install
-    url = u'http://skse.silverlock.org/'     # URL to download from
-    urlTip = u'http://skse.silverlock.org/'  # Tooltip for mouse over the URL
-
-#--Script Dragon
-class sd:
-    shortName = u'SD'
-    longName = u'Script Dragon'
-    installDir = u'asi'
-
-#--SkyProc Patchers
-class sp:
-    shortName = u'SP'
-    longName = u'SkyProc'
-    installDir = u'SkyProc Patchers'
-
-#--Quick shortcut for combining the SE and SD names
-se_sd = se.shortName+u'/'+sd.longName
-
-#--Graphics Extender information
-class ge:
-    shortName = u''
-    longName = u''
-    exe = u'**DNE**'
-    url = u''
-    urlTip = u''
-
-#--4gb Launcher
-class laa:
-    # Skyrim has a 4gb Launcher, but as of patch 1.3.10, it is
-    # no longer required (Bethsoft updated TESV.exe to already
-    # be LAA)
-    name = u''
-    exe = u'**DNE**'
-    launchesSE = False
-
-# Files BAIN shouldn't skip
-dontSkip = (
-       # These are all in the Interface folder. Apart from the skyui_ files,
-       # they are all present in vanilla.
-       u'skyui_cfg.txt',
-       u'skyui_translate.txt',
-       u'credits.txt',
-       u'credits_french.txt',
-       u'fontconfig.txt',
-       u'controlmap.txt',
-       u'gamepad.txt',
-       u'mouse.txt',
-       u'keyboard_english.txt',
-       u'keyboard_french.txt',
-       u'keyboard_german.txt',
-       u'keyboard_spanish.txt',
-       u'keyboard_italian.txt',
-)
-
-# Directories where specific file extensions should not be skipped by BAIN
-dontSkipDirs = {
-                # This rule is to allow mods with string translation enabled.
-                'interface\\translations':['.txt']
-}
-
-#Folders BAIN should never check
-SkipBAINRefresh = {
-    #Use lowercase names
-    u'tes5edit backups',
-}
-
-#--Some stuff dealing with INI files
-class ini:
-    #--True means new lines are allowed to be added via INI Tweaks
-    #  (by default)
-    allowNewLines = True
-
-    #--INI Entry to enable BSA Redirection
-    bsaRedirection = (u'',u'')
-
-# Bsas info
-supports_mod_inis = True
 vanilla_string_bsas = {
     u'Skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
     u'Update.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
@@ -173,7 +83,7 @@ vanilla_string_bsas = {
 class ess:
     # Save file capabilities
     canReadBasic = True         # All the basic stuff needed for the Saves Tab
-    canEditMasters = True       # Adjusting save file masters
+    canEditMasters = False      # Adjusting save file masters
     canEditMore = False         # No advanced editing
     ext = u'.ess'               # Save file extension
 
@@ -281,9 +191,6 @@ masterFiles = [
     u'Update.esm',
     ]
 
-#The pickle file for this game. Holds encoded GMST IDs from the big list below.
-pklfile = r'bash\db\Skyrim_ids.pkl'
-
 #--BAIN: Directories that are OK to install to
 dataDirs = {
     u'dialogueviews',
@@ -307,127 +214,15 @@ dataDirsPlus = {
     u'skyproc patchers',
 }
 
-# Installer -------------------------------------------------------------------
-# ensure all path strings are prefixed with 'r' to avoid interpretation of
-#   accidental escape sequences
-wryeBashDataFiles = {
-    u'Bashed Patch.esp',
-    u'Bashed Patch, 0.esp',
-    u'Bashed Patch, 1.esp',
-    u'Bashed Patch, 2.esp',
-    u'Bashed Patch, 3.esp',
-    u'Bashed Patch, 4.esp',
-    u'Bashed Patch, 5.esp',
-    u'Bashed Patch, 6.esp',
-    u'Bashed Patch, 7.esp',
-    u'Bashed Patch, 8.esp',
-    u'Bashed Patch, 9.esp',
-    u'Bashed Patch, CBash.esp',
-    u'Bashed Patch, Python.esp',
-    u'Bashed Patch, Warrior.esp',
-    u'Bashed Patch, Thief.esp',
-    u'Bashed Patch, Mage.esp',
-    u'Bashed Patch, Test.esp',
-    u'Docs\\Bash Readme Template.html',
-    u'Docs\\wtxt_sand_small.css',
-    u'Docs\\wtxt_teal.css',
-    u'Docs\\Bash Readme Template.txt',
-    u'Docs\\Bashed Patch, 0.html',
-    u'Docs\\Bashed Patch, 0.txt',
-}
-wryeBashDataDirs = {
-    u'Bash Patches',
-    u'INI Tweaks'
-}
-ignoreDataFiles = {
-}
-ignoreDataFilePrefixes = {
-}
-ignoreDataDirs = {
-    u'LSData'
-}
-
 #--Tags supported by this game
 allTags = sorted((
-    u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace', u'C.Light',
-    u'C.Location', u'C.SkyLighting', u'C.Music', u'C.Name', u'C.Owner',
-    u'C.RecordFlags', u'C.Regions', u'C.Water', u'Deactivate', u'Delev',
-    u'Filter', u'Graphics', u'Invent', u'NoMerge', u'Relev', u'Sound',
-    u'Stats', u'Names',
+    u'Deactivate', u'Delev', u'Invent', u'NoMerge', u'Relev',
     ))
 
 #--Gui patcher classes available when building a Bashed Patch
 patchers = (
-    u'AliasesPatcher', u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
-    u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
-    u'StatsPatcher', u'NamesPatcher',
-    )
-
-#--CBash Gui patcher classes available when building a Bashed Patch
-CBash_patchers = tuple()
-
-# Magic Info ------------------------------------------------------------------
-weaponTypes = (
-    _(u'Blade (1 Handed)'),
-    _(u'Blade (2 Handed)'),
-    _(u'Blunt (1 Handed)'),
-    _(u'Blunt (2 Handed)'),
-    _(u'Staff'),
-    _(u'Bow'),
-    )
-
-# Race Info -------------------------------------------------------------------
-raceNames = {
-    0x13740 : _(u'Argonian'),
-    0x13741 : _(u'Breton'),
-    0x13742 : _(u'Dark Elf'),
-    0x13743 : _(u'High Elf'),
-    0x13744 : _(u'Imperial'),
-    0x13745 : _(u'Khajiit'),
-    0x13746 : _(u'Nord'),
-    0x13747 : _(u'Orc'),
-    0x13748 : _(u'Redguard'),
-    0x13749 : _(u'Wood Elf'),
-    }
-
-raceShortNames = {
-    0x13740 : u'Arg',
-    0x13741 : u'Bre',
-    0x13742 : u'Dun',
-    0x13743 : u'Alt',
-    0x13744 : u'Imp',
-    0x13745 : u'Kha',
-    0x13746 : u'Nor',
-    0x13747 : u'Orc',
-    0x13748 : u'Red',
-    0x13749 : u'Bos',
-    }
-
-raceHairMale = {
-    0x13740 : 0x64f32, #--Arg
-    0x13741 : 0x90475, #--Bre
-    0x13742 : 0x64214, #--Dun
-    0x13743 : 0x7b792, #--Alt
-    0x13744 : 0x90475, #--Imp
-    0x13745 : 0x653d4, #--Kha
-    0x13746 : 0x1da82, #--Nor
-    0x13747 : 0x66a27, #--Orc
-    0x13748 : 0x64215, #--Red
-    0x13749 : 0x690bc, #--Bos
-    }
-
-raceHairFemale = {
-    0x13740 : 0x64f33, #--Arg
-    0x13741 : 0x1da83, #--Bre
-    0x13742 : 0x1da83, #--Dun
-    0x13743 : 0x690c2, #--Alt
-    0x13744 : 0x1da83, #--Imp
-    0x13745 : 0x653d0, #--Kha
-    0x13746 : 0x1da83, #--Nor
-    0x13747 : 0x64218, #--Orc
-    0x13748 : 0x64210, #--Red
-    0x13749 : 0x69473, #--Bos
-    }
+    u'GmstTweaker', u'ImportInventory', u'ListsMerger', u'PatchMerger',
+)
 
 #--Plugin format stuff
 class esp:
@@ -461,7 +256,7 @@ class esp:
                 'RGDL', 'DOBJ', 'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN',
                 'SMEN', 'DLBR', 'MUST', 'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA',
                 'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO', 'MOVT', 'SNDR', 'DUAL',
-                'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB', ]
+                'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB', 'LENS', 'VOLI', ]
 
     #--Dict mapping 'ignored' top types to un-ignored top types.
     topIgTypes = dict(
@@ -530,37 +325,6 @@ class RecordHeader(BaseRecordHeader):
             return struct.pack('=4s5I',self.recType,self.size,self.flags1,
                                self.fid,self.flags2,self.extra)
 
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# CLDC ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# HAIR ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# PWAT ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# RGDL ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# SCOL ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# Unused records, they have empty GRUP in skyrim.esm---------------------------
-# SCPT ------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-# These Are normally not mergable but added to brec.MreRecord.type_class
-#
-#       MreCell,
-#------------------------------------------------------------------------------
-# These have undefined FormIDs Do not merge them
-#
-#       MreNavi, MreNavm,
-#------------------------------------------------------------------------------
-# These need syntax revision but can be merged once that is corrected
-#
-#       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
-#------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
     # MreAchr, MreDial, MreInfo,
@@ -577,7 +341,7 @@ mergeClasses = (
     MreMust, MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb, MreRfct,
     MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr,
     MreSopm, MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst,
-    MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr,
+    MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens,
     ####### for debug
     MreQust,
 )
@@ -612,7 +376,7 @@ def init():
         MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn,
         MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd,
         MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-        MreWthr, MreCell, MreWrld,  # MreNavm, MreNavi
+        MreWthr, MreCell, MreWrld, MreVoli, MreLens, # MreNavm, MreNavi
         ####### for debug
         MreQust, MreHeader,
     ))
