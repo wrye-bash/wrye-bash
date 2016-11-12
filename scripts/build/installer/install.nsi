@@ -169,6 +169,12 @@
                 !insertmacro InstallBashFiles "Fallout4" "Fallout4" "$Path_Fallout4" $Reg_Value_Fallout4_Py $Reg_Value_Fallout4_Exe "Fallout4 Path" $CheckState_Fallout4_Py $CheckState_Fallout4_Exe false
             ${EndIf}
         ${EndIf}
+        ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
+            ; Install resources:
+            ${If} Path_SkyrimSE != $Empty
+                !insertmacro InstallBashFiles "SkyrimSE" "SkyrimSE" "$Path_SkyrimSE" $Reg_Value_SkyrimSE_Py $Reg_Value_SkyrimSE_Exe "SkyrimSE Path" $CheckState_SkyrimSE_Py $CheckState_SkyrimSE_Exe false
+            ${EndIf}
+        ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} Path_Ex1 != $Empty
@@ -262,6 +268,22 @@
                 ${ElseIf} $CheckState_Fallout4_Exe == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout4.lnk" "$Path_Fallout4\Mopy\Wrye Bash.exe"
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout4 (Debug Log).lnk" "$Path_Fallout4\Mopy\Wrye Bash.exe" "-d"
+                ${EndIf}
+            ${EndIf}
+        ${EndIf}
+        ${If} $SkyrimSE == ${BST_CHECKED}
+            ${If} SkyrimSE != $Empty
+                SetOutPath $Path_SkyrimSE\Mopy
+                ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE.lnk" "$Path_SkyrimSE\Mopy\Wrye Bash Launcher.pyw" "" "$Path_SkyrimSE\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE (Debug Log).lnk" "$Path_SkyrimSE\Mopy\Wrye Bash Debug.bat" "" "$Path_SkyrimSE\Mopy\bash\images\bash_32.ico" 0
+                    ${If} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - SkyrimSE.lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - SkyrimSE (Debug Log).lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe" "-d"
+                    ${EndIf}
+                ${ElseIf} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE.lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE (Debug Log).lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe" "-d"
                 ${EndIf}
             ${EndIf}
         ${EndIf}
