@@ -156,6 +156,7 @@ class ess:
     @staticmethod
     def load(ins,header):
         """Extract info from save file."""
+        def unpack_str8(): return ins.read(struct.unpack('B', ins.read(1))[0])
         #--Header
         if ins.read(12) != 'TES4SAVEGAME':
             raise Exception(u'Save file is not an Oblivion save game.')
@@ -163,11 +164,9 @@ class ess:
         headerSize, = struct.unpack('I',ins.read(4))
         #--Name, location
         ins.seek(42)
-        size, = struct.unpack('B',ins.read(1))
-        header.pcName = ins.read(size)
+        header.pcName = unpack_str8()
         header.pcLevel, = struct.unpack('H',ins.read(2))
-        size, = struct.unpack('B',ins.read(1))
-        header.pcLocation = ins.read(size)
+        header.pcLocation = unpack_str8()
         #--Image Data
         (header.gameDays,header.gameTicks,header.gameTime,ssSize,ssWidth,
          ssHeight) = struct.unpack('=fI16s3I',ins.read(36))
@@ -177,8 +176,7 @@ class ess:
         del header.masters[:]
         numMasters, = struct.unpack('B',ins.read(1))
         for count in xrange(numMasters):
-            size, = struct.unpack('B',ins.read(1))
-            header.masters.append(ins.read(size))
+            header.masters.append(unpack_str8())
 
     @staticmethod
     def writeMasters(ins,out,header):

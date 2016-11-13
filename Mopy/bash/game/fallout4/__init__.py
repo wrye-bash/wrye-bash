@@ -161,6 +161,7 @@ class ess:
     @staticmethod
     def load(ins,header):
         """Extract info from save file."""
+        def unpack_str16(): return ins.read(struct.unpack('H', ins.read(2))[0])
         #--Header
         if ins.read(12) != 'FO4_SAVEGAME':
             raise Exception(u'Save file is not a Fallout 4 save game.')
@@ -168,14 +169,11 @@ class ess:
         #--Name, location
         header.version, = struct.unpack('I',ins.read(4))
         saveNumber, = struct.unpack('I',ins.read(4))
-        size, = struct.unpack('H',ins.read(2))
-        header.pcName = ins.read(size)
+        header.pcName = unpack_str16()
         header.pcLevel, = struct.unpack('I',ins.read(4))
-        size, = struct.unpack('H',ins.read(2))
-        header.pcLocation = ins.read(size)
+        header.pcLocation = unpack_str16()
         # Begin Game Time
-        size, = struct.unpack('H',ins.read(2))
-        header.gameDate = ins.read(size)
+        header.gameDate = unpack_str16()
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
         days,hours,minutes,_days,_hours,_minutes = header.gameDate.split('.')
         days = int(days[:-1])
@@ -185,16 +183,16 @@ class ess:
         # Assuming still 1000 ticks per second
         header.gameTicks = (days*24*60*60 + hours*60*60 + minutes*60) * 1000
         # End Game Time
-        size, = struct.unpack('H',ins.read(2))
-        header.pcRace = ins.read(size) # Player Race
+        header.pcRace = unpack_str16() # Player Race
         header.pcSex, = struct.unpack('H',ins.read(2)) # Player Sex
         # Read unknown 16 bytes
-        unk3 = ins.read(16)
+        ins.read(16)
         #--Image Data
         ssWidth, = struct.unpack('I',ins.read(4))
         ssHeight, = struct.unpack('I',ins.read(4))
-        if ins.tell() != headerSize + 16:
-            raise Exception(u'Save game header size (%s) not as expected (%s).' % (ins.tell()-16,headerSize))
+        if ins.tell() != headerSize + 16: raise Exception(
+            u'Save game header size (%s) not as expected (%s).' % (
+                ins.tell() - 16, headerSize))
         #--Image Data
         # Fallout 4 is in 32bit RGB, Bash is expecting 24bit RGB
         ssData = ins.read(4*ssWidth*ssHeight)
@@ -203,29 +201,29 @@ class ess:
         #ssAlpha = ''.join(itertools.islice(ssData, 0, None, 4))
         ssData = ''.join(itertools.compress(ssData, itertools.cycle(reversed(range(4)))))
         header.image = (ssWidth,ssHeight,ssData)
-        #--unknown
-        unk3 = ins.read(1)
-        size, = struct.unpack('H',ins.read(2))
-        gameVersion = ins.read(size)
+        # Read unknown byte
+        ins.read(1)
+        gameVersion = unpack_str16()
         #--Masters
         mastersSize, = struct.unpack('I',ins.read(4))
         header.mastersStart = ins.tell()
         del header.masters[:]
         numMasters, = struct.unpack('B',ins.read(1))
         for count in xrange(numMasters):
-            size, = struct.unpack('H',ins.read(2))
-            header.masters.append(ins.read(size))
-        if ins.tell() != header.mastersStart + mastersSize:
-            raise Exception(u'Save game masters size (%i) not as expected (%i).' % (ins.tell()-header.mastersStart,mastersSize))
+            header.masters.append(unpack_str16())
+        if ins.tell() != header.mastersStart + mastersSize: raise Exception(
+            u'Save game masters size (%i) not as expected (%i).' % (
+                ins.tell() - header.mastersStart, mastersSize))
 
     @staticmethod
     def writeMasters(ins,out,header):
         """Rewrites masters of existing save file."""
         def unpack(fmt, size): return struct.unpack(fmt, ins.read(size))
         def pack(fmt, *args): out.write(struct.pack(fmt, *args))
+        def unpack_str16(): return ins.read(struct.unpack('H', ins.read(2))[0])
         out.write(ins.read(header.mastersStart-4))
         #--plugin info
-        oldSize, = unpack('I',4)
+        unpack('I', 4) # Discard oldSize
         newSize = 1 + sum(len(x)+2 for x in header.masters)
         pack('I',newSize)
         #  Skip old masters
@@ -233,8 +231,7 @@ class ess:
         numMasters, = unpack('B',1)
         pack('B',len(header.masters))
         for x in xrange(numMasters):
-            size, = unpack('H',2)
-            oldMasters.append(ins.read(size))
+            oldMasters.append(unpack_str16())
         #  Write new masters
         for master in header.masters:
             pack('H',len(master))
