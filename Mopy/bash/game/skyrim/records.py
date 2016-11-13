@@ -290,7 +290,7 @@ class MelConditions(MelGroups):
             )
 
 #------------------------------------------------------------------------------
-class MelDecalData(MelStruct):
+class MelDecalData(MelOptStruct):
     """Represents Decal Data."""
 
     DecalDataFlags = Flags(0L,Flags.getNames(
@@ -302,7 +302,7 @@ class MelDecalData(MelStruct):
 
     def __init__(self,attr='decals'):
         """Initialize elements."""
-        MelStruct.__init__(self,'DODT','7f2B2s3Bs','minWidth','maxWidth','minHeight',
+        MelOptStruct.__init__(self,'DODT','7f2B2s3Bs','minWidth','maxWidth','minHeight',
                   'maxHeight','depth','shininess','parallaxScale',
                   'parallaxPasses',(MelDecalData.DecalDataFlags,'flags',0L),('unknownDecal1',null2),
                   'redDecal','greenDecal','blueDecal',('unknownDecal2',null1),
@@ -3120,9 +3120,10 @@ class MreGras(MelRecord):
         MelBounds(),
         MelModel(),
         MelStruct('DATA','3BsH2sI4fB3s','density','minSlope','maxSlope',
-                  'unknown','unitsFromWater','unknown','unitsFromWaterType',
-                  'positionRange','heightRange','colorRange','wavePeriod',
-                  (GrasTypeFlags,'flags',0L),'unknown',
+                  ('unkGras1', null1),'unitsFromWater',('unkGras2', null2),
+                  'unitsFromWaterType','positionRange','heightRange',
+                  'colorRange','wavePeriod',(GrasTypeFlags,'flags',0L),
+                  ('unkGras3', null3),
                   ),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
@@ -3424,36 +3425,36 @@ class MreImad(MelRecord):
         MelStruct('NAM3','5f','unknown5','fadeRed','fadeGreen','fadeBlue',
                   'fadeAlpha',dumpExtra='unknownExtra5',),
         # {<<<< Begin Radial Blur >>>>}
-        MelStruct('RNAM','2f','unknown6','strength',dumpExtra='unknownExtra6',),
+        MelStruct('RNAM','2f','unknown6','rnamStrength',dumpExtra='unknownExtra6',),
         MelStruct('SNAM','2f','unknown7','rampup',dumpExtra='unknownExtra7',),
         MelStruct('UNAM','2f','unknown8','start',dumpExtra='unknownExtra8',),
         MelStruct('NAM1','2f','unknown9','rampdown',dumpExtra='unknownExtra9',),
         MelStruct('NAM2','2f','unknown10','downstart',dumpExtra='unknownExtra10',),
         # {<<<< End Radial Blur >>>>}
         # {<<<< Begin Depth of Field >>>>}
-        MelStruct('WNAM','2f','unknown11','strength',dumpExtra='unknownExtra11',),
+        MelStruct('WNAM','2f','unknown11','wnamStrength',dumpExtra='unknownExtra11',),
         MelStruct('XNAM','2f','unknown12','distance',dumpExtra='unknownExtra12',),
         MelStruct('YNAM','2f','unknown13','range',dumpExtra='unknownExtra13',),
         # {<<<< FullScreen Motion Blur >>>>}
-        MelStruct('NAM4','2f','unknown14','strength',dumpExtra='unknownExtra14',),
+        MelStruct('NAM4','2f','unknown14','nam4Strength',dumpExtra='unknownExtra14',),
         # {<<<< End Depth of Field >>>>}
         # {<<<< Begin HDR >>>>}
-        MelStruct('\x00IAD','2f','unknown15','multiply',dumpExtra='unknownExtra15',),
-        MelStruct('\x40IAD','2f','unknown16','add',dumpExtra='unknownExtra16',),
-        MelStruct('\x01IAD','2f','unknown17','multiply',dumpExtra='unknownExtra17',),
-        MelStruct('\x41IAD','2f','unknown18','add',dumpExtra='unknownExtra18',),
-        MelStruct('\x02IAD','2f','unknown19','multiply',dumpExtra='unknownExtra19',),
-        MelStruct('\x42IAD','2f','unknown20','add',dumpExtra='unknownExtra20',),
-        MelStruct('\x03IAD','2f','unknown21','multiply',dumpExtra='unknownExtra21',),
-        MelStruct('\x43IAD','2f','unknown22','add',dumpExtra='unknownExtra22',),
-        MelStruct('\x04IAD','2f','unknown23','multiply',dumpExtra='unknownExtra23',),
-        MelStruct('\x44IAD','2f','unknown24','add',dumpExtra='unknownExtra24',),
-        MelStruct('\x05IAD','2f','unknown25','multiply',dumpExtra='unknownExtra25',),
-        MelStruct('\x45IAD','2f','unknown26','add',dumpExtra='unknownExtra26',),
-        MelStruct('\x06IAD','2f','unknown27','multiply',dumpExtra='unknownExtra27',),
-        MelStruct('\x46IAD','2f','unknown28','add',dumpExtra='unknownExtra28',),
-        MelStruct('\x07IAD','2f','unknown29','multiply',dumpExtra='unknownExtra29',),
-        MelStruct('\x47IAD','2f','unknown30','add',dumpExtra='unknownExtra30',),
+        MelStructA('\x00IAD','2f','eyeAdaptSpeedMult','time1','value1'),
+        MelStructA('\x40IAD','2f','eyeAdaptSpeedAdd','time2','value2'),
+        MelStructA('\x01IAD','2f','bloomBlurRadiusMult','time3','value3'),
+        MelStructA('\x41IAD','2f','bloomBlurRadiusAdd','time4','value4'),
+        MelStructA('\x02IAD','2f','bloomThresholdMult','time5','value5'),
+        MelStructA('\x42IAD','2f','bloomThresholdAdd','time6','value6'),
+        MelStructA('\x03IAD','2f','bloomScaleMult','time7','value7'),
+        MelStructA('\x43IAD','2f','bloomScaleAdd','time8','value8'),
+        MelStructA('\x04IAD','2f','targetLumMinMult','time9','value9'),
+        MelStructA('\x44IAD','2f','targetLumMinAdd','time10','value10'),
+        MelStructA('\x05IAD','2f','targetLumMaxMult','time11','value11'),
+        MelStructA('\x45IAD','2f','targetLumMaxAdd','time12','value12'),
+        MelStructA('\x06IAD','2f','sunlightScaleMult','time13','value13'),
+        MelStructA('\x46IAD','2f','sunlightScaleAdd','time14','value14'),
+        MelStructA('\x07IAD','2f','skyScaleMult','time15','value15'),
+        MelStructA('\x47IAD','2f','skyScaleAdd','time16','value16'),
         # {<<<< End HDR >>>>}
         MelBase('\x08IAD','isd08IAD_p'),
         MelBase('\x48IAD','isd48IAD_p'),
@@ -3474,12 +3475,12 @@ class MreImad(MelRecord):
         MelBase('\x10IAD','isd10IAD_p'),
         MelBase('\x50IAD','isd50IAD_p'),
         # {<<<< Begin Cinematic >>>>}
-        MelStruct('\x11IAD','2f','unknown31','multiply',dumpExtra='unknownExtra31',),
-        MelStruct('\x51IAD','2f','unknown32','add',dumpExtra='unknownExtra32',),
-        MelStruct('\x12IAD','2f','unknown33','multiply',dumpExtra='unknownExtra33',),
-        MelStruct('\x52IAD','2f','unknown34','add',dumpExtra='unknownExtra34',),
-        MelStruct('\x13IAD','2f','unknown35','multiply',dumpExtra='unknownExtra35',),
-        MelStruct('\x53IAD','2f','unknown36','add',dumpExtra='unknownExtra36',),
+        MelStructA('\x11IAD','2f','saturationMult','time17','value17'),
+        MelStructA('\x51IAD','2f','saturationAdd','time18','value18'),
+        MelStructA('\x12IAD','2f','brightnessMult','time19','value19'),
+        MelStructA('\x52IAD','2f','brightnessAdd','time20','value20'),
+        MelStructA('\x13IAD','2f','contrastMult','time21','value21'),
+        MelStructA('\x53IAD','2f','contrastAdd','time22','value22'),
         # {<<<< End Cinematic >>>>}
         MelBase('\x14IAD','isd14IAD_p'),
         MelBase('\x54IAD','isd54IAD_p'),
@@ -3588,7 +3589,7 @@ class MreIpctData(MelStruct):
     def __init__(self, subType='DATA'):
         MelStruct.__init__(self, subType, 'fI2fI2B2s', 'effectDuration', 'effectOrientation',
                   'angleThreshold','placementRadius','soundLevel',
-                           (MreIpctData.IpctTypeFlags,'flags',0L),'impactResult','unkIpct1', ),
+                           (MreIpctData.IpctTypeFlags,'ipctFlags',0L),'impactResult',('unkIpct1',null1),),
 
     def loadData(self, record, ins, sub_type, size, readId):
         """Handle older truncated DATA for IPCT subrecord."""
@@ -4201,7 +4202,7 @@ class MreMovt(MelRecord):
                   'forwardWalk','forwardRun','backWalk','backRun',
                   'rotateInPlaceWalk','rotateInPlaceRun',
                   'rotateWhileMovingRun'),
-        MelStruct('INAM','3f','directional','movementSpeed','rotationSpeed'),
+        MelOptStruct('INAM','3f','directional','movementSpeed','rotationSpeed'),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -6205,8 +6206,8 @@ class MreSndr(MelRecord):
         MelFid('ONAM','outputModel',),
         MelLString('FNAM','string'),
         MelConditions(),
-        MelStruct('LNAM','sBsB','unknown1','looping','unknown2',
-                  'rumbleSendValue',),
+        MelStruct('LNAM','sBsB',('unkSndr1',null1),'looping',
+                  ('unkSndr2',null1),'rumbleSendValue',),
         MelStruct('BNAM','2b2BH','pctFrequencyShift','pctFrequencyVariance','priority',
                   'dbVariance','staticAttenuation',),
         )

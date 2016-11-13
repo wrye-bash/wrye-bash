@@ -230,9 +230,10 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
 
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-class Master_AllowEdit(CheckLink):
+class Master_AllowEdit(CheckLink, EnabledLink):
     text, help = _(u'Allow edit'), _(u'Allow editing the masters list')
 
+    def _enable(self): return self.window.panel.detailsPanel.allowDetailsEdit
     def _check(self): return self.window.allowEdit
     def Execute(self): self.window.allowEdit ^= True
 

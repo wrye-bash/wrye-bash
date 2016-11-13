@@ -176,61 +176,57 @@ class ess:
     @staticmethod
     def load(ins,header):
         """Extract info from save file."""
+        def unpack_str16(): return ins.read(struct.unpack('H', ins.read(2))[0])
         #--Header
         if ins.read(13) != 'TESV_SAVEGAME':
             raise Exception(u'Save file is not a Skyrim save game.')
         headerSize, = struct.unpack('I',ins.read(4))
         #--Name, location
-        version,saveNumber,size = struct.unpack('2IH',ins.read(10))
-        header.pcName = ins.read(size)
+        header.version, = struct.unpack('I',ins.read(4))
+        saveNumber, = struct.unpack('I',ins.read(4))
+        header.pcName = unpack_str16()
         header.pcLevel, = struct.unpack('I',ins.read(4))
-        size, = struct.unpack('H',ins.read(2))
-        header.pcLocation = ins.read(size)
-        size, = struct.unpack('H',ins.read(2))
-        header.gameDate = ins.read(size)
+        header.pcLocation = unpack_str16()
+        # Begin Game Time
+        header.gameDate = unpack_str16()
+        # gameDate format: hours.minutes.seconds
         hours,minutes,seconds = [int(x) for x in header.gameDate.split('.')]
         playSeconds = hours*60*60 + minutes*60 + seconds
         header.gameDays = float(playSeconds)/(24*60*60)
         header.gameTicks = playSeconds * 1000
-        size, = struct.unpack('H',ins.read(2))
-        ins.seek(ins.tell()+size+2+4+4+8) # raceEdid, unk0, unk1, unk2, ftime
+        # End Game Time
+        header.pcRace = unpack_str16() # Player Race
+        header.pcSex, = struct.unpack('H',ins.read(2)) # Player Sex
+        # Read unknown 16 bytes
+        ins.read(16)
+        #--Image Data
         ssWidth, = struct.unpack('I',ins.read(4))
         ssHeight, = struct.unpack('I',ins.read(4))
-        if ins.tell() != headerSize + 17:
-            raise Exception(u'Save game header size (%s) not as expected (%s).' % (ins.tell()-17,headerSize))
+        if ins.tell() != headerSize + 17: raise Exception(
+            u'Save game header size (%s) not as expected (%s).' % (
+                ins.tell() - 17, headerSize))
         #--Image Data
         ssData = ins.read(3*ssWidth*ssHeight)
         header.image = (ssWidth,ssHeight,ssData)
-        #--unknown
-        unk3 = ins.read(1)
+        # Read unknown byte
+        ins.read(1)
         #--Masters
         mastersSize, = struct.unpack('I',ins.read(4))
-        mastersStart = ins.tell()
+        header.mastersStart = ins.tell()
         del header.masters[:]
         numMasters, = struct.unpack('B',ins.read(1))
         for count in xrange(numMasters):
-            size, = struct.unpack('H',ins.read(2))
-            header.masters.append(ins.read(size))
-        if ins.tell() != mastersStart + mastersSize:
-            raise Exception(u'Save game masters size (%i) not as expected (%i).' % (ins.tell()-mastersStart,mastersSize))
+            header.masters.append(unpack_str16())
+        if ins.tell() != header.mastersStart + mastersSize: raise Exception(
+            u'Save game masters size (%i) not as expected (%i).' % (
+                ins.tell() - header.mastersStart, mastersSize))
 
     @staticmethod
     def writeMasters(ins,out,header):
         """Rewrites masters of existing save file."""
         def unpack(fmt, size): return struct.unpack(fmt, ins.read(size))
         def pack(fmt, *args): out.write(struct.pack(fmt, *args))
-        #--Magic (TESV_SAVEGAME)
-        out.write(ins.read(13))
-        #--Header
-        size, = unpack('I',4)
-        pack('I',size)
-        out.write(ins.read(size-8))
-        ssWidth,ssHeight = unpack('2I',8)
-        pack('2I',ssWidth,ssHeight)
-        #--Screenshot
-        out.write(ins.read(3*ssWidth*ssHeight))
-        #--formVersion
-        out.write(ins.read(1))
+        out.write(ins.read(header.mastersStart-4))
         #--plugin info
         oldSize, = unpack('I',4)
         newSize = 1 + sum(len(x)+2 for x in header.masters)
