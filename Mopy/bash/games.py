@@ -343,6 +343,7 @@ class Game(object):
             else: lord.append(mod)
         # end textfile get
         duplicates = self._check_for_duplicates(lord)
+        _reordered |= self._order_fixed(lord)
         if not quiet: warn_lo_fixed(_addedFiles, _removedFiles, _reordered,
                                     duplicates, lord, old_lord)
         return _removedFiles, _addedFiles, _reordered
@@ -384,6 +385,10 @@ class Game(object):
             msg += u'Removed duplicate entries from active list : '
             msg += _pl(duplicates)
         acti[:] = acti_filtered[:255] # chop off extra, update acti in place
+        if self._order_fixed(acti):
+            msg += u'Reordered active plugins with fixed order '
+            msg += _pl(acti_filtered[:255], u'from:\n', joint=u'\n') + _pl(
+                acti, u'\nto:\n', joint=u'\n')
         if msg:
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user - ##: maybe backup previous plugin txt ?
@@ -394,6 +399,8 @@ class Game(object):
             if not quiet: bolt.deprint(msg)
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
+
+    def _order_fixed(self, lord): return False
 
     @staticmethod
     def _check_active_order(acti, lord):
@@ -648,6 +655,8 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
+    remove_from_plugins_txt = set()
+
     def load_order_changed(self): return self._plugins_txt_modified()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
@@ -665,13 +674,24 @@ class AsteriskGame(Game):
         active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
         lo, active = (lo if cached_load_order is None else cached_load_order,
                       active if cached_active is None else cached_active)
-        if not exists:
-            self._write_plugins_txt(lo, active)
-            bolt.deprint(u'Created %s' % self.plugins_txt_path)
-        return list(lo), list(active)
+        to_drop = []
+        for rem in self.remove_from_plugins_txt:
+            if rem in active or rem in lo:
+                to_drop.append(rem)
+        lo, active = self._readd_in_lists(lo, active)
+        if not exists or to_drop:
+            msg = u'Created %s' if not exists else u'Removed ' + u' ,'.join(
+                map(unicode, to_drop)) + u' from %s'
+            self._persist_load_order(lo, active)
+            bolt.deprint(msg % self.plugins_txt_path)
+        return lo, active
+
+    def _readd_in_lists(self, lo, active): return list(lo), list(active)
 
     def _persist_load_order(self, lord, active):
         assert active # must at least contain the master esm for these games
+        lord = [x for x in lord if x not in self.remove_from_plugins_txt]
+        active = [x for x in active if x not in self.remove_from_plugins_txt]
         self._write_plugins_txt(lord, active)
 
     def _persist_active_plugins(self, active, lord):
@@ -713,6 +733,41 @@ class SkyrimSE(AsteriskGame):
                                  bolt.GPath(u'Dawnguard.esm'),
                                  bolt.GPath(u'Hearthfires.esm'),
                                  bolt.GPath(u'Dragonborn.esm'),)
+    remove_from_plugins_txt = {bolt.GPath(u'Skyrim.esm')} | set(
+        must_be_active_if_present)
+
+    def _order_fixed(self, lord):
+        lo = [x for x in lord if x not in self.remove_from_plugins_txt]
+        add = self.__fixed_order_plugins()
+        if add + lo != lord:
+            lord[:] = add + lo
+            return True
+        return False
+
+    def _readd_in_lists(self, lo, active):
+        # add the plugins that should not be in plugins.txt in the lists,
+        # assuming they should also be active
+        add = self.__fixed_order_plugins()
+        lo = [x for x in lo if x not in self.remove_from_plugins_txt]
+        active = [x for x in active if x not in self.remove_from_plugins_txt]
+        return add + lo, add + active
+
+    def __fixed_order_plugins(self):
+        """Return the semi fixed plugins in their buggy timestamp load order"""
+        # get existing
+        add = [x for x in self.remove_from_plugins_txt if x in self.mod_infos]
+        # sort in mtime
+        add.sort(key=lambda x: self.mod_infos[x].mtime)
+        # master is first, should always be in add
+        if self.master_path in add:
+            add.remove(self.master_path)
+            add.insert(0, self.master_path)
+        # special case, Update.esm always loads second
+        update = bolt.GPath(u'Update.esm')
+        if update in add:
+            add.remove(update)
+            add.insert(1, update)
+        return add
 
 # Game factory
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
