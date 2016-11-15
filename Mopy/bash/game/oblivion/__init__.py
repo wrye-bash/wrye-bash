@@ -67,6 +67,7 @@ nexusKey = 'bash.installers.openTesNexus.continue'
 allow_reset_bsa_timestamps = True
 bsa_extension = ur'bsa'
 supports_mod_inis = False
+vanilla_string_bsas = {}
 
 # Load order info
 using_txt_file = False

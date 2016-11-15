@@ -4148,14 +4148,18 @@ class ModInfos(FileInfos):
         :rtype: list[bolt.Path]
         """
         bsaPaths = [mod_info.getBsaPath()]
-        iniFiles = self._ini_files(descending=descending)
-        for iniFile in iniFiles:
-            for key in (u'sResourceArchiveList', u'sResourceArchiveList2'):
-                extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
-                extraBsa = [x.strip() for x in extraBsa]
-                extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
-                if descending: extraBsa.reverse()
-                bsaPaths.extend(extraBsa)
+        if mod_info.name.s in bush.game.vanilla_string_bsas:
+            bsaPaths = map(GPath, bush.game.vanilla_string_bsas[
+                mod_info.name.s]) + bsaPaths
+        else:
+            iniFiles = self._ini_files(descending=descending)
+            for iniFile in iniFiles:
+                for key in (u'sResourceArchiveList', u'sResourceArchiveList2'): ##: per game keys !
+                    extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
+                    extraBsa = [x.strip() for x in extraBsa]
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    if descending: extraBsa.reverse()
+                    bsaPaths.extend(extraBsa)
         return [x for x in bsaPaths if not existing or x.isfile()]
 
     def hasBadMasterNames(self,modName):
