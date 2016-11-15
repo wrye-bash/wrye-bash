@@ -4122,15 +4122,21 @@ class ModInfos(FileInfos):
         return False
 
     _plugin_inis = {}
-    def _ini_files(self, descending=False):
-        if bush.game.fsName == u'Skyrim':
-            iniPaths = set(
+    def _ini_files(self, descending=False): ##: Do this ONCE on refresh()
+        if bush.game.fsName == u'Skyrim': ##: Skyrim SE, Fallout4 ?
+            iniPaths = (
                 self[name].getIniPath() for name in load_order.activeCached())
+            iniPaths = [p for p in iniPaths if p.isfile()]
+            # delete non existent inis from cache
             for key in self._plugin_inis.keys():
                 if key not in iniPaths:
                     del self._plugin_inis[key]
-            iniFiles = [self._plugin_inis.setdefault(iniPath, IniFile(iniPath))
-                        for iniPath in iniPaths if iniPath.exists()]
+            # update cache with new or modified files
+            for iniPath in iniPaths:
+                if iniPath not in self._plugin_inis or self._plugin_inis[
+                    iniPath].needs_update():
+                    self._plugin_inis[iniPath] = IniFile(iniPath)
+            iniFiles = [self._plugin_inis[k] for k in iniPaths]
             if descending: iniFiles.reverse()
             iniFiles.append(oblivionIni)
         else:
