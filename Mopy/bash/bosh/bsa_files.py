@@ -298,20 +298,20 @@ class ABsa(AFile):
         self.bsa_folders = collections.OrderedDict() # keep folder order
         self._filenames = []
         self.total_names_length = 0 # reported wrongly at times - calculate it
-        if load_cache: self.__load(abs_path, names_only)
+        if load_cache: self.__load(names_only)
 
-    def __load(self, abs_path, names_only):
+    def __load(self, names_only):
         try:
             if not names_only:
-                self._load_bsa(abs_path)
+                self._load_bsa()
             else:
-                self.load_bsa_light(abs_path)
+                self.load_bsa_light()
         except struct.error as e:
             raise BSAError, e.message, sys.exc_info()[2]
 
     # Abstract - _load_bsa is not used externally, may be removed
-    def _load_bsa(self, abs_path): raise NotImplementedError
-    def load_bsa_light(self, abs_path): raise NotImplementedError
+    def _load_bsa(self): raise NotImplementedError
+    def load_bsa_light(self): raise NotImplementedError
 
     # API
     def has_asset(self, asset_path):
@@ -320,7 +320,7 @@ class ABsa(AFile):
     @property
     def assets(self):
         if self._assets is self.__class__._assets:
-            self.load_bsa_light(self.abs_path)
+            self.load_bsa_light()
             self._assets = frozenset(self._filenames)
         return self._assets
 
@@ -333,14 +333,13 @@ class BSA(ABsa):
     file_record_type = BSAFileRecord
     folder_record_type = BSAFolderRecord
 
-    def _load_bsa(self, abs_path):
+    def _load_bsa(self):
         folder_records = [] # we need those to parse the folder names
         self.bsa_folders.clear()
         file_records = []
         read_file_record = partial(self._read_file_records, file_records,
                                    folders=self.bsa_folders)
-        file_names = self._read_bsa_file(abs_path, folder_records,
-                                         read_file_record)
+        file_names = self._read_bsa_file(folder_records, read_file_record)
         names_record_index = file_records_index = 0
         for folder_path, bsa_folder in self.bsa_folders.iteritems():
             for __ in xrange(bsa_folder.folder_record.files_count):
@@ -360,14 +359,13 @@ class BSA(ABsa):
             rec.load_record(bsa_file)
             file_records.append(rec)
 
-    def load_bsa_light(self, abs_path):
+    def load_bsa_light(self):
         folder_records = [] # we need those to parse the folder names
         _filenames = []
         path_folder_record = collections.OrderedDict()
         read_file_record = partial(self._discard_file_records,
                                    folders=path_folder_record)
-        file_names = self._read_bsa_file(abs_path, folder_records,
-                                         read_file_record)
+        file_names = self._read_bsa_file(folder_records, read_file_record)
         names_record_index = 0
         for folder_path, folder_record in path_folder_record.iteritems():
             for __ in xrange(folder_record.files_count):
@@ -376,9 +374,9 @@ class BSA(ABsa):
                 names_record_index += 1
         self._filenames = _filenames
 
-    def _read_bsa_file(self, abs_path, folder_records, read_file_records):
+    def _read_bsa_file(self, folder_records, read_file_records):
         total_names_length = 0
-        with open(u'%s' % abs_path, 'rb') as bsa_file: # accept string or Path
+        with open(u'%s' % self.abs_path, 'rb') as bsa_file: # accept string or Path
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
             # load the folder records from input stream
@@ -399,9 +397,9 @@ class BSA(ABsa):
                 read_file_records(bsa_file, folder_path, folder_record)
             if total_names_length != self.bsa_header.total_folder_name_length:
                 deprint(u'%s reports wrong folder names length %d'
-                        u' - actual: %d (number of folders is %d)' % (
-                            abs_path, self.bsa_header.total_folder_name_length,
-                            total_names_length, self.bsa_header.folder_count))
+                    u' - actual: %d (number of folders is %d)' % (
+                    self.abs_path, self.bsa_header.total_folder_name_length,
+                    total_names_length, self.bsa_header.folder_count))
             self.total_names_length = total_names_length
             file_names = bsa_file.read( # has an empty string at the end
                 self.bsa_header.total_file_name_length).split('\00')
@@ -417,8 +415,8 @@ class BSA(ABsa):
 class BA2(ABsa):
     header_type = Ba2Header
 
-    def _load_bsa(self, abs_path):
-        with open(u'%s' % abs_path, 'rb') as bsa_file:
+    def _load_bsa(self):
+        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
             # load the folder records from input stream
@@ -452,8 +450,8 @@ class BA2(ABsa):
             current_folder.assets[file_name] = BSAAsset(file_name,
                                                         file_records[index])
 
-    def load_bsa_light(self, abs_path):
-        with open(u'%s' % abs_path, 'rb') as bsa_file:
+    def load_bsa_light(self):
+        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
             # load the file names block
