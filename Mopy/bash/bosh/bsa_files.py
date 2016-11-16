@@ -40,6 +40,7 @@ from . import AFile
 from ..bolt import deprint
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
+path_sep = u'\\'
 
 # Exceptions ------------------------------------------------------------------
 class BSAError(Exception): pass
@@ -336,7 +337,7 @@ class BSA(ABsa):
         folder_records = [] # we need those to parse the folder names
         self.bsa_folders.clear()
         file_records = []
-        read_file_record = partial(self._read_file_record, file_records,
+        read_file_record = partial(self._read_file_records, file_records,
                                    folders=self.bsa_folders)
         file_names = self._read_bsa_file(abs_path, folder_records,
                                          read_file_record)
@@ -344,14 +345,15 @@ class BSA(ABsa):
         for folder_path, bsa_folder in self.bsa_folders.iteritems():
             for __ in xrange(bsa_folder.folder_record.files_count):
                 rec = file_records[file_records_index]
+                file_records_index += 1
                 file_name = _decode_path(file_names[names_record_index])
                 names_record_index += 1
                 bsa_folder.assets[file_name] = BSAAsset(
-                    os.path.sep.join((folder_path, file_name)), rec)
+                    path_sep.join((folder_path, file_name)), rec)
 
     @staticmethod
-    def _read_file_record(file_records, bsa_file, folder_path,
-                          folder_record, folders=None):
+    def _read_file_records(file_records, bsa_file, folder_path,
+                           folder_record, folders=None):
         folders[folder_path] = BSAFolder(folder_record)
         for __ in xrange(folder_record.files_count):
             rec = BSAFileRecord()
@@ -362,7 +364,7 @@ class BSA(ABsa):
         folder_records = [] # we need those to parse the folder names
         _filenames = []
         path_folder_record = collections.OrderedDict()
-        read_file_record = partial(self._discard_file_record,
+        read_file_record = partial(self._discard_file_records,
                                    folders=path_folder_record)
         file_names = self._read_bsa_file(abs_path, folder_records,
                                          read_file_record)
@@ -370,11 +372,11 @@ class BSA(ABsa):
         for folder_path, folder_record in path_folder_record.iteritems():
             for __ in xrange(folder_record.files_count):
                 file_name = _decode_path(file_names[names_record_index])
-                _filenames.append(os.path.sep.join((folder_path, file_name)))
+                _filenames.append(path_sep.join((folder_path, file_name)))
                 names_record_index += 1
         self._filenames = _filenames
 
-    def _read_bsa_file(self, abs_path, folder_records, read_file_record):
+    def _read_bsa_file(self, abs_path, folder_records, read_file_records):
         total_names_length = 0
         with open(u'%s' % abs_path, 'rb') as bsa_file: # accept string or Path
             # load the header from input stream
@@ -394,7 +396,7 @@ class BSA(ABsa):
                                       bsa_file.read(name_size - 1))[0])
                     total_names_length += name_size
                     bsa_file.read(1) # discard null terminator
-                read_file_record(bsa_file, folder_path, folder_record)
+                read_file_records(bsa_file, folder_path, folder_record)
             if total_names_length != self.bsa_header.total_folder_name_length:
                 deprint(u'%s reports wrong folder names length %d'
                         u' - actual: %d (number of folders is %d)' % (
@@ -406,8 +408,8 @@ class BSA(ABsa):
             # close the file
         return file_names
 
-    def _discard_file_record(self, bsa_file, folder_path, folder_record,
-                             folders=None):
+    def _discard_file_records(self, bsa_file, folder_path, folder_record,
+                              folders=None):
         bsa_file.read(folder_record.files_count *
             self.file_record_type.total_record_size())
         folders[folder_path] = folder_record
