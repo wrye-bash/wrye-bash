@@ -2941,7 +2941,6 @@ except AttributeError:
 class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
-    _assets = frozenset()
 
     def __init__(self, parent_dir, bsa_name):
         super(BSAInfo, self).__init__(parent_dir, bsa_name)
@@ -2963,16 +2962,6 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
             'ResetBSATimestamps']:
             if self._file_mod_time != self._default_mtime:
                 self.setmtime(self._default_mtime)
-
-    # API
-    def has_asset(self, asset_path): return asset_path in self.assets
-
-    @property
-    def assets(self):
-        if self._assets is self.__class__._assets:
-            self.load_bsa_light(self.abs_path)
-            self._assets = frozenset(self._filenames)
-        return self._assets
 
 #------------------------------------------------------------------------------
 class TrackedFileInfos(DataDict):
@@ -4112,7 +4101,7 @@ class ModInfos(FileInfos):
                 for path in bsaPaths:
                     try:
                         bsa_info = bsaInfos[path.tail] # type: BSAInfo
-                        if bsa_info.has_asset(assetPath.cs): # Lowercase !
+                        if bsa_info.has_asset(assetPath):
                             found = True
                             break
                     except KeyError: # not existing or corrupted
@@ -4147,11 +4136,11 @@ class ModInfos(FileInfos):
         """Return a list of existing bsa paths to get assets from.
         :rtype: list[bolt.Path]
         """
-        bsaPaths = [mod_info.getBsaPath()]
         if mod_info.name.s in bush.game.vanilla_string_bsas:
-            bsaPaths = map(GPath, bush.game.vanilla_string_bsas[
-                mod_info.name.s]) + bsaPaths
+            bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
+                mod_info.name.s])
         else:
+            bsaPaths = [mod_info.getBsaPath()] # first check bsa with same name
             iniFiles = self._ini_files(descending=descending)
             for iniFile in iniFiles:
                 for key in (u'sResourceArchiveList', u'sResourceArchiveList2'): ##: per game keys !

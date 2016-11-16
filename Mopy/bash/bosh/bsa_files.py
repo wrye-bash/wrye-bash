@@ -289,6 +289,7 @@ class Ba2Folder(object):
 # Files -----------------------------------------------------------------------
 class ABsa(AFile):
     header_type = BsaHeader
+    _assets = frozenset()
 
     def __init__(self, abs_path, load_cache=False, names_only=True):
         super(ABsa, self).__init__(abs_path)
@@ -310,6 +311,17 @@ class ABsa(AFile):
     # Abstract - _load_bsa is not used externally, may be removed
     def _load_bsa(self, abs_path): raise NotImplementedError
     def load_bsa_light(self, abs_path): raise NotImplementedError
+
+    # API
+    def has_asset(self, asset_path):
+        return (u'%s' % asset_path).lower() in self.assets
+
+    @property
+    def assets(self):
+        if self._assets is self.__class__._assets:
+            self.load_bsa_light(self.abs_path)
+            self._assets = frozenset(self._filenames)
+        return self._assets
 
 class BSA(ABsa):
     """Bsa file. Notes:
@@ -454,6 +466,8 @@ class BA2(ABsa):
             _filenames.append(file_name)
             file_names_block = file_names_block[name_size + 2:]
         self._filenames = _filenames
+
+    def has_asset(self, asset_path): return (u'%s' % asset_path) in self.assets
 
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader
