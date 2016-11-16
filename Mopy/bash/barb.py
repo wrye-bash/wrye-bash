@@ -25,6 +25,8 @@
 """Rollback library."""
 
 import cPickle
+
+import archives
 import bash
 import bass
 import bolt
@@ -185,8 +187,8 @@ class BackupSettings(BaseBackupSettings):
                 cPickle.dump(self.verApp, out, -1)
             # create the backup archive in 7z format WITH solid compression
             # may raise StateError
-            command = bolt.compressCommand(self.archive, self._dir, self.tmp)
-            bolt.compress7z(command, self._dir, self.archive, self.tmp)
+            command = archives.compressCommand(self.archive, self._dir, self.tmp)
+            archives.compress7z(command, self._dir, self.archive, self.tmp)
             bass.settings['bash.backupPath'] = self._dir
         self.InfoSuccess()
 
@@ -257,8 +259,8 @@ class RestoreSettings(BaseBackupSettings):
         BaseBackupSettings.__init__(self, parent, path, do_quit)
         if not self.PromptFile():
             raise BackupCancelled()
-        command = bolt.extractCommand(self._dir.join(self.archive), self.tmp)
-        bolt.extract7z(command, self._dir.join(self.archive))
+        command = archives.extractCommand(self._dir.join(self.archive), self.tmp)
+        archives.extract7z(command, self._dir.join(self.archive))
         with self.tmp.join(u'backup.dat').open('rb') as ins:
             self.verDat = cPickle.load(ins)
             self.verApp = cPickle.load(ins)

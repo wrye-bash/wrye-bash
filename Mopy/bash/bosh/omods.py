@@ -24,7 +24,7 @@
 import re
 import subprocess
 from subprocess import PIPE
-from .. import env, bolt, bass
+from .. import env, bolt, bass, archives
 from ..bolt import decode, encode, Path, startupinfo
 
 failedOmods = set()
@@ -93,7 +93,7 @@ class OmodFile:
         reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
         with self.omod_path.unicodeSafe() as tempOmod:
-            cmd7z = [bolt.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
+            cmd7z = [archives.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
             with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
                     line = unicode(line,'utf8')
@@ -125,7 +125,7 @@ class OmodFile:
             subprogress = bolt.SubProgress(progress, 0, 0.4)
             current = 0
             with self.omod_path.unicodeSafe() as tempOmod:
-                cmd7z = [bolt.exe7z,u'e',u'-r',u'-sccUTF-8',tempOmod.s,u'-o%s' % extractDir.s]
+                cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir.s]
                 with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                     for line in ins:
                         line = unicode(line,'utf8')
@@ -196,7 +196,7 @@ class OmodFile:
 
         # Extracted data stream is saved as a file named 'a'
         progress(0, self.omod_path.tail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        cmd = [bolt.exe7z,u'e',u'-r',u'-sccUTF-8',dataPath.s,u'-o%s' % outPath.s]
+        cmd = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', dataPath.s, u'-o%s' % outPath.s]
         subprocess.call(cmd, startupinfo=startupinfo)
 
         # Split the uncompress stream into files

@@ -27,9 +27,9 @@ import cPickle
 import re
 import sys
 from . import Installer, InstallerArchive
-from ..bolt import defaultExt, extractCommand, readExts, compressionSettings, \
-    compressCommand
-from .. import bolt
+from ..archives import defaultExt, readExts, compressionSettings, \
+    compressCommand, extractCommand
+from .. import bolt, archives
 from ..bolt import DataDict, PickleDict, GPath, Path, StateError, sio, \
     SubProgress, ArgumentError
 
@@ -68,11 +68,11 @@ class ConvertersData(DataDict):
     def refreshConvertersNeeded(self):
         """Return True if refreshConverters is necessary."""
         self._prune_converters()
-        archives = set()
+        archives_set = set()
         scanned = set()
         convertersJoin = converters_dir.join
         converterGet = self.bcfPath_sizeCrcDate.get
-        archivesAdd = archives.add
+        archivesAdd = archives_set.add
         scannedAdd = scanned.add
         for archive in converters_dir.list():
             apath = convertersJoin(archive)
@@ -86,7 +86,7 @@ class ConvertersData(DataDict):
                 return True
             archivesAdd(archive)
         #--Added/removed packages?
-        return archives != set(self.bcfPath_sizeCrcDate)
+        return archives_set != set(self.bcfPath_sizeCrcDate)
 
     #--Converters
     @staticmethod
@@ -304,8 +304,8 @@ class InstallerConverter(object):
         with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
             command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
-                bolt.exe7z, converter_path.s)
-            bolt.wrapPopenOut(command, translate, errorMsg=
+                archives.exe7z, converter_path.s)
+            archives.wrapPopenOut(command, translate, errorMsg=
                 u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)
 
     def save(self, destInstaller):
@@ -331,7 +331,7 @@ class InstallerConverter(object):
                 u'Extracting files...'))
         with self.fullPath.unicodeSafe() as tempPath:
             command = extractCommand(tempPath, tmpDir)
-            bolt.extract7z(command, tempPath, progress)
+            archives.extract7z(command, tempPath, progress)
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -549,7 +549,7 @@ class InstallerConverter(object):
                 self.blockSize, self.isSolid)
         command = compressCommand(destArchive, outDir, srcFolder, solid,
                                   archiveType)
-        bolt.compress7z(command, outDir, destArchive, srcFolder, progress)
+        archives.compress7z(command, outDir, destArchive, srcFolder, progress)
         Installer.rmTempDir()
 
     def _unpack(self, srcInstaller, fileNames, progress=None):
@@ -581,11 +581,11 @@ class InstallerConverter(object):
             progress(0, srcInstaller.s + u'\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
         command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
-            bolt.exe7z, apath.s, subTempDir.s, tempList.s)
+            archives.exe7z, apath.s, subTempDir.s, tempList.s)
         #--Extract files
         try:
-            subArchives = bolt.extract7z(command, srcInstaller, progress,
-                                         readExtensions=readExts)
+            subArchives = archives.extract7z(command, srcInstaller, progress,
+                                             readExtensions=readExts)
         finally:
             tempList.remove()
             bolt.clearReadOnly(subTempDir) ##: do this once

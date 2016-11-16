@@ -54,6 +54,7 @@ import types
 from subprocess import Popen, PIPE
 from operator import attrgetter,itemgetter
 
+import archives
 import bass
 import bosh.faces
 import parsers
@@ -1515,7 +1516,7 @@ class Archive:
         reListArchive = re.compile('(Path|Size|CRC|Attributes) = (.+)')
         path = size = isDir = 0
 
-        cmd = '"%s" l "%s"' % (bolt.exe7z, self.path.s)
+        cmd = '"%s" l "%s"' % (archives.exe7z, self.path.s)
         cmd = cmd.encode('mbcs')
         proc = Popen(cmd, stdout=PIPE, stdin=PIPE)
         out = proc.stdout
@@ -1544,7 +1545,7 @@ class Archive:
     def extract(self):
         """Extracts specified files from archive."""
         command = '"%s" x "%s" -y -oDumpster @listfile.txt -scsWIN' % (
-            bolt.exe7z, self.path.s)
+            archives.exe7z, self.path.s)
         command = command.encode('mbcs')
         out = Popen(command, stdout=PIPE, stdin=PIPE).stdout
         reExtracting = re.compile('Extracting\s+(.+)')

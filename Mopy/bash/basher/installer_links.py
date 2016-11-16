@@ -37,7 +37,7 @@ import re
 import webbrowser
 from . import settingDefaults, Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
-from .. import bass, bolt, bosh, bush, balt
+from .. import bass, bolt, bosh, bush, balt, archives
 from ..bass import Resources
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
@@ -100,7 +100,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
     def _pack(self, archive, installer, project, release=False):
         #--Archive configuration options
         blockSize = None
-        if archive.cext in bolt.noSolidExts:
+        if archive.cext in archives.noSolidExts:
             isSolid = False
         else:
             if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
@@ -137,11 +137,11 @@ class _InstallerLink(Installers_Link, EnabledLink):
         if self.idata.store_dir.join(archive).isdir():
             self._showWarning(_(u'%s is a directory.') % archive.s)
             return
-        if archive.cext not in bolt.writeExts:
+        if archive.cext not in archives.writeExts:
             self._showWarning(
                 _(u'The %s extension is unsupported. Using %s instead.') % (
-                    archive.cext, bolt.defaultExt))
-            archive = GPath(archive.sroot + bolt.defaultExt).tail
+                    archive.cext, archives.defaultExt))
+            archive = GPath(archive.sroot + archives.defaultExt).tail
         if archive in self.idata:
             if not self._askYes(_(u'%s already exists. Overwrite it?') %
                     archive.s, title=self.dialogTitle, default=False): return
@@ -978,7 +978,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                     if not result: return
                     #--Error checking
                     project = GPath(result).tail
-                    if not project.s or project.cext in bolt.readExts:
+                    if not project.s or project.cext in archives.readExts:
                         self._showWarning(_(u"%s is not a valid project name.") % result)
                         return
                     if self.idata.store_dir.join(project).isfile():
@@ -1047,7 +1047,7 @@ class InstallerProject_Pack(_SingleProject):
     @balt.conversation
     def Execute(self):
         #--Generate default filename from the project name and the default extension
-        archive = GPath(self._selected_item.s + bolt.defaultExt)
+        archive = GPath(self._selected_item.s + archives.defaultExt)
         #--Confirm operation
         archive = self._askFilename(
             message=_(u'Pack %s to Archive:') % self._selected_item.s,
@@ -1080,7 +1080,8 @@ class InstallerConverter_Apply(_InstallerLink):
     @balt.conversation
     def Execute(self):
         #--Generate default filename from BCF filename
-        defaultFilename = self.converter.fullPath.sbody[:-4] + bolt.defaultExt
+        defaultFilename = self.converter.fullPath.sbody[:-4] + archives\
+            .defaultExt
         #--List source archives
         message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
             u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in
@@ -1128,7 +1129,7 @@ class InstallerConverter_Create(_InstallerLink):
 
     def Execute(self):
         #--Generate allowable targets
-        readTypes = u'*%s' % u';*'.join(bolt.readExts)
+        readTypes = u'*%s' % u';*'.join(archives.readExts)
         #--Select target archive
         destArchive = self._askOpen(title=_(u"Select the BAIN'ed Archive:"),
                                     defaultDir=self.idata.store_dir,
@@ -1136,14 +1137,14 @@ class InstallerConverter_Create(_InstallerLink):
         if not destArchive: return
         #--Error Checking
         BCFArchive = destArchive = destArchive.tail
-        if not destArchive.s or destArchive.cext not in bolt.readExts:
+        if not destArchive.s or destArchive.cext not in archives.readExts:
             self._showWarning(_(u'%s is not a valid archive name.') % destArchive.s)
             return
         if destArchive not in self.idata:
             self._showWarning(_(u'%s must be in the Bash Installers directory.') % destArchive.s)
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
-            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + bolt.defaultExt).tail
+            BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + archives.defaultExt).tail
         #--List source archives and target archive
         message = _(u'Convert:')
         message += u'\n* ' + u'\n* '.join(sorted(u'(%08X) - %s' % (self.idata[x].crc,x.s) for x in self.selected))
@@ -1159,10 +1160,11 @@ class InstallerConverter_Create(_InstallerLink):
             return
         if BCFArchive.csbody[-4:] != u'-bcf':
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + BCFArchive.cext).tail
-        if BCFArchive.cext != bolt.defaultExt:
+        if BCFArchive.cext != archives.defaultExt:
             self._showWarning(_(u"BCF's only support %s. The %s extension will"
-                      u" be discarded.") % (bolt.defaultExt, BCFArchive.cext))
-            BCFArchive = GPath(BCFArchive.sbody + bolt.defaultExt).tail
+                      u" be discarded.") % (
+                              archives.defaultExt, BCFArchive.cext))
+            BCFArchive = GPath(BCFArchive.sbody + archives.defaultExt).tail
         if bass.dirs['converters'].join(BCFArchive).exists():
             if not self._askYes(_(
                     u'%s already exists. Overwrite it?') % BCFArchive.s,

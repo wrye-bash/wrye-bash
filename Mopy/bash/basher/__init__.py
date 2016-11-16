@@ -67,7 +67,7 @@ import wx
 
 #--Localization
 #..Handled by bosh, so import that.
-from .. import bush, bosh, bolt, bass, env, load_order
+from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
@@ -2158,7 +2158,7 @@ class InstallersList(balt.UIList):
             event.Skip()
 
     __ext_group = \
-        u'(\.(' + ur'|'.join(ext[1:] for ext in bolt.readExts) + u')+)'
+        u'(\.(' + ur'|'.join(ext[1:] for ext in archives.readExts) + u')+)'
     def OnLabelEdited(self, event):
         """Renamed some installers"""
         selected = self.GetSelected()
@@ -2202,7 +2202,7 @@ class InstallersList(balt.UIList):
 
     @staticmethod
     def _unhide_wildcard():
-        starred = u';'.join(bolt.readExts)
+        starred = u';'.join(archives.readExts)
         return bush.game.displayName + u' ' + _(
             u'Mod Archives') + u' (' + starred + u')|' + starred
 
@@ -2321,7 +2321,7 @@ class InstallersList(balt.UIList):
         converters = [x for x in filenames if
                       bosh.converters.ConvertersData.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
-                     or x.cext in bolt.readExts and x not in converters]
+                     or x.cext in archives.readExts and x not in converters]
         if len(omodnames) > 0: self._extractOmods(omodnames)
         if not filenames and not converters:
             return
