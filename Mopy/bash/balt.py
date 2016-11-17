@@ -65,6 +65,7 @@ class Font(wx.Font):
     def Style(font_, bold=False, slant=False, underline=False):
         if bold: font_.SetWeight(wx.FONTWEIGHT_BOLD)
         if slant: font_.SetStyle(wx.FONTSTYLE_SLANT)
+        else: font_.SetStyle(wx.FONTSTYLE_NORMAL)
         if underline: font_.SetUnderlined()
         return font_
 

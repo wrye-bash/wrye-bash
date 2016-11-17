@@ -3076,6 +3076,7 @@ class FileInfos(_DataStore):
     file_pattern = None # subclasses must define this !
     def _initDB(self, dir_):
         self.store_dir = dir_ #--Path
+        self.store_dir.makedirs()
         self.bash_dir.makedirs() # self.dir may need be set
         self.data = {} # populated in refresh ()
         self.corrupted = {} #--errorMessage = corrupted[fileName]
