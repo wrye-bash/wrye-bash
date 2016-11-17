@@ -32,10 +32,13 @@ http://www.uesp.net/wiki/Tes5Mod:Archive_File_Format
 __author__ = 'Utumno'
 
 import collections
+import errno
 import os
 import struct
 import sys
 from functools import partial
+from itertools import groupby
+from operator import itemgetter
 from . import AFile
 from ..bolt import deprint
 
@@ -44,6 +47,8 @@ path_sep = u'\\'
 
 # Exceptions ------------------------------------------------------------------
 class BSAError(Exception): pass
+
+class BSANotImplemented(BSAError): pass
 
 class BSAVersionError(BSAError):
 
@@ -111,6 +116,8 @@ class BsaHeader(_Header):
     def is_compressed(self): return self.archive_flags & 4
     def is_xbox(self): return self.archive_flags & 64
 
+    def embed_filenames(self): return self.archive_flags & 0x100 # TODO Oblivion ?
+
 class Ba2Header(_Header):
     __slots__ = ( # in the order encountered in the header
         'b2a_files_type', 'b2a_num_files', 'b2a_name_table_offset')
@@ -133,11 +140,11 @@ class Ba2Header(_Header):
 class OblivionBsaHeader(BsaHeader):
     __slots__ = ()
 
+    def embed_filenames(self): return False
+
 class SkyrimBsaHeader(BsaHeader):
     __slots__ = ()
     bsa_version = int('0x68', 16)
-
-    def embed_filenames(self): return self.archive_flags & 0x100
 
 class SkyrimSeBsaHeader(BsaHeader):
     __slots__ = ()
@@ -211,9 +218,16 @@ class BSASkyrimSEFolderRecord(_BsaHashedRecord):
     formats = list((f, struct.calcsize(f)) for f in formats)
 
 class BSAFileRecord(_BsaHashedRecord):
-    __slots__ = ('file_data_size', 'raw_file_data_offset')
+    __slots__ = ('file_size_flags', 'raw_file_data_offset')
     formats = ['I', 'I']
     formats = list((f, struct.calcsize(f)) for f in formats)
+
+    def compression_toggle(self): return self.file_size_flags & 0x40000000
+
+    def raw_data_size(self):
+        if self.compression_toggle():
+            return self.file_size_flags & (~0xC0000000) # negate all flags
+        return self.file_size_flags
 
 # BA2s
 class _B2aFileRecordCommon(_HashedRecord):
@@ -268,6 +282,7 @@ class B2aFileRecordTexture(_B2aFileRecordCommon):
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
+    """:type assets: collections.OrderedDict[unicode, BSAAsset]"""
 
     def __init__(self, folder_record):
         self.folder_record = folder_record
@@ -277,8 +292,8 @@ class BSAAsset(object):
     __slots__ = ('filerecord', 'filename')
 
     def __init__(self, filename, filerecord):
-        self.filerecord = filerecord
-        self.filename = filename
+        self.filerecord = filerecord # type: BSAFileRecord
+        self.filename = filename # type: unicode
 
     def __repr__(self): return repr(self.filename)
     def __unicode__(self): return self.filename
@@ -290,6 +305,7 @@ class Ba2Folder(object):
 
 # Files -----------------------------------------------------------------------
 class ABsa(AFile):
+    """:type bsa_folders: collections.OrderedDict[unicode, BSAFolder]"""
     header_type = BsaHeader
     _assets = frozenset()
 
@@ -310,7 +326,60 @@ class ABsa(AFile):
         except struct.error as e:
             raise BSAError, e.message, sys.exc_info()[2]
 
-    # Abstract - _load_bsa is not used externally, may be removed
+    def extract_assets(self, asset_paths, dest_folder):
+        # map files to folders
+        folder_file = []
+        for a in asset_paths:
+            split = a.rsplit(path_sep, 1)
+            if len(split) == 1:
+                split = [u'', split[0]]
+            folder_file.append(split)
+        del asset_paths # forget about this
+        # group files by folder
+        folder_files_dict = {}
+        folder_file.sort(key=itemgetter(0)) # sort first then group
+        for key, val in groupby(folder_file, key=itemgetter(0)):
+            folder_files_dict[key] = set(dest for _key, dest in val)
+        # load the bsa - this should be reworked to load only needed records
+        self._load_bsa()
+        folder_assets = collections.OrderedDict()
+        for folder_path, bsa_folder in self.bsa_folders.iteritems():
+            if folder_path not in folder_files_dict: continue
+            # Has assets we need to extract keep order to avoid seeking back and forth
+            folder_assets[folder_path] = file_records = []
+            filenames = folder_files_dict[folder_path]
+            for filename, asset in bsa_folder.assets.iteritems():
+                if filename not in filenames: continue
+                file_records.append((filename, asset.filerecord))
+        # unload the bsa
+        self.bsa_folders.clear()
+        # get the data from the file
+        global_compression = self.bsa_header.is_compressed()
+        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
+            for folder, file_records in folder_assets.iteritems():
+                target_dir = os.path.join(dest_folder, folder)
+                try:
+                    os.makedirs(target_dir)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+                for filename, record in file_records:
+                    if global_compression ^ record.compression_toggle():
+                        raise BSANotImplemented(
+                            u'Compressed records are not yet supported (%s)' %
+                            self.abs_path)
+                    data_size = record.raw_data_size()
+                    bsa_file.seek(record.raw_file_data_offset)
+                    if self.bsa_header.embed_filenames(): # use len(filename) ?
+                        filename_len, = struct.unpack('B', bsa_file.read(1))
+                        bsa_file.read(filename_len) # discard filename
+                        data_size -= filename_len + 1
+                    # get the data!
+                    raw_data = bsa_file.read(data_size)
+                    with open(os.path.join(target_dir, filename), 'wb') as out:
+                        out.write(raw_data)
+
+    # Abstract
     def _load_bsa(self): raise NotImplementedError
     def load_bsa_light(self): raise NotImplementedError
 
