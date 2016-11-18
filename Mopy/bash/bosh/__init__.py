@@ -4123,7 +4123,7 @@ class ModInfos(FileInfos):
 
     _plugin_inis = {}
     def _ini_files(self, descending=False): ##: Do this ONCE on refresh()
-        if bush.game.fsName == u'Skyrim': ##: Skyrim SE, Fallout4 ?
+        if bush.game.supports_mod_inis:
             iniPaths = (
                 self[name].getIniPath() for name in load_order.activeCached())
             iniPaths = [p for p in iniPaths if p.isfile()]
