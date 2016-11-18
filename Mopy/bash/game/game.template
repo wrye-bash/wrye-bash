@@ -61,11 +61,13 @@ patchTip = u''
 #--URL to the Nexus site for this game
 nexusUrl = u''  #-- URL
 nexusName = u'' #-- Long Name
-nexusKey u''    #-- Key for the "always ask this question" setting in settings.dat
+nexusKey = u''    #-- Key for the "always ask this question" setting in settings.dat
 
 # Bsa info
 allow_reset_bsa_timestamps = False
 bsa_extension = ur'bsa'
+supports_mod_inis = True # this game supports mod ini files aka ini fragments
+vanilla_string_bsas = {}
 
 # Load order info
 using_txt_file = True
@@ -310,7 +312,7 @@ mergeClasses = (
 readClasses = ()
 writeClasses = ()
 
-def ini():
+def init():
     # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
     # re-executing all lines within the module, it acts like another 'import'
     # statement - in other words, nothing happens.  This means any lines that

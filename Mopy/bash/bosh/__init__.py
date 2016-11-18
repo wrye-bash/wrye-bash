@@ -2721,7 +2721,7 @@ class ModInfo(_BackupMixin, FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            bsaPaths = modInfos.extra_bsas(self, descending=True)
+            bsaPaths = modInfos.extra_bsas(self)
             bsaFiles = {}
             targetJoin = dirs['bsaCache'].join
             for filepath in extract:
@@ -2941,7 +2941,6 @@ except AttributeError:
 class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
-    _assets = frozenset()
 
     def __init__(self, parent_dir, bsa_name):
         super(BSAInfo, self).__init__(parent_dir, bsa_name)
@@ -2963,16 +2962,6 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
             'ResetBSATimestamps']:
             if self._file_mod_time != self._default_mtime:
                 self.setmtime(self._default_mtime)
-
-    # API
-    def has_asset(self, asset_path): return asset_path in self.assets
-
-    @property
-    def assets(self):
-        if self._assets is self.__class__._assets:
-            self.load_bsa_light(self.abs_path)
-            self._assets = frozenset(self._filenames)
-        return self._assets
 
 #------------------------------------------------------------------------------
 class TrackedFileInfos(DataDict):
@@ -3455,6 +3444,7 @@ def _lo_cache(lord_func):
             active_set_changed = active_changed and (
                 set(active) != set(old_active))
             if active_changed:
+                self._refresh_mod_inis() # before _refreshMissingStrings !
                 self._refreshBadNames()
                 self._refreshInfoLists()
                 self._refreshMissingStrings()
@@ -3650,6 +3640,8 @@ class ModInfos(FileInfos):
             forceRefresh=hasChanged or _modTimesChange, forceActive=deleted)
         self.reloadBashTags()
         # if active did not change, we must perform the refreshes below
+        if lo_changed < 2: # in case ini files were deleted or modified
+            self._refresh_mod_inis()
         if lo_changed < 2 and hasChanged:
             self._refreshBadNames()
             self._refreshInfoLists()
@@ -3666,6 +3658,23 @@ class ModInfos(FileInfos):
                 self.rescanMergeable(scanList,progress)
         hasChanged += bool(scanList or difMergeable)
         return bool(hasChanged) or lo_changed
+
+    _plugin_inis = OrderedDict() # cache active mod inis in active mods order
+    def _refresh_mod_inis(self):
+        if not bush.game.supports_mod_inis: return
+        iniPaths = (self[m].getIniPath() for m in load_order.activeCached())
+        iniPaths = [p for p in iniPaths if p.isfile()]
+        # delete non existent inis from cache
+        for key in self._plugin_inis.keys():
+            if key not in iniPaths:
+                del self._plugin_inis[key]
+        # update cache with new or modified files
+        for iniPath in iniPaths:
+            if iniPath not in self._plugin_inis or self._plugin_inis[
+                iniPath].needs_update():
+                self._plugin_inis[iniPath] = IniFile(iniPath)
+        self._plugin_inis = OrderedDict(
+            [(k, self._plugin_inis[k]) for k in iniPaths])
 
     def _refreshBadNames(self):
         """Refreshes which filenames cannot be saved to plugins.txt
@@ -4112,7 +4121,7 @@ class ModInfos(FileInfos):
                 for path in bsaPaths:
                     try:
                         bsa_info = bsaInfos[path.tail] # type: BSAInfo
-                        if bsa_info.has_asset(assetPath.cs): # Lowercase !
+                        if bsa_info.has_asset(assetPath):
                             found = True
                             break
                     except KeyError: # not existing or corrupted
@@ -4121,35 +4130,27 @@ class ModInfos(FileInfos):
                     return True
         return False
 
-    _plugin_inis = {}
-    def _ini_files(self, descending=False):
-        if bush.game.fsName == u'Skyrim':
-            iniPaths = set(
-                self[name].getIniPath() for name in load_order.activeCached())
-            for key in self._plugin_inis.keys():
-                if key not in iniPaths:
-                    del self._plugin_inis[key]
-            iniFiles = [self._plugin_inis.setdefault(iniPath, IniFile(iniPath))
-                        for iniPath in iniPaths if iniPath.exists()]
-            if descending: iniFiles.reverse()
-            iniFiles.append(oblivionIni)
-        else:
-            iniFiles = [oblivionIni]
+    def _ini_files(self):
+        iniFiles = self._plugin_inis.values() # in active order
+        iniFiles.reverse() # later loading inis override previous settings
+        iniFiles.append(oblivionIni)
         return iniFiles
 
-    def extra_bsas(self, mod_info, descending=False, existing=True):
-        """Return a list of existing bsa paths to get assets from.
+    def extra_bsas(self, mod_info, existing=True):
+        """Return a list of (existing) bsa paths to get assets from.
         :rtype: list[bolt.Path]
         """
-        bsaPaths = [mod_info.getBsaPath()]
-        iniFiles = self._ini_files(descending=descending)
-        for iniFile in iniFiles:
-            for key in (u'sResourceArchiveList', u'sResourceArchiveList2'):
-                extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
-                extraBsa = [x.strip() for x in extraBsa]
-                extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
-                if descending: extraBsa.reverse()
-                bsaPaths.extend(extraBsa)
+        if mod_info.name.s in bush.game.vanilla_string_bsas:
+            bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
+                mod_info.name.s])
+        else:
+            bsaPaths = [mod_info.getBsaPath()] # first check bsa with same name
+            for iniFile in self._ini_files():
+                for key in (u'sResourceArchiveList', u'sResourceArchiveList2'): ##: per game keys !
+                    extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
+                    extraBsa = (x.strip() for x in extraBsa)
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    bsaPaths.extend(extraBsa)
         return [x for x in bsaPaths if not existing or x.isfile()]
 
     def hasBadMasterNames(self,modName):

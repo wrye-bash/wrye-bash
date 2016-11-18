@@ -62,6 +62,16 @@ nexusKey = 'bash.installers.openFallout4Nexus.continue'
 # Bsa info
 allow_reset_bsa_timestamps = False
 bsa_extension = ur'ba2'
+supports_mod_inis = True
+vanilla_string_bsas = {
+    u'Fallout4.esm': [u'Fallout4 - Interface.ba2'],
+    u'DLCRobot.esm': [u'DLCRobot - Main.ba2'],
+    u'DLCworkshop01.esm': [u'DLCworkshop01 - Main.ba2'],
+    u'DLCworkshop02.esm': [u'DLCworkshop02 - Main.ba2'],
+    u'DLCworkshop03.esm': [u'DLCworkshop03 - Main.ba2'],
+    u'DLCCoast.esm': [u'DLCCoast - Main.ba2'],
+    u'DLCNukaWorld.esm':  [u'DLCNukaWorld - Main.ba2'],
+}
 
 # Load order info
 using_txt_file = True

@@ -72,6 +72,14 @@ nexusKey = 'bash.installers.openSkyrimNexus.continue'
 # Bsa info
 allow_reset_bsa_timestamps = False
 bsa_extension = ur'bsa'
+supports_mod_inis = True
+vanilla_string_bsas = {
+    u'Skyrim.esm': [u'Skyrim - Interface.bsa'],
+    u'Update.esm': [u'Skyrim - Interface.bsa'],
+    u'Dawnguard.esm': [u'Dawnguard.bsa'],
+    u'Hearthfires.esm': [u'Hearthfires.bsa'],
+    u'Dragonborn.esm': [u'Dragonborn.bsa'],
+}
 
 # Load order info
 using_txt_file = True
