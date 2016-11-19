@@ -316,8 +316,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:
             if BashFrame.iniList is not None:
-                BashFrame.iniList.panel.add_targets(new_targets)
-                BashFrame.iniList.panel.set_choice(target_path)
+                BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
+                BashFrame.iniList.panel.detailsPanel.set_choice(target_path)
                 BashFrame.iniList.panel.ShowPanel(refresh_infos=False,
                     clean_targets=False, detail_item=lastApplied,
                     focus_list=False)
