@@ -1798,11 +1798,16 @@ class UIList(wx.Panel):
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-        # Details HACK: if it was a single item then refresh details for it:
-        if len(files) == 1: self.SelectItem(files[0])
-        else: self.panel.RefreshDetails()
+        self._refresh_details(files)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
+
+    def _refresh_details(self, files):
+        # Details HACK: if it was a single item then refresh details for it:
+        if len(files) == 1:
+            self.SelectItem(files[0])
+        else:
+            self.panel.SetDetails()
 
     def Focus(self):
         self.__gList.SetFocus()

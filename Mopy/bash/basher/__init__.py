@@ -168,9 +168,8 @@ class _DetailsViewMixin(NotebookPanel):
     detailsPanel = None
     def _setDetails(self, fileName):
         self.detailsPanel.SetFile(fileName=fileName)
-    def RefreshDetails(self): self._setDetails('SAME')
     def ClearDetails(self): self._setDetails(None)
-    def SetDetails(self, fileName): self._setDetails(fileName)
+    def SetDetails(self, fileName='SAME'): self._setDetails(fileName)
 
     def RefreshUIColors(self):
         super(_DetailsViewMixin, self).RefreshUIColors()
@@ -230,7 +229,7 @@ class SashUIListPanel(SashPanel):
         self.uiList = self._ui_list_type(self.left, listData=self.listData,
                                          keyPrefix=self.keyPrefix, panel=self)
 
-    def RefreshDetails(self):
+    def SetDetails(self, fileName='SAME'):
         """Called in UIList#RefreshUI on the panel attribute  - including
         the INIList where there are no details to refresh."""
 
