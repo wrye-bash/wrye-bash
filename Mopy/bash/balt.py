@@ -2193,7 +2193,7 @@ class UIList(wx.Panel):
                     self.data_store.delete(items, confirm=True, recycle=recycle)
             except bolt.BoltError as e: showError(self, u'%r' % e)
             except (AccessDeniedError, CancelError, SkipError): pass
-            finally:
+            finally: # FIXME: remove break from here masks tracebacks
                 if self.__class__._shellUI: break # could delete fail mid-way ?
         else:
             self.data_store.delete_Refresh(items, check_existence=True)

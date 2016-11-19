@@ -229,14 +229,6 @@ class SashUIListPanel(SashPanel):
         self.uiList = self._ui_list_type(self.left, listData=self.listData,
                                          keyPrefix=self.keyPrefix, panel=self)
 
-    def SetDetails(self, fileName='SAME'):
-        """Called in UIList#RefreshUI on the panel attribute  - including
-        the INIList where there are no details to refresh."""
-
-    def ClearDetails(self):
-        """Called in UIList#OnKeyUp on the panel attribute  - including
-        the INIList where there are no details to refresh."""
-
     def SelectUIListItem(self, item, deselectOthers=False):
         self.uiList.SelectAndShowItem(item, deselectOthers=deselectOthers,
                                       focus=True)
@@ -664,21 +656,13 @@ class INITweakLineCtrl(INIListCtrl):
         super(INITweakLineCtrl, self).__init__(parent)
         self.tweakLines = []
         self.iniContents = self._contents = iniContents
-        self._ini_detail = None
 
     def _get_selected_line(self, index): return self.tweakLines[index][5]
 
     def RefreshTweakLineCtrl(self, tweakPath):
-        if tweakPath == 'SAME':
-            if not self._ini_detail in bosh.iniInfos:
-                tweakPath = None
-            else:
-                tweakPath = self._ini_detail
         if tweakPath is None:
             self.DeleteAllItems()
-            self._ini_detail = None
             return
-        self._ini_detail = tweakPath
         # TODO(ut) avoid if ini tweak did not change
         self.tweakLines = bosh.iniInfos.get_tweak_lines_infos(tweakPath)
         num = self.GetItemCount()
@@ -1622,17 +1606,13 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     @property
     def ini_name(self): return self.target_inis.keys()[self.choice]
 
-    def _resetDetails(self):
-        self.tweakContents.RefreshTweakLineCtrl(None)
-        self._ini_detail = None
-        self.tweakName.SetValue(u'')
+    def _resetDetails(self): pass
 
     def SetFile(self, fileName='SAME'):
         fileName = super(INIDetailsPanel, self).SetFile(fileName)
         self._ini_detail = fileName
-        if fileName:
-            self.tweakName.SetValue(fileName.sbody)
-            self.tweakContents.RefreshTweakLineCtrl(fileName)
+        self.tweakContents.RefreshTweakLineCtrl(fileName)
+        self.tweakName.SetValue(fileName.sbody if fileName else u'')
 
     def _enable_buttons(self):
         isGameIni = bosh.iniInfos.ini in bosh.gameInis
@@ -1688,17 +1668,6 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
                 self.comboBox.SetItems(self.SortChoices())
                 self.choice = self.target_inis.keys().index(current_choice)
 
-    def AddOrSelectIniDropDown(self, apath): # will refresh the UI !
-        if apath.stail not in self.target_inis: # added
-            self.target_inis[apath.stail] = apath
-            self.comboBox.SetItems(self.SortChoices()) # to set self.choice
-        else: # just needed for when we are called from _apply_tweaks (duh)
-            if self.choice == self.target_inis.keys().index(apath.stail):
-                return
-        self.choice = self.target_inis.keys().index(apath.stail)
-        self.ShowPanel(target_changed=True)
-        self._ini_panel.uiList.RefreshUI()
-
     def set_choice(self, target_path):
         self.choice = self.target_inis.keys().index(target_path.stail)
 
@@ -1721,10 +1690,14 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
                 self.comboBox.SetSelection(self.choice)
                 return
         # new file or selected an existing one different from current choice
-        self.AddOrSelectIniDropDown(full_path)
+        if full_path.stail not in self.target_inis: # added
+            self.target_inis[full_path.stail] = full_path
+            self.comboBox.SetItems(self.SortChoices()) # to set self.choice
+        self.choice = self.target_inis.keys().index(full_path.stail)
+        self.ShowPanel(target_changed=True)
+        self._ini_panel.uiList.RefreshUI()
 
-    def ShowPanel(self, target_changed=False, detail_item='SAME',
-                  clean_targets=False, **kwargs):
+    def ShowPanel(self, target_changed=False, clean_targets=False, **kwargs):
         if self._firstShow:
             super(INIDetailsPanel, self).ShowPanel(**kwargs)
             target_changed = True # to display the target ini
@@ -1733,10 +1706,9 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
             bosh.iniInfos.ini = self.current_ini_path
         self._enable_buttons() # if a game ini was deleted will disable edit
         if clean_targets: self._clean_targets()
-        # first RefreshIniContents as RefreshTweakLineCtrl will have correct lines
+        # first RefreshIniContents as RefreshTweakLineCtrl needs its lines
         if new_target or target_changed:
             self.iniContents.RefreshIniContents(new_target)
-        self.tweakContents.RefreshTweakLineCtrl(detail_item)
         self.comboBox.SetSelection(self.choice)
 
     def ClosePanel(self, destroy=False):
@@ -1761,14 +1733,13 @@ class INIPanel(BashTab):
         self.detailsPanel.ShowPanel(target_changed=True)
 
     def ShowPanel(self, refresh_infos=True, refresh_target=True,
-                  clean_targets=True, detail_item='SAME', focus_list=True,
-                  **kwargs): ##: double refreshes detail item -!!!
+                  clean_targets=True, focus_list=True, **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
         super(INIPanel, self).ShowPanel(target_changed=changes and changes[3],
-            clean_targets=clean_targets, detail_item=detail_item)
+                                        clean_targets=clean_targets)
         if changes: # we need this to be more granular
-            self.uiList.RefreshUI(focus_list=focus_list)
+            self.uiList.RefreshUI(focus_list=focus_list) # resets the details
 
     def _sbCount(self):
         stati = self.uiList.CountTweakStatus()
