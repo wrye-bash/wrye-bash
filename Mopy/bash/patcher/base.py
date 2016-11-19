@@ -214,11 +214,11 @@ class AMultiTweakItem(object):
         self.choiceLabels = []
         self.choiceValues = []
         self.default = 0
-        for choice in choices:
-            self.choiceLabels.append(choice[0])
-            if choice[0][0] == u'[':
-                self.default = choices.index(choice)
-            self.choiceValues.append(choice[1:])
+        for choice_tuple in choices: # (choice_label, choice1, choice2, ...)
+            self.choiceLabels.append(choice_tuple[0])
+            if choice_tuple[0][0] == u'[':
+                self.default = choices.index(choice_tuple)
+            self.choiceValues.append(choice_tuple[1:])
         #--Config
         self.isEnabled = False
         self.defaultEnabled = kwargs.get('defaultEnabled', False)

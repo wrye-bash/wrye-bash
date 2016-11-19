@@ -57,9 +57,9 @@ class ColorDialog(balt.Dialog):
         self.text_key = dict((_display_text(x), x) for x in keys)
         colored = self.text_key.keys()
         colored.sort(key=unicode.lower)
-        choice = colored[0]
-        choiceKey = self.text_key[choice]
-        self.comboBox = balt.ComboBox(self, value=choice, choices=colored)
+        combo_text = colored[0]
+        choiceKey = self.text_key[combo_text]
+        self.comboBox = balt.ComboBox(self, value=combo_text, choices=colored)
         #--Color Picker
         self.picker = wx.ColourPickerCtrl(self)
         self.picker.SetColour(colors[choiceKey])
@@ -102,7 +102,8 @@ class ColorDialog(balt.Dialog):
         self.SetIcons(Resources.bashBlue)
         self.UpdateUIButtons()
 
-    def GetChoice(self):
+    def GetColorKey(self):
+        """Return balt.colors dict key for current combobox selection."""
         return self.text_key[self.comboBox.GetValue()]
 
     @staticmethod
@@ -130,13 +131,13 @@ class ColorDialog(balt.Dialog):
                 allDefault = False
                 break
         # Apply and Default
-        choice = self.GetChoice()
-        changed = bool(choice in self.changes)
+        color_key = self.GetColorKey()
+        changed = bool(color_key in self.changes)
         if changed:
-            color = self.changes[choice]
+            color = self.changes[color_key]
         else:
-            color = colors[choice]
-        default = bool(color == settingDefaults['bash.colors'][choice])
+            color = colors[color_key]
+        default = bool(color == settingDefaults['bash.colors'][color_key])
         # Update the Buttons, ComboBox, and ColorPicker
         self.apply.Enable(changed)
         self.applyAll.Enable(anyChanged)
@@ -147,9 +148,9 @@ class ColorDialog(balt.Dialog):
 
     def OnDefault(self,event):
         event.Skip()
-        choice = self.GetChoice()
-        newColor = settingDefaults['bash.colors'][choice]
-        self.changes[choice] = newColor
+        color_key = self.GetColorKey()
+        newColor = settingDefaults['bash.colors'][color_key]
+        self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
     def OnDefaultAll(self,event):
@@ -162,12 +163,12 @@ class ColorDialog(balt.Dialog):
 
     def OnApply(self,event):
         event.Skip()
-        choice = self.GetChoice()
-        newColor = self.changes[choice]
+        color_key = self.GetColorKey()
+        newColor = self.changes[color_key]
         #--Update settings and colors
-        bass.settings['bash.colors'][choice] = newColor
+        bass.settings['bash.colors'][color_key] = newColor
         bass.settings.setChanged('bash.colors')
-        colors[choice] = newColor
+        colors[color_key] = newColor
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
@@ -244,15 +245,15 @@ class ColorDialog(balt.Dialog):
     def OnComboBox(self,event):
         event.Skip()
         self.UpdateUIButtons()
-        choice = self.GetChoice()
-        help = colorInfo[choice][1]
+        color_key = self.GetColorKey()
+        help = colorInfo[color_key][1]
         self.textCtrl.SetValue(help)
 
     def OnColorPicker(self,event):
         event.Skip()
-        choice = self.GetChoice()
+        color_key = self.GetColorKey()
         newColor = self.picker.GetColour()
-        self.changes[choice] = newColor
+        self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
 #------------------------------------------------------------------------------

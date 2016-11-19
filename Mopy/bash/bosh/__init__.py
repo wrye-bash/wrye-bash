@@ -4060,14 +4060,14 @@ class ModInfos(FileInfos):
     def lo_activate_all(self):
         toActivate = set(load_order.activeCached())
         try:
-            def _select(m):
+            def _add_to_activate(m):
                 if not m in toActivate:
                     self.lo_activate(m, doSave=False)
                     toActivate.add(m)
             mods = load_order.get_ordered(self.keys())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
-                if self.isBP(mod): _select(mod)
+                if self.isBP(mod): _add_to_activate(mod)
             # then activate mods not tagged NoMerge or Deactivate or Filter
             def _activatable(modName):
                 tags = modInfos[modName].getBashTags()
@@ -4075,10 +4075,10 @@ class ModInfos(FileInfos):
             mods = filter(_activatable, mods)
             mergeable = set(self.mergeable)
             for mod in mods:
-                if not mod in mergeable: _select(mod)
+                if not mod in mergeable: _add_to_activate(mod)
             # then activate as many of the remaining mods as we can
             for mod in mods:
-                if mod in mergeable: _select(mod)
+                if mod in mergeable: _add_to_activate(mod)
         except PluginsFullError:
             deprint(u'select All: 255 mods activated', traceback=True)
             raise
