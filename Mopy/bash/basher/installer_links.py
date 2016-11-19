@@ -318,8 +318,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             if BashFrame.iniList is not None:
                 BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
                 BashFrame.iniList.panel.detailsPanel.set_choice(target_path)
-                BashFrame.iniList.panel.ShowPanel(refresh_infos=False,
-                    clean_targets=False, focus_list=False)
+                BashFrame.iniList.panel.ShowPanel(refresh_target=True,
+                                                  focus_list=False)
                 BashFrame.iniList.panel.SetDetails(lastApplied)
             else:
                 targets = bass.settings['bash.ini.choices']

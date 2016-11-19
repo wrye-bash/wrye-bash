@@ -161,8 +161,7 @@ class INI_Apply(EnabledLink):
             needsRefresh = True
             bosh.iniInfos.ini.applyTweakFile(ini_info.read_ini_lines())
         if needsRefresh:
-            self.window.panel.ShowPanel(refresh_infos=False,
-                                        clean_targets=False)
+            self.window.panel.ShowPanel(refresh_target=True)
 
 #------------------------------------------------------------------------------
 class INI_CreateNew(OneItemLink):

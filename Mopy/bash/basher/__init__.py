@@ -635,7 +635,7 @@ class INIList(balt.UIList):
         choice = self.panel.detailsPanel.current_ini_path.tail
         if not self.warn_tweak_game_ini(choice): return
         target.applyTweakFile(tweak.read_ini_lines())
-        self.panel.ShowPanel(refresh_infos=False, clean_targets=False)
+        self.panel.ShowPanel(refresh_target=True)
 
     @staticmethod
     @balt.conversation
@@ -1732,8 +1732,8 @@ class INIPanel(BashTab):
         self.uiList.RefreshUI(focus_list=False)
         self.detailsPanel.ShowPanel(target_changed=True)
 
-    def ShowPanel(self, refresh_infos=True, refresh_target=True,
-                  clean_targets=True, focus_list=True, **kwargs):
+    def ShowPanel(self, refresh_infos=False, refresh_target=False,
+                  clean_targets=False, focus_list=True, **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
         super(INIPanel, self).ShowPanel(target_changed=changes and changes[3],
@@ -3781,7 +3781,8 @@ class BashFrame(wx.Frame):
         #--Show current notebook panel
         if self.iPanel: self.iPanel.frameActivated = True
         self.notebook.currentPage.ShowPanel(refresh_infos=not booting,
-                                            clean_targets=not booting)
+                                            clean_targets=not booting,
+                                            refresh_target=True)
         #--WARNINGS----------------------------------------
         if booting: self.warnTooManyModsBsas()
         self.warn_load_order()
