@@ -272,11 +272,11 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         new_targets = set()
-        for iniFile in ret.IniEdits:
+        for iniFile, wizardEdits in ret.IniEdits.iteritems():
             outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
                 (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
-                for line in generateTweakLines(ret.IniEdits[iniFile], iniFile):
+                for line in generateTweakLines(wizardEdits, iniFile):
                     out.write(line + u'\n')
             bosh.iniInfos.refreshFile(outFile.tail) # add it to the iniInfos
             bosh.iniInfos.table.setItem(outFile.tail, 'installer',

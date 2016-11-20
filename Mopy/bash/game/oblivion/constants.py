@@ -1541,7 +1541,7 @@ soundsTypes = {
     "LIGH": ('sound',),
     "MGEF": ('castingSound','boltSound','hitSound','areaSound',),
 #    "REGN": ('entries.sounds',),
-    "SOUN": ('soundFile', 'minDist2', 'maxDist2', 'freqAdj2', 'staticAtten',
+    "SOUN": ('soundFile', 'minDistance', 'maxDistance', 'freqAdjustment', 'staticAtten',
              'stopTime', 'startTime',),
     "WATR": ('sound',),
     "WTHR": ('sounds',),
