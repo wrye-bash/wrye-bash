@@ -44,6 +44,7 @@ from ...parsers import LoadFactory, ModFile
 
 # Patchers: 40 ----------------------------------------------------------------
 class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
+    tweak_read_classes = 'RACE',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -65,15 +66,8 @@ class ARaceTweaker_BiggerOrcsAndNords(AMultiTweakItem):
 class RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
                                      MultiTweakItem):
     """Adjusts the Orc and Nord race records to be taller/heavier."""
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'RACE',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'RACE',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -120,9 +114,6 @@ class CBash_RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
         super(CBash_RaceTweaker_BiggerOrcsAndNords, self).__init__()
         self.attrs = ['maleHeight','femaleHeight','maleWeight','femaleWeight']
 
-    def getTypes(self):
-        return ['RACE']
-
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -147,6 +138,7 @@ class CBash_RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
 class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
     """Merges similar race's hairs (kinda specifically designed for SOVVM's
     bearded races)."""
+    tweak_read_classes = 'RACE',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -162,15 +154,8 @@ class ARaceTweaker_MergeSimilarRaceHairs(AMultiTweakItem):
 
 class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
                                         MultiTweakItem):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'RACE',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'RACE',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -224,10 +209,6 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
 class CBash_RaceTweaker_MergeSimilarRaceHairs(
     ARaceTweaker_MergeSimilarRaceHairs, CBash_MultiTweakItem):
     name = _(u"Merge Hairs from similar races")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['RACE']
 
     #--Patch Phase ------------------------------------------------------------
     def finishPatch(self,patchFile,progress):
@@ -284,6 +265,7 @@ class CBash_RaceTweaker_MergeSimilarRaceHairs(
 
 class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
     """Merges similar race's eyes."""
+    tweak_read_classes = 'RACE',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -299,15 +281,8 @@ class ARaceTweaker_MergeSimilarRaceEyes(AMultiTweakItem):
 
 class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
                                        MultiTweakItem):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'RACE',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'RACE',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -363,10 +338,6 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
                                              CBash_MultiTweakItem):
     """Merges similar race's eyes."""
     name = _(u"Merge Eyes from similar races")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['RACE']
 
     #--Patch Phase ------------------------------------------------------------
     def finishPatch(self,patchFile,progress):
@@ -424,6 +395,7 @@ class CBash_RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
 
 class ARaceTweaker_AllHairs(AMultiTweakItem):
     """Gives all races ALL hairs."""
+    tweak_read_classes = 'RACE',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -435,15 +407,8 @@ class ARaceTweaker_AllHairs(AMultiTweakItem):
         self.logMsg = u'* '+ _(u'Races tweaked') + u': %d'
 
 class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'RACE',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'RACE',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -465,10 +430,6 @@ class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
 class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
     name = _(u"Races Have All Hairs")
 
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['RACE']
-
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -483,6 +444,7 @@ class CBash_RaceTweaker_AllHairs(ARaceTweaker_AllHairs,CBash_MultiTweakItem):
 
 class ARaceTweaker_AllEyes(AMultiTweakItem):
     """Gives all races ALL eyes."""
+    tweak_read_classes = 'RACE',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self,opt=(u'what a lot of eyes you have dear',1)):
@@ -496,14 +458,6 @@ class ARaceTweaker_AllEyes(AMultiTweakItem):
 class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
 
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'RACE',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'RACE',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.RACE
@@ -531,9 +485,6 @@ class CBash_RaceTweaker_AllEyes(ARaceTweaker_AllEyes,CBash_MultiTweakItem):
             opt=(u'them races are a real eye full', 1)
         )
 
-    def getTypes(self):
-        return ['RACE']
-
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -548,6 +499,7 @@ class CBash_RaceTweaker_AllEyes(ARaceTweaker_AllEyes,CBash_MultiTweakItem):
 
 class ARaceTweaker_PlayableEyes(AMultiTweakItem):
     """Sets all eyes to be playable."""
+    tweak_read_classes = 'EYES',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -559,15 +511,8 @@ class ARaceTweaker_PlayableEyes(AMultiTweakItem):
         self.logMsg = u'* '+ _(u'Eyes tweaked') + u': %d'
 
 class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'EYES',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'EYES',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.EYES
@@ -591,10 +536,6 @@ class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,
     """Sets all eyes to be playable."""
     name = _(u"Playable Eyes")
 
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['EYES']
-
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -609,6 +550,7 @@ class CBash_RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,
 
 class ARaceTweaker_PlayableHairs(AMultiTweakItem):
     """Sets all hairs to be playable."""
+    tweak_read_classes = 'HAIR',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -620,15 +562,8 @@ class ARaceTweaker_PlayableHairs(AMultiTweakItem):
         self.logMsg = u'* '+ _(u'Hairs tweaked') + u': %d'
 
 class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'HAIR',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'HAIR',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
@@ -652,10 +587,6 @@ class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,
     """Sets all hairs to be playable."""
     name = _(u"Playable Hairs")
 
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['HAIR']
-
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired. """
@@ -670,6 +601,7 @@ class CBash_RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,
 
 class ARaceTweaker_SexlessHairs(AMultiTweakItem):
     """Sets all hairs to be playable by both males and females."""
+    tweak_read_classes = 'HAIR',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -681,15 +613,8 @@ class ARaceTweaker_SexlessHairs(AMultiTweakItem):
         self.logMsg = u'* '+ _(u'Hairs tweaked') + u': %d'
 
 class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'HAIR',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'HAIR',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.HAIR
@@ -712,10 +637,6 @@ class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
 class CBash_RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,
                                      CBash_MultiTweakItem):
     name = _(u"Sexless Hairs")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['HAIR']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):

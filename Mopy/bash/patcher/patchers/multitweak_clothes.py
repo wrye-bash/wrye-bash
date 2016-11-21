@@ -71,9 +71,7 @@ class ClothesTweak(AClothesTweak,MultiTweakItem):
         return super(ClothesTweak,self).isMyType(record)
 
 class CBash_ClothesTweak(AClothesTweak,CBash_MultiTweakItem):
-
-    def getTypes(self):
-        return ['CLOT']
+    tweak_read_classes = 'CLOT',
 
 #------------------------------------------------------------------------------
 class ClothesTweak_MaxWeight(ClothesTweak):

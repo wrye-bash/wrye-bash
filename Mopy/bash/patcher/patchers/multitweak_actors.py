@@ -38,16 +38,9 @@ from .base import MultiTweakItem, CBash_MultiTweakItem, MultiTweaker, \
 # Patchers: 30 ----------------------------------------------------------------
 class BasalNPCTweaker(MultiTweakItem):
     """Base for all NPC tweakers"""
+    tweak_read_classes = 'NPC_',
 
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'NPC_',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'NPC_',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.NPC_
@@ -59,16 +52,9 @@ class BasalNPCTweaker(MultiTweakItem):
 
 class BasalCreatureTweaker(MultiTweakItem):
     """Base for all Creature tweakers"""
+    tweak_read_classes = 'CREA',
 
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'CREA',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'CREA',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchRecords = patchFile.CREA
@@ -77,6 +63,12 @@ class BasalCreatureTweaker(MultiTweakItem):
             patchRecords.setRecord(record)
 
     def buildPatch(self,log,progress,patchFile): raise AbstractError
+
+class _NpcCTweak(CBash_MultiTweakItem):
+    tweak_read_classes = 'NPC_',
+
+class _CreaCTweak(CBash_MultiTweakItem):
+    tweak_read_classes = 'CREA',
 
 #------------------------------------------------------------------------------
 class AMAONPCSkeletonPatcher(AMultiTweakItem):
@@ -134,16 +126,13 @@ class MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,BasalNPCTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher,CBash_MultiTweakItem):
+class CBash_MAONPCSkeletonPatcher(AMAONPCSkeletonPatcher, _NpcCTweak):
     name = _(u"MAO Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(CBash_MAONPCSkeletonPatcher, self).__init__()
         self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
-    def getTypes(self):
-        return ['NPC_']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -250,8 +239,7 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
                     count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log, count)
 
-class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
-                                    CBash_MultiTweakItem):
+class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher, _NpcCTweak):
     name = _(u"VORB Skeleton Setter")
 
     #--Config Phase -----------------------------------------------------------
@@ -261,9 +249,6 @@ class CBash_VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,
         self.playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
         self.skeletonList = None
         self.skeletonSetSpecial = None
-
-    def getTypes(self):
-        return ['NPC_']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -352,15 +337,10 @@ class VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,BasalNPCTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher,
-                                      CBash_MultiTweakItem):
+class CBash_VanillaNPCSkeletonPatcher(AVanillaNPCSkeletonPatcher, _NpcCTweak):
     scanOrder = 31 #Run before MAO
     editOrder = 31
     name = _(u"Vanilla Beast Skeleton")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -412,13 +392,9 @@ class RedguardNPCPatcher(ARedguardNPCPatcher,BasalNPCTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_RedguardNPCPatcher(ARedguardNPCPatcher,CBash_MultiTweakItem):
+class CBash_RedguardNPCPatcher(ARedguardNPCPatcher, _NpcCTweak):
     name = _(u"Redguard FGTS Patcher")
     redguardId = FormID(GPath(u'Oblivion.esm'),0x00000D43)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -468,13 +444,8 @@ class NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,BasalCreatureTweaker):
         #--Log
         self._patchLog(log, count)
 
-class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher,
-                                    CBash_MultiTweakItem):
+class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher, _CreaCTweak):
     name = _(u"No Bloody Creatures")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -541,13 +512,9 @@ class AsIntendedImpsPatcher(AAsIntendedImpsPatcher,BasalCreatureTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher,CBash_MultiTweakItem):
+class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher, _CreaCTweak):
     name = _(u"As Intended: Imps")
     spell = FormID(GPath(u'Oblivion.esm'), 0x02B53F)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -619,14 +586,9 @@ class AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,BasalCreatureTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher,
-                                   CBash_MultiTweakItem):
+class CBash_AsIntendedBoarsPatcher(AAsIntendedBoarsPatcher, _CreaCTweak):
     name = _(u"As Intended: Boars")
     spell = FormID(GPath(u'Oblivion.esm'), 0x02B54E)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -677,14 +639,9 @@ class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,
-                                     CBash_MultiTweakItem):
+class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher, _NpcCTweak):
     name = _(u"Sexy Walk for female NPCs")
     playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -727,14 +684,9 @@ class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,
-                                     CBash_MultiTweakItem):
+class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher, _NpcCTweak):
     name = _(u"Real Walk for female NPCs")
     playerFid = FormID(GPath(u'Oblivion.esm'), 0x000007)
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['NPC_']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -795,12 +747,8 @@ class QuietFeetPatcher(AQuietFeetPatcher,BasalCreatureTweaker):
                 count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log,count)
 
-class CBash_QuietFeetPatcher(AQuietFeetPatcher,CBash_MultiTweakItem):
+class CBash_QuietFeetPatcher(AQuietFeetPatcher, _CreaCTweak):
     name = _(u"Quiet Feet")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -869,12 +817,8 @@ class IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
         self._patchLog(log,count)
 
 class CBash_IrresponsibleCreaturesPatcher(AIrresponsibleCreaturesPatcher,
-                                          CBash_MultiTweakItem):
+                                          _CreaCTweak):
     name = _(u"Irresponsible Creatures")
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['CREA']
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):

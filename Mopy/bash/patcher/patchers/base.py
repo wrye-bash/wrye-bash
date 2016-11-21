@@ -61,17 +61,15 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
 
 class MultiTweakItem(AMultiTweakItem):
     # Notice the differences from Patcher in scanModFile and buildPatch
-    # would it make any sense to make getRead/WriteClasses() into classmethods
-    # see comments in Patcher
     # TODO: scanModFile() have VERY similar code - use getReadClasses here ?
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ()  # raise AbstractError ? NO: see NamesTweak_BodyTags
+        return self.__class__.tweak_read_classes
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ()
+        return self.__class__.tweak_read_classes
 
     def scanModFile(self,modFile,progress,patchFile): # extra param: patchFile
         """Scans specified mod file to extract info. May add record to patch
@@ -101,7 +99,7 @@ class CBash_MultiTweakItem(AMultiTweakItem):
     #--Patch Phase ------------------------------------------------------------
     def getTypes(self):
         """Returns the group types that this patcher checks"""
-        return []
+        return list(self.__class__.tweak_read_classes)
 
     # def apply(self,modFile,record): # TODO bashTags argument is unused in
     # all subclasses

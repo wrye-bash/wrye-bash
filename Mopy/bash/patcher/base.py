@@ -204,6 +204,8 @@ class AAliasesPatcher(_Abstract_Patcher):
 #------------------------------------------------------------------------------
 class AMultiTweakItem(object):
     """A tweak item, optionally with configuration choices."""
+    tweak_read_classes = ()
+
     def __init__(self,label,tip,key,*choices,**kwargs):
         # TODO: docs for attributes !
         self.label = label

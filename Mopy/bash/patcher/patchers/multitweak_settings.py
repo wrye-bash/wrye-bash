@@ -53,9 +53,7 @@ class CBash_GlobalsTweak(CBash_MultiTweakItem):
     """Sets a global to specified value"""
     scanOrder = 29
     editOrder = 29
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['GLOB']
+    tweak_read_classes = 'GLOB',
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -122,9 +120,7 @@ class CBash_GmstTweak(CBash_MultiTweakItem):
     """Sets a gmst to specified value"""
     scanOrder = 29
     editOrder = 29
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['GMST']
+    tweak_read_classes = 'GMST',
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):

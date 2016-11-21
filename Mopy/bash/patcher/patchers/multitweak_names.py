@@ -37,7 +37,7 @@ class _AMultiTweakItem_Names(MultiTweakItem):
     def _patchLog(self, log, count):
         # --Log - Notice self.logMsg is not used - so (apart from
         # NamesTweak_BodyTags and NamesTweak_Body where it is not defined in
-        # the ANamesTweakXX common superclass) self.logMsg wastes space and the
+        # the ANamesTweak_XX common superclass) the
         # CBash implementations which _do_ use it produce different logs. TODO:
         # unify C/P logs by using self.logMsg (mind the classes mentioned)
         log(u'* %s: %d' % (self.label,sum(count.values())))
@@ -175,6 +175,7 @@ class ANamesTweak_Potions(AMultiTweakItem):
     """Names tweaker for potions."""
     reOldLabel = re.compile(u'^(-|X) ',re.U)
     reOldEnd = re.compile(u' -$',re.U)
+    tweak_read_classes = 'ALCH',
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
@@ -189,16 +190,9 @@ class ANamesTweak_Potions(AMultiTweakItem):
         self.logMsg = u'* ' + _(u'%(record_type)s Renamed') % {
             'record_type': (u'%s ' % self.key)} + u': %d'
 
-class NamesTweak_Potions(ANamesTweak_Potions,_AMultiTweakItem_Names):
+class NamesTweak_Potions(ANamesTweak_Potions, _AMultiTweakItem_Names):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'ALCH',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'ALCH',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.ALCH
@@ -249,10 +243,7 @@ class NamesTweak_Potions(ANamesTweak_Potions,_AMultiTweakItem_Names):
             count[srcMod] = count.get(srcMod,0) + 1
         self._patchLog(log, count)
 
-class CBash_NamesTweak_Potions(ANamesTweak_Potions,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['ALCH']
+class CBash_NamesTweak_Potions(ANamesTweak_Potions, CBash_MultiTweakItem):
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -326,15 +317,9 @@ class ANamesTweak_Scrolls(AMultiTweakItem):
         self.magicFormat = rawFormat[1:]
 
 class NamesTweak_Scrolls(ANamesTweak_Scrolls,_AMultiTweakItem_Names):
+    tweak_read_classes = 'BOOK','ENCH',
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'BOOK','ENCH',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'BOOK','ENCH',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         #--Scroll Enchantments
@@ -390,10 +375,7 @@ class NamesTweak_Scrolls(ANamesTweak_Scrolls,_AMultiTweakItem_Names):
 
 class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
     """Names tweaker for scrolls."""
-
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['BOOK']
+    tweak_read_classes = 'BOOK',
 
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
@@ -438,6 +420,8 @@ class CBash_NamesTweak_Scrolls(ANamesTweak_Scrolls,CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class ANamesTweak_Spells(AMultiTweakItem):
     """Names tweaker for spells."""
+    tweak_read_classes = 'SPEL',
+
     #--Config Phase -----------------------------------------------------------
     reOldLabel = reSpell
     def __init__(self):
@@ -459,15 +443,8 @@ class ANamesTweak_Spells(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Spells Renamed') + u': %d'
 
 class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'SPEL',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'SPEL',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         patchBlock = patchFile.SPEL
@@ -512,10 +489,8 @@ class NamesTweak_Spells(ANamesTweak_Spells,_AMultiTweakItem_Names):
         self._patchLog(log, count)
 
 class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['SPEL']
 
+    #--Config Phase -----------------------------------------------------------
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
         super(CBash_NamesTweak_Spells, self).save_tweak_config(configs)
@@ -557,6 +532,8 @@ class CBash_NamesTweak_Spells(ANamesTweak_Spells,CBash_MultiTweakItem):
 #------------------------------------------------------------------------------
 class ANamesTweak_Weapons(AMultiTweakItem):
     """Names tweaker for weapons and ammo."""
+    tweak_read_classes = 'AMMO','WEAP',
+
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
         super(ANamesTweak_Weapons, self).__init__(_(u"Weapons"),
@@ -575,15 +552,8 @@ class ANamesTweak_Weapons(AMultiTweakItem):
         self.logMsg = u'* '+_(u'Items Renamed') + u': %d'
 
 class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
+
     #--Patch Phase ------------------------------------------------------------
-    def getReadClasses(self):
-        """Returns load factory classes needed for reading."""
-        return 'AMMO','WEAP',
-
-    def getWriteClasses(self):
-        """Returns load factory classes needed for writing."""
-        return 'AMMO','WEAP',
-
     def scanModFile(self,modFile,progress,patchFile):
         mapper = modFile.getLongMapper()
         for blockType in ('AMMO','WEAP'):
@@ -625,10 +595,8 @@ class NamesTweak_Weapons(ANamesTweak_Weapons,_AMultiTweakItem_Names):
         self._patchLog(log, count)
 
 class CBash_NamesTweak_Weapons(ANamesTweak_Weapons,CBash_MultiTweakItem):
-    #--Config Phase -----------------------------------------------------------
-    def getTypes(self):
-        return ['AMMO','WEAP']
 
+    #--Config Phase -----------------------------------------------------------
     def save_tweak_config(self, configs):
         """Save config to configs dictionary."""
         super(CBash_NamesTweak_Weapons, self).save_tweak_config(configs)
