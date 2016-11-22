@@ -2983,6 +2983,17 @@ class ScreensList(balt.UIList):
     itemMenu = Links() #--Single item menu
     _shellUI = True
     _editLabels = True
+    __ext_group = \
+        u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
+    def _order_by_number(self, items):
+        if self.sort != 'File': return
+        regex = re.compile(u'(.*?)(\d*)' + self.__ext_group + u'$')
+        keys = {k: regex.match(k.s) for k in items}
+        keys = {k: (v.groups()[0].lower(), int(v.groups()[1] or 0)) for k, v in
+                keys.iteritems()}
+        items.sort(key=keys.__getitem__,
+                   reverse=self.colReverse.get('File', False))
+
     _sort_keys = {'File'    : None,
                   'Modified': lambda self, a: self.data_store[a][1],
                  }
@@ -2991,6 +3002,7 @@ class ScreensList(balt.UIList):
         ('File',     lambda self, p: p.s),
         # ('Modified', lambda self, path: formatDate(self.data_store[path][1])), # unused
     ])
+    _extra_sortings = [_order_by_number]
 
     #--Events ---------------------------------------------
     def OnDClick(self,event):
@@ -2998,14 +3010,11 @@ class ScreensList(balt.UIList):
         hitItem = self._getItemClicked(event)
         if not hitItem: return
         self.OpenSelected(selected=[hitItem])
-
-    __ext_group = \
-        u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
     def OnLabelEdited(self, event):
         """Rename selected screenshots."""
         root, _newName, numStr = self.validate_filename(event, has_digits=True,
                                                         ext=self.__ext_group)
-        if not root: return
+        if not (root or numStr): return # allow for number only names
         selected = self.GetSelected()
         #--Rename each screenshot, keeping the old extension
         num = int(numStr or  0)

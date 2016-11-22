@@ -2169,11 +2169,12 @@ class UIList(wx.Panel):
                 regex += ext + u'$'
                 rePattern = re.compile(regex, re.I | re.U)
                 maPattern = rePattern.match(newName)
-        if not maPattern:
+        if maPattern:
+            num_str = maPattern.groups()[1] if has_digits else None
+        if not maPattern or not (maPattern.groups()[0] or num_str):
             showError(self, msg)
             if event: event.Veto()
             return None, None, None
-        num_str = maPattern.groups()[1] if has_digits else None
         return maPattern.groups()[0], GPath(newName), num_str
 
     @conversation
