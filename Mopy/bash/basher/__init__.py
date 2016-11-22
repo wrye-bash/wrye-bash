@@ -189,7 +189,6 @@ class _DetailsViewMixin(NotebookPanel):
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
-    _sashGravity = 1.0
 
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
@@ -201,7 +200,6 @@ class SashPanel(NotebookPanel):
         else:
             splitter.SplitHorizontally(self.left, self.right)
         self.isVertical = isVertical
-        splitter.SetSashGravity(self._sashGravity)
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
@@ -274,6 +272,8 @@ class SashUIListPanel(SashPanel):
 
 class BashTab(_DetailsViewMixin, SashUIListPanel):
     _details_panel_type = None # type: type
+    defaultSashPos = 512
+    minimumSize = 256
 
     def __init__(self, parent, isVertical=True):
         super(BashTab, self).__init__(parent, isVertical)
@@ -2460,8 +2460,9 @@ class InstallersList(balt.UIList):
 #------------------------------------------------------------------------------
 class InstallersDetails(_DetailsMixin, SashPanel):
     keyPrefix = 'bash.installers.details'
-    defaultSashPos = - 128 # negative so it sets bottom panel's (comments) size
+    defaultSashPos = - 32 # negative so it sets bottom panel's (comments) size
     defaultSubSashPos = 0
+    minimumSize = 32 # so comments dont take too much space
 
     @property
     def displayed_item(self): return self._displayed_installer
