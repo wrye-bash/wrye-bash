@@ -542,7 +542,7 @@ def _wxSelectGame(ret, msgtext):
                                         wx.TE_BESTWRAP),
                       1, wx.GROW | wx.ALL, 5)
             for gameName in gameNames:
-                gameName = gameName[0].upper() + gameName[1:]
+                gameName = gameName.title()
                 sizer.Add(wx.Button(panel, label=gameName), 0,
                           wx.GROW | wx.ALL ^ wx.TOP, 5)
             button = wx.Button(panel, wx.ID_CANCEL, _(u'Quit'))
@@ -601,7 +601,7 @@ def _tinkerSelectGame(ret, msgtext):
     retCode = _AppReturnCode()
 
     for gameName in ret:
-        text = gameName[0].upper() + gameName[1:]
+        text = gameName.title()
         command = OnClick(gameName, retCode.set).on_click
         button = Tkinter.Button(frame, text=text, command=command, pady=15,
                                 borderwidth=5, relief=Tkinter.GROOVE)
