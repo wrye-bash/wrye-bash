@@ -68,10 +68,10 @@ def cmdBackup():
     global basher, balt, barb
     if not basher: import basher, balt, barb
     path = None
-    quit = opts.backup and opts.quietquit
+    should_quit = opts.backup and opts.quietquit
     if opts.backup: path = GPath(opts.filename)
     if barb.BackupSettings.PromptMismatch() or opts.backup:
-        backup = barb.BackupSettings(balt.Link.Frame, path, quit,
+        backup = barb.BackupSettings(balt.Link.Frame, path, should_quit,
                                      opts.backup_images)
         try:
             backup.Apply()
@@ -84,7 +84,7 @@ def cmdBackup():
             if not backup.SameAppVersion() and not backup.PromptContinue():
                 return False
         del backup
-    return quit
+    return should_quit
 
 def cmdRestore():
     # restore settings on user request
@@ -92,17 +92,17 @@ def cmdRestore():
     if not basher: import basher, balt, barb
     backup = None
     path = None
-    quit = opts.restore and opts.quietquit
+    should_quit = opts.restore and opts.quietquit
     if opts.restore: path = GPath(opts.filename)
     if opts.restore:
         try:
-            backup = barb.RestoreSettings(balt.Link.Frame, path, quit,
+            backup = barb.RestoreSettings(balt.Link.Frame, path, should_quit,
                                           opts.backup_images)
             backup.Apply()
         except barb.BackupCancelled:
             pass
     del backup
-    return quit
+    return should_quit
 
 #------------------------------------------------------------------------------
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
@@ -171,7 +171,7 @@ def oneInstanceChecker():
 
     return True
 
-def exit():
+def exit_cleanup():
     try:
         os.close(lockfd)
         os.remove(pidpath.s)
@@ -336,6 +336,7 @@ def main():
                 # No good with wxPython, use Tkinter instead ##: what use ?
                 retCode = _tinkerSelectGame(ret, msgtext)
             if retCode is None:
+                print u"No games were found or Selected. Aborting."
                 return
         # Add the game to the command line, so we use it if we restart
         sys.argv += ['-g', retCode]
@@ -386,7 +387,7 @@ def main():
         return # not actually needed as _showErrorInGui will re-raise e
 
     if not oneInstanceChecker(): return
-    atexit.register(exit)
+    atexit.register(exit_cleanup)
     basher.InitSettings()
     basher.InitLinks()
     basher.InitImages()
@@ -408,9 +409,9 @@ def main():
 
     # process backup/restore options
     # quit if either is true, but only after calling both
-    quit_ = cmdBackup()
-    quit_ = cmdRestore() or quit_
-    if quit_: return
+    should_quit = cmdBackup()
+    should_quit = cmdRestore() or should_quit
+    if should_quit: return
 
     if env.isUAC:
         uacRestart = False
