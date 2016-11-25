@@ -190,5 +190,4 @@ class INI_CreateNew(OneItemLink):
             defaultDir=bass.dirs['tweaks'], defaultFile=fileName,
             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
         if bosh.iniInfos.duplicate_ini(pathFrom, tweak_path):
-            self.window.RefreshUI()
-            self.window.SelectAndShowItem(tweak_path.tail)
+            self.window.RefreshUI(detail_item=tweak_path.tail)

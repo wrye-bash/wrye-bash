@@ -143,9 +143,8 @@ class Mod_CreateDummyMasters(OneItemLink):
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
         bosh.modInfos.refresh(refresh_infos=False)
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refreshSaves=True, detail_item=to_select[-1])
         self.window.SelectItemsNoCallback(to_select)
-        self.window.SelectAndShowItem(to_select[-1])
 
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
@@ -1454,9 +1453,9 @@ class Mod_CopyToEsmp(EnabledLink):
         if added:
             if save_lo: modInfos.cached_lo_save_lo()
             modInfos.refresh(refresh_infos=False)
-            self.window.RefreshUI(refreshSaves=True) # just in case
+            self.window.RefreshUI(refreshSaves=True, # just in case
+                                  detail_item=added[-1])
             self.window.SelectItemsNoCallback(added)
-            self.window.SelectAndShowItem(added[-1])
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):

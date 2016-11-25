@@ -173,10 +173,9 @@ class Saves_Profiles(ChoiceLink):
                 bosh.saveInfos.setLocalSave(newSaves, refreshSaveInfos=False)
                 bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
                 Link.Frame.SetTitle()
-                self.window.panel.ClearDetails()
-                self.window.DeleteAll() # let call below repopulate
                 bosh.saveInfos.refresh()
-                self.window.RefreshUI()
+                self.window.DeleteAll() # let call below repopulate
+                self.window.RefreshUI(detail_item=None)
                 self.window.panel.ShowPanel()
                 Link.Frame.warn_corrupted(warn_mods=False, warn_strings=False)
 
