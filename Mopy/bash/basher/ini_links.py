@@ -182,6 +182,7 @@ class INI_CreateNew(OneItemLink):
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
                               bosh.iniInfos[self.selected[0]].tweak_status >= 0
 
+    @balt.conversation
     def Execute(self):
         """Handle creating a new INI tweak."""
         pathFrom = self._selected_item
@@ -190,22 +191,6 @@ class INI_CreateNew(OneItemLink):
             title=_(u'Copy Tweak with current settings...'),
             defaultDir=bass.dirs['tweaks'], defaultFile=fileName,
             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
-        if not tweak_path: return
-        self._selected_info.getPath().copyTo(tweak_path)
-        # Now edit it with the values from the target INI
-        bosh.iniInfos.refresh()
-        oldTarget = self.window.data_store.ini
-        target = bosh.iniInfos[tweak_path.tail].ini_info_file
-        settings = copy.copy(target.getSettings())
-        new_settings = oldTarget.getSettings()
-        for section in settings:
-            if section in new_settings:
-                for setting in settings[section]:
-                    if setting in new_settings[section]:
-                        settings[section][setting] = new_settings[section][
-                            setting]
-        for k,v in settings.items(): # drop line numbers
-            settings[k] = dict((sett, val[0]) for sett, val in v.iteritems())
-        target.saveSettings(settings)
-        self.window.RefreshUI()
-        self.window.SelectAndShowItem(tweak_path.tail)
+        if bosh.iniInfos.duplicate_ini(pathFrom, tweak_path):
+            self.window.RefreshUI()
+            self.window.SelectAndShowItem(tweak_path.tail)

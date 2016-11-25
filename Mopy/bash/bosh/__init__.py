@@ -3423,6 +3423,29 @@ class INIInfos(FileInfos):
             info.getPath().start()
             return False
 
+    def duplicate_ini(self, tweak, new_tweak):
+        """Duplicate tweak into new_tweak, copying current target settings"""
+        if not new_tweak: return False
+        info = self[tweak] # type: INIInfo
+        with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
+            ini_file.write('\n'.join(info.ini_info_file.read_ini_lines()))
+        self[new_tweak.tail] = self.factory(self.store_dir, new_tweak)
+        # Now edit it with the values from the target INI
+        new_ini_file = self[new_tweak.tail].ini_info_file
+        new_tweak_settings = copy.copy(new_ini_file.getSettings())
+        target_settings = self.ini.getSettings()
+        for section in new_tweak_settings:
+            if section in target_settings:
+                for setting in new_tweak_settings[section]:
+                    if setting in target_settings[section]:
+                        new_tweak_settings[section][setting] = \
+                            target_settings[section][setting]
+        for k,v in new_tweak_settings.items(): # drop line numbers
+            new_tweak_settings[k] = dict(
+                (sett, val[0]) for sett, val in v.iteritems())
+        new_ini_file.saveSettings(new_tweak_settings)
+        return True
+
 def _lo_cache(lord_func):
     """Decorator to make sure I sync modInfos cache with load_order cache
     whenever I change (or attempt to change) the latter."""
