@@ -1343,11 +1343,11 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     functionality, you can provide callbacks for, or override the following functions:
     OnDropFiles(self, x, y, filenames) - called when files are dropped in the list control
     OnDropIndexes(self,indexes,newPos) - called to move the specified indexes to new starting position 'newPos'
-    dndAllow(self) - return true to allow dnd, false otherwise
+    You must provide a callback for fnDndAllow(self, event) - return true to
+    allow dnd, false otherwise
 
     OnDropFiles callback:   fnDropFiles
     OnDropIndexes callback: fnDropIndexes
-    dndAllow callback:      fnDndAllow
     """
     class DropFileOrList(wx.DropTarget):
 
@@ -1377,9 +1377,9 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
             self.window.OnDragging(x,y,dragResult)
             return wx.DropTarget.OnDragOver(self,x,y,dragResult)
 
-    def __init__(self, parent, pos=defPos, size=defSize, style=0,
-                 dndFiles=False, dndList=False, dndOnlyMoveContinuousGroup=True,
-                 fnDropFiles=None, fnDropIndexes=None, fnDndAllow=None):
+    def __init__(self, parent, fnDndAllow, pos=defPos, size=defSize, style=0,
+                 dndFiles=False, dndList=False, fnDropFiles=None,
+                 fnDropIndexes=None, dndOnlyMoveContinuousGroup=True):
         wx.ListCtrl.__init__(self, parent, pos=pos, size=size, style=style)
         ListCtrlAutoWidthMixin.__init__(self)
         if dndFiles or dndList:
@@ -1390,7 +1390,6 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
         self.fnDropFiles = fnDropFiles
         self.fnDropIndexes = fnDropIndexes
         self.fnDndAllow = fnDndAllow
-        self.doDnD = True
         #--Item/Id mapping
         self._item_itemId = {}
         """:type : dict[bolt.Path | basestring | int, long]"""
@@ -1421,7 +1420,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
                 self.ScrollLines(1)
 
     def OnBeginDrag(self, event):
-        if not self.dndAllow(): return
+        if not self.fnDndAllow(event): return
 
         indexes = []
         start = stop = -1
@@ -1502,9 +1501,6 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     def OnDropIndexes(self, indexes, newPos):
         if self.fnDropIndexes:
             wx.CallLater(10,self.fnDropIndexes,indexes,newPos)
-
-    def dndAllow(self):
-        return self.doDnD and (not self.fnDndAllow or self.fnDndAllow())
 
     # API (alpha) -------------------------------------------------------------
 
@@ -1619,10 +1615,10 @@ class UIList(wx.Panel):
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
         if self.__class__._sunkenBorder: ctrlStyle |= wx.SUNKEN_BORDER
         if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
-        self.__gList = ListCtrl(self, style=ctrlStyle,
+        self.__gList = ListCtrl(self, self.dndAllow,
+                                style=ctrlStyle,
                                 dndFiles=self.__class__._dndFiles,
                                 dndList=self.__class__._dndList,
-                                fnDndAllow=self.dndAllow,
                                 fnDropFiles=self.OnDropFiles,
                                 fnDropIndexes=self.OnDropIndexes)
         if self.icons:
@@ -2115,9 +2111,10 @@ class UIList(wx.Panel):
             listCtrl.DeleteColumn(numCols)
 
     #--Drag and Drop-----------------------------------------------------------
-    def dndAllow(self):
-        # Only allow drag an drop when sorting by the columns specified in dndColumns
-        return self.sort_column in self._dndColumns
+    @conversation
+    def dndAllow(self, event): # Disallow drag an drop by default
+        if event: event.Veto()
+        return False
 
     def OnDropFiles(self, x, y, filenames): raise AbstractError
     def OnDropIndexes(self, indexes, newPos): raise AbstractError

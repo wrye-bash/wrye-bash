@@ -803,6 +803,23 @@ class ModList(_ModsUIList):
     def OnDropIndexes(self, indexes, newIndex):
         if self._dropIndexes(indexes, newIndex): self._refreshOnDrop()
 
+    def dndAllow(self, event):
+        msg = u''
+        continue_key = 'bash.mods.dnd.column.continue'
+        if not self.sort_column in self._dndColumns:
+            msg = _(u'Reordering mods is only allowed when they are sorted '
+                    u'by Load Order.')
+        else:
+            pinned = load_order.filter_pinned(self.GetSelected())
+            if pinned:
+                msg = _(u"You can't reorder the following mods:\n" +
+                        u', '.join(map(unicode, pinned)))
+                continue_key = 'bash.mods.dnd.pinned.continue'
+        if msg:
+            balt.askContinue(self, msg, continue_key)
+            return super(ModList, self).dndAllow(event) # disallow
+        return True
+
     @balt.conversation
     def _refreshOnDrop(self):
         #--Save and Refresh
@@ -917,8 +934,8 @@ class ModList(_ModsUIList):
     def OnChar(self,event):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
         code = event.GetKeyCode()
-        if ((event.CmdDown() and code in balt.wxArrows) and
-            (self.sort_column in self._dndColumns)):
+        if event.CmdDown() and code in balt.wxArrows:
+            if not self.dndAllow(event=None): return
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
             previous = -1
@@ -2345,6 +2362,14 @@ class InstallersList(balt.UIList):
                 pass
         self.panel.frameActivated = True
         self.panel.ShowPanel()
+
+    def dndAllow(self, event):
+        if not self.sort_column in self._dndColumns:
+            msg = _(u"Drag and drop in the Installer's list is only allowed "
+                    u"when the list is sorted by install order")
+            balt.askContinue(self, msg, 'bash.installers.dnd.column.continue')
+            return super(InstallersList, self).dndAllow(event) # disallow
+        return True
 
     def OnChar(self,event):
         """Char event: Reorder."""

@@ -199,6 +199,9 @@ def get_ordered(mod_names):
     mod_names.sort(key=loIndexCachedOrMax)
     return mod_names
 
+def filter_pinned(imods):
+    return filter(lambda x: x == game_handle.master_path, imods)
+
 # Get and set API
 def save_lo(lord, acti=None, __index_move=0):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
