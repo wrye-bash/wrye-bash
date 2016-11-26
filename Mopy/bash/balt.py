@@ -575,21 +575,21 @@ def askContinue(parent, message, continueKey, title=_(u'Warning')):
     #--ContinueKey set?
     if _settings.get(continueKey): return wx.ID_OK
     #--Generate/show dialog
+    checkBoxTxt = _(u"Don't show this in the future.")
     if canVista:
         result = vistaDialog(parent,
                              title=title,
                              message=message,
                              buttons=[(wx.ID_OK, 'ok'),
                                       (wx.ID_CANCEL, 'cancel')],
-                             checkBoxTxt=_(u"Don't show this in the future."),
+                             checkBoxTxt=checkBoxTxt,
                              icon='warning',
                              heading=u'',
                              )
         check = result[1]
         result = result[0]
     else:
-        result, check = _continueDialog(parent, message, title,
-                                        _(u"Don't show this in the future."))
+        result, check = _continueDialog(parent, message, title, checkBoxTxt)
     if check:
         _settings[continueKey] = 1
     return result in (wx.ID_OK,wx.ID_YES)
@@ -598,21 +598,21 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     """Shows a modal continue query  Returns True to continue.
     Also provides checkbox "Don't show this in for rest of operation."."""
     #--Generate/show dialog
+    checkBoxTxt = _(u"Don't show this for the rest of operation.")
     if canVista:
         buttons=[(wx.ID_OK, 'ok'), (wx.ID_CANCEL, 'cancel')]
         result = vistaDialog(parent,
                              title=title,
                              message=message,
                              buttons=buttons,
-                             checkBoxTxt=_(u"Don't show this for the rest of operation."),
+                             checkBoxTxt=checkBoxTxt,
                              icon='warning',
                              heading=u'',
                              )
         check = result[1]
         result = result[0]
     else:
-        result, check = _continueDialog(parent, message, title, _(
-            u"Don't show this for rest of operation."))
+        result, check = _continueDialog(parent, message, title, checkBoxTxt)
     if result in (wx.ID_OK, wx.ID_YES):
         if check:
             return 2
@@ -1681,10 +1681,10 @@ class UIList(wx.Panel):
     def autoColWidths(self, val): _settings['bash.autoSizeListColumns'] = val
     # the current sort column
     @property
-    def sort(self):
+    def sort_column(self):
         return _settings.get(self.keyPrefix + '.sort', self._default_sort_col)
-    @sort.setter
-    def sort(self, val): _settings[self.keyPrefix + '.sort'] = val
+    @sort_column.setter
+    def sort_column(self, val): _settings[self.keyPrefix + '.sort'] = val
 
     def OnItemSelected(self, event):
         modName = self.GetItem(event.m_itemIndex)
@@ -2030,7 +2030,7 @@ class UIList(wx.Panel):
              last sort was on same sort variable -- in which case,
              reverse the sort order.
         """
-        curColumn = self.sort
+        curColumn = self.sort_column
         column = column or curColumn
         curReverse = self.colReverse.get(column, False)
         if column in self.nonReversibleCols: #--Disallow reverse for load
@@ -2040,7 +2040,7 @@ class UIList(wx.Panel):
         elif reverse in {'INVERT','CURRENT'}:
             reverse = curReverse
         #--Done
-        self.sort = column
+        self.sort_column = column
         self.colReverse[column] = reverse
         return column, reverse, curColumn
 
@@ -2122,7 +2122,7 @@ class UIList(wx.Panel):
     #--Drag and Drop-----------------------------------------------------------
     def dndAllow(self):
         # Only allow drag an drop when sorting by the columns specified in dndColumns
-        return self.sort in self._dndColumns
+        return self.sort_column in self._dndColumns
 
     def OnDropFiles(self, x, y, filenames): raise AbstractError
     def OnDropIndexes(self, indexes, newPos): raise AbstractError

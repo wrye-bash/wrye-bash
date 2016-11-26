@@ -44,7 +44,7 @@ class Files_SortBy(RadioLink):
         self.text = bass.settings['bash.colNames'][sortCol]
         self.help = _(u'Sort by %s') % self.text
 
-    def _check(self): return self.window.sort == self.sortCol
+    def _check(self): return self.window.sort_column == self.sortCol
 
     def Execute(self): self.window.SortItems(self.sortCol, 'INVERT')
 

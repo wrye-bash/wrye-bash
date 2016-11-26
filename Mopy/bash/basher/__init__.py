@@ -288,7 +288,7 @@ class _ModsUIList(balt.UIList):
     _esmsFirstCols = balt.UIList.nonReversibleCols
     @property
     def esmsFirst(self): return settings.get(self.keyPrefix + '.esmsFirst',
-                            True) or self.sort in self._esmsFirstCols
+                            True) or self.sort_column in self._esmsFirstCols
     @esmsFirst.setter
     def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
 
@@ -308,7 +308,8 @@ class _ModsUIList(balt.UIList):
             items.sort(key=lambda x: x not in set(load_order.activeCached()
                 ) | bosh.modInfos.imported | bosh.modInfos.merged)
 
-    def forceEsmFirst(self): return self.sort in _ModsUIList._esmsFirstCols
+    def forceEsmFirst(self):
+        return self.sort_column in _ModsUIList._esmsFirstCols
 
 #------------------------------------------------------------------------------
 class MasterList(_ModsUIList):
@@ -917,7 +918,7 @@ class ModList(_ModsUIList):
         """Char event: Reorder (Ctrl+Up and Ctrl+Down)."""
         code = event.GetKeyCode()
         if ((event.CmdDown() and code in balt.wxArrows) and
-            (self.sort in self._dndColumns)):
+            (self.sort_column in self._dndColumns)):
             # Calculate continuous chunks of indexes
             chunk, chunks, indexes = 0, [[]], self.GetSelectedIndexes()
             previous = -1
@@ -2209,7 +2210,7 @@ class InstallersList(balt.UIList):
     #--Drag and Drop-----------------------------------------------------------
     def OnDropIndexes(self, indexes, newPos):
         # See if the column is reverse sorted first
-        column = self.sort
+        column = self.sort_column
         reverse = self.colReverse.get(column,False)
         if reverse:
             newPos = self.item_count - newPos - 1 - (indexes[-1] - indexes[0])
@@ -2987,7 +2988,7 @@ class ScreensList(balt.UIList):
     __ext_group = \
         u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
     def _order_by_number(self, items):
-        if self.sort != 'File': return
+        if self.sort_column != 'File': return
         regex = re.compile(u'(.*?)(\d*)' + self.__ext_group + u'$')
         keys = {k: regex.match(k.s) for k in items}
         keys = {k: (v.groups()[0].lower(), int(v.groups()[1] or 0)) for k, v in
