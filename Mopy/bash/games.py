@@ -203,6 +203,9 @@ class Game(object):
                                      previous_lord)
         return lord, active # return what was set or was previously set
 
+    @property
+    def pinned_mods(self): return {self.master_path}
+
     # Conflicts - only for timestamp games
     def has_load_order_conflict(self, mod_name): return False
     def has_load_order_conflict_active(self, mod_name, active): return False
@@ -736,6 +739,9 @@ class SkyrimSE(AsteriskGame):
     remove_from_plugins_txt = {bolt.GPath(u'Skyrim.esm')} | set(
         must_be_active_if_present)
 
+    @property
+    def pinned_mods(self): return self.remove_from_plugins_txt
+
     def _order_fixed(self, lord):
         lo = [x for x in lord if x not in self.remove_from_plugins_txt]
         add = self.__fixed_order_plugins()
@@ -752,21 +758,26 @@ class SkyrimSE(AsteriskGame):
         active = [x for x in active if x not in self.remove_from_plugins_txt]
         return add + lo, add + active
 
+    __dlc_spacing = 60 # in seconds
     def __fixed_order_plugins(self):
         """Return the semi fixed plugins in their buggy timestamp load order"""
         # get existing
-        add = [x for x in self.remove_from_plugins_txt if x in self.mod_infos]
-        # sort in mtime
-        add.sort(key=lambda x: self.mod_infos[x].mtime)
-        # master is first, should always be in add
-        if self.master_path in add:
-            add.remove(self.master_path)
-            add.insert(0, self.master_path)
-        # special case, Update.esm always loads second
+        add = [self.master_path]
+        add.extend(
+            x for x in self.must_be_active_if_present if x in self.mod_infos)
+        # rewrite mtimes
+        master_mtime = self.mod_infos[self.master_path].mtime
         update = bolt.GPath(u'Update.esm')
-        if update in add:
-            add.remove(update)
-            add.insert(1, update)
+        for dlc in add[1:]:
+            if dlc == update:
+                master_mtime = self.mod_infos[update].mtime
+            else:
+                master_mtime += self.__dlc_spacing
+                dlc_mtime = self.mod_infos[dlc].mtime
+                if dlc_mtime != master_mtime:
+                    self.mod_infos[dlc].setmtime(master_mtime)
+                    bolt.deprint(u'Restamped %s  from %s to %s' % (dlc,
+                    bolt.formatDate(dlc_mtime), bolt.formatDate(master_mtime)))
         return add
 
 # Game factory
