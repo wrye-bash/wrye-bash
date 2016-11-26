@@ -1653,8 +1653,8 @@ class UIList(wx.Panel):
         self.mouseTextPrev = u''
         self.__gList.Bind(wx.EVT_MOTION, self.OnMouse)
         self.__gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        # Panel callbacks
-        self.Bind(wx.EVT_SIZE,self.OnSize)
+        # Sizer
+        self.SetSizer(vSizer((self.__gList, 1, wx.EXPAND)))
         # Columns
         self.PopulateColumns()
         #--Items
@@ -1828,12 +1828,7 @@ class UIList(wx.Panel):
         if not self.itemMenu: return
         self.itemMenu.PopupMenu(self,Link.Frame,selected)
 
-    #-- Callbacks -------------------------------------------------------------
-    def OnSize(self, event):
-        """Panel size was changed. Change gList size to match."""
-        size = tuple(self.GetClientSize())
-        self.__gList.SetSize(size)
-
+    #--Callbacks --------------------------------------------------------------
     def OnMouse(self,event):
         """Handle mouse entered item by showing tip or similar."""
         if event.Moving():
