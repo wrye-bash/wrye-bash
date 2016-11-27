@@ -2301,7 +2301,7 @@ class Link(object):
     """
     Frame = None   # BashFrame singleton, set once and for all in BashFrame()
     Popup = None   # Current popup menu, set in Links.PopupMenu()
-    text = u''     # Menu label (may depend on UI state when the menu is shown)
+    _text = u''    # Menu label (may depend on UI state when the menu is shown)
 
     def __init__(self, _text=None):
         """Assign a wx Id.
@@ -2311,7 +2311,7 @@ class Link(object):
         """
         super(Link, self).__init__()
         self._id = wx.NewId() # register wx callbacks in AppendToMenu overrides
-        self.text = _text or self.__class__.text # menu label
+        self._text = _text or self.__class__._text # menu label
 
     def _initData(self, window, selection):
         """Initialize the Link instance data based on UI state when the
@@ -2346,7 +2346,7 @@ class Link(object):
         return showWarning(self.window, message, title=title, **kwdargs)
 
     def _askYes(self, message, title=u'', default=True, questionIcon=False):
-        if not title: title = self.text
+        if not title: title = self._text
         return askYes(self.window, message, title=title, default=default,
                       questionIcon=questionIcon)
 
@@ -2360,18 +2360,18 @@ class Link(object):
                        mustExist=mustExist)
 
     def _askOk(self, message, title=u''):
-        if not title: title = self.text
+        if not title: title = self._text
         return askOk(self.window, message, title)
 
     def _showOk(self, message, title=u'', **kwdargs):
-        if not title: title = self.text
+        if not title: title = self._text
         return showOk(self.window, message, title, **kwdargs)
 
     def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
         return askWarning(self.window, message, title, **kwdargs)
 
     def _askText(self, message, title=u'', default=u'', strip=True):
-        if not title: title = self.text
+        if not title: title = self._text
         return askText(self.window, message, title=title, default=default,
                        strip=strip)
 
@@ -2426,7 +2426,7 @@ class ItemLink(Link):
         super(ItemLink, self).AppendToMenu(menu, window, selection)
         Link.Frame.Bind(wx.EVT_MENU, self.__Execute, id=self._id)
         Link.Frame.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
-        menuItem = wx.MenuItem(menu, self._id, self.text, self.help or u'',
+        menuItem = wx.MenuItem(menu, self._id, self._text, self.help or u'',
                                self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
@@ -2455,7 +2455,7 @@ class MenuLink(Link):
     def __init__(self, name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
         super(MenuLink, self).__init__()
-        self.text = name or self.__class__.text
+        self.text = name or self.__class__._text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
@@ -2587,7 +2587,7 @@ class RadioLink(CheckLink):
 
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
-    text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
+    _text, key, help = u'LINK TEXT', 'link.key', u'' # Override text and key !
     opposite = False
 
     def _check(self):
@@ -2599,7 +2599,7 @@ class BoolLink(CheckLink):
 # UIList Links ----------------------------------------------------------------
 class UIList_Delete(ItemLink):
     """Delete selected item(s) from UIList."""
-    text = _(u'Delete')
+    _text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
     def Execute(self):
@@ -2608,13 +2608,13 @@ class UIList_Delete(ItemLink):
 
 class UIList_Rename(ItemLink):
     """Rename selected UIList item(s)."""
-    text = _(u'Rename...')
+    _text = _(u'Rename...')
 
     def Execute(self): self.window.Rename(selected=self.selected)
 
 class UIList_OpenItems(ItemLink):
     """Open specified file(s)."""
-    text = _(u'Open...')
+    _text = _(u'Open...')
 
     @property
     def help(self):
@@ -2626,7 +2626,7 @@ class UIList_OpenItems(ItemLink):
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
-    text = _(u'Open...')
+    _text = _(u'Open...')
 
     def _initData(self, window, selection):
         super(UIList_OpenStore, self)._initData(window, selection)
@@ -2636,7 +2636,7 @@ class UIList_OpenStore(ItemLink):
 
 class UIList_Hide(ItemLink):
     """Hide the file (move it to the data store's Hidden directory)."""
-    text = _(u'Hide')
+    _text = _(u'Hide')
 
     def _initData(self, window, selection):
         super(UIList_Hide, self)._initData(window, selection)

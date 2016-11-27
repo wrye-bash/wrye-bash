@@ -40,7 +40,7 @@ __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
 #------------------------------------------------------------------------------
 class Screens_NextScreenShot(EnabledLink):
     """Sets screenshot base name and number."""
-    text = _(u'Next Shot...')
+    _text = _(u'Next Shot...')
     rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
 
     def _enable(self): return bosh.oblivionIni.abs_path.exists()
@@ -88,7 +88,7 @@ class Screen_ConvertTo(EnabledLink):
         super(Screen_ConvertTo, self).__init__()
         self.ext = ext.lower()
         self.imageType = imageType
-        self.text = _(u'Convert to %s') % self.ext
+        self._text = _(u'Convert to %s') % self.ext
 
     def _enable(self):
         self.convertable = [s for s in self.selected if
@@ -121,7 +121,7 @@ class Screen_JpgQuality(RadioLink):
     def __init__(self, quality):
         super(Screen_JpgQuality, self).__init__()
         self.quality = quality
-        self.text = u'%i' % self.quality
+        self._text = u'%i' % self.quality
 
     def _check(self):
         return self.quality == bass.settings['bash.screens.jpgQuality']
@@ -135,7 +135,7 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
     def __init__(self):
         super(Screen_JpgQualityCustom, self).__init__(
             bass.settings['bash.screens.jpgCustomQuality'])
-        self.text = _(u'Custom [%i]') % self.quality
+        self._text = _(u'Custom [%i]') % self.quality
 
     def Execute(self):
         quality = self._askNumber(_(u'JPEG Quality'), value=self.quality,
@@ -143,7 +143,7 @@ class Screen_JpgQualityCustom(Screen_JpgQuality):
         if quality is None: return
         self.quality = quality
         bass.settings['bash.screens.jpgCustomQuality'] = self.quality
-        self.text = _(u'Custom [%i]') % quality
+        self._text = _(u'Custom [%i]') % quality
         super(Screen_JpgQualityCustom, self).Execute()
 
 #------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ class Screen_Rename(UIList_Rename):
 class People_AddNew(ItemLink, People_Link):
     """Add a new record."""
     dialogTitle = _(u'Add New Person')
-    text = _(u'Add...')
+    _text = _(u'Add...')
     help = _(u'Add a new record')
 
     def Execute(self):
@@ -173,7 +173,7 @@ class People_AddNew(ItemLink, People_Link):
 class People_Export(ItemLink, People_Link):
     """Export people to text archive."""
     dialogTitle = _(u"Export People")
-    text = _(u'Export...')
+    _text = _(u'Export...')
     help = _(u'Export people to text archive')
 
     def Execute(self):
@@ -192,7 +192,7 @@ class People_Export(ItemLink, People_Link):
 class People_Import(ItemLink, People_Link):
     """Import people from text archive."""
     dialogTitle = _(u"Import People")
-    text = _(u'Import...')
+    _text = _(u'Import...')
     help = _(u'Import people from text archive')
 
     def Execute(self):
@@ -211,12 +211,12 @@ class People_Import(ItemLink, People_Link):
 #------------------------------------------------------------------------------
 class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
     """Add Karma setting links."""
-    text = _(u'Karma')
+    _text = _(u'Karma')
     karma_labels = [u'%+d' % x for x in xrange(5, -6, -1)]
 
     class _Karma(ItemLink, People_Link):
         def Execute(self):
-            karma = int(self.text)
+            karma = int(self._text)
             for item in self.selected:
                 text = self.pdata[item][2]
                 self.pdata[item] = (time.time(), karma, text)
@@ -231,14 +231,14 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
 # Masters Links ---------------------------------------------------------------
 #------------------------------------------------------------------------------
 class Master_AllowEdit(CheckLink, EnabledLink):
-    text, help = _(u'Allow edit'), _(u'Allow editing the masters list')
+    _text, help = _(u'Allow edit'), _(u'Allow editing the masters list')
 
     def _enable(self): return self.window.panel.detailsPanel.allowDetailsEdit
     def _check(self): return self.window.allowEdit
     def Execute(self): self.window.allowEdit ^= True
 
 class Master_ClearRenames(ItemLink):
-    text = _(u'Clear Renames')
+    _text = _(u'Clear Renames')
     help = _(u'Clear internal Bash renames dictionary')
 
     def Execute(self):
@@ -257,7 +257,7 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""
-    text = _(u"Change to...")
+    _text = _(u"Change to...")
     help = _(u"Rename/replace master through file dialog")
 
     @balt.conversation
@@ -288,7 +288,7 @@ class Master_ChangeTo(_Master_EditList):
 #------------------------------------------------------------------------------
 class Master_Disable(AppendableLink, _Master_EditList):
     """Rename/replace master through file dialog."""
-    text = _(u"Disable")
+    _text = _(u"Disable")
     help = _(u"Disable master")
 
     def _append(self, window): return not window.fileInfo.isMod() #--Saves only
@@ -307,9 +307,9 @@ class _Column(CheckLink, EnabledLink):
     def __init__(self, _text='COLKEY'): # not really the link text in this case
         super(_Column, self).__init__()
         self.colName = _text
-        self.text = bass.settings['bash.colNames'][self.colName]
+        self._text = bass.settings['bash.colNames'][self.colName]
         self.help = _(u"Show/Hide '%(colname)s' column.") % {
-            'colname': self.text}
+            'colname': self._text}
 
     def _enable(self):
         return self.colName not in self.window.persistent_columns
@@ -330,7 +330,7 @@ class _Column(CheckLink, EnabledLink):
 
 class ColumnsMenu(ChoiceLink, MenuLink):
     """Customize visible columns."""
-    text = _(u"Columns")
+    _text = _(u"Columns")
     # extraItems
     class _AutoWidth(RadioLink):
         wxFlag = 0
@@ -339,15 +339,15 @@ class ColumnsMenu(ChoiceLink, MenuLink):
             self.window.autoColWidths = self.wxFlag
             self.window.autosizeColumns()
     class _Manual(_AutoWidth):
-        text = _(u'Manual')
+        _text = _(u'Manual')
         help = _(
             u'Allow to manually resize columns. Applies to all Bash lists')
     class _Contents(_AutoWidth):
-        text, wxFlag = _(u'Fit Contents'), 1 # wx.LIST_AUTOSIZE
+        _text, wxFlag = _(u'Fit Contents'), 1 # wx.LIST_AUTOSIZE
         help = _(u'Fit columns to their content. Applies to all Bash lists.'
                  u' You can hit Ctrl + Numpad+ to the same effect')
     class _Header(_AutoWidth):
-        text, wxFlag = _(u'Fit Header'), 2 # wx.LIST_AUTOSIZE_USEHEADER
+        _text, wxFlag = _(u'Fit Header'), 2 # wx.LIST_AUTOSIZE_USEHEADER
         help = _(u'Fit columns to their content, keep header always visible. '
                  u' Applies to all Bash lists')
     extraItems = [_Manual(), _Contents(), _Header(), balt.SeparatorLink()]

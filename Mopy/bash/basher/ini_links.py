@@ -37,8 +37,8 @@ __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
 
 class INI_SortValid(BoolLink):
     """Sort valid INI Tweaks to the top."""
-    text, key, help = _(u'Valid Tweaks First'), 'bash.ini.sortValid', \
-                      _(u'Valid tweak files will be shown first.')
+    _text, key, help = _(u'Valid Tweaks First'), 'bash.ini.sortValid', \
+                       _(u'Valid tweak files will be shown first.')
 
     def Execute(self):
         super(INI_SortValid, self).Execute()
@@ -47,7 +47,7 @@ class INI_SortValid(BoolLink):
 #------------------------------------------------------------------------------
 class INI_AllowNewLines(BoolLink):
     """Consider INI Tweaks with new lines valid."""
-    text = _(u'Allow Tweaks with New Lines')
+    _text = _(u'Allow Tweaks with New Lines')
     key = 'bash.ini.allowNewLines'
     help = _(u'Tweak files with new lines are considered valid..')
 
@@ -58,7 +58,7 @@ class INI_AllowNewLines(BoolLink):
 #------------------------------------------------------------------------------
 class INI_ListINIs(ItemLink):
     """List errors that make an INI Tweak invalid."""
-    text = _(u'List Active INIs...')
+    _text = _(u'List Active INIs...')
     help = _(u'Lists all fully applied tweak files.')
 
     def Execute(self):
@@ -71,7 +71,7 @@ class INI_ListINIs(ItemLink):
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
     """List errors that make an INI Tweak invalid."""
-    text = _(u'List Errors...')
+    _text = _(u'List Errors...')
     help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
@@ -96,13 +96,13 @@ class INI_FileOpenOrCopy(OneItemLink):
     def _initData(self, window, selection):
         super(INI_FileOpenOrCopy, self)._initData(window, selection)
         if not len(selection) == 1:
-            self.text = _(u'Open/Copy...')
+            self._text = _(u'Open/Copy...')
             self.help = _(u'Only one INI file can be opened or copied at a time.')
         elif not bosh.iniInfos[selection[0]].is_default_tweak:
-            self.text = _(u'Open...')
+            self._text = _(u'Open...')
             self.help = _(u"Open '%s' with the system's default program.") % selection[0]
         else:
-            self.text = _(u'Copy...')
+            self._text = _(u'Copy...')
             self.help = _(u"Make an editable copy of the default tweak '%s'.") % selection[0]
 
     def Execute(self):
@@ -128,7 +128,7 @@ class INI_Delete(balt.UIList_Delete, EnabledLink):
 #------------------------------------------------------------------------------
 class INI_Apply(EnabledLink):
     """Apply an INI Tweak."""
-    text = _(u'Apply')
+    _text = _(u'Apply')
 
     def _initData(self, window, selection):
         super(INI_Apply, self)._initData(window, selection)
@@ -167,7 +167,7 @@ class INI_Apply(EnabledLink):
 class INI_CreateNew(OneItemLink):
     """Create a new INI Tweak using the settings from the tweak file,
     but values from the target INI."""
-    text = _(u'Create Tweak with current settings...')
+    _text = _(u'Create Tweak with current settings...')
 
     def _initData(self, window, selection):
         super(INI_CreateNew, self)._initData(window, selection)

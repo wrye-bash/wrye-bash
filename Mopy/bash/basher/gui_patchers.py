@@ -848,7 +848,7 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
             def __init__(self, _text, index):
                 super(_OnItemChoice, self).__init__(_text)
                 self.index = index
-            def _check(self): return self.text in choiceSet
+            def _check(self): return self._text in choiceSet
             def Execute(self): _onItemChoice(self.index)
         def _onItemChoice(dex):
             """Handle choice menu selection."""

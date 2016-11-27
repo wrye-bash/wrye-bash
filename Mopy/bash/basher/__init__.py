@@ -1494,7 +1494,7 @@ class ModDetails(_SashDetailsPanel):
             bosh.modInfos.table.setItem(mod_info.name, 'autoBashTags', to)
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
-            text = _(u'Automatic')
+            _text = _(u'Automatic')
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
             def _check(self): return is_auto
@@ -1506,7 +1506,7 @@ class ModDetails(_SashDetailsPanel):
         # Copy tags to mod description
         bashTagsDesc = mod_info.getBashTagsDesc()
         class _CopyDesc(EnabledLink):
-            text = _(u'Copy to Description')
+            _text = _(u'Copy to Description')
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
@@ -1524,12 +1524,12 @@ class ModDetails(_SashDetailsPanel):
             def _initData(self, window, selection):
                 super(_TagLink, self)._initData(window, selection)
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
-                    {'tag': self.text, 'modname': mod_info.name})
-            def _check(self): return self.text in mod_tags
+                    {'tag': self._text, 'modname': mod_info.name})
+            def _check(self): return self._text in mod_tags
             def Execute(self):
                 """Toggle bash tag from menu."""
                 if _isAuto(): _setAuto(False)
-                modTags = mod_tags ^ {self.text}
+                modTags = mod_tags ^ {self._text}
                 mod_info.setBashTags(modTags)
                 _refreshUI()
         # Menu
@@ -3343,11 +3343,11 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         super(_Tab_Link, self).__init__()
         self.tabKey = tabKey
         self.enabled = canDisable
-        className, self.text, item = tabInfo.get(self.tabKey,[None,None,None])
+        className, self._text, item = tabInfo.get(self.tabKey,[None,None,None])
         self.help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
-            {'tabtitle': self.text})
+            {'tabtitle': self._text})
 
-    def _append(self, window): return self.text is not None
+    def _append(self, window): return self._text is not None
 
     def _enable(self): return self.enabled
 
