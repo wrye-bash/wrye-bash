@@ -283,9 +283,3 @@ class CBash_ClothesTweaker(_AClothesTweaker,CBash_MultiTweaker):
      (CBash_ClothesTweak_Unblock(*x) for x in _AClothesTweaker._unblock),
      (CBash_ClothesTweak_MaxWeight(*x) for x in _AClothesTweaker._max_weight)),
         key=lambda a: a.label.lower())
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile

@@ -2230,9 +2230,3 @@ class CBash_AssortedTweaker(CBash_MultiTweaker):
         CBash_AssortedTweak_SkyrimStyleWeapons(),
         CBash_AssortedTweak_TextlessLSCRs(),
         ],key=lambda a: a.label.lower())
-
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile

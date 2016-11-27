@@ -128,6 +128,11 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
                 group_patchers.setdefault(type_,[]).append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
+    def initPatchFile(self, patchFile, loadMods):
+        super(CBash_MultiTweaker, self).initPatchFile(patchFile, loadMods)
+        for tweak in self.tweaks:
+            tweak.patchFile = patchFile
+
     def buildPatchLog(self,log):
         """Will write to log."""
         if not self.isActive: return

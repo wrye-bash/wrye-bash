@@ -889,8 +889,3 @@ class CBash_TweakActors(CBash_MultiTweaker):
         CBash_RWALKNPCAnimationPatcher(),
         CBash_SWALKNPCAnimationPatcher(),
         ],key=lambda a: a.label.lower())
-    #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        self.patchFile = patchFile
-        for tweak in self.tweaks:
-            tweak.patchFile = patchFile
