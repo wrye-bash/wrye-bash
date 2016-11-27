@@ -520,30 +520,30 @@ class _AContentsChecker(SpecialPatcher):
     name = _(u'Contents Checker')
     text = _(u"Checks contents of leveled lists, inventories and containers"
              u" for correct types.")
+    contType_entryTypes = {
+        'LVSP': {'LVSP', 'SPEL'},
+        'LVLC': {'LVLC', 'NPC_', 'CREA'},
+        #--LVLI will also be applied for containers.
+        'LVLI': {'LVLI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CLOT',
+                 'INGR', 'KEYM', 'LIGH', 'MISC', 'SGST', 'SLGM', 'WEAP'},
+    }
+    contType_entryTypes['CONT'] = contType_entryTypes['CREA'] = \
+    contType_entryTypes['NPC_'] = contType_entryTypes['LVLI']
+    #--Types
+    contTypes = set(contType_entryTypes)
+    entryTypes = reduce(set.union, contType_entryTypes.itervalues())
 
 class ContentsChecker(_AContentsChecker,Patcher):
+
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
         super(ContentsChecker, self).initPatchFile(patchFile, loadMods)
-        self.contType_entryTypes = {
-            'LVSP':'LVSP,SPEL'.split(','),
-            'LVLC':'LVLC,NPC_,CREA'.split(','),
-            #--LVLI will also be applied for containers.
-            'LVLI': 'LVLI,ALCH,AMMO,APPA,ARMO,BOOK,CLOT,INGR,KEYM,LIGH,MISC,'
-                    'SGST,SLGM,WEAP'.split(','),
-            }
-        self.contType_entryTypes['CONT'] = self.contType_entryTypes['LVLI']
-        self.contType_entryTypes['CREA'] = self.contType_entryTypes['LVLI']
-        self.contType_entryTypes['NPC_'] = self.contType_entryTypes['LVLI']
         self.id_type = {}
         self.id_eid = {}
-        #--Types
-        self.contTypes = self.contType_entryTypes.keys()
-        self.entryTypes = sum(self.contType_entryTypes.values(),[])
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return tuple(self.contTypes + self.entryTypes) if self.isActive else ()
+        return tuple(self.contTypes | self.entryTypes) if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
@@ -552,26 +552,25 @@ class ContentsChecker(_AContentsChecker,Patcher):
     def scanModFile(self, modFile, progress):
         """Scan modFile."""
         if not self.isActive: return
-        modName = modFile.fileInfo.name
         mapper = modFile.getLongMapper()
         #--Remember types (only when first defined)
         id_type = self.id_type
-        for type in self.entryTypes:
-            if type not in modFile.tops: continue
-            for record in modFile.tops[type].getActiveRecords():
+        for entry_type in self.entryTypes:
+            if entry_type not in modFile.tops: continue
+            for record in modFile.tops[entry_type].getActiveRecords():
                 fid = record.fid
                 if not record.longFids: fid = mapper(fid)
                 if fid not in id_type:
-                    id_type[fid] = type
+                    id_type[fid] = entry_type
 ##                if fid[0] == modName:
-##                    id_type[fid] = type
+##                    id_type[fid] = entry_type
         #--Save container types
         modFile.convertToLongFids(self.contTypes)
-        for type in self.contTypes:
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
+        for cont_type in self.contTypes:
+            if cont_type not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile, cont_type)
             id_records = patchBlock.id_records
-            for record in modFile.tops[type].getActiveRecords():
+            for record in modFile.tops[cont_type].getActiveRecords():
                 if record.fid not in id_records:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
 
@@ -588,11 +587,11 @@ class ContentsChecker(_AContentsChecker,Patcher):
             ('entries','listId',('LVSP','LVLI','LVLC')),
             ('items','item',('CONT','CREA','NPC_')),
             ):
-            for type in types:
-                if type not in modFile.tops: continue
-                entryTypes = set(self.contType_entryTypes[type])
+            for rec_type in types:
+                if rec_type not in modFile.tops: continue
+                entryTypes = set(self.contType_entryTypes[rec_type])
                 id_removed = {}
-                for record in modFile.tops[type].records:
+                for record in modFile.tops[rec_type].records:
                     newEntries = []
                     oldEntries = getattr(record,cAttr)
                     for entry in oldEntries:
@@ -608,7 +607,7 @@ class ContentsChecker(_AContentsChecker,Patcher):
                         keep(record.fid)
                 #--Log it
                 if id_removed:
-                    log(u"\n=== "+type)
+                    log(u"\n=== " + rec_type)
                     for contId in sorted(id_removed):
                         log(u'* ' + id_eid[contId])
                         for removedId in sorted(id_removed[contId]):
@@ -623,24 +622,6 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
     def initPatchFile(self,patchFile,loadMods):
         super(CBash_ContentsChecker, self).initPatchFile(patchFile, loadMods)
         self.isActive = True
-        self.type_validEntries = {'LVSP': {'LVSP', 'SPEL'},
-                                'LVLC': {'LVLC', 'NPC_', 'CREA'},
-                                'LVLI': {'LVLI', 'ALCH', 'AMMO', 'APPA',
-                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
-                                         'KEYM', 'LIGH', 'MISC', 'SGST',
-                                         'SLGM', 'WEAP'},
-                                'CONT': {'LVLI', 'ALCH', 'AMMO', 'APPA',
-                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
-                                         'KEYM', 'LIGH', 'MISC', 'SGST',
-                                         'SLGM', 'WEAP'},
-                                'CREA': {'LVLI', 'ALCH', 'AMMO', 'APPA',
-                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
-                                         'KEYM', 'LIGH', 'MISC', 'SGST',
-                                         'SLGM', 'WEAP'},
-                                'NPC_': {'LVLI', 'ALCH', 'AMMO', 'APPA',
-                                         'ARMO', 'BOOK', 'CLOT', 'INGR',
-                                         'KEYM', 'LIGH', 'MISC', 'SGST',
-                                         'SLGM', 'WEAP'}}
         self.listTypes = {'LVSP', 'LVLC', 'LVLI'}
         self.containerTypes = {'CONT', 'CREA', 'NPC_'}
         self.mod_type_id_badEntries = {}
@@ -653,7 +634,7 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
     #--Patch Phase ------------------------------------------------------------
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
-        type = record._Type
+        rec_type = record._Type
         Current = self.patchFile.Current
         badEntries = set()
         goodEntries = []
@@ -661,8 +642,8 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
         knownGoodAdd = knownGood.add
         goodAppend = goodEntries.append
         badAdd = badEntries.add
-        validEntries = self.type_validEntries[type]
-        if type in self.listTypes:
+        validEntries = self.contType_entryTypes[rec_type]
+        if rec_type in self.listTypes:
             topattr, subattr = ('entries','listId')
         else: #Is a container type
             topattr, subattr = ('items','item')
@@ -696,7 +677,7 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
                 setattr(override, topattr, goodEntries)
                 type_id_badEntries = self.mod_type_id_badEntries.setdefault(
                     modFile.GName, {})
-                id_badEntries = type_id_badEntries.setdefault(type, {})
+                id_badEntries = type_id_badEntries.setdefault(rec_type, {})
                 id_badEntries[record.eid] = badEntries.copy()
                 record.UnloadRecord()
                 record._RecordID = override._RecordID
