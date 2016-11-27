@@ -218,8 +218,7 @@ class People_Karma(ChoiceLink, balt.MenuLink, People_Link):
         def Execute(self):
             karma = int(self._text)
             for item in self.selected:
-                text = self.pdata[item][2]
-                self.pdata[item] = (time.time(), karma, text)
+                self.pdata[item] = (time.time(), karma, self.pdata[item][2])
             self.window.RefreshUI()
             self.pdata.setChanged()
 
@@ -304,10 +303,12 @@ class Master_Disable(AppendableLink, _Master_EditList):
 #------------------------------------------------------------------------------
 class _Column(CheckLink, EnabledLink):
 
-    def __init__(self, _text='COLKEY'): # not really the link text in this case
+    def __init__(self, _text='COLKEY'):
+        """:param _text: not the link _text in this case, the key to the text
+        """
         super(_Column, self).__init__()
         self.colName = _text
-        self._text = bass.settings['bash.colNames'][self.colName]
+        self._text = bass.settings['bash.colNames'][_text]
         self.help = _(u"Show/Hide '%(colname)s' column.") % {
             'colname': self._text}
 

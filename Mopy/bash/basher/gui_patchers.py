@@ -66,8 +66,8 @@ class _PatcherPanel(object):
         self.patch_dialog = parent
         self.gTipText = gTipText
         self.gConfigPanel = wx.Panel(parent, style=self.__class__.style)
-        text = fill(self.text, 70)
-        gText = StaticText(self.gConfigPanel, text)
+        patcher_txt = fill(self.text, 70)
+        gText = StaticText(self.gConfigPanel, patcher_txt)
         self.gSizer = VSizer(gText)
         self.gConfigPanel.SetSizer(self.gSizer)
         gConfigSizer.Add(self.gConfigPanel, 1, wx.EXPAND)
@@ -172,9 +172,9 @@ class _AliasesPatcherPanel(_PatcherPanel):
             u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())]))
 
     def OnEditAliases(self):
-        text = self.gAliases.GetValue()
+        aliases_text = self.gAliases.GetValue()
         self.aliases.clear()
-        for line in text.split(u'\n'):
+        for line in aliases_text.split(u'\n'):
             fields = map(string.strip,line.split(u'>>'))
             if len(fields) != 2 or not fields[0] or not fields[1]: continue
             self.aliases[GPath(fields[0])] = GPath(fields[1])

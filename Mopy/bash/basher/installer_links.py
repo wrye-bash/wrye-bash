@@ -570,11 +570,11 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
 
     @balt.conversation ##: no use ! _showLog returns immediately
     def Execute(self):
-        text = self._selected_info.listSource()
+        source_list_txt = self._selected_info.listSource()
         #--Get masters list
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Package Structure'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        balt.copyToClipboard(source_list_txt)
+        self._showLog(source_list_txt, title=_(u'Package Structure'),
+                      fixedFont=False, icons=Resources.bashBlue)
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""

@@ -62,9 +62,9 @@ class INI_ListINIs(ItemLink):
 
     def Execute(self):
         """Handle printing out the errors."""
-        text = self.window.ListTweaks()
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Active INIs'), fixedFont=False,
+        tweak_list = self.window.ListTweaks()
+        balt.copyToClipboard(tweak_list)
+        self._showLog(tweak_list, title=_(u'Active INIs'), fixedFont=False,
                       icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------
@@ -81,12 +81,12 @@ class INI_ListErrors(EnabledLink):
 
     def Execute(self):
         """Handle printing out the errors."""
-        text = u''
+        error_text = u''
         for i in self.selected:
             fileInfo = bosh.iniInfos[i]
-            text += u'%s\n' % fileInfo.listErrors()
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'INI Tweak Errors'), fixedFont=False,
+            error_text += u'%s\n' % fileInfo.listErrors()
+        balt.copyToClipboard(error_text)
+        self._showLog(error_text, title=_(u'INI Tweak Errors'), fixedFont=False,
                       icons=Resources.bashBlue)
 
 #------------------------------------------------------------------------------

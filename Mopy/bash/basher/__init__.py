@@ -2105,13 +2105,13 @@ class InstallersList(balt.UIList):
         #--Background
         if installer.skipDirFiles:
             item_format.back_key = 'installers.bkgd.skipped'
-        text = u''
+        mouse_text = u''
         if installer.dirty_sizeCrc:
             item_format.back_key = 'installers.bkgd.dirty'
-            text += _(u'Needs Annealing due to a change in configuration.')
+            mouse_text += _(u'Needs Annealing due to a change in configuration.')
         elif installer.underrides:
             item_format.back_key = 'installers.bkgd.outOfOrder'
-            text += _(u'Needs Annealing due to a change in Install Order.')
+            mouse_text += _(u'Needs Annealing due to a change in Install Order.')
         #--Icon
         item_format.icon_key = 'on' if installer.isActive else 'off'
         item_format.icon_key += '.' + self._status_color[installer.status]
@@ -2122,7 +2122,7 @@ class InstallersList(balt.UIList):
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
         #--TODO: add mouse  mouse tips
-        self.mouseTexts[item] = text
+        self.mouseTexts[item] = mouse_text
 
     __renaming_type = None # type of items currently being renamed
     def OnBeginEditLabel(self,event):
@@ -2155,11 +2155,11 @@ class InstallersList(balt.UIList):
             editbox = self.edit_control
             # (start, stop), if start==stop there is no selection
             selection_span = editbox.GetSelection()
-            text = editbox.GetValue()
-            lenWithExt = len(text)
+            edittext = editbox.GetValue()
+            lenWithExt = len(edittext)
             if selection_span[0] != 0:
                 selection_span = (0,lenWithExt)
-            selectedText = GPath(text[selection_span[0]:selection_span[1]])
+            selectedText = GPath(edittext[selection_span[0]:selection_span[1]])
             textNextLower = selectedText.body
             if textNextLower == selectedText:
                 lenNextLower = lenWithExt
@@ -3288,8 +3288,8 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         """Karma spin."""
         if not self._people_detail: return
         karma = int(self.gKarma.GetValue())
-        text = self.file_infos[self._people_detail][2]
-        self.file_infos[self._people_detail] = (time.time(), karma, text)
+        details = self.file_infos[self._people_detail][2]
+        self.file_infos[self._people_detail] = (time.time(), karma, details)
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
         self.file_infos.setChanged()
 
@@ -3297,7 +3297,7 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         """Saves details if they need saving."""
         if not self.gText.IsModified(): return
         if not self.file_info: return
-        mtime, karma, text = self.file_infos[self._people_detail]
+        mtime, karma, __text = self.file_infos[self._people_detail]
         self.file_infos[self._people_detail] = (
             time.time(), karma, self.gText.GetValue().strip())
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
@@ -3309,10 +3309,10 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         item = super(PeopleDetails, self).SetFile(fileName)
         self._people_detail = item
         if not item: return
-        karma, text = self.peoplePanel.listData[item][1:3]
+        karma, details = self.peoplePanel.listData[item][1:3]
         self.gName.SetValue(item)
         self.gKarma.SetValue(karma)
-        self.gText.SetValue(text)
+        self.gText.SetValue(details)
 
     def _resetDetails(self):
         self.gKarma.SetValue(0)

@@ -170,10 +170,10 @@ class File_ListMasters(OneItemLink):
                         {'filename': selection[0]})
 
     def Execute(self):
-        text = bosh.modInfos.getModList(fileInfo=self._selected_info)
-        balt.copyToClipboard(text)
-        self._showLog(text, title=self._selected_item.s, fixedFont=False,
-                      icons=Resources.bashBlue)
+        list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
+        balt.copyToClipboard(list_of_mods)
+        self._showLog(list_of_mods, title=self._selected_item.s,
+                      fixedFont=False, icons=Resources.bashBlue)
 
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
