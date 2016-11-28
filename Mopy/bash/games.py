@@ -660,6 +660,9 @@ class AsteriskGame(Game):
 
     remove_from_plugins_txt = set()
 
+    @property
+    def pinned_mods(self): return self.remove_from_plugins_txt
+
     def load_order_changed(self): return self._plugins_txt_modified()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
@@ -683,13 +686,11 @@ class AsteriskGame(Game):
                 to_drop.append(rem)
         lo, active = self._readd_in_lists(lo, active)
         if not exists or to_drop:
-            msg = u'Created %s' if not exists else u'Removed ' + u' ,'.join(
-                map(unicode, to_drop)) + u' from %s'
+            msg = u'Created %s' if not exists else (u'Removed ' + u' ,'.join(
+                map(unicode, to_drop)) + u' from %s')
             self._persist_load_order(lo, active)
             bolt.deprint(msg % self.plugins_txt_path)
         return lo, active
-
-    def _readd_in_lists(self, lo, active): return list(lo), list(active)
 
     def _persist_load_order(self, lord, active):
         assert active # must at least contain the master esm for these games
@@ -720,6 +721,31 @@ class AsteriskGame(Game):
     def _write_modfile(self, path, lord, active):
         _write_plugins_txt_(path, lord, active, _star=True)
 
+    # Validation overrides ----------------------------------------------------
+    def _order_fixed(self, lord):
+        lo = [x for x in lord if x not in self.remove_from_plugins_txt]
+        add = self._fixed_order_plugins()
+        if add + lo != lord:
+            lord[:] = add + lo
+            return True
+        return False
+
+    # Asterisk game specific: plugins with fixed load order -------------------
+    def _readd_in_lists(self, lo, active):
+        # add the plugins that should not be in plugins.txt in the lists,
+        # assuming they should also be active
+        add = self._fixed_order_plugins()
+        lo = [x for x in lo if x not in self.remove_from_plugins_txt]
+        active = [x for x in active if x not in self.remove_from_plugins_txt]
+        return add + lo, add + active
+
+    def _fixed_order_plugins(self):
+        """Return existing fixed plugins in their fixed load order."""
+        add = [self.master_path]
+        add.extend(
+            x for x in self.must_be_active_if_present if x in self.mod_infos)
+        return add
+
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
 
@@ -730,6 +756,9 @@ class Fallout4(AsteriskGame):
                                  bolt.GPath(u'DLCWorkshop03.esm'),
                                  bolt.GPath(u'DLCNukaWorld.esm'),)
 
+    remove_from_plugins_txt = {bolt.GPath(u'Fallout4.esm')} | set(
+        must_be_active_if_present)
+
 class SkyrimSE(AsteriskGame):
 
     must_be_active_if_present = (bolt.GPath(u'Update.esm'),
@@ -739,28 +768,10 @@ class SkyrimSE(AsteriskGame):
     remove_from_plugins_txt = {bolt.GPath(u'Skyrim.esm')} | set(
         must_be_active_if_present)
 
-    @property
-    def pinned_mods(self): return self.remove_from_plugins_txt
-
-    def _order_fixed(self, lord):
-        lo = [x for x in lord if x not in self.remove_from_plugins_txt]
-        add = self.__fixed_order_plugins()
-        if add + lo != lord:
-            lord[:] = add + lo
-            return True
-        return False
-
-    def _readd_in_lists(self, lo, active):
-        # add the plugins that should not be in plugins.txt in the lists,
-        # assuming they should also be active
-        add = self.__fixed_order_plugins()
-        lo = [x for x in lo if x not in self.remove_from_plugins_txt]
-        active = [x for x in active if x not in self.remove_from_plugins_txt]
-        return add + lo, add + active
-
     __dlc_spacing = 60 # in seconds
-    def __fixed_order_plugins(self):
-        """Return the semi fixed plugins in their buggy timestamp load order"""
+    def _fixed_order_plugins(self):
+        """Return the semi fixed plugins after pinning them in correct order by
+        timestamping them."""
         # get existing
         add = [self.master_path]
         add.extend(
