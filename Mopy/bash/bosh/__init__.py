@@ -3476,6 +3476,9 @@ def _lo_cache(lord_func):
             #if lo changed (including additions/removals) let refresh handle it
             if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
                 self.autoGhost(force=False)
+            new_active = set(active) - set(old_active)
+            for neu in new_active: # new active mods, unghost
+                self[neu].setGhost(False)
             return (lo_changed and 1) + (active_changed and 2)
         finally:
             self._lo_wip, self._active_wip = list(
@@ -3558,7 +3561,7 @@ class ModInfos(FileInfos):
 
     @_lo_cache
     def cached_lo_save_all(self):
-        """Write data to loadorder.txt file (and update plugins.txt too)."""
+        """Save load order and plugins.txt"""
         dex = {x: i for i, x in enumerate(self._lo_wip) if
                x in set(self._active_wip)}
         self._active_wip.sort(key=dex.__getitem__) # order in their load order
@@ -4016,8 +4019,6 @@ class ModInfos(FileInfos):
             for master in self[fileName].header.masters:
                 if master in modSet:
                     self.lo_activate(master, False, modSet, children, _activated)
-            # Unghost
-            self[fileName].setGhost(False)
             #--Select in plugins
             if fileName not in self._active_wip:
                 self._active_wip.append(fileName)
@@ -4100,8 +4101,6 @@ class ModInfos(FileInfos):
         extra = listToSelect[255:]
         #--Save
         final_selection = listToSelect[:255]
-        # we should unghost ourselves so that ctime is properly set
-        for s in final_selection: self[s].setGhost(False)
         self.cached_lo_save_active(active=final_selection)
         #--Done/Error Message
         message = u''
