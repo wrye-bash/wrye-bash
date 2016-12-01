@@ -1798,11 +1798,16 @@ class UIList(wx.Panel):
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-        # Details HACK: if it was a single item then refresh details for it:
-        if len(files) == 1: self.SelectItem(files[0])
-        else: self.panel.RefreshDetails()
+        self._refresh_details(files)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
+
+    def _refresh_details(self, files):
+        # Details HACK: if it was a single item then refresh details for it:
+        if len(files) == 1:
+            self.SelectItem(files[0])
+        else:
+            self.panel.SetDetails()
 
     def Focus(self):
         self.__gList.SetFocus()
@@ -2188,7 +2193,7 @@ class UIList(wx.Panel):
                     self.data_store.delete(items, confirm=True, recycle=recycle)
             except bolt.BoltError as e: showError(self, u'%r' % e)
             except (AccessDeniedError, CancelError, SkipError): pass
-            finally:
+            finally: # FIXME: remove break from here masks tracebacks
                 if self.__class__._shellUI: break # could delete fail mid-way ?
         else:
             self.data_store.delete_Refresh(items, check_existence=True)

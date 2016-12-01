@@ -1553,14 +1553,14 @@ class IniFile(object):
         do a copy first !"""
         if not self.abs_path.isfile():
             return ({}, {}) if with_deleted else {}
-        if self.needs_update(_reset_cache=True):
+        if self._settings_cache_linenum is self.__empty or self.needs_update():
             self._settings_cache_linenum, self._deleted_cache, \
                 self.isCorrupted = self._get_settings(self.abs_path)
         if with_deleted:
             return self._settings_cache_linenum, self._deleted_cache
         return self._settings_cache_linenum
 
-    def needs_update(self, _reset_cache=False):
+    def needs_update(self):
         try:
             psize, pmtime = self.abs_path.size_mtime()
             if self._deleted:
@@ -1573,10 +1573,9 @@ class IniFile(object):
                 self._deleted = self.updated = True
                 return True
             return False # we already know it's deleted (used for game inis)
-        if self._settings_cache_linenum is self.__empty or \
-                    self._file_size != psize or self._file_mod_time != pmtime:
-            if _reset_cache:
-                self._file_size, self._file_mod_time = psize, pmtime
+        if self._file_size != psize or self._file_mod_time != pmtime:
+            self._file_size, self._file_mod_time = psize, pmtime
+            self._settings_cache_linenum = self.__empty
             self.updated = True
             return True
         return False
@@ -1849,7 +1848,7 @@ class DefaultIniFile(IniFile):
     def read_ini_lines(self): return self.lines
 
     # YAK! track uses!
-    def needs_update(self, _reset_cache=False): raise AbstractError
+    def needs_update(self): raise AbstractError
     @classmethod
     def _get_settings(cls, tweakPath): raise AbstractError
     def saveSettings(self,ini_settings,deleted_settings={}):
@@ -2131,8 +2130,7 @@ class OblivionIni(IniFile):
         try:
             srcPath.copyTo(self.abs_path)
             if balt.Link.Frame.iniList:
-                balt.Link.Frame.iniList.panel.ShowPanel(refresh_infos=False,
-                                                        clean_targets=False)
+                balt.Link.Frame.iniList.panel.ShowPanel(refresh_target=True)
             else:
                 iniInfos.refresh(refresh_infos=False)
             return True
@@ -3341,7 +3339,7 @@ class INIInfos(FileInfos):
 
     def _refresh_infos(self):
         """Refresh from file directory."""
-        oldNames = set(self.data)
+        oldNames=set(n for n, v in self.iteritems() if not v.is_default_tweak)
         newNames = set()
         _added = set()
         _updated = set()
@@ -3349,11 +3347,8 @@ class INIInfos(FileInfos):
         for name in names:
             fileInfo = self.factory(self.store_dir, name)
             name = fileInfo.name
-            if name in newNames:
-                deprint(u'%s appears twice (%s)' % (name, fileInfo.getPath()))
-                continue
-            oldInfo = self.get(name) # None if name was in corrupted
-            isAdded = name not in oldNames
+            oldInfo = self.get(name) # None if name was added
+            isAdded = oldInfo is None
             if oldInfo is not None:
                 isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
             else: isUpdated = False
@@ -3376,7 +3371,7 @@ class INIInfos(FileInfos):
                 default_info = self.setdefault(k, self.factory(u'', k))
                 default_info.ini_info_file = d
                 if k in _deleted: # we restore default over copy
-                    _updated.add(k)
+                    _updated.add(k) # no need to reset status as is None
         return _added, _deleted, _updated
 
     def refresh(self, refresh_infos=True, refresh_target=True):
