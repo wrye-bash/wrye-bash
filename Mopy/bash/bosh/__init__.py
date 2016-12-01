@@ -2435,11 +2435,8 @@ class FileInfos(_DataStore):
 
     #--Refresh
     def _names(self): # performance intensive
-        names = set()
-        if self.store_dir.exists():
-            names |= {x for x in self.store_dir.list() if
+        return {x for x in self.store_dir.list() if
                 self.store_dir.join(x).isfile() and self.rightFileType(x)}
-        return list(names)
 
     def refresh(self, refresh_infos=True):
         """Refresh from file directory."""
@@ -2570,8 +2567,7 @@ class FileInfos(_DataStore):
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
-        for d in set(self.table.keys()) & set(deleted):
-            del self.table[d]
+            self.table.pop(name, None)
         return deleted
 
     #--Move
@@ -2685,23 +2681,17 @@ class INIInfos(FileInfos):
     def _refresh_infos(self):
         """Refresh from file directory."""
         oldNames=set(n for n, v in self.iteritems() if not v.is_default_tweak)
-        newNames = set()
         _added = set()
         _updated = set()
-        names = self._names()
-        for name in names:
-            fileInfo = self.factory(self.store_dir, name)
-            name = fileInfo.name
+        newNames = self._names()
+        for name in newNames:
             oldInfo = self.get(name) # None if name was added
-            isAdded = oldInfo is None
             if oldInfo is not None:
-                isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
-            else: isUpdated = False
-            if isAdded or isUpdated:
-                self[name] = fileInfo
-                if isAdded: _added.add(name)
-                elif isUpdated: _updated.add(name)
-            newNames.add(name)
+                if oldInfo.ini_info_file.needs_update(): _updated.add(name)
+            else: # added
+                oldInfo = self.factory(self.store_dir, name)
+                _added.add(name)
+            self[name] = oldInfo
         _deleted = oldNames - newNames
         for name in _deleted:
             self.pop(name, None)
@@ -2982,8 +2972,7 @@ class ModInfos(FileInfos):
     #--Refresh-----------------------------------------------------------------
     def _names(self):
         names = FileInfos._names(self)
-        names.sort(key=lambda x: x.cext == u'.ghost')
-        return names
+        return sorted(names, key=lambda x: x.cext == u'.ghost')
 
     def refresh(self, refresh_infos=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes.
@@ -3892,11 +3881,10 @@ class BSAInfos(FileInfos):
     def refresh(self, refresh_infos=True):
         """Refresh from file directory."""
         oldNames = set(self.data) | set(self.corrupted)
-        newNames = set()
         _added = set()
         _updated = set()
-        names = self._names()
-        for name in names:
+        newNames = self._names()
+        for name in newNames:
             oldInfo = self.get(name) # None if name was in corrupted or new one
             isAdded = name not in oldNames
             isUpdated = False
@@ -3913,8 +3901,6 @@ class BSAInfos(FileInfos):
                 self.corrupted[name] = e.message
                 self.pop(name, None)
                 continue
-            finally:
-                newNames.add(name) # corrupted or not it's in new names
         _deleted = oldNames - newNames
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
