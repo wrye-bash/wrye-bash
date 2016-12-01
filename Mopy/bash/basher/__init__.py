@@ -1743,13 +1743,15 @@ class INIPanel(BashTab):
         self.detailsPanel.ShowPanel(target_changed=True)
 
     def ShowPanel(self, refresh_infos=False, refresh_target=False,
-                  clean_targets=False, focus_list=True, **kwargs):
+                  clean_targets=False, focus_list=True, detail_item='SAME',
+                  **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
         super(INIPanel, self).ShowPanel(target_changed=changes and changes[3],
                                         clean_targets=clean_targets)
         if changes: # we need this to be more granular
-            self.uiList.RefreshUI(focus_list=focus_list) # resets the details
+            self.uiList.RefreshUI(focus_list=focus_list,
+                                  detail_item=detail_item)
 
     def _sbCount(self):
         stati = self.uiList.CountTweakStatus()

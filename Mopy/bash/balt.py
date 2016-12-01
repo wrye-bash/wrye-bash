@@ -1776,8 +1776,7 @@ class UIList(wx.Panel):
         self.autosizeColumns()
 
     __all = ()
-    __same = bolt.Path(u'')
-    def RefreshUI(self, redraw=__all, to_del=__all, detail_item=__same,
+    def RefreshUI(self, redraw=__all, to_del=__all, detail_item='SAME',
                   **kwargs):
         """Populate specified files or ALL files, sort, set status bar count.
         """
@@ -1799,7 +1798,7 @@ class UIList(wx.Panel):
     def _refresh_details(self, redraw, detail_item):
         if detail_item is None:
             self.panel.ClearDetails()
-        elif detail_item is not self.__same:
+        elif detail_item != 'SAME':
             self.SelectAndShowItem(detail_item)
         else: # if it was a single item, refresh details for it
             if len(redraw) == 1:
