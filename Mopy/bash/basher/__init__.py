@@ -1095,7 +1095,9 @@ class _DetailsMixin(object):
 
     # Details panel API
     def SetFile(self, fileName='SAME'):
-        """Set file to be viewed."""
+        """Set file to be viewed. Leave fileName empty to reset.
+        :type fileName: basestring | bolt.Path | None
+        """
         #--Reset?
         if fileName == 'SAME':
             if self.displayed_item not in self.file_infos:
@@ -1139,7 +1141,7 @@ class _EditableMixin(_DetailsMixin):
 
     def DoSave(self): raise AbstractError
 
-    def DoCancel(self): self.SetFile(self.displayed_item)
+    def DoCancel(self): self.SetFile()
 
 class _EditableMixinOnFileInfos(_EditableMixin):
     """Bsa/Mods/Saves details, DEPRECATED: we need common data infos API!"""
@@ -1423,7 +1425,6 @@ class ModDetails(_SashDetailsPanel):
             newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
-            self.SetFile(self.displayed_item)
             with load_order.Unlock():
                 bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI( # refresh saves if lo changed
@@ -1466,16 +1467,16 @@ class ModDetails(_SashDetailsPanel):
         #--Done
         try:
             bosh.modInfos.refreshFile(fileName)
-            self.SetFile(fileName)
+            detail_item = fileName
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
-            self.SetFile(None)
+            detail_item = None
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
             changeDate and not load_order.using_txt_file())
-        self.panel_uilist.RefreshUI(refreshSaves=refreshSaves)
-        self.panel_uilist.SelectAndShowItem(self.modInfo.name)
+        self.panel_uilist.RefreshUI(refreshSaves=refreshSaves,
+                                    detail_item=detail_item)
 
     #--Bash Tags
     def ShowBashTagsMenu(self):
@@ -2021,13 +2022,12 @@ class SaveDetails(_SashDetailsPanel):
         #--Done
         try:
             bosh.saveInfos.refreshFile(saveInfo.name)
-            self.SetFile(self.saveInfo.name)
+            detail_item = saveInfo.name
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
-            self.SetFile(None)
+            detail_item = None
         # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
-        self.panel_uilist.RefreshUI()
-        self.panel_uilist.SelectAndShowItem(self.saveInfo.name)
+        self.panel_uilist.RefreshUI(detail_item=detail_item)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
@@ -3218,11 +3218,11 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         #--Done
         try:
             bosh.bsaInfos.refreshFile(self._bsa_info.name)
-            self.SetFile(self._bsa_info.name)
+            detail_item = self._bsa_info.name
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
-            self.SetFile(None)
-        self.panel_uilist.RefreshUI()
+            detail_item = None
+        self.panel_uilist.RefreshUI(detail_item=detail_item)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):
