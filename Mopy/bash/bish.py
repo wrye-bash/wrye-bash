@@ -133,10 +133,10 @@ def init(initLevel):
     #--Settings
     bosh.initBosh()
     bosh.initSettings(readOnly=True)
-    bosh.oblivionIni = bosh.OblivionIni()
+    bosh.oblivionIni = bosh.ini_files.OblivionIni()
     #--MwIniFile (initLevel >= 1)
     if initLevel < 1: return
-    bosh.oblivionIni = bosh.OblivionIni()
+    bosh.oblivionIni = bosh.ini_files.OblivionIni()
     #--ModInfos (initLevel >= 2)
     if initLevel < 2: return
     bosh.modInfos = bosh.ModInfos()

@@ -4054,7 +4054,8 @@ class BashApp(wx.App):
     @staticmethod
     def InitData(progress):
         """Initialize all data. Called by Init()."""
-        bosh.gameInis = tuple(bosh.OblivionIni(x) for x in bush.game.iniFiles)
+        bosh.gameInis = tuple(
+            bosh.ini_files.OblivionIni(x) for x in bush.game.iniFiles)
         progress(0.05, _(u'Initializing BsaInfos'))
         #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
         bosh.bsaInfos = bosh.BSAInfos()
