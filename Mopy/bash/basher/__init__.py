@@ -380,6 +380,10 @@ class MasterList(_ModsUIList):
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
 
+    def OnDClick(self, event):
+        BashFrame.modList.RefreshUI()
+        BashFrame.modList.SelectAndShowItem(self.data_store[self.mouse_index].name, deselectOthers=True)
+
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
         self.ClearSelected()
