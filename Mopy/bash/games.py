@@ -203,6 +203,9 @@ class Game(object):
                                      previous_lord)
         return lord, active # return what was set or was previously set
 
+    @property
+    def pinned_mods(self): return {self.master_path}
+
     # Conflicts - only for timestamp games
     def has_load_order_conflict(self, mod_name): return False
     def has_load_order_conflict_active(self, mod_name, active): return False
@@ -343,6 +346,7 @@ class Game(object):
             else: lord.append(mod)
         # end textfile get
         duplicates = self._check_for_duplicates(lord)
+        _reordered |= self._order_fixed(lord)
         if not quiet: warn_lo_fixed(_addedFiles, _removedFiles, _reordered,
                                     duplicates, lord, old_lord)
         return _removedFiles, _addedFiles, _reordered
@@ -384,6 +388,10 @@ class Game(object):
             msg += u'Removed duplicate entries from active list : '
             msg += _pl(duplicates)
         acti[:] = acti_filtered[:255] # chop off extra, update acti in place
+        if self._order_fixed(acti):
+            msg += u'Reordered active plugins with fixed order '
+            msg += _pl(acti_filtered[:255], u'from:\n', joint=u'\n') + _pl(
+                acti, u'\nto:\n', joint=u'\n')
         if msg:
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user - ##: maybe backup previous plugin txt ?
@@ -394,6 +402,8 @@ class Game(object):
             if not quiet: bolt.deprint(msg)
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
+
+    def _order_fixed(self, lord): return False
 
     @staticmethod
     def _check_active_order(acti, lord):
@@ -648,12 +658,10 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
-    must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
-                                 bolt.GPath(u'DLCworkshop01.esm'),
-                                 bolt.GPath(u'DLCCoast.esm'),
-                                 bolt.GPath(u'DLCWorkshop02.esm'),
-                                 bolt.GPath(u'DLCWorkshop03.esm'),
-                                 bolt.GPath(u'DLCNukaWorld.esm'),)
+    remove_from_plugins_txt = set()
+
+    @property
+    def pinned_mods(self): return self.remove_from_plugins_txt
 
     def load_order_changed(self): return self._plugins_txt_modified()
 
@@ -672,13 +680,22 @@ class AsteriskGame(Game):
         active, lo = self._parse_modfile(self.plugins_txt_path) # empty if not exists
         lo, active = (lo if cached_load_order is None else cached_load_order,
                       active if cached_active is None else cached_active)
-        if not exists:
-            self._write_plugins_txt(lo, active)
-            bolt.deprint(u'Created %s' % self.plugins_txt_path)
-        return list(lo), list(active)
+        to_drop = []
+        for rem in self.remove_from_plugins_txt:
+            if rem in active or rem in lo:
+                to_drop.append(rem)
+        lo, active = self._readd_in_lists(lo, active)
+        if not exists or to_drop:
+            msg = u'Created %s' if not exists else (u'Removed ' + u' ,'.join(
+                map(unicode, to_drop)) + u' from %s')
+            self._persist_load_order(lo, active)
+            bolt.deprint(msg % self.plugins_txt_path)
+        return lo, active
 
     def _persist_load_order(self, lord, active):
-        assert active # must at least contain Fallout4.esm
+        assert active # must at least contain the master esm for these games
+        lord = [x for x in lord if x not in self.remove_from_plugins_txt]
+        active = [x for x in active if x not in self.remove_from_plugins_txt]
         self._write_plugins_txt(lord, active)
 
     def _persist_active_plugins(self, active, lord):
@@ -704,11 +721,84 @@ class AsteriskGame(Game):
     def _write_modfile(self, path, lord, active):
         _write_plugins_txt_(path, lord, active, _star=True)
 
+    # Validation overrides ----------------------------------------------------
+    def _order_fixed(self, lord):
+        lo = [x for x in lord if x not in self.remove_from_plugins_txt]
+        add = self._fixed_order_plugins()
+        if add + lo != lord:
+            lord[:] = add + lo
+            return True
+        return False
+
+    # Asterisk game specific: plugins with fixed load order -------------------
+    def _readd_in_lists(self, lo, active):
+        # add the plugins that should not be in plugins.txt in the lists,
+        # assuming they should also be active
+        add = self._fixed_order_plugins()
+        lo = [x for x in lo if x not in self.remove_from_plugins_txt]
+        active = [x for x in active if x not in self.remove_from_plugins_txt]
+        return add + lo, add + active
+
+    def _fixed_order_plugins(self):
+        """Return existing fixed plugins in their fixed load order."""
+        add = [self.master_path]
+        add.extend(
+            x for x in self.must_be_active_if_present if x in self.mod_infos)
+        return add
+
+# AsteriskGame overrides
+class Fallout4(AsteriskGame):
+
+    must_be_active_if_present = (bolt.GPath(u'DLCRobot.esm'),
+                                 bolt.GPath(u'DLCworkshop01.esm'),
+                                 bolt.GPath(u'DLCCoast.esm'),
+                                 bolt.GPath(u'DLCWorkshop02.esm'),
+                                 bolt.GPath(u'DLCWorkshop03.esm'),
+                                 bolt.GPath(u'DLCNukaWorld.esm'),)
+
+    remove_from_plugins_txt = {bolt.GPath(u'Fallout4.esm')} | set(
+        must_be_active_if_present)
+
+class SkyrimSE(AsteriskGame):
+
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
+                                 bolt.GPath(u'Dawnguard.esm'),
+                                 bolt.GPath(u'Hearthfires.esm'),
+                                 bolt.GPath(u'Dragonborn.esm'),)
+    remove_from_plugins_txt = {bolt.GPath(u'Skyrim.esm')} | set(
+        must_be_active_if_present)
+
+    __dlc_spacing = 60 # in seconds
+    def _fixed_order_plugins(self):
+        """Return the semi fixed plugins after pinning them in correct order by
+        timestamping them."""
+        # get existing
+        add = [self.master_path]
+        add.extend(
+            x for x in self.must_be_active_if_present if x in self.mod_infos)
+        # rewrite mtimes
+        master_mtime = self.mod_infos[self.master_path].mtime
+        update = bolt.GPath(u'Update.esm')
+        for dlc in add[1:]:
+            if dlc == update:
+                master_mtime = self.mod_infos[update].mtime
+            else:
+                master_mtime += self.__dlc_spacing
+                dlc_mtime = self.mod_infos[dlc].mtime
+                if dlc_mtime != master_mtime:
+                    self.mod_infos[dlc].setmtime(master_mtime)
+                    bolt.deprint(u'Restamped %s  from %s to %s' % (dlc,
+                    bolt.formatDate(dlc_mtime), bolt.formatDate(master_mtime)))
+        return add
+
+# Game factory
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
     if name == u'Skyrim':
         return TextfileGame(mod_infos, plugins_txt_path, loadorder_txt_path)
+    elif name == u'Skyrim Special Edition':
+        return SkyrimSE(mod_infos, plugins_txt_path)
     elif name == u'Fallout4':
-        return AsteriskGame(mod_infos, plugins_txt_path)
+        return Fallout4(mod_infos, plugins_txt_path)
     else:
         return TimestampGame(mod_infos, plugins_txt_path)
 

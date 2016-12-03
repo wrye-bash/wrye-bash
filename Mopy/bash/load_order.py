@@ -200,7 +200,7 @@ def get_ordered(mod_names):
     return mod_names
 
 def filter_pinned(imods):
-    return filter(lambda x: x == game_handle.master_path, imods)
+    return filter(game_handle.pinned_mods.__contains__, imods)
 
 # Get and set API
 def save_lo(lord, acti=None, __index_move=0):

@@ -1668,7 +1668,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive or not self.srcs: return
-        if game.fsName == u'Skyrim':
+        if game.fsName in (u'Skyrim', u'Skyrim Special Edition'):
             loadFactory = LoadFactory(False,'NPC_','CONT')
         else:
             loadFactory = LoadFactory(False,'CREA','NPC_','CONT')
@@ -1678,7 +1678,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             mapper = srcFile.getLongMapper()
-            if game.fsName == u'Skyrim':
+            if game.fsName in (u'Skyrim', u'Skyrim Special Edition'):
                 for block in (srcFile.NPC_, srcFile.CONT):
                     for record in block.getActiveRecords():
                         self.touched.add(mapper(record.fid))

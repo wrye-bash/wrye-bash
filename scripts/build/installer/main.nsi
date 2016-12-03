@@ -45,6 +45,7 @@ Unicode true
     Var Path_Nehrim
     Var Path_Skyrim
     Var Path_Fallout4
+    Var Path_SkyrimSE
     Var Path_Ex1
     Var Path_Ex2
 
@@ -53,6 +54,7 @@ Unicode true
     Var Check_Nehrim
     Var Check_Skyrim
     Var Check_Fallout4
+    Var Check_SkyrimSE
     Var Check_Extra
     Var Check_Ex1
     Var Check_Ex2
@@ -60,6 +62,7 @@ Unicode true
     Var CheckState_Nehrim
     Var CheckState_Skyrim
     Var CheckState_Fallout4
+    Var CheckState_SkyrimSE
     Var CheckState_Extra
     Var CheckState_Ex1
     Var CheckState_Ex2
@@ -67,48 +70,56 @@ Unicode true
     Var Check_Nehrim_Py
     Var Check_Skyrim_Py
     Var Check_Fallout4_Py
+    Var Check_SkyrimSE_Py
     Var Check_Ex1_Py
     Var Check_Ex2_Py
     Var CheckState_OB_Py
     Var CheckState_Nehrim_Py
     Var CheckState_Skyrim_Py
     Var CheckState_Fallout4_Py
+    Var CheckState_SkyrimSE_Py
     Var CheckState_Ex1_Py
     Var CheckState_Ex2_Py
     Var Check_OB_Exe
     Var Check_Nehrim_Exe
     Var Check_Skyrim_Exe
     Var Check_Fallout4_Exe
+    Var Check_SkyrimSE_Exe
     Var Check_Ex1_Exe
     Var Check_Ex2_Exe
     Var CheckState_OB_Exe
     Var CheckState_Nehrim_Exe
     Var CheckState_Skyrim_Exe
     Var CheckState_Fallout4_Exe
+    Var CheckState_SkyrimSE_Exe
     Var CheckState_Ex1_Exe
     Var CheckState_Ex2_Exe
     Var Reg_Value_OB_Py
     Var Reg_Value_Nehrim_Py
     Var Reg_Value_Skyrim_Py
     Var Reg_Value_Fallout4_Py
+    Var Reg_Value_SkyrimSE_Py
     Var Reg_Value_Ex1_Py
     Var Reg_Value_Ex2_Py
     Var Reg_Value_OB_Exe
     Var Reg_Value_Nehrim_Exe
     Var Reg_Value_Skyrim_Exe
     Var Reg_Value_Fallout4_Exe
+    Var Reg_Value_SkyrimSE_Exe
     Var Reg_Value_Ex1_Exe
     Var Reg_Value_Ex2_Exe
     Var PathDialogue_OB
     Var PathDialogue_Nehrim
     Var PathDialogue_Skyrim
     Var PathDialogue_Fallout4
+    Var PathDialogue_SkyrimSE
     Var PathDialogue_Ex1
     Var PathDialogue_Ex2
     Var Browse_OB
     Var Browse_Nehrim
     Var Browse_Skyrim
     Var Browse_Fallout4
+    Var Browse_SkyrimSE
     Var Browse_Ex1
     Var Browse_Ex2
     Var Check_Readme
@@ -154,18 +165,21 @@ Unicode true
         ReadRegStr $Path_Nehrim            HKLM "Software\Wrye Bash" "Nehrim Path"
         ReadRegStr $Path_Skyrim            HKLM "Software\Wrye Bash" "Skyrim Path"
         ReadRegStr $Path_Fallout4          HKLM "Software\Wrye Bash" "Fallout4 Path"
+        ReadRegStr $Path_SkyrimSE          HKLM "Software\Wrye Bash" "SkyrimSE Path"
         ReadRegStr $Path_Ex1               HKLM "Software\Wrye Bash" "Extra Path 1"
         ReadRegStr $Path_Ex2               HKLM "Software\Wrye Bash" "Extra Path 2"
         ReadRegStr $Reg_Value_OB_Py        HKLM "Software\Wrye Bash" "Oblivion Python Version"
         ReadRegStr $Reg_Value_Nehrim_Py    HKLM "Software\Wrye Bash" "Nehrim Python Version"
         ReadRegStr $Reg_Value_Skyrim_Py    HKLM "Software\Wrye Bash" "Skyrim Python Version"
         ReadRegStr $Reg_Value_Fallout4_Py  HKLM "Software\Wrye Bash" "Fallout4 Python Version"
+        ReadRegStr $Reg_Value_SkyrimSE_Py  HKLM "Software\Wrye Bash" "SkyrimSE Python Version"
         ReadRegStr $Reg_Value_Ex1_Py       HKLM "Software\Wrye Bash" "Extra Path 1 Python Version"
         ReadRegStr $Reg_Value_Ex2_Py       HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
         ReadRegStr $Reg_Value_OB_Exe       HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
         ReadRegStr $Reg_Value_Nehrim_Exe   HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
         ReadRegStr $Reg_Value_Skyrim_Exe   HKLM "Software\Wrye Bash" "Skyrim Standalone Version"
         ReadRegStr $Reg_Value_Fallout4_Exe HKLM "Software\Wrye Bash" "Fallout4 Standalone Version"
+        ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "Software\Wrye Bash" "SkyrimSE Standalone Version"
         ReadRegStr $Reg_Value_Ex1_Exe      HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe      HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
     FunctionEnd
@@ -177,18 +191,21 @@ Unicode true
         ReadRegStr $Path_Nehrim            HKLM "Software\Wrye Bash" "Nehrim Path"
         ReadRegStr $Path_Skyrim            HKLM "Software\Wrye Bash" "Skyrim Path"
         ReadRegStr $Path_Fallout4          HKLM "Software\Wrye Bash" "Fallout4 Path"
+        ReadRegStr $Path_SkyrimSE          HKLM "Software\Wrye Bash" "SkyrimSE Path"
         ReadRegStr $Path_Ex1               HKLM "Software\Wrye Bash" "Extra Path 1"
         ReadRegStr $Path_Ex2               HKLM "Software\Wrye Bash" "Extra Path 2"
         ReadRegStr $Reg_Value_OB_Py        HKLM "Software\Wrye Bash" "Oblivion Python Version"
         ReadRegStr $Reg_Value_Nehrim_Py    HKLM "Software\Wrye Bash" "Nehrim Python Version"
         ReadRegStr $Reg_Value_Skyrim_Py    HKLM "Software\Wrye Bash" "Skyrim Python Version"
         ReadRegStr $Reg_Value_Fallout4_Py  HKLM "Software\Wrye Bash" "Fallout4 Python Version"
+        ReadRegStr $Reg_Value_SkyrimSE_Py  HKLM "Software\Wrye Bash" "SkyrimSE Python Version"
         ReadRegStr $Reg_Value_Ex1_Py       HKLM "Software\Wrye Bash" "Extra Path 1 Python Version"
         ReadRegStr $Reg_Value_Ex2_Py       HKLM "Software\Wrye Bash" "Extra Path 2 Python Version"
         ReadRegStr $Reg_Value_OB_Exe       HKLM "Software\Wrye Bash" "Oblivion Standalone Version"
         ReadRegStr $Reg_Value_Nehrim_Exe   HKLM "Software\Wrye Bash" "Nehrim Standalone Version"
         ReadRegStr $Reg_Value_Skyrim_Exe   HKLM "Software\Wrye Bash" "Skyrim Standalone Version"
         ReadRegStr $Reg_Value_Fallout4_Exe HKLM "Software\Wrye Bash" "Fallout4 Standalone Version"
+        ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "Software\Wrye Bash" "SkyrimSE Standalone Version"
         ReadRegStr $Reg_Value_Ex1_Exe      HKLM "Software\Wrye Bash" "Extra Path 1 Standalone Version"
         ReadRegStr $Reg_Value_Ex2_Exe      HKLM "Software\Wrye Bash" "Extra Path 2 Standalone Version"
 
@@ -236,6 +253,16 @@ Unicode true
             StrCpy $CheckState_Fallout4 ${BST_CHECKED}
         ${EndIf}
 
+        ${If} $Path_SkyrimSE == $Empty
+            ReadRegStr $Path_SkyrimSE HKLM "Software\Bethesda Softworks\Skyrim Special Edition" "Installed Path"
+            ${If} $Path_SkyrimSE == $Empty
+                ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wow6432Node\Bethesda Softworks\Skyrim Special Edition" "Installed Path"
+            ${EndIf}
+        ${EndIf}
+        ${If} $Path_SkyrimSE != $Empty
+            StrCpy $CheckState_SkyrimSE ${BST_CHECKED}
+        ${EndIf}
+
         ${If} $Path_Ex1 != $Empty
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex1 ${BST_CHECKED}
@@ -278,6 +305,14 @@ Unicode true
             StrCpy $CheckState_Fallout4_Py ${BST_CHECKED}
         ${EndIf}
 
+        ${If} $Reg_Value_SkyrimSE_Exe == $True
+        ${OrIf} $Reg_Value_SkyrimSE_Py != $True
+            StrCpy $CheckState_SkyrimSE_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_SkyrimSE_Py == $True
+            StrCpy $CheckState_SkyrimSE_Py ${BST_CHECKED}
+        ${EndIf}
+
         ${If} $Reg_Value_Ex1_Exe == $True
         ${OrIf} $Reg_Value_Ex1_Py != $True
             StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
@@ -307,6 +342,8 @@ Unicode true
             StrCpy $1 $PathDialogue_Skyrim
         ${ElseIf} $0 == $Browse_Fallout4
             StrCpy $1 $PathDialogue_Fallout4
+        ${ElseIf} $0 == $Browse_SkyrimSE
+            StrCpy $1 $PathDialogue_SkyrimSE
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2
@@ -361,6 +398,8 @@ Unicode true
             StrCpy $1 $PathDialogue_Skyrim
         ${ElseIf} $0 == $Browse_Fallout4
             StrCpy $1 $PathDialogue_Fallout4
+        ${ElseIf} $0 == $Browse_SkyrimSE
+            StrCpy $1 $PathDialogue_SkyrimSE
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2
