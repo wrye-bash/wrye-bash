@@ -380,6 +380,12 @@ class MasterList(_ModsUIList):
     def OnItemSelected(self, event): event.Skip()
     def OnKeyUp(self, event): event.Skip()
 
+    def OnDClick(self, event):
+        event.Skip()
+        mod_name = self.data_store[self.mouse_index].name
+        if not mod_name in bosh.modInfos: return
+        balt.Link.Frame.notebook.SelectPage('Mods', mod_name)
+
     #--Set ModInfo
     def SetFileInfo(self,fileInfo):
         self.ClearSelected()
