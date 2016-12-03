@@ -387,14 +387,14 @@ class ComboBox(wx.ComboBox):
             self.SetToolTip(tooltip(u''))
         event.Skip()
 
-def bitmapButton(parent, bitmap, tip=None, pos=defPos, size=defSize,
+def bitmapButton(parent, bitmap, button_tip=None, pos=defPos, size=defSize,
                  style=wx.BU_AUTODRAW, val=defVal, name=u'button',
                  onBBClick=None, onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
     if onBBClick: gButton.Bind(wx.EVT_BUTTON, lambda __event: onBBClick())
     if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
-    if tip: gButton.SetToolTip(tooltip(tip))
+    if button_tip: gButton.SetToolTip(tooltip(button_tip))
     return gButton
 
 class Button(wx.Button):
@@ -403,7 +403,7 @@ class Button(wx.Button):
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onButClick=None,
-                 onButClickEventful=None, tip=None, default=False):
+                 onButClickEventful=None, button_tip=None, default=False):
         """Create a button and bind its click function.
         :param onButClick: a no args function to execute on button click
         :param onButClickEventful: a function accepting as parameter the
@@ -416,7 +416,7 @@ class Button(wx.Button):
             raise BoltError('Both onButClick and onButClickEventful specified')
         if onButClick: self.Bind(wx.EVT_BUTTON, lambda __event: onButClick())
         if onButClickEventful: self.Bind(wx.EVT_BUTTON, onButClickEventful)
-        if tip: self.SetToolTip(tooltip(tip))
+        if button_tip: self.SetToolTip(tooltip(button_tip))
         if default: self.SetDefault()
 
 class OkButton(Button): _id = wx.ID_OK
@@ -440,22 +440,23 @@ class SelectAllButton(Button): _id = wx.ID_SELECTALL
 class ApplyButton(Button): _id = wx.ID_APPLY
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClickToggle=None, tip=None):
+                 val=defVal, name='button', onClickToggle=None,
+                 toggle_tip=None):
     """Creates a toggle button, binds toggle function, then returns bound
     button."""
     gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
                               name)
     if onClickToggle: gButton.Bind(wx.EVT_TOGGLEBUTTON,
                                    lambda __event: onClickToggle())
-    if tip: gButton.SetToolTip(tooltip(tip))
+    if toggle_tip: gButton.SetToolTip(tooltip(toggle_tip))
     return gButton
 
 def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
-             name='checkBox', onCheck=None, tip=None, checked=False):
+             name='checkBox', onCheck=None, checkbox_tip=None, checked=False):
     """Creates a checkBox, binds check function, then returns bound button."""
     gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
     if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX, lambda __event: onCheck())
-    if tip: gCheckBox.SetToolTip(tooltip(tip))
+    if checkbox_tip: gCheckBox.SetToolTip(tooltip(checkbox_tip))
     gCheckBox.SetValue(checked)
     return gCheckBox
 
@@ -478,12 +479,12 @@ class StaticText(wx.StaticText):
 
 def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
              style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
-             name=u'wxSpinctrl', onSpin=None, tip=None):
+             name=u'wxSpinctrl', onSpin=None, spin_tip=None):
     """Spin control with event and tip setting."""
     gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
                             initial, name)
     if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL, lambda __event: onSpin())
-    if tip: gSpinCtrl.SetToolTip(tooltip(tip))
+    if spin_tip: gSpinCtrl.SetToolTip(tooltip(spin_tip))
     return gSpinCtrl
 
 def listBox(parent, choices=None, **kwargs):

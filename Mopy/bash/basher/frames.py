@@ -88,7 +88,7 @@ class DocBrowser(wx.Frame):
                                        onClickToggle=self.DoEdit)
         self.openButton = Button(self, _(u'Open Doc...'),
                                  onButClick=self.DoOpen,
-                                 tip=_(u'Open doc in external editor.'))
+                                 button_tip=_(u'Open doc in external editor.'))
         #--Doc Name
         self.docNameBox = RoTextCtrl(self, multiline=False)
         #--Doc display

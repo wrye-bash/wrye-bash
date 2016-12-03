@@ -43,10 +43,10 @@ class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     def _initData(self, window, selection):
         super(_StatusBar_Hide, self)._initData(window, selection)
-        tip = window.GetToolTip().GetTip()
-        self._text = _(u"Hide '%s'") % tip
+        tip_ = window.GetToolTip().GetTip()
+        self._text = _(u"Hide '%s'") % tip_
         self.help = _(u"Hides %(buttonname)s's status bar button (can be"
-            u" restored through the settings menu).") % ({'buttonname': tip})
+            u" restored through the settings menu).") % ({'buttonname': tip_})
 
     def Execute(self): Link.Frame.statusBar.HideButton(self.window)
 
@@ -76,8 +76,8 @@ class StatusBar_Button(ItemLink):
         kwdargs['onBBClick'] = self.Execute
         if self.gButton is not None:
             self.gButton.Destroy()
-        self.gButton = bitmapButton(window, image, style=style, tip=self.tip,
-                                    **kwdargs)
+        self.gButton = bitmapButton(window, image, style=style,
+                                    button_tip=self.tip, **kwdargs)
         return self.gButton
 
     def DoPopupMenu(self,event):

@@ -1938,8 +1938,8 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         okButton = OkButton(dialog, onButClick=OnOk)
         gskip = TextCtrl(dialog)
         gdeprefix = TextCtrl(dialog)
-        gskipcomments = toggleButton(dialog,_(u'Filter Out Comments'),
-            tip=_(u"If active doesn't export comments in the scripts"))
+        gskipcomments = toggleButton(dialog, _(u'Filter Out Comments'),
+            toggle_tip=_(u"If active doesn't export comments in the scripts"))
         gskip.SetValue(bass.settings['bash.mods.export.skip'])
         gdeprefix.SetValue(bass.settings['bash.mods.export.deprefix'])
         gskipcomments.SetValue(bass.settings['bash.mods.export.skipcomments'])
