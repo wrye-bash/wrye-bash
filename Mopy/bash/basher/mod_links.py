@@ -901,7 +901,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         if self.CBashMismatch:
             old_mode = [u'CBash', u'Python'][self.doCBash]
             new_mode = [u'Python', u'CBash'][self.doCBash]
-            msg = msg % (self._selected_item.s, old_mode, new_mode)
+            msg %= self._selected_item.s, old_mode, new_mode
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         patch_files.executing_patch = self._selected_item

@@ -118,8 +118,7 @@ class _SimpleImporter(ImportPatcher):
                             else:
                                 id_data[fid][attr] = value
             progress.plus()
-        self.longTypes = self.longTypes & set(
-            x.classType for x in self.srcClasses)
+        self.longTypes &= set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
@@ -759,8 +758,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                                 if keep:
                                     id_data[fid].update(temp_values)
             progress.plus()
-        self.longTypes = self.longTypes & set(
-            x.classType for x in self.srcClasses)
+        self.longTypes &= set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):

@@ -2588,7 +2588,7 @@ class ModInfo(_BackupMixin, FileInfo):
         tags |= self.getBashTagsDesc()
         tags -= removed
         # Filter and remove old tags
-        tags = tags & allTagsSet
+        tags &= allTagsSet
         if tags & oldTagsSet:
             tags -= oldTagsSet
             self.setBashTagsDesc(tags)

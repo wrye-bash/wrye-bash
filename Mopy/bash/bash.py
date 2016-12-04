@@ -338,7 +338,7 @@ def main():
             if retCode is None:
                 return
         # Add the game to the command line, so we use it if we restart
-        sys.argv = sys.argv + ['-g', retCode]
+        sys.argv += ['-g', retCode]
         bush.setGame(retCode, opts.oblivionPath, bashIni)
 
     # from now on bush.game is set
@@ -594,7 +594,7 @@ def _tinkerSelectGame(ret, msgtext):
             self.callback = callback
 
         def on_click(self):
-            sys.argv = sys.argv + ['-g', self.gameName]
+            sys.argv += ['-g', self.gameName]
             self.callback(self.gameName)
             root.destroy()
 

@@ -3735,8 +3735,8 @@ class BashFrame(wx.Frame):
             title = bush.game.altName + u' %s%s'
         else:
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
-        title = title % (settings['bash.version'],
-            _(u'(Standalone)') if settings['bash.standalone'] else u'')
+        title %= (settings['bash.version'],
+                  _(u'(Standalone)') if settings['bash.standalone'] else u'')
         if CBashApi.Enabled:
             title += u', CBash %s: ' % (CBashApi.VersionText,)
         else:

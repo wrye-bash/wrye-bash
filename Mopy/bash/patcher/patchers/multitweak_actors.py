@@ -633,7 +633,7 @@ class SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher,BasalNPCTweaker):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
-                record.animations = record.animations + [u'0sexywalk01.kf']
+                record.animations += [u'0sexywalk01.kf']
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -650,8 +650,7 @@ class CBash_SWALKNPCAnimationPatcher(ASWALKNPCAnimationPatcher, _NpcCTweak):
             if record.IsFemale:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.animations = override.animations + [
-                        u'0sexywalk01.kf']
+                    override.animations += [u'0sexywalk01.kf']
                     self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
@@ -678,7 +677,7 @@ class RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher,BasalNPCTweaker):
         keep = patchFile.getKeeper()
         for record in patchFile.NPC_.records:
             if record.flags.female == 1:
-                record.animations = record.animations + [u'0realwalk01.kf']
+                record.animations += [u'0realwalk01.kf']
                 keep(record.fid)
                 srcMod = record.fid[0]
                 count[srcMod] = count.get(srcMod,0) + 1
@@ -695,8 +694,7 @@ class CBash_RWALKNPCAnimationPatcher(ARWALKNPCAnimationPatcher, _NpcCTweak):
             if record.IsFemale:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.animations = override.animations + [
-                        u'0realwalk01.kf']
+                    override.animations += [u'0realwalk01.kf']
                     self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID
