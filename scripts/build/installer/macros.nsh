@@ -62,6 +62,9 @@
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Path"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Python Version"
         DeleteRegValue HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version"
+        DeleteRegValue HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "${GameName} Path"
+        DeleteRegValue HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "${GameName} Python Version"
+        DeleteRegValue HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "${GameName} Standalone Version"
     !macroend
 
 
