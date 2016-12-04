@@ -30,7 +30,7 @@ Unicode true
     VIProductVersion ${WB_FILEVERSION}
     VIAddVersionKey /LANG=1033 "ProductName" "Wrye Bash"
     VIAddVersionKey /LANG=1033 "CompanyName" "Wrye Bash development team"
-    VIAddVersionKey /LANG=1033 "LegalCopyright" "� Wrye"
+    VIAddVersionKey /LANG=1033 "LegalCopyright" "© Wrye"
     VIAddVersionKey /LANG=1033 "FileDescription" "Installer for ${WB_NAME}"
     VIAddVersionKey /LANG=1033 "FileVersion" "${WB_FILEVERSION}"
     SetCompressor /SOLID lzma
