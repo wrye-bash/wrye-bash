@@ -12,16 +12,21 @@
         ; Python version requires Python, wxPython, Python Comtypes and PyWin32.
         ${If} $PythonVersionInstall == $True
             ; Look for Python.
-            ReadRegStr $Python_Path HKLM "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
+
+            ; HKLM
+            ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${If} $Python_Path == $Empty
-                ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
+                ReadRegStr $Python_Path HKLM "SOFTWARE\WOW6432Node\Python\PythonCore\2.7\InstallPath" ""
             ${EndIf}
-            ${If} $Python_Path == $Empty
-                ReadRegStr $Python_Path HKCU "SOFTWARE\Wow6432Node\Python\PythonCore\2.7\InstallPath" ""
-            ${EndIf}
+
+            ; HKCU
             ${If} $Python_Path == $Empty
                 ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${EndIf}
+            ${If} $Python_Path == $Empty
+                ReadRegStr $Python_Path HKCU "SOFTWARE\WOW6432Node\Python\PythonCore\2.7\InstallPath" ""
+            ${EndIf}
+
 
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
@@ -41,14 +46,14 @@
                 ${EndIf}
 
                 ; Detect wxPython.
-                ReadRegStr $Python_wx HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
+                ReadRegStr $Python_wx HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
                 ${If} $Python_wx == $Empty
-                    ReadRegStr $Python_wx HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
+                    ReadRegStr $Python_wx HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
                 ${EndIf}
                 ; Detect PyWin32.
-                ReadRegStr $1         HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                ReadRegStr $1         HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
                 ${If} $1 == $Empty
-                    ReadRegStr $1         HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
+                    ReadRegStr $1         HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
                 ${EndIf}
                 StrCpy $Python_pywin32 $1 3 -3
 
@@ -189,15 +194,15 @@
         ${EndIf}
         ; Write the uninstall keys for Windows
         SetOutPath "$COMMONFILES\Wrye Bash"
-        WriteRegStr HKLM "Software\Wrye Bash" "Installer Path" "$EXEPATH"
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayName" "Wrye Bash"
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "UninstallString" '"$COMMONFILES\Wrye Bash\uninstall.exe"'
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "URLInfoAbout" 'http://oblivion.nexusmods.com/mods/22368'
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "HelpLink" 'http://forums.bethsoft.com/topic/1376871-rel-wrye-bash/'
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "Publisher" 'Wrye & Wrye Bash Development Team'
-        WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayVersion" '${WB_FILEVERSION}'
-        WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoModify" 1
-        WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoRepair" 1
+        WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Installer Path" "$EXEPATH"
+        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayName" "Wrye Bash"
+        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "UninstallString" '"$COMMONFILES\Wrye Bash\uninstall.exe"'
+        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "URLInfoAbout" 'http://oblivion.nexusmods.com/mods/22368'
+        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "HelpLink" 'http://forums.bethsoft.com/topic/1376871-rel-wrye-bash/'
+        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "Publisher" 'Wrye & Wrye Bash Development Team'
+        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayVersion" '${WB_FILEVERSION}'
+        WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoModify" 1
+        WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoRepair" 1
         CreateDirectory "$COMMONFILES\Wrye Bash"
         WriteUninstaller "$COMMONFILES\Wrye Bash\uninstall.exe"
     SectionEnd
