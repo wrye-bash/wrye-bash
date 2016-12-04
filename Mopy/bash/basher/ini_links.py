@@ -25,9 +25,8 @@
 """Menu items for the main and item menus of the ini tweaks tab - their window
 attribute points to BashFrame.iniList singleton.
 """
-import copy
 
-from .. import bass, bosh, balt, env
+from .. import bass, bosh, balt
 from ..bass import Resources
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
 

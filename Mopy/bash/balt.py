@@ -39,7 +39,7 @@ import textwrap
 import time
 import threading
 from functools import partial, wraps
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 #--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin

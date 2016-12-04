@@ -486,15 +486,16 @@ class Save_EditCreated(OneItemLink):
                  'SPEL':_(u'Rename Spells...'),
                  'ALCH':_(u'Rename Potions...')
                  }
-    recordTypes = {'ENCH':('ARMO','CLOT','WEAP')}
+    recordTypes = {'ENCH': ('ARMO', 'CLOT', 'WEAP'), 'SPEL': ('SPEL',),
+                   'ALCH': ('ALCH',)}
     help = _(u'Allow user to rename custom items (spells, enchantments, etc)')
 
-    def __init__(self,type):
-        if type not in Save_EditCreated.menuNames:
+    def __init__(self, save_rec_type):
+        if save_rec_type not in Save_EditCreated.menuNames:
             raise ArgumentError
         super(Save_EditCreated, self).__init__()
-        self.type = type
-        self.menuName = self._text = Save_EditCreated.menuNames[self.type]
+        self.save_rec_type = save_rec_type
+        self._text = Save_EditCreated.menuNames[self.save_rec_type]
 
     def Execute(self):
         #--Get SaveFile
@@ -502,14 +503,14 @@ class Save_EditCreated(OneItemLink):
             saveFile = bosh.SaveFile(self._selected_info)
             saveFile.load(progress)
         #--No custom items?
-        recordTypes = Save_EditCreated.recordTypes.get(self.type,(self.type,))
+        recordTypes = Save_EditCreated.recordTypes[self.save_rec_type]
         records = [record for record in saveFile.created if record.recType in recordTypes]
         if not records:
             self._showOk(_(u'No items to edit.'))
             return
         #--Open editor dialog
         data = Save_EditCreatedData(self.window,saveFile,recordTypes)
-        balt.ListEditor.Display(self.window, self.menuName, data)
+        balt.ListEditor.Display(self.window, self._text, data)
 
 #------------------------------------------------------------------------------
 class Save_EditPCSpellsData(balt.ListEditorData):

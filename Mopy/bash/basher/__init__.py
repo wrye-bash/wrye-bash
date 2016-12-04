@@ -4201,7 +4201,3 @@ def InitImages():
     Resources.bashMonkey.Add(images['monkey.16'])
 
 from .links import InitLinks
-
-# Main ------------------------------------------------------------------------
-if __name__ == '__main__':
-    print _(u'Compiled')
