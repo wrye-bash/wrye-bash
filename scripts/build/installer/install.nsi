@@ -260,7 +260,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
-        ${If} $Fallout4 == ${BST_CHECKED}
+        ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             ${If} $Path_Fallout4 != $Empty
                 SetOutPath $Path_Fallout4\Mopy
                 ${If} $CheckState_Fallout4_Py == ${BST_CHECKED}
@@ -276,7 +276,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
-        ${If} $SkyrimSE == ${BST_CHECKED}
+        ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ${If} $Path_SkyrimSE != $Empty
                 SetOutPath $Path_SkyrimSE\Mopy
                 ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
