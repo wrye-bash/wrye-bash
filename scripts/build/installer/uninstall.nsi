@@ -11,31 +11,37 @@
                 !insertmacro UninstallBash $Path_OB "Oblivion"
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} $Path_Nehrim != $Empty
                 !insertmacro UninstallBash $Path_Nehrim "Nehrim"
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             ${If} $Path_Skyrim != $Empty
                 !insertmacro UninstallBash $Path_Skyrim "Skyrim"
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             ${If} $Path_Fallout4 != $Empty
                 !insertmacro UninstallBash $Path_Fallout4 "Fallout4"
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ${If} $Path_SkyrimSE != $Empty
                 !insertmacro UninstallBash $Path_SkyrimSE "SkyrimSE"
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} $Path_Ex1 != $Empty
                 !insertmacro UninstallBash $Path_Ex1 "Extra Path 1"
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} $Path_Ex2 != $Empty
                 !insertmacro UninstallBash $Path_Ex2 "Extra Path 2"
