@@ -441,7 +441,7 @@
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             SetOutPath "$Path_Skyrim\Mopy"
             ${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
-                ExecShell "open" '"%Path_Skyrim\Mopy\Wrye Bash Launcher.pyw"'
+                ExecShell "open" '"$Path_Skyrim\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_Skyrim_Exe == ${BST_CHECKED}
                 ExecShell "open" "$Path_Skyrim\Mopy\Wrye Bash.exe"
             ${EndIf}
@@ -449,7 +449,7 @@
         ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             SetOutPath "$Path_Fallout4\Mopy"
             ${If} $CheckState_Fallout4_Py == ${BST_CHECKED}
-                ExecShell "open" '"%Path_Fallout4\Mopy\Wrye Bash Launcher.pyw"'
+                ExecShell "open" '"$Path_Fallout4\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_Fallout4_Exe == ${BST_CHECKED}
                 ExecShell "open" "$Path_Fallout4\Mopy\Wrye Bash.exe"
             ${EndIf}
@@ -457,7 +457,7 @@
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             SetOutPath "$Path_SkyrimSE\Mopy"
             ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
-                ExecShell "open" '"%Path_SkyrimSE\Mopy\Wrye Bash Launcher.pyw"'
+                ExecShell "open" '"$Path_SkyrimSE\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
                 ExecShell "open" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
             ${EndIf}
