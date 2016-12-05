@@ -518,7 +518,7 @@
             ${EndIf}
             ${If} $Path_Ex2 != $Empty
                 !insertmacro RemoveOldFiles "$Path_Ex2"
-                ${EndIf}
+            ${EndIf}
         ${EndIf}
     FunctionEnd
 
