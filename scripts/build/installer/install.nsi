@@ -152,43 +152,43 @@
 
         ${If} $CheckState_OB == ${BST_CHECKED}
             ; Install resources:
-            ${If} Path_OB != $Empty
+            ${If} $Path_OB != $Empty
                 !insertmacro InstallBashFiles "Oblivion" "Oblivion" "$Path_OB" $Reg_Value_OB_Py $Reg_Value_OB_Exe "Oblivion Path" $CheckState_OB_Py $CheckState_OB_Exe true
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ; Install resources:
-            ${If} Path_Nehrim != $Empty
+            ${If} $Path_Nehrim != $Empty
                 !insertmacro InstallBashFiles "Nehrim" "Oblivion" "$Path_Nehrim" $Reg_Value_Nehrim_Py $Reg_Value_Nehrim_Exe "Nehrim Path" $CheckState_Nehrim_Py $CheckState_Nehrim_Exe true
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             ; Install resources:
-            ${If} Path_Skyrim != $Empty
+            ${If} $Path_Skyrim != $Empty
                 !insertmacro InstallBashFiles "Skyrim" "Skyrim" "$Path_Skyrim" $Reg_Value_Skyrim_Py $Reg_Value_Skyrim_Exe "Skyrim Path" $CheckState_Skyrim_Py $CheckState_Skyrim_Exe false
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             ; Install resources:
-            ${If} Path_Fallout4 != $Empty
+            ${If} $Path_Fallout4 != $Empty
                 !insertmacro InstallBashFiles "Fallout4" "Fallout4" "$Path_Fallout4" $Reg_Value_Fallout4_Py $Reg_Value_Fallout4_Exe "Fallout4 Path" $CheckState_Fallout4_Py $CheckState_Fallout4_Exe false
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ; Install resources:
-            ${If} Path_SkyrimSE != $Empty
+            ${If} $Path_SkyrimSE != $Empty
                 !insertmacro InstallBashFiles "SkyrimSE" "SkyrimSE" "$Path_SkyrimSE" $Reg_Value_SkyrimSE_Py $Reg_Value_SkyrimSE_Exe "SkyrimSE Path" $CheckState_SkyrimSE_Py $CheckState_SkyrimSE_Exe false
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
-            ${If} Path_Ex1 != $Empty
+            ${If} $Path_Ex1 != $Empty
                 !insertmacro InstallBashFiles "Extra Path 1" "" $Path_Ex1 $Reg_Value_Ex1_Py $Reg_Value_Ex1_Exe "Extra Path 1" $CheckState_Ex1_Py $CheckState_Ex1_Exe false
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ; Install resources:
-            ${If} Path_Ex2 != $Empty
+            ${If} $Path_Ex2 != $Empty
                 !insertmacro InstallBashFiles "Extra Path 2" "" $Path_Ex2 $Reg_Value_Ex2_Py $Reg_Value_Ex2_Exe "Extra Path 2" $CheckState_Ex2_Py $CheckState_Ex2_Exe false
             ${EndIf}
         ${EndIf}
@@ -213,7 +213,7 @@
         CreateShortCut "$SMPROGRAMS\Wrye Bash\Uninstall.lnk" "$COMMONFILES\Wrye Bash\uninstall.exe" "" "$COMMONFILES\Wrye Bash\uninstall.exe" 0
 
         ${If} $CheckState_OB == ${BST_CHECKED}
-            ${If} Path_OB != $Empty
+            ${If} $Path_OB != $Empty
                 SetOutPath $Path_OB\Mopy
                 ${If} $CheckState_OB_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Oblivion.lnk" "$Path_OB\Mopy\Wrye Bash Launcher.pyw" "" "$Path_OB\Mopy\bash\images\bash_32.ico" 0
@@ -229,23 +229,23 @@
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
-            ${If} Path_Nehrim != $Empty
+            ${If} $Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim\Mopy
                 ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Nehrim\Mopy\bash\images\bash_32.ico" 0
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim (Debug Log).lnk" "$Path_Nehrim\Mopy\Wrye Bash Debug.bat" "" "$Path_Nehrim\Mopy\bash\images\bash_32.ico" 0
                     ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                        CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash (Standalone) - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
                         CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Nehrim (Debug Log).lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe" "-d"
                     ${EndIf}
                 ${ElseIf} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-                    CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
-                    CreateShortCut "$SMPROGRAMS\Wyre Bash\Wrye Bash - Nehrim (Debug Log).lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe" "-d"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim.lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Nehrim (Debug Log).lnk" "$Path_Nehrim\Mopy\Wrye Bash.exe" "-d"
                 ${EndIf}
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
-            ${If} Path_Skyrim != $Empty
+            ${If} $Path_Skyrim != $Empty
                 SetOutPath $Path_Skyrim\Mopy
                 ${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Skyrim.lnk" "$Path_Skyrim\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Skyrim\Mopy\bash\images\bash_32.ico" 0
@@ -260,8 +260,8 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
-        ${If} $Fallout4 == ${BST_CHECKED}
-            ${If} Fallout4 != $Empty
+        ${If} $CheckState_Fallout4 == ${BST_CHECKED}
+            ${If} $Path_Fallout4 != $Empty
                 SetOutPath $Path_Fallout4\Mopy
                 ${If} $CheckState_Fallout4_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout4.lnk" "$Path_Fallout4\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Fallout4\Mopy\bash\images\bash_32.ico" 0
@@ -276,8 +276,8 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
-        ${If} $SkyrimSE == ${BST_CHECKED}
-            ${If} SkyrimSE != $Empty
+        ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
+            ${If} $Path_SkyrimSE != $Empty
                 SetOutPath $Path_SkyrimSE\Mopy
                 ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE.lnk" "$Path_SkyrimSE\Mopy\Wrye Bash Launcher.pyw" "" "$Path_SkyrimSE\Mopy\bash\images\bash_32.ico" 0
@@ -293,7 +293,7 @@
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
-            ${If} Path_Ex1 != $Empty
+            ${If} $Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1\Mopy
                 ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 1.lnk" "$Path_Ex1\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex1\Mopy\bash\images\bash_32.ico" 0
@@ -309,7 +309,7 @@
             ${EndIf}
         ${EndIf}
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
-            ${If} Path_Ex2 != $Empty
+            ${If} $Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2\Mopy
                 ${If} $CheckState_Ex2_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Extra 2.lnk" "$Path_Ex2\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Ex2\Mopy\bash\images\bash_32.ico" 0
