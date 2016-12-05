@@ -347,13 +347,40 @@
     Function PAGE_FINISH
         !insertmacro MUI_HEADER_TEXT $(PAGE_FINISH_TITLE) $(PAGE_FINISH_SUBTITLE)
 
-        ReadRegStr $Path_OB       HKLM "Software\Wrye Bash" "Oblivion Path"
-        ReadRegStr $Path_Nehrim   HKLM "Software\Wrye Bash" "Nehrim Path"
-        ReadRegStr $Path_Skyrim   HKLM "Software\Wrye Bash" "Skyrim Path"
+        ReadRegStr $Path_OB HKLM "Software\Wrye Bash" "Oblivion Path"
+        ${If} $Path_OB == $Empty
+            ReadRegStr $Path_OB HKLM "Software\WOW6432Node\Wrye Bash" "Oblivion Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Nehrim HKLM "Software\Wrye Bash" "Nehrim Path"
+        ${If} $Path_Nehrim == $Empty
+            ReadRegStr $Path_Nehrim HKLM "Software\WOW6432Node\Wrye Bash" "Nehrim Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Skyrim HKLM "Software\Wrye Bash" "Skyrim Path"
+        ${If} $Path_Skyrim == $Empty
+            ReadRegStr $Path_Skyrim HKLM "Software\WOW6432Node\Wrye Bash" "Skyrim Path"
+        ${EndIf}
+
         ReadRegStr $Path_Fallout4 HKLM "Software\Wrye Bash" "Fallout4 Path"
+        ${If} $Path_Fallout4 == $Empty
+            ReadRegStr $Path_Fallout4 HKLM "Software\WOW6432Node\Wrye Bash" "Fallout4 Path"
+        ${EndIf}
+
         ReadRegStr $Path_SkyrimSE HKLM "Software\Wrye Bash" "SkyrimSE Path"
-        ReadRegStr $Path_Ex1      HKLM "Software\Wrye Bash" "Extra Path 1"
-        ReadRegStr $Path_Ex2      HKLM "Software\Wrye Bash" "Extra Path 2"
+        ${If} $Path_SkyrimSE == $Empty
+            ReadRegStr $Path_SkyrimSE HKLM "Software\WOW6432Node\Wrye Bash" "SkyrimSE Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Ex1 HKLM "Software\Wrye Bash" "Extra Path 1"
+        ${If} $Path_Ex1 == $Empty
+            ReadRegStr $Path_Ex1 HKLM "Software\WOW6432Node\Wrye Bash" "Extra Path 1"
+        ${EndIf}
+
+        ReadRegStr $Path_Ex2 HKLM "Software\Wrye Bash" "Extra Path 2"
+        ${If} $Path_Ex2 == $Empty
+            ReadRegStr $Path_Ex2 HKLM "Software\WOW6432Node\Wrye Bash" "Extra Path 2"
+        ${EndIf}
 
         nsDialogs::Create 1018
             Pop $Dialog
