@@ -299,7 +299,7 @@ Unicode true
 
         ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
         ${If} $Path_Ex1 == $Empty
-            ReadRegStr $Path_Ex1 KLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
+            ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
         ${EndIf}
 
         ReadRegStr $Path_Ex2 HKLM "SOFTWARE\Wrye Bash" "Extra Path 2"
