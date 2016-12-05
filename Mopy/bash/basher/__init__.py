@@ -1068,13 +1068,17 @@ class ModList(_ModsUIList):
                           [checklists], liststyle='tree', canCancel=False)
 
     def jump_to_mods_installer(self, modName):
-        if not balt.Link.Frame.iPanel or not bass.settings[
-            'bash.installers.enabled']: return False
-        installer = self.data_store.table.getColumn('installer').get(modName)
+        installer = self.get_installer(modName)
         if installer is None:
             return False
         balt.Link.Frame.notebook.SelectPage('Installers', installer)
         return True
+
+    def get_installer(self, modName):
+        if not balt.Link.Frame.iPanel or not bass.settings[
+            'bash.installers.enabled']: return None
+        installer = self.data_store.table.getColumn('installer').get(modName)
+        return GPath(installer)
 
 #------------------------------------------------------------------------------
 class _DetailsMixin(object):
@@ -3472,12 +3476,15 @@ class BashNotebook(wx.Notebook, balt.TabDragMixin):
         return menu
 
     def SelectPage(self, page_title, item):
-        for ind, title in enumerate(settings['bash.tabs.order']):
-            if title == page_title: break
+        ind = 0
+        for title, enabled in settings['bash.tabs.order'].iteritems():
+            if title == page_title:
+                if not enabled: return
+                break
+            ind += enabled
         else: raise BoltError('Invalid page: %s' % page_title)
         self.SetSelection(ind)
-        tabInfo[page_title][2].SelectUIListItem(GPath(item),
-                                                deselectOthers=True)
+        tabInfo[page_title][2].SelectUIListItem(item, deselectOthers=True)
 
     def DoTabMenu(self,event):
         pos = event.GetPosition()
