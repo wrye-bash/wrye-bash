@@ -1,7 +1,6 @@
 ; install.nsi
 ; Installation script for Wrye Bash NSIS installer.
 
-
 ;-------------------------------- The Installation Sections:
 
     Section "Prerequisites" Prereq
@@ -11,22 +10,19 @@
 
         ; Python version requires Python, wxPython, Python Comtypes and PyWin32.
         ${If} $PythonVersionInstall == $True
-            ; Look for Python.
-
-            ; HKLM
+            ; Look for Python in HKLM
             ReadRegStr $Python_Path HKLM "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${If} $Python_Path == $Empty
                 ReadRegStr $Python_Path HKLM "SOFTWARE\WOW6432Node\Python\PythonCore\2.7\InstallPath" ""
             ${EndIf}
 
-            ; HKCU
+            ; Look for Python in HKCU
             ${If} $Python_Path == $Empty
                 ReadRegStr $Python_Path HKCU "SOFTWARE\Python\PythonCore\2.7\InstallPath" ""
             ${EndIf}
             ${If} $Python_Path == $Empty
                 ReadRegStr $Python_Path HKCU "SOFTWARE\WOW6432Node\Python\PythonCore\2.7\InstallPath" ""
             ${EndIf}
-
 
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
@@ -50,11 +46,13 @@
                 ${If} $Python_wx == $Empty
                     ReadRegStr $Python_wx HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
                 ${EndIf}
+
                 ; Detect PyWin32.
                 ReadRegStr $1         HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
                 ${If} $1 == $Empty
                     ReadRegStr $1         HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\pywin32-py2.7" "DisplayName"
                 ${EndIf}
+
                 StrCpy $Python_pywin32 $1 3 -3
 
                 ; Compare versions.
@@ -84,6 +82,7 @@
             ${Else}
                 DetailPrint "Python 2.7 is already installed; skipping!"
             ${EndIf}
+
             ${If} $Python_wx == "1"
                 SetOutPath "$TEMP\PythonInstallers"
                 DetailPrint "wxPython 2.8.12.1 - Downloading..."
@@ -104,6 +103,7 @@
             ${Else}
                 DetailPrint "wxPython 2.8.12.1 is already installed; skipping!"
             ${EndIf}
+
             ${If} $Python_Comtypes == "1"
                 SetOutPath "$TEMP\PythonInstallers"
                 DetailPrint "Comtypes 0.6.2 - Downloading..."
@@ -124,6 +124,7 @@
             ${Else}
                 DetailPrint "Comtypes 0.6.2 is already installed; skipping!"
             ${EndIf}
+
             ${If} $Python_pywin32 == "1"
                 SetOutPath "$TEMP\PythonInstallers"
                 DetailPrint "PyWin32 - Downloading..."
@@ -156,42 +157,49 @@
                 !insertmacro InstallBashFiles "Oblivion" "Oblivion" "$Path_OB" $Reg_Value_OB_Py $Reg_Value_OB_Exe "Oblivion Path" $CheckState_OB_Py $CheckState_OB_Exe true
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Nehrim != $Empty
                 !insertmacro InstallBashFiles "Nehrim" "Oblivion" "$Path_Nehrim" $Reg_Value_Nehrim_Py $Reg_Value_Nehrim_Exe "Nehrim Path" $CheckState_Nehrim_Py $CheckState_Nehrim_Exe true
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Skyrim != $Empty
                 !insertmacro InstallBashFiles "Skyrim" "Skyrim" "$Path_Skyrim" $Reg_Value_Skyrim_Py $Reg_Value_Skyrim_Exe "Skyrim Path" $CheckState_Skyrim_Py $CheckState_Skyrim_Exe false
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Fallout4 != $Empty
                 !insertmacro InstallBashFiles "Fallout4" "Fallout4" "$Path_Fallout4" $Reg_Value_Fallout4_Py $Reg_Value_Fallout4_Exe "Fallout4 Path" $CheckState_Fallout4_Py $CheckState_Fallout4_Exe false
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_SkyrimSE != $Empty
                 !insertmacro InstallBashFiles "SkyrimSE" "SkyrimSE" "$Path_SkyrimSE" $Reg_Value_SkyrimSE_Py $Reg_Value_SkyrimSE_Exe "SkyrimSE Path" $CheckState_SkyrimSE_Py $CheckState_SkyrimSE_Exe false
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Ex1 != $Empty
                 !insertmacro InstallBashFiles "Extra Path 1" "" $Path_Ex1 $Reg_Value_Ex1_Py $Reg_Value_Ex1_Exe "Extra Path 1" $CheckState_Ex1_Py $CheckState_Ex1_Exe false
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Ex2 != $Empty
                 !insertmacro InstallBashFiles "Extra Path 2" "" $Path_Ex2 $Reg_Value_Ex2_Py $Reg_Value_Ex2_Exe "Extra Path 2" $CheckState_Ex2_Py $CheckState_Ex2_Exe false
             ${EndIf}
         ${EndIf}
+
         ; Write the uninstall keys for Windows
         SetOutPath "$COMMONFILES\Wrye Bash"
         WriteRegStr HKLM "SOFTWARE\Wrye Bash" "Installer Path" "$EXEPATH"
@@ -208,7 +216,6 @@
     SectionEnd
 
     Section "Start Menu Shortcuts" Shortcuts_SM
-
         CreateDirectory "$SMPROGRAMS\Wrye Bash"
         CreateShortCut "$SMPROGRAMS\Wrye Bash\Uninstall.lnk" "$COMMONFILES\Wrye Bash\uninstall.exe" "" "$COMMONFILES\Wrye Bash\uninstall.exe" 0
 
@@ -228,6 +235,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${If} $Path_Nehrim != $Empty
                 SetOutPath $Path_Nehrim\Mopy
@@ -244,6 +252,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Skyrim == ${BST_CHECKED}
             ${If} $Path_Skyrim != $Empty
                 SetOutPath $Path_Skyrim\Mopy
@@ -260,6 +269,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Fallout4 == ${BST_CHECKED}
             ${If} $Path_Fallout4 != $Empty
                 SetOutPath $Path_Fallout4\Mopy
@@ -276,6 +286,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ${If} $Path_SkyrimSE != $Empty
                 SetOutPath $Path_SkyrimSE\Mopy
@@ -292,6 +303,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} $Path_Ex1 != $Empty
                 SetOutPath $Path_Ex1\Mopy
@@ -308,6 +320,7 @@
                 ${EndIf}
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Ex2 == ${BST_CHECKED}
             ${If} $Path_Ex2 != $Empty
                 SetOutPath $Path_Ex2\Mopy
