@@ -10,6 +10,7 @@ Unicode true
     !include "nsDialogs.nsh"
     !include "WordFunc.nsh"
     !include "StrFunc.nsh"
+    !include "macros.nsh"
     ; declare used functions
     ${StrLoc}
 
@@ -162,220 +163,14 @@ Unicode true
         StrCpy $Empty ""
         StrCpy $True "True"
 
-        ReadRegStr $Path_OB HKLM "SOFTWARE\Wrye Bash" "Oblivion Path"
-        ${If} $Path_OB == $Empty
-            ReadRegStr $Path_OB HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Nehrim HKLM "SOFTWARE\Wrye Bash" "Nehrim Path"
-        ${If} $Path_Nehrim == $Empty
-            ReadRegStr $Path_Nehrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Skyrim HKLM "SOFTWARE\Wrye Bash" "Skyrim Path"
-        ${If} $Path_Skyrim == $Empty
-            ReadRegStr $Path_Skyrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\Wrye Bash" "Fallout4 Path"
-        ${If} $Path_Fallout4 == $Empty
-            ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
-        ${EndIf}
-
-        ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
-        ${If} $Path_SkyrimSE == $Empty
-            ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
-        ${If} $Path_Ex1 == $Empty
-            ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
-        ${EndIf}
-
-        ReadRegStr $Path_Ex2 HKLM "SOFTWARE\Wrye Bash" "Extra Path 2"
-        ${If} $Path_Ex2 == $Empty
-            ReadRegStr $Path_Ex2 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_OB_Py HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version"
-        ${If} $Reg_Value_OB_Py == $Empty
-            ReadRegStr $Reg_Value_OB_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Nehrim_Py HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version"
-        ${If} $Reg_Value_Nehrim_Py == $Empty
-            ReadRegStr $Reg_Value_Nehrim_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Skyrim_Py HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version"
-        ${If} $Reg_Value_Skyrim_Py == $Empty
-            ReadRegStr $Reg_Value_Skyrim_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout4_Py HKLM "SOFTWARE\Wrye Bash" "Fallout4 Python Version"
-        ${If} $Reg_Value_Fallout4_Py == $Empty
-            ReadRegStr $Reg_Value_Fallout4_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_SkyrimSE_Py HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Python Version"
-        ${If} $Reg_Value_SkyrimSE_Py == $Empty
-            ReadRegStr $Reg_Value_SkyrimSE_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version"
-        ${If} $Reg_Value_Ex1_Py == $Empty
-            ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex2_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version"
-        ${If} $Reg_Value_Ex2_Py == $Empty
-            ReadRegStr $Reg_Value_Ex2_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_OB_Exe HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version"
-        ${If} $Reg_Value_OB_Exe == $Empty
-            ReadRegStr $Reg_Value_OB_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Nehrim_Exe HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version"
-        ${If} $Reg_Value_Nehrim_Exe == $Empty
-            ReadRegStr $Reg_Value_Nehrim_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Skyrim_Exe HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalone Version"
-        ${If} $Reg_Value_Skyrim_Exe == $Empty
-            ReadRegStr $Reg_Value_Skyrim_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout4_Exe HKLM "SOFTWARE\Wrye Bash" "Fallout4 Standalone Version"
-        ${If} $Reg_Value_Fallout4_Exe == $Empty
-            ReadRegStr $Reg_Value_Fallout4_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Standalone Version"
-        ${If} $Reg_Value_SkyrimSE_Exe == $Empty
-            ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version"
-        ${If} $Reg_Value_Ex1_Exe == $Empty
-            ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex2_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version"
-        ${If} $Reg_Value_Ex2_Exe == $Empty
-            ReadRegStr $Reg_Value_Ex2_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2 Standalone Version"
-        ${EndIf}
+        !insertmacro InitializeRegistryPaths
     FunctionEnd
 
     Function .onInit
         StrCpy $Empty ""
         StrCpy $True "True"
 
-        ReadRegStr $Path_OB HKLM "SOFTWARE\Wrye Bash" "Oblivion Path"
-        ${If} $Path_OB == $Empty
-            ReadRegStr $Path_OB HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Nehrim HKLM "SOFTWARE\Wrye Bash" "Nehrim Path"
-        ${If} $Path_Nehrim == $Empty
-            ReadRegStr $Path_Nehrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Skyrim HKLM "SOFTWARE\Wrye Bash" "Skyrim Path"
-        ${If} $Path_Skyrim == $Empty
-            ReadRegStr $Path_Skyrim HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\Wrye Bash" "Fallout4 Path"
-        ${If} $Path_Fallout4 == $Empty
-            ReadRegStr $Path_Fallout4 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Path"
-        ${EndIf}
-
-        ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
-        ${If} $Path_SkyrimSE == $Empty
-            ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
-        ${EndIf}
-
-        ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
-        ${If} $Path_Ex1 == $Empty
-            ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
-        ${EndIf}
-
-        ReadRegStr $Path_Ex2 HKLM "SOFTWARE\Wrye Bash" "Extra Path 2"
-        ${If} $Path_Ex2 == $Empty
-            ReadRegStr $Path_Ex2 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_OB_Py HKLM "SOFTWARE\Wrye Bash" "Oblivion Python Version"
-        ${If} $Reg_Value_OB_Py == $Empty
-            ReadRegStr $Reg_Value_OB_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Nehrim_Py HKLM "SOFTWARE\Wrye Bash" "Nehrim Python Version"
-        ${If} $Reg_Value_Nehrim_Py == $Empty
-            ReadRegStr $Reg_Value_Nehrim_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Skyrim_Py HKLM "SOFTWARE\Wrye Bash" "Skyrim Python Version"
-        ${If} $Reg_Value_Skyrim_Py == $Empty
-            ReadRegStr $Reg_Value_Skyrim_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout4_Py HKLM "SOFTWARE\Wrye Bash" "Fallout4 Python Version"
-        ${If} $Reg_Value_Fallout4_Py == $Empty
-            ReadRegStr $Reg_Value_Fallout4_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_SkyrimSE_Py HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Python Version"
-        ${If} $Reg_Value_SkyrimSE_Py == $Empty
-            ReadRegStr $Reg_Value_SkyrimSE_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version"
-        ${If} $Reg_Value_Ex1_Py == $Empty
-            ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex2_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Python Version"
-        ${If} $Reg_Value_Ex2_Py == $Empty
-            ReadRegStr $Reg_Value_Ex2_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2 Python Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_OB_Exe HKLM "SOFTWARE\Wrye Bash" "Oblivion Standalone Version"
-        ${If} $Reg_Value_OB_Exe == $Empty
-            ReadRegStr $Reg_Value_OB_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Oblivion Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Nehrim_Exe HKLM "SOFTWARE\Wrye Bash" "Nehrim Standalone Version"
-        ${If} $Reg_Value_Nehrim_Exe == $Empty
-            ReadRegStr $Reg_Value_Nehrim_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Nehrim Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Skyrim_Exe HKLM "SOFTWARE\Wrye Bash" "Skyrim Standalone Version"
-        ${If} $Reg_Value_Skyrim_Exe == $Empty
-            ReadRegStr $Reg_Value_Skyrim_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Skyrim Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Fallout4_Exe HKLM "SOFTWARE\Wrye Bash" "Fallout4 Standalone Version"
-        ${If} $Reg_Value_Fallout4_Exe == $Empty
-            ReadRegStr $Reg_Value_Fallout4_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout4 Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Standalone Version"
-        ${If} $Reg_Value_SkyrimSE_Exe == $Empty
-            ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version"
-        ${If} $Reg_Value_Ex1_Exe == $Empty
-            ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Standalone Version"
-        ${EndIf}
-
-        ReadRegStr $Reg_Value_Ex2_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 2 Standalone Version"
-        ${If} $Reg_Value_Ex2_Exe == $Empty
-            ReadRegStr $Reg_Value_Ex2_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 2 Standalone Version"
-        ${EndIf}
+        !insertmacro InitializeRegistryPaths
 
         StrCpy $MinVersion_Comtypes '0.6.2'
         StrCpy $MinVersion_wx '2.8.12'
@@ -586,7 +381,6 @@ Unicode true
 
 ;-------------------------------- Include Local Script Files
 
-    !include "macros.nsh"
     !include "pages.nsi"
     !include "install.nsi"
     !include "uninstall.nsi"
