@@ -21,5 +21,274 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+"""Constants and classes to define for each new game - still a WIP."""
 
-#empty
+from .. import brec
+# from .constants import * # TODO(ut): create a .constants module
+
+#--Name of the game
+name = u'' ## Example: u'Oblivion'
+#--Alternate display name of Wrye Bash when managing this game
+altName = u'' ## Example: u'Wrye Smash'
+
+#--Exe to look for to see if this is the right game
+exe = u'' ## Example: u'TESV.exe'
+
+#--Registry keys to read to find the install location
+## These are relative to:
+##  HKLM\Software
+##  HKLM\Software\Wow6432Node
+##  HKCU\Software
+##  HKCU\Software\Wow6432Node
+## Example: (u'Bethesda Softworks\\Oblivion', u'Installed Path')
+regInstallKeys = ()
+
+#--Patch information
+## URL to download patches for the main game.
+patchURL = u''
+## Tooltip to display over the URL when displayed
+patchTip = u''
+
+#--URL to the Nexus site for this game
+nexusUrl = u''  #-- URL
+nexusName = u'' #-- Long Name
+nexusKey = u''  #-- Key for the "always ask this question" setting in settings.dat
+
+# Bsa info
+allow_reset_bsa_timestamps = False
+bsa_extension = ur'bsa'
+supports_mod_inis = True # this game supports mod ini files aka ini fragments
+vanilla_string_bsas = {}
+
+# Load order info
+using_txt_file = True
+
+#--Construction Set information
+class cs:
+    imageName = u''   # Image name template for the status bar
+    longName = u''    # Full name
+    exe = u'*DNE*'    # Executable to run
+    shortName = u''   # Abbreviated name
+    seArgs = u''      # Argument to pass to the SE to load the CS
+
+#--Script Extender information
+class se:
+    shortName = u''   # Abbreviated name.  If this is empty, it signals that no SE is available
+    longname = u''    # Full name
+    exe = u''         # Exe to run
+    steamExe = u''    # Exe to run if a steam install
+    url = u''         # URL to download from
+    urlTip = u''      # Tooltip for mouse over the URL
+
+#--Script Dragon
+class sd:
+    shortName = u''
+    longName = u''
+    installDir = u''
+
+#--SkyProc Patchers
+class sp:
+    shortName = u''
+    longName = u''
+    installDir = u''
+
+#--Quick shortcut for combining the SE and SD names
+se_sd = u''
+
+#--Graphics Extender information
+class ge:
+    shortName = u''
+    longName = u''
+    ## exe is treated specially here.  If it is a string, then it should
+    ## be the path relative to the root directory of the game
+    ## if it is list, each list element should be an iterable to pass to Path.join
+    ## relative to the root directory of the game.  In this case, each filename
+    ## will be tested in reverse order.  This was required for Oblivion, as the newer
+    ## OBGE has a different filename than the older OBGE
+    exe = u''
+    url = u''
+    urlTip = u''
+
+#--4gb Launcher
+class laa:
+    name = u''          # Display name of the launcher
+    exe = u'*DNE*'      # Executable to run
+    launchesSE = False  # Whether the launcher will automatically launch the SE
+
+# Files BAIN shouldn't skip
+dontSkip = (
+# Nothing so far
+)
+
+# Directories where specific file extensions should not be skipped by BAIN
+dontSkipDirs = {
+# Nothing so far
+}
+
+#--Folders BAIN should never CRC check in the Data directory
+SkipBAINRefresh = set((
+    # Use lowercase names
+))
+
+#--Some stuff dealing with INI files
+class ini:
+    #--True means new lines are allowed to be added via INI tweaks
+    #  (by default)
+    allowNewLines = False
+
+    #--INI Entry to enable BSA Redirection
+    bsaRedirection = (u'Archive',u'sArchiveList')
+
+#--Save Game format stuff
+class ess:
+    # Save file capabilities
+    canReadBasic = False    # Can read the info needed for the Save Tab display
+    canEditMasters = False  # Can adjust save file masters
+    canEditMore = False     # Advanced editing
+    ext = u'.ess'           # Save file extension
+
+    @staticmethod
+    def load(ins,header):
+        """Extract basic info from save file.close
+           At a minimum, this should set the following
+           attributes in 'header':
+            pcName
+            pcLevel
+            pcLocation
+            gameDate
+            gameDays
+            gameTicks (seconds*1000)
+            image (ssWidth,ssHeight,ssData)
+            masters
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def writeMasters(ins,out,header):
+        """Rewrites masters of existing save file."""
+        raise NotImplementedError
+
+#--The main plugin Wrye Bash should look for
+masterFiles = [
+    ]
+
+#--INI files that should show up in the INI Edits tab
+## Example: [u'Oblivion.ini']
+iniFiles = [
+    ]
+
+#-- INI setting used to setup Save Profiles
+## (section,key)
+saveProfilesKey = (u'General',u'SLocalSavePath')
+
+#--BAIN:
+## These are the allowed default data directories that BAIN can install to
+dataDirs = set()
+## These are additional special directories that BAIN can install to
+dataDirsPlus = set()
+
+# Installer -------------------------------------------------------------------
+# ensure all path strings are prefixed with 'r' to avoid interpretation of
+#   accidental escape sequences
+wryeBashDataFiles = {u'Bashed Patch.esp', u'Bashed Patch, 0.esp',
+                     u'Bashed Patch, 1.esp', u'Bashed Patch, 2.esp',
+                     u'Bashed Patch, 3.esp', u'Bashed Patch, 4.esp',
+                     u'Bashed Patch, 5.esp', u'Bashed Patch, 6.esp',
+                     u'Bashed Patch, 7.esp', u'Bashed Patch, 8.esp',
+                     u'Bashed Patch, 9.esp', u'Bashed Patch, CBash.esp',
+                     u'Bashed Patch, Python.esp', u'Bashed Patch, FCOM.esp',
+                     u'Bashed Patch, Warrior.esp', u'Bashed Patch, Thief.esp',
+                     u'Bashed Patch, Mage.esp', u'Bashed Patch, Test.esp',
+                     u'ArchiveInvalidationInvalidated!.bsa',
+                     u'Docs\\Bash Readme Template.html',
+                     u'Docs\\wtxt_sand_small.css', u'Docs\\wtxt_teal.css',
+                     u'Docs\\Bash Readme Template.txt'}
+wryeBashDataDirs = {u'Bash Patches\\', u'INI Tweaks\\'}
+ignoreDataFiles = set()
+ignoreDataFilePrefixes = set()
+ignoreDataDirs = set()
+
+#--Plugin format stuff
+class esp:
+    #--Wrye Bash capabilities
+    canBash = False         # Can create Bashed Patches
+    canEditHeader = False   # Can edit basic info in the TES4 record
+
+    #--Valid ESM/ESP header versions
+    ## These are the valid 'version' numbers for the game file headers
+    validHeaderVersions = tuple()
+
+    #--Class to use to read the TES4 record
+    ## This is the class name in bosh.py to use for the TES4 record when reading
+    ## Example: 'MreTes4'
+    tes4ClassName = ''
+
+    #--Information about the basic record header
+    class header:
+        format = ''         # Format passed to struct.unpack to unpack the header
+        size = 0            # Size of the record header
+        attrs = tuple()     # List of attributes to set = the return of struct.unpack
+        defaults = tuple()  # Default values for each of the above attributes
+
+    #--Top types in order of the main ESM
+    topTypes = []
+
+    #--Dict mapping 'ignored' top types to un-ignored top types
+    topIgTopTYpes = dict()
+
+    #--Record Types: all recognized record types (not just the top types)
+    recordTypes = set(topTypes + 'GRUP,TES4'.split(','))
+
+class RecordHeader(brec.BaseRecordHeader):
+    size = 20 # Size in bytes of a record header
+
+    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
+        self.recType = recType
+        self.size = size
+        # Do some conditional stuff, commonly different variable names
+		# if this is a GRUP header or an actual record
+
+    @staticmethod
+    def unpack(ins):
+        """Returns a RecordHeader object by reading the input stream."""
+        pass
+
+    def pack(self):
+        """Returns the record header packed into a string for writing to file."""
+        pass
+
+#--The pickle file for this game.  Holds encoded GMST IDs from the big list below
+pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
+
+#--Bash Tags supported by this game
+allTags = sorted(())
+
+#--Patcher available when building a Bashed Patch (referenced by class name)
+patchers = ()
+
+#--CBash patchers available when building a Bashed Patch
+CBash_patchers = ()
+
+#--Mergeable record types
+mergeClasses = (
+)
+
+#--Extra read classes: these record types will always be loaded, even if patchers
+#  don't need them directly (for example, for MGEF info)
+readClasses = ()
+writeClasses = ()
+
+def init():
+    # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
+    # re-executing all lines within the module, it acts like another 'import'
+    # statement - in other words, nothing happens.  This means any lines that
+    # affect outside modules must do so within this function, which will be
+    # called instead of 'reload'
+    brec.ModReader.recHeader = RecordHeader
+
+    #--Record Types
+    brec.MreRecord.type_class = dict((x.classType,x) for x in  (
+	    ))
+
+    #--Simple records
+    brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {'TES4'})

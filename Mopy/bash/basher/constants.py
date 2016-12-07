@@ -199,7 +199,22 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.statusbar.showversion': False,
     #--Wrye Bash: Group and Rating
     'bash.mods.autoGhost': False,
-    'bash.mods.groups': list(bush.defaultGroups),
+    'bash.mods.groups': [
+        u'Root',
+        u'Library',
+        u'Cosmetic',
+        u'Clothing',
+        u'Weapon',
+        u'Tweak',
+        u'Overhaul',
+        u'Misc.',
+        u'Magic',
+        u'NPC',
+        u'Home',
+        u'Place',
+        u'Quest',
+        u'Last',
+    ],
     'bash.mods.ratings': ['+','1','2','3','4','5','=','~'],
     #--Wrye Bash: Col (Sort) Names
     'bash.colNames': {

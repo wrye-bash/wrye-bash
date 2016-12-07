@@ -31,9 +31,10 @@ import collections
 import struct
 from env import get_game_path
 from bolt import GPath, Path, deprint, BoltError
+import game as game_init
 
 # Game detection --------------------------------------------------------------
-game = None         # the python module for the current game
+game = None         # type: game_init
 gamePath = None     # absolute bolt Path to the game directory
 foundGames = {}     # 'name':Path dict used by the Settings switch game menu
 
@@ -48,9 +49,8 @@ def _supportedGames(useCache=True):
     _allGames.clear()
     _registryGames.clear()
     import pkgutil
-    import game as _game
     # Detect the known games
-    for importer,modname,ispkg in pkgutil.iter_modules(_game.__path__):
+    for importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):
         if not ispkg: continue # game support modules are packages
         # Equivalent of "from game import <modname>"
         try:
@@ -67,7 +67,6 @@ def _supportedGames(useCache=True):
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
-    del _game
     deprint(u'Detected the following supported games via Windows Registry:')
     for foundName in _registryGames:
         deprint(u' %s:' % foundName, _registryGames[foundName])
@@ -179,24 +178,6 @@ def setGame(gameName, workingDir=u'', bashIni=None):
             return None
     # No match found return the list of possible games
     return foundGames_.keys() # may be empty if nothing is found in registry
-
-# Default Groups --------------------------------------------------------------
-defaultGroups = (
-    u'Root',
-    u'Library',
-    u'Cosmetic',
-    u'Clothing',
-    u'Weapon',
-    u'Tweak',
-    u'Overhaul',
-    u'Misc.',
-    u'Magic',
-    u'NPC',
-    u'Home',
-    u'Place',
-    u'Quest',
-    u'Last',
-    )
 
 # Tes3 Group/Top Types --------------------------------------------------------
 groupTypes = [
