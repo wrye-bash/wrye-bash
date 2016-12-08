@@ -87,51 +87,52 @@ _encodingSwap = {
 # setting it tries the specified encoding first
 pluginEncoding = None
 
-def _getbestencoding(text):
+def _getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
-    result = chardet.detect(text)
+    result = chardet.detect(bitstream)
     encoding,confidence = result['encoding'],result['confidence']
     encoding = _encodingSwap.get(encoding,encoding)
     ## Debug: uncomment the following to output stats on encoding detection
     #print
-    #print '%s: %s (%s)' % (repr(text),encoding,confidence)
+    #print '%s: %s (%s)' % (repr(bitstream),encoding,confidence)
     return encoding,confidence
 
-def decode(text,encoding=None,avoidEncodings=()):
-    if isinstance(text,unicode) or text is None: return text
+def decode(byte_str, encoding=None, avoidEncodings=()):
+    if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
     if encoding:
-        try: return unicode(text,encoding)
+        try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
-    encoding,confidence = _getbestencoding(text)
+    encoding,confidence = _getbestencoding(byte_str)
     if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
-        try: return unicode(text,encoding)
+        try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # If even that fails, fall back to the old method, trial and error
     for encoding in encodingOrder:
-        try: return unicode(text,encoding)
+        try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     raise UnicodeDecodeError(u'Text could not be decoded using any method')
 
-def encode(text,encodings=encodingOrder,firstEncoding=None,returnEncoding=False):
-    if isinstance(text,str) or text is None:
-        if returnEncoding: return text,None
-        else: return text
+def encode(text_str, encodings=encodingOrder, firstEncoding=None,
+           returnEncoding=False):
+    if isinstance(text_str, str) or text_str is None:
+        if returnEncoding: return text_str, None
+        else: return text_str
     # Try user specified encoding
     if firstEncoding:
         try:
-            text = text.encode(firstEncoding)
-            if returnEncoding: return text,firstEncoding
-            else: return text
+            text_str = text_str.encode(firstEncoding)
+            if returnEncoding: return text_str, firstEncoding
+            else: return text_str
         except UnicodeEncodeError:
             pass
     goodEncoding = None
     # Try the list of encodings in order
     for encoding in encodings:
         try:
-            temp = text.encode(encoding)
+            temp = text_str.encode(encoding)
             detectedEncoding = _getbestencoding(temp)
             if detectedEncoding == encoding:
                 # This encoding also happens to be detected
@@ -262,13 +263,13 @@ def dumpTranslator(outPath,language,*files):
                             outWrite(line)
                         continue
                     elif line[0:7] == 'msgid "':
-                        text = line.strip('\r\n')[7:-1]
+                        stripped = line.strip('\r\n')[7:-1]
                         # Replace escape sequences
-                        text = text.replace('\\"','"')      # Quote
-                        text = text.replace('\\t','\t')     # Tab
-                        text = text.replace('\\\\', '\\')   # Backslash
-                        translated = _(text)
-                        if text != translated:
+                        stripped = stripped.replace('\\"','"')      # Quote
+                        stripped = stripped.replace('\\t','\t')     # Tab
+                        stripped = stripped.replace('\\\\', '\\')   # Backslash
+                        translated = _(stripped)
+                        if stripped != translated:
                             # Already translated
                             outWrite(line)
                             outWrite('msgstr "')

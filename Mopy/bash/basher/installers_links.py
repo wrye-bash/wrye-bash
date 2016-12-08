@@ -55,7 +55,7 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
 #------------------------------------------------------------------------------
 class Installers_AddMarker(ItemLink):
     """Add an installer marker."""
-    text = _(u'Add Marker...')
+    _text = _(u'Add Marker...')
     help = _(u'Adds a Marker, a special type of package useful for separating'
              u' and labelling your packages.')
 
@@ -65,7 +65,7 @@ class Installers_AddMarker(ItemLink):
 
 class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
-    text = _(u'Monitor External Installation...')
+    _text = _(u'Monitor External Installation...')
     help = _(u'Monitors the Data folder during installation via manual install'
              u' or 3rd party tools.')
 
@@ -181,7 +181,7 @@ class Installers_MonitorInstall(Installers_Link):
 
 class Installers_ListPackages(Installers_Link):
     """Copies list of Bain files to clipboard."""
-    text = _(u'List Packages...')
+    _text = _(u'List Packages...')
     help = _(u'Displays a list of all packages.  Also copies that list to the '
         u'clipboard.  Useful for posting your package order on forums.')
 
@@ -198,7 +198,7 @@ class Installers_ListPackages(Installers_Link):
 
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""
-    text = _(u'Anneal All')
+    _text = _(u'Anneal All')
     help = _(u'This will install any missing files (for active installers)'
              u' and correct all install order and reconfiguration errors.')
 
@@ -214,7 +214,7 @@ class Installers_AnnealAll(Installers_Link):
 
 class Installers_UninstallAllPackages(Installers_Link):
     """Uninstall all packages."""
-    text = _(u'Uninstall All Packages')
+    _text = _(u'Uninstall All Packages')
     help = _(u'This will uninstall all packages.')
 
     @balt.conversation
@@ -236,7 +236,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
     def __init__(self, full_refresh=False):
         super(Installers_Refresh, self).__init__()
         self.full_refresh = full_refresh
-        self.text = _(u'Full Refresh') if full_refresh else _(u'Refresh Data')
+        self._text = _(u'Full Refresh') if full_refresh else _(u'Refresh Data')
         self.help = _(
             u"Perform a full refresh of all data files, recalculating all "
             u"CRCs.  This can take 5-15 minutes.") if self.full_refresh else _(
@@ -247,7 +247,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
     @balt.conversation
     def Execute(self):
         """Refreshes all Installers data"""
-        if self.full_refresh and not self._askWarning(self.msg, self.text):
+        if self.full_refresh and not self._askWarning(self.msg, self._text):
             return
         self.idata.reset_refresh_flag_on_projects()
         self.iPanel.ShowPanel(fullRefresh=self.full_refresh,scan_data_dir=True)
@@ -256,7 +256,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
     files. For safety just moved to Oblivion Mods\Bash Installers\Bash\Data
     Folder Contents (date/time)\."""
-    text = _(u'Clean Data')
+    _text = _(u'Clean Data')
     help = _(u'This will remove all mod files that are not linked to an'
              u' active installer out of the Data folder.')
     fullMessage = _(u"Clean Data directory?") + u"  " + help + u"  " + _(
@@ -281,11 +281,11 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
 # Installers BoolLinks --------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):
-    text, key, help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
+    _text, key, help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
         u"Enable/Disable automatic annealing of packages.")
 
 class Installers_AutoWizard(BoolLink):
-    text = _(u'Auto-Anneal/Install Wizards')
+    _text = _(u'Auto-Anneal/Install Wizards')
     key = 'bash.installers.autoWizard'
     help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
              u" of packages after running its wizard.")
@@ -297,19 +297,19 @@ class _Installers_BoolLink_Refresh(BoolLink):
 
 class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
-    text  = _(u'Wizard Icon Overlay')
+    _text  = _(u'Wizard Icon Overlay')
     key = 'bash.installers.wizardOverlay'
     help =_(u"Enable/Disable the magic wand icon overlay for packages with"
             u" Wizards.")
 
 class Installers_AutoRefreshProjects(BoolLink):
     """Toggle autoRefreshProjects setting and update."""
-    text = _(u'Auto-Refresh Projects')
+    _text = _(u'Auto-Refresh Projects')
     key = 'bash.installers.autoRefreshProjects'
 
 class Installers_AutoApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""
-    text = _(u'Auto-Apply Embedded BCFs')
+    _text = _(u'Auto-Apply Embedded BCFs')
     key = 'bash.installers.autoApplyEmbeddedBCFs'
     help = _(u'Automatically apply Embedded BCFs to their containing archives.')
 
@@ -326,7 +326,7 @@ class Installers_AutoApplyEmbeddedBCFs(ItemLink):
 
 class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""
-    text = _(u'Skip Bethsoft Content')
+    _text = _(u'Skip Bethsoft Content')
     key = 'bash.installers.autoRefreshBethsoft'
     help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
     opposite = True
@@ -355,7 +355,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""
-    text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
+    _text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     dialogTitle = _(u'Enable Installers')
     message = _(u"Do you want to enable Installers?") + u'\n\n\t' + _(
@@ -377,7 +377,7 @@ class Installers_Enabled(BoolLink):
 
 class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     """Toggle BSA Redirection."""
-    text, key = _(u'BSA Redirection'),'bash.bsaRedirection'
+    _text, key = _(u'BSA Redirection'), 'bash.bsaRedirection'
     help = _(u"Use Quarn's BSA redirection technique.")
 
     def _initData(self, window, selection):
@@ -405,28 +405,28 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
 
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
-    text = _(u'Show Inactive Conflicts')
+    _text = _(u'Show Inactive Conflicts')
     key = 'bash.installers.conflictsReport.showInactive'
 
 class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
-    text = _(u'Show Lower Conflicts')
+    _text = _(u'Show Lower Conflicts')
     key = 'bash.installers.conflictsReport.showLower'
 
 class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
-    text = _(u'Show BSA Conflicts')
+    _text = _(u'Show BSA Conflicts')
     key = 'bash.installers.conflictsReport.showBSAConflicts'
 
 class Installers_AvoidOnStart(BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
-    text, key, help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
+    _text, key, help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
         u"Toggles Wrye Bash to avoid the Installers tab on startup,"
         u" avoiding unnecessary data scanning.")
 
 class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
-    text, key = _(u'Clean Data Directory'), 'bash.installers.removeEmptyDirs'
+    _text, key = _(u'Clean Data Directory'), 'bash.installers.removeEmptyDirs'
 
 # Sorting Links
 class _Installer_Sort(ItemLink):
@@ -436,17 +436,17 @@ class _Installer_Sort(ItemLink):
 
 class Installers_SortActive(_Installer_Sort, BoolLink):
     """Sort by type."""
-    text, key, help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
+    _text, key, help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
         u'If selected, active installers will be sorted to the top of the list.')
 
 class Installers_SortProjects(_Installer_Sort, BoolLink):
     """Sort dirs to the top."""
-    text, key, help = _(u'Projects First'), 'bash.installers.sortProjects', _(
+    _text, key, help = _(u'Projects First'), 'bash.installers.sortProjects', _(
         u'If selected, projects will be sorted to the top of the list.')
 
 class Installers_SortStructure(_Installer_Sort, BoolLink):
     """Sort by type."""
-    text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
+    _text, key = _(u'Sort by Structure'), 'bash.installers.sortStructure'
 
 #------------------------------------------------------------------------------
 # Installers_Skip Links -------------------------------------------------------
@@ -473,38 +473,39 @@ class _Installers_Skip(Installers_Link, BoolLink):
 
 class _Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""
-    text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
+    _text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
 
 class _Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
-    text, key = _(u'Skip Images'), 'bash.installers.skipImages'
+    _text, key = _(u'Skip Images'), 'bash.installers.skipImages'
 
 class _Installers_SkipDistantLOD(_Installers_Skip):
     """Toggle skipDistantLOD setting and update."""
-    text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
+    _text, key = _(u'Skip DistantLOD'), 'bash.installers.skipDistantLOD'
 
 class _Installers_SkipLandscapeLODMeshes(_Installers_Skip):
     """Toggle skipLandscapeLODMeshes setting and update."""
-    text, key = _(u'Skip LOD Meshes'), 'bash.installers.skipLandscapeLODMeshes'
+    _text = _(u'Skip LOD Meshes')
+    key = 'bash.installers.skipLandscapeLODMeshes'
 
 class _Installers_SkipLandscapeLODTextures(_Installers_Skip):
     """Toggle skipLandscapeLODTextures setting and update."""
-    text = _(u'Skip LOD Textures')
+    _text = _(u'Skip LOD Textures')
     key = 'bash.installers.skipLandscapeLODTextures'
 
 class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
     """Toggle skipLandscapeLODNormals setting and update."""
-    text = _(u'Skip LOD Normals')
+    _text = _(u'Skip LOD Normals')
     key = 'bash.installers.skipLandscapeLODNormals'
 
 class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
     """Toggle skipTESVBsl setting and update."""
-    text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
+    _text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
     def _append(self, window): return bush.game.fsName == 'Skyrim'
 
 class Installers_GlobalSkips(balt.MenuLink):
     """Global Skips submenu."""
-    text = _(u'Global Skips')
+    _text = _(u'Global Skips')
 
     def __init__(self):
         super(Installers_GlobalSkips, self).__init__()
@@ -529,25 +530,25 @@ class _Installers_Process_Skip(_Installers_Skip):
 
 class _Installers_SkipDocs(_Installers_Process_Skip):
     """Toggle skipDocs setting and update."""
-    text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
+    _text, key = _(u'Skip Docs'), 'bash.installers.skipDocs'
 
 class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
-    text = _(u'Skip %s Plugins') % bush.game.se_sd
+    _text = _(u'Skip %s Plugins') % bush.game.se_sd
     key = 'bash.installers.allowOBSEPlugins'
     def _append(self, window): return bool(bush.game.se_sd)
     def _check(self): return not bass.settings[self.key]
 
 class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
     """Toggle auto-renaming of .STRINGS files"""
-    text = _(u'Auto-name String Translation Files')
+    _text = _(u'Auto-name String Translation Files')
     key = 'bash.installers.renameStrings'
     def _append(self, window): return bool(bush.game.esp.stringsFiles)
 
 #--New project dialog ---------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
     """Open the Create New Project Dialog"""
-    text = _(u'Create New Project...')
+    _text = _(u'Create New Project...')
     help = _(u'Create a new project...')
 
     @balt.conversation

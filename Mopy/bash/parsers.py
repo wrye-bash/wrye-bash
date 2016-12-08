@@ -3049,12 +3049,10 @@ class SpellRecords(_UsesEffectsMixin):
         self.attrs = ('eid', 'full', 'cost', 'level', 'spellType')
         self.detailed = detailed
         if detailed:
-            self.attrs = self.attrs + (
-                'flags.noAutoCalc','flags.startSpell','flags.immuneToSilence',
-                'flags.ignoreLOS','flags.scriptEffectAlwaysApplies',
-                'flags.disallowAbsorbReflect',
-                'flags.touchExplodesWOTarget') #, 'effects_list' is special
-                # cased
+            self.attrs += ('flags.noAutoCalc', 'flags.startSpell',
+              'flags.immuneToSilence', 'flags.ignoreLOS',
+              'flags.scriptEffectAlwaysApplies', 'flags.disallowAbsorbReflect',
+              'flags.touchExplodesWOTarget') #, 'effects_list' is special cased
         self.spellTypeNumber_Name = {None:'NONE',
                                      0 : 'Spell',
                                      1 : 'Disease',
@@ -3249,8 +3247,7 @@ class CBash_SpellRecords(_UsesEffectsMixin):
         self.attrs = ('eid', 'full', 'cost', 'levelType', 'spellType')
         self.detailed = detailed
         if detailed:
-            self.attrs = self.attrs + (
-                'IsManualCost','IsStartSpell','IsSilenceImmune',
+            self.attrs += ('IsManualCost','IsStartSpell','IsSilenceImmune',
                 'IsAreaEffectIgnoresLOS','IsScriptAlwaysApplies',
                 'IsDisallowAbsorbReflect','IsTouchExplodesWOTarget',
                 'effects_list')

@@ -1494,7 +1494,7 @@ class ModDetails(_SashDetailsPanel):
             bosh.modInfos.table.setItem(mod_info.name, 'autoBashTags', to)
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
-            text = _(u'Automatic')
+            _text = _(u'Automatic')
             help = _(
                 u"Use the tags from the description and masterlist/userlist.")
             def _check(self): return is_auto
@@ -1506,7 +1506,7 @@ class ModDetails(_SashDetailsPanel):
         # Copy tags to mod description
         bashTagsDesc = mod_info.getBashTagsDesc()
         class _CopyDesc(EnabledLink):
-            text = _(u'Copy to Description')
+            _text = _(u'Copy to Description')
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
@@ -1524,12 +1524,12 @@ class ModDetails(_SashDetailsPanel):
             def _initData(self, window, selection):
                 super(_TagLink, self)._initData(window, selection)
                 self.help = _(u"Add %(tag)s to %(modname)s") % (
-                    {'tag': self.text, 'modname': mod_info.name})
-            def _check(self): return self.text in mod_tags
+                    {'tag': self._text, 'modname': mod_info.name})
+            def _check(self): return self._text in mod_tags
             def Execute(self):
                 """Toggle bash tag from menu."""
                 if _isAuto(): _setAuto(False)
-                modTags = mod_tags ^ {self.text}
+                modTags = mod_tags ^ {self._text}
                 mod_info.setBashTags(modTags)
                 _refreshUI()
         # Menu
@@ -2105,13 +2105,13 @@ class InstallersList(balt.UIList):
         #--Background
         if installer.skipDirFiles:
             item_format.back_key = 'installers.bkgd.skipped'
-        text = u''
+        mouse_text = u''
         if installer.dirty_sizeCrc:
             item_format.back_key = 'installers.bkgd.dirty'
-            text += _(u'Needs Annealing due to a change in configuration.')
+            mouse_text += _(u'Needs Annealing due to a change in configuration.')
         elif installer.underrides:
             item_format.back_key = 'installers.bkgd.outOfOrder'
-            text += _(u'Needs Annealing due to a change in Install Order.')
+            mouse_text += _(u'Needs Annealing due to a change in Install Order.')
         #--Icon
         item_format.icon_key = 'on' if installer.isActive else 'off'
         item_format.icon_key += '.' + self._status_color[installer.status]
@@ -2122,7 +2122,7 @@ class InstallersList(balt.UIList):
         #if textKey == 'installers.text.invalid': # I need a 'text.markers'
         #    text += _(u'Marker Package. Use for grouping installers together')
         #--TODO: add mouse  mouse tips
-        self.mouseTexts[item] = text
+        self.mouseTexts[item] = mouse_text
 
     __renaming_type = None # type of items currently being renamed
     def OnBeginEditLabel(self,event):
@@ -2155,11 +2155,11 @@ class InstallersList(balt.UIList):
             editbox = self.edit_control
             # (start, stop), if start==stop there is no selection
             selection_span = editbox.GetSelection()
-            text = editbox.GetValue()
-            lenWithExt = len(text)
+            edittext = editbox.GetValue()
+            lenWithExt = len(edittext)
             if selection_span[0] != 0:
                 selection_span = (0,lenWithExt)
-            selectedText = GPath(text[selection_span[0]:selection_span[1]])
+            selectedText = GPath(edittext[selection_span[0]:selection_span[1]])
             textNextLower = selectedText.body
             if textNextLower == selectedText:
                 lenNextLower = lenWithExt
@@ -3288,8 +3288,8 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         """Karma spin."""
         if not self._people_detail: return
         karma = int(self.gKarma.GetValue())
-        text = self.file_infos[self._people_detail][2]
-        self.file_infos[self._people_detail] = (time.time(), karma, text)
+        details = self.file_infos[self._people_detail][2]
+        self.file_infos[self._people_detail] = (time.time(), karma, details)
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
         self.file_infos.setChanged()
 
@@ -3297,7 +3297,7 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         """Saves details if they need saving."""
         if not self.gText.IsModified(): return
         if not self.file_info: return
-        mtime, karma, text = self.file_infos[self._people_detail]
+        mtime, karma, __text = self.file_infos[self._people_detail]
         self.file_infos[self._people_detail] = (
             time.time(), karma, self.gText.GetValue().strip())
         self.peoplePanel.uiList.PopulateItem(item=self._people_detail)
@@ -3309,10 +3309,10 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         item = super(PeopleDetails, self).SetFile(fileName)
         self._people_detail = item
         if not item: return
-        karma, text = self.peoplePanel.listData[item][1:3]
+        karma, details = self.peoplePanel.listData[item][1:3]
         self.gName.SetValue(item)
         self.gKarma.SetValue(karma)
-        self.gText.SetValue(text)
+        self.gText.SetValue(details)
 
     def _resetDetails(self):
         self.gKarma.SetValue(0)
@@ -3343,11 +3343,11 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         super(_Tab_Link, self).__init__()
         self.tabKey = tabKey
         self.enabled = canDisable
-        className, self.text, item = tabInfo.get(self.tabKey,[None,None,None])
+        className, self._text, item = tabInfo.get(self.tabKey,[None,None,None])
         self.help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
-            {'tabtitle': self.text})
+            {'tabtitle': self._text})
 
-    def _append(self, window): return self.text is not None
+    def _append(self, window): return self._text is not None
 
     def _enable(self): return self.enabled
 
@@ -3735,8 +3735,8 @@ class BashFrame(wx.Frame):
             title = bush.game.altName + u' %s%s'
         else:
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
-        title = title % (settings['bash.version'],
-            _(u'(Standalone)') if settings['bash.standalone'] else u'')
+        title %= (settings['bash.version'],
+                  _(u'(Standalone)') if settings['bash.standalone'] else u'')
         if CBashApi.Enabled:
             title += u', CBash %s: ' % (CBashApi.VersionText,)
         else:
@@ -4201,7 +4201,3 @@ def InitImages():
     Resources.bashMonkey.Add(images['monkey.16'])
 
 from .links import InitLinks
-
-# Main ------------------------------------------------------------------------
-if __name__ == '__main__':
-    print _(u'Compiled')

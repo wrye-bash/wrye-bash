@@ -50,7 +50,7 @@ def _bassLang(): return bass.language if bass.language else \
 #------------------------------------------------------------------------------
 class Settings_BackupSettings(ItemLink):
     """Saves Bash's settings and user data.."""
-    text =_(u'Backup Settings...')
+    _text =_(u'Backup Settings...')
     help = _(u"Backup all of Wrye Bash's settings/data to an archive file.")
 
     @balt.conversation
@@ -90,7 +90,7 @@ class Settings_BackupSettings(ItemLink):
 #------------------------------------------------------------------------------
 class Settings_RestoreSettings(ItemLink):
     """Saves Bash's settings and user data.."""
-    text = _(u'Restore Settings...')
+    _text = _(u'Restore Settings...')
     help = _(u"Restore all of Wrye Bash's settings/data from a backup archive "
              u"file.")
 
@@ -115,7 +115,7 @@ class Settings_RestoreSettings(ItemLink):
 #------------------------------------------------------------------------------
 class Settings_SaveSettings(ItemLink):
     """Saves Bash's settings and user data."""
-    text = _(u'Save Settings')
+    _text = _(u'Save Settings')
     help = _(u"Save all of Wrye Bash's settings/data now.")
 
     def Execute(self):
@@ -124,7 +124,7 @@ class Settings_SaveSettings(ItemLink):
 #------------------------------------------------------------------------------
 class Settings_ExportDllInfo(AppendableLink, ItemLink):
     """Exports list of good and bad dll's."""
-    text = _(
+    _text = _(
         u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
     help = _(u"Export list of allowed/disallowed plugin dlls to a txt file"
         u" (for BAIN).")
@@ -160,7 +160,7 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
 #------------------------------------------------------------------------------
 class Settings_ImportDllInfo(AppendableLink, ItemLink):
     """Imports list of good and bad dll's."""
-    text = _(
+    _text = _(
         u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
     help = _(u"Import list of allowed/disallowed plugin dlls from a txt file"
         u" (for BAIN).")
@@ -220,7 +220,7 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
 #------------------------------------------------------------------------------
 class Settings_Colors(ItemLink):
     """Shows the color configuration dialog."""
-    text = _(u'Colors...')
+    _text = _(u'Colors...')
     help = _(u"Configure the custom colors used in the UI.")
 
     def Execute(self): ColorDialog.Display()
@@ -230,7 +230,7 @@ class Settings_IconSize(RadioLink):
     def __init__(self, sb_icon_size):
         super(Settings_IconSize, self).__init__()
         self.sb_icon_size = sb_icon_size
-        self.text = unicode(sb_icon_size)
+        self._text = unicode(sb_icon_size)
         self.help = _(u"Sets the status bar icons to %(sb_icon_size)s pixels") % (
             {'sb_icon_size': unicode(sb_icon_size)})
 
@@ -244,7 +244,7 @@ class Settings_IconSize(RadioLink):
 #------------------------------------------------------------------------------
 class Settings_StatusBar_ShowVersions(CheckLink):
     """Show/Hide version numbers for buttons on the statusbar."""
-    text = _(u'Show App Version')
+    _text = _(u'Show App Version')
     help = _(u"Show/hide version numbers for buttons on the status bar.")
 
     def _check(self): return bass.settings['bash.statusbar.showversion']
@@ -254,7 +254,7 @@ class Settings_StatusBar_ShowVersions(CheckLink):
         for button in BashStatusBar.buttons:
             if isinstance(button, App_Button):
                 if button.gButton:
-                    button.gButton.SetToolTip(tooltip(button.tip))
+                    button.gButton.SetToolTip(tooltip(button.sb_button_tip))
         if BashStatusBar.obseButton.button_state:
             for button in App_Button.obseButtons:
                 button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
@@ -276,7 +276,7 @@ class Settings_Languages(TransLink):
             return subMenu
         else:
             class _NoLang(EnabledLink):
-                text = _(u'Language')
+                _text = _(u'Language')
                 help = _(u"Wrye Bash was unable to detect any translation"
                          u" files.")
                 def _enable(self): return False
@@ -298,19 +298,19 @@ class Settings_Language(RadioLink):
     def __init__(self,language):
         super(Settings_Language, self).__init__()
         self.language = language
-        self.text = self.__class__.languageMap.get(self.language.lower(),
+        self._text = self.__class__.languageMap.get(self.language.lower(),
                                                     self.language)
 
     def _initData(self, window, selection):
         if self.language == _bassLang():
             self.help = _(
                 "Currently using %(languagename)s as the active language.") % (
-                            {'languagename': self.text})
+                            {'languagename': self._text})
             self.check = True
         else:
             self.help = _(
                 "Restart Wrye Bash and use %(languagename)s as the active "
-                "language.") % ({'languagename': self.text})
+                "language.") % ({'languagename': self._text})
             self.check = False
 
     def _check(self): return self.check
@@ -345,10 +345,10 @@ class Settings_PluginEncodings(MenuLink):
 class Settings_PluginEncoding(RadioLink):
     def __init__(self,name,encoding):
         super(Settings_PluginEncoding, self).__init__()
-        self.text = name
+        self._text = name
         self.encoding = encoding
         self.help = _(u"Select %(encodingname)s encoding for Wrye Bash to use."
-            ) % ({'encodingname': self.text})
+            ) % ({'encodingname': self._text})
 
     def _check(self): return self.encoding == bass.settings[
         'bash.pluginEncoding']
@@ -369,7 +369,7 @@ class Settings_Games(MenuLink):
 class _Settings_Game(RadioLink):
     def __init__(self,game):
         super(_Settings_Game, self).__init__()
-        self.game = self.text = game
+        self.game = self._text = game
         self.help = _(u"Restart Wrye Bash to manage %(game)s.") % (
             {'game': game})
 
@@ -396,7 +396,7 @@ class Settings_UnHideButtons(TransLink):
             return subMenu
         else:
             class _NoButtons(EnabledLink):
-                text = _(u'Unhide Buttons')
+                _text = _(u'Unhide Buttons')
                 help = _(u"No hidden buttons available to unhide.")
                 def _enable(self): return False
             return _NoButtons()
@@ -412,21 +412,21 @@ class Settings_UnHideButton(ItemLink):
         if button:
             # If the wx.Button object exists (it was hidden this session),
             # Use the tooltip from it
-            tip = button.GetToolTip().GetTip()
+            tip_ = button.GetToolTip().GetTip()
         else:
-            # If the link is an App_Button, it will have a 'tip' attribute
-            tip = getattr(self.link,'tip',None)
-        if tip is None:
+            # If the link is an App_Button, it will have a 'sb_button_tip' attribute
+            tip_ = getattr(self.link,'sb_button_tip',None) # YAK YAK YAK
+        if tip_ is None:
             # No good, use its uid as a last resort
-            tip = self.link.uid
-        self.text = tip
-        self.help = _(u"Unhide the '%s' status bar button.") % tip
+            tip_ = self.link.uid
+        self._text = tip_
+        self.help = _(u"Unhide the '%s' status bar button.") % tip_
 
     def Execute(self): Link.Frame.statusBar.UnhideButton(self.link)
 
 #------------------------------------------------------------------------------
 class Settings_UseAltName(BoolLink):
-    text, key, help = _(u'Use Alternate Wrye Bash Name'), 'bash.useAltName', \
+    _text, key, help = _(u'Use Alternate Wrye Bash Name'), 'bash.useAltName', \
         _(u'Use an alternate display name for Wrye Bash based on the game it'
           u' is managing.')
 
@@ -436,7 +436,7 @@ class Settings_UseAltName(BoolLink):
 
 #------------------------------------------------------------------------------
 class Settings_UAC(AppendableLink, ItemLink):
-    text = _(u'Administrator Mode')
+    _text = _(u'Administrator Mode')
     help = _(u'Restart Wrye Bash with administrator privileges.')
 
     def _append(self, window): return env.isUAC
@@ -449,7 +449,7 @@ class Settings_UAC(AppendableLink, ItemLink):
 
 class Settings_Deprint(CheckLink):
     """Turn on deprint/delist."""
-    text = _(u'Debug Mode')
+    _text = _(u'Debug Mode')
     help = _(u"Turns on extra debug prints to help debug an error or just for "
              u"advanced testing.")
 
@@ -462,7 +462,7 @@ class Settings_Deprint(CheckLink):
 
 class Settings_DumpTranslator(AppendableLink, ItemLink):
     """Dumps new translation key file using existing key, value pairs."""
-    text = _(u'Dump Translator')
+    _text = _(u'Dump Translator')
     help = _(u"Generate a new version of the translator file for your locale.")
 
     def _append(self, window):

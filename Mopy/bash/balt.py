@@ -39,7 +39,7 @@ import textwrap
 import time
 import threading
 from functools import partial, wraps
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 #--wx
 import wx
 from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
@@ -387,14 +387,14 @@ class ComboBox(wx.ComboBox):
             self.SetToolTip(tooltip(u''))
         event.Skip()
 
-def bitmapButton(parent, bitmap, tip=None, pos=defPos, size=defSize,
+def bitmapButton(parent, bitmap, button_tip=None, pos=defPos, size=defSize,
                  style=wx.BU_AUTODRAW, val=defVal, name=u'button',
                  onBBClick=None, onRClick=None):
     """Creates a button, binds click function, then returns bound button."""
     gButton = wx.BitmapButton(parent,defId,bitmap,pos,size,style,val,name)
     if onBBClick: gButton.Bind(wx.EVT_BUTTON, lambda __event: onBBClick())
     if onRClick: gButton.Bind(wx.EVT_CONTEXT_MENU,onRClick)
-    if tip: gButton.SetToolTip(tooltip(tip))
+    if button_tip: gButton.SetToolTip(tooltip(button_tip))
     return gButton
 
 class Button(wx.Button):
@@ -403,7 +403,7 @@ class Button(wx.Button):
 
     def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
                  val=defVal, name='button', onButClick=None,
-                 onButClickEventful=None, tip=None, default=False):
+                 onButClickEventful=None, button_tip=None, default=False):
         """Create a button and bind its click function.
         :param onButClick: a no args function to execute on button click
         :param onButClickEventful: a function accepting as parameter the
@@ -416,7 +416,7 @@ class Button(wx.Button):
             raise BoltError('Both onButClick and onButClickEventful specified')
         if onButClick: self.Bind(wx.EVT_BUTTON, lambda __event: onButClick())
         if onButClickEventful: self.Bind(wx.EVT_BUTTON, onButClickEventful)
-        if tip: self.SetToolTip(tooltip(tip))
+        if button_tip: self.SetToolTip(tooltip(button_tip))
         if default: self.SetDefault()
 
 class OkButton(Button): _id = wx.ID_OK
@@ -440,22 +440,23 @@ class SelectAllButton(Button): _id = wx.ID_SELECTALL
 class ApplyButton(Button): _id = wx.ID_APPLY
 
 def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClickToggle=None, tip=None):
+                 val=defVal, name='button', onClickToggle=None,
+                 toggle_tip=None):
     """Creates a toggle button, binds toggle function, then returns bound
     button."""
     gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
                               name)
     if onClickToggle: gButton.Bind(wx.EVT_TOGGLEBUTTON,
                                    lambda __event: onClickToggle())
-    if tip: gButton.SetToolTip(tooltip(tip))
+    if toggle_tip: gButton.SetToolTip(tooltip(toggle_tip))
     return gButton
 
 def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
-             name='checkBox', onCheck=None, tip=None, checked=False):
+             name='checkBox', onCheck=None, checkbox_tip=None, checked=False):
     """Creates a checkBox, binds check function, then returns bound button."""
     gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
     if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX, lambda __event: onCheck())
-    if tip: gCheckBox.SetToolTip(tooltip(tip))
+    if checkbox_tip: gCheckBox.SetToolTip(tooltip(checkbox_tip))
     gCheckBox.SetValue(checked)
     return gCheckBox
 
@@ -478,12 +479,12 @@ class StaticText(wx.StaticText):
 
 def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
              style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
-             name=u'wxSpinctrl', onSpin=None, tip=None):
+             name=u'wxSpinctrl', onSpin=None, spin_tip=None):
     """Spin control with event and tip setting."""
     gSpinCtrl = wx.SpinCtrl(parent, defId, value, pos, size, style, min, max,
                             initial, name)
     if onSpin: gSpinCtrl.Bind(wx.EVT_SPINCTRL, lambda __event: onSpin())
-    if tip: gSpinCtrl.SetToolTip(tooltip(tip))
+    if spin_tip: gSpinCtrl.SetToolTip(tooltip(spin_tip))
     return gSpinCtrl
 
 def listBox(parent, choices=None, **kwargs):
@@ -2301,7 +2302,7 @@ class Link(object):
     """
     Frame = None   # BashFrame singleton, set once and for all in BashFrame()
     Popup = None   # Current popup menu, set in Links.PopupMenu()
-    text = u''     # Menu label (may depend on UI state when the menu is shown)
+    _text = u''    # Menu label (may depend on UI state when the menu is shown)
 
     def __init__(self, _text=None):
         """Assign a wx Id.
@@ -2311,7 +2312,7 @@ class Link(object):
         """
         super(Link, self).__init__()
         self._id = wx.NewId() # register wx callbacks in AppendToMenu overrides
-        self.text = _text or self.__class__.text # menu label
+        self._text = _text or self.__class__._text # menu label
 
     def _initData(self, window, selection):
         """Initialize the Link instance data based on UI state when the
@@ -2346,7 +2347,7 @@ class Link(object):
         return showWarning(self.window, message, title=title, **kwdargs)
 
     def _askYes(self, message, title=u'', default=True, questionIcon=False):
-        if not title: title = self.text
+        if not title: title = self._text
         return askYes(self.window, message, title=title, default=default,
                       questionIcon=questionIcon)
 
@@ -2360,18 +2361,18 @@ class Link(object):
                        mustExist=mustExist)
 
     def _askOk(self, message, title=u''):
-        if not title: title = self.text
+        if not title: title = self._text
         return askOk(self.window, message, title)
 
     def _showOk(self, message, title=u'', **kwdargs):
-        if not title: title = self.text
+        if not title: title = self._text
         return showOk(self.window, message, title, **kwdargs)
 
     def _askWarning(self, message, title=_(u'Warning'), **kwdargs):
         return askWarning(self.window, message, title, **kwdargs)
 
     def _askText(self, message, title=u'', default=u'', strip=True):
-        if not title: title = self.text
+        if not title: title = self._text
         return askText(self.window, message, title=title, default=default,
                        strip=strip)
 
@@ -2426,7 +2427,7 @@ class ItemLink(Link):
         super(ItemLink, self).AppendToMenu(menu, window, selection)
         Link.Frame.Bind(wx.EVT_MENU, self.__Execute, id=self._id)
         Link.Frame.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
-        menuItem = wx.MenuItem(menu, self._id, self.text, self.help or u'',
+        menuItem = wx.MenuItem(menu, self._id, self._text, self.help or u'',
                                self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
@@ -2455,7 +2456,7 @@ class MenuLink(Link):
     def __init__(self, name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
         super(MenuLink, self).__init__()
-        self.text = name or self.__class__.text
+        self.text = name or self.__class__._text
         self.links = Links()
         self.oneDatumOnly = oneDatumOnly
 
@@ -2587,7 +2588,7 @@ class RadioLink(CheckLink):
 
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
-    text, key, help =  u'LINK TEXT', 'link.key', u'' # Override text and key !
+    _text, key, help = u'LINK TEXT', 'link.key', u'' # Override text and key !
     opposite = False
 
     def _check(self):
@@ -2599,7 +2600,7 @@ class BoolLink(CheckLink):
 # UIList Links ----------------------------------------------------------------
 class UIList_Delete(ItemLink):
     """Delete selected item(s) from UIList."""
-    text = _(u'Delete')
+    _text = _(u'Delete')
     help = _(u'Delete selected item(s)')
 
     def Execute(self):
@@ -2608,13 +2609,13 @@ class UIList_Delete(ItemLink):
 
 class UIList_Rename(ItemLink):
     """Rename selected UIList item(s)."""
-    text = _(u'Rename...')
+    _text = _(u'Rename...')
 
     def Execute(self): self.window.Rename(selected=self.selected)
 
 class UIList_OpenItems(ItemLink):
     """Open specified file(s)."""
-    text = _(u'Open...')
+    _text = _(u'Open...')
 
     @property
     def help(self):
@@ -2626,7 +2627,7 @@ class UIList_OpenItems(ItemLink):
 
 class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
-    text = _(u'Open...')
+    _text = _(u'Open...')
 
     def _initData(self, window, selection):
         super(UIList_OpenStore, self)._initData(window, selection)
@@ -2636,7 +2637,7 @@ class UIList_OpenStore(ItemLink):
 
 class UIList_Hide(ItemLink):
     """Hide the file (move it to the data store's Hidden directory)."""
-    text = _(u'Hide')
+    _text = _(u'Hide')
 
     def _initData(self, window, selection):
         super(UIList_Hide, self)._initData(window, selection)

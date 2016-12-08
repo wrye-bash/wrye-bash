@@ -670,16 +670,16 @@ class WryeParser(ScriptParser.Parser):
     @staticmethod
     def codebox(lines,pre=True,br=True):
         self = WryeParser(None, None, None, None, codebox=True) ##: drop this !
-        def colorize(text,color=u'black',link=True):
-            href = text
-            text = WryeParser.codeboxRemaps['Text'].get(text,text)
+        def colorize(text_, color=u'black', link=True):
+            href = text_
+            text_ = WryeParser.codeboxRemaps['Text'].get(text_, text_)
             if color != u'black' or link:
-                color = WryeParser.codeboxRemaps['Color'].get(text,color)
-                text = u'<span style="color:%s;">%s</span>' % (color,text)
+                color = WryeParser.codeboxRemaps['Color'].get(text_, color)
+                text_ = u'<span style="color:%s;">%s</span>' % (color, text_)
             if link:
                 href = WryeParser.codeboxRemaps['Link'].get(href,href)
-                text = u'<a href="#%s">%s</a>' % (href,text)
-            return text
+                text_ = u'<a href="#%s">%s</a>' % (href, text_)
+            return text_
 
         self.cLine = 0
         outLines = []
@@ -707,7 +707,7 @@ class WryeParser(ScriptParser.Parser):
                     outLine += padding
                     lastEnd = stop
                     # The token
-                    text = line[start:stop]
+                    token_txt = line[start:stop]
                     # Check for ellipses
                     if i.text == u'.':
                         dotCount += 1
@@ -720,21 +720,21 @@ class WryeParser(ScriptParser.Parser):
                             outLine += colorize(u'.')
                             dotCount -= 1
                     if i.type == ScriptParser.KEYWORD:
-                        outLine += colorize(text,u'blue')
+                        outLine += colorize(token_txt,u'blue')
                     elif i.type == ScriptParser.FUNCTION:
-                        outLine += colorize(text,u'purple')
+                        outLine += colorize(token_txt,u'purple')
                     elif i.type in (ScriptParser.INTEGER, ScriptParser.DECIMAL):
-                        outLine += colorize(text,u'cyan',False)
+                        outLine += colorize(token_txt,u'cyan',False)
                     elif i.type == ScriptParser.STRING:
-                        outLine += colorize(text,u'brown',False)
+                        outLine += colorize(token_txt,u'brown',False)
                     elif i.type == ScriptParser.OPERATOR:
                         outLine += colorize(i.text)
                     elif i.type == ScriptParser.CONSTANT:
-                        outLine += colorize(text,u'cyan')
+                        outLine += colorize(token_txt,u'cyan')
                     elif i.type == ScriptParser.NAME:
-                        outLine += u'<i>%s</i>' % text
+                        outLine += u'<i>%s</i>' % token_txt
                     else:
-                        outLine += text
+                        outLine += token_txt
             if self.runon:
                 outLine += u' \\'
             if lastEnd < len(line):

@@ -394,7 +394,3 @@ class RestoreSettings(BaseBackupSettings):
             _(u'Click OK to restart now.'),
             _(u'Bash Settings Restored'))
         Link.Frame.Restart()
-
-# Main ------------------------------------------------------------------------
-if __name__ == '__main__':
-    print _(u'Compiled')

@@ -2588,7 +2588,7 @@ class ModInfo(_BackupMixin, FileInfo):
         tags |= self.getBashTagsDesc()
         tags -= removed
         # Filter and remove old tags
-        tags = tags & allTagsSet
+        tags &= allTagsSet
         if tags & oldTagsSet:
             tags -= oldTagsSet
             self.setBashTagsDesc(tags)
@@ -7233,7 +7233,7 @@ class InstallersData(_DataStore):
         :param installerKeys: an iterable of bolt.Path
         :return: a list of installable packages/projects bolt.Path
         """
-        def installable(x): # type: 0: unset/invalid; 1: simple; 2: complex
+        def installable(x): # type -> 0: unset/invalid; 1: simple; 2: complex
             return self[x].type in (1, 2) and isinstance(self[x],
                 (InstallerArchive, InstallerProject))
         return filter(installable, installerKeys)
@@ -8109,7 +8109,3 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
     if 'bash.readme' in settings:
         settings['bash.version'] = _(settings['bash.readme'][1])
         del settings['bash.readme']
-
-# Main ------------------------------------------------------------------------
-if __name__ == '__main__':
-    print _(u'Compiled')

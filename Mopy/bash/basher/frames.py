@@ -88,7 +88,7 @@ class DocBrowser(wx.Frame):
                                        onClickToggle=self.DoEdit)
         self.openButton = Button(self, _(u'Open Doc...'),
                                  onButClick=self.DoOpen,
-                                 tip=_(u'Open doc in external editor.'))
+                                 button_tip=_(u'Open doc in external editor.'))
         #--Doc Name
         self.docNameBox = RoTextCtrl(self, multiline=False)
         #--Doc display
@@ -472,12 +472,12 @@ class ModChecker(wx.Frame):
 
     def OnCopyText(self):
         """Copies text of report to clipboard."""
-        text = u'[spoiler]\n'+self.text+u'[/spoiler]'
-        text = re.sub(ur'\[\[.+?\|\s*(.+?)\]\]',ur'\1',text,re.U)
-        text = re.sub(u'(__|\*\*|~~)',u'',text,re.U)
-        text = re.sub(u'&bull; &bull;',u'**',text,re.U)
-        text = re.sub(u'<[^>]+>','',text,re.U)
-        balt.copyToClipboard(text)
+        text_ = u'[spoiler]\n' + self.text + u'[/spoiler]'
+        text_ = re.sub(ur'\[\[.+?\|\s*(.+?)\]\]', ur'\1', text_, re.U)
+        text_ = re.sub(u'(__|\*\*|~~)', u'', text_, re.U)
+        text_ = re.sub(u'&bull; &bull;', u'**', text_, re.U)
+        text_ = re.sub(u'<[^>]+>', '', text_, re.U)
+        balt.copyToClipboard(text_)
 
     def CheckMods(self):
         """Do mod check."""
