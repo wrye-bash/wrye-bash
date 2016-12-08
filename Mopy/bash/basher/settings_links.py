@@ -254,7 +254,7 @@ class Settings_StatusBar_ShowVersions(CheckLink):
         for button in BashStatusBar.buttons:
             if isinstance(button, App_Button):
                 if button.gButton:
-                    button.gButton.SetToolTip(tooltip(button.tip))
+                    button.gButton.SetToolTip(tooltip(button.sb_button_tip))
         if BashStatusBar.obseButton.button_state:
             for button in App_Button.obseButtons:
                 button.gButton.SetToolTip(tooltip(getattr(button,'obseTip',u'')))
@@ -412,15 +412,15 @@ class Settings_UnHideButton(ItemLink):
         if button:
             # If the wx.Button object exists (it was hidden this session),
             # Use the tooltip from it
-            tip = button.GetToolTip().GetTip()
+            tip_ = button.GetToolTip().GetTip()
         else:
-            # If the link is an App_Button, it will have a 'tip' attribute
-            tip = getattr(self.link,'tip',None)
-        if tip is None:
+            # If the link is an App_Button, it will have a 'sb_button_tip' attribute
+            tip_ = getattr(self.link,'sb_button_tip',None) # YAK YAK YAK
+        if tip_ is None:
             # No good, use its uid as a last resort
-            tip = self.link.uid
-        self._text = tip
-        self.help = _(u"Unhide the '%s' status bar button.") % tip
+            tip_ = self.link.uid
+        self._text = tip_
+        self.help = _(u"Unhide the '%s' status bar button.") % tip_
 
     def Execute(self): Link.Frame.statusBar.UnhideButton(self.link)
 

@@ -54,7 +54,7 @@ class StatusBar_Button(ItemLink):
     """Launch an application."""
     _tip = u''
     @property
-    def tip(self): return self._tip
+    def sb_button_tip(self): return self._tip
 
     def __init__(self,uid=None,canHide=True,tip=u''):
         """ui: Unique identifier, used for saving the order of status bar icons
@@ -77,7 +77,7 @@ class StatusBar_Button(ItemLink):
         if self.gButton is not None:
             self.gButton.Destroy()
         self.gButton = bitmapButton(window, image, style=style,
-                                    button_tip=self.tip, **kwdargs)
+                                    button_tip=self.sb_button_tip, **kwdargs)
         return self.gButton
 
     def DoPopupMenu(self,event):
@@ -120,7 +120,7 @@ class App_Button(StatusBar_Button):
         return u''
 
     @property
-    def tip(self):
+    def sb_button_tip(self):
         if not bass.settings['bash.statusbar.showversion']: return self._tip
         else:
             return self._tip + u' ' + self.version
@@ -451,22 +451,22 @@ class App_BOSS(App_Button):
 class Game_Button(App_Button):
     """Will close app on execute if autoquit is on."""
     @property
-    def tip(self):
-        tip = self._tip + u' ' + self.version if self.version else self._tip
+    def sb_button_tip(self):
+        tip_ = self._tip + u' ' + self.version if self.version else self._tip
         if BashStatusBar.laaButton.button_state:
-            tip += u' + ' + bush.game.laa.name
-        return tip
+            tip_ += u' + ' + bush.game.laa.name
+        return tip_
 
     @property
     def obseTip(self):
         # Oblivion (version)
-        tip = self._obseTip % (dict(version=self.version))
+        tip_ = self._obseTip % (dict(version=self.version))
         # + OBSE
-        tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
+        tip_ += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + LAA
         if BashStatusBar.laaButton.button_state:
-            tip += u' + ' + bush.game.laa.name
-        return tip
+            tip_ += u' + ' + bush.game.laa.name
+        return tip_
 
     def Execute(self):
         super(Game_Button, self).Execute()
@@ -479,10 +479,10 @@ class TESCS_Button(App_Button):
     @property
     def obseTip(self):
         # TESCS (version)
-        tip = self._obseTip % (dict(version=self.version))
-        if not self.obseArg: return tip
+        tip_ = self._obseTip % (dict(version=self.version))
+        if not self.obseArg: return tip_
         # + OBSE
-        tip += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
+        tip_ += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
         # + CSE
         cse_path = bass.dirs['mods'].join(u'obse', u'plugins',
                                           u'Construction Set Extender.dll')
@@ -492,8 +492,8 @@ class TESCS_Button(App_Button):
                 version = u'.'.join([u'%i'%x for x in version])
             else:
                 version = u''
-            tip += u' + CSE %s' % version
-        return tip
+            tip_ += u' + CSE %s' % version
+        return tip_
 
 #------------------------------------------------------------------------------
 class _StatefulButton(StatusBar_Button):
@@ -502,7 +502,7 @@ class _StatefulButton(StatusBar_Button):
     _default_state = True
 
     @property
-    def tip(self): raise bolt.AbstractError
+    def sb_button_tip(self): raise bolt.AbstractError
 
     def SetState(self, state=None):
         """Set state related info. If newState != None, sets to new state
@@ -514,7 +514,7 @@ class _StatefulButton(StatusBar_Button):
         if self.gButton:
             self.gButton.SetBitmapLabel(balt.images[self.imageKey %
                         bass.settings['bash.statusbar.iconSize']].GetBitmap())
-            self.gButton.SetToolTip(tooltip(self.tip))
+            self.gButton.SetToolTip(tooltip(self.sb_button_tip))
 
     @property
     def button_state(self): return self._present and bass.settings.get(
@@ -557,11 +557,11 @@ class Obse_Button(_StatefulButton):
         return state
 
     @property
-    def tip(self): return ((_(u"%s %s Disabled"), _(u"%s %s Enabled"))[
+    def sb_button_tip(self): return ((_(u"%s %s Disabled"), _(u"%s %s Enabled"))[
         self.button_state]) % (bush.game.se.shortName, self.obseVersion)
 
     def UpdateToolTips(self):
-        tipAttr = ('tip', 'obseTip')[self.button_state]
+        tipAttr = ('sb_button_tip', 'obseTip')[self.button_state]
         for button in App_Button.obseButtons:
             button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,u'')))
 
@@ -585,7 +585,7 @@ class LAA_Button(_StatefulButton):
         return state
 
     @property
-    def tip(self): return bush.game.laa.name + (
+    def sb_button_tip(self): return bush.game.laa.name + (
         _(u' Disabled'), _(u' Enabled'))[self.button_state]
 
 #------------------------------------------------------------------------------
@@ -600,7 +600,7 @@ class AutoQuit_Button(_StatefulButton):
         [u'off', u'x'][self.button_state], u'%d')
 
     @property
-    def tip(self): return (_(u"Auto-Quit Disabled"), _(u"Auto-Quit Enabled"))[
+    def sb_button_tip(self): return (_(u"Auto-Quit Disabled"), _(u"Auto-Quit Enabled"))[
         self.button_state]
 
 #------------------------------------------------------------------------------
