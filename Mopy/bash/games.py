@@ -36,7 +36,7 @@ from collections import defaultdict
 
 import bolt
 
-def _write_plugins_txt_(path, lord, active, _star=False):
+def _write_plugins_txt_(path, lord, active, _star):
     with path.open('wb') as out:
         def asterisk(active_set=set(active)):
             return '*' if _star and (mod in active_set) else ''
@@ -46,10 +46,11 @@ def _write_plugins_txt_(path, lord, active, _star=False):
             # plugins.txt.  Even activating through the SkyrimLauncher
             # doesn't work.
             try:
-                out.write(asterisk() + bolt.encode(mod.s))
+                out.write(asterisk() + bolt.encode(mod.s, firstEncoding='cp1252'))
                 out.write('\r\n')
             except UnicodeEncodeError:
-                pass
+                bolt.deprint(mod.s + u' failed to properly encode and was not '
+                                     u'included in plugins.txt')
 
 _re_plugins_txt_comment = re.compile(u'^#.*', re.U)
 def _parse_plugins_txt_(path, mod_infos, _star):
@@ -71,13 +72,16 @@ def _parse_plugins_txt_(path, mod_infos, _star):
         for line in ins:
             # Oblivion/Skyrim saves the plugins.txt file in cp1252 format
             # It wont accept filenames in any other encoding
-            try: # use raw strings below
-                modname = _re_plugins_txt_comment.sub('', line).strip()
-                if not modname: continue
-                is_active = not _star or modname.startswith('*')
-                if _star and is_active: modname = modname[1:]
-                test = bolt.decode(modname)
-            except UnicodeError: continue
+            modname = _re_plugins_txt_comment.sub('', line).strip()
+            if not modname: continue
+            # use raw strings below
+            is_active = not _star or modname.startswith('*')
+            if _star and is_active: modname = modname[1:]
+            try:
+                test = bolt.decode(modname, encoding='cp1252')
+            except UnicodeError:
+                bolt.deprint(u'%r failed to properly decode' % modname)
+                continue
             if bolt.GPath(test) not in mod_infos:
                 # The automatic encoding detector could have returned
                 # an encoding it actually wasn't.  Luckily, we

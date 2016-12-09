@@ -44,13 +44,14 @@ __all__ = ['AlchemicalCatalogs', 'CBash_AlchemicalCatalogs', 'CoblExhaustion',
 def _PrintFormID(fid):
     # PBash short Fid
     if isinstance(fid,(long,int)):
-        print '%08X' % fid
+        fid = u'%08X' % fid
     # PBash long FId
     elif isinstance(fid, tuple):
-        print '(%s, %06X)' % (fid[0],fid[1])
+        fid =  u'(%s, %06X)' % (fid[0], fid[1])
     # CBash / other(error)
     else:
-        print repr(fid)
+        fid = repr(fid)
+    print fid.encode('utf-8')
 
 class _AAlchemicalCatalogs(SpecialPatcher):
     """Updates COBL alchemical catalogs."""
@@ -228,14 +229,14 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
             # sanity checks
             if book:
                 if book.recType != 'BOOK':
-                    print _PrintFormID(fid)
+                    _PrintFormID(fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
                     raise StateError(u"Cobl Catalogs: Unable to lookup book"
                                      u" record in Cobl Main.esm!")
                 book = book.CopyAsOverride(self.patchFile)
                 if not book:
-                    print _PrintFormID(fid)
+                    _PrintFormID(fid)
                     print patchFile.Current.Debug_DumpModFiles()
                     print book
                     book = coblMod.LookupRecord(
@@ -744,12 +745,11 @@ class CBash_MFactMarker(_AMFactMarker, _DefaultDictLog):
         if not mFactable: return
         subProgress = SubProgress(progress)
         subProgress.setFull(max(len(mFactable),1))
-        pstate = 0
         coblMod = patchFile.Current.LookupModFile(self.cobl.s)
 
         record = coblMod.LookupRecord(self.mFactLong)
         if record.recType != 'FACT':
-            print _PrintFormID(self.mFactLong)
+            _PrintFormID(self.mFactLong)
             print patchFile.Current.Debug_DumpModFiles()
             print record
             raise StateError(u"Cobl Morph Factions: Unable to lookup morphable"
