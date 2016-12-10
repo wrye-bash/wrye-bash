@@ -485,6 +485,57 @@ class BSA(ABsa):
 class BA2(ABsa):
     header_type = Ba2Header
 
+    def extract_assets(self, asset_paths, dest_folder):
+        # map files to folders
+        folder_file = []
+        for a in asset_paths:
+            split = a.rsplit(path_sep, 1)
+            if len(split) == 1:
+                split = [u'', split[0]]
+            folder_file.append(split)
+        del asset_paths # forget about this
+        # group files by folder
+        folder_files_dict = {}
+        folder_file.sort(key=itemgetter(0)) # sort first then group
+        for key, val in groupby(folder_file, key=itemgetter(0)):
+            folder_files_dict[key] = set(dest for _key, dest in val)
+        # load the bsa - this should be reworked to load only needed records
+        self._load_bsa()
+        if self.bsa_header.b2a_files_type != 'GNRL':
+            raise BSANotImplemented(
+                u'Texture ba2 archives are not yet supported')
+        folder_assets = collections.OrderedDict()
+        for folder_path, bsa_folder in self.bsa_folders.iteritems():
+            if folder_path not in folder_files_dict: continue
+            # Has assets we need to extract keep order to avoid seeking back and forth
+            folder_assets[folder_path] = file_records = []
+            filenames = folder_files_dict[folder_path]
+            for filename, asset in bsa_folder.assets.iteritems():
+                if filename not in filenames: continue
+                file_records.append((filename, asset.filerecord))
+        # unload the bsa
+        self.bsa_folders.clear()
+        # get the data from the file
+        with open(u'%s' % self.abs_path, 'rb') as bsa_file:
+            for folder, file_records in folder_assets.iteritems():
+                target_dir = os.path.join(dest_folder, folder)
+                try:
+                    os.makedirs(target_dir)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+                for filename, record in file_records:
+                    if record.packed_size: # seems to signify compression
+                        raise BSANotImplemented(
+                            u'Compressed records are not yet supported (%s)' %
+                            self.abs_path)
+                    data_size = record.unpacked_size
+                    bsa_file.seek(record.offset)
+                    # get the data!
+                    raw_data = bsa_file.read(data_size)
+                    with open(os.path.join(target_dir, filename), 'wb') as out:
+                        out.write(raw_data)
+
     def _load_bsa(self):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             # load the header from input stream
