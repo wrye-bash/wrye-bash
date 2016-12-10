@@ -73,13 +73,13 @@ def _decode_path(string_path):
 class _Header(object):
     __slots__ = ('file_id', 'version')
     formats = ['4s', 'I']
+    formats = list((f, struct.calcsize(f)) for f in formats)
     bsa_magic = 'BSA\x00'
     bsa_version = int('0x67', 16)
 
     def load_header(self, ins):
         for fmt, attr in zip(_Header.formats, _Header.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt, ins.read(
-                struct.calcsize(fmt)))[0])
+            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if self.file_id != self.__class__.bsa_magic:
             raise BSAError(u'Magic wrong: %r' % self.file_id)
@@ -90,13 +90,13 @@ class BsaHeader(_Header):
          'file_count', 'total_folder_name_length', 'total_file_name_length',
          'file_flags')
     formats = ['I'] * 8
+    formats = list((f, struct.calcsize(f)) for f in formats)
     header_size = 36
 
     def load_header(self, ins):
         super(BsaHeader, self).load_header(ins)
         for fmt, attr in zip(BsaHeader.formats, BsaHeader.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt, ins.read(
-                struct.calcsize(fmt)))[0])
+            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if self.folder_records_offset != self.__class__.header_size:
             raise BSAError(u'Header size wrong: %r. Should be %r' % (
@@ -115,6 +115,7 @@ class Ba2Header(_Header):
     __slots__ = ( # in the order encountered in the header
         'b2a_files_type', 'b2a_num_files', 'b2a_name_table_offset')
     formats = ['4s', 'I', 'Q']
+    formats = list((f, struct.calcsize(f)) for f in formats)
     bsa_magic = 'BTDX'
     file_types = {'GNRL', 'DX10'} # GNRL=General, DX10=Textures
     bsa_version = int('0x01', 16)
@@ -123,8 +124,7 @@ class Ba2Header(_Header):
     def load_header(self, ins):
         super(Ba2Header, self).load_header(ins)
         for fmt, attr in zip(Ba2Header.formats, Ba2Header.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt, ins.read(
-                struct.calcsize(fmt)))[0])
+            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if not self.b2a_files_type in self.file_types:
             raise BSAError(u'Unrecognised file types: %r. Should be %s' % (
@@ -149,13 +149,13 @@ class _HashedRecord(object):
     formats = [('Q', struct.calcsize('Q'))]
 
     def load_record(self, ins):
-        fmt = _HashedRecord.formats[0]
-        self.hash = struct.unpack(fmt[0], ins.read(fmt[1]))[0]
+        fmt, siz = _HashedRecord.formats[0]
+        self.hash, = struct.unpack(fmt, ins.read(siz))
 
     def load_record_from_buffer(self, memview, start):
-        fmt = _HashedRecord.formats[0]
-        self.hash = struct.unpack_from(fmt[0], memview, start)[0]
-        return start + fmt[1]
+        fmt, siz = _HashedRecord.formats[0]
+        self.hash, = struct.unpack_from(fmt, memview, start)
+        return start + siz
 
     @classmethod
     def total_record_size(cls):
@@ -222,7 +222,7 @@ class _B2aFileRecordCommon(_HashedRecord):
     formats = list((f, struct.calcsize(f)) for f in formats)
 
     def load_record(self, ins):
-        super(_B2aFileRecordCommon, self).load_record(ins)
+        self.hash, = struct.unpack('I', ins.read(4)) # hash is I not Q !
         for fmt, attr in zip(_B2aFileRecordCommon.formats,
                              _B2aFileRecordCommon.__slots__):
             self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
@@ -274,13 +274,14 @@ class BSAFolder(object):
         self.assets = collections.OrderedDict() # keep files order
 
 class BSAAsset(object):
+    __slots__ = ('filerecord', 'filename')
 
     def __init__(self, filename, filerecord):
         self.filerecord = filerecord
         self.filename = filename
 
     def __repr__(self): return repr(self.filename)
-    def __unicode__(self): return unicode(self.filename)
+    def __unicode__(self): return self.filename
 
 class Ba2Folder(object):
 
@@ -345,10 +346,10 @@ class BSA(ABsa):
             for __ in xrange(bsa_folder.folder_record.files_count):
                 rec = file_records[file_records_index]
                 file_records_index += 1
-                file_name = _decode_path(file_names[names_record_index])
+                filename = _decode_path(file_names[names_record_index])
                 names_record_index += 1
-                bsa_folder.assets[file_name] = BSAAsset(
-                    path_sep.join((folder_path, file_name)), rec)
+                bsa_folder.assets[filename] = BSAAsset(
+                    path_sep.join((folder_path, filename)), rec)
 
     @staticmethod
     def _read_file_records(file_records, bsa_file, folder_path,
@@ -369,8 +370,8 @@ class BSA(ABsa):
         names_record_index = 0
         for folder_path, folder_record in path_folder_record.iteritems():
             for __ in xrange(folder_record.files_count):
-                file_name = _decode_path(file_names[names_record_index])
-                _filenames.append(path_sep.join((folder_path, file_name)))
+                filename = _decode_path(file_names[names_record_index])
+                _filenames.append(path_sep.join((folder_path, filename)))
                 names_record_index += 1
         self._filenames = _filenames
 
@@ -436,19 +437,21 @@ class BA2(ABsa):
         current_folder_name = current_folder = None
         for index in xrange(self.bsa_header.b2a_num_files):
             name_size = struct.unpack_from('H', file_names_block)[0]
-            file_name = _decode_path(
+            filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes())
             file_names_block = file_names_block[name_size + 2:]
-            folder_dex = file_name.rfind(u'\\')
+            folder_dex = filename.rfind(u'\\')
             if folder_dex == -1:
                 folder_name = u''
             else:
-                folder_name = file_name[:folder_dex]
+                folder_name = filename[:folder_dex]
+                filename = filename[folder_dex + 1:]
             if current_folder_name != folder_name:
                 current_folder = self.bsa_folders.setdefault(folder_name,
                                                              Ba2Folder())
-            current_folder.assets[file_name] = BSAAsset(file_name,
-                                                        file_records[index])
+                current_folder_name = folder_name
+            current_folder.assets[filename] = BSAAsset(filename,
+                                                       file_records[index])
 
     def load_bsa_light(self):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
@@ -461,9 +464,9 @@ class BA2(ABsa):
         _filenames = []
         for index in xrange(self.bsa_header.b2a_num_files):
             name_size = struct.unpack_from('H', file_names_block)[0]
-            file_name = _decode_path(
+            filename = _decode_path(
                 file_names_block[2:name_size + 2].tobytes())
-            _filenames.append(file_name)
+            _filenames.append(filename)
             file_names_block = file_names_block[name_size + 2:]
         self._filenames = _filenames
 
