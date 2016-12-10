@@ -37,7 +37,7 @@ import os
 import struct
 import sys
 from functools import partial
-from itertools import groupby
+from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
 from ..bolt import deprint
@@ -326,20 +326,25 @@ class ABsa(AFile):
         except struct.error as e:
             raise BSAError, e.message, sys.exc_info()[2]
 
-    def extract_assets(self, asset_paths, dest_folder):
-        # map files to folders
+    @staticmethod
+    def _map_files_to_folders(asset_paths):
         folder_file = []
         for a in asset_paths:
             split = a.rsplit(path_sep, 1)
             if len(split) == 1:
                 split = [u'', split[0]]
             folder_file.append(split)
-        del asset_paths # forget about this
         # group files by folder
         folder_files_dict = {}
         folder_file.sort(key=itemgetter(0)) # sort first then group
         for key, val in groupby(folder_file, key=itemgetter(0)):
             folder_files_dict[key] = set(dest for _key, dest in val)
+        return folder_files_dict
+
+    def extract_assets(self, asset_paths, dest_folder):
+        folder_files_dict = self._map_files_to_folders(
+            imap(unicode.lower, asset_paths))
+        del asset_paths # forget about this
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
         folder_assets = collections.OrderedDict()
@@ -487,18 +492,8 @@ class BA2(ABsa):
 
     def extract_assets(self, asset_paths, dest_folder):
         # map files to folders
-        folder_file = []
-        for a in asset_paths:
-            split = a.rsplit(path_sep, 1)
-            if len(split) == 1:
-                split = [u'', split[0]]
-            folder_file.append(split)
+        folder_files_dict = self._map_files_to_folders(asset_paths)
         del asset_paths # forget about this
-        # group files by folder
-        folder_files_dict = {}
-        folder_file.sort(key=itemgetter(0)) # sort first then group
-        for key, val in groupby(folder_file, key=itemgetter(0)):
-            folder_files_dict[key] = set(dest for _key, dest in val)
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
         if self.bsa_header.b2a_files_type != 'GNRL':
