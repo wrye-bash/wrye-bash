@@ -106,7 +106,7 @@ class INI_FileOpenOrCopy(OneItemLink):
 
     def Execute(self):
         if bosh.iniInfos.open_or_copy(self._selected_item):
-            self.window.RefreshUI()
+            self.window.RefreshUI(redraw=[self._selected_item])
 
 #------------------------------------------------------------------------------
 class INI_Delete(balt.UIList_Delete, EnabledLink):
@@ -190,5 +190,5 @@ class INI_CreateNew(OneItemLink):
             defaultDir=bass.dirs['tweaks'], defaultFile=fileName,
             wildcard=_(u'INI Tweak File (*.ini)|*.ini'))
         if bosh.iniInfos.duplicate_ini(pathFrom, tweak_path):
-            self.window.RefreshUI()
-            self.window.SelectAndShowItem(tweak_path.tail)
+            self.window.RefreshUI(redraw=[tweak_path.tail], # to_add
+                                  detail_item=tweak_path.tail)

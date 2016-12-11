@@ -372,7 +372,7 @@ class Installers_Enabled(BoolLink):
         if enabled:
             self.window.panel.ShowPanel(scan_data_dir=True)
         else:
-            self.window.DeleteAll() ##: crude
+            self.window.DeleteAll()
             self.window.panel.ClearDetails()
 
 class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):

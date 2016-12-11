@@ -214,8 +214,8 @@ class Mods_CreateBlankBashedPatch(ItemLink):
         newPatchName = bosh.modInfos.generateNextBashedPatch(
             self.window.GetSelected())
         if newPatchName is not None:
-            self.window.RefreshUI(files=[newPatchName], refreshSaves=False)
-            self.window.SelectAndShowItem(newPatchName, deselectOthers=True)
+            self.window.ClearSelected(clear_details=True)
+            self.window.RefreshUI(redraw=[newPatchName], refreshSaves=False)
         else:
             self._showWarning(u"Unable to create new bashed patch: "
                               u"10 bashed patches already exist!")
@@ -239,8 +239,8 @@ class Mods_CreateBlank(ItemLink):
         if windowSelected: # assign it the group of the first selected mod
             mod_group = self.window.data_store.table.getColumn('group')
             mod_group[newName] = mod_group.get(windowSelected[0], u'')
-        self.window.RefreshUI(files=[newName], refreshSaves=False)
-        self.window.SelectAndShowItem(newName, deselectOthers=True)
+        self.window.ClearSelected(clear_details=True)
+        self.window.RefreshUI(redraw=[newName], refreshSaves=False)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):
@@ -295,7 +295,7 @@ class Mods_AutoGhost(BoolLink):
 
     def Execute(self):
         super(Mods_AutoGhost, self).Execute()
-        self.window.RefreshUI(files=bosh.modInfos.autoGhost(force=True),
+        self.window.RefreshUI(redraw=bosh.modInfos.autoGhost(force=True),
                               refreshSaves=False)
 
 #------------------------------------------------------------------------------

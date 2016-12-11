@@ -143,9 +143,8 @@ class Mod_CreateDummyMasters(OneItemLink):
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
         bosh.modInfos.refresh(refresh_infos=False)
-        self.window.RefreshUI(refreshSaves=True)
+        self.window.RefreshUI(refreshSaves=True, detail_item=to_select[-1])
         self.window.SelectItemsNoCallback(to_select)
-        self.window.SelectAndShowItem(to_select[-1])
 
 class Mod_OrderByName(EnabledLink):
     """Sort the selected files."""
@@ -258,8 +257,8 @@ class _Mod_LabelsData(balt.ListEditorData):
         self.mod_labels.sort()
         return newName
 
-    def _refresh(self, files): # editing mod labels should not affect saves
-        self.parent.RefreshUI(files=files, refreshSaves=False)
+    def _refresh(self, redraw): # editing mod labels should not affect saves
+        self.parent.RefreshUI(redraw=redraw, refreshSaves=False)
 
     def rename(self,oldName,newName):
         """Renames oldName to newName."""
@@ -280,7 +279,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if colGroup[fileName] == oldName:
                 colGroup[fileName] = newName
                 changed.append(fileName)
-        self._refresh(files=changed)
+        self._refresh(redraw=changed)
         #--Done
         return newName
 
@@ -295,7 +294,7 @@ class _Mod_LabelsData(balt.ListEditorData):
             if colGroup[fileName] == item:
                 del colGroup[fileName]
                 changed.append(fileName)
-        self._refresh(files=changed)
+        self._refresh(redraw=changed)
         #--Done
         return True
 
@@ -316,7 +315,7 @@ class _Mod_Labels(ChoiceLink):
     extraButtons = {} # extra actions for the edit dialog
 
     def _refresh(self): # editing mod labels should not affect saves
-        self.window.RefreshUI(files=self.selected, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
 
     def __init__(self):
         super(_Mod_Labels, self).__init__()
@@ -727,7 +726,7 @@ class _GhostLink(ItemLink):
 
     def Execute(self):
         changed = self._loop()
-        self.window.RefreshUI(files=changed, refreshSaves=False)
+        self.window.RefreshUI(redraw=changed, refreshSaves=False)
 
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     _text, help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
@@ -774,7 +773,7 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
             files.append(self.mname)
         else:
             files = self._loop()
-        self.window.RefreshUI(files=files, refreshSaves=False)
+        self.window.RefreshUI(redraw=files, refreshSaves=False)
 
 #------------------------------------------------------------------------------
 class _Mod_AllowGhostingInvert_All(_GhostLink, ItemLink):
@@ -832,7 +831,7 @@ class Mod_MarkMergeable(ItemLink):
         if no:
             message += u'=== ' + _(u'Not Mergeable') + u'\n* ' + '\n\n* '.join(
                 no)
-        self.window.RefreshUI(files=self.selected, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
         if message != u'':
             self._showWryeLog(message, title=_(u'Mark Mergeable'),
                               icons=Resources.bashBlue)
@@ -1101,7 +1100,7 @@ class _DirtyLink(ItemLink):
         for fileName in self.selected:
             bosh.modInfos.table.setItem(fileName, 'ignoreDirty',
                                         self._ignoreDirty(fileName))
-        self.window.RefreshUI(files=self.selected, refreshSaves=False)
+        self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
 
 class _Mod_SkipDirtyCheckAll(_DirtyLink, CheckLink):
     help = _(u"Set whether to check or not the selected mod(s) against LOOT's "
@@ -1454,9 +1453,9 @@ class Mod_CopyToEsmp(EnabledLink):
         if added:
             if save_lo: modInfos.cached_lo_save_lo()
             modInfos.refresh(refresh_infos=False)
-            self.window.RefreshUI(refreshSaves=True) # just in case
+            self.window.RefreshUI(refreshSaves=True, # just in case
+                                  detail_item=added[-1])
             self.window.SelectItemsNoCallback(added)
-            self.window.SelectAndShowItem(added[-1])
 
 #------------------------------------------------------------------------------
 class Mod_DecompileAll(EnabledLink):
@@ -1534,7 +1533,7 @@ class _Esm_Flip(EnabledLink):
             # will be moved to the top - note that modification times won't
             # change - so mods will revert to their original position once back
             # to esp from esm (Oblivion etc). Refresh saves due to esms move
-        self.window.RefreshUI(files=updated, refreshSaves=True)
+        self.window.RefreshUI(redraw=updated, refreshSaves=True)
 
 class Mod_FlipSelf(_Esm_Flip):
     """Flip an esp(esm) to an esm(esp)."""
@@ -1630,7 +1629,7 @@ class Mod_SetVersion(OneItemLink):
         self._selected_info.header.setChanged()
         self._selected_info.writeHeader()
         #--Repopulate
-        self.window.RefreshUI(files=[self._selected_item],
+        self.window.RefreshUI(redraw=[self._selected_item],
                               refreshSaves=False) # version: why affect saves ?
 
 #------------------------------------------------------------------------------

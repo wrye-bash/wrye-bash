@@ -183,8 +183,6 @@ class _DetailsViewMixin(NotebookPanel):
         super(_DetailsViewMixin, self).ShowPanel()
         self.detailsPanel.ShowPanel(**kwargs)
 
-    def GetDetailsItem(self): return self.detailsPanel.file_info
-
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
@@ -978,7 +976,8 @@ class ModList(_ModsUIList):
             self._toggle_active_state(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
-            self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True, focus=True)
+            self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True,
+                                   focus=True)
         else:
             mod_clicked = self._getItemClicked(event)
             if event.AltDown() and mod_clicked:
@@ -1095,7 +1094,9 @@ class _DetailsMixin(object):
 
     # Details panel API
     def SetFile(self, fileName='SAME'):
-        """Set file to be viewed."""
+        """Set file to be viewed. Leave fileName empty to reset.
+        :type fileName: basestring | bolt.Path | None
+        """
         #--Reset?
         if fileName == 'SAME':
             if self.displayed_item not in self.file_infos:
@@ -1139,7 +1140,7 @@ class _EditableMixin(_DetailsMixin):
 
     def DoSave(self): raise AbstractError
 
-    def DoCancel(self): self.SetFile(self.displayed_item)
+    def DoCancel(self): self.SetFile()
 
 class _EditableMixinOnFileInfos(_EditableMixin):
     """Bsa/Mods/Saves details, DEPRECATED: we need common data infos API!"""
@@ -1423,7 +1424,6 @@ class ModDetails(_SashDetailsPanel):
             newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
-            self.SetFile(self.displayed_item)
             with load_order.Unlock():
                 bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI( # refresh saves if lo changed
@@ -1466,16 +1466,16 @@ class ModDetails(_SashDetailsPanel):
         #--Done
         try:
             bosh.modInfos.refreshFile(fileName)
-            self.SetFile(fileName)
+            detail_item = fileName
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
-            self.SetFile(None)
+            detail_item = None
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
             changeDate and not load_order.using_txt_file())
-        self.panel_uilist.RefreshUI(refreshSaves=refreshSaves)
-        self.panel_uilist.SelectAndShowItem(self.modInfo.name)
+        self.panel_uilist.RefreshUI(refreshSaves=refreshSaves,
+                                    detail_item=detail_item)
 
     #--Bash Tags
     def ShowBashTagsMenu(self):
@@ -1486,7 +1486,7 @@ class ModDetails(_SashDetailsPanel):
         mod_tags = mod_info.getBashTags()
         is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
                                               True)
-        def _refreshUI(): self.panel_uilist.RefreshUI(files=[mod_info.name],
+        def _refreshUI(): self.panel_uilist.RefreshUI(redraw=[mod_info.name],
                 refreshSaves=False) # why refresh saves when updating tags (?)
         def _isAuto():
             return bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags')
@@ -1743,13 +1743,15 @@ class INIPanel(BashTab):
         self.detailsPanel.ShowPanel(target_changed=True)
 
     def ShowPanel(self, refresh_infos=False, refresh_target=False,
-                  clean_targets=False, focus_list=True, **kwargs):
+                  clean_targets=False, focus_list=True, detail_item='SAME',
+                  **kwargs):
         changes = bosh.iniInfos.refresh(refresh_infos=refresh_infos,
                                         refresh_target=refresh_target)
         super(INIPanel, self).ShowPanel(target_changed=changes and changes[3],
                                         clean_targets=clean_targets)
         if changes: # we need this to be more granular
-            self.uiList.RefreshUI(focus_list=focus_list) # resets the details
+            self.uiList.RefreshUI(focus_list=focus_list,
+                                  detail_item=detail_item)
 
     def _sbCount(self):
         stati = self.uiList.CountTweakStatus()
@@ -1824,20 +1826,21 @@ class SaveList(balt.UIList):
         """Savegame renamed."""
         root, newName, _numStr = self.validate_filename(event)
         if not root: return
-        detail_item = self.panel.GetDetailsItem()
-        item_edited = [detail_item.name if detail_item else None]
+        item_edited = [self.panel.detailsPanel.displayed_item]
         selected = [s for s in self.GetSelected() if
                     not bosh.saveInfos.bak_file_pattern.match(s.s)] # YAK !
         to_select = set()
+        to_del = set()
         for save_key in selected:
             newFileName = self.new_name(newName)
             if not self._try_rename(save_key, newFileName, to_select,
                                     item_edited): break
+            to_del.add(save_key)
         if to_select:
-            self.RefreshUI()
+            self.RefreshUI(redraw=to_select, to_del=to_del, # to_add
+                           detail_item=item_edited[0])
             #--Reselect the renamed items
             self.SelectItemsNoCallback(to_select)
-            if item_edited[0]: self.SelectItem(item_edited[0])
         event.Veto() # needed ! clears new name from label on exception
 
     @staticmethod
@@ -1877,7 +1880,8 @@ class SaveList(balt.UIList):
             return
         newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
         newName = self.data_store.enable(hitItem, newEnabled)
-        if newName != hitItem: self.RefreshUI() ##: files=[fileName]
+        if newName != hitItem: self.RefreshUI(redraw=[newName],
+                                              to_del=[hitItem])
 
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
@@ -2017,13 +2021,12 @@ class SaveDetails(_SashDetailsPanel):
         #--Done
         try:
             bosh.saveInfos.refreshFile(saveInfo.name)
-            self.SetFile(self.saveInfo.name)
+            detail_item = saveInfo.name
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
-            self.SetFile(None)
+            detail_item = None
         # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
-        self.panel_uilist.RefreshUI()
-        self.panel_uilist.SelectAndShowItem(self.saveInfo.name)
+        self.panel_uilist.RefreshUI(detail_item=detail_item)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
@@ -2446,12 +2449,12 @@ class InstallersList(balt.UIList):
         try:
             index = self.GetIndex(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
-            self.data_store.add_marker(u'====', max_order)
-            self.RefreshUI() # why refresh mods/saves/inis when adding a marker
+            self.data_store.add_marker(new_marker, max_order)
+            self.RefreshUI(redraw=[new_marker])
             index = self.GetIndex(new_marker)
         if index != -1:
-            self.ClearSelected()
-            self.SelectItemAtIndex(index)
+            self.SelectAndShowItem(new_marker, deselectOthers=True,
+                                   focus=True)
             self.Rename([new_marker])
 
     def rescanInstallers(self, toRefresh, abort, update_from_data=True,
@@ -2753,7 +2756,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
         espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         subIndices = self.gSubList.GetSelections()
-        self.installersPanel.uiList.RefreshUI(files=[self.displayed_item])
+        self.installersPanel.uiList.RefreshUI(redraw=[self.displayed_item])
         for subIndex in subIndices:
             self.gSubList.SetSelection(subIndex)
         # Reset the scroll bars back to their original position
@@ -3049,13 +3052,18 @@ class ScreensList(balt.UIList):
         if numStr: numStr.zfill(digits)
         with balt.BusyCursor():
             to_select = set()
+            to_del = set()
+            item_edited = [self.panel.detailsPanel.displayed_item]
             for screen in selected:
                 newName = GPath(root + numStr + screen.ext)
-                if not self._try_rename(screen, newName, to_select): break
+                if not self._try_rename(screen, newName, to_select,
+                                        item_edited): break
+                to_del.add(screen)
                 num += 1
                 numStr = unicode(num).zfill(digits)
             if to_select:
-                self.RefreshUI()
+                self.RefreshUI(redraw=to_select, to_del=to_del,
+                               detail_item=item_edited[0])
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(to_select)
             event.Veto()
@@ -3214,11 +3222,11 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         #--Done
         try:
             bosh.bsaInfos.refreshFile(self._bsa_info.name)
-            self.SetFile(self._bsa_info.name)
+            detail_item = self._bsa_info.name
         except bosh.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
-            self.SetFile(None)
-        self.panel_uilist.RefreshUI()
+            detail_item = None
+        self.panel_uilist.RefreshUI(detail_item=detail_item)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):

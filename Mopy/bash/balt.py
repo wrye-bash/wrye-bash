@@ -1776,39 +1776,35 @@ class UIList(wx.Panel):
         self.autosizeColumns()
 
     __all = ()
-    def RefreshUI(self, **kwargs):
-        """Populate specified files or ALL files, set status bar count.
-
-        If there are any deleted (applies also to renamed) items leave files
-        parameter alone.
+    def RefreshUI(self, redraw=__all, to_del=__all, detail_item='SAME',
+                  **kwargs):
+        """Populate specified files or ALL files, sort, set status bar count.
         """
-        # TODO(ut) needs work: A) deleted, new and files->modified **kwargs
-        # parameters and get rid of ModList override(move part to PopulateItem)
-        # Refresh UI uses must be optimized - pass in ONLY the items we need
-        # refreshed - most of the time Refresh UI calls PopulateItems on ALL
-        # items - a nono. Refresh UI has 106 uses...
-        # B) Rework details: add 'select' tuple parameter (ex 'detail', duh) to
-        # allow specifying detail item - for now use heuristics (len(files))
-        files = kwargs.pop('files', self.__all)
         focus_list = kwargs.pop('focus_list', True)
-        if files is self.__all:
+        if redraw is to_del is self.__all:
             self.PopulateItems()
         else:  #--Iterable
-            for file_ in files:
-                self.PopulateItem(item=file_)
+            for d in to_del:
+                self.__gList.RemoveItemAt(self.GetIndex(d))
+            for upd in redraw:
+                self.PopulateItem(item=upd)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-        self._refresh_details(files)
+        self._refresh_details(redraw, detail_item)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
 
-    def _refresh_details(self, files):
-        # Details HACK: if it was a single item then refresh details for it:
-        if len(files) == 1:
-            self.SelectItem(files[0])
-        else:
-            self.panel.SetDetails()
+    def _refresh_details(self, redraw, detail_item):
+        if detail_item is None:
+            self.panel.ClearDetails()
+        elif detail_item != 'SAME':
+            self.SelectAndShowItem(detail_item)
+        else: # if it was a single item, refresh details for it
+            if len(redraw) == 1:
+                self.SelectAndShowItem(next(iter(redraw)))
+            else:
+                self.panel.SetDetails()
 
     def Focus(self):
         self.__gList.SetFocus()

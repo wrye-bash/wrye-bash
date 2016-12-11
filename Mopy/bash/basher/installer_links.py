@@ -122,7 +122,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             iArchive.blockSize = blockSize
             #--Refresh UI
             self.idata.irefresh(what='I', pending=[archive])
-        self.window.RefreshUI()
+        self.window.RefreshUI(detail_item=archive)
 
     def _askFilename(self, message, filename):
         """:rtype: bolt.Path"""
@@ -319,8 +319,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
                 BashFrame.iniList.panel.detailsPanel.set_choice(target_path)
                 BashFrame.iniList.panel.ShowPanel(refresh_target=True,
-                                                  focus_list=False)
-                BashFrame.iniList.panel.SetDetails(lastApplied)
+                    focus_list=False, detail_item=lastApplied)
             else:
                 targets = bass.settings['bash.ini.choices']
                 for target in new_targets:
@@ -438,8 +437,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         with balt.BusyCursor():
             self.idata.copy_installer(curName,newName)
             self.idata.irefresh(what='N')
-        self.window.RefreshUI()
-        self.window.SelectAndShowItem(newName)
+        self.window.RefreshUI(detail_item=newName)
 
 class Installer_Hide(_InstallerLink, UIList_Hide):
     """Hide selected Installers."""
@@ -597,11 +595,10 @@ class Installer_Move(_InstallerLink):
         if newPos == -3: newPos = self.idata[self.idata.lastKey].order
         elif newPos == -2: newPos = self.idata[self.idata.lastKey].order+1
         elif newPos < 0: newPos = len(self.idata)
-        current_archive = self.iPanel.GetDetailsItem()
         self.idata.moveArchives(self.selected,newPos)
         self.idata.irefresh(what='N')
-        self.window.RefreshUI()
-        self.window.SelectAndShowItem(GPath(current_archive.archive), focus=True)
+        self.window.RefreshUI(
+            detail_item=self.iPanel.detailsPanel.displayed_item)
 
 class Installer_Open(balt.UIList_OpenItems, _InstallerLink):
     """Open selected file(s)."""
@@ -799,8 +796,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                 curFile = _copy_conflicts(curFile)
             project = destDir.root
         self._get_refreshed(project, srcInstaller)
-        self.window.RefreshUI()
-        self.window.SelectAndShowItem(project)
+        self.window.RefreshUI(detail_item=project)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
@@ -993,9 +989,8 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                 projects.append(project)
             if not projects: return
             self.idata.irefresh(what='NS')
-            self.window.RefreshUI() # all files ? can status of others change ?
+            self.window.RefreshUI(detail_item=projects[-1]) # all files ? can status of others change ?
             self.window.SelectItemsNoCallback(projects)
-            self.window.SelectAndShowItem(projects[-1])
 
 #------------------------------------------------------------------------------
 # InstallerProject Links ------------------------------------------------------
@@ -1055,7 +1050,6 @@ class InstallerProject_Pack(_SingleProject):
         if not archive: return
         self._pack(archive, self._selected_info, self._selected_item,
                    release=self.__class__.release)
-        self.window.SelectAndShowItem(archive)
 
 #------------------------------------------------------------------------------
 class InstallerProject_ReleasePack(InstallerProject_Pack):
@@ -1100,8 +1094,7 @@ class InstallerConverter_Apply(_InstallerLink):
                     position=new_archive_order)
             except StateError:
                 return
-        self.window.RefreshUI()
-        self.window.SelectAndShowItem(destArchive)
+        self.window.RefreshUI(detail_item=destArchive)
 
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
@@ -1119,8 +1112,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
             destinations, converted = self.idata.applyEmbeddedBCFs(
                 [archive], [dest], progress)
             if not destinations: return # destinations == [dest] if all was ok
-        self.window.RefreshUI()
-        self.window.SelectAndShowItem(dest)
+        self.window.RefreshUI(detail_item=dest)
 
 class InstallerConverter_Create(_InstallerLink):
     """Create BAIN conversion file."""

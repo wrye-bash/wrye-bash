@@ -173,10 +173,9 @@ class Saves_Profiles(ChoiceLink):
                 bosh.saveInfos.setLocalSave(newSaves, refreshSaveInfos=False)
                 bosh.modInfos.swapPluginsAndMasterVersion(arcSaves, newSaves)
                 Link.Frame.SetTitle()
-                self.window.panel.ClearDetails()
-                self.window.DeleteAll() # let call below repopulate
                 bosh.saveInfos.refresh()
-                self.window.RefreshUI()
+                self.window.DeleteAll() # let call below repopulate
+                self.window.RefreshUI(detail_item=None)
                 self.window.panel.ShowPanel()
                 Link.Frame.warn_corrupted(warn_mods=False, warn_strings=False)
 
@@ -273,8 +272,8 @@ class Save_RenamePlayer(ItemLink):
     help = _(u'Rename the Player character in a save game')
 
     def Execute(self):
-        saveInfo = bosh.saveInfos[self.selected[0]]
         # get new player name - must not be empty
+        saveInfo = bosh.saveInfos[self.selected[0]]
         newName = self._askText(
             _(u"Enter new player name. E.g. Conan the Bold"),
             title=_(u"Rename player"), default=saveInfo.header.pcName)
@@ -283,7 +282,7 @@ class Save_RenamePlayer(ItemLink):
             savedPlayer = bosh.Save_NPCEdits(self.window.data_store[save])
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI(redraw=self.selected)
 
 #------------------------------------------------------------------------------
 class Save_ExportScreenshot(OneItemLink):
@@ -640,8 +639,9 @@ class Save_Move(ChoiceLink):
             self._showInfo(_(u'%d files copied to %s.') % (count, profile),
                            title=_(u'Copy File'))
         elif count: # files moved to other profile, refresh ##: finally ?
-            bosh.saveInfos.delete_Refresh(self.selected, check_existence=True)
-            self.window.RefreshUI()
+            moved = bosh.saveInfos.delete_Refresh(self.selected,
+                                                  check_existence=True)
+            self.window.RefreshUI(to_del=moved)
 
 #------------------------------------------------------------------------------
 class Save_RepairAbomb(OneItemLink):
@@ -809,7 +809,7 @@ class Save_Unbloat(OneItemLink):
         self._showOk((_(u'Uncreated Objects: %d') + u'\n' +
                       _(u'Uncreated Refs: %d') + u'\n' +
                       _(u'UnNulled Refs: %d')) % nums, self._selected_item.s)
-        self.window.RefreshUI(files=[self._selected_item])
+        self.window.RefreshUI(redraw=[self._selected_item])
 
 #------------------------------------------------------------------------------
 class Save_UpdateNPCLevels(EnabledLink):

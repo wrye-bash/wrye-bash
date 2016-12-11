@@ -86,7 +86,8 @@ class Files_Unhide(ItemLink):
         moved = self.window.data_store.move_infos(srcFiles, destFiles,
                                                   self.window)
         if moved:
-            self.window.RefreshUI(refreshSaves=True)
+            self.window.RefreshUI( # pick one at random to show details for
+                detail_item=next(iter(moved)), refreshSaves=True)
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -155,9 +156,9 @@ class File_Duplicate(ItemLink):
         if dests:
             if fileInfo.isMod(): fileInfos.cached_lo_save_lo()
             fileInfos.refresh(refresh_infos=False)
-            self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
+            self.window.RefreshUI(redraw=dests, detail_item=dests[-1],
+                                  refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
-            self.window.SelectAndShowItem(dests[-1])
 
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
@@ -249,7 +250,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
             except bosh.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
                 self.window.panel.ClearDetails()
-            self.window.RefreshUI(files=[fileName], refreshSaves=False) # don't
+            self.window.RefreshUI(redraw=[fileName], refreshSaves=False) # don't
             # refresh saves as neither selection state nor load order change
 
 class File_Backup(ItemLink):
@@ -285,7 +286,7 @@ class _RevertBackup(OneItemLink):
         with balt.BusyCursor():
             try:
                 self._selected_info.revert_backup()
-                self.window.RefreshUI(files=[self._selected_item],
+                self.window.RefreshUI(redraw=[self._selected_item],
                                       refreshSaves=False)
             except bosh.FileError:
                 self._showError(_(u'Old file is corrupt!'))
