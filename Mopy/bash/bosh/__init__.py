@@ -1486,6 +1486,9 @@ class AFile(object):
     @property
     def abs_path(self): return self._abs_path
 
+    @abs_path.setter
+    def abs_path(self, val): self._abs_path = val
+
     def needs_update(self, _reset_cache=True):
         try:
             psize, pmtime = self.abs_path.size_mtime()
@@ -2504,6 +2507,7 @@ class FileInfos(_DataStore):
         super(FileInfos, self)._rename_operation(oldName, newName)
         #--FileInfo
         fileInfo.name = newName
+        fileInfo.abs_path = self.store_dir.join(newName)
         #--FileInfos
         self[newName] = self[oldName]
         del self[oldName]
@@ -2920,7 +2924,8 @@ class ModInfos(FileInfos):
                 next_mod = None
             end_time = self[next_mod].mtime if next_mod else None
             start_time  = self[previous].mtime
-            if end_time <= start_time: # can happen on esm/esp boundary
+            if end_time is not None and \
+                    end_time <= start_time: # can happen on esm/esp boundary
                 start_time = end_time - 60
             set_time = load_order.get_free_time(start_time, end_time=end_time)
             self[new_mod].setmtime(set_time)

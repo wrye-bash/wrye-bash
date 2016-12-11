@@ -2220,7 +2220,7 @@ class InstallersList(balt.UIList):
 
     @staticmethod
     def _unhide_wildcard():
-        starred = u';'.join(archives.readExts)
+        starred = u';'.join(u'*' + ext for ext in archives.readExts)
         return bush.game.displayName + u' ' + _(
             u'Mod Archives') + u' (' + starred + u')|' + starred
 
