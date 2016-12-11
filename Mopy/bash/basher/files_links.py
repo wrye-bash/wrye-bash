@@ -86,7 +86,8 @@ class Files_Unhide(ItemLink):
         moved = self.window.data_store.move_infos(srcFiles, destFiles,
                                                   self.window)
         if moved:
-            self.window.RefreshUI(refreshSaves=True)
+            self.window.RefreshUI( # pick one at random to show details for
+                detail_item=next(iter(moved)), refreshSaves=True)
             self.window.SelectItemsNoCallback(moved, deselectOthers=True)
 
 #------------------------------------------------------------------------------
@@ -155,9 +156,9 @@ class File_Duplicate(ItemLink):
         if dests:
             if fileInfo.isMod(): fileInfos.cached_lo_save_lo()
             fileInfos.refresh(refresh_infos=False)
-            self.window.RefreshUI(refreshSaves=False) #(dup) saves not affected
+            self.window.RefreshUI(redraw=dests, detail_item=dests[-1],
+                                  refreshSaves=False) #(dup) saves not affected
             self.window.SelectItemsNoCallback(dests)
-            self.window.SelectAndShowItem(dests[-1])
 
 class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""

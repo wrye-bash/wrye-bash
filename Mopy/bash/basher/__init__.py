@@ -183,8 +183,6 @@ class _DetailsViewMixin(NotebookPanel):
         super(_DetailsViewMixin, self).ShowPanel()
         self.detailsPanel.ShowPanel(**kwargs)
 
-    def GetDetailsItem(self): return self.detailsPanel.file_info
-
 class SashPanel(NotebookPanel):
     """Subclass of Notebook Panel, designed for two pane panel."""
     defaultSashPos = minimumSize = 256
@@ -978,7 +976,8 @@ class ModList(_ModsUIList):
             self._toggle_active_state(mod_clicked_on_icon)
             # select manually as OnSelectItem() will fire for the wrong
             # index if list is sorted with selected first
-            self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True, focus=True)
+            self.SelectAndShowItem(mod_clicked_on_icon, deselectOthers=True,
+                                   focus=True)
         else:
             mod_clicked = self._getItemClicked(event)
             if event.AltDown() and mod_clicked:
@@ -1827,8 +1826,7 @@ class SaveList(balt.UIList):
         """Savegame renamed."""
         root, newName, _numStr = self.validate_filename(event)
         if not root: return
-        detail_item = self.panel.GetDetailsItem()
-        item_edited = [detail_item.name if detail_item else None]
+        item_edited = [self.panel.detailsPanel.displayed_item]
         selected = [s for s in self.GetSelected() if
                     not bosh.saveInfos.bak_file_pattern.match(s.s)] # YAK !
         to_select = set()
@@ -1839,10 +1837,10 @@ class SaveList(balt.UIList):
                                     item_edited): break
             to_del.add(save_key)
         if to_select:
-            self.RefreshUI(redraw=to_select, to_del=to_del) # to_add
+            self.RefreshUI(redraw=to_select, to_del=to_del, # to_add
+                           detail_item=item_edited[0])
             #--Reselect the renamed items
             self.SelectItemsNoCallback(to_select)
-            if item_edited[0]: self.SelectItem(item_edited[0])
         event.Veto() # needed ! clears new name from label on exception
 
     @staticmethod
@@ -1882,7 +1880,8 @@ class SaveList(balt.UIList):
             return
         newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
         newName = self.data_store.enable(hitItem, newEnabled)
-        if newName != hitItem: self.RefreshUI() ##: files=[fileName]
+        if newName != hitItem: self.RefreshUI(redraw=[newName],
+                                              to_del=[hitItem])
 
 #------------------------------------------------------------------------------
 class SaveDetails(_SashDetailsPanel):
@@ -2450,12 +2449,12 @@ class InstallersList(balt.UIList):
         try:
             index = self.GetIndex(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
-            self.data_store.add_marker(u'====', max_order)
-            self.RefreshUI() # why refresh mods/saves/inis when adding a marker
+            self.data_store.add_marker(new_marker, max_order)
+            self.RefreshUI(redraw=[new_marker])
             index = self.GetIndex(new_marker)
         if index != -1:
-            self.ClearSelected()
-            self.SelectItemAtIndex(index)
+            self.SelectAndShowItem(new_marker, deselectOthers=True,
+                                   focus=True)
             self.Rename([new_marker])
 
     def rescanInstallers(self, toRefresh, abort, update_from_data=True,
@@ -3053,13 +3052,18 @@ class ScreensList(balt.UIList):
         if numStr: numStr.zfill(digits)
         with balt.BusyCursor():
             to_select = set()
+            to_del = set()
+            item_edited = [self.panel.detailsPanel.displayed_item]
             for screen in selected:
                 newName = GPath(root + numStr + screen.ext)
-                if not self._try_rename(screen, newName, to_select): break
+                if not self._try_rename(screen, newName, to_select,
+                                        item_edited): break
+                to_del.add(screen)
                 num += 1
                 numStr = unicode(num).zfill(digits)
             if to_select:
-                self.RefreshUI()
+                self.RefreshUI(redraw=to_select, to_del=to_del,
+                               detail_item=item_edited[0])
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(to_select)
             event.Veto()

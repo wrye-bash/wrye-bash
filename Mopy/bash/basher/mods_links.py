@@ -214,8 +214,8 @@ class Mods_CreateBlankBashedPatch(ItemLink):
         newPatchName = bosh.modInfos.generateNextBashedPatch(
             self.window.GetSelected())
         if newPatchName is not None:
+            self.window.ClearSelected(clear_details=True)
             self.window.RefreshUI(redraw=[newPatchName], refreshSaves=False)
-            self.window.SelectAndShowItem(newPatchName, deselectOthers=True)
         else:
             self._showWarning(u"Unable to create new bashed patch: "
                               u"10 bashed patches already exist!")
@@ -239,8 +239,8 @@ class Mods_CreateBlank(ItemLink):
         if windowSelected: # assign it the group of the first selected mod
             mod_group = self.window.data_store.table.getColumn('group')
             mod_group[newName] = mod_group.get(windowSelected[0], u'')
+        self.window.ClearSelected(clear_details=True)
         self.window.RefreshUI(redraw=[newName], refreshSaves=False)
-        self.window.SelectAndShowItem(newName, deselectOthers=True)
 
 #------------------------------------------------------------------------------
 class Mods_ListMods(ItemLink):

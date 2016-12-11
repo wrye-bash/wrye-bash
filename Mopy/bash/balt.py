@@ -1802,7 +1802,7 @@ class UIList(wx.Panel):
             self.SelectAndShowItem(detail_item)
         else: # if it was a single item, refresh details for it
             if len(redraw) == 1:
-                self.SelectItem(next(iter(redraw)))
+                self.SelectAndShowItem(next(iter(redraw)))
             else:
                 self.panel.SetDetails()
 
