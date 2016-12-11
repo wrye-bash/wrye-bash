@@ -1777,7 +1777,7 @@ class UIList(wx.Panel):
 
     __all = ()
     __same = bolt.Path(u'')
-    def RefreshUI(self, detail_item=__same, **kwargs):
+    def RefreshUI(self, redraw=__all, detail_item=__same, **kwargs):
         """Populate specified files or ALL files, set status bar count.
 
         If there are any deleted (applies also to renamed) items leave files
@@ -1788,28 +1788,27 @@ class UIList(wx.Panel):
         # Refresh UI uses must be optimized - pass in ONLY the items we need
         # refreshed - most of the time Refresh UI calls PopulateItems on ALL
         # items - a nono. Refresh UI has 106 uses...
-        files = kwargs.pop('files', self.__all)
         focus_list = kwargs.pop('focus_list', True)
-        if files is self.__all:
+        if redraw is self.__all:
             self.PopulateItems()
         else:  #--Iterable
-            for file_ in files:
+            for file_ in redraw:
                 self.PopulateItem(item=file_)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
-        self._refresh_details(files, detail_item)
+        self._refresh_details(redraw, detail_item)
         self.panel.SetStatusCount()
         if focus_list: self.Focus()
 
-    def _refresh_details(self, files, detail_item):
+    def _refresh_details(self, redraw, detail_item):
         if detail_item is None:
             self.panel.ClearDetails()
         elif detail_item is not self.__same:
             self.SelectAndShowItem(detail_item)
-        else:
-            if len(files) == 1: # if it was a single item, refresh details for it
-                self.SelectItem(files[0])
+        else: # if it was a single item, refresh details for it
+            if len(redraw) == 1:
+                self.SelectItem(redraw[0])
             else:
                 self.panel.SetDetails()
 

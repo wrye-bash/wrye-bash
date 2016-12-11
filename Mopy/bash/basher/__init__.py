@@ -1486,7 +1486,7 @@ class ModDetails(_SashDetailsPanel):
         mod_tags = mod_info.getBashTags()
         is_auto = bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags',
                                               True)
-        def _refreshUI(): self.panel_uilist.RefreshUI(files=[mod_info.name],
+        def _refreshUI(): self.panel_uilist.RefreshUI(redraw=[mod_info.name],
                 refreshSaves=False) # why refresh saves when updating tags (?)
         def _isAuto():
             return bosh.modInfos.table.getItem(mod_info.name, 'autoBashTags')
@@ -2753,7 +2753,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         subScrollPos  = self.gSubList.GetScrollPos(wx.VERTICAL)
         espmScrollPos = self.gEspmList.GetScrollPos(wx.VERTICAL)
         subIndices = self.gSubList.GetSelections()
-        self.installersPanel.uiList.RefreshUI(files=[self.displayed_item])
+        self.installersPanel.uiList.RefreshUI(redraw=[self.displayed_item])
         for subIndex in subIndices:
             self.gSubList.SetSelection(subIndex)
         # Reset the scroll bars back to their original position

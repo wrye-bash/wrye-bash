@@ -249,7 +249,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
             except bosh.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
                 self.window.panel.ClearDetails()
-            self.window.RefreshUI(files=[fileName], refreshSaves=False) # don't
+            self.window.RefreshUI(redraw=[fileName], refreshSaves=False) # don't
             # refresh saves as neither selection state nor load order change
 
 class File_Backup(ItemLink):
@@ -285,7 +285,7 @@ class _RevertBackup(OneItemLink):
         with balt.BusyCursor():
             try:
                 self._selected_info.revert_backup()
-                self.window.RefreshUI(files=[self._selected_item],
+                self.window.RefreshUI(redraw=[self._selected_item],
                                       refreshSaves=False)
             except bosh.FileError:
                 self._showError(_(u'Old file is corrupt!'))
