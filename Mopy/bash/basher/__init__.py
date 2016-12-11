@@ -1829,12 +1829,14 @@ class SaveList(balt.UIList):
         selected = [s for s in self.GetSelected() if
                     not bosh.saveInfos.bak_file_pattern.match(s.s)] # YAK !
         to_select = set()
+        to_del = set()
         for save_key in selected:
             newFileName = self.new_name(newName)
             if not self._try_rename(save_key, newFileName, to_select,
                                     item_edited): break
+            to_del.add(save_key)
         if to_select:
-            self.RefreshUI()
+            self.RefreshUI(redraw=to_select, to_del=to_del) # to_add
             #--Reselect the renamed items
             self.SelectItemsNoCallback(to_select)
             if item_edited[0]: self.SelectItem(item_edited[0])

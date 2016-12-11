@@ -1777,23 +1777,18 @@ class UIList(wx.Panel):
 
     __all = ()
     __same = bolt.Path(u'')
-    def RefreshUI(self, redraw=__all, detail_item=__same, **kwargs):
-        """Populate specified files or ALL files, set status bar count.
-
-        If there are any deleted (applies also to renamed) items leave files
-        parameter alone.
+    def RefreshUI(self, redraw=__all, to_del=__all, detail_item=__same,
+                  **kwargs):
+        """Populate specified files or ALL files, sort, set status bar count.
         """
-        # TODO(ut) needs work: A) deleted, new and files->modified **kwargs
-        # parameters and get rid of ModList override(move part to PopulateItem)
-        # Refresh UI uses must be optimized - pass in ONLY the items we need
-        # refreshed - most of the time Refresh UI calls PopulateItems on ALL
-        # items - a nono. Refresh UI has 106 uses...
         focus_list = kwargs.pop('focus_list', True)
-        if redraw is self.__all:
+        if redraw is to_del is self.__all:
             self.PopulateItems()
         else:  #--Iterable
-            for file_ in redraw:
-                self.PopulateItem(item=file_)
+            for d in to_del:
+                self.__gList.RemoveItemAt(self.GetIndex(d))
+            for upd in redraw:
+                self.PopulateItem(item=upd)
             #--Sort
             self.SortItems()
             self.autosizeColumns()
@@ -1808,7 +1803,7 @@ class UIList(wx.Panel):
             self.SelectAndShowItem(detail_item)
         else: # if it was a single item, refresh details for it
             if len(redraw) == 1:
-                self.SelectItem(redraw[0])
+                self.SelectItem(next(iter(redraw)))
             else:
                 self.panel.SetDetails()
 

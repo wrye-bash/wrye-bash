@@ -272,8 +272,8 @@ class Save_RenamePlayer(ItemLink):
     help = _(u'Rename the Player character in a save game')
 
     def Execute(self):
-        saveInfo = bosh.saveInfos[self.selected[0]]
         # get new player name - must not be empty
+        saveInfo = bosh.saveInfos[self.selected[0]]
         newName = self._askText(
             _(u"Enter new player name. E.g. Conan the Bold"),
             title=_(u"Rename player"), default=saveInfo.header.pcName)
@@ -282,7 +282,7 @@ class Save_RenamePlayer(ItemLink):
             savedPlayer = bosh.Save_NPCEdits(self.window.data_store[save])
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
-        self.window.RefreshUI()
+        self.window.RefreshUI(redraw=self.selected)
 
 #------------------------------------------------------------------------------
 class Save_ExportScreenshot(OneItemLink):
@@ -639,8 +639,9 @@ class Save_Move(ChoiceLink):
             self._showInfo(_(u'%d files copied to %s.') % (count, profile),
                            title=_(u'Copy File'))
         elif count: # files moved to other profile, refresh ##: finally ?
-            bosh.saveInfos.delete_Refresh(self.selected, check_existence=True)
-            self.window.RefreshUI()
+            moved = bosh.saveInfos.delete_Refresh(self.selected,
+                                                  check_existence=True)
+            self.window.RefreshUI(to_del=moved)
 
 #------------------------------------------------------------------------------
 class Save_RepairAbomb(OneItemLink):
