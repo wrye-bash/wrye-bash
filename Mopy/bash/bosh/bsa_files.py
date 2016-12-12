@@ -392,6 +392,10 @@ class ABsa(AFile):
     def has_asset(self, asset_path):
         return (u'%s' % asset_path).lower() in self.assets
 
+    # API
+    def has_assets(self, asset_paths):
+        return set((u'%s' % a).lower() for a in asset_paths) & self.assets
+
     @property
     def assets(self):
         if self._assets is self.__class__._assets:
@@ -586,6 +590,10 @@ class BA2(ABsa):
         self._filenames = _filenames
 
     def has_asset(self, asset_path): return (u'%s' % asset_path) in self.assets
+
+    # API
+    def has_assets(self, asset_paths):
+        return set((u'%s' % a) for a in asset_paths) & self.assets
 
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader

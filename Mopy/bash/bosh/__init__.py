@@ -43,11 +43,11 @@ import time
 from binascii import crc32
 from collections import OrderedDict
 from functools import wraps, partial
-from itertools import groupby
+from itertools import groupby, imap
 from operator import attrgetter, itemgetter
 
 from .mods_metadata import ConfigHelpers
-from .. import bass, bolt, balt, bush, env, load_order, libbsa, archives
+from .. import bass, bolt, balt, bush, env, load_order, archives
 from .. import patcher # for configIsCBash()
 from ..archives import defaultExt, readExts, compressionSettings, \
     countFilesInArchive
@@ -2052,7 +2052,7 @@ class ModInfo(_BackupMixin, FileInfo):
         for _dir, join, format_str in bush.game.esp.stringsFiles:
             fname = format_str % {'body': sbody, 'ext': ext,
                                   'language': language}
-            assetPath = GPath(u'').join(*join).join(fname)
+            assetPath = empty_path.join(*join).join(fname)
             files.append(assetPath)
         extract = set()
         paths = set()
@@ -2066,30 +2066,28 @@ class ModInfo(_BackupMixin, FileInfo):
         #--If there were some missing Loose Files
         if extract:
             bsaPaths = modInfos.extra_bsas(self)
-            bsaFiles = {}
-            targetJoin = dirs['bsaCache'].join
-            for filepath in extract:
-                found = False
-                for path in bsaPaths:
-                    bsaFile = bsaFiles.get(path,None)
-                    if not bsaFile:
-                        try:
-                            bsaFile = libbsa.BSAHandle(path)
-                            bsaFiles[path] = bsaFile
-                        except:
-                            deprint(u'   Error loading BSA file:',path.stail,traceback=True)
-                            continue
-                    if bsaFile.IsAssetInBSA(filepath):
-                        target = targetJoin(path.tail)
-                        #--Extract
-                        try:
-                            bsaFile.ExtractAsset(filepath,target)
-                        except libbsa.LibbsaError as e:
-                            raise ModError(self.name,u"Could not extract Strings File from '%s': %s" % (path.stail,e))
-                        paths.add(target.join(filepath))
-                        found = True
-                if not found:
-                    raise ModError(self.name,u"Could not locate Strings File '%s'" % filepath.stail)
+            bsa_assets = OrderedDict()
+            for path in bsaPaths:
+                try:
+                    bsa_info = bsaInfos[path.tail] # type: BSAInfo
+                    has_assets = bsa_info.has_assets(extract)
+                except (KeyError, BSAError): # not existing or corrupted
+                    continue
+                bsa_assets[bsa_info] = has_assets
+                #extract contains Paths that compare equal to lowercase strings
+                extract -= set(imap(unicode.lower, has_assets))
+                if not extract:
+                    break
+            else: raise ModError(self.name, u"Could not locate Strings Files")
+            for bsa, assets in bsa_assets.iteritems():
+                out_path = dirs['bsaCache'].join(bsa.name)
+                try:
+                    bsa.extract_assets(assets, out_path.s)
+                except BSAError as e:
+                    raise ModError(self.name,
+                                   u"Could not extract Strings File from "
+                                   u"'%s': %s" % (bsa.name, e))
+                paths.update(imap(out_path.join, assets))
         return paths
 
     def hasResources(self):
@@ -3462,7 +3460,7 @@ class ModInfos(FileInfos):
         if modInfo.header.flags1.hasStrings:
             language = oblivionIni.get_ini_language()
             sbody,ext = modName.sbody,modName.ext
-            bsaPaths = self.extra_bsas(modInfo, existing=False)
+            bsaPaths = self.extra_bsas(modInfo)
             for dir_, join, format_str in bush.game.esp.stringsFiles:
                 fname = format_str % {'body': sbody, 'ext': ext,
                                       'language': language}
@@ -3490,7 +3488,7 @@ class ModInfos(FileInfos):
         iniFiles.append(oblivionIni)
         return iniFiles
 
-    def extra_bsas(self, mod_info, existing=True):
+    def extra_bsas(self, mod_info):
         """Return a list of (existing) bsa paths to get assets from.
         :rtype: list[bolt.Path]
         """
@@ -3505,7 +3503,7 @@ class ModInfos(FileInfos):
                     extraBsa = (x.strip() for x in extraBsa)
                     extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
                     bsaPaths.extend(extraBsa)
-        return [x for x in bsaPaths if not existing or x.isfile()]
+        return bsaPaths
 
     def hasBadMasterNames(self,modName):
         """True if there mod has master's with unencodable names."""
@@ -7161,12 +7159,7 @@ def initDirs(bashIni, personal, localAppData):
             msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
 
-    #Setup libbsa and LOOT API, needs to be done after the dirs are initialized
-    libbsa.Init(bass.dirs['compiled'].s)
-    # That didn't work - Wrye Bash isn't installed correctly
-    if libbsa.BSAHandle is None:
-        raise bolt.BoltError(u'The libbsa API could not be loaded.')
-    deprint(u'Using libbsa API version:', libbsa.version)
+    # Setup LOOT API, needs to be done after the dirs are initialized
     global configHelpers
     configHelpers = ConfigHelpers()
 
