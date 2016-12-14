@@ -43,7 +43,7 @@ bass.language = opts.language
 import bolt
 from bolt import GPath
 import env
-basher = balt = barb =  None
+basher = balt = barb = None
 is_standalone = hasattr(sys, 'frozen')
 
 #------------------------------------------------------------------------------
@@ -297,7 +297,7 @@ def main():
 
     # ensure we are in the correct directory so relative paths will work
     # properly
-    if hasattr(sys,"frozen"):
+    if is_standalone:
         pathToProg = os.path.dirname(
             unicode(sys.executable, bolt.Path.sys_fs_enc))
     else:
@@ -355,7 +355,7 @@ def main():
         sys.stdout = open('CONOUT$', 'w', 0)
         sys.stderr = open('CONOUT$', 'w', 0)
         # run bashmon and exit
-        import bashmon
+        import bashmon # this imports bosh which imports wx (DUH)
         bashmon.monitor(0.25) #--Call monitor with specified sleep interval
         return
 
@@ -363,10 +363,10 @@ def main():
     #  required before the rest has imported
     SetUserPath(uArg=opts.userPath)
 
+    # Force Python mode if CBash can't work with this game
+    bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
     try:
-        # Force Python mode if CBash can't work with this game
-        bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
-        import bosh
+        import bosh # this imports balt (DUH) which imports wx
         env.isUAC = env.testUAC(bush.gamePath.join(u'Data'))
         bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
 
@@ -376,7 +376,7 @@ def main():
             msg2 = _(u'done')
             try: print msg1
             except UnicodeError: print msg1.encode(bolt.Path.sys_fs_enc)
-            import belt
+            import belt # this imports bosh which imports wx (DUH)
             bolt.WryeText.genHtml(opts.genHtml)
             try: print msg2
             except UnicodeError: print msg2.encode(bolt.Path.sys_fs_enc)
@@ -396,7 +396,7 @@ def main():
     basher.InitImages()
     #--Start application
     if opts.debug:
-        if hasattr(sys, 'frozen'):
+        if is_standalone:
             # Special case for py2exe version
             app = basher.BashApp()
             # Regain control of stdout/stderr from wxPython
@@ -407,7 +407,7 @@ def main():
     else:
         app = basher.BashApp()
 
-    if not hasattr(sys, 'frozen') and (
+    if not is_standalone and (
         not _rightWxVersion() or not _rightPythonVersion()): return
 
     # process backup/restore options
@@ -457,7 +457,7 @@ def _showErrorInGui(e):
             import barb
             import balt
         bolt.deprintOn = bool(opts.debug)
-        app = basher.BashApp(redirect=bolt.deprintOn and not hasattr(sys, 'frozen'))
+        app = basher.BashApp(redirect=bolt.deprintOn and not is_standalone)
         balt.showError(None, msg, title=title)
         app.MainLoop()
     except:
@@ -479,7 +479,7 @@ def _showErrorInGui(e):
     raise e, None, sys.exc_info()[2]
 
 def _showErrorInAnyGui(msg):
-    if hasattr(sys, 'frozen'):
+    if is_standalone:
         # WBSA we've disabled TKinter, since it's not required, use wx
         # here instead
         import wx
@@ -496,12 +496,8 @@ def _showErrorInAnyGui(msg):
                 button = wx.Button(panel, wx.ID_CANCEL, _(u'Quit'))
                 button.SetDefault()
                 sizer.Add(button, 0, wx.GROW | wx.ALL ^ wx.TOP, 5)
-                self.Bind(wx.EVT_BUTTON, self.OnButton)
+                self.Bind(wx.EVT_BUTTON, lambda __event: self.Close(True))
                 panel.SetSizer(sizer)
-
-            def OnButton(self, event):
-                self.Close(True)
-
         _app = wx.App(False)
         frame = ErrorMessage()
         frame.Show()
