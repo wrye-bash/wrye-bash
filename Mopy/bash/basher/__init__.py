@@ -891,7 +891,7 @@ class ModList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.ghosted'
             mouseText += _(u"File is ghosted.  ")
         if settings['bash.mods.scanDirty']:
-            message = modInfo.getDirtyMessage()
+            message = bosh.modInfos.getDirtyMessage(mod_name)
             mouseText += message[1]
             if message[0]: item_format.underline = True
         self.mouseTexts[mod_name] = mouseText

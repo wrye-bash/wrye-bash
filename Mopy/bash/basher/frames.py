@@ -510,7 +510,7 @@ class ModChecker(wx.Frame):
             bass.settings['bash.modChecker.showSuggest'],
             bass.settings['bash.modChecker.showCRC'],
             bass.settings['bash.modChecker.showVersion'],
-            scanDirty=(None, self)[self.gScanDirty.GetValue()]
+            mod_checker=(None, self)[self.gScanDirty.GetValue()]
             )
         if bHaveComTypes:
             logPath = bass.dirs['saveBase'].join(u'ModChecker.html')

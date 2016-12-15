@@ -301,12 +301,14 @@ class Mods_AutoGhost(BoolLink):
 #------------------------------------------------------------------------------
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
-    _text = _(u"Check mods against BOSS's dirty mod list")
+    _text = _(u"Check mods against LOOT's dirty mod list")
+    help = _(u"Display a tooltip if mod is dirty and underline dirty mods - "
+             u"checks are performed using bundled LOOT")
     key = 'bash.mods.scanDirty'
 
     def Execute(self):
         super(Mods_ScanDirty, self).Execute()
-        self.window.RefreshUI(refreshSaves=False)
+        self.window.RefreshUI(refreshSaves=False) # update all mouse tips
 
 class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""

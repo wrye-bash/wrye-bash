@@ -1938,12 +1938,6 @@ class ModInfo(_BackupMixin, FileInfo):
             self.setBashTagsDesc(tags)
         self.setBashTags(tags)
 
-    def getDirtyMessage(self):
-        """Returns a dirty message from LOOT."""
-        if modInfos.table.getItem(self.name,'ignoreDirty',False):
-            return False,u''
-        return configHelpers.getDirtyMessage(self.name)
-
     #--Header Editing ---------------------------------------------------------
     def readHeader(self):
         """Read header from file and set self.header attribute."""
@@ -3481,6 +3475,12 @@ class ModInfos(FileInfos):
                 if not found:
                     return True
         return False
+
+    def getDirtyMessage(self, modname):
+        """Returns a dirty message from LOOT."""
+        if self.table.getItem(modname, 'ignoreDirty', False):
+            return False, u''
+        return configHelpers.getDirtyMessage(modname)
 
     def _ini_files(self):
         iniFiles = self._plugin_inis.values() # in active order

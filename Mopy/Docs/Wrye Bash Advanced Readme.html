@@ -411,7 +411,11 @@ tab. The directories skipped are:
             manually refresh) - so it's recommended to leave this enabled. If you are concerned about a particularly big project then consider enabling the <a href="#bainDontRefresh">Don't
                 Refresh</a> flag <i>on that particular project</i>. Keep in mind that Projects will be anyway refreshed once on Bash restart, irrespective of this setting (except if popular
             demand arises).
-        <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the timestamps on the Bethsoft BSAs are changed.  However, enabling this setting is the only way to allow BAIN to install Vanilla ESPs, ESMs, and BSAs. Preferred setting: disabled.
+        <tr><td colspan="2" id="bainSkipBethsoftContent">Skip BethSoft Content<td>Toggles whether or not refreshing the Data directory will
+            also scan Bethsoft BSAs, ESPs, and ESMs. Disabling this option will cause a significant increase in refresh time if the
+            timestamps on the Bethsoft BSAs are changed. However, disabling this setting is the only way to allow BAIN to install Vanilla
+            ESPs, ESMs, and BSAs. For example, DLC plugins which have been cleaned with xEdit and packed into a BAIN. Preferred setting:
+            enabled (that is, <i>skip</i> installation of bethsoft content).
         <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.com/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
@@ -530,7 +534,16 @@ tab. The directories skipped are:
     <thead><tr><th>Item<th>Description
     <tbody>
         <tr><td>File Name<td>The filename of the selected plugin. Note that changing this does not change the filename in the Masters Lists of any dependent plugins.
-        <tr><td>Modification Time<td>For Oblivion, this affects the load order of the selected plugin. For Skyrim, it has no effect, except that if it is changed for a plugin obtained from Steam Workshop, it will cause the plugin to be redownloaded as Steam Workshop uses modification time to detect file versions.
+        <tr><td>Modification Time<td>This field is editable, by clicking in the box. After changes are made, click the Save button to commit
+            your changes to the plugin, or Cancel to discard them. Notes : For Oblivion, this affects the load order of the selected plugin.
+            For Skyrim, it has no effect, except that if it is changed for a plugin obtained from Steam Workshop, it will cause the plugin
+            to be redownloaded as Steam Workshop uses modification time to detect file versions. For Skyrim Special Edition, there was a bug
+            at some point, with DLC Load Order being set by Date / Time Stamp (only the DLCs were affected by this). The only way to
+            re-arrange your Skyrim SE DLC plugins Load Order was to edit their modification time, so that they follow each other by for
+            example one minute. The bug was fixed in a later patch - but anyway Bash won't let you change neither the load order nor the
+            modification times of the DLCs. The game always loads them before other masters and in the following order:
+            Dawnguard / Hearthfire / Dragonborn. So Bash will timestamp them in one minute intervals following Skyrim/Update esms, so even
+            the buggy patch behaves correctly.
         <tr><td>Author<td>Who made the selected plugin.
         <tr><td>Description<td>Commonly used for a short description of what the selected plugin does, plus the version number and any Bash Tags the author sets.
         <tr><td>Masters List<td>The Masters list show the plugins (.esm or .esp) that the currently selected plugin depends on, the load order
@@ -629,7 +642,10 @@ tab. The directories skipped are:
         <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
         <tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
         <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
-        <tr><td colspan="2">Check mods against BOSS's dirty mod list<td>BOSS's masterlist contains information on dirty plugins that can be used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this information if BOSS is installed.
+        <tr><td colspan="2">Check mods against LOOT's dirty mod list<td>LOOT's masterlist contains information on dirty plugins that can be
+            used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this information if
+            bundled version of LOOT is functional for this game. Note that the detection is based on user's LOOT install masterlists, if
+            those are compatible with bundled LOOT, otherwise Bash falls back to the taglists it comes with.
 </table>
 <table>
     <thead>

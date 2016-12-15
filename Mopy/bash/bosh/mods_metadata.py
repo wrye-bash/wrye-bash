@@ -356,9 +356,9 @@ class ConfigHelpers:
                           u'TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]]')
     def checkMods(self, showModList=False, showRuleSets=False, showNotes=False,
                   showConfig=True, showSuggest=True, showCRC=False,
-                  showVersion=True, showWarn=True, scanDirty=None):
+                  showVersion=True, showWarn=True, mod_checker=None):
         """Checks currently loaded mods against ruleset.
-           scanDirty should be the instance of ModChecker, to scan."""
+           mod_checker should be the instance of ModChecker, to scan."""
         from . import modInfos
         active = set(load_order.activeCached())
         merged = modInfos.merged
@@ -385,15 +385,15 @@ class ConfigHelpers:
             #--Look for dirty edits
             shouldClean = {}
             scan = []
-            for x in active:
-                dirtyMessage = modInfos[x].getDirtyMessage()
-                if dirtyMessage[0]:
-                    shouldClean[x] = dirtyMessage[1]
-                elif scanDirty:
+            dirty_msgs = [(x, modInfos.getDirtyMessage(x)) for x in active]
+            for x, y in dirty_msgs:
+                if y[0]:
+                    shouldClean[x] = y[1]
+                elif mod_checker:
                     scan.append(modInfos[x])
-            if scanDirty:
+            if mod_checker:
                 try:
-                    with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60,parent=scanDirty,abort=True) as progress:
+                    with balt.Progress(_(u'Scanning for Dirty Edits...'),u'\n'+u' '*60, parent=mod_checker, abort=True) as progress:
                         ret = ModCleaner.scan_Many(scan,ModCleaner.ITM|ModCleaner.UDR,progress)
                         for i,mod in enumerate(scan):
                             udrs,itms,fog = ret[i]
@@ -409,7 +409,9 @@ class ConfigHelpers:
                                 shouldClean[mod.name] = cleanMsg
                 except bolt.CancelError:
                     pass
-            shouldCleanMaybe = [(x,modInfos[x].getDirtyMessage()[1]) for x in active if not modInfos[x].getDirtyMessage()[0] and modInfos[x].getDirtyMessage()[1] != u'']
+            # below is always empty with current implementation
+            shouldCleanMaybe = [(x, y[1]) for x, y in dirty_msgs if
+                                not y[0] and y[1] != u'']
             for mod in tuple(shouldMerge):
                 if u'NoMerge' in modInfos[mod].getBashTags():
                     shouldMerge.discard(mod)
@@ -457,7 +459,7 @@ class ConfigHelpers:
                       u'with TES4Edit'))
                 for mod in sorted(shouldCleanMaybe):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
-            elif scanDirty and not shouldClean:
+            elif mod_checker and not shouldClean:
                 log.setHeader(
                     u'=== ' + _(u'Mods that need cleaning with TES4Edit'))
                 log(_(u'Congratulations all mods appear clean.'))
