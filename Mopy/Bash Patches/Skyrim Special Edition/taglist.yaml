@@ -8,6 +8,10 @@ plugins:
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 235
         udr: 91
+  - name: '3rdEraWeapMoS-lvlList.esp'
+    tag:
+      - Delev
+      - Relev
   - name: 'Dawnguard.esm'
     tag:
       - Delev
@@ -21,6 +25,11 @@ plugins:
         udr: 82
         nav: 57
       - crc: 0xd2cf128
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 6
+        nav: 57
+      - crc: 0x1b95f26b
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 6
@@ -56,12 +65,23 @@ plugins:
       - Invent
       - Names
       - Stats
+  - name: 'Imperious - Races of Skyrim.esp'
+    tag:
+      - R.Description
+      - R.Skills
+  - name: 'SSEMerged.esp'
+    tag:
+      - NoMerge
+  - name: 'BetterQuestObjectives.esp'
+    tag:
+      - NoMerge
   - name: 'Open Cities Skyrim.esp'
     tag:
       - C.Location
   - name: 'Alternate Start - Live Another Life.esp'
     tag:
       - C.Location
-  - name: 'SSEMerged.esp'
+  - name: 'Morrowloot.esp'
     tag:
-      - NoMerge
+      - Delev
+      - Relev
