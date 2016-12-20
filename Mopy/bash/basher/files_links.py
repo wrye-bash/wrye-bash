@@ -227,7 +227,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
         """Revert to Snapshot."""
         fileName = self._selected_item
         #--Snapshot finder
-        srcDir = self.window.data_store.bash_dir.join(u'Snapshots')
+        srcDir = self._selected_info.snapshot_dir
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()

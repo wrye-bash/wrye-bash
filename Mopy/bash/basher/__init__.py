@@ -718,15 +718,15 @@ class TargetINILineCtrl(INIListCtrl):
             self.DeleteAllItems()
         num = self.GetItemCount()
         try:
-            with bosh.iniInfos.ini.abs_path.open('r') as ini:
-                lines = ini.readlines()
-                for i,line in enumerate(lines):
-                    if i >= num:
-                        self.InsertStringItem(i, line.rstrip())
-                    else:
-                        self.SetStringItem(i, 0, line.rstrip())
-                for i in xrange(len(lines), num):
-                    self.DeleteItem(len(lines))
+            with bosh.iniInfos.ini.abs_path.open('r') as target_ini_file:
+                lines = target_ini_file.readlines()
+            for i,line in enumerate(lines):
+                if i >= num:
+                    self.InsertStringItem(i, line.rstrip())
+                else:
+                    self.SetStringItem(i, 0, line.rstrip())
+            for i in xrange(len(lines), num):
+                self.DeleteItem(len(lines))
         except IOError:
             warn = True
             page = Link.Frame.notebook.currentPage
@@ -1122,7 +1122,7 @@ class _EditableMixin(_DetailsMixin):
     # Details panel API
     def SetFile(self, fileName='SAME'):
         #--Edit State
-        self.edited = 0
+        self.edited = False
         self.save.Disable()
         self.cancel.Disable()
         return super(_EditableMixin, self).SetFile(fileName)
@@ -3744,7 +3744,8 @@ class BashFrame(wx.Frame):
         else:
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
         title %= (settings['bash.version'],
-                  _(u'(Standalone)') if settings['bash.standalone'] else u'')
+                  (u' ' + _(u'(Standalone)')) if settings[
+                      'bash.standalone'] else u'')
         if CBashApi.Enabled:
             title += u', CBash %s: ' % (CBashApi.VersionText,)
         else:

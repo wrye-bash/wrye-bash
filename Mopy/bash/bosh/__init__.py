@@ -2848,7 +2848,7 @@ class ModInfos(FileInfos):
             u'1.0.7.5':    108369128, # Nehrim
             u'1.5.0.8':    115531891, # Nehrim Update
             u'SI':         277504985} # Shivering Isles 1.2
-        self.size_voVersion = bolt.invertDict(self.version_voSize)
+        self.size_voVersion = {y:x for x, y in self.version_voSize.iteritems()}
         self.voCurrent = None
         self.voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
@@ -3871,7 +3871,7 @@ class BSAInfos(FileInfos):
     except AttributeError:
         pass
 
-    def __init__(self): FileInfos.__init__(self, dirs['mods'], BSAInfo)
+    def __init__(self): super(BSAInfos, self).__init__(dirs['mods'], BSAInfo)
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')

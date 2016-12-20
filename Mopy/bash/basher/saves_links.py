@@ -246,10 +246,9 @@ class Save_ImportFace(OneItemLink):
         with balt.Progress(srcName.s) as progress:
             saveFile = bosh.SaveFile(srcInfo)
             saveFile.load(progress)
-            progress.Destroy()
-            srcFaces = bosh.faces.PCFaces.save_getFaces(saveFile)
-            #--Dialog
-            ImportFaceDialog.Display(self.window,srcName.s,fileInfo,srcFaces)
+        srcFaces = bosh.faces.PCFaces.save_getFaces(saveFile)
+        #--Dialog
+        ImportFaceDialog.Display(self.window,srcName.s,fileInfo,srcFaces)
 
     def FromMod(self,fileInfo,srcPath):
         """Import from a mod."""
