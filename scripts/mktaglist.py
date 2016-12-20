@@ -4,13 +4,14 @@
 #
 # Taglist Generator
 #
-# This script generates taglist.yaml files in Mopy\Bashed Patches\Oblivion and
-# Mopy\Bashed Patches\Skyrim using the LOOT API and source masterlists. The
-# masterlists must be named "masterlist.txt" or "masterlist.yaml" and put in the
-# folders mentioned above, or be present in a LOOT install that was installed
-# using its installer.
-# To generate the taglist for a game, you must have the game installed. This
-# script will generate taglists for all detected games.
+# This script generates taglist.yaml files in Mopy/Bashed Patches game
+# subdirectories using the LOOT API and masterlists. The LOOT API Python module
+# must be installed in the Mopy folder (use the install_loot_api.py script), and
+# this script must be run from the repository root. The script will skip
+# generating taglists for any games that do not have a folder in
+# Mopy/Bashed Patches that matches the first tuple value of an element in the
+# gamesData list below, so if adding a taglist for a new game, create the folder
+# first.
 #
 # Usage:
 #   mktaglist.py
