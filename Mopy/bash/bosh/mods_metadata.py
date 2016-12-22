@@ -271,6 +271,7 @@ class ConfigHelpers:
                         lootDb.load_lists(path.s,userpath.s)
                     else:
                         lootDb.load_lists(path.s)
+                    lootDb.eval_lists()
                     return # we are done
                 except Exception:
                     deprint(u'An error occurred while parsing file%s %s:'
@@ -285,6 +286,7 @@ class ConfigHelpers:
         try:
             self.tagCache = {}
             lootDb.load_lists(self.tagList.s)
+            lootDb.eval_lists()
         except Exception:
             deprint(u'An error occurred while parsing taglist.yaml:',
                     traceback=True)
