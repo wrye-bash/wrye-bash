@@ -57,16 +57,16 @@ def installLootApi(version, revision, destinationPath):
     archivePath = os.path.join(tempfile.gettempdir(), 'archive.7z')
     sevenZipPath = os.path.join('Mopy', 'bash', 'compiled', '7z.exe')
 
+    if (os.path.exists(os.path.join(destinationPath, 'loot_api.dll'))
+       or os.path.exists(os.path.join(destinationPath, 'loot_api.pyd'))):
+       raise RuntimeError('Please delete the existing LOOT API binaries first.')
+
     print 'Downloading LOOT API Python wrapper from "' + url + '"...'
     urllib.urlretrieve(url, archivePath)
 
     print 'Extracting LOOT API Python wrapper to ' + destinationPath
 
-    if os.path.exists(os.path.join(destinationPath, 'loot_api.dll')):
-        os.remove(os.path.join(destinationPath, 'loot_api.dll'))
 
-    if os.path.exists(os.path.join(destinationPath, 'loot_api.pyd')):
-        os.remove(os.path.join(destinationPath, 'loot_api.pyd'))
 
     subprocess.call([sevenZipPath, 'e', archivePath, '-y', '-o' + destinationPath, '*/loot_api.dll', '*/loot_api.pyd'])
 
