@@ -49,7 +49,7 @@ def installMSVCRedist():
 
 def isLootApiInstalled(version, revision):
     return ('loot_api' in sys.modules
-        and loot_api.WrapperVersion.string == version
+        and loot_api.WrapperVersion.string() == version
         and loot_api.WrapperVersion.revision == revision)
 
 def installLootApi(version, revision, destinationPath):
