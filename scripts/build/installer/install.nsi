@@ -8,6 +8,44 @@
 
         ClearErrors
 
+        ; All versions require the MSVC 2015 redist for the LOOT API.
+        ${If} ${RunningX64}
+            StrCpy $MSVC_Sub_Key "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\14.0\VC\Runtimes\x86"
+        ${Else}
+            StrCpy $MSVC_Sub_Key "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86"
+        ${EndIf}
+
+        ReadRegDword $MSVC_Installed HKLM $MSVC_Sub_Key "Installed"
+        ReadRegDword $MSVC_Major HKLM $MSVC_Sub_Key "Major"
+        ReadRegDword $MSVC_Minor HKLM $MSVC_Sub_Key "Minor"
+        ReadRegDword $MSVC_Bld HKLM $MSVC_Sub_Key "Bld"
+
+        ${If} $MSVC_Installed == "0"
+        ${OrIf} $MSVC_Major < 14
+        ${OrIf} $MSVC_Minor < 0
+        ${OrIf} $MSVC_Bld < 24215
+            DetailPrint "Visual C++ 2015 Redistributable registry key was not found; assumed to be uninstalled."
+            DetailPrint "Downloading Visual C++ 2015 Redistributable Setup..."
+            SetOutPath $TEMP
+            NSISdl::download "https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe" "vc_redist.x86.exe"
+
+            Pop $R0 ;Get the return value
+            ${If} $R0 == "success"
+                DetailPrint "Running Visual C++ 2015 Redistributable Setup..."
+                Sleep 2000
+                HideWindow
+                ExecWait '"$TEMP\vc_redist.x86.exe" /quiet /norestart'
+                BringToFront
+                DetailPrint "Finished Visual C++ 2015 Redistributable Setup"
+
+                Delete "$TEMP\vc_redist.x86.exe"
+            ${Else}
+                DetailPrint "Could not contact Microsoft.com, or the file has been (re)moved!"
+            ${EndIf}
+        ${Else}
+            DetailPrint "Visual C++ 2015 Redistributable is already installed; skipping!"
+        ${EndIf}
+
         ; Python version requires Python, wxPython, Python Comtypes and PyWin32.
         ${If} $PythonVersionInstall == $True
             ; Look for Python in HKLM

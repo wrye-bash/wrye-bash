@@ -1,0 +1,7 @@
+plugins:
+  - name: 'FO4Merged.esp'
+    tag:
+      - NoMerge
+  - name: 'Smashed Patch.esp'
+    tag:
+      - NoMerge

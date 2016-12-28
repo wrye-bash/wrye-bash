@@ -34,3 +34,6 @@ Mopy/bash/l10n/*NEW.txt
 .idea/
 # if a symlink
 .idea
+
+# The LOOT API binaries
+Mopy/loot_api.*
