@@ -408,7 +408,7 @@ def WarnNonRepoFiles(args, all_files):
                    "files out of the source directory temporarily.")
         elif args.non_repo == NON_REPO.COPY:
             lprint("          You have chosen to make a temporary clean copy "
-                   " of the repository to build with.")
+                   "of the repository to build with.")
         else:
             lprint("          You have chosen to not relocate them.  "
                    "These files will be included in the installer!")

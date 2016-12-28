@@ -36,6 +36,7 @@ from ..patcher import getPatchesPath, getPatchesList
 try:
     import loot_api
 except ImportError as e:
+    loot_api = None
     deprint(u'Failed to import the loot_api module: ({})'.format(e))
 
 lootDb = None #--LootDb singleton
@@ -219,9 +220,8 @@ class ConfigHelpers:
 
     def __init__(self):
         global lootDb
-        if 'loot_api' in sys.modules:
+        if loot_api is not None:
             deprint(u'Using LOOT API version:', loot_api.Version.string())
-
             try:
                 gameType = self.getLootApiGameType(bush.game.fsName)
                 lootDb = loot_api.create_database(gameType, bass.dirs['app'].s)
@@ -236,7 +236,6 @@ class ConfigHelpers:
                 lootDb = None
         else:
             lootDb = None
-
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = bass.dirs['userApp'].join(
             os.pardir, u'LOOT', bush.game.fsName, u'masterlist.yaml')
@@ -264,6 +263,7 @@ class ConfigHelpers:
                 self.tagCache = {}
                 self.lootMasterTime = path.mtime
                 parsing = u'', u'%s' % path
+                # noinspection PyBroadException
                 try:
                     if userpath.exists():
                         parsing = u's', u'%s, %s' % (path, userpath)
@@ -273,6 +273,8 @@ class ConfigHelpers:
                         lootDb.load_lists(path.s)
                     lootDb.eval_lists()
                     return # we are done
+                # unfortunatelly the pyd file throws generic Exception - see
+                # http://pybind11.readthedocs.io/en/latest/advanced/exceptions.html#built-in-exception-translation
                 except Exception:
                     deprint(u'An error occurred while parsing file%s %s:'
                             % parsing, traceback=True)
@@ -283,6 +285,7 @@ class ConfigHelpers:
                 u'Bash is installed correctly.')
         if self.tagList.mtime == self.tagListModTime: return
         self.tagListModTime = self.tagList.mtime
+        # noinspection PyBroadException
         try:
             self.tagCache = {}
             lootDb.load_lists(self.tagList.s)
@@ -307,9 +310,8 @@ class ConfigHelpers:
 
     @staticmethod
     def getLootApiGameType(fsName):
-        if not 'loot_api' in sys.modules:
+        if loot_api is None:
             return None
-
         if fsName == 'Oblivion':
             return loot_api.GameType.tes4
         elif fsName == 'Skyrim':
