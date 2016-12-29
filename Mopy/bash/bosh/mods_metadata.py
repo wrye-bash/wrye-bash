@@ -25,12 +25,19 @@ import errno
 import os
 import re
 import struct
+import sys
 
-from .. import balt, bolt, bush, bass, loot, load_order
+from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, BoltError, deprint, sio
 from ..brec import ModReader, MreRecord, ModError
 from ..cint import ObBaseRecord, ObCollection
 from ..patcher import getPatchesPath, getPatchesList
+
+try:
+    import loot_api
+except ImportError as e:
+    loot_api = None
+    deprint(u'Failed to import the loot_api module: ({})'.format(e))
 
 lootDb = None #--LootDb singleton
 
@@ -212,21 +219,22 @@ class ConfigHelpers:
     """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
 
     def __init__(self):
-        #--LOOT masterlist or if that doesn't exist use the taglist
-        loot.Init(bass.dirs['compiled'].s)
-        # That didn't work - Wrye Bash isn't installed correctly
-        if not loot.LootApi:
-            raise bolt.BoltError(u'The LOOT API could not be loaded.')
-        deprint(u'Using LOOT API version:', loot.version)
-
         global lootDb
-        try:
-            lootDb = loot.LootDb(bass.dirs['app'].s, bush.game.fsName)
-        except loot.LootGameError:
-            deprint(u'The LOOT API does not support the current game.')
-            lootDb = None
-        except OSError:
-            deprint(u'The LOOT API failed to initialize', traceback=True)
+        if loot_api is not None:
+            deprint(u'Using LOOT API version:', loot_api.Version.string())
+            try:
+                gameType = self.getLootApiGameType(bush.game.fsName)
+                lootDb = loot_api.create_database(gameType, bass.dirs['app'].s)
+            except OSError:
+                deprint(u'The LOOT API failed to initialize', traceback=True)
+                lootDb = None
+            except ValueError:
+                deprint(u'The LOOT API does not support the current game.')
+                lootDb = None
+            except RuntimeError:
+                deprint(u'Failed to create a LOOT API database.')
+                lootDb = None
+        else:
             lootDb = None
         # LOOT stores the masterlist/userlist in a %LOCALAPPDATA% subdirectory.
         self.lootMasterPath = bass.dirs['userApp'].join(
@@ -255,15 +263,19 @@ class ConfigHelpers:
                 self.tagCache = {}
                 self.lootMasterTime = path.mtime
                 parsing = u'', u'%s' % path
+                # noinspection PyBroadException
                 try:
                     if userpath.exists():
                         parsing = u's', u'%s, %s' % (path, userpath)
                         self.lootUserTime = userpath.mtime
-                        lootDb.Load(path.s,userpath.s)
+                        lootDb.load_lists(path.s,userpath.s)
                     else:
-                        lootDb.Load(path.s)
+                        lootDb.load_lists(path.s)
+                    lootDb.eval_lists()
                     return # we are done
-                except loot.LootError:
+                # unfortunatelly the pyd file throws generic Exception - see
+                # http://pybind11.readthedocs.io/en/latest/advanced/exceptions.html#built-in-exception-translation
+                except Exception:
                     deprint(u'An error occurred while parsing file%s %s:'
                             % parsing, traceback=True)
         #--No masterlist or an error occurred while reading it, use the taglist
@@ -273,10 +285,12 @@ class ConfigHelpers:
                 u'Bash is installed correctly.')
         if self.tagList.mtime == self.tagListModTime: return
         self.tagListModTime = self.tagList.mtime
+        # noinspection PyBroadException
         try:
             self.tagCache = {}
-            lootDb.Load(self.tagList.s)
-        except loot.LootError:
+            lootDb.load_lists(self.tagList.s)
+            lootDb.eval_lists()
+        except Exception:
             deprint(u'An error occurred while parsing taglist.yaml:',
                     traceback=True)
 
@@ -287,17 +301,40 @@ class ConfigHelpers:
             if lootDb is None:
                 tags = (set(), set(), set())
             else:
-                tags = lootDb.GetModBashTags(modName)
+                tags = lootDb.get_plugin_tags(modName.s)
+                tags = (tags.added, tags.removed, tags.userlist_modified)
             self.tagCache[modName] = tags
             return tags
         else:
             return self.tagCache[modName]
 
     @staticmethod
+    def getLootApiGameType(fsName):
+        if loot_api is None:
+            return None
+        if fsName == 'Oblivion':
+            return loot_api.GameType.tes4
+        elif fsName == 'Skyrim':
+            return loot_api.GameType.tes5
+        elif fsName == 'Skyrim Special Edition':
+            return loot_api.GameType.tes5se
+        elif fsName == 'Fallout3':
+            return loot_api.GameType.fo3
+        elif fsName == 'FalloutNV':
+            return loot_api.GameType.fonv
+        elif fsName == 'Fallout4':
+            return loot_api.GameType.fo4
+        else:
+            return None
+
+    @staticmethod
     def getDirtyMessage(modName):
         if lootDb is None:
             return False, u''
-        return lootDb.GetDirtyMessage(modName)
+        if lootDb.get_plugin_cleanliness(modName.s) == loot_api.PluginCleanliness.dirty:
+            return True, 'Contains dirty edits, needs cleaning.'
+        else:
+            return False, ''
 
     #--Mod Checker ------------------------------------------------------------
     def refreshRuleSets(self):

@@ -367,6 +367,7 @@ def PackStandaloneVersion(args, all_files):
     all_files = [x for x in all_files
                  if os.path.splitext(x)[1].lower() not in (u'.py',
                                                            u'.pyw',
+                                                           u'.pyd',
                                                            u'.bat',
                                                            u'.template')
                  ]
@@ -407,7 +408,7 @@ def WarnNonRepoFiles(args, all_files):
                    "files out of the source directory temporarily.")
         elif args.non_repo == NON_REPO.COPY:
             lprint("          You have chosen to make a temporary clean copy "
-                   " of the repository to build with.")
+                   "of the repository to build with.")
         else:
             lprint("          You have chosen to not relocate them.  "
                    "These files will be included in the installer!")
@@ -908,6 +909,10 @@ def main():
         if all_files is False:
             lprint('GitPython is not set up correctly, aborting.')
             return
+
+        # Add the LOOT API binaries to all_files
+        all_files.append(os.path.join(u'Mopy', u'loot_api.dll'))
+        all_files.append(os.path.join(u'Mopy', u'loot_api.pyd'))
 
         file_version = GetVersionInfo(args.version)
 

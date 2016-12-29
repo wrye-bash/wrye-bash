@@ -1,90 +1,71 @@
 # -*- coding: utf-8 -*-
 #
-#===============================================================================
+#==============================================================================
 #
 # Taglist Generator
 #
-# This script generates taglist.yaml files in Mopy\Bashed Patches\Oblivion and
-# Mopy\Bashed Patches\Skyrim using the LOOT API and source masterlists. The
-# masterlists must be named "masterlist.txt" or "masterlist.yaml" and put in the
-# folders mentioned above, or be present in a LOOT install that was installed
-# using its installer.
-# To generate the taglist for a game, you must have the game installed. This
-# script will generate taglists for all detected games.
+# This script generates taglist.yaml files in Mopy/Bashed Patches game
+# subdirectories using the LOOT API and masterlists. The LOOT API Python module
+# must be installed in the Mopy folder (use the install_loot_api.py script),
+# and this script must be run from the repository root. The script will skip
+# generating taglists for any games that do not have a folder in
+# Mopy/Bashed Patches that matches the first tuple value of an element in the
+# gamesData list below, so if adding a taglist for a new game, create the
+# folder first.
 #
 # Usage:
 #   mktaglist.py
 #
-#===============================================================================
+#==============================================================================
 
-import sys
 import os
-import _winreg
-from collections import OrderedDict
+import shutil
+import sys
+import tempfile
+import urllib
 
-sys.path.append('../Mopy/bash')
+sys.path.append(u'Mopy')
 
-import loot
+import loot_api
 
-lootDir = u'../Mopy/bash/compiled'
+def MockGameInstall(masterFileName):
+    gamePath = tempfile.mkdtemp()
+    os.mkdir(os.path.join(gamePath, u'Data'))
+    open(os.path.join(gamePath, u'Data', masterFileName), 'a').close()
+    return gamePath
 
-games_info = OrderedDict([(u'Oblivion', None), (u'Skyrim', None),
-                          (u'Fallout3', None), (u'FalloutNV', None),
-                          # (u'Fallout4', None),
-                          ])
+def CleanUpMockedGameInstall(gamePath):
+    shutil.rmtree(gamePath)
 
-# Detect games.
-for g in games_info:
-    try:
-        reg_key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,
-            u'Software\\Bethesda Softworks\\%s' % g, 0,
-            _winreg.KEY_READ | _winreg.KEY_WOW64_32KEY)
-    except OSError as e:
-        if e.errno == 2: continue # The system cannot find the file specified
-    value = _winreg.QueryValueEx(reg_key, u'Installed Path')
-    if value[1] == _winreg.REG_SZ and os.path.exists(value[0]):
-        games_info[g] = value[0]
-        print u'Found %s.' % g
+def DownloadMasterlist(repository, destinationPath):
+    url = u'https://raw.githubusercontent.com/loot/{}/v0.10/masterlist.yaml'.format(repository)
+    urllib.urlretrieve(url, destinationPath)
 
+print u'Loaded the LOOT API v{0} using wrapper version {1}'.format(
+    loot_api.Version.string(), loot_api.WrapperVersion.string())
 
-# Detect LOOT masterlists' installation path in AppData/Local
-localAppData = os.path.join(os.environ["LOCALAPPDATA"], 'LOOT')
-if not os.path.exists(localAppData):
-    raise Exception("No LOOT masterlists install found in %s" % localAppData)
+gamesData = [
+    (u'Oblivion', 'Oblivion.esm', 'oblivion', loot_api.GameType.tes4),
+    (u'Skyrim', 'Skyrim.esm', 'skyrim', loot_api.GameType.tes5),
+    (u'Skyrim Special Edition', 'Skyrim.esm', 'skyrimse', loot_api.GameType.tes5se),
+    (u'Fallout3', 'Fallout3.esm', 'fallout3', loot_api.GameType.fo3),
+    (u'FalloutNV', 'FalloutNV.esm', 'falloutnv', loot_api.GameType.fonv),
+    (u'Fallout4', 'Fallout4.esm', 'fallout4', loot_api.GameType.fo4),
+    ]
 
-# Detect masterlists
-for g, app_dir in games_info.iteritems():
-    if app_dir is not None and os.path.exists(os.path.join(localAppData, g)):
-        games_info[g] = (
-            app_dir, os.path.join(localAppData, g, 'masterlist.yaml'))
-
-
-# Load the LOOT API.
-loot.Init(lootDir)
-if loot.LootApi:
-    print u'Loaded the LOOT API from "%s", version %s.' % (lootDir, loot.version)
-else:
-    raise Exception("Couldn't load LOOT API.")
-
-
-loot_codes = dict(zip(games_info.keys(), (
-    loot.LOOT_GAME_TES4, loot.LOOT_GAME_TES5, loot.LOOT_GAME_FO3,
-    loot.LOOT_GAME_FONV,
-    # loot.LOOT_GAME_FO4,
-)))
-
-for game, info in games_info.iteritems():
-    if info is None: continue
-    print u'Getting masterlist from %s' % info[1]
-    taglistDir = u'../Mopy/Bash Patches/%s/taglist.yaml' % game
-    # taglistDir = u'../%s - taglist.yaml' % game
-    if os.path.exists(info[1]):
-        lootDb = loot.LootDb(info[0], loot_codes[game])
-        lootDb.PlainLoad(info[1])
-        lootDb.DumpMinimal(taglistDir, True)
-        print u'%s masterlist converted.' % game
-    else:
-        print u'Error: %s masterlist not found.' % game
+for fsName, masterFileName, repository, gameType in gamesData:
+    gameInstallPath = MockGameInstall(masterFileName)
+    masterlistPath = os.path.join(gameInstallPath, u'masterlist.yaml')
+    taglistDir = u'Mopy/Bash Patches/{}/taglist.yaml'.format(fsName)
+    if not os.path.exists(taglistDir):
+        print u'Skipping taglist for {} as its output directory does not exist'.format(fsName)
+        continue
+    DownloadMasterlist(repository, masterlistPath)
+    lootDb = loot_api.create_database(gameType, gameInstallPath)
+    lootDb.load_lists(masterlistPath)
+    lootDb.write_minimal_list(taglistDir, True)
+    print u'{} masterlist converted.'.format(fsName)
+    CleanUpMockedGameInstall(gameInstallPath)
 
 print u'Taglist generator finished.'
 
