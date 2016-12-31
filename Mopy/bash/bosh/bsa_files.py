@@ -282,11 +282,11 @@ class B2aFileRecordTexture(_B2aFileRecordCommon):
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
-    """:type assets: collections.OrderedDict[unicode, BSAAsset]"""
+    """:type folder_assets: collections.OrderedDict[unicode, BSAAsset]"""
 
     def __init__(self, folder_record):
         self.folder_record = folder_record
-        self.assets = collections.OrderedDict() # keep files order
+        self.folder_assets = collections.OrderedDict() # keep files order
 
 class BSAAsset(object):
     __slots__ = ('filerecord', 'filename')
@@ -301,7 +301,7 @@ class BSAAsset(object):
 class Ba2Folder(object):
 
     def __init__(self):
-        self.assets = collections.OrderedDict() # keep files order
+        self.folder_assets = collections.OrderedDict() # keep files order
 
 # Files -----------------------------------------------------------------------
 class ABsa(AFile):
@@ -353,7 +353,7 @@ class ABsa(AFile):
             # Has assets we need to extract keep order to avoid seeking back and forth
             folder_assets[folder_path] = file_records = []
             filenames = folder_files_dict[folder_path]
-            for filename, asset in bsa_folder.assets.iteritems():
+            for filename, asset in bsa_folder.folder_assets.iteritems():
                 if filename not in filenames: continue
                 file_records.append((filename, asset.filerecord))
         # unload the bsa
@@ -392,14 +392,13 @@ class ABsa(AFile):
     def has_asset(self, asset_path):
         return (u'%s' % asset_path).lower() in self.assets
 
-    # API
     def has_assets(self, asset_paths):
         return set((u'%s' % a).lower() for a in asset_paths) & self.assets
 
     @property
     def assets(self):
         if self._assets is self.__class__._assets:
-            self.load_bsa_light()
+            self.__load(names_only=True)
             self._assets = frozenset(self._filenames)
         return self._assets
 
@@ -426,7 +425,7 @@ class BSA(ABsa):
                 file_records_index += 1
                 filename = _decode_path(file_names[names_record_index])
                 names_record_index += 1
-                bsa_folder.assets[filename] = BSAAsset(
+                bsa_folder.folder_assets[filename] = BSAAsset(
                     path_sep.join((folder_path, filename)), rec)
 
     @staticmethod
@@ -509,7 +508,7 @@ class BA2(ABsa):
             # Has assets we need to extract keep order to avoid seeking back and forth
             folder_assets[folder_path] = file_records = []
             filenames = folder_files_dict[folder_path]
-            for filename, asset in bsa_folder.assets.iteritems():
+            for filename, asset in bsa_folder.folder_assets.iteritems():
                 if filename not in filenames: continue
                 file_records.append((filename, asset.filerecord))
         # unload the bsa
@@ -564,13 +563,12 @@ class BA2(ABsa):
                 folder_name = u''
             else:
                 folder_name = filename[:folder_dex]
-                filename = filename[folder_dex + 1:]
             if current_folder_name != folder_name:
                 current_folder = self.bsa_folders.setdefault(folder_name,
                                                              Ba2Folder())
                 current_folder_name = folder_name
-            current_folder.assets[filename] = BSAAsset(filename,
-                                                       file_records[index])
+            current_folder.folder_assets[filename[folder_dex + 1:]] = \
+                BSAAsset(filename, file_records[index])
 
     def load_bsa_light(self):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
@@ -589,9 +587,9 @@ class BA2(ABsa):
             file_names_block = file_names_block[name_size + 2:]
         self._filenames = _filenames
 
+    # API
     def has_asset(self, asset_path): return (u'%s' % asset_path) in self.assets
 
-    # API
     def has_assets(self, asset_paths):
         return set((u'%s' % a) for a in asset_paths) & self.assets
 

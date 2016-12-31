@@ -2064,12 +2064,15 @@ class ModInfo(_BackupMixin, FileInfo):
             for path in bsaPaths:
                 try:
                     bsa_info = bsaInfos[path.tail] # type: BSAInfo
-                    has_assets = bsa_info.has_assets(extract)
-                except (KeyError, BSAError): # not existing or corrupted
+                    found_assets = bsa_info.has_assets(extract)
+                except (KeyError, BSAError) as e: # not existing or corrupted
+                    if isinstance(e, BSAError):
+                        deprint(u'Failed to parse %s' % path.tail,
+                                traceback=True)
                     continue
-                bsa_assets[bsa_info] = has_assets
+                bsa_assets[bsa_info] = found_assets
                 #extract contains Paths that compare equal to lowercase strings
-                extract -= set(imap(unicode.lower, has_assets))
+                extract -= set(imap(unicode.lower, found_assets))
                 if not extract:
                     break
             else: raise ModError(self.name, u"Could not locate Strings Files")
