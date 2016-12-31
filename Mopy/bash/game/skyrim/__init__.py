@@ -441,10 +441,10 @@ class esp:
 
     #--Strings Files
     stringsFiles = [
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.STRINGS'),
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.DLSTRINGS'),
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.ILSTRINGS'),
-        ]
+        ((u'Strings',), u'%(body)s_%(language)s.STRINGS'),
+        ((u'Strings',), u'%(body)s_%(language)s.DLSTRINGS'),
+        ((u'Strings',), u'%(body)s_%(language)s.ILSTRINGS'),
+    ]
 
     #--Top types in Skyrim order.
     topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT',

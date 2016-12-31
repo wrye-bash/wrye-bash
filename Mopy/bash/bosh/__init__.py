@@ -39,6 +39,7 @@ import re
 import string
 import struct
 import time
+import traceback
 from collections import OrderedDict
 from functools import wraps
 from itertools import imap
@@ -1985,9 +1986,6 @@ class ModInfo(_BackupMixin, FileInfo):
         except UnicodeEncodeError:
             return True
 
-    def isMissingStrings(self):
-        return modInfos.isMissingStrings(self.name)
-
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
         maExGroup = reExGroup.match(self.name.s)
@@ -2009,21 +2007,22 @@ class ModInfo(_BackupMixin, FileInfo):
         """Returns path to plugin's INI, if it were to exists."""
         return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
 
+    def _string_files_paths(self, language):
+        sbody, ext = self.name.sbody, self.name.ext
+        for join, format_str in bush.game.esp.stringsFiles:
+            fname = format_str % {'body': sbody, 'ext': ext,
+                                  'language': language}
+            assetPath = empty_path.join(*join).join(fname)
+            yield assetPath
+
     def getStringsPaths(self,language=u'English'):
         """If Strings Files are available as loose files, just point to
         those, otherwise extract needed files from BSA if needed."""
         baseDirJoin = self.getPath().head.join
-        files = []
-        sbody,ext = self.name.sbody,self.name.ext
-        for _dir, join, format_str in bush.game.esp.stringsFiles:
-            fname = format_str % {'body': sbody, 'ext': ext,
-                                  'language': language}
-            assetPath = empty_path.join(*join).join(fname)
-            files.append(assetPath)
         extract = set()
         paths = set()
         #--Check for Loose Files first
-        for filepath in files:
+        for filepath in self._string_files_paths(language):
             loose = baseDirJoin(filepath)
             if not loose.exists():
                 extract.add(filepath)
@@ -2031,16 +2030,15 @@ class ModInfo(_BackupMixin, FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            bsaPaths = modInfos.extra_bsas(self)
+            bsaPaths = self.extra_bsas()
             bsa_assets = OrderedDict()
             for path in bsaPaths:
                 try:
                     bsa_info = bsaInfos[path.tail] # type: BSAInfo
                     found_assets = bsa_info.has_assets(extract)
-                except (KeyError, BSAError) as e: # not existing or corrupted
-                    if isinstance(e, BSAError):
-                        deprint(u'Failed to parse %s' % path.tail,
-                                traceback=True)
+                except (KeyError, BSAError, OverflowError) as e: # not existing or corrupted
+                    if isinstance(e, (BSAError, OverflowError)):
+                        deprint(u'Failed to parse %s' % path, traceback=True)
                     continue
                 bsa_assets[bsa_info] = found_assets
                 #extract contains Paths that compare equal to lowercase strings
@@ -2058,6 +2056,55 @@ class ModInfo(_BackupMixin, FileInfo):
                                    u"'%s': %s" % (bsa.name, e))
                 paths.update(imap(out_path.join, assets))
         return paths
+
+    def extra_bsas(self):
+        """Return a list of (existing) bsa paths to get assets from.
+        :rtype: list[bolt.Path]
+        """
+        if self.name.cs in bush.game.vanilla_string_bsas: # lowercase !
+            bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
+                self.name.cs])
+        else:
+            bsaPaths = [self.getBsaPath()] # first check bsa with same name
+            for iniFile in modInfos.ini_files():
+                for key in (u'sResourceArchiveList', u'sResourceArchiveList2'): ##: per game keys !
+                    extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
+                    extraBsa = (x.strip() for x in extraBsa)
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    bsaPaths.extend(extraBsa)
+        return bsaPaths
+
+    def isMissingStrings(self, __debug=0):
+        """True if the mod says it has .STRINGS files, but the files are
+        missing."""
+        if not self.header.flags1.hasStrings: return False
+        language = oblivionIni.get_ini_language()
+        bsaPaths = self.extra_bsas()
+        for assetPath in self._string_files_paths(language):
+            # Check loose files first
+            if self.dir.join(assetPath).exists():
+                continue
+            # Check in BSA's next
+            found = False
+            if __debug == 1:
+                deprint(u'Scanning BSAs for string files for %s' % self.name)
+                __debug = 2
+            for path in bsaPaths:
+                try:
+                    bsa_info = bsaInfos[path.tail] # type: BSAInfo
+                    if bsa_info.has_asset(assetPath):
+                        found = True
+                        break
+                except (KeyError, BSAError, OverflowError) as e: # not existing or corrupted
+                    if isinstance(e, (BSAError, OverflowError)):
+                        print u'Failed to parse %s:\n%s' % (
+                            path, traceback.format_exc())
+                    elif __debug == 2: deprint(u'%s is not present' % path)
+                    continue
+                deprint(u'Asset %s not in %s' % (assetPath, path))
+            if not found:
+                return True
+        return False
 
     def hasResources(self):
         """Returns (hasBsa,hasVoices) booleans according to presence of
@@ -3048,12 +3095,10 @@ class ModInfos(FileInfos):
         """Refreshes which mods are supposed to have strings files, but are
         missing them (=CTD). For Skyrim you need to have a valid load order."""
         oldBad = self.missing_strings
-        bad = set(fileName for fileName in self.keys() if
-                  self.isMissingStrings(fileName))
-        new = bad - oldBad
-        self.missing_strings = bad
-        self.new_missing_strings = new
-        return bool(new)
+        self.missing_strings = set(
+            k for k, v in self.iteritems() if v.isMissingStrings())
+        self.new_missing_strings = self.missing_strings - oldBad
+        return bool(self.new_missing_strings)
 
     def autoGhost(self,force=False):
         """Automatically turn inactive files to ghosts.
@@ -3448,62 +3493,17 @@ class ModInfos(FileInfos):
         except UnicodeEncodeError:
             return True
 
-    def isMissingStrings(self,modName):
-        """True if the mod says it has .STRINGS files, but the files are missing."""
-        modInfo = self[modName]
-        if modInfo.header.flags1.hasStrings:
-            language = oblivionIni.get_ini_language()
-            sbody,ext = modName.sbody,modName.ext
-            bsaPaths = self.extra_bsas(modInfo)
-            for dir_, join, format_str in bush.game.esp.stringsFiles:
-                fname = format_str % {'body': sbody, 'ext': ext,
-                                      'language': language}
-                assetPath = empty_path.join(*join).join(fname)
-                # Check loose files first
-                if dirs[dir_].join(assetPath).exists():
-                    continue
-                # Check in BSA's next
-                found = False
-                for path in bsaPaths:
-                    try:
-                        bsa_info = bsaInfos[path.tail] # type: BSAInfo
-                        if bsa_info.has_asset(assetPath):
-                            found = True
-                            break
-                    except KeyError: # not existing or corrupted
-                        continue
-                if not found:
-                    return True
-        return False
-
     def getDirtyMessage(self, modname):
         """Returns a dirty message from LOOT."""
         if self.table.getItem(modname, 'ignoreDirty', False):
             return False, u''
         return configHelpers.getDirtyMessage(modname)
 
-    def _ini_files(self):
+    def ini_files(self):
         iniFiles = self._plugin_inis.values() # in active order
         iniFiles.reverse() # later loading inis override previous settings
         iniFiles.append(oblivionIni)
         return iniFiles
-
-    def extra_bsas(self, mod_info):
-        """Return a list of (existing) bsa paths to get assets from.
-        :rtype: list[bolt.Path]
-        """
-        if mod_info.name.cs in bush.game.vanilla_string_bsas: # lowercase !
-            bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
-                mod_info.name.cs])
-        else:
-            bsaPaths = [mod_info.getBsaPath()] # first check bsa with same name
-            for iniFile in self._ini_files():
-                for key in (u'sResourceArchiveList', u'sResourceArchiveList2'): ##: per game keys !
-                    extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
-                    extraBsa = (x.strip() for x in extraBsa)
-                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
-                    bsaPaths.extend(extraBsa)
-        return bsaPaths
 
     def calculateLO(self, mods=None): # excludes corrupt mods
         if mods is None: mods = self.keys()
@@ -3897,6 +3897,7 @@ class BSAInfos(FileInfos):
                 if isAdded: _added.add(name)
                 elif isUpdated: _updated.add(name)
             except BSAError as e: # old still corrupted, or new(ly) corrupted
+                deprint(u'Failed to load %s' % name, traceback=True)
                 self.corrupted[name] = e.message
                 self.pop(name, None)
                 continue
