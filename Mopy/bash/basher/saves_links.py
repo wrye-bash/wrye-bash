@@ -277,8 +277,8 @@ class Save_RenamePlayer(ItemLink):
             _(u"Enter new player name. E.g. Conan the Bold"),
             title=_(u"Rename player"), default=saveInfo.header.pcName)
         if not newName: return
-        for save in self.selected:
-            savedPlayer = bosh.Save_NPCEdits(self.window.data_store[save])
+        for save in self.iselected_infos():
+            savedPlayer = bosh.Save_NPCEdits(save)
             savedPlayer.renamePlayer(newName)
         bosh.saveInfos.refresh()
         self.window.RefreshUI(redraw=self.selected)
@@ -849,9 +849,8 @@ class Save_UpdateNPCLevels(EnabledLink):
             #--Loop over savefiles
             subProgress = SubProgress(progress,0.4,1.0,len(self.selected))
             message = _(u'NPCs Releveled:')
-            for index,saveName in enumerate(self.selected):
+            for index,(saveName,saveInfo) in enumerate(self.iselected_pairs()):
                 subProgress(index,_(u'Updating ') + saveName.s)
-                saveInfo = self.window.data_store[saveName]
                 saveFile = bosh.SaveFile(saveInfo)
                 saveFile.load()
                 records = saveFile.records

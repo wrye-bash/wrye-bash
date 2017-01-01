@@ -73,7 +73,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
     def isSingleArchive(self):
         """Indicates whether or not is single archive."""
         if len(self.selected) != 1: return False
-        else: return isinstance(self.idata[self.selected[0]],
+        else: return isinstance(next(self.iselected_infos()),
                                 bosh.InstallerArchive)
 
     def _get_refreshed(self, installer, src_installer, is_project=True,
@@ -257,7 +257,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         ui_refresh = [False, False]
         try:
             if ret.Install:
-                if self.idata[self.selected[0]].isActive: #If it's currently installed, anneal
+                if self._selected_info.isActive: #If it's currently installed, anneal
                     title, doIt = _(u'Annealing...'), self.idata.bain_anneal
                 else: #Install, if it's not installed
                     title, doIt = _(u'Installing...'), self.idata.bain_install
@@ -377,7 +377,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
         isSingle = super(Installer_OpenReadme, self)._enable()
         return isSingle and bool(self._selected_info.hasReadme)
 
-    def Execute(self): self.idata[self.selected[0]].open_readme()
+    def Execute(self): self._selected_info.open_readme()
 
 #------------------------------------------------------------------------------
 class Installer_Anneal(_InstallLink):
@@ -446,10 +446,8 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
         u"Hide selected installer(s). No installer markers should be selected")
 
     def _enable(self):
-        for item in self.selected:
-            if isinstance(self.idata[item],bosh.InstallerMarker):
-                return False
-        return True
+        return not any(map(lambda inf: isinstance(inf, bosh.InstallerMarker),
+                       self.iselected_infos()))
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
@@ -458,18 +456,9 @@ class Installer_Rename(UIList_Rename, _InstallerLink):
 
     def _enable(self):
         ##Only enable if all selected items are of the same type
-        firstItem = self.idata[self.selected[0]]
-        if isinstance(firstItem,bosh.InstallerMarker):
-            installer_type = bosh.InstallerMarker
-        elif isinstance(firstItem,bosh.InstallerArchive):
-            installer_type = bosh.InstallerArchive
-        elif isinstance(firstItem,bosh.InstallerProject):
-            installer_type = bosh.InstallerProject
-        else: return False
-        for item in self.selected:
-            if not isinstance(self.idata[item], installer_type):
-                return False
-        return True
+        firstItem = next(self.iselected_infos())
+        return all(map(lambda inf: isinstance(inf, type(firstItem)),
+                       self.iselected_infos()))
 
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
@@ -580,7 +569,7 @@ class Installer_Move(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        curPos = min(self.idata[x].order for x in self.selected)
+        curPos = min(inf.order for inf in self.iselected_infos())
         message = (_(u'Move selected archives to what position?') + u'\n' +
                    _(u'Enter position number.') + u'\n' +
                    _(u'Last: -1; First of Last: -2; Semi-Last: -3.')
@@ -605,8 +594,8 @@ class Installer_Open(balt.UIList_OpenItems, _InstallerLink):
 
     def _initData(self, window, selection):
         super(Installer_Open, self)._initData(window, selection)
-        self.selected = [x for x in self.selected if
-                         not isinstance(self.idata[x], bosh.InstallerMarker)]
+        self.selected = [k for k, v in self.iselected_pairs() if
+                         not isinstance(v, bosh.InstallerMarker)]
 
     def _enable(self): return bool(self.selected)
 
@@ -736,7 +725,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         srcConflicts = set()
         packConflicts = []
         srcArchive = self._selected_item
-        srcInstaller = self.idata[srcArchive]
+        srcInstaller = self._selected_info
         src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path -> (int, int)
         all_files = set(src_sizeCrc) # bolt.PathS of ALL installer's files
         if not all_files:
@@ -956,10 +945,8 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
         self.window = window # and the idata access is via self.window
-        for selected in self.selected:
-            if not isinstance(self.idata[selected],
-                              bosh.InstallerArchive): return False
-        return True
+        return all(map(lambda inf: isinstance(inf, bosh.InstallerArchive),
+                       self.iselected_infos()))
 
     @balt.conversation
     def Execute(self):
@@ -1103,8 +1090,7 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        name = self.selected[0]
-        archive = self.idata[name]
+        name, archive = next(self.iselected_pairs()) # first selected pair
         #--Ask for an output filename
         dest = self._askFilename(_(u'Output file:'), filename=name.stail)
         if not dest: return
@@ -1139,7 +1125,8 @@ class InstallerConverter_Create(_InstallerLink):
             BCFArchive = GPath(BCFArchive.sbody + u'-BCF' + archives.defaultExt).tail
         #--List source archives and target archive
         message = _(u'Convert:')
-        message += u'\n* ' + u'\n* '.join(sorted(u'(%08X) - %s' % (self.idata[x].crc,x.s) for x in self.selected))
+        message += u'\n* ' + u'\n* '.join(sorted(
+            u'(%08X) - %s' % (v.crc, k.s) for k, v in self.iselected_pairs()))
         message += (u'\n\n'+_(u'To:')+u'\n* (%08X) - %s') % (self.idata[destArchive].crc,destArchive.s) + u'\n'
         #--Confirm operation
         result = self._askText(message, title=self.dialogTitle,
