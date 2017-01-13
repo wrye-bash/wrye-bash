@@ -2521,7 +2521,10 @@ class FileInfos(_DataStore):
         backBase = self.bash_dir.join(u'Backups')
         #--Go through each file
         for fileName in fileNames:
-            fileInfo = self[fileName]
+            try:
+                fileInfo = self[fileName]
+            except KeyError: # corrupted
+                fileInfo = self.factory(self.store_dir, fileName)
             #--File
             filePath = fileInfo.getPath()
             if filePath.body != fileName and filePath.tail != fileName.tail:
