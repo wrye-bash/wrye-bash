@@ -2330,7 +2330,7 @@ class _DataStore(DataDict):
     store_dir = empty_path # where the datas sit, static except for SaveInfos
 
     def delete(self, itemOrItems, **kwargs): raise AbstractError
-    def delete_Refresh(self, deleted, check_existence=False):
+    def delete_Refresh(self, deleted, check_existence):
         # Yak - absorb in refresh - add deleted parameter
         if check_existence:
             deleted = set(
@@ -2428,7 +2428,6 @@ class TableFileInfos(_DataStore):
             fileNames = [fileName]
         else:
             fileNames = fileName
-        doRefresh = kwargs.pop('doRefresh', True)
         #--Files to delete
         toDelete = []
         #--Cache table updates
@@ -2455,10 +2454,11 @@ class TableFileInfos(_DataStore):
                 if not filePath.exists(): self.table.delRow(modname)
                 else: del tableUpdate[filePath] # item was not deleted
             #--Refresh
-            if doRefresh:
-                self.delete_Refresh(tableUpdate.values())
+            if kwargs.pop('doRefresh', True):
+                self.delete_Refresh(tableUpdate.values(),
+                                    kwargs.pop('check_existence', False))
 
-    def delete_Refresh(self, deleted, check_existence=False):
+    def delete_Refresh(self, deleted, check_existence):
         deleted = super(TableFileInfos, self).delete_Refresh(deleted,
                                                              check_existence)
         if not deleted: return deleted
@@ -2729,7 +2729,7 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
 
-    def delete_Refresh(self, deleted, check_existence=False):
+    def delete_Refresh(self, deleted, check_existence):
         deleted = super(INIInfos, self).delete_Refresh(deleted,
                                                        check_existence)
         if not deleted: return deleted
@@ -3585,7 +3585,7 @@ class ModInfos(FileInfos):
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.delete(self, fileName, **kwargs)
 
-    def delete_Refresh(self, deleted, check_existence=False):
+    def delete_Refresh(self, deleted, check_existence):
         # adapted from refresh() (avoid refreshing from the data directory)
         deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
         if not deleted: return
@@ -3950,7 +3950,7 @@ class PeopleData(_DataStore):
         del self[key]
         self.hasChanged = True
 
-    def delete_Refresh(self, deleted, check_existence=False): pass
+    def delete_Refresh(self, deleted, check_existence): pass
 
     #--Operations
     def loadText(self,path):
@@ -4016,11 +4016,15 @@ class ScreensData(_DataStore):
             filePath = [dirJoin(file) for file in fileName]
         else:
             filePath = [dirJoin(fileName)]
-        _delete(filePath, **kwargs)
-        for item in filePath:
-            if not item.exists(): del self[item.tail]
+        try:
+            _delete(filePath, **kwargs)
+        finally:
+            if kwargs.pop('doRefresh', True):
+                self.delete_Refresh(filePath, check_existence=False)
 
-    def delete_Refresh(self, deleted, check_existence=False): self.refresh()
+    def delete_Refresh(self, deleted, check_existence):
+        for item in deleted:
+            if not item.exists(): del self[item.tail]
 
     def _rename_operation(self, oldName, newName):
         super(ScreensData, self)._rename_operation(oldName, newName)
@@ -5616,19 +5620,19 @@ class InstallersData(_DataStore):
             if isinstance(self[item], InstallerMarker): markers.append(item)
             else: toDelete.append(self.store_dir.join(item))
         #--Delete
-        doRefresh = kwargs.pop('doRefresh', True)
         try:
             for m in markers: del self[m]
             _delete(toDelete, **kwargs)
         finally:
-            if doRefresh:
-                deleted = set(markers)
-                deleted.update(
+            if kwargs.pop('doRefresh', True):
+                deleted = set( # markers are already popped
                     item.tail for item in toDelete if not item.exists())
                 if deleted:
-                    self.delete_Refresh(deleted) # markers are already popped
+                    self.delete_Refresh(deleted, check_existence=False)
+                elif markers:
+                    self.refreshOrder()
 
-    def delete_Refresh(self, deleted, check_existence=False):
+    def delete_Refresh(self, deleted, check_existence):
         deleted = super(InstallersData, self).delete_Refresh(deleted,
                                                              check_existence)
         if deleted: self.irefresh(what='I', deleted=deleted)

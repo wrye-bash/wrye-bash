@@ -2181,19 +2181,21 @@ class UIList(wx.Panel):
         if not self.__class__._shellUI:
             items = self._promptDelete(items, dialogTitle, order, recycle)
         if not items: return
-        for i in items: ##: simplify and make sure delete_Refresh() runs !
-            try:
-                if not self.__class__._shellUI: # non shellUI path used to
-                    # delete as many as possible, I kept this behavior
+        if not self.__class__._shellUI: # non shellUI path used to delete as
+            # many as possible, mainly to show an error on trying to delete
+            # the master esm - I kept this behavior
+            for i in items:
+                try:
                     self.data_store.delete(i, doRefresh=False, recycle=recycle)
-                else: # shellUI path tries to delete all at once
-                    self.data_store.delete(items, confirm=True, recycle=recycle)
-            except bolt.BoltError as e: showError(self, u'%r' % e)
+                except bolt.BoltError as e: showError(self, u'%s' % e)
+                except (AccessDeniedError, CancelError, SkipError): pass
+            else:
+                self.data_store.delete_Refresh(items, check_existence=True)
+        else: # shellUI path tries to delete all at once
+            try:
+                self.data_store.delete(items, confirm=True, recycle=recycle,
+                    check_existence=True)
             except (AccessDeniedError, CancelError, SkipError): pass
-            finally: # FIXME: remove break from here masks tracebacks
-                if self.__class__._shellUI: break # could delete fail mid-way ?
-        else:
-            self.data_store.delete_Refresh(items, check_existence=True)
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def _toDelete(self, items):
