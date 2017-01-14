@@ -25,12 +25,13 @@ import re
 import time
 from collections import OrderedDict
 
+from . import AFile
 from .. import env, bush, balt
 from ..bass import dirs
 from ..bolt import LString, deprint, GPath, AbstractError, CancelError, \
     SkipError
 
-class IniFile(object):
+class IniFile(AFile):
     """Any old ini file."""
     reComment = re.compile(u';.*',re.U)
     reDeletedSetting = re.compile(ur';-\s*(\w.*?)\s*(;.*$|=.*$|$)',re.U)
@@ -41,14 +42,10 @@ class IniFile(object):
     __empty = {}
     defaultSection = u'General'
 
-    def __init__(self, path):
-        self.abs_path = path
+    def __init__(self, abs_path):
+        super(IniFile, self).__init__(abs_path)
         self.isCorrupted = False
         #--Settings cache
-        try:
-            self._file_size, self._file_mod_time = self.abs_path.size_mtime()
-        except OSError:
-            self._file_size = self._file_mod_time = 0
         self._settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
         self._deleted = False
@@ -391,11 +388,6 @@ class OBSEIniFile(IniFile):
     formatRes = (reSet, reSetGS, reSetNGS)
     defaultSection = u'' # Change the default section to something that
     # can't occur in a normal ini
-
-    def __init__(self, path):
-        """Change the default section to something that can't
-        occur in a normal ini"""
-        IniFile.__init__(self, path)
 
     def getSetting(self, section, key, default):
         lstr = LString(section)
