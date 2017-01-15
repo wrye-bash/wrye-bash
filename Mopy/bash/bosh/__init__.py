@@ -6050,7 +6050,7 @@ class InstallersData(_DataStore):
         """Move specified archives to specified position."""
         old_ordered = self.sorted_pairs(set(self.data) - set(moveList))
         new_ordered = self.sorted_pairs(moveList)
-        if newPos >= len(self.keys()): newPos = len(self.keys()) - 1
+        if newPos >= len(self.keys()): newPos = len(old_ordered)
         for index,(archive,installer) in enumerate(old_ordered[:newPos]):
             installer.order = index
         for index,(archive,installer) in enumerate(new_ordered):

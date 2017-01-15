@@ -2449,7 +2449,7 @@ class InstallersList(balt.UIList):
             index = self.GetIndex(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
             self.data_store.add_marker(new_marker, max_order)
-            self.RefreshUI(redraw=[new_marker])
+            self.RefreshUI() # need to redraw all items cause order changed
             index = self.GetIndex(new_marker)
         if index != -1:
             self.SelectAndShowItem(new_marker, deselectOthers=True,
