@@ -1297,17 +1297,6 @@ class CoSaves:
         self.savePath = savePath
         self.paths = CoSaves.getPaths(savePath)
 
-    def delete(self, **kwargs): # not a DataDict subclass
-        """Delete cofiles."""
-        paths = filter(lambda pa: pa.exists(), self.paths)
-        #--Backups
-        backBase = kwargs['backupDir']
-        backpaths = filter(lambda b: b.exists(),
-                           (backBase.join(p.tail) for p in paths))
-        backpaths += filter(lambda bf: bf.exists(),
-                            (p + u'f' for p in backpaths))
-        _delete(paths + tuple(backpaths), **kwargs)
-
     def _recopy(self, savePath, saveName, pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
         if saveName: savePath = savePath.join(saveName)
@@ -2252,7 +2241,7 @@ class SaveInfo(_BackupMixin, FileInfo):
         return CoSaves(self.getPath())
 
     def backup_paths(self):
-        save_paths = super(SaveInfo, self).backup_paths()
+        save_paths = super(SaveInfo, self).backup_paths() # type: list[tuple]
         save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
         return save_paths
 
@@ -3739,12 +3728,10 @@ class SaveInfos(FileInfos):
         self._refreshLocalSave()
         return refresh_infos and FileInfos.refresh(self)
 
-    def delete(self, fileName, **kwargs):
-        """Deletes savefile and associated pluggy file."""
-        FileInfos.delete(self, fileName, **kwargs)
-        kwargs['confirm'] = False # ask only on save deletion
-        kwargs['backupDir'] = self.bash_dir.join('Backups')
-        CoSaves(self.store_dir, fileName).delete(**kwargs)
+    def _additional_deletes(self, fileInfo, toDelete):
+        toDelete.extend(CoSaves.getPaths(fileInfo.getPath()))
+        # now add backups and cosaves backups
+        super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
 
     def _get_rename_paths(self, oldName, newName):
         renames = [tuple(map(self.store_dir.join, (oldName, newName)))]
