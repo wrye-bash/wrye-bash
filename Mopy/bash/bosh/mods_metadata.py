@@ -1081,7 +1081,7 @@ class ModDetails:
 
     def readFromMod(self, modInfo, progress=None):
         """Extracts details from mod file."""
-        def getRecordReader(ins,flags,size):
+        def getRecordReader(flags, size):
             """Decompress record data as needed."""
             if not MreRecord.flags1_(flags).compressed:
                 return ins,ins.tell()+size
@@ -1100,23 +1100,27 @@ class ModDetails:
         with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
             while not ins.atEnd():
                 header = ins.unpackRecHeader()
-                recType,size = header.recType,header.size
+                recType, rec_siz = header.recType, header.size
                 if recType == 'GRUP':
+                    # FIXME(ut): monkey patch for fallout QUST GRUP
+                    if bush.game.fsName == u'Fallout4' and header.groupType == 10:
+                        ins.seek(rec_siz - header.__class__.size, 1)
+                        continue
                     label = header.label
                     progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
                     records = group_records.setdefault(label,[])
-                    if label in ('CELL','WRLD','DIAL'):
-                        ins.seek(size-header.__class__.size,1)
+                    if label in ('CELL', 'WRLD', 'DIAL'): # skip these groups
+                        ins.seek(rec_siz - header.__class__.size, 1)
                 elif recType != 'GRUP':
                     eid = u''
-                    nextRecord = ins.tell() + size
-                    recs,endRecs = getRecordReader(ins,header.flags1,size)
+                    nextRecord = ins.tell() + rec_siz
+                    recs, endRecs = getRecordReader(header.flags1, rec_siz)
                     while recs.tell() < endRecs:
-                        (type,size) = recs.unpackSubHeader()
-                        if type == 'EDID':
-                            eid = recs.readString(size)
+                        (recType, rec_siz) = recs.unpackSubHeader()
+                        if recType == 'EDID':
+                            eid = recs.readString(rec_siz)
                             break
-                        recs.seek(size,1)
+                        recs.seek(rec_siz, 1)
                     records.append((header.fid,eid))
                     ins.seek(nextRecord)
         del group_records[bush.game.MreHeader.classType]
