@@ -181,6 +181,12 @@ def round_size(siz):
     """Round non zero sizes to 1 KB."""
     return formatInteger(0 if siz == 0 else max(siz, 1024) / 1024) + u' KB'
 
+# Helpers ---------------------------------------------------------------------
+def sortFiles(files, __split=os.path.split):
+    """Utility function. Sorts files by directory, then file name."""
+    sort_keys_dict = dict((x, __split(x.lower())) for x in files)
+    return sorted(files, key=sort_keys_dict.__getitem__)
+
 # Localization ----------------------------------------------------------------
 # noinspection PyDefaultArgument
 def _findAllBashModules(files=[], bashPath=None, cwd=None,

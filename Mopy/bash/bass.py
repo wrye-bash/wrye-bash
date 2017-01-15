@@ -68,3 +68,29 @@ settings = None # bolt.Settings !
 
 # mod extension regex - used all over
 reModExt = _re.compile(ur'\.es[mp](.ghost)?$', _re.I | _re.U)
+
+#--Temp Files/Dirs - originally in Installer, probably belong to a new module
+################################## DO NOT USE #################################
+_tempDir = None # type: bolt.Path | None
+
+def getTempDir():
+    """Return current Temp Dir, generating one if needed."""
+    return _tempDir if _tempDir is not None else newTempDir()
+
+def rmTempDir():
+    """Remove the current temporary directory, and set the current Temp Dir to
+       None - meaning a new one will be generated on getTempDir()"""
+    global _tempDir
+    if _tempDir is None:
+        return
+    if _tempDir.exists():
+        _tempDir.rmtree(safety=_tempDir.stail)
+    _tempDir = None
+
+def newTempDir():
+    """Generate a new temporary directory name, set it as the current Temp
+    Dir."""
+    global _tempDir
+    from bolt import Path
+    _tempDir = Path.tempDir()
+    return _tempDir

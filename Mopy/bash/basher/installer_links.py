@@ -767,7 +767,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                 inst.unpackToTemp(curConflicts,
                     SubProgress(progress, curFile, curFile + len(curConflicts),
                                 len(curConflicts)))
-                inst.getTempDir().moveTo(ijoin(destDir, g_path))
+                bass.getTempDir().moveTo(ijoin(destDir, g_path))
                 curFile += len(curConflicts)
             return curFile
         with balt.Progress(_(u"Copying Conflicts..."),

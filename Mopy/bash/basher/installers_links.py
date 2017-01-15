@@ -457,7 +457,7 @@ class _Installers_Skip(Installers_Link, BoolLink):
     @balt.conversation
     def Execute(self):
         super(_Installers_Skip, self).Execute()
-        bosh.Installer.init_global_skips()
+        bosh.bain.Installer.init_global_skips()
         self._refreshInstallers()
 
     def _refreshInstallers(self):
