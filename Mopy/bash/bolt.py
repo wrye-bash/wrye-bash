@@ -1931,12 +1931,12 @@ class Log:
             if self.prevHeader and self.doFooter:
                 self.writeFooter()
             if self.header:
-                self.writeHeader(self.header)
+                self.writeLogHeader(self.header)
             self.prevHeader = self.header
         if message: self.writeMessage(message,appendNewline)
 
     #--Abstract/null writing functions...
-    def writeHeader(self,header):
+    def writeLogHeader(self, header):
         """Write header. Abstract/null version."""
         pass
     def writeFooter(self):
@@ -1953,7 +1953,7 @@ class LogFile(Log):
         self.out = out
         Log.__init__(self)
 
-    def writeHeader(self,header):
+    def writeLogHeader(self, header):
         self.out.write(header+u'\n')
 
     def writeFooter(self):

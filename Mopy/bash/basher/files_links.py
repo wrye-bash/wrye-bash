@@ -243,7 +243,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
             self._selected_info.setmtime(current_mtime) # keep load order
             try:
                 self.window.data_store.refreshFile(fileName)
-            except bosh.FileError:
+            except bolt.FileError:
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
                 self.window.panel.ClearDetails()
             self.window.RefreshUI(redraw=[fileName], refreshSaves=False) # don't
@@ -283,7 +283,7 @@ class _RevertBackup(OneItemLink):
                 self._selected_info.revert_backup()
                 self.window.RefreshUI(redraw=[self._selected_item],
                                       refreshSaves=False)
-            except bosh.FileError:
+            except bolt.FileError:
                 self._showError(_(u'Old file is corrupt!'))
                 self.window.RefreshUI(refreshSaves=True)
 

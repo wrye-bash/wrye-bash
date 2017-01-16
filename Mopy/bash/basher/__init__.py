@@ -1468,7 +1468,7 @@ class ModDetails(_SashDetailsPanel):
         try:
             bosh.modInfos.refreshFile(fileName)
             detail_item = fileName
-        except bosh.FileError:
+        except bolt.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             detail_item = None
         with load_order.Unlock():
@@ -2023,7 +2023,7 @@ class SaveDetails(_SashDetailsPanel):
         try:
             bosh.saveInfos.refreshFile(saveInfo.name)
             detail_item = saveInfo.name
-        except bosh.FileError:
+        except bolt.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             detail_item = None
         # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
@@ -3224,7 +3224,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         try:
             bosh.bsaInfos.refreshFile(self._bsa_info.name)
             detail_item = self._bsa_info.name
-        except bosh.FileError:
+        except bolt.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             detail_item = None
         self.panel_uilist.RefreshUI(detail_item=detail_item)

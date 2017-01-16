@@ -1643,11 +1643,6 @@ class FileInfo(_AFileInfo):
         #--Ancillary storage
         self.extras = {}
 
-    def getFileInfos(self):
-        """Return one of the FileInfos singletons depending on fileInfo type.
-        :rtype: FileInfos"""
-        raise AbstractError
-
     #--File type tests
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
@@ -1706,16 +1701,17 @@ class FileInfo(_AFileInfo):
         else:
             return status
 
-    def writeHeader(self):
-        """Writes header to file, overwriting old header."""
-        raise AbstractError
-
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath.
         Provided so that SaveFileInfo can override for its cofiles."""
         pass
 
 class _BackupMixin(FileInfo): # this should become a real mixin - under #336
+
+    def getFileInfos(self):
+        """Return one of the FileInfos singletons depending on fileInfo type.
+        :rtype: FileInfos"""
+        raise AbstractError
 
     def _doBackup(self,backupDir,forceBackup=False):
         """Creates backup(s) of file, places in backupDir."""
@@ -2011,7 +2007,11 @@ class ModInfo(_BackupMixin, FileInfo):
 
     def hasBadMasterNames(self):
         """True if has a master with un unencodable name in cp1252."""
-        return modInfos.hasBadMasterNames(self.name)
+        try:
+            for x in self.header.masters: x.s.encode('cp1252')
+            return False
+        except UnicodeEncodeError:
+            return True
 
     def isMissingStrings(self):
         return modInfos.isMissingStrings(self.name)
@@ -3343,7 +3343,7 @@ class ModInfos(FileInfos):
             if modSet is None: modSet = set(self.keys())
             #--Check for bad masternames:
             #  Disabled for now
-            ##if self.hasBadMasterNames(fileName):
+            ##if self[fileName].hasBadMasterNames():
             ##    return
             for master in self[fileName].header.masters:
                 if master in modSet:
@@ -3511,15 +3511,6 @@ class ModInfos(FileInfos):
                     extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
                     bsaPaths.extend(extraBsa)
         return bsaPaths
-
-    def hasBadMasterNames(self,modName):
-        """True if there mod has master's with unencodable names."""
-        masters = self[modName].header.masters
-        try:
-            for x in masters: x.s.encode('cp1252')
-            return False
-        except UnicodeEncodeError:
-            return True
 
     def calculateLO(self, mods=None): # excludes corrupt mods
         if mods is None: mods = self.keys()
