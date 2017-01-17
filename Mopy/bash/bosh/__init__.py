@@ -3492,9 +3492,9 @@ class ModInfos(FileInfos):
         """Return a list of (existing) bsa paths to get assets from.
         :rtype: list[bolt.Path]
         """
-        if mod_info.name.s in bush.game.vanilla_string_bsas:
+        if mod_info.name.cs in bush.game.vanilla_string_bsas: # lowercase !
             bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
-                mod_info.name.s])
+                mod_info.name.cs])
         else:
             bsaPaths = [mod_info.getBsaPath()] # first check bsa with same name
             for iniFile in self._ini_files():

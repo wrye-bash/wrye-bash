@@ -76,8 +76,11 @@ nexusKey = 'bash.installers.openSkyrimSeNexus.continue'
 
 # Bsa info
 vanilla_string_bsas = {
-    u'Skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
-    u'Update.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
+    u'skyrim.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
+    u'update.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
+    u'dawnguard.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
+    u'hearthfires.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
+    u'dragonborn.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
 }
 
 #--Save Game format stuff
