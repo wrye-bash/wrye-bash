@@ -26,7 +26,6 @@
    Skyrim Special Edition is set at the active game."""
 
 import struct
-import itertools
 from .constants import *
 from .default_tweaks import default_tweaks
 from ... import brec
@@ -90,110 +89,6 @@ class ess:
     canEditMasters = False      # Adjusting save file masters
     canEditMore = False         # No advanced editing
     ext = u'.ess'               # Save file extension
-
-    @staticmethod
-    def load(ins,header):
-        """Extract info from save file."""
-        def unpack_str16(): return ins.read(struct.unpack('H', ins.read(2))[0])
-        #--Header
-        if ins.read(13) != 'TESV_SAVEGAME':
-            raise Exception(u'Save file is not a Skyrim save game.')
-        headerSize, = struct.unpack('I',ins.read(4))
-        #--Name, location
-        # This would be Key, if $C Skyrim SE otherwise Skyrim
-        header.version, = struct.unpack('I',ins.read(4))
-        saveNumber, = struct.unpack('I',ins.read(4))
-        header.pcName = unpack_str16()
-        header.pcLevel, = struct.unpack('I',ins.read(4))
-        header.pcLocation = unpack_str16()
-        # Begin Game Time
-        header.gameDate = unpack_str16()
-        # gameDate format: hours.minutes.seconds
-        hours,minutes,seconds = [int(x) for x in header.gameDate.split('.')]
-        playSeconds = hours*60*60 + minutes*60 + seconds
-        header.gameDays = float(playSeconds)/(24*60*60)
-        header.gameTicks = playSeconds * 1000
-        # End Game Time
-        header.pcRace = unpack_str16() # Player Race
-        header.pcSex, = struct.unpack('H',ins.read(2)) # Player Sex
-        # Read unknown 16 bytes
-        unk3 = ins.read(16)
-        #--Image Data
-        ssWidth, = struct.unpack('I',ins.read(4))
-        ssHeight, = struct.unpack('I',ins.read(4))
-        if header.version == 12:
-            unk2Bytes = ins.read(2)
-        if ins.tell() != headerSize + 17: raise Exception(
-            u'New Save game header size (%s) not as expected (%s).' % (
-                ins.tell() - 17, headerSize))
-        #--Image Data
-        if header.version == 12:
-            # Skyrim SE is in 32bit RGB, Bash is expecting 24bit RGB
-            ssData = ins.read(4*ssWidth*ssHeight)
-            # pick out only every 3 bytes, drop the 4th (alpha channel)
-            ## TODO: Setup Bash to use the alpha data
-            #ssAlpha = ''.join(itertools.islice(ssData, 0, None, 4))
-            ssData = ''.join(itertools.compress(ssData, itertools.cycle(reversed(range(4)))))
-            header.image = (ssWidth,ssHeight,ssData)
-        else:
-            ssData = ins.read(3*ssWidth*ssHeight)
-            header.image = (ssWidth,ssHeight,ssData)
-            # Read unknown byte
-
-        if header.version == 12:
-            # Skyrim SE and no list of files can be listed, displayed, or renamed
-            # without lz4 support. Exit at this point
-            return
-        else:
-            unk3 = ins.read(1)
-
-        #--Masters
-        mastersSize, = struct.unpack('I',ins.read(4))
-        header.mastersStart = ins.tell()
-        del header.masters[:]
-        numMasters, = struct.unpack('B',ins.read(1))
-        for count in xrange(numMasters):
-            header.masters.append(unpack_str16())
-        if ins.tell() != header.mastersStart + mastersSize: raise Exception(
-            u'Save game masters size (%i) not as expected (%i).' % (
-            ins.tell() - header.mastersStart, mastersSize))
-
-    @staticmethod
-    def writeMasters(ins,out,header):
-        """Rewrites masters of existing save file."""
-        def unpack(fmt,size): return struct.unpack(fmt,ins.read(size))
-        def pack(fmt,*args): out.write(struct.pack(fmt,*args))
-        out.write(ins.read(header.mastersStart-4))
-        #--plugin info
-        oldSize, = unpack('I',4)
-        newSize = 1 + sum(len(x)+2 for x in header.masters)
-        pack('I',newSize)
-        #  Skip old masters
-        oldMasters = []
-        numMasters, = unpack('B',1)
-        pack('B',len(header.masters))
-        for x in xrange(numMasters):
-            size, = unpack('H',2)
-            oldMasters.append(ins.read(size))
-        #  Write new masters
-        for master in header.masters:
-            pack('H',len(master))
-            out.write(master.s)
-        #--Offsets
-        offset = out.tell() - ins.tell()
-        #--File Location Table
-        for i in xrange(6):
-            # formIdArrayCount offset, unkownTable3Offset,
-            # globalDataTable1Offset, globalDataTable2Offset,
-            # changeFormsOffset, globalDataTable3Offset
-            oldOffset, = unpack('I',4)
-            pack('I',oldOffset+offset)
-        #--Copy the rest
-        while True:
-            buff = ins.read(0x5000000)
-            if not buff: break
-            out.write(buff)
-        return oldMasters
 
 #--INI files that should show up in the INI Edits tab
 iniFiles = [

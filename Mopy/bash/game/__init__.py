@@ -148,27 +148,6 @@ class ess:
     canEditMore = False     # Advanced editing
     ext = u'.ess'           # Save file extension
 
-    @staticmethod
-    def load(ins,header):
-        """Extract basic info from save file.close
-           At a minimum, this should set the following
-           attributes in 'header':
-            pcName
-            pcLevel
-            pcLocation
-            gameDate
-            gameDays
-            gameTicks (seconds*1000)
-            image (ssWidth,ssHeight,ssData)
-            masters
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def writeMasters(ins,out,header):
-        """Rewrites masters of existing save file."""
-        raise NotImplementedError
-
 #--The main plugin Wrye Bash should look for
 masterFiles = [
     ]

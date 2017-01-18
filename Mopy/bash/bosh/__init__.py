@@ -38,6 +38,7 @@ import os
 import re
 import string
 import struct
+import sys
 import time
 import traceback
 from collections import OrderedDict
@@ -495,58 +496,6 @@ class ObseFile:
         """Save data to file safely."""
         self.save(self.path.temp,self.path.mtime)
         self.path.untemp()
-
-#------------------------------------------------------------------------------
-class SaveHeader:
-    """Represents selected info from a Tes4SaveGame file."""
-    def __init__(self,path=None):
-        self.pcName = None
-        self.pcLocation = None
-        self.gameDays = 0
-        self.gameTicks = 0
-        self.pcLevel = 0
-        self.masters = []
-        self.image = None
-        if path: self.load(path)
-
-    def load(self,path):
-        """Extract info from save file."""
-        try:
-            with path.open('rb') as ins:
-                bush.game.ess.load(ins,self)
-            self.pcName = decode(cstrip(self.pcName))
-            self.pcLocation = decode(cstrip(self.pcLocation),bolt.pluginEncoding,avoidEncodings=('utf8','utf-8'))
-            self.masters = [GPath(decode(x)) for x in self.masters]
-        #--Errors
-        except:
-            deprint(u'save file error:',traceback=True)
-            raise SaveFileError(path.tail,u'File header is corrupted.')
-
-    def writeMasters(self,path):
-        """Rewrites masters of existing save file."""
-        if not path.exists():
-            raise SaveFileError(path.head,u'File does not exist.')
-        with path.open('rb') as ins:
-            with path.temp.open('wb') as out:
-                oldMasters = bush.game.ess.writeMasters(ins,out,self)
-        oldMasters = [GPath(decode(x)) for x in oldMasters]
-        path.untemp()
-        #--Cosaves
-        masterMap = dict((x,y) for x,y in zip(oldMasters,self.masters) if x != y)
-        #--Pluggy file?
-        pluggyPath = CoSaves.getPaths(path)[0]
-        if masterMap and pluggyPath.exists():
-            pluggy = PluggyFile(pluggyPath)
-            pluggy.load()
-            pluggy.mapMasters(masterMap)
-            pluggy.safeSave()
-        #--OBSE/SKSE file?
-        obsePath = CoSaves.getPaths(path)[1]
-        if masterMap and obsePath.exists():
-            obse = ObseFile(obsePath)
-            obse.load()
-            obse.mapMasters(masterMap)
-            obse.safeSave()
 
 #------------------------------------------------------------------------------
 class SaveFile:
@@ -2248,6 +2197,7 @@ class INIInfo(IniFile):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
+from .save_files import get_save_header_type, SaveHeaderError
 class SaveInfo(_BackupMixin, FileInfo):
     def getFileInfos(self): return saveInfos
 
@@ -2268,12 +2218,39 @@ class SaveInfo(_BackupMixin, FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = SaveHeader(self.getPath())
+            self.header = get_save_header_type(bush.game.fsName)(self.getPath())
             #--Master Names/Order
             self.masterNames = tuple(self.header.masters)
             self.masterOrder = tuple() #--Reset to empty for now
-        except struct.error as rex:
-            raise SaveFileError(self.name,u'Struct.error: %s' % rex)
+        except SaveHeaderError as e:
+            raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
+
+    def write_masters(self):
+        """Rewrites masters of existing save file."""
+        if not self.abs_path.exists():
+            raise SaveFileError(self.abs_path.head, u'File does not exist.')
+        with self.abs_path.open('rb') as ins:
+            with self.abs_path.temp.open('wb') as out:
+                oldMasters = self.header.writeMasters(ins, out)
+        oldMasters = [GPath(decode(x)) for x in oldMasters]
+        self.abs_path.untemp()
+        #--Cosaves
+        masterMap = dict(
+            (x, y) for x, y in zip(oldMasters, self.header.masters) if x != y)
+        #--Pluggy file?
+        pluggyPath = CoSaves.getPaths(self.abs_path)[0]
+        if masterMap and pluggyPath.exists():
+            pluggy = PluggyFile(pluggyPath)
+            pluggy.load()
+            pluggy.mapMasters(masterMap)
+            pluggy.safeSave()
+        #--OBSE/SKSE file?
+        obsePath = CoSaves.getPaths(self.abs_path)[1]
+        if masterMap and obsePath.exists():
+            obse = ObseFile(obsePath)
+            obse.load()
+            obse.mapMasters(masterMap)
+            obse.safeSave()
 
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
