@@ -282,21 +282,11 @@ class B2aFileRecordTexture(_B2aFileRecordCommon):
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
-    """:type folder_assets: collections.OrderedDict[unicode, BSAAsset]"""
+    """:type folder_assets: collections.OrderedDict[unicode, BSAFileRecord]"""
 
     def __init__(self, folder_record):
         self.folder_record = folder_record
         self.folder_assets = collections.OrderedDict() # keep files order
-
-class BSAAsset(object):
-    __slots__ = ('filerecord', 'filename')
-
-    def __init__(self, filename, filerecord):
-        self.filerecord = filerecord # type: BSAFileRecord
-        self.filename = filename # type: unicode
-
-    def __repr__(self): return repr(self.filename)
-    def __unicode__(self): return self.filename
 
 class Ba2Folder(object):
 
@@ -384,9 +374,9 @@ class ABsa(AFile):
             # back and forth in the file
             folder_to_assets[folder_path] = file_records = []
             filenames = folder_files_dict[folder_path.lower()]
-            for filename, asset in bsa_folder.folder_assets.iteritems():
+            for filename, filerecord in bsa_folder.folder_assets.iteritems():
                 if filename.lower() not in filenames: continue
-                file_records.append((filename, asset.filerecord))
+                file_records.append((filename, filerecord))
         return folder_to_assets
 
     # Abstract
@@ -434,8 +424,7 @@ class BSA(ABsa):
                 file_records_index += 1
                 filename = _decode_path(file_names[names_record_index])
                 names_record_index += 1
-                bsa_folder.folder_assets[filename] = BSAAsset(
-                    path_sep.join((folder_path, filename)), rec)
+                bsa_folder.folder_assets[filename] = rec
 
     @staticmethod
     def _read_file_records(file_records, bsa_file, folder_path,
@@ -569,7 +558,7 @@ class BA2(ABsa):
                                                              Ba2Folder())
                 current_folder_name = folder_name
             current_folder.folder_assets[filename[folder_dex + 1:]] = \
-                BSAAsset(filename, file_records[index])
+                file_records[index]
 
     def load_bsa_light(self):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
