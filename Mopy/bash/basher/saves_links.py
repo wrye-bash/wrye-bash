@@ -318,7 +318,7 @@ class Save_DiffMasters(EnabledLink):
             newMasters = set(load_order.activeCached())
         else:
             newName = oldNew[1]
-            newInfo = self.window.data_store[GPath(newName)]
+            newInfo = self.window.data_store[newName]
             newMasters = set(newInfo.masterNames)
         missing = oldMasters - newMasters
         extra = newMasters - oldMasters

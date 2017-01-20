@@ -25,7 +25,6 @@
 """This module contains some constants ripped out of basher.py"""
 from .. import bass, bush
 from ..balt import Image, ImageList, defPos
-from ..bolt import GPath
 
 # Color Descriptions ----------------------------------------------------------
 colorInfo = {
@@ -395,7 +394,7 @@ BMP = Image.typesDict['bmp']
 TIF = Image.typesDict['tif']
 
 imDirJn = bass.dirs['images'].join
-def _png(name): return Image(GPath(imDirJn(name)), PNG)
+def _png(name): return Image(imDirJn(name), PNG)
 
 #--Image lists
 karmacons = ImageList(16,16)
