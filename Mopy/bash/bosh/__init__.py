@@ -4032,58 +4032,6 @@ class InstallerMarker(InstallerMarker): pass
 class InstallerProject(InstallerProject): pass
 
 #------------------------------------------------------------------------------
-class ModGroups:
-    """Groups for mods with functions for importing/exporting from/to text file."""
-
-    def __init__(self):
-        self.mod_group = {}
-
-    def readFromModInfos(self,mods=None):
-        """Imports mods/groups from modInfos."""
-        column = modInfos.table.getColumn('group')
-        mods = mods or column.keys()# if mods are None read groups for all mods
-        groups = tuple(column.get(x) for x in mods)
-        self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
-
-    @staticmethod
-    def assignedGroups():
-        """Return all groups that are currently assigned to mods."""
-        column = modInfos.table.getColumn('group')
-        return set(x[1] for x in column.items() if x[1]) #x=(bolt.Path,'group')
-
-    def writeToModInfos(self,mods=None):
-        """Exports mod groups to modInfos."""
-        mods = mods or modInfos.table.data.keys()
-        mod_group = self.mod_group
-        column = modInfos.table.getColumn('group')
-        changed = 0
-        for mod in mods:
-            if mod in mod_group and column.get(mod) != mod_group[mod]:
-                column[mod] = mod_group[mod]
-                changed += 1
-        return changed
-
-    def readFromText(self,textPath):
-        """Imports mod groups from specified text file."""
-        textPath = GPath(textPath)
-        mod_group = self.mod_group
-        with bolt.CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) >= 2 and reModExt.search(fields[0]):
-                    mod,group = fields[:2]
-                    mod_group[GPath(mod)] = group
-
-    def writeToText(self,textPath):
-        """Exports eids to specified text file."""
-        textPath = GPath(textPath)
-        mod_group = self.mod_group
-        rowFormat = u'"%s","%s"\n'
-        with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(rowFormat % (_(u"Mod"),_(u"Group")))
-            for mod in sorted(mod_group):
-                out.write(rowFormat % (mod.s,mod_group[mod]))
-
-#------------------------------------------------------------------------------
 class SaveSpells:
     """Player spells of a savegame."""
 

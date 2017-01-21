@@ -356,6 +356,58 @@ class _Mod_Labels(ChoiceLink):
     def _choices(self): return sorted(self.mod_labels, key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
+class _ModGroups:
+    """Groups for mods with functions for importing/exporting from/to text
+    file."""
+
+    def __init__(self):
+        self.mod_group = {}
+
+    def readFromModInfos(self,mods=None):
+        """Imports mods/groups from modInfos."""
+        column = bosh.modInfos.table.getColumn('group')
+        mods = mods or column.keys()# if mods are None read groups for all mods
+        groups = tuple(column.get(x) for x in mods)
+        self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
+
+    @staticmethod
+    def assignedGroups():
+        """Return all groups that are currently assigned to mods."""
+        column = bosh.modInfos.table.getColumn('group')
+        return set(x[1] for x in column.items() if x[1]) #x=(bolt.Path,'group')
+
+    def writeToModInfos(self,mods=None):
+        """Exports mod groups to modInfos."""
+        mods = mods or bosh.modInfos.table.data.keys()
+        mod_group = self.mod_group
+        column = bosh.modInfos.table.getColumn('group')
+        changed = 0
+        for mod in mods:
+            if mod in mod_group and column.get(mod) != mod_group[mod]:
+                column[mod] = mod_group[mod]
+                changed += 1
+        return changed
+
+    def readFromText(self,textPath):
+        """Imports mod groups from specified text file."""
+        textPath = GPath(textPath)
+        mod_group = self.mod_group
+        with bolt.CsvReader(textPath) as ins:
+            for fields in ins:
+                if len(fields) >= 2 and bass.reModExt.search(fields[0]):
+                    mod,group = fields[:2]
+                    mod_group[GPath(mod)] = group
+
+    def writeToText(self,textPath):
+        """Exports eids to specified text file."""
+        textPath = GPath(textPath)
+        mod_group = self.mod_group
+        rowFormat = u'"%s","%s"\n'
+        with textPath.open('w',encoding='utf-8-sig') as out:
+            out.write(rowFormat % (_(u"Mod"),_(u"Group")))
+            for mod in sorted(mod_group):
+                out.write(rowFormat % (mod.s,mod_group[mod]))
+
 class _Mod_Groups_Export(ItemLink):
     """Export mod groups to text file."""
     askTitle = _(u'Export groups to:')
@@ -373,7 +425,7 @@ class _Mod_Groups_Export(ItemLink):
                                  wildcard=u'*' + self.__class__.csvFile)
         if not textPath: return
         #--Export
-        modGroups = bosh.ModGroups()
+        modGroups = _ModGroups()
         modGroups.readFromModInfos(self.selected)
         modGroups.writeToText(textPath)
         self._showOk(_(u"Exported %d mod/groups.") % len(modGroups.mod_group))
@@ -401,7 +453,7 @@ class _Mod_Groups_Import(ItemLink):
             self._showError(_(u'Source file must be a csv file.'))
             return
         #--Import
-        modGroups = bosh.ModGroups()
+        modGroups = _ModGroups()
         modGroups.readFromText(textPath)
         changed = modGroups.writeToModInfos(self.selected)
         bosh.modInfos.refresh()
@@ -438,7 +490,7 @@ class Mod_Groups(_Mod_Labels):
     def _doRefresh(self):
         """Add to the list of groups groups currently assigned to mods."""
         self.listEditor.SetItemsTo(list(set(bass.settings[
-            'bash.mods.groups']) | bosh.ModGroups.assignedGroups()))
+            'bash.mods.groups']) | _ModGroups.assignedGroups()))
 
     def _doSync(self):
         """Set the list of groups to groups currently assigned to mods."""
@@ -447,7 +499,7 @@ class Mod_Groups(_Mod_Labels):
         if not balt.askContinue(self.listEditor, msg,
                                 'bash.groups.sync.continue',
                                 _(u'Sync Groups')): return
-        self.listEditor.SetItemsTo(list(bosh.ModGroups.assignedGroups()))
+        self.listEditor.SetItemsTo(list(_ModGroups.assignedGroups()))
 
     def _doReset(self):
         """Set the list of groups to the default groups list.
