@@ -45,6 +45,7 @@ from functools import wraps
 from itertools import imap
 from operator import attrgetter
 
+from ._mergeability import isPBashMergeable, isCBashMergeable
 from .mods_metadata import ConfigHelpers
 from .. import bass, bolt, balt, bush, env, load_order, archives
 from .. import patcher # for configIsCBash()
@@ -57,7 +58,7 @@ from ..bolt import GPath, Flags, DataDict, SubProgress, cstrip, \
 from ..bolt import decode, encode
 from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
     getFormIndices
-from ..cint import ObCollection, CBashApi
+from ..cint import CBashApi
 from ..parsers import LoadFactory, ModFile
 
 #--Settings
@@ -3182,7 +3183,7 @@ class ModInfos(FileInfos):
                 canMerge = False
             else:
                 try:
-                    canMerge = is_mergeable(fileInfo)
+                    canMerge = is_mergeable(fileInfo, self)
                 except Exception as e:
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
@@ -4228,172 +4229,6 @@ class Save_NPCEdits:
         saveFile.pcName = newName
         saveFile.setRecord(npc.getTuple(fid,version))
         saveFile.safeSave()
-
-# Mergeability ----------------------------------------------------------------
-##: belong to patcher/patch_files (?) but used in modInfos - cyclic imports
-def _is_mergeable_no_load(modInfo, verbose):
-    reasons = []
-    if modInfo.isEsm():
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is esm.'))
-    #--Bashed Patch
-    if modInfo.header.author == u'BASHED PATCH':
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
-    #--Bsa / voice?
-    if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
-        if not verbose: return False
-        hasBsa, hasVoices = modInfo.hasResources()
-        if hasBsa:
-            reasons.append(u'\n.    '+_(u'Has BSA archive.'))
-        if hasVoices:
-            reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
-    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-    tags = modInfos[modInfo.name].getBashTags()
-    if u'NoMerge' in tags:
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
-    if reasons: return reasons
-    return True
-
-def pbash_mergeable_no_load(modInfo, verbose):
-    reasons = _is_mergeable_no_load(modInfo, verbose)
-    if isinstance(reasons, list):
-        reasons = u''.join(reasons)
-    elif not reasons:
-        return False # non verbose mode
-    else: # True
-        reasons = u''
-    #--Missing Strings Files?
-    if modInfo.isMissingStrings():
-        if not verbose: return False
-        reasons += u'\n.    '+_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
-            modInfo.name.sbody, oblivionIni.get_ini_language())
-    if reasons: return reasons
-    return True
-
-def isPBashMergeable(modInfo,verbose=True):
-    """Returns True or error message indicating whether specified mod is mergeable."""
-    reasons = pbash_mergeable_no_load(modInfo, verbose)
-    if isinstance(reasons, unicode):
-        pass
-    elif not reasons:
-        return False # non verbose mode
-    else: # True
-        reasons = u''
-    #--Load test
-    mergeTypes = set([recClass.classType for recClass in bush.game.mergeClasses])
-    modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
-    try:
-        modFile.load(True,loadStrings=False)
-    except ModError as error:
-        if not verbose: return False
-        reasons += u'\n.    %s.' % error
-    #--Skipped over types?
-    if modFile.topsSkipped:
-        if not verbose: return False
-        reasons += u'\n.    '+_(u'Unsupported types: ')+u', '.join(sorted(modFile.topsSkipped))+u'.'
-    #--Empty mod
-    elif not modFile.tops:
-        if not verbose: return False
-        reasons += u'\n.    '+ u'Empty mod.'
-    #--New record
-    lenMasters = len(modFile.tes4.masters)
-    newblocks = []
-    for type,block in modFile.tops.iteritems():
-        for record in block.getActiveRecords():
-            if record.fid >> 24 >= lenMasters:
-                if record.flags1.deleted: continue #if new records exist but are deleted just skip em.
-                if not verbose: return False
-                newblocks.append(type)
-                break
-    if newblocks: reasons += u'\n.    '+_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.'
-    dependent = [name.s for name, info in modInfos.iteritems()
-                 if info.header.author != u'BASHED PATCH'
-                 if modInfo.name in info.header.masters]
-    if dependent:
-        if not verbose: return False
-        reasons += u'\n.    '+_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.'
-    if reasons: return reasons
-    return True
-
-def cbash_mergeable_no_load(modInfo, verbose):
-    """Check if mod is mergeable without taking into account the rest of mods"""
-    return _is_mergeable_no_load(modInfo, verbose)
-
-def _modIsMergeableLoad(modInfo,verbose):
-    """Check if mod is mergeable, loading it and taking into account the
-    rest of mods."""
-    allowMissingMasters = {u'Filter', u'IIM', u'InventOnly'}
-    tags = modInfos[modInfo.name].getBashTags()
-    reasons = []
-
-    #--Load test
-    with ObCollection(ModsPath=dirs['mods'].s) as Current:
-        #MinLoad, InLoadOrder, AddMasters, TrackNewTypes, SkipAllRecords
-        modFile = Current.addMod(modInfo.getPath().stail, Flags=0x00002129)
-        Current.load()
-
-        missingMasters = []
-        nonActiveMasters = []
-        masters = modFile.TES4.masters
-        for master in masters:
-            master = GPath(master)
-            if not tags & allowMissingMasters:
-                if master not in modInfos:
-                    if not verbose: return False
-                    missingMasters.append(master.s)
-                elif not load_order.cached_is_active(master):
-                    if not verbose: return False
-                    nonActiveMasters.append(master.s)
-        #--masters not present in mod list?
-        if len(missingMasters):
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Masters missing: ')+u'\n    * %s' % (u'\n    * '.join(sorted(missingMasters))))
-        if len(nonActiveMasters):
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Masters not active: ')+u'\n    * %s' % (u'\n    * '.join(sorted(nonActiveMasters))))
-        #--Empty mod
-        if modFile.IsEmpty():
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Empty mod.'))
-        #--New record
-        else:
-            if not tags & allowMissingMasters:
-                newblocks = modFile.GetNewRecordTypes()
-                if newblocks:
-                    if not verbose: return False
-                    reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
-        dependent = [name.s for name, info in modInfos.iteritems()
-            if info.header.author != u'BASHED PATCH' and
-            modInfo.name in info.header.masters and name not in modInfos.mergeable]
-        if dependent:
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))
-        if reasons: return reasons
-        return True
-
-# noinspection PySimplifyBooleanCheck
-def isCBashMergeable(modInfo,verbose=True):
-    """Returns True or error message indicating whether specified mod is mergeable."""
-    if modInfo.name.s == u"Oscuro's_Oblivion_Overhaul.esp":
-        if verbose: return u'\n.    ' + _(
-            u'Marked non-mergeable at request of mod author.')
-        return False
-    canmerge = cbash_mergeable_no_load(modInfo, verbose)
-    if verbose:
-        loadreasons = _modIsMergeableLoad(modInfo, verbose)
-        reasons = []
-        if canmerge != True:
-            reasons = canmerge
-        if loadreasons != True:
-            reasons.extend(loadreasons)
-        if reasons: return u''.join(reasons)
-        return True
-    else:
-        if canmerge == True:
-            return _modIsMergeableLoad(modInfo, verbose)
-        return False
 
 # Initialization --------------------------------------------------------------
 from ..env import get_personal_path, get_local_app_data_path
