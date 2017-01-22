@@ -2222,6 +2222,16 @@ class InstallersList(balt.UIList):
                 self.SelectItemsNoCallback(newselected)
             event.Veto()
 
+    def new_name(self, new_name):
+        if self.__renaming_type is bosh.InstallerMarker:
+            new_name, count = GPath(u'==' + new_name.s.strip(u'=') + u'=='), 0
+            while new_name in self.data_store:
+                count += 1
+                new_name = GPath(u'==' + new_name.s.strip(u'=') + (
+                    u' (%d)' % count) + u'==')
+            return GPath(u'==' + new_name.s.strip(u'=') + u'==')
+        return super(InstallersList, self).new_name(new_name)
+
     @staticmethod
     def _unhide_wildcard():
         starred = u';'.join(u'*' + ext for ext in archives.readExts)

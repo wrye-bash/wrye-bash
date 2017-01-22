@@ -1021,13 +1021,12 @@ class InstallerMarker(Installer):
         pass
 
     def renameInstaller(self, name_new, data):
-        newName = GPath(u'==' + name_new.s.strip(u'=') + u'==')
         archive = GPath(self.archive)
-        if newName == archive:
+        if name_new == archive:
             return False, False, False
         #--Add the marker to Bash and remove old one
-        self.archive = newName.s
-        data[newName] = self
+        self.archive = name_new.s
+        data[name_new] = self
         del data[archive]
         return True, False, False
 
