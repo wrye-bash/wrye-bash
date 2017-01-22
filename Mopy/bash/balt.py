@@ -2428,6 +2428,12 @@ class ItemLink(Link):
         menu.AppendItem(menuItem)
         return menuItem
 
+    def iselected_infos(self):
+        return (self.window.data_store[x] for x in self.selected)
+
+    def iselected_pairs(self):
+        return ((x, self.window.data_store[x]) for x in self.selected)
+
     # Callbacks ---------------------------------------------------------------
     # noinspection PyUnusedLocal
     def __Execute(self, __event):

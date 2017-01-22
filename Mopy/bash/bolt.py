@@ -1897,15 +1897,6 @@ def intArg(arg,default=None):
     elif isinstance(arg,types.StringTypes): return int(arg,0)
     else: return int(arg)
 
-def invertDict(indict):
-    """Invert a dictionary."""
-    return dict((y,x) for x,y in indict.iteritems())
-
-def listSubtract(alist, blist):
-    """Return a copy of first list minus items in second list."""
-    s = set(blist)
-    return [a for a in alist if a not in s]
-
 def winNewLines(inString):
     """Converts unix newlines to windows newlines."""
     return reUnixNewLine.sub(u'\r\n',inString)

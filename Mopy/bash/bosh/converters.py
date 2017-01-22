@@ -580,8 +580,8 @@ class InstallerConverter(object):
         if progress:
             progress(0, srcInstaller.s + u'\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
-        command = u'"%s" x "%s" -y -o%s @%s -scsUTF-8 -sccUTF-8' % (
-            archives.exe7z, apath.s, subTempDir.s, tempList.s)
+        command = archives.extractCommand(apath, subTempDir)
+        command += u' @%s' % tempList.s
         #--Extract files
         try:
             subArchives = archives.extract7z(command, srcInstaller, progress,

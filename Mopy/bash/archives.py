@@ -36,7 +36,7 @@ readExts.update(set(writeExts))
 noSolidExts = {u'.zip'}
 reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
 regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
-regExtractMatch = re.compile(ur'Extracting\s+(.+)', re.U).match
+regExtractMatch = re.compile(ur'- (.+)', re.U).match
 regErrMatch = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',
     re.U).match
 reListArchive = re.compile(
@@ -151,7 +151,7 @@ def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
             u"%s\\*" % srcFolder.s]
 
 def extractCommand(archivePath, outDirPath):
-    command = u'"%s" x "%s" -y -o"%s" -scsUTF-8 -sccUTF-8' % (
+    command = u'"%s" x "%s" -y -bb1 -o"%s" -scsUTF-8 -sccUTF-8' % (
         exe7z, archivePath.s, outDirPath.s)
     return command
 

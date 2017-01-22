@@ -47,12 +47,10 @@ import os
 import re
 import string
 import struct
-import cStringIO
 import StringIO
 import sys
-import types
 from subprocess import Popen, PIPE
-from operator import attrgetter,itemgetter
+from operator import attrgetter
 
 import archives
 import bass
@@ -987,12 +985,7 @@ def parseDials(srcName=None,dstName='Wrye Test.esp'):
 
 @mainfunc
 def parseRecords(fileName='Oblivion.esm'):
-    import psyco
-    psyco.full()
     init(3)
-    skipPrint = False
-    tempDict = dict()
-    diffDict = dict()
     skipPrint = True
 ##    #All complex records
 ##    testClasses = [bosh.MreRecord.type_class[x] for x in (set(bosh.MreRecord.type_class) - bosh.MreRecord.simpleTypes)] ##'LAND', 'PGRD'

@@ -126,10 +126,8 @@ class File_Duplicate(ItemLink):
     def Execute(self):
         dests = []
         fileInfos = self.window.data_store
-        for to_duplicate in self.selected:
-            fileInfo = fileInfos[to_duplicate]
-            #--Mod with resources?
-            #--Warn on rename if file has bsa and/or dialog
+        for to_duplicate, fileInfo in self.iselected_pairs():
+            #--Mod with resources? Warn on rename if file has bsa and/or dialog
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
             (root, ext) = to_duplicate.rootExt
@@ -150,7 +148,7 @@ class File_Duplicate(ItemLink):
                     _(u"Files cannot be duplicated to themselves!"))
                 continue
             fileInfos.copy_info(to_duplicate, destDir, destName)
-            if fileInfo.isMod():
+            if fileInfo.isMod(): ##: move this inside copy_info
                 fileInfos.cached_lo_insert_after(to_duplicate, destName)
             dests.append(destName)
         if dests:
@@ -185,9 +183,7 @@ class File_Snapshot(ItemLink):
         self._text = (_(u'Snapshot'),_(u'Snapshot...'))[len(selection) == 1]
 
     def Execute(self):
-        for item in self.selected:
-            fileName = GPath(item)
-            fileInfo = self.window.data_store[fileName]
+        for fileName, fileInfo in self.iselected_pairs():
             (destDir,destName,wildcard) = fileInfo.getNextSnapshot()
             destDir.makedirs()
             if len(self.selected) == 1:
@@ -227,7 +223,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
         """Revert to Snapshot."""
         fileName = self._selected_item
         #--Snapshot finder
-        srcDir = self.window.data_store.bash_dir.join(u'Snapshots')
+        srcDir = self._selected_info.snapshot_dir
         wildcard = self._selected_info.getNextSnapshot()[2]
         #--File dialog
         srcDir.makedirs()
@@ -259,8 +255,7 @@ class File_Backup(ItemLink):
     help = _(u"Create a backup of the selected file(s).")
 
     def Execute(self):
-        for item in self.selected:
-            fileInfo = self.window.data_store[item]
+        for fileInfo in self.iselected_infos():
             fileInfo.makeBackup(True)
 
 class _RevertBackup(OneItemLink):

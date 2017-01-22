@@ -718,15 +718,15 @@ class TargetINILineCtrl(INIListCtrl):
             self.DeleteAllItems()
         num = self.GetItemCount()
         try:
-            with bosh.iniInfos.ini.abs_path.open('r') as ini:
-                lines = ini.readlines()
-                for i,line in enumerate(lines):
-                    if i >= num:
-                        self.InsertStringItem(i, line.rstrip())
-                    else:
-                        self.SetStringItem(i, 0, line.rstrip())
-                for i in xrange(len(lines), num):
-                    self.DeleteItem(len(lines))
+            with bosh.iniInfos.ini.abs_path.open('r') as target_ini_file:
+                lines = target_ini_file.readlines()
+            for i,line in enumerate(lines):
+                if i >= num:
+                    self.InsertStringItem(i, line.rstrip())
+                else:
+                    self.SetStringItem(i, 0, line.rstrip())
+            for i in xrange(len(lines), num):
+                self.DeleteItem(len(lines))
         except IOError:
             warn = True
             page = Link.Frame.notebook.currentPage
@@ -955,7 +955,7 @@ class ModList(_ModsUIList):
         if code == wx.WXK_SPACE:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
-                          not load_order.isActiveCached(GPath(item))]
+                          not load_order.isActiveCached(item)]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
                 self._toggle_active_state(*selected)
@@ -1001,10 +1001,9 @@ class ModList(_ModsUIList):
         """Toggle active state of mods given - all mods must be either
         active or inactive."""
         refreshNeeded = False
-        keys = map(GPath, mods)
-        active = [mod for mod in keys if load_order.isActiveCached(mod)]
-        inactive = [mod for mod in keys if not load_order.isActiveCached(mod)]
-        assert len(active) == len(keys) or len(inactive) == len(keys)
+        active = [mod for mod in mods if load_order.isActiveCached(mod)]
+        inactive = [mod for mod in mods if not load_order.isActiveCached(mod)]
+        assert len(active) == len(mods) or len(inactive) == len(mods)
         changes = collections.defaultdict(dict)
         # Deactivate ?
         touched = set()
@@ -1122,7 +1121,7 @@ class _EditableMixin(_DetailsMixin):
     # Details panel API
     def SetFile(self, fileName='SAME'):
         #--Edit State
-        self.edited = 0
+        self.edited = False
         self.save.Disable()
         self.cancel.Disable()
         return super(_EditableMixin, self).SetFile(fileName)
@@ -2450,7 +2449,7 @@ class InstallersList(balt.UIList):
             index = self.GetIndex(new_marker)
         except KeyError: # u'====' not found in the internal dictionary
             self.data_store.add_marker(new_marker, max_order)
-            self.RefreshUI(redraw=[new_marker])
+            self.RefreshUI() # need to redraw all items cause order changed
             index = self.GetIndex(new_marker)
         if index != -1:
             self.SelectAndShowItem(new_marker, deselectOthers=True,
@@ -3744,7 +3743,8 @@ class BashFrame(wx.Frame):
         else:
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
         title %= (settings['bash.version'],
-                  _(u'(Standalone)') if settings['bash.standalone'] else u'')
+                  (u' ' + _(u'(Standalone)')) if settings[
+                      'bash.standalone'] else u'')
         if CBashApi.Enabled:
             title += u', CBash %s: ' % (CBashApi.VersionText,)
         else:
@@ -3906,7 +3906,7 @@ class BashFrame(wx.Frame):
 
     def _missingDocsDir(self):
         #--Missing docs directory?
-        testFile = GPath(bass.dirs['mopy']).join(u'Docs', u'wtxt_teal.css')
+        testFile = bass.dirs['mopy'].join(u'Docs', u'wtxt_teal.css')
         if self.incompleteInstallError or testFile.exists(): return
         self.incompleteInstallError = True
         msg = _(u'Installation appears incomplete.  Please re-unzip bash '
@@ -4139,15 +4139,15 @@ def InitImages():
     for key,value in settings['bash.colors'].iteritems(): colors[key] = value
     #--Images
     imgDirJn = bass.dirs['images'].join
-    def _png(name): return Image(GPath(imgDirJn(name)),PNG)
+    def _png(name): return Image(imgDirJn(name), PNG)
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
     #--Misc
     #images['oblivion'] = Image(GPath(bass.dirs['images'].join(u'oblivion.png')),png)
-    images['help.16'] = Image(GPath(imgDirJn(u'help16.png')))
-    images['help.24'] = Image(GPath(imgDirJn(u'help24.png')))
-    images['help.32'] = Image(GPath(imgDirJn(u'help32.png')))
+    images['help.16'] = Image(imgDirJn(u'help16.png'))
+    images['help.24'] = Image(imgDirJn(u'help24.png'))
+    images['help.32'] = Image(imgDirJn(u'help32.png'))
     #--ColorChecks
     images['checkbox.red.x'] = _png(u'checkbox_red_x.png')
     images['checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
@@ -4178,7 +4178,7 @@ def InitImages():
     images['bash.24.blue'] = _png(u'bash_24_blue.png')
     images['bash.32.blue'] = _png(u'bash_32_blue.png')
     #--Bash Patch Dialogue
-    images['monkey.16'] = Image(GPath(imgDirJn(u'wryemonkey16.jpg')),JPEG)
+    images['monkey.16'] = Image(imgDirJn(u'wryemonkey16.jpg'), JPEG)
     #--DocBrowser
     images['doc.16'] = _png(u'DocBrowser16.png')
     images['doc.24'] = _png(u'DocBrowser24.png')

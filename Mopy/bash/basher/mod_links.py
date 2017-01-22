@@ -171,10 +171,9 @@ class Mod_OrderByName(EnabledLink):
         self.selected.sort(key=attrgetter('cext')) # sort esm first
         if not load_order.using_txt_file():
             #--Get first time from first selected file.
-            newTime = min(
-                bosh.modInfos[fileName].mtime for fileName in self.selected)
-            for fileName in self.selected:
-                bosh.modInfos[fileName].setmtime(newTime)
+            newTime = min(x.mtime for x in self.iselected_infos())
+            for inf in self.iselected_infos():
+                inf.setmtime(newTime)
                 newTime += 60
             #--Refresh
             with load_order.Unlock():
@@ -194,8 +193,6 @@ class Mod_Redate(AppendableLink, ItemLink):
 
     @balt.conversation
     def Execute(self):
-        #--Get current start time.
-        modInfos = self.window.data_store
         #--Ask user for revised time.
         newTimeStr = self._askText(
             _(u'Redate selected mods starting at...'),
@@ -208,14 +205,14 @@ class Mod_Redate(AppendableLink, ItemLink):
             self._showError(_(u'Unrecognized date: ') + newTimeStr)
             return
         #--Do it
-        selInfos = [modInfos[fileName] for fileName in self.selected]
+        selInfos = [x for x in self.iselected_infos()]
         selInfos.sort(key=attrgetter('mtime'))
         for fileInfo in selInfos:
             fileInfo.setmtime(newTime)
             newTime += 60
         #--Refresh
         with load_order.Unlock():
-            modInfos.refresh(refresh_infos=False, _modTimesChange=True)
+            bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
         self.window.RefreshUI(refreshSaves=True)
 
 # Group/Rating submenus -------------------------------------------------------
@@ -526,8 +523,8 @@ class Mod_ListBashTags(ItemLink):
 
     def Execute(self):
         #--Get masters list
-        files = [bosh.modInfos[fileName] for fileName in self.selected]
-        text = bosh.modInfos.getTagList(files)
+        modInfos = [x for x in self.iselected_infos()]
+        text = bosh.modInfos.getTagList(modInfos)
         balt.copyToClipboard(text)
         self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
                       icons=Resources.bashBlue)
@@ -564,16 +561,15 @@ class Mod_CreateBOSSReport(EnabledLink):
         else:
             spoiler = False
         # Scan for ITM and UDR's
-        modInfos = [bosh.modInfos[x] for x in self.selected]
+        modInfos = [x for x in self.iselected_infos()]
         try:
             with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
                 udr_itm_fog = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress)
         except bolt.CancelError:
             return
         # Create the report
-        for i,fileName in enumerate(self.selected):
+        for i, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             if fileName == u'Oblivion.esm': continue
-            fileInfo = bosh.modInfos[fileName]
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
             if not installer: text += fileName.s
@@ -715,8 +711,7 @@ class _GhostLink(ItemLink):
         """Loop selected files applying allow ghosting settings and
         (un)ghosting as needed."""
         files = []
-        for fileName in self.selected:
-            fileInfo = bosh.modInfos[fileName]
+        for fileName, fileInfo in self.iselected_pairs():
             bosh.modInfos.table.setItem(fileName, 'allowGhosting',
                                         self.__class__.setAllow(fileName))
             oldGhost = fileInfo.isGhost
@@ -1166,7 +1161,7 @@ class Mod_ScanDirty(ItemLink):
 
     def Execute(self):
         """Handle execution"""
-        modInfos = [bosh.modInfos[x] for x in self.selected]
+        modInfos = [x for x in self.iselected_infos()]
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
                 ret = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress, detailed=True)
@@ -1264,13 +1259,11 @@ class Mod_RemoveWorldOrphans(EnabledLink):
         message = _(u"In some circumstances, editing a mod will leave orphaned cell records in the world group. This command will remove such orphans.")
         if not self._askContinue(message, 'bash.removeWorldOrphans.continue',
                                  _(u'Remove World Orphans')): return
-        for item in self.selected:
-            fileName = GPath(item)
+        for index, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
             if bosh.reOblivion.match(fileName.s):
                 self._showWarning(_(u"Skipping %s") % fileName.s,
                                   _(u'Remove World Orphans'))
                 continue
-            fileInfo = bosh.modInfos[fileName]
             #--Export
             with balt.Progress(_(u"Remove World Orphans")) as progress:
                 loadFactory = parsers.LoadFactory(True,
@@ -1305,10 +1298,9 @@ class Mod_FogFixer(ItemLink):
         with balt.Progress(_(u'Nvidia Fog Fix')) as progress:
             progress.setFull(len(self.selected))
             fixed = []
-            for index,fileName in enumerate(map(GPath,self.selected)):
+            for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
                 if fileName.cs in bush.game.masterFiles: continue
                 progress(index,_(u'Scanning')+fileName.s)
-                fileInfo = bosh.modInfos[fileName]
                 fog_fixer = bosh.mods_metadata.NvidiaFogFixer(fileInfo)
                 fog_fixer.fix_fog(SubProgress(progress, index, index + 1))
                 if fog_fixer.fixedCells:
@@ -1342,13 +1334,12 @@ class Mod_UndeleteRefs(EnabledLink):
             progress.setFull(len(self.selected))
             hasFixed = False
             log = bolt.LogFile(StringIO.StringIO())
-            for index,fileName in enumerate(map(GPath,self.selected)):
+            for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
                 if bosh.reOblivion.match(fileName.s):
                     self._showWarning(_(u'Skipping') + u' ' + fileName.s,
                                       self._text)
                     continue
                 progress(index,_(u'Scanning')+u' '+fileName.s+u'.')
-                fileInfo = bosh.modInfos[fileName]
                 cleaner = bosh.mods_metadata.ModCleaner(fileInfo)
                 cleaner.clean(bosh.mods_metadata.ModCleaner.UDR,
                               SubProgress(progress, index, index + 1))
@@ -1416,8 +1407,7 @@ class Mod_CopyToEsmp(EnabledLink):
 
     def _enable(self):
         """Disable if selected are mixed esm/p's or inverted mods."""
-        for item in self.selected:
-            fileInfo = bosh.modInfos[item]
+        for fileInfo in self.iselected_infos():
             if fileInfo.isInvertedMod() or fileInfo.isEsm() != self._is_esm:
                 return False
         return True
@@ -1471,13 +1461,11 @@ class Mod_DecompileAll(EnabledLink):
         message = _(u"This command will remove the effects of a 'compile all' by removing all scripts whose texts appear to be identical to the version that they override.")
         if not self._askContinue(message, 'bash.decompileAll.continue',
                                  _(u'Decompile All')): return
-        for item in self.selected:
-            fileName = GPath(item)
+        for fileName, fileInfo in self.iselected_pairs():
             if bosh.reOblivion.match(fileName.s):
                 self._showWarning(_(u"Skipping %s") % fileName.s,
                                   _(u'Decompile All'))
                 continue
-            fileInfo = bosh.modInfos[fileName]
             loadFactory = parsers.LoadFactory(True, bosh.MreRecord.type_class['SCPT'])
             modFile = parsers.ModFile(fileInfo, loadFactory)
             modFile.load(True)
@@ -1545,8 +1533,7 @@ class Mod_FlipSelf(_Esm_Flip):
         self._text = _(u'Espify Self') if self.isEsm else _(u'Esmify Self')
 
     def _enable(self):
-        for item in self.selected:
-            fileInfo = bosh.modInfos[item]
+        for item, fileInfo in self.iselected_pairs():
             if fileInfo.isEsm() != self.isEsm or not item.cext[-1] == u'p':
                 return False
         return True
@@ -1559,8 +1546,7 @@ class Mod_FlipSelf(_Esm_Flip):
                    )
         if not self._askContinue(message, 'bash.flipToEsmp.continue',
                                  _(u'Flip to Esm')): return
-        for item in self.selected:
-            fileInfo = bosh.modInfos[item]
+        for fileInfo in self.iselected_infos():
             header = fileInfo.header
             header.flags1.esm = not header.flags1.esm
             fileInfo.writeHeader()
@@ -1724,8 +1710,7 @@ class _Mod_Export_Link(ItemLink):
             parser = self._parser()
             readProgress = SubProgress(progress, 0.1, 0.8)
             readProgress.setFull(len(self.selected))
-            for index, fileName in enumerate(self.selected):
-                fileInfo = bosh.modInfos[fileName]
+            for index,(fileName,fileInfo) in enumerate(self.iselected_pairs()):
                 readProgress(index, _(u'Reading') + u' ' + fileName.s + u'.')
                 parser.readFromMod(fileInfo)
             progress(0.8, _(u'Exporting to') + u' ' + textName.s + u'.')
@@ -1924,8 +1909,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         return CBash_ScriptText() if CBashApi.Enabled else ScriptText()
 
     def Execute(self): # overrides _Mod_Export_Link
-        fileName = self.selected[0]
-        fileInfo = bosh.modInfos[fileName]
+        fileName, fileInfo = next(self.iselected_pairs()) # first selected pair
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
             dialog.EndModal(1)

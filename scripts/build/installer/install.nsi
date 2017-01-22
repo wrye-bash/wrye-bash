@@ -102,18 +102,18 @@
             ; Download and install missing requirements.
             ${If} $Python_Path == $Empty
                 SetOutPath "$TEMP\PythonInstallers"
-                DetailPrint "Python 2.7.10 - Downloading..."
-                inetc::get /NOCANCEL /RESUME "" "https://www.python.org/ftp/python/2.7.10/python-2.7.10.msi" "$TEMP\PythonInstallers\python-2.7.10.msi"
+                DetailPrint "Python 2.7.12 - Downloading..."
+                inetc::get /NOCANCEL /RESUME "" "https://www.python.org/ftp/python/2.7.12/python-2.7.12.msi" "$TEMP\PythonInstallers\python-2.7.12.msi"
                 Pop $R0
                 ${If} $R0 == "OK"
-                    DetailPrint "Python 2.7.10 - Installing..."
+                    DetailPrint "Python 2.7.12 - Installing..."
                     Sleep 2000
                     HideWindow
-                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.10.msi"'
+                    ExecWait '"msiexec" /i "$TEMP\PythonInstallers\python-2.7.12.msi"'
                     BringToFront
-                    DetailPrint "Python 2.7.10 - Installed."
+                    DetailPrint "Python 2.7.12 - Installed."
                 ${Else}
-                    DetailPrint "Python 2.7.10 - Download Failed!"
+                    DetailPrint "Python 2.7.12 - Download Failed!"
                     MessageBox MB_OK "Python download failed, please try running installer again or manually downloading."
                     Abort
                 ${EndIf}
@@ -244,7 +244,7 @@
         WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayName" "Wrye Bash"
         WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "UninstallString" '"$COMMONFILES\Wrye Bash\uninstall.exe"'
         WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "URLInfoAbout" 'http://oblivion.nexusmods.com/mods/22368'
-        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "HelpLink" 'http://forums.bethsoft.com/topic/1376871-rel-wrye-bash/'
+        WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "HelpLink" 'http://forums.bethsoft.com/topic/1612572-rel-wrye-bash/'
         WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "Publisher" 'Wrye & Wrye Bash Development Team'
         WriteRegStr HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "DisplayVersion" '${WB_FILEVERSION}'
         WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash" "NoModify" 1

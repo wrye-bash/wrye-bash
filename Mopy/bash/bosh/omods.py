@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import collections
 import re
 import subprocess
 from subprocess import PIPE
@@ -87,26 +88,22 @@ class OmodFile:
     def getOmodContents(self):
         """Return a list of the files and their uncompressed sizes, and the total uncompressed size of an archive"""
         # Get contents of archive
-        filesizes = dict()
-        totalSize = 0
+        filesizes = collections.OrderedDict()
         reFileSize = re.compile(ur'[0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}.{6}\s+([0-9]+)\s+[0-9]+\s+(.+?)$',re.U)
-        reFinalLine = re.compile(ur'\s+([0-9]+)\s+[0-9]+\s+[0-9]+\s+files.*',re.U)
 
         with self.omod_path.unicodeSafe() as tempOmod:
             cmd7z = [archives.exe7z, u'l', u'-r', u'-sccUTF-8', tempOmod.s]
             with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                 for line in ins:
                     line = unicode(line,'utf8')
-                    maFinalLine = reFinalLine.match(line)
-                    if maFinalLine:
-                        totalSize = int(maFinalLine.group(1))
-                        break
                     maFileSize = reFileSize.match(line)
-                    if maFileSize:
+                    if maFileSize: #also matches the last line with total sizes
                         size = int(maFileSize.group(1))
                         name = maFileSize.group(2).strip().strip(u'\r')
                         filesizes[name] = size
-        return filesizes,totalSize
+        # drop the last line entry
+        del filesizes[filesizes.keys()[-1]]
+        return filesizes, sum(filesizes.itervalues())
 
     def extractToProject(self,outDir,progress=None):
         """Extract the contents of the omod to a project, with omod conversion data"""
@@ -119,13 +116,13 @@ class OmodFile:
             sizes,total = self.getOmodContents()
 
             # Extract the files
-            reExtracting = re.compile(ur'Extracting\s+(.+)',re.U)
+            reExtracting = re.compile(ur'- (.+)',re.U)
             progress(0, self.omod_path.stail + u'\n' + _(u'Extracting...'))
 
             subprogress = bolt.SubProgress(progress, 0, 0.4)
             current = 0
             with self.omod_path.unicodeSafe() as tempOmod:
-                cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir.s]
+                cmd7z = [archives.exe7z, u'e', u'-r', u'-sccUTF-8', tempOmod.s, u'-o%s' % extractDir.s, u'-bb1']
                 with subprocess.Popen(cmd7z, stdout=PIPE, stdin=PIPE, startupinfo=startupinfo).stdout as ins:
                     for line in ins:
                         line = unicode(line,'utf8')

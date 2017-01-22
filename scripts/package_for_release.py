@@ -749,8 +749,7 @@ def main():
         If you need more detailed help beyond what is listed below, use the
         --tutorial or -t switch.
 
-        This script requires at least Python 2.7.8 to run, due to improvements
-        made to py2exe executables in regards to MSVC redistributable packages.
+        You must use at least Python 2.7.12.
         ''',
         )
     parser.add_argument(
@@ -864,8 +863,8 @@ def main():
     if args.tutorial:
         ShowTutorial()
         return
-    if sys.version_info[0:3] < (2,7,8):
-        lprint('You must run at least Python 2.7.8 to use this script.')
+    if sys.version_info[0:3] < (2, 7, 12):
+        lprint('You must run at least Python 2.7.12 to use this script.')
         lprint('Your Python:', sys.version)
         return
     if not args.version:

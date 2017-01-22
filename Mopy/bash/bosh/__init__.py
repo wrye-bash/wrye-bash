@@ -2521,7 +2521,10 @@ class FileInfos(_DataStore):
         backBase = self.bash_dir.join(u'Backups')
         #--Go through each file
         for fileName in fileNames:
-            fileInfo = self[fileName]
+            try:
+                fileInfo = self[fileName]
+            except KeyError: # corrupted
+                fileInfo = self.factory(self.store_dir, fileName)
             #--File
             filePath = fileInfo.getPath()
             if filePath.body != fileName and filePath.tail != fileName.tail:
@@ -2848,7 +2851,7 @@ class ModInfos(FileInfos):
             u'1.0.7.5':    108369128, # Nehrim
             u'1.5.0.8':    115531891, # Nehrim Update
             u'SI':         277504985} # Shivering Isles 1.2
-        self.size_voVersion = bolt.invertDict(self.version_voSize)
+        self.size_voVersion = {y:x for x, y in self.version_voSize.iteritems()}
         self.voCurrent = None
         self.voAvailable = set()
         # removed/extra mods in plugins.txt - set in load_order.py,
@@ -3492,9 +3495,9 @@ class ModInfos(FileInfos):
         """Return a list of (existing) bsa paths to get assets from.
         :rtype: list[bolt.Path]
         """
-        if mod_info.name.s in bush.game.vanilla_string_bsas:
+        if mod_info.name.cs in bush.game.vanilla_string_bsas: # lowercase !
             bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
-                mod_info.name.s])
+                mod_info.name.cs])
         else:
             bsaPaths = [mod_info.getBsaPath()] # first check bsa with same name
             for iniFile in self._ini_files():
@@ -3871,7 +3874,7 @@ class BSAInfos(FileInfos):
     except AttributeError:
         pass
 
-    def __init__(self): FileInfos.__init__(self, dirs['mods'], BSAInfo)
+    def __init__(self): super(BSAInfos, self).__init__(dirs['mods'], BSAInfo)
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
@@ -5046,7 +5049,7 @@ class InstallerArchive(Installer):
             if   key == u'Solid': self.isSolid = (value[0] == u'+')
             elif key == u'Path': _li.filepath = value.decode('utf8')
             elif key == u'Size': _li.size = int(value)
-            elif key == u'Attributes': _li.isdir = value and (value[0] == u'D')
+            elif key == u'Attributes': _li.isdir = value and (u'D' in value)
             elif key == u'CRC' and value: _li.crc = int(value,16)
             elif key == u'Method':
                 if _li.filepath and not _li.isdir and _li.filepath != \
@@ -5174,7 +5177,7 @@ class InstallerArchive(Installer):
                     filepath[0] = value.decode('utf8')
                 elif key == u'Attributes':
                     text.append( # attributes may be empty
-                        (u'%s' % filepath[0], value and (value[0] == u'D')))
+                        (u'%s' % filepath[0], value and (u'D' in value)))
                 elif key == u'Method':
                     filepath[0] = u''
             archives.list_archive(tempArch, _parse_archive_line)
@@ -6047,7 +6050,7 @@ class InstallersData(_DataStore):
         """Move specified archives to specified position."""
         old_ordered = self.sorted_pairs(set(self.data) - set(moveList))
         new_ordered = self.sorted_pairs(moveList)
-        if newPos >= len(self.keys()): newPos = len(self.keys()) - 1
+        if newPos >= len(self.keys()): newPos = len(old_ordered)
         for index,(archive,installer) in enumerate(old_ordered[:newPos]):
             installer.order = index
         for index,(archive,installer) in enumerate(new_ordered):

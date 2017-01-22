@@ -26,6 +26,7 @@
 attribute points to BashFrame.iniList singleton.
 """
 
+from itertools import imap
 from .. import bass, bosh, balt
 from ..bass import Resources
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
@@ -74,17 +75,13 @@ class INI_ListErrors(EnabledLink):
     help = _(u'Lists any errors in the tweak file causing it to be invalid.')
 
     def _enable(self):
-        for i in self.selected:
-            if bosh.iniInfos[i].tweak_status < 0:
-                return True
-        return False
+        return any(imap(lambda inf: inf.tweak_status < 0,
+                        self.iselected_infos()))
 
     def Execute(self):
         """Handle printing out the errors."""
-        error_text = u''
-        for i in self.selected:
-            fileInfo = bosh.iniInfos[i]
-            error_text += u'%s\n' % fileInfo.listErrors()
+        error_text = u'\n'.join(inf.listErrors() for inf in
+                                self.iselected_infos())
         balt.copyToClipboard(error_text)
         self._showLog(error_text, title=_(u'INI Tweak Errors'), fixedFont=False,
                       icons=Resources.bashBlue)
@@ -97,7 +94,7 @@ class INI_FileOpenOrCopy(OneItemLink):
         if not len(selection) == 1:
             self._text = _(u'Open/Copy...')
             self.help = _(u'Only one INI file can be opened or copied at a time.')
-        elif not bosh.iniInfos[selection[0]].is_default_tweak:
+        elif not self._selected_info.is_default_tweak:
             self._text = _(u'Open...')
             self.help = _(u"Open '%s' with the system's default program.") % selection[0]
         else:
@@ -140,12 +137,8 @@ class INI_Apply(EnabledLink):
             'ini': self.window.current_ini_name}
 
     def _enable(self):
-        if not bass.settings['bash.ini.allowNewLines']:
-            for i in self.selected:
-                iniInfo = bosh.iniInfos[i]
-                if iniInfo.tweak_status < 0:
-                    return False # temp disabled for testing
-        return True
+        return bass.settings['bash.ini.allowNewLines'] or not any( # no invalid
+            imap(lambda inf: inf.tweak_status < 0, self.iselected_infos()))
 
     def Execute(self):
         """Handle applying INI Tweaks."""
@@ -153,9 +146,8 @@ class INI_Apply(EnabledLink):
         if not self.window.warn_tweak_game_ini(self.window.current_ini_name):
             return
         needsRefresh = False
-        for item in self.selected:
+        for ini_info in self.iselected_infos():
             #--No point applying a tweak that's already applied
-            ini_info = bosh.iniInfos[item] # type: bosh.INIInfo
             if ini_info.tweak_status == 20: continue
             needsRefresh = True
             bosh.iniInfos.ini.applyTweakFile(ini_info.read_ini_lines())
@@ -178,7 +170,7 @@ class INI_CreateNew(OneItemLink):
                 'tweak': (selection[0]), 'ini': self.window.current_ini_name}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
-                              bosh.iniInfos[self.selected[0]].tweak_status >= 0
+                              self._selected_info.tweak_status >= 0
 
     @balt.conversation
     def Execute(self):
