@@ -55,7 +55,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
         super(ListsMerger, self).initPatchFile(patchFile)
         self.srcs_ordered = self.srcs
         self.srcs = set(self.srcs) & patchFile.loadSet
-        self.listTypes = bush.game_mod.listTypes
+        self.listTypes = bush.game.listTypes
         self.type_list = dict([(type,{}) for type in self.listTypes])
         self.masterItems = {}
         self.mastersScanned = set()

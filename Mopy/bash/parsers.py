@@ -1179,7 +1179,7 @@ class FullNames:
 
     def __init__(self,types=None,aliases=None):
         self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
-        self.types = types or bush.game_mod.namesTypes
+        self.types = types or bush.game.namesTypes
         self.aliases = aliases or {}
 
     def readFromMod(self,modInfo):
@@ -1380,7 +1380,7 @@ class ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
-        self.class_attrs = bush.game_mod.statsTypes
+        self.class_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
         self.aliases = aliases or {} #--For aliasing mod names
         if bush.game.fsName in (u'Skyrim', u'Skyrim Special Edition'):
@@ -1546,7 +1546,7 @@ class ItemStats:
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
-            for group,header in bush.game_mod.statsHeaders:
+            for group,header in bush.game.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
@@ -1580,7 +1580,7 @@ class CBash_ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
-        self.class_attrs = bush.game_mod.statsTypes
+        self.class_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
         self.aliases = aliases or {} #--For aliasing mod names
         self.attr_type = {'eid':self.sstr,
@@ -1672,7 +1672,7 @@ class CBash_ItemStats:
                     elif stype is sfloat: _csvFormat += u',"{0[%d]:f}"' % index
                 _csvFormat = _csvFormat[1:] #--Chop leading comma
                 out.write(_csvFormat.format(values) + u'\n')
-            for group,header in bush.game_mod.statsHeaders:
+            for group,header in bush.game.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
@@ -2307,7 +2307,7 @@ class ItemPrices(_ItemPrices):
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
-        self.class_fid_stats = bush.game_mod.pricesTypes
+        self.class_fid_stats = bush.game.pricesTypes
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):

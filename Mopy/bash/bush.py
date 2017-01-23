@@ -54,14 +54,10 @@ def reset_bush_globals():
               _display_fsName):
         d.clear()
 
-def _supportedGames(useCache=True):
+def _supportedGames():
     """Set games supported by Bash and return their paths from the registry."""
-    if useCache and _allGames: return _registryGames.copy()
     # rebuilt cache
-    _allGames.clear()
-    _registryGames.clear()
-    _fsName_display.clear()
-    _display_fsName.clear()
+    reset_bush_globals()
     import pkgutil
     # Detect the known games
     for importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):

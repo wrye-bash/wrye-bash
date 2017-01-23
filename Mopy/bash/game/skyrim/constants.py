@@ -1673,7 +1673,7 @@ allBethFiles = {
     u'DialogueViews\\014417D7.xml',
     u'DialogueViews\\0153BFFA.xml',
     u'DialogueViews\\015F2BE5.xml',
-	#--probably need one for each language
+    #--probably need one for each language
     u'Interface\\Translate_ENGLISH.txt',
     u'LSData\\DtC6dal.dat',
     u'LSData\\DtC6dl.dat',
@@ -17178,13 +17178,7 @@ soundsTypes = {
     #Needs to loop over all the sounds
     "WTHR": ('sounds',),
 }
-soundsFidTypes = {
-}
 
-#------------------------------------------------------------------------------
-# Strings SoundPatcher
-#------------------------------------------------------------------------------
-stringSoundsRecs = ()
 #------------------------------------------------------------------------------
 # CellImporter
 #------------------------------------------------------------------------------

@@ -22,7 +22,6 @@
 #
 # =============================================================================
 """GameInfo override for Fallout NV."""
-from .constants import *
 from .default_tweaks import default_tweaks
 from .. import GameInfo
 from ... import brec
@@ -247,6 +246,7 @@ class FalloutNVGameInfo(GameInfo):
 
     @classmethod
     def init(cls):
+        cls._dynamic_import_constants(__name__)
         # From Valda's version
         # MreAchr, MreAcre, MreActi, MreAlch, MreAloc, MreAmef, MreAmmo,
         # MreAnio, MreAppa, MreArma, MreArmo, MreAspc, MreAvif, MreBook,

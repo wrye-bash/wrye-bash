@@ -1170,9 +1170,6 @@ soundsTypes = {
              'equipSound','unequipSound','soundMod1Shoot3Ds','soundMod1Shoot2D',
              'soundLevel',),
 }
-soundsFidTypes = {
-    "TACT": ('sound',),
-}
 
 #------------------------------------------------------------------------------
 # CellImporter
@@ -1305,10 +1302,6 @@ graphicsModelAttrs = ('model','shellCasingModel','scopeModel','worldModel')
 # Inventory Patcher
 #------------------------------------------------------------------------------
 inventoryTypes = ('CREA','NPC_','CONT',)
-#------------------------------------------------------------------------------
-# Mod Record Elements ---------------------------------------------------------
-#------------------------------------------------------------------------------
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Record type to name dictionary
 record_type_name = {

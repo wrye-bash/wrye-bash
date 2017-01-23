@@ -23,11 +23,11 @@
 # =============================================================================
 """GameInfo class encapsulating static info for active game. Avoid adding
 state and methods. game.GameInfo#init classmethod is used to import rest of
-active game package as needed (currently the record module) and to set some
-brec.RecordHeader/MreRecord class variables."""
+active game package as needed (currently the record and constants modules)
+and to set some brec.RecordHeader/MreRecord class variables."""
+import importlib
 
 from .. import brec
-# from .constants import * # TODO(ut): create a .constants module
 
 class GameInfo(object):
     # Main game info - should be overridden -----------------------------------
@@ -268,6 +268,124 @@ class GameInfo(object):
     readClasses = ()
     writeClasses = ()
 
+    # Class attributes moved to constants module, set dynamically at init
+    #--Game ESM/ESP/BSA files
+    ## These are all of the ESM,ESP,and BSA data files that belong to the game
+    ## These filenames need to be in lowercase,
+    bethDataFiles = set()  # initialize with literal
+
+    #--Every file in the Data directory from Bethsoft
+    allBethFiles = set()  # initialize with literal
+
+    # Function Info -----------------------------------------------------------
+    conditionFunctionData = (  #--0: no param; 1: int param; 2: formid param
+    )
+    allConditions = set(entry[0] for entry in conditionFunctionData)
+    fid1Conditions = set(
+        entry[0] for entry in conditionFunctionData if entry[2] == 2)
+    fid2Conditions = set(
+        entry[0] for entry in conditionFunctionData if entry[3] == 2)
+    # Skip 3 and 4 because it needs to be set per runOn
+    fid5Conditions = set(
+        entry[0] for entry in conditionFunctionData if entry[4] == 2)
+
+    #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
+    #  as the form id.  Any GMST as such needs it Editor Id listed here.
+    gmstEids = []
+
+    """
+    GLOB record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
+
+    Each entry is a tuple in the following format:
+      (DisplayText, MouseoverText, GLOB EditorID, Option1, Option2, ...,
+      OptionN)
+      -EditorID can be a plain string, or a tuple of multiple Editor IDs.
+      If it's a tuple, then Value (below) must be a tuple of equal length,
+      providing values for each GLOB
+    Each Option is a tuple:
+      (DisplayText, Value)
+      - If you enclose DisplayText in brackets like this: _(u'[Default]'),
+      then the patcher will treat this option as the default value.
+      - If you use _(u'Custom') as the entry, the patcher will bring up a
+      number input dialog
+
+    To make a tweak Enabled by Default, enclose the tuple entry for the
+    tweak in a list, and make a dictionary as the second list item with {
+    'defaultEnabled ':True}. See the UOP Vampire face fix for an example of
+    this (in the GMST Tweaks)
+    """
+    GlobalsTweaks = []
+
+    """
+    GMST record tweaks used by patcher.patchers.multitweak_settings.GmstTweaker
+
+    Each entry is a tuple in the following format:
+      (DisplayText, MouseoverText, GMST EditorID, Option1, Option2, ...,
+      OptionN)
+      - EditorID can be a plain string, or a tuple of multiple Editor IDs.
+      If it's a tuple, then Value (below) must be a tuple of equal length,
+      providing values for each GMST
+    Each Option is a tuple:
+      (DisplayText, Value)
+      - If you enclose DisplayText in brackets like this: _(u'[Default]'),
+      then the patcher will treat this option as the default value.
+      - If you use _(u'Custom') as the entry, the patcher will bring up a
+      number input dialog
+
+    To make a tweak Enabled by Default, enclose the tuple entry for the
+    tweak in a list, and make a dictionary as the second list item with {
+    'defaultEnabled ':True}. See the UOP Vampire facefix for an example of
+    this (in the GMST Tweaks)
+    """
+    GmstTweaks = []
+
+    #--------------------------------------------------------------------------
+    # ListsMerger patcher (leveled list patcher)
+    #--------------------------------------------------------------------------
+    listTypes = ()
+    #--------------------------------------------------------------------------
+    # NamesPatcher
+    #--------------------------------------------------------------------------
+    namesTypes = set()  # initialize with literal
+    #--------------------------------------------------------------------------
+    # ItemPrices Patcher
+    #--------------------------------------------------------------------------
+    pricesTypes = {}
+    #--------------------------------------------------------------------------
+    # StatsImporter
+    #--------------------------------------------------------------------------
+    statsTypes = {}
+    statsHeaders = ()
+    #--------------------------------------------------------------------------
+    # SoundPatcher
+    #--------------------------------------------------------------------------
+    # Needs longs in SoundPatcher
+    soundsLongsTypes = set()  # initialize with literal
+    soundsTypes = {}
+    #--------------------------------------------------------------------------
+    # CellImporter
+    #--------------------------------------------------------------------------
+    cellAutoKeys = set()  # use a set literal
+    cellRecAttrs = {}
+    cellRecFlags = {}
+    #--------------------------------------------------------------------------
+    # GraphicsPatcher
+    #--------------------------------------------------------------------------
+    graphicsLongsTypes = set()  # initialize with literal
+    graphicsTypes = {}
+    graphicsFidTypes = {}
+    graphicsModelAttrs = ()
+    #--------------------------------------------------------------------------
+    # Inventory Patcher
+    #--------------------------------------------------------------------------
+    inventoryTypes = ()
+
+    # Record type to name dictionary
+    record_type_name = {}
+
+    # xEdit menu string and key for expert setting
+    xEdit_expert = ()
+
     @classmethod
     def init(cls):
         # Setting RecordHeader class variables --------------------------------
@@ -281,5 +399,26 @@ class GameInfo(object):
         # Simple records
         brec.MreRecord.simpleTypes = (
                 set(brec.MreRecord.type_class) - {'TES4'})
+    # Import from the constants module ----------------------------------------
+    # Class attributes moved to constants module, set dynamically at init
+    _constants_members = {
+        'GlobalsTweaks', 'GmstTweaks', 'allBethFiles', 'allConditions',
+        'bethDataFiles', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
+        'conditionFunctionData', 'fid1Conditions', 'fid2Conditions',
+        'fid5Conditions', 'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
+        'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes', 'listTypes',
+        'namesTypes', 'pricesTypes', 'record_type_name', 'soundsLongsTypes',
+        'soundsTypes', 'statsHeaders', 'statsTypes', 'xEdit_expert',
+    }
+    @classmethod
+    def _dynamic_import_constants(cls, package_name):
+        """Dynamically import package's 'constants' module, we need to pass
+        the package name in. Populate class namespace with those constants."""
+        constants = importlib.import_module('.constants', package=package_name)
+        for k in dir(constants):
+            if k.startswith('_'): continue
+            if k not in cls._constants_members:
+                raise RuntimeError(u'Unexpected game constant %s' % k)
+            setattr(cls, k, getattr(constants, k))
 
 GAME_TYPE = None

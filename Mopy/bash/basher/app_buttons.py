@@ -341,7 +341,7 @@ class _Mods_xEditExpert(BoolLink):
 
     def __init__(self):
         super(_Mods_xEditExpert, self).__init__()
-        self._text, self.key = bush.game_mod.xEdit_expert
+        self._text, self.key = bush.game.xEdit_expert
 
 class App_Tes4View(App_Button):
     """Allow some extra args for Tes4View."""
@@ -381,7 +381,7 @@ class App_Tes4View(App_Button):
 #  or name ends with Trans.exe
     def __init__(self,*args,**kwdargs):
         App_Button.__init__(self,*args,**kwdargs)
-        if bush.game_mod.xEdit_expert:
+        if bush.game.xEdit_expert:
             self.mainMenu.append(_Mods_xEditExpert())
 
     def IsPresent(self):
@@ -394,8 +394,8 @@ class App_Tes4View(App_Button):
         return True
 
     def Execute(self):
-        is_expert = bush.game_mod.xEdit_expert and bass.settings[
-            bush.game_mod.xEdit_expert[1]]
+        is_expert = bush.game.xEdit_expert and bass.settings[
+            bush.game.xEdit_expert[1]]
         extraArgs = bass.inisettings[
             'xEditCommandLineArguments'].split() if is_expert else []
         if balt.getKeyState_Control():
@@ -694,7 +694,7 @@ class App_GenPickle(StatusBar_Button):
         #--Eid list? - if the GMST has a 00000000 eid when looking at it in
         # the CS with nothing but oblivion.esm loaded you need to add the
         # gmst to this list, rebuild the pickle and overwrite the old one.
-        for eid in bush.game_mod.gmstEids:
+        for eid in bush.game.gmstEids:
             if eid not in fids:
                 maxId += 1
                 fids[eid] = maxId

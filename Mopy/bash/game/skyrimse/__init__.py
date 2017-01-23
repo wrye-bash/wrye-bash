@@ -23,7 +23,6 @@
 # =============================================================================
 """GameInfo override for TES V: Skyrim Special Edition."""
 
-from .constants import *
 from .default_tweaks import default_tweaks
 from ..skyrim import SkyrimGameInfo
 from ... import brec
@@ -85,6 +84,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
 
     @classmethod
     def init(cls):
+        cls._dynamic_import_constants(__name__)
         # First import from skyrimse.records file
         from .records import MreWthr, MreMato, MreLtex, MreWatr, MreWeap, \
             MreStat, MreAmmo, MreVoli, MreLens

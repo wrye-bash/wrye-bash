@@ -883,8 +883,6 @@ soundsTypes = {
              'equipSound','unequipSound','soundLevel',),
     "WTHR": ('sounds',),
 }
-soundsFidTypes = {
-}
 
 #------------------------------------------------------------------------------
 # CellImporter
@@ -934,7 +932,7 @@ graphicsTypes = {
     "AMMO": ('iconPath','model',),
     "ARMA": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath',),
     "ARMO": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath',
-	         'objectEffect',),
+             'objectEffect',),
     "BOOK": ('iconPath','model',),
     "CLAS": ('iconPath',),
     "CREA": ('bodyParts','nift_p','effect',),
@@ -991,10 +989,6 @@ graphicsModelAttrs = ('model','shellCasingModel','scopeModel','worldModel')
 # Inventory Patcher
 #------------------------------------------------------------------------------
 inventoryTypes = ('CREA','NPC_','CONT',)
-#------------------------------------------------------------------------------
-# Mod Record Elements ---------------------------------------------------------
-#------------------------------------------------------------------------------
-FID = 'FID' #--Used by MelStruct classes to indicate fid elements.
 
 # Record type to name dictionary
 record_type_name = {

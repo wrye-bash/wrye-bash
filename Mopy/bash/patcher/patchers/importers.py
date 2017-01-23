@@ -29,8 +29,7 @@ import re
 from operator import attrgetter
 # Internal
 from ... import bosh # for modInfos
-from ... import load_order
-from ...bush import game, game_mod # for Name patcher
+from ... import bush, load_order
 from ...bolt import GPath, MemorySet
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
@@ -257,7 +256,7 @@ class _ACellImporter(AImportPatcher):
     name = _(u'Import Cells')
 
 class CellImporter(_ACellImporter, ImportPatcher):
-    autoKey = game_mod.cellAutoKeys
+    autoKey = bush.game.cellAutoKeys
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
@@ -266,8 +265,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
         self.cellData = collections.defaultdict(dict)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
-        self.recAttrs = game_mod.cellRecAttrs # dict[unicode, tuple[str]]
-        self.recFlags = game_mod.cellRecFlags # dict[unicode, str]
+        self.recAttrs = bush.game.cellRecAttrs # dict[unicode, tuple[str]]
+        self.recFlags = bush.game.cellRecFlags # dict[unicode, str]
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -535,11 +534,11 @@ class DestructiblePatcher(_SimpleImporter):
              u"Destruction Environment mod is installed and active.")
     tip = text
     autoKey = {u'Destructible'}
-    if game.fsName == u'Fallout3':
+    if bush.game.fsName == u'Fallout3':
         longTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CONT', 'CREA',
                      'DOOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT', 'NPC_',
                      'PROJ', 'TACT', 'TERM', 'WEAP'}
-    elif game.fsName == u'FalloutNV':
+    elif bush.game.fsName == u'FalloutNV':
         longTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CHIP', 'CONT',
                      'CREA', 'DOOR', 'FURN', 'IMOD', 'KEYM', 'LIGH', 'MISC',
                      'MSTT', 'NPC_', 'PROJ', 'TACT', 'TERM', 'WEAP'}
@@ -584,8 +583,8 @@ class _AGraphicsPatcher(AImportPatcher):
     autoKey = {u'Graphics'}
 
 class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
-    rec_attrs = game_mod.graphicsTypes
-    long_types = game_mod.graphicsLongsTypes
+    rec_attrs = bush.game.graphicsTypes
+    long_types = bush.game.graphicsLongsTypes
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -595,22 +594,22 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
         # Look into why these records are not included, are they part of other patchers?
         # no 'model' attr: 'EYES', 'AVIF', 'MICN',
         # Would anyone ever change these: 'PERK', 'QUST', 'SKIL', 'REPU'
-        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconOnlyRecs):
+        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconOnlyRecs):
         #     recAttrs_class[recClass] = ('iconPath',)
         # no 'iconPath' attr: 'ADDN', 'ANIO', 'ARTO', 'BPTD', 'CAMS', 'CLMT',
         # 'CONT', 'EXPL', 'HAZD', 'HPDT', 'IDLM',  'IPCT', 'MATO', 'MSTT',
         # 'PROJ', 'TACT', 'TREE',
-        # for recClass in (MreRecord.type_class[x] for x in game.graphicsModelOnlyRecs):
+        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsModelOnlyRecs):
         #     recAttrs_class[recClass] = ('model',)
         # no'model' and 'iconpath' attr: 'COBJ', 'HAIR', 'NOTE', 'CCRD', 'CHIP', 'CMNY', 'IMOD',
         # Is 'RACE' included in race patcher?
-        # for recClass in (MreRecord.type_class[x] for x in game.graphicsIconModelRecs):
+        # for recClass in (MreRecord.type_class[x] for x in bush.game.graphicsIconModelRecs):
         #     recAttrs_class[recClass] = ('iconPath','model',)
         # Why does Graphics have a seperate entry for Fids when SoundPatcher does not?
         # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
-        #     recFidAttrs_class[recClass] = game.graphicsMgefFidAttrs
+        #     recFidAttrs_class[recClass] = bush.game.graphicsMgefFidAttrs
         self.recFidAttrs_class = {MreRecord.type_class[recType]: attrs for
-                        recType, attrs in game_mod.graphicsFidTypes.iteritems()}
+                        recType, attrs in bush.game.graphicsFidTypes.iteritems()}
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         recAttrs = self.recAttrs_class[recClass]
@@ -649,7 +648,7 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
                     if record.__getattribute__(attr).lower() != value.lower():
                         break
                     continue
-                elif attr in game_mod.graphicsModelAttrs:
+                elif attr in bush.game.graphicsModelAttrs:
                     try:
                         if record.__getattribute__(
                                 attr).modPath.lower() != value.modPath.lower():
@@ -1754,25 +1753,26 @@ class ImportInventory(ImportPatcher, _AImportInventory):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive or not self.srcs: return
-        loadFactory = LoadFactory(False, *game_mod.inventoryTypes)
+        inv_types = bush.game.inventoryTypes
+        loadFactory = LoadFactory(False, *inv_types)
         progress.setFull(len(self.srcs))
         for index,srcMod in enumerate(self.srcs):
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
             mapper = srcFile.getLongMapper()
-            for block in game_mod.inventoryTypes:
+            for block in inv_types:
                 for record in getattr(srcFile, block).getActiveRecords():
                     self.touched.add(mapper(record.fid))
             progress.plus()
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return game_mod.inventoryTypes if self.isActive else ()
+        return bush.game.inventoryTypes if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return game_mod.inventoryTypes if self.isActive else ()
+        return bush.game.inventoryTypes if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add record from modFile."""
@@ -1785,9 +1785,9 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         #--Master or source?
         if modName in self.allMods:
             id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(game_mod.inventoryTypes)
-            for type in game_mod.inventoryTypes:
-                for record in getattr(modFile,type).getActiveRecords():
+            modFile.convertToLongFids(bush.game.inventoryTypes)
+            for inv_type in bush.game.inventoryTypes:
+                for record in getattr(modFile,inv_type).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = record.items[:]
         #--Source mod?
@@ -1809,10 +1809,10 @@ class ImportInventory(ImportPatcher, _AImportInventory):
                 deltas.append((removeItems,addEntries))
         #--Keep record?
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for type in game_mod.inventoryTypes:
-                patchBlock = getattr(self.patchFile,type)
+            for inv_type in bush.game.inventoryTypes:
+                patchBlock = getattr(self.patchFile,inv_type)
                 id_records = patchBlock.id_records
-                for record in getattr(modFile,type).getActiveRecords():
+                for record in getattr(modFile,inv_type).getActiveRecords():
                     fid = mapper(record.fid)
                     if fid in touched and fid not in id_records:
                         patchBlock.setRecord(record.getTypeCopy(mapper))
@@ -1823,8 +1823,8 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = collections.defaultdict(int)
-        for type in game_mod.inventoryTypes:
-            for record in getattr(self.patchFile,type).records:
+        for inv_type in bush.game.inventoryTypes:
+            for record in getattr(self.patchFile,inv_type).records:
                 changed = False
                 deltas = id_deltas.get(record.fid)
                 if not deltas: continue
@@ -2691,8 +2691,8 @@ class SoundPatcher(_SimpleImporter, _ASoundPatcher):
     text = _(u"Import sounds (from Magic Effects, Containers, Activators,"
              u" Lights, Weathers and Doors) from source mods.")
     tip = text
-    rec_attrs = game_mod.soundsTypes
-    long_types = game_mod.soundsLongsTypes
+    rec_attrs = bush.game.soundsTypes
+    long_types = bush.game.soundsLongsTypes
 
 class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     """Imports sounds from source mods into patch."""
@@ -2835,7 +2835,7 @@ class CBash_StatsPatcher(_AStatsPatcher, _RecTypeModLogging):
         super(CBash_StatsPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.csvFid_attr_value = {}
-        self.class_attrs = game_mod.statsTypes
+        self.class_attrs = bush.game.statsTypes
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""
