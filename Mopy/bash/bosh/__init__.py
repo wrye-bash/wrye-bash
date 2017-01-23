@@ -1269,11 +1269,6 @@ class SaveFile:
             self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
-def _delete(itemOrItems, **kwargs):
-    confirm = kwargs.pop('confirm', False)
-    recycle = kwargs.pop('recycle', True)
-    env.shellDelete(itemOrItems, confirm=confirm, recycle=recycle)
-
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
     try:
@@ -2283,13 +2278,30 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
 class _DataStore(DataDict):
     store_dir = empty_path # where the datas sit, static except for SaveInfos
 
-    def delete(self, itemOrItems, **kwargs): raise AbstractError
-    def delete_Refresh(self, deleted, check_existence):
-        # Yak - absorb in refresh - add deleted parameter
-        if check_existence:
-            deleted = set(
-                d for d in deleted if not self.store_dir.join(d).exists())
-        return deleted
+    def delete(self, delete_keys, **kwargs):
+        """Deletes member file(s)."""
+        full_delete_paths, delete_info = self.files_to_delete(delete_keys,
+            raise_on_master_deletion=kwargs.pop(
+                'raise_on_master_deletion', True))
+        try:
+            self._delete_operation(full_delete_paths, delete_info, **kwargs)
+        finally:
+            #--Refresh
+            if kwargs.pop('doRefresh', True):
+                self.delete_Refresh(full_delete_paths, delete_info,
+                                    check_existence=True)
+
+    def files_to_delete(self, filenames, **kwargs):
+        raise AbstractError
+
+    def _delete_operation(self, paths, delete_info, **kwargs):
+        confirm = kwargs.pop('confirm', False)
+        recycle = kwargs.pop('recycle', True)
+        env.shellDelete(paths, confirm=confirm, recycle=recycle)
+
+    def delete_Refresh(self, deleted, deleted2, check_existence):
+        raise AbstractError
+
     def refresh(self): raise AbstractError
     def save(self): pass # for Screenshots
     # Renaming
@@ -2376,13 +2388,7 @@ class TableFileInfos(_DataStore):
         return cls.file_pattern.search(u'%s' % fileName)
 
     #--Delete
-    def delete(self, fileName, **kwargs):
-        """Deletes member file."""
-        if not isinstance(fileName,(list,set)):
-            fileNames = [fileName]
-        else:
-            fileNames = fileName
-        #--Files to delete
+    def files_to_delete(self, fileNames, **kwargs):
         toDelete = []
         #--Cache table updates
         tableUpdate = {}
@@ -2400,21 +2406,27 @@ class TableFileInfos(_DataStore):
             tableUpdate[filePath] = fileName
         #--Now do actual deletions
         toDelete = [x for x in toDelete if x.exists()]
-        try:
-            _delete(toDelete, **kwargs)
-        finally:
-            #--Table
-            for filePath, modname in tableUpdate.iteritems():
-                if not filePath.exists(): self.table.delRow(modname)
-                else: del tableUpdate[filePath] # item was not deleted
-            #--Refresh
-            if kwargs.pop('doRefresh', True):
-                self.delete_Refresh(tableUpdate.values(),
-                                    kwargs.pop('check_existence', False))
+        return toDelete, tableUpdate
 
-    def delete_Refresh(self, deleted, check_existence):
-        deleted = super(TableFileInfos, self).delete_Refresh(deleted,
-                                                             check_existence)
+    def _update_deleted_paths(self, deleted_keys, paths_to_keys,
+                              check_existence):
+        if check_existence:
+            if paths_to_keys is None: # we passed the keys in, get the paths
+                paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
+            for filePath in paths_to_keys.keys():
+                if filePath.exists():
+                    del paths_to_keys[filePath] # item was not deleted
+        return (paths_to_keys is not None and paths_to_keys.values() or
+                deleted_keys) # if paths_to_keys is still None it's a no-op
+
+    def delete_Refresh(self, deleted_keys, paths_to_keys, check_existence):
+        """Special case for the saves, inis, mods and bsas.
+        :param deleted_keys: must be the data store keys and not full paths
+        :param paths_to_keys: a dict mapping full paths to the keys
+        """
+        #--Table
+        deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
+                                             check_existence)
         if not deleted: return deleted
         for name in deleted:
             self.pop(name, None); self.corrupted.pop(name, None)
@@ -2683,10 +2695,13 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
 
-    def delete_Refresh(self, deleted, check_existence):
-        deleted = super(INIInfos, self).delete_Refresh(deleted,
-                                                       check_existence)
+    def delete_Refresh(self, deleted_keys, paths_to_keys, check_existence):
+        deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
+                                             check_existence)
         if not deleted: return deleted
+        for name in deleted:
+            self.pop(name, None)
+            self.table.delRow(name)
         set_keys = set(self.keys())
         for k, d in self._default_tweaks.iteritems(): # readd default tweaks
             if k not in set_keys:
@@ -3530,18 +3545,22 @@ class ModInfos(FileInfos):
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
 
-    def delete(self, fileName, **kwargs):
-        """Delete member file."""
-        if not isinstance(fileName, (set, list)): fileName = {fileName}
-        for f in fileName:
-            if f.s in bush.game.masterFiles: raise bolt.BoltError(
-                u"Cannot delete the game's master file(s).")
-        self.lo_deactivate(fileName, doSave=False)
-        FileInfos.delete(self, fileName, **kwargs)
+    #--Delete
+    def files_to_delete(self, filenames, **kwargs):
+        for f in set(filenames):
+            if f.s in bush.game.masterFiles:
+                if kwargs.pop('raise_on_master_deletion', True):
+                    raise bolt.BoltError(
+                        u"Cannot delete the game's master file(s).")
+                else:
+                    filenames.remove(f)
+        self.lo_deactivate(filenames, doSave=False)
+        return super(ModInfos, self).files_to_delete(filenames)
 
-    def delete_Refresh(self, deleted, check_existence):
+    def delete_Refresh(self, deleted, paths_to_keys, check_existence):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = FileInfos.delete_Refresh(self, deleted, check_existence)
+        deleted = super(ModInfos, self).delete_Refresh(deleted, paths_to_keys,
+                                                       check_existence)
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
         from .bain import InstallersData
@@ -3898,12 +3917,12 @@ class PeopleData(_DataStore):
             self.dictFile.save()
             self.hasChanged = False
 
-    def delete(self, key, **kwargs):
+    def delete(self, keys, **kwargs):
         """Delete entry."""
-        del self[key]
+        for key in keys: del self[key]
         self.hasChanged = True
 
-    def delete_Refresh(self, deleted, check_existence): pass
+    def delete_Refresh(self, deleted, deleted2, check_existence): pass
 
     #--Operations
     def loadText(self,path):
@@ -3962,20 +3981,11 @@ class ScreensData(_DataStore):
         self.data = newData
         return changed
 
-    def delete(self, fileName, **kwargs):
-        """Deletes member file."""
-        dirJoin = self.store_dir.join
-        if isinstance(fileName,(list,set)):
-            filePath = [dirJoin(file) for file in fileName]
-        else:
-            filePath = [dirJoin(fileName)]
-        try:
-            _delete(filePath, **kwargs)
-        finally:
-            if kwargs.pop('doRefresh', True):
-                self.delete_Refresh(filePath, check_existence=False)
+    def files_to_delete(self, filenames, **kwargs):
+        toDelete = [self.store_dir.join(screen) for screen in filenames]
+        return toDelete, None
 
-    def delete_Refresh(self, deleted, check_existence):
+    def delete_Refresh(self, deleted, deleted2, check_existence):
         for item in deleted:
             if not item.exists(): del self[item.tail]
 

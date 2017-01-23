@@ -35,8 +35,7 @@ from functools import partial, wraps
 from itertools import groupby, imap
 from operator import itemgetter
 
-from . import imageExts, _DataStore, _AFileInfo, _delete, \
-    BestIniFile, InstallerConverter
+from . import imageExts, _DataStore, _AFileInfo, BestIniFile, InstallerConverter
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, load_order
 from ..archives import readExts, defaultExt, list_archive, exe7z, compress7z, \
@@ -1646,31 +1645,26 @@ class InstallersData(_DataStore):
         return self[oldName].renameInstaller(newName, self)
 
     #--Dict Functions ---------------------------------------------------------
-    def delete(self, items, **kwargs):
-        """Delete multiple installers. Delete entry AND archive file itself."""
+    def files_to_delete(self, filenames, **kwargs):
         toDelete = []
         markers = []
-        for item in items:
+        for item in filenames:
             if item == self.lastKey: continue
             if isinstance(self[item], InstallerMarker): markers.append(item)
             else: toDelete.append(self.store_dir.join(item))
-        #--Delete
-        try:
-            for m in markers: del self[m]
-            _delete(toDelete, **kwargs)
-        finally:
-            if kwargs.pop('doRefresh', True):
-                deleted = set( # markers are already popped
-                    item.tail for item in toDelete if not item.exists())
-                if deleted:
-                    self.delete_Refresh(deleted, check_existence=False)
-                elif markers:
-                    self.refreshOrder()
+        return toDelete, markers
 
-    def delete_Refresh(self, deleted, check_existence):
-        deleted = super(InstallersData, self).delete_Refresh(deleted,
-                                                             check_existence)
-        if deleted: self.irefresh(what='I', deleted=deleted)
+    def _delete_operation(self, paths, markers, **kwargs):
+        for m in markers: del self[m]
+        super(InstallersData, self)._delete_operation(paths, markers, **kwargs)
+
+    def delete_Refresh(self, deleted, markers, check_existence):
+        deleted = set(item.tail for item in deleted if
+                      not check_existence or not item.exists())
+        if deleted:
+            self.irefresh(what='I', deleted=deleted)
+        elif markers:
+            self.refreshOrder()
 
     def copy_installer(self,item,destName,destDir=None):
         """Copies archive to new location."""
@@ -2309,7 +2303,8 @@ class InstallersData(_DataStore):
             if removedPlugins:
                 from . import modInfos
                 refresh_ui[0] = True
-                modInfos.delete(removedPlugins, doRefresh=False, recycle=False)
+                modInfos.delete(removedPlugins, doRefresh=False, recycle=False,
+                                raise_on_master_deletion=False)
         except (bolt.CancelError, bolt.SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()
