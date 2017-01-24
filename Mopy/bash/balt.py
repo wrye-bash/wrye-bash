@@ -2191,7 +2191,7 @@ class UIList(wx.Panel):
                 except bolt.BoltError as e: showError(self, u'%s' % e)
                 except (AccessDeniedError, CancelError, SkipError): pass
             else:
-                self.data_store.delete_Refresh(items, None,
+                self.data_store.delete_refresh(items, None,
                                                check_existence=True)
         else: # shellUI path tries to delete all at once
             try:
@@ -2232,7 +2232,7 @@ class UIList(wx.Panel):
             #--Do it
             with BusyCursor(): self.data_store.move_info(key, destDir)
         #--Refresh stuff
-        self.data_store.delete_Refresh(keys, None, check_existence=True)
+        self.data_store.delete_refresh(keys, None, check_existence=True)
 
     # Generate unique filenames when duplicating files etc
     @staticmethod

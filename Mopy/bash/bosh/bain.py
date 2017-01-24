@@ -1658,7 +1658,7 @@ class InstallersData(_DataStore):
         for m in markers: del self[m]
         super(InstallersData, self)._delete_operation(paths, markers, **kwargs)
 
-    def delete_Refresh(self, deleted, markers, check_existence):
+    def delete_refresh(self, deleted, markers, check_existence):
         deleted = set(item.tail for item in deleted if
                       not check_existence or not item.exists())
         if deleted:

@@ -638,7 +638,7 @@ class Save_Move(ChoiceLink):
             self._showInfo(_(u'%d files copied to %s.') % (count, profile),
                            title=_(u'Copy File'))
         elif count: # files moved to other profile, refresh ##: finally ?
-            moved = bosh.saveInfos.delete_Refresh(self.selected, None,
+            moved = bosh.saveInfos.delete_refresh(self.selected, None,
                                                   check_existence=True)
             self.window.RefreshUI(to_del=moved)
 

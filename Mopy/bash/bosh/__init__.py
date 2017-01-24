@@ -2288,7 +2288,7 @@ class _DataStore(DataDict):
         finally:
             #--Refresh
             if kwargs.pop('doRefresh', True):
-                self.delete_Refresh(full_delete_paths, delete_info,
+                self.delete_refresh(full_delete_paths, delete_info,
                                     check_existence=True)
 
     def files_to_delete(self, filenames, **kwargs):
@@ -2299,7 +2299,7 @@ class _DataStore(DataDict):
         recycle = kwargs.pop('recycle', True)
         env.shellDelete(paths, confirm=confirm, recycle=recycle)
 
-    def delete_Refresh(self, deleted, deleted2, check_existence):
+    def delete_refresh(self, deleted, deleted2, check_existence):
         raise AbstractError
 
     def refresh(self): raise AbstractError
@@ -2419,7 +2419,8 @@ class TableFileInfos(_DataStore):
         return (paths_to_keys is not None and paths_to_keys.values() or
                 deleted_keys) # if paths_to_keys is still None it's a no-op
 
-    def delete_Refresh(self, deleted_keys, paths_to_keys, check_existence):
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
+                       _in_refresh=False):
         """Special case for the saves, inis, mods and bsas.
         :param deleted_keys: must be the data store keys and not full paths
         :param paths_to_keys: a dict mapping full paths to the keys
@@ -2487,13 +2488,8 @@ class FileInfos(TableFileInfos):
                     elif isUpdated: _updated.add(name)
             newNames.add(name) # will add known corrupted too
         _deleted = oldNames - newNames
-        for name in _deleted:
-            # Can run into multiple pops if one of the files is corrupted
-            self.pop(name, None); self.corrupted.pop(name, None)
-        if _deleted:
-            # items deleted outside Bash
-            for d in set(self.table.keys()) &  set(_deleted):
-                del self.table[d]
+        self.delete_refresh(_deleted, None, check_existence=False,
+                            _in_refresh=True)
         change = bool(_added) or bool(_updated) or bool(_deleted)
         if not change: return change
         return _added, _updated, _deleted
@@ -2529,7 +2525,7 @@ class FileInfos(TableFileInfos):
     #--Move
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite! The client is
-        responsible for calling delete_Refresh of the data store."""
+        responsible for calling delete_refresh of the data store."""
         destDir.makedirs()
         srcPath = self[fileName].getPath()
         destPath = destDir.join(fileName)
@@ -2663,10 +2659,8 @@ class INIInfos(TableFileInfos):
                 _added.add(name)
             self[name] = oldInfo
         _deleted = oldNames - newNames
-        for name in _deleted:
-            self.pop(name, None)
-            # items deleted outside Bash, otherwise delete_Refresh did this
-            self.table.pop(name, None)
+        self.delete_refresh(_deleted, None, check_existence=False,
+                            _in_refresh=True)
         # re-add default tweaks
         for k in self.keys():
             if k not in newNames: del self[k]
@@ -2695,7 +2689,8 @@ class INIInfos(TableFileInfos):
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
 
-    def delete_Refresh(self, deleted_keys, paths_to_keys, check_existence):
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
+                       _in_refresh=False):
         deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
                                              check_existence)
         if not deleted: return deleted
@@ -2703,10 +2698,11 @@ class INIInfos(TableFileInfos):
             self.pop(name, None)
             self.table.delRow(name)
         set_keys = set(self.keys())
-        for k, d in self._default_tweaks.iteritems(): # readd default tweaks
-            if k not in set_keys:
-                default_info = self.setdefault(k, d) # type: DefaultIniInfo
-                default_info.reset_status()
+        if not _in_refresh: # readd default tweaks
+            for k, d in self._default_tweaks.iteritems():
+                if k not in set_keys:
+                    default_info = self.setdefault(k, d) # type: DefaultIniInfo
+                    default_info.reset_status()
         return deleted
 
     def get_tweak_lines_infos(self, tweakPath):
@@ -3557,15 +3553,17 @@ class ModInfos(FileInfos):
         self.lo_deactivate(filenames, doSave=False)
         return super(ModInfos, self).files_to_delete(filenames)
 
-    def delete_Refresh(self, deleted, paths_to_keys, check_existence):
+    def delete_refresh(self, deleted, paths_to_keys, check_existence,
+                       _in_refresh=False):
         # adapted from refresh() (avoid refreshing from the data directory)
-        deleted = super(ModInfos, self).delete_Refresh(deleted, paths_to_keys,
+        deleted = super(ModInfos, self).delete_refresh(deleted, paths_to_keys,
                                                        check_existence)
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
         from .bain import InstallersData
         for d in imap(self.store_dir.join, deleted): # we need absolute paths
             InstallersData.miscTrackedFiles.track(d)
+        if _in_refresh: return
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
         self._refreshBadNames()
@@ -3883,7 +3881,7 @@ class BSAInfos(FileInfos):
         for name in _deleted:
             # Can run into multiple pops if one of the files is corrupted
             self.pop(name, None); self.corrupted.pop(name, None)
-            # items deleted outside Bash, otherwise delete_Refresh did this
+            # items deleted outside Bash, otherwise delete_refresh did this
             self.table.pop(name, None)
         change = bool(_added) or bool(_updated) or bool(_deleted)
         if not change: return change
@@ -3922,7 +3920,7 @@ class PeopleData(_DataStore):
         for key in keys: del self[key]
         self.hasChanged = True
 
-    def delete_Refresh(self, deleted, deleted2, check_existence): pass
+    def delete_refresh(self, deleted, deleted2, check_existence): pass
 
     #--Operations
     def loadText(self,path):
@@ -3985,7 +3983,7 @@ class ScreensData(_DataStore):
         toDelete = [self.store_dir.join(screen) for screen in filenames]
         return toDelete, None
 
-    def delete_Refresh(self, deleted, deleted2, check_existence):
+    def delete_refresh(self, deleted, deleted2, check_existence):
         for item in deleted:
             if not item.exists(): del self[item.tail]
 
