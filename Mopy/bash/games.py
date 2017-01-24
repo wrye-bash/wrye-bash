@@ -30,10 +30,9 @@ of Bash."""
 __author__ = 'Utumno'
 
 import re
-
 import time
 from collections import defaultdict
-
+# Local
 import bolt
 
 def _write_plugins_txt_(path, lord, active, _star):
@@ -172,10 +171,11 @@ class Game(object):
             self._persist_load_order(lo, None) # active is not used here
 
     def set_load_order(self, lord, active, previous_lord=None,
-                       previous_active=None, dry_run=False):
+                       previous_active=None, dry_run=False, quiet=False):
+        quiet = quiet or dry_run
         assert lord is not None or active is not None, \
             'load order or active must be not None'
-        if lord is not None: self._fix_load_order(lord, quiet=dry_run)
+        if lord is not None: self._fix_load_order(lord, quiet=quiet)
         if (previous_lord is None or previous_lord != lord) and active is None:
             # changing load order - must test if active plugins must change too
             assert previous_active is not None, \
@@ -197,7 +197,7 @@ class Game(object):
                 'you need to pass a load order in to set active plugins'
             # a load order is needed for all games to validate active against
             test = lord if lord is not None else previous_lord
-            self._fix_active_plugins(active, test, on_disc=False, quiet=dry_run)
+            self._fix_active_plugins(active, test, on_disc=False, quiet=quiet)
         lord = lord if lord is not None else previous_lord
         active = active if active is not None else previous_active
         assert lord is not None and active is not None, \
@@ -363,7 +363,7 @@ class Game(object):
         if _removed: # take note as we may need to rewrite plugins txt
             msg = u'Active list contains mods not present ' \
                   u'in Data/ directory or corrupted: ' + _pl(_removed) + u'\n'
-            self.mod_infos.selectedBad = _removed
+            if not quiet: self.mod_infos.selectedBad = _removed
         else: msg = u''
         if not self.allow_deactivate_master:
             if not self.master_path in acti_filtered:

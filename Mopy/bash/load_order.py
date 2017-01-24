@@ -203,7 +203,7 @@ def filter_pinned(imods):
     return filter(game_handle.pinned_mods.__contains__, imods)
 
 # Get and set API
-def save_lo(lord, acti=None, __index_move=0):
+def save_lo(lord, acti=None, __index_move=0, quiet=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
     Will update plugins.txt too if using the textfile method to reorder it
@@ -213,7 +213,8 @@ def save_lo(lord, acti=None, __index_move=0):
     load_list = list(lord) if lord is not None else None
     lord, acti = game_handle.set_load_order(load_list, acti_list,
                                             list(cached_lord.loadOrder),
-                                            list(cached_lord.activeOrdered))
+                                            list(cached_lord.activeOrdered),
+                                            quiet=quiet)
     _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
     return cached_lord
 
@@ -296,7 +297,7 @@ def __restore(index_move):
         index_move += int(math.copysign(1, index_move)) # increase or decrease by 1
         return __restore(index_move)
     return save_lo(previous.loadOrder, previous.activeOrdered,
-                   __index_move=index_move)
+                   __index_move=index_move, quiet=True)
 
 # API helpers
 def swap(old_path, new_path): game_handle.swap(old_path, new_path)
