@@ -1491,16 +1491,23 @@ class AFile(object):
 
     def needs_update(self):
         try:
-            psize, pmtime = self.abs_path.size_mtime()
+            if self._with_ctime:
+                psize, pmtime, pctime = self.abs_path.size_mtime_ctime()
+            else:
+                psize, pmtime = self.abs_path.size_mtime()
         except OSError:
             return False # we should not call needs_update on deleted files
-        if self._file_size != psize or self._file_mod_time != pmtime:
-            self._reset_cache(psize, pmtime)
+        if self._file_size != psize or self._file_mod_time != pmtime or (
+            self._with_ctime and self.ctime != pctime):
+            self._reset_cache(psize, pmtime, pctime=(self._with_ctime and
+                                                        pctime) or None)
             return True
         return False
 
-    def _reset_cache(self, psize, pmtime):
+    def _reset_cache(self, psize, pmtime, pctime=None):
         self._file_size, self._file_mod_time = psize, pmtime
+        if pctime is not None:
+            self.ctime = pctime
 
     def __repr__(self): return self.__class__.__name__ + u"<" + repr(
         self.abs_path.stail) + u">"
@@ -2100,6 +2107,10 @@ class INIInfo(IniFile):
         super(INIInfo, self).__init__(path)
         self._status = None
 
+    def _reset_cache(self, psize, pmtime, pctime=None):
+        super(INIInfo, self)._reset_cache(psize, pmtime, pctime)
+        self._status = None
+
     @property
     def tweak_status(self):
         if self._status is None: self.getStatus()
@@ -2273,8 +2284,8 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
         self._reset_bsa_mtime()
         return changed
 
-    def _reset_cache(self, psize, pmtime):
-        super(BSAInfo, self)._reset_cache(pmtime, psize)
+    def _reset_cache(self, psize, pmtime, pctime=None):
+        super(BSAInfo, self)._reset_cache(pmtime, psize, pctime)
         self._assets = self.__class__._assets
 
     def _reset_bsa_mtime(self):
@@ -2711,9 +2722,6 @@ class INIInfos(TableFileInfos):
         if changed: # reset the status of all infos and let RefreshUI set it
             self.ini.updated = False
             for ini_info in self.itervalues(): ini_info.reset_status()
-        elif _updated:
-            for ini_info in _updated: self[ini_info].reset_status()
-        # no need to reset status for added as it is already None
         change = bool(_added) or bool(_updated) or bool(_deleted) or changed
         if not change: return change
         return _added, _updated, _deleted, changed
