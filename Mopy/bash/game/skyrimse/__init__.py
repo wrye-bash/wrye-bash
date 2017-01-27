@@ -52,7 +52,7 @@ from ..skyrim import patchURL, patchTip, allow_reset_bsa_timestamps, \
     dontSkipDirs, ini, pklfile, wryeBashDataFiles, wryeBashDataDirs, \
     ignoreDataFiles, ignoreDataFilePrefixes, ignoreDataDirs, CBash_patchers, \
     weaponTypes, raceNames, raceShortNames, raceHairMale, raceHairFemale, \
-    SkipBAINRefresh, supports_mod_inis
+    SkipBAINRefresh, supports_mod_inis, resource_archives_keys
 
 #--Name of the game to use in UI.
 displayName = u'Skyrim Special Edition'

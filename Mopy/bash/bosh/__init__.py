@@ -2067,7 +2067,7 @@ class ModInfo(_BackupMixin, FileInfo):
         else:
             bsaPaths = [self.getBsaPath()] # first check bsa with same name
             for iniFile in modInfos.ini_files():
-                for key in (u'sResourceArchiveList', u'sResourceArchiveList2'): ##: per game keys !
+                for key in bush.game.resource_archives_keys:
                     extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
                     extraBsa = (x.strip() for x in extraBsa)
                     extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]

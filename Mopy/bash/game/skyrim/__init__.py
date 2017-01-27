@@ -80,6 +80,7 @@ vanilla_string_bsas = {
     u'hearthfires.esm': [u'Hearthfires.bsa'],
     u'dragonborn.esm': [u'Dragonborn.bsa'],
 }
+resource_archives_keys = (u'sResourceArchiveList', u'sResourceArchiveList2')
 
 # Load order info
 using_txt_file = True

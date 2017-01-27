@@ -59,6 +59,7 @@ allow_reset_bsa_timestamps = False
 bsa_extension = ur'bsa'
 supports_mod_inis = True # this game supports mod ini files aka ini fragments
 vanilla_string_bsas = {}
+resource_archives_keys = ()
 
 # Load order info
 using_txt_file = True

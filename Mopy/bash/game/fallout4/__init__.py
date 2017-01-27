@@ -72,6 +72,11 @@ vanilla_string_bsas = {
     u'dlccoast.esm': [u'DLCCoast - Main.ba2'],
     u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
 }
+resource_archives_keys = (
+    u'sResourceIndexFileList', u'sResourceStartUpArchiveList',
+    u'sResourceArchiveList', u'sResourceArchiveList2',
+    u'sResourceArchiveListBeta'
+)
 
 # Load order info
 using_txt_file = True
