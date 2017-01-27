@@ -2906,7 +2906,7 @@ class InstallersPanel(BashTab):
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
-        changed = bosh.bain.InstallersData.miscTrackedFiles.refreshTracked()
+        changed = bosh.bain.InstallersData.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
             data_sizeCrcDate = self.listData.data_sizeCrcDate

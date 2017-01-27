@@ -2357,6 +2357,7 @@ class _DataStore(DataDict):
         return set(d.tail for d in destinations if d.exists())
 
 class TableFileInfos(_DataStore):
+    _notify_bain_on_delete = True
 
     file_pattern = None # subclasses must define this !
     def _initDB(self, dir_):
@@ -2410,14 +2411,17 @@ class TableFileInfos(_DataStore):
 
     def _update_deleted_paths(self, deleted_keys, paths_to_keys,
                               check_existence):
+        if paths_to_keys is None: # we passed the keys in, get the paths
+            paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
         if check_existence:
-            if paths_to_keys is None: # we passed the keys in, get the paths
-                paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
             for filePath in paths_to_keys.keys():
                 if filePath.exists():
                     del paths_to_keys[filePath] # item was not deleted
-        return (paths_to_keys is not None and paths_to_keys.values() or
-                deleted_keys) # if paths_to_keys is still None it's a no-op
+        if self.__class__._notify_bain_on_delete:
+            from .bain import InstallersData
+            for d in paths_to_keys: # we need absolute paths
+                InstallersData.track(d)
+        return paths_to_keys.values()
 
     def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
                        _in_refresh=False):
@@ -3560,9 +3564,6 @@ class ModInfos(FileInfos):
                                                        check_existence)
         if not deleted: return
         # temporarily track deleted mods so BAIN can update its UI
-        from .bain import InstallersData
-        for d in imap(self.store_dir.join, deleted): # we need absolute paths
-            InstallersData.miscTrackedFiles.track(d)
         if _in_refresh: return
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
@@ -3709,6 +3710,7 @@ class ModInfos(FileInfos):
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
+    _notify_bain_on_delete = False
     try:
         _ext = ur'\.' + bush.game.ess.ext[1:]
     except AttributeError: # 'NoneType' object has no attribute 'ess'

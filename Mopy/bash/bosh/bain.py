@@ -35,13 +35,13 @@ from functools import partial, wraps
 from itertools import groupby, imap
 from operator import itemgetter
 
-from . import imageExts, _DataStore, _AFileInfo, BestIniFile, InstallerConverter
+from . import imageExts, _DataStore, BestIniFile, InstallerConverter, AFile
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, load_order
 from ..archives import readExts, defaultExt, list_archive, exe7z, compress7z, \
     countFilesInArchive, extractCommand, extract7z, compressionSettings
 from ..bolt import Path, deprint, formatInteger, round_size, GPath, \
-    AbstractError, sio, ArgumentError, SubProgress, StateError, DataDict
+    AbstractError, sio, ArgumentError, SubProgress, StateError
 
 os_sep = unicode(os.path.sep)
 
@@ -719,7 +719,7 @@ class Installer(object):
                 elif fileExt in imageExts:
                     dest = os_sep.join((u'Docs', file))
             if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
-                InstallersData.miscTrackedFiles.track(bass.dirs['mods'].join(dest))
+                InstallersData.track(bass.dirs['mods'].join(dest))
             #--Save
             key = GPath(dest)
             data_sizeCrc[key] = (size,crc)
@@ -1506,42 +1506,12 @@ def projects_walk_cache(func): ##: HACK ! Profile
     return _projects_walk_cache_wrapper
 
 #------------------------------------------------------------------------------
-class _TrackedFileInfos(DataDict):
-    """Similar to FileInfos, but doesn't use a PickleDict to save information
-       about the tracked files at all.
-
-       Uses absolute paths - the caller is responsible for passing them.
-       """
-    # DEPRECATED: hack introduced to track BAIN installed files
-    tracked_dir = GPath(u'') # a mess with paths
-
-    def __init__(self):
-        self.data = {}
-
-    def refreshTracked(self):
-        changed = set()
-        for name, tracked in self.items():
-            fileInfo = _AFileInfo(self.tracked_dir, name)
-            filePath = fileInfo.getPath()
-            if not filePath.exists(): # untrack - runs on first run !!
-                self.pop(name, None)
-                changed.add(name)
-            elif not fileInfo.sameAs(tracked):
-                self[name] = fileInfo
-                changed.add(name)
-        return changed
-
-    def track(self, absPath): # cf FileInfos.refreshFile
-        fileInfo = _AFileInfo(self.tracked_dir, absPath)
-        # fileInfo.readHeader() #ModInfo: will blow if absPath doesn't exist
-        self[absPath] = fileInfo
-
 class InstallersData(_DataStore):
     """Installers tank data. This is the data source for the InstallersList."""
-    # hack to track changes in installed mod inis etc _in the Data/ dir_ and
+    # track changes in installed mod inis etc _in the game Data/ dir_ and
     # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track
     # ini deletions from Data/Ini Tweaks as well as mods/xmls etc in Data/)
-    miscTrackedFiles = _TrackedFileInfos()
+    _miscTrackedFiles = {}
     # cache with paths in Data/ that would be skipped but are not, due to
     # an installer having the override skip etc flag on - when turning the skip
     # off leave the files here - will be cleaned on restart (files will show
@@ -2085,6 +2055,21 @@ class InstallersData(_DataStore):
         progress(0, (
             _(u"%s: Skips overrides...") % bass.dirs['mods'].stail) + u'\n')
         self.update_data_SizeCrcDate(new_skips_overrides, progress)
+
+    @staticmethod
+    def track(abspath):
+        InstallersData._miscTrackedFiles[abspath] = AFile(abspath)
+
+    @staticmethod
+    def refreshTracked():
+        changed = set()
+        for abspath, tracked in InstallersData._miscTrackedFiles.items():
+            if not abspath.exists(): # untrack - runs on first run !!
+                InstallersData._miscTrackedFiles.pop(abspath, None)
+                changed.add(abspath)
+            elif tracked.needs_update():
+                changed.add(abspath)
+        return changed
 
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
