@@ -3150,8 +3150,11 @@ class ModInfos(FileInfos):
         newMods = []
         self.mergeable.clear()
         name_mergeInfo = self.table.getColumn('mergeInfo')
-        #--Add known/unchanged and esms
-        for mpath, modInfo in self.iteritems():
+        #--Add known/unchanged and esms - we need to scan dependent mods
+        # first to account for mergeability of their masters
+        for mpath, modInfo in sorted(self.items(),
+                key=lambda tup: load_order.cached_lo_index(tup[0]),
+                                     reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
             # if esm bit was flipped size won't change, so check this first
             if modInfo.isEsm():

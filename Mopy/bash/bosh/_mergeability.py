@@ -160,8 +160,9 @@ def _modIsMergeableLoad(modInfo, minfos, verbose):
                 if newblocks:
                     if not verbose: return False
                     reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
+        # dependent mods mergeability should be determined BEFORE their masters
         dependent = [name.s for name, info in minfos.iteritems()
-            if info.header.author != u'BASHED PATCH' and # FIXME(ut): using mergeable in mergeability test
+            if info.header.author != u'BASHED PATCH' and
             modInfo.name in info.header.masters and name not in minfos.mergeable]
         if dependent:
             if not verbose: return False
