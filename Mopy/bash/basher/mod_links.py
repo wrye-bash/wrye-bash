@@ -809,9 +809,8 @@ class Mod_MarkMergeable(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        with balt.Progress(self._text + u' ' * 30) as prog:
-            result, tagged_no_merge = bosh.modInfos.rescanMergeable(
-                self.selected, prog, self.doCBash)
+        result, tagged_no_merge = bosh.modInfos.rescanMergeable(self.selected,
+            doCBash=self.doCBash, verbose=True)
         yes = [x for x in self.selected if
                x not in tagged_no_merge and x in bosh.modInfos.mergeable]
         no = set(self.selected) - set(yes)
@@ -904,10 +903,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         if self.doCBash or bass.settings['bash.CBashEnabled']:
             # if doing a python patch but CBash is enabled, it's very likely
             # that the merge info currently is from a CBash mode scan, rescan
-            prog = balt.Progress(_(u"Mark Mergeable") + u' ' * 30)
-            with prog:
-                bosh.modInfos.rescanMergeable(mods_prior_to_patch, prog,
-                                              self.doCBash)
+            bosh.modInfos.rescanMergeable(mods_prior_to_patch,
+                                          doCBash=self.doCBash)
             self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
         #--Check if we should be deactivating some plugins
         active_prior_to_patch = [x for x in mods_prior_to_patch if

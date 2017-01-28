@@ -3051,9 +3051,7 @@ class ModInfos(FileInfos):
         scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
         if scanList:
-            with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
-                progress.setFull(len(scanList))
-                self.rescanMergeable(scanList,progress)
+            self.rescanMergeable(scanList)
         hasChanged += bool(scanList or difMergeable)
         return bool(hasChanged) or lo_changed
 
@@ -3165,7 +3163,11 @@ class ModInfos(FileInfos):
                 newMods.append(mpath)
         return newMods
 
-    def rescanMergeable(self,names,progress,doCBash=None):
+    def rescanMergeable(self, names, prog=None, doCBash=None, verbose=False):
+        with prog or balt.Progress(_(u"Mark Mergeable") + u' ' * 30) as prog:
+            return self._rescanMergeable(names, prog, doCBash, verbose)
+
+    def _rescanMergeable(self, names, progress, doCBash, verbose):
         """Will rescan specified mods."""
         if doCBash is None:
             doCBash = CBashApi.Enabled
@@ -3183,24 +3185,20 @@ class ModInfos(FileInfos):
                 canMerge = False
             else:
                 try:
-                    canMerge = is_mergeable(fileInfo, self)
+                    canMerge = is_mergeable(fileInfo, self, verbose)
                 except Exception as e:
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
             result[fileName] = canMerge
-            # noinspection PySimplifyBooleanCheck
-            if canMerge == True:
+            if not isinstance(canMerge, basestring) and canMerge: # True...
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
             else:
-                if canMerge == u'\n.    '+_(u"Has 'NoMerge' tag."):
-                    mod_mergeInfo[fileName] = (fileInfo.size,True)
-                    self.mergeable.add(fileName)
-                    tagged_no_merge.add(fileName)
-                else:
-                    mod_mergeInfo[fileName] = (fileInfo.size,False)
-                    self.mergeable.discard(fileName)
+                mod_mergeInfo[fileName] = (fileInfo.size,False)
+                self.mergeable.discard(fileName)
+            if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
+                tagged_no_merge.add(fileName)
         return result, tagged_no_merge
 
     def reloadBashTags(self):

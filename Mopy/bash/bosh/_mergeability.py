@@ -22,6 +22,7 @@
 #
 # =============================================================================
 """Tmp module to get mergeability stuff out of bosh.__init__.py."""
+# FIXME(ut): methods return True or a list resulting in if result == True tests and complicated logic
 from .. import bass, bush
 from ..bolt import GPath
 from ..brec import ModError
@@ -47,10 +48,6 @@ def _is_mergeable_no_load(modInfo, verbose):
         if hasVoices:
             reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
     #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-    tags = modInfo.getBashTags()
-    if u'NoMerge' in tags:
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
     if reasons: return reasons
     return True
 
@@ -71,7 +68,7 @@ def pbash_mergeable_no_load(modInfo, verbose):
     if reasons: return reasons
     return True
 
-def isPBashMergeable(modInfo, minfos, verbose=True):
+def isPBashMergeable(modInfo, minfos, verbose):
     """Returns True or error message indicating whether specified mod is mergeable."""
     reasons = pbash_mergeable_no_load(modInfo, verbose)
     if isinstance(reasons, unicode):
@@ -81,7 +78,7 @@ def isPBashMergeable(modInfo, minfos, verbose=True):
     else: # True
         reasons = u''
     #--Load test
-    mergeTypes = set([recClass.classType for recClass in bush.game.mergeClasses])
+    mergeTypes = set(recClass.classType for recClass in bush.game.mergeClasses)
     modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
     try:
         modFile.load(True,loadStrings=False)
@@ -164,7 +161,7 @@ def _modIsMergeableLoad(modInfo, minfos, verbose):
                     if not verbose: return False
                     reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
         dependent = [name.s for name, info in minfos.iteritems()
-            if info.header.author != u'BASHED PATCH' and
+            if info.header.author != u'BASHED PATCH' and # FIXME(ut): using mergeable in mergeability test
             modInfo.name in info.header.masters and name not in minfos.mergeable]
         if dependent:
             if not verbose: return False
@@ -172,8 +169,7 @@ def _modIsMergeableLoad(modInfo, minfos, verbose):
         if reasons: return reasons
         return True
 
-# noinspection PySimplifyBooleanCheck
-def isCBashMergeable(modInfo, minfos, verbose=True):
+def isCBashMergeable(modInfo, minfos, verbose):
     """Returns True or error message indicating whether specified mod is mergeable."""
     if modInfo.name.s == u"Oscuro's_Oblivion_Overhaul.esp":
         if verbose: return u'\n.    ' + _(
