@@ -282,26 +282,16 @@ class B2aFileRecordTexture(_B2aFileRecordCommon):
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
-    """:type assets: collections.OrderedDict[unicode, BSAAsset]"""
+    """:type folder_assets: collections.OrderedDict[unicode, BSAFileRecord]"""
 
     def __init__(self, folder_record):
         self.folder_record = folder_record
-        self.assets = collections.OrderedDict() # keep files order
-
-class BSAAsset(object):
-    __slots__ = ('filerecord', 'filename')
-
-    def __init__(self, filename, filerecord):
-        self.filerecord = filerecord # type: BSAFileRecord
-        self.filename = filename # type: unicode
-
-    def __repr__(self): return repr(self.filename)
-    def __unicode__(self): return self.filename
+        self.folder_assets = collections.OrderedDict() # keep files order
 
 class Ba2Folder(object):
 
     def __init__(self):
-        self.assets = collections.OrderedDict() # keep files order
+        self.folder_assets = collections.OrderedDict() # keep files order
 
 # Files -----------------------------------------------------------------------
 class ABsa(AFile):
@@ -327,7 +317,7 @@ class ABsa(AFile):
             raise BSAError, e.message, sys.exc_info()[2]
 
     @staticmethod
-    def _map_files_to_folders(asset_paths):
+    def _map_files_to_folders(asset_paths): # lowercase keys and values
         folder_file = []
         for a in asset_paths:
             split = a.rsplit(path_sep, 1)
@@ -338,7 +328,7 @@ class ABsa(AFile):
         folder_files_dict = {}
         folder_file.sort(key=itemgetter(0)) # sort first then group
         for key, val in groupby(folder_file, key=itemgetter(0)):
-            folder_files_dict[key] = set(dest for _key, dest in val)
+            folder_files_dict[key.lower()] = set(dest.lower() for _key, dest in val)
         return folder_files_dict
 
     def extract_assets(self, asset_paths, dest_folder):
@@ -347,21 +337,13 @@ class ABsa(AFile):
         del asset_paths # forget about this
         # load the bsa - this should be reworked to load only needed records
         self._load_bsa()
-        folder_assets = collections.OrderedDict()
-        for folder_path, bsa_folder in self.bsa_folders.iteritems():
-            if folder_path not in folder_files_dict: continue
-            # Has assets we need to extract keep order to avoid seeking back and forth
-            folder_assets[folder_path] = file_records = []
-            filenames = folder_files_dict[folder_path]
-            for filename, asset in bsa_folder.assets.iteritems():
-                if filename not in filenames: continue
-                file_records.append((filename, asset.filerecord))
+        folder_to_assets = self._map_assets_to_folders(folder_files_dict)
         # unload the bsa
         self.bsa_folders.clear()
         # get the data from the file
         global_compression = self.bsa_header.is_compressed()
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
-            for folder, file_records in folder_assets.iteritems():
+            for folder, file_records in folder_to_assets.iteritems():
                 target_dir = os.path.join(dest_folder, folder)
                 try:
                     os.makedirs(target_dir)
@@ -384,6 +366,19 @@ class ABsa(AFile):
                     with open(os.path.join(target_dir, filename), 'wb') as out:
                         out.write(raw_data)
 
+    def _map_assets_to_folders(self, folder_files_dict):
+        folder_to_assets = collections.OrderedDict()
+        for folder_path, bsa_folder in self.bsa_folders.iteritems():
+            if folder_path.lower() not in folder_files_dict: continue
+            # Has assets we need to extract. Keep order to avoid seeking
+            # back and forth in the file
+            folder_to_assets[folder_path] = file_records = []
+            filenames = folder_files_dict[folder_path.lower()]
+            for filename, filerecord in bsa_folder.folder_assets.iteritems():
+                if filename.lower() not in filenames: continue
+                file_records.append((filename, filerecord))
+        return folder_to_assets
+
     # Abstract
     def _load_bsa(self): raise NotImplementedError
     def load_bsa_light(self): raise NotImplementedError
@@ -392,15 +387,18 @@ class ABsa(AFile):
     def has_asset(self, asset_path):
         return (u'%s' % asset_path).lower() in self.assets
 
-    # API
     def has_assets(self, asset_paths):
         return set((u'%s' % a).lower() for a in asset_paths) & self.assets
 
     @property
     def assets(self):
+        """Set of full paths in the bsa in lowercase.
+        :rtype: frozenset[unicode]
+        """
         if self._assets is self.__class__._assets:
-            self.load_bsa_light()
-            self._assets = frozenset(self._filenames)
+            self.__load(names_only=True)
+            self._assets = frozenset(imap(unicode.lower, self._filenames))
+            del self._filenames
         return self._assets
 
 class BSA(ABsa):
@@ -426,8 +424,7 @@ class BSA(ABsa):
                 file_records_index += 1
                 filename = _decode_path(file_names[names_record_index])
                 names_record_index += 1
-                bsa_folder.assets[filename] = BSAAsset(
-                    path_sep.join((folder_path, filename)), rec)
+                bsa_folder.folder_assets[filename] = rec
 
     @staticmethod
     def _read_file_records(file_records, bsa_file, folder_path,
@@ -503,20 +500,12 @@ class BA2(ABsa):
         if self.bsa_header.b2a_files_type != 'GNRL':
             raise BSANotImplemented(
                 u'Texture ba2 archives are not yet supported')
-        folder_assets = collections.OrderedDict()
-        for folder_path, bsa_folder in self.bsa_folders.iteritems():
-            if folder_path not in folder_files_dict: continue
-            # Has assets we need to extract keep order to avoid seeking back and forth
-            folder_assets[folder_path] = file_records = []
-            filenames = folder_files_dict[folder_path]
-            for filename, asset in bsa_folder.assets.iteritems():
-                if filename not in filenames: continue
-                file_records.append((filename, asset.filerecord))
+        folder_to_assets = self._map_assets_to_folders(folder_files_dict)
         # unload the bsa
         self.bsa_folders.clear()
         # get the data from the file
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
-            for folder, file_records in folder_assets.iteritems():
+            for folder, file_records in folder_to_assets.iteritems():
                 target_dir = os.path.join(dest_folder, folder)
                 try:
                     os.makedirs(target_dir)
@@ -564,13 +553,12 @@ class BA2(ABsa):
                 folder_name = u''
             else:
                 folder_name = filename[:folder_dex]
-                filename = filename[folder_dex + 1:]
             if current_folder_name != folder_name:
                 current_folder = self.bsa_folders.setdefault(folder_name,
                                                              Ba2Folder())
                 current_folder_name = folder_name
-            current_folder.assets[filename] = BSAAsset(filename,
-                                                       file_records[index])
+            current_folder.folder_assets[filename[folder_dex + 1:]] = \
+                file_records[index]
 
     def load_bsa_light(self):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
@@ -588,12 +576,6 @@ class BA2(ABsa):
             _filenames.append(filename)
             file_names_block = file_names_block[name_size + 2:]
         self._filenames = _filenames
-
-    def has_asset(self, asset_path): return (u'%s' % asset_path) in self.assets
-
-    # API
-    def has_assets(self, asset_paths):
-        return set((u'%s' % a) for a in asset_paths) & self.assets
 
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader

@@ -34,7 +34,6 @@ from time import time, sleep
 import sys
 import platform
 import traceback
-import StringIO
 
 import bass
 import barg
@@ -43,8 +42,16 @@ bass.language = opts.language
 import bolt
 from bolt import GPath
 import env
-basher = balt = barb =  None
+basher = balt = barb = None
 is_standalone = hasattr(sys, 'frozen')
+
+def _import_wx():
+    """:rtype: wx | None"""
+    try:
+        import wx
+    except ImportError:
+        wx = None
+    return wx
 
 #------------------------------------------------------------------------------
 def SetHomePath(homePath):
@@ -108,7 +115,7 @@ def cmdRestore():
 #------------------------------------------------------------------------------
 # adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
 pidpath, lockfd = None, -1
-def oneInstanceChecker():
+def oneInstanceChecker(_wx):
     global pidpath, lockfd
     pidpath = bolt.Path.getcwd().root.join(u'pidfile.tmp')
     lockfd = None
@@ -137,13 +144,12 @@ def oneInstanceChecker():
                     buttons=[(True,'ok')],
                     )
             else:
-                try:
-                    import wx
-                    _app = wx.App(False)
-                    with wx.MessageDialog(None, msg, _(u'Wrye Bash'),
-                                          wx.ID_OK) as dialog:
+                if _wx:
+                    _app = _wx.App(False)
+                    with _wx.MessageDialog(None, msg, _(u'Wrye Bash'),
+                                          _wx.ID_OK) as dialog:
                         dialog.ShowModal()
-                except ImportError as e:
+                else:
                     print 'error: %r' % e
                     import Tkinter
                     root = Tkinter.Tk()
@@ -255,7 +261,7 @@ def exit_cleanup():
                 print
                 raise
 
-def dump_environment():
+def dump_environment(_wx):
     import locale
     print u"Wrye Bash starting"
     print u"Using Wrye Bash Version %s%s" % (
@@ -263,10 +269,9 @@ def dump_environment():
     print u"OS info:", platform.platform()
     print u"Python version: %d.%d.%d" % (
         sys.version_info[0],sys.version_info[1],sys.version_info[2])
-    try:
-        import wx
-        print u"wxPython version: %s" % wx.version()
-    except ImportError:
+    if _wx is not None:
+        print u"wxPython version: %s" % _wx.version()
+    else:
         print u"wxPython not found"
     # Standalone: stdout will actually be pointing to stderr, which has no
     # 'encoding' attribute
@@ -280,6 +285,7 @@ def dump_environment():
 # Main ------------------------------------------------------------------------
 def main():
     bolt.deprintOn = opts.debug
+    wx = _import_wx()
     # useful for understanding context of bug reports
     if opts.debug or is_standalone:
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
@@ -293,11 +299,14 @@ def main():
         old_stderr = errLog
 
     if opts.debug:
-        dump_environment()
+        dump_environment(wx)
+    if wx is None: # not much use in continuing if wx is not present
+        _showErrorInGui(None, msg=_(u'Unable to locate wxpython installation'))
+        return
 
     # ensure we are in the correct directory so relative paths will work
     # properly
-    if hasattr(sys,"frozen"):
+    if is_standalone:
         pathToProg = os.path.dirname(
             unicode(sys.executable, bolt.Path.sys_fs_enc))
     else:
@@ -331,13 +340,7 @@ def main():
                 msgtext += _(
                     u'To prevent this message in the future, use the -g '
                     u'command line argument to specify the game')
-            try:
-                # First try using wxPython
-                # raise BoltError("TEST TINKER")
-                retCode = _wxSelectGame(ret, msgtext)
-            except:
-                # No good with wxPython, use Tkinter instead ##: what use ?
-                retCode = _tinkerSelectGame(ret, msgtext)
+            retCode = _wxSelectGame(ret, msgtext, wx)
             if retCode is None:
                 print u"No games were found or Selected. Aborting."
                 return
@@ -355,7 +358,7 @@ def main():
         sys.stdout = open('CONOUT$', 'w', 0)
         sys.stderr = open('CONOUT$', 'w', 0)
         # run bashmon and exit
-        import bashmon
+        import bashmon # this imports bosh which imports wx (DUH)
         bashmon.monitor(0.25) #--Call monitor with specified sleep interval
         return
 
@@ -363,10 +366,10 @@ def main():
     #  required before the rest has imported
     SetUserPath(uArg=opts.userPath)
 
+    # Force Python mode if CBash can't work with this game
+    bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
     try:
-        # Force Python mode if CBash can't work with this game
-        bolt.CBash = opts.mode if bush.game.esp.canCBash else 1
-        import bosh
+        import bosh # this imports balt (DUH) which imports wx
         env.isUAC = env.testUAC(bush.gamePath.join(u'Data'))
         bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
 
@@ -376,7 +379,7 @@ def main():
             msg2 = _(u'done')
             try: print msg1
             except UnicodeError: print msg1.encode(bolt.Path.sys_fs_enc)
-            import belt
+            import belt # this imports bosh which imports wx (DUH)
             bolt.WryeText.genHtml(opts.genHtml)
             try: print msg2
             except UnicodeError: print msg2.encode(bolt.Path.sys_fs_enc)
@@ -385,18 +388,18 @@ def main():
         import basher
         import barb
         import balt
-    except (bolt.PermissionError, bolt.BoltError) as e:
-        _showErrorInGui(e)
-        return # not actually needed as _showErrorInGui will re-raise e
+    except (bolt.PermissionError, bolt.BoltError, ImportError) as e:
+        _showErrorInGui(e, _wx=wx)
+        return
 
-    if not oneInstanceChecker(): return
+    if not oneInstanceChecker(wx): return
     atexit.register(exit_cleanup)
     basher.InitSettings()
     basher.InitLinks()
     basher.InitImages()
     #--Start application
     if opts.debug:
-        if hasattr(sys, 'frozen'):
+        if is_standalone:
             # Special case for py2exe version
             app = basher.BashApp()
             # Regain control of stdout/stderr from wxPython
@@ -407,8 +410,8 @@ def main():
     else:
         app = basher.BashApp()
 
-    if not hasattr(sys, 'frozen') and (
-        not _rightWxVersion() or not _rightPythonVersion()): return
+    if not is_standalone and (
+        not _rightWxVersion(wx) or not _rightPythonVersion()): return
 
     # process backup/restore options
     # quit if either is true, but only after calling both
@@ -440,69 +443,50 @@ def main():
     app.MainLoop()
 
 # Show error in gui -----------------------------------------------------------
-def _showErrorInGui(e):
+def _showErrorInGui(e, msg=None, _wx=None):
     """Try really hard to be able to show the error in the GUI."""
-    o = StringIO.StringIO()
-    traceback.print_exc(file=o)
-    msg = o.getvalue()
-    o.close()
+    if e:
+        with bolt.sio() as o:
+            traceback.print_exc(file=o)
+            msg = o.getvalue()
+    else:
+        msg = msg
+    if bolt.deprintOn: print msg
     title = _(u'Error! Unable to start Wrye Bash.')
     msg = _(
         u'Please ensure Wrye Bash is correctly installed.') + u'\n\n\n%s' % msg
-    try: # raise ImportError("TEST _showErrorInAnyGui")
-        global basher, balt, barb
-        if not basher:
-            # we get here if initBosh threw
-            import basher
-            import barb
-            import balt
-        bolt.deprintOn = bool(opts.debug)
-        app = basher.BashApp(redirect=bolt.deprintOn and not hasattr(sys, 'frozen'))
-        balt.showError(None, msg, title=title)
-        app.MainLoop()
-    except:
-        traceback.print_exc() # print current exception then
-        # try really hard to be able to show the error in any GUI
+    try: # try really hard to be able to show the error in any GUI
+        _showErrorInAnyGui(title + u'\n\n' + msg, _wx)
+    except StandardError:
+        print 'An error has occurred with Wrye Bash, and could not be ' \
+              'displayed.'
+        print 'The following is the error that occurred while trying to ' \
+              'display the first error:'
         try:
-            _showErrorInAnyGui(title + u'\n\n' + msg)
-        except StandardError:
-            print 'An error has occurred with Wrye Bash, and could not be ' \
-                  'displayed.'
-            print 'The following is the error that occurred while trying to ' \
-                  'display the first error:'
-            try:
-                traceback.print_exc()
-            except:
-                print '  An error occurred while trying to display the' \
-                      ' second error.'
-            print 'The following is the error that could not be displayed:'
-    raise e, None, sys.exc_info()[2]
+            traceback.print_exc()
+        except:
+            print '  An error occurred while trying to display the' \
+                  ' second error.'
+        print 'The following is the error that could not be displayed:'
+    if e: raise e, None, sys.exc_info()[2]
 
-def _showErrorInAnyGui(msg):
-    if hasattr(sys, 'frozen'):
-        # WBSA we've disabled TKinter, since it's not required, use wx
-        # here instead
-        import wx
-
-        class ErrorMessage(wx.Frame):
+def _showErrorInAnyGui(msg, _wx=None):
+    if _wx:
+        class ErrorMessage(_wx.Frame):
             def __init__(self):
-                wx.Frame.__init__(self, None, title=u'Wrye Bash')
-                self.panel = panel = wx.Panel(self)
-                sizer = wx.BoxSizer(wx.VERTICAL)
-                sizer.Add(wx.TextCtrl(panel, value=msg,
-                                      style=wx.TE_MULTILINE | wx.TE_READONLY
-                                            | wx.TE_BESTWRAP),
-                          1, wx.GROW | wx.ALL, 5)
-                button = wx.Button(panel, wx.ID_CANCEL, _(u'Quit'))
+                _wx.Frame.__init__(self, None, title=u'Wrye Bash')
+                self.panel = panel = _wx.Panel(self)
+                sizer = _wx.BoxSizer(_wx.VERTICAL)
+                sizer.Add(_wx.TextCtrl(panel, value=msg,
+                                       style=_wx.TE_MULTILINE | _wx.TE_READONLY
+                                             | _wx.TE_BESTWRAP),
+                          1, _wx.GROW | _wx.ALL, 5)
+                button = _wx.Button(panel, _wx.ID_CANCEL, _(u'Quit'))
                 button.SetDefault()
-                sizer.Add(button, 0, wx.GROW | wx.ALL ^ wx.TOP, 5)
-                self.Bind(wx.EVT_BUTTON, self.OnButton)
+                sizer.Add(button, 0, _wx.GROW | _wx.ALL ^ _wx.TOP, 5)
+                self.Bind(_wx.EVT_BUTTON, lambda __event: self.Close(True))
                 panel.SetSizer(sizer)
-
-            def OnButton(self, event):
-                self.Close(True)
-
-        _app = wx.App(False)
+        _app = _wx.App(False)
         frame = ErrorMessage()
         frame.Show()
         frame.Center()
@@ -532,35 +516,34 @@ class _AppReturnCode(object):
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _wxSelectGame(ret, msgtext):
-    import wx
+def _wxSelectGame(ret, msgtext, _wx):
 
-    class GameSelect(wx.Frame):
+    class GameSelect(_wx.Frame):
         def __init__(self, gameNames, callback):
-            wx.Frame.__init__(self, None, title=u'Wrye Bash')
+            _wx.Frame.__init__(self, None, title=u'Wrye Bash')
             self.callback = callback
-            self.panel = panel = wx.Panel(self)
-            sizer = wx.BoxSizer(wx.VERTICAL)
-            sizer.Add(wx.TextCtrl(panel, value=msgtext,
-                                  style=wx.TE_MULTILINE | wx.TE_READONLY |
-                                        wx.TE_BESTWRAP),
-                      1, wx.GROW | wx.ALL, 5)
+            self.panel = panel = _wx.Panel(self)
+            sizer = _wx.BoxSizer(_wx.VERTICAL)
+            sizer.Add(_wx.TextCtrl(panel, value=msgtext,
+                                   style=_wx.TE_MULTILINE | _wx.TE_READONLY |
+                                         _wx.TE_BESTWRAP),
+                      1, _wx.GROW | _wx.ALL, 5)
             for gameName in gameNames:
                 gameName = gameName.title()
-                sizer.Add(wx.Button(panel, label=gameName), 0,
-                          wx.GROW | wx.ALL ^ wx.TOP, 5)
-            button = wx.Button(panel, wx.ID_CANCEL, _(u'Quit'))
+                sizer.Add(_wx.Button(panel, label=gameName), 0,
+                          _wx.GROW | _wx.ALL ^ _wx.TOP, 5)
+            button = _wx.Button(panel, _wx.ID_CANCEL, _(u'Quit'))
             button.SetDefault()
-            sizer.Add(button, 0, wx.GROW | wx.ALL ^ wx.TOP, 5)
-            self.Bind(wx.EVT_BUTTON, self.OnButton)
+            sizer.Add(button, 0, _wx.GROW | _wx.ALL ^ _wx.TOP, 5)
+            self.Bind(_wx.EVT_BUTTON, self.OnButton)
             panel.SetSizer(sizer)
 
         def OnButton(self, event):
-            if event.GetId() != wx.ID_CANCEL:
+            if event.GetId() != _wx.ID_CANCEL:
                 self.callback(self.FindWindowById(event.GetId()).GetLabel())
             self.Close(True)
 
-    _app = wx.App(False)
+    _app = _wx.App(False)
     retCode = _AppReturnCode()
     frame = GameSelect(ret, retCode.set)
     frame.Show()
@@ -569,60 +552,10 @@ def _wxSelectGame(ret, msgtext):
     del _app
     return retCode.get()
 
-def _tinkerSelectGame(ret, msgtext):
-    # Python mode, use Tkinter here, since we don't know for
-    # sure if wx is present
-    import Tkinter
-
-    root = Tkinter.Tk()
-    frame = Tkinter.Frame(root)
-    frame.pack()
-
-    class onQuit(object):
-        def __init__(self):
-            self.canceled = False
-
-        def on_click(self):
-            self.canceled = True
-            root.destroy()
-
-    quit = onQuit()
-    button = Tkinter.Button(frame, text=_(u'Quit'), fg='red',
-                            command=quit.on_click, pady=15, borderwidth=5,
-                            relief=Tkinter.GROOVE)
-    button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
-
-    class OnClick(object):
-        def __init__(self, gameName, callback):
-            self.gameName = gameName
-            self.callback = callback
-
-        def on_click(self):
-            sys.argv += ['-g', self.gameName]
-            self.callback(self.gameName)
-            root.destroy()
-
-    retCode = _AppReturnCode()
-
-    for gameName in ret:
-        text = gameName.title()
-        command = OnClick(gameName, retCode.set).on_click
-        button = Tkinter.Button(frame, text=text, command=command, pady=15,
-                                borderwidth=5, relief=Tkinter.GROOVE)
-        button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
-    w = Tkinter.Text(frame)
-    w.insert(Tkinter.END, msgtext)
-    w.config(state=Tkinter.DISABLED)
-    w.pack()
-    root.mainloop()
-    return retCode.get()
-
 # Version checks --------------------------------------------------------------
-def _rightWxVersion():
+def _rightWxVersion(_wx):
     run = True
-    import wx
-
-    wxver = wx.version()
+    wxver = _wx.version()
     if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
         # Can't use translatable strings, because they'd most likely end up
         # being in unicode!
