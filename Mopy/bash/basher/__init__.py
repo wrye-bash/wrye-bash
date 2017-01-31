@@ -371,11 +371,14 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
-        for mi, masters_name in enumerate(fileInfo.header.masters):
-            masterInfo = bosh.MasterInfo(masters_name)
-            self.data_store[mi] = masterInfo
+        self._generate_master_infos()
         self._reList()
         self.PopulateItems()
+
+    def _generate_master_infos(self):
+        for mi, masters_name in enumerate(self.fileInfo.header.masters):
+            masterInfo = bosh.MasterInfo(masters_name)
+            self.data_store[mi] = masterInfo
 
     #--Get Master Status
     def GetMasterStatus(self, mi):
@@ -1195,6 +1198,8 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     uiList of SashUIListPanel.
     :type uilist: MasterList"""
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
+    _master_list_type = MasterList
+    _masters_text = _(u"Masters:")
 
     def __init__(self, parent):
         SashPanel.__init__(self, parent, isVertical=False)
@@ -1211,10 +1216,12 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
                                            mod_or_save_panel)
         #--Masters
-        self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=mod_or_save_panel, detailsPanel=self)
+        self.uilist = self._master_list_type(self.masterPanel,
+                                             keyPrefix=self.keyPrefix,
+                                             panel=mod_or_save_panel,
+                                             detailsPanel=self)
         mastersSizer = vSizer(
-            vspace(), hSizer(StaticText(self.masterPanel,_(u"Masters:"))),
+            vspace(), hSizer(StaticText(self.masterPanel, self._masters_text)),
             (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
             vspace(), hSizer(self.save, hspace(), self.cancel))
         self.masterPanel.SetSizer(mastersSizer)

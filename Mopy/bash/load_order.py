@@ -145,6 +145,9 @@ lo_entry = collections.namedtuple('lo_entry', ['date', 'lord'])
 _saved_load_orders = [] # type: list[lo_entry]
 _current_list_index = -1
 
+def get_saved_load_orders():
+    return [order for order in _saved_load_orders if order is not __empty]
+
 def _new_entry():
     _saved_load_orders[_current_list_index:_current_list_index] = [
         lo_entry(time.time(), cached_lord)]

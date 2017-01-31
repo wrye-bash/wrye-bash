@@ -369,6 +369,16 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Karma': 25,
         'Header': 50,
         },
+    #--Wrye Bash: Load Orders
+    'bash.mods.loadOrders.cols': ['Index', 'Date'],
+    'bash.mods.loadOrders.sort': 'Index',
+    'bash.mods.loadOrders.colReverse': {
+        'Date':1,
+        },
+    'bash.mods.loadOrders.colWidths': {
+        'Index':24,
+        # 'Date':135,
+        },
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     'tes5View.iKnowWhatImDoing':False,
