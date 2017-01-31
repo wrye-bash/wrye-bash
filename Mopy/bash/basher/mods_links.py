@@ -25,7 +25,7 @@ points to BashFrame.modList singleton."""
 
 import re
 from .dialogs import CreateNewPlugin
-from .frames import ModChecker
+from .frames import ModChecker, LoBrowser
 from .. import bass, bosh, balt, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
@@ -42,7 +42,8 @@ __all__ = [u'Mods_EsmsFirst', u'Mods_LoadList', u'Mods_SelectedFirst',
            u'Mods_ScanDirty', u'Mods_CrcRefresh', u'Mods_AutoESLFlagBP',
            u'Mods_LockActivePlugins', u'Mods_ModChecker',
            u'Mods_ExportBashTags', u'Mods_ImportBashTags',
-           u'Mods_ClearManualBashTags', u'Mods_OpenLOFileMenu']
+           u'Mods_ClearManualBashTags', u'Mods_OpenLOFileMenu',
+           u'Mods_LoadOrdersList']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -166,6 +167,13 @@ class Mods_LoadList(ChoiceLink):
     @property
     def _choices(self):
         return sorted(self.load_lists, key=lambda a: a.lower())
+
+class Mods_LoadOrdersList(ItemLink):
+    """Show load order lists."""
+    _text = _(u"Saved Load Orders")
+    _help = _(u'Displays a list of all previously used load orders.')
+
+    def Execute(self): LoBrowser().show_frame()
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):

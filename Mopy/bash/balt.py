@@ -1490,7 +1490,7 @@ class UIList(wx.Panel):
         colDex, listCtrl = 0, self.__gList
         while colDex < numCols: ##: simplify!
             colKey = cols[colDex]
-            colName = _settings[u'bash.colNames'].get(colKey, colKey)
+            colName = self._get_column_name(colKey)
             colWidth = self.colWidths.get(colKey, 30)
             if colDex >= listCtrl.lc_get_columns_count(): # Make a new column
                 listCtrl.lc_insert_column(colDex, colName)
@@ -1512,6 +1512,10 @@ class UIList(wx.Panel):
             colDex += 1
         while listCtrl.lc_get_columns_count() > numCols:
             listCtrl.lc_delete_column(numCols)
+
+    @staticmethod
+    def _get_column_name(colKey):
+        return _settings[u'bash.colNames'].get(colKey, colKey)
 
     #--Drag and Drop-----------------------------------------------------------
     @conversation

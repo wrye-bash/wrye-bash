@@ -192,6 +192,8 @@ class SashPanel(NotebookPanel):
     _ui_settings = {u'.sashPos' : _UIsetting(lambda self: self.defaultSashPos,
         lambda self: self.splitter.get_sash_pos(),
         lambda self, sashPos: self.splitter.set_sash_pos(sashPos))}
+    # If > 0, put some spacing around the contents of the entire panel
+    _panel_border = 0
 
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
@@ -200,6 +202,7 @@ class SashPanel(NotebookPanel):
         self.left, self.right = self.splitter.make_panes(vertically=isVertical)
         self.isVertical = isVertical
         VLayout(item_weight=1, item_expand=True,
+                border=self.__class__._panel_border,
                 items=[self.splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
@@ -405,14 +408,17 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
+        self._generate_master_infos(fileInfo)
+        self._reList()
+        self.PopulateItems()
+
+    def _generate_master_infos(self, fileInfo):
         self.is_inaccurate = fileInfo.has_inaccurate_masters
         has_sizes = bush.game.Esp.check_master_sizes and isinstance(
             fileInfo, bosh.ModInfo) # only mods have master sizes
         for mi, masters_name in enumerate(fileInfo.masterNames):
             masters_size = fileInfo.header.master_sizes[mi] if has_sizes else 0
             self.data_store[mi] = bosh.MasterInfo(masters_name, masters_size)
-        self._reList()
-        self.PopulateItems()
 
     #--Get Master Status
     def GetMasterStatus(self, mi):
@@ -1421,6 +1427,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     uiList of SashUIListPanel. ui_list_panel is mods or saves panel
     :type uilist: MasterList"""
     _master_list_type = MasterList
+    _masters_text = _(u'Masters:')
 
     def __init__(self, parent, ui_list_panel, split_vertically=False):
         _SashDetailsPanel.__init__(self, parent)
@@ -1433,7 +1440,7 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         self.uilist = self._master_list_type(
             self.masterPanel, keyPrefix=self.keyPrefix, panel=ui_list_panel,
             detailsPanel=self)
-        self._masters_label = Label(self.masterPanel, _(u'Masters:'))
+        self._masters_label = Label(self.masterPanel, self._masters_text)
         VLayout(spacing=4, items=[
             self._masters_label,
             (self.uilist, LayoutOptions(weight=1, expand=True)),
