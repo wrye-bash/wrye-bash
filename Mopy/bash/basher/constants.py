@@ -406,6 +406,16 @@ settingDefaults = { # keep current naming format till refactored
     },
     u'bash.screens.jpgQuality': 95,
     u'bash.screens.jpgCustomQuality': 75,
+    #--Wrye Bash: Load Orders
+    u'bash.mods.load_orders.cols': [u'Index', u'Date'],
+    u'bash.mods.load_orders.sort': u'Index',
+    u'bash.mods.load_orders.colReverse': {
+        u'Date': 1,
+    },
+    u'bash.mods.load_orders.colWidths': {
+        u'Index': 24,
+        # u'Date': 135,
+    },
     #--BOSS:
     u'BOSS.ClearLockTimes': True,
     u'BOSS.AlwaysUpdate': True,

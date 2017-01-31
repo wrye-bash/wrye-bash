@@ -435,6 +435,7 @@ def InitModLinks():
         loadMenu = MenuLink(_(u'Active Mods'))
         loadMenu.links.append(Mods_LoadList())
         ModList.column_links.append(loadMenu)
+        ModList.mainMenu.append(Mods_LoadOrdersList())
     ModList.column_links.append(SeparatorLink())
     if bush.game.displayName == u'Oblivion': #--Versions
         versionsMenu = MenuLink(u'Oblivion.esm')
