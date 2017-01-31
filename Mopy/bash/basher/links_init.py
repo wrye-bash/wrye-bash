@@ -392,6 +392,7 @@ def InitModLinks():
         loadMenu = MenuLink(_(u'Load Order'))
         loadMenu.links.append(Mods_LoadList())
         ModList.mainMenu.append(loadMenu)
+        ModList.mainMenu.append(Mods_LoadOrdersList())
     ModList.mainMenu.append(SeparatorLink())
     if bush.game.fsName == u'Oblivion': #--Versions
         versionsMenu = MenuLink(u"Oblivion.esm")

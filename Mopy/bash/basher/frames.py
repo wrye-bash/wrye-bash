@@ -26,6 +26,7 @@ import re
 import string
 from collections import OrderedDict
 
+from .gui_load_order import LoPanel
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import bell, Link, Resources
 from ..bolt import GPath
@@ -479,3 +480,13 @@ class InstallerProject_OmodConfigDialog(WindowFrame):
         #--Done
         omods.OmodConfig.writeOmodConfig(self.project, self.config)
         self.on_closing()
+
+#------------------------------------------------------------------------------
+class LoBrowser(WindowFrame):
+    _frame_settings_key = u'bash.lo_browser'
+
+    def __init__(self):
+        super(LoBrowser, self).__init__(
+            balt.Link.Frame, title=_(u'Load Order Browser'),
+            sizes_dict=bass.settings) # FIXME(inf) balt.sizes?
+        LoPanel(self)

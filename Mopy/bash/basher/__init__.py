@@ -176,6 +176,8 @@ class SashPanel(NotebookPanel):
     _ui_settings = {u'.sashPos' : _UIsetting(lambda self: self.defaultSashPos,
         lambda self: self.splitter.get_sash_pos(),
         lambda self, sashPos: self.splitter.set_sash_pos(sashPos))}
+    # If > 0, put some spacing around the contents of the entire panel
+    _panel_border = 0
 
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
@@ -184,6 +186,7 @@ class SashPanel(NotebookPanel):
         self.left, self.right = self.splitter.make_panes(vertically=isVertical)
         self.isVertical = isVertical
         VLayout(item_weight=1, item_expand=True,
+                border=self.__class__._panel_border,
                 items=[self.splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
@@ -377,10 +380,13 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
-        for mi, masters_name in enumerate(fileInfo.get_masters()):
-            self.data_store[mi] = bosh.MasterInfo(masters_name)
+        self._generate_master_infos()
         self._reList()
         self.PopulateItems()
+
+    def _generate_master_infos(self):
+        for mi, masters_name in enumerate(self.fileInfo.get_masters()):
+            self.data_store[mi] = bosh.MasterInfo(masters_name)
 
     #--Get Master Status
     def GetMasterStatus(self, mi):
@@ -1276,6 +1282,8 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
     I named the master list attribute 'uilist' to stand apart from the
     uiList of SashUIListPanel. ui_list_panel is mods or saves panel
     :type uilist: MasterList"""
+    _master_list_type = MasterList
+    _masters_text = _(u"Masters:")
 
     def __init__(self, parent, ui_list_panel):
         _SashDetailsPanel.__init__(self, parent)
@@ -1285,10 +1293,9 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
                                            ui_list_panel)
         #--Masters
-        self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
-                                 panel=ui_list_panel, detailsPanel=self)
-        VLayout(spacing=4, items=[
-            Label(self.masterPanel, _(u"Masters:")),
+        self.uilist = self._master_list_type(self.masterPanel,
+            keyPrefix=self.keyPrefix, panel=ui_list_panel, detailsPanel=self)
+        VLayout(spacing=4, items=[Label(self.masterPanel, self._masters_text),
             (self.uilist, LayoutOptions(weight=1, expand=True)),
             HLayout(spacing=4, items=[self.save, self.cancel])
         ]).apply_to(self.masterPanel)

@@ -25,7 +25,8 @@
 points to BashFrame.modList singleton."""
 
 import re
-from .. import bosh, balt, load_order
+from .frames import LoBrowser
+from .. import bosh, balt, bass, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from .. import exception
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
@@ -36,7 +37,8 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
            'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
-           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP']
+           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP',
+           'Mods_LoadOrdersList']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -160,6 +162,13 @@ class Mods_LoadList(ChoiceLink):
     @property
     def _choices(self):
         return sorted(self.load_lists.keys(), key=lambda a: a.lower())
+
+class Mods_LoadOrdersList(ItemLink):
+    """Show load order lists."""
+    _text = _(u"Saved Load Orders")
+    _help = _(u'Displays a list of all previously used load orders.')
+
+    def Execute(self): LoBrowser().show_frame()
 
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):
