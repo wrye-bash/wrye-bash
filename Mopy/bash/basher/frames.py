@@ -25,6 +25,8 @@
 import re
 import string
 import wx
+
+from .gui_load_order import LoPanel
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bell, Link, toggleButton, SaveButton, CancelButton, hspace, \
@@ -535,3 +537,11 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         #--Done
         omods.OmodConfig.writeOmodConfig(self.project, self.config)
         self.OnCloseWindow()
+
+#------------------------------------------------------------------------------
+class LoBrowser(BaltFrame):
+    _frame_settings_key = 'bash.loBrowser'
+
+    def __init__(self):
+        super(LoBrowser, self).__init__(balt.Link.Frame,title=_(u'Lo Browser'))
+        LoPanel(self)
