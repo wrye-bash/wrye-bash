@@ -26,6 +26,7 @@
 """Game class initially introduced to encapsulate load order handling and
 eventually to wrap the bush.game module to a class API to be used in the rest
 of Bash."""
+import env
 
 __author__ = 'Utumno'
 
@@ -36,20 +37,28 @@ from collections import defaultdict
 import bolt
 
 def _write_plugins_txt_(path, lord, active, _star):
-    with path.open('wb') as out:
-        def asterisk(active_set=set(active)):
-            return '*' if _star and (mod in active_set) else ''
-        for mod in (_star and lord) or active:
-            # Ok, this seems to work for Oblivion, but not Skyrim
-            # Skyrim seems to refuse to have any non-cp1252 named file in
-            # plugins.txt.  Even activating through the SkyrimLauncher
-            # doesn't work.
-            try:
-                out.write(asterisk() + bolt.encode(mod.s, firstEncoding='cp1252'))
-                out.write('\r\n')
-            except UnicodeEncodeError:
-                bolt.deprint(mod.s + u' failed to properly encode and was not '
-                                     u'included in plugins.txt')
+    try:
+        with path.open('wb') as out:
+            __write_plugins(out, lord, active, _star)
+    except IOError:
+        env.clear_read_only(path)
+        with path.open('wb') as out:
+            __write_plugins(out, lord, active, _star)
+
+def __write_plugins(out, lord, active, _star):
+    def asterisk(active_set=set(active)):
+        return '*' if _star and (mod in active_set) else ''
+    for mod in (_star and lord) or active:
+        # Ok, this seems to work for Oblivion, but not Skyrim
+        # Skyrim seems to refuse to have any non-cp1252 named file in
+        # plugins.txt.  Even activating through the SkyrimLauncher
+        # doesn't work.
+        try:
+            out.write(asterisk() + bolt.encode(mod.s, firstEncoding='cp1252'))
+            out.write('\r\n')
+        except UnicodeEncodeError:
+            bolt.deprint(mod.s + u' failed to properly encode and was not '
+                                 u'included in plugins.txt')
 
 _re_plugins_txt_comment = re.compile(u'^#.*', re.U)
 def _parse_plugins_txt_(path, mod_infos, _star):

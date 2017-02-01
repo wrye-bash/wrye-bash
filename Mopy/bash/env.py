@@ -26,6 +26,7 @@
 """
 import os as _os
 import re as _re
+import stat
 import shutil as _shutil
 from bolt import GPath, BoltError, deprint, CancelError, SkipError, Path, \
     decode
@@ -103,6 +104,9 @@ try:
     import win32com.client as win32client
 except ImportError:
     win32client =None
+
+def clear_read_only(filepath): # copied from bolt
+    _os.chmod(u'%s' % filepath, stat.S_IWUSR | stat.S_IWOTH)
 
 def get_personal_path():
     if shell and shellcon:
