@@ -110,20 +110,6 @@ settings = None
 
 # Links -----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-def SetUAC(item): # item must define a GetHandle() method
-    """Helper function for creating menu items or buttons that need UAC
-       Note: for this to work correctly, it needs to be run BEFORE
-       appending a menu item to a menu (and so, needs to be enabled/
-       disabled prior to that as well."""
-    if env.isUAC:
-        if isinstance(item, wx.MenuItem):
-            pass
-            #if item.IsEnabled():
-            #    bitmap = images['uac.small'].GetBitmap()
-            #    item.SetBitmaps(bitmap,bitmap)
-        else:
-            env.setUAC(item.GetHandle(), True)
-
 ##: DEPRECATED: Tank link mixins to access the Tank data. They should be
 # replaced by self.window.method but I keep them till encapsulation reduces
 # their use to a minimum
@@ -163,8 +149,8 @@ tabInfo = {
 class _DetailsViewMixin(NotebookPanel):
     """Mixin to add detailsPanel attribute to a Panel with a details view.
 
-    Mix it in to SashUIListPanel so UILists can call SetDetails, RefreshDetails
-    and ClearDetails on their panels."""
+    Mix it in to SashUIListPanel so UILists can call SetDetails and
+    ClearDetails on their panels."""
     detailsPanel = None
     def _setDetails(self, fileName):
         self.detailsPanel.SetFile(fileName=fileName)
@@ -656,10 +642,10 @@ class INIList(balt.UIList):
 
     @staticmethod
     @balt.conversation
-    def _warn_tweak_game_ini(choice):
+    def _warn_tweak_game_ini(chosen):
         ask = True
-        if choice in bush.game.iniFiles:
-            message = (_(u"Apply an ini tweak to %s?") % choice + u'\n\n' + _(
+        if chosen in bush.game.iniFiles:
+            message = (_(u"Apply an ini tweak to %s?") % chosen + u'\n\n' + _(
                 u"WARNING: Incorrect tweaks can result in CTDs and even "
                 u"damage to your computer!"))
             ask = balt.askContinue(balt.Link.Frame, message,
@@ -829,9 +815,9 @@ class ModList(_ModsUIList):
 
     #--Populate Item
     def set_item_format(self, mod_name, item_format):
-        modInfo = self.data_store[mod_name]
+        mod_info = self.data_store[mod_name]
         #--Image
-        status = modInfo.getStatus()
+        status = mod_info.getStatus()
         checkMark = (
             1 if load_order.cached_is_active(mod_name)
             else 2 if mod_name in bosh.modInfos.merged
@@ -841,12 +827,12 @@ class ModList(_ModsUIList):
         item_format.icon_key = status_image_key, checkMark
         #--Default message
         mouseText = u''
-        fileBashTags = modInfo.getBashTags()
+        fileBashTags = mod_info.getBashTags()
         if mod_name in bosh.modInfos.bad_names:
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
         if mod_name in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
-        if modInfo.isEsm():
+        if mod_info.isEsm():
             item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
         elif mod_name in bosh.modInfos.bashed_patches:
@@ -882,25 +868,25 @@ class ModList(_ModsUIList):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
-        elif modInfo.hasBadMasterNames():
+        elif mod_info.hasBadMasterNames():
             if load_order.cached_is_active(mod_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText += _(u"WARNING: Has master names that will not load.  ")
-        elif modInfo.hasActiveTimeConflict():
+        elif mod_info.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
             mouseText += _(u"WARNING: Has same load order as another mod.  ")
         elif u'Deactivate' in fileBashTags and checkMark == 1:
             item_format.back_key = 'mods.bkgd.deactivate'
             mouseText += _(u"Mod should be imported and deactivated.  ")
-        elif modInfo.isExOverLoaded():
+        elif mod_info.isExOverLoaded():
             item_format.back_key = 'mods.bkgd.exOverload'
             mouseText += _(u"WARNING: Exclusion group is overloaded.  ")
-        elif modInfo.hasTimeConflict():
+        elif mod_info.hasTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText += _(u"Has same time as another (unloaded) mod.  ")
-        elif modInfo.isGhost:
+        elif mod_info.isGhost:
             item_format.back_key = 'mods.bkgd.ghosted'
             mouseText += _(u"File is ghosted.  ")
         if settings['bash.mods.scanDirty']:
@@ -1223,7 +1209,6 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     uiList of SashPanels.
     :type uilist: MasterList"""
     defaultSubSashPos = 0 # that was the default for mods (for saves 500)
-    _subsplitterSashGravity = 1.0 # max resize the top (masters) panel
 
     def __init__(self, parent):
         SashPanel.__init__(self, parent, isVertical=False)
@@ -1236,7 +1221,6 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         self.subSplitter.SetMinimumPaneSize(64)
         self.subSplitter.SplitHorizontally(self.masterPanel,
                                            self._bottom_low_panel)
-        self.subSplitter.SetSashGravity(self._subsplitterSashGravity)
         mod_or_save_panel = parent.GetParent().GetParent()
         _EditableMixinOnFileInfos.__init__(self, self.masterPanel,
                                            mod_or_save_panel)
@@ -1580,11 +1564,11 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.button = balt.Button(right, _(u'Remove'),
                                   onButClick=self._OnRemove)
         #--Edit button
-        self.editButton = balt.Button(right, _(u'Edit...'),
-                                      onButClick=self._OnEdit)
-        self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
+        self.editButton = balt.Button(right, _(u'Edit...'), onButClick=lambda:
+                                      self.current_ini_path.start())
         #--Ini file
         self.iniContents = TargetINILineCtrl(right)
+        self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
         #--Tweak file
         self.tweakContents = INITweakLineCtrl(left, self.iniContents)
         self.iniContents.SetTweakLinesCtrl(self.tweakContents)
@@ -1660,11 +1644,6 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
                 if not bosh.get_game_ini(ini_path):
                     self.__remove(name)
         self._combo_reset()
-
-    def _OnEdit(self):
-        """Called when the 'Edit' button is pressed."""
-        selection = self.comboBox.GetValue()
-        self.target_inis[selection].start()
 
     def __remove(self, ini_str_name): # does NOT change sorting
         del self.target_inis[ini_str_name]

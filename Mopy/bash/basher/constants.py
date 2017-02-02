@@ -301,7 +301,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.badDlls':{},
     'bash.installers.onDropFiles.action':None,
     'bash.installers.commentsSplitterSashPos':0,
-    'bash.installers.columns':['Package','Order','Modified','Size','Files'],
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
     'bash.wizard.pos': defPos,
@@ -388,7 +387,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'Karma': 25,
         'Header': 50,
         },
-    'bash.people.columns': ['Name','Karma','Header'],
     #--Tes4View/Edit/Trans
     'tes4View.iKnowWhatImDoing':False,
     'tes5View.iKnowWhatImDoing':False,

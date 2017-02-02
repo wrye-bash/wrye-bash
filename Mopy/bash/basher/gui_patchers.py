@@ -793,14 +793,14 @@ class _ListsMergerPanel(_ChoiceMenuMixin, _ListPatcherPanel):
 
     def _get_set_choice(self, item):
         """Get default config choice."""
-        choice = self.configChoices.get(item)
-        if not isinstance(choice,set): choice = {u'Auto'}
-        if u'Auto' in choice:
+        config_choice = self.configChoices.get(item)
+        if not isinstance(config_choice,set): config_choice = {u'Auto'}
+        if u'Auto' in config_choice:
             if item in bosh.modInfos:
                 bashTags = bosh.modInfos[item].getBashTags()
-                choice = {u'Auto'} | (self.autoKey & bashTags)
-        self.configChoices[item] = choice
-        return choice
+                config_choice = {u'Auto'} | (self.autoKey & bashTags)
+        self.configChoices[item] = config_choice
+        return config_choice
 
     def getItemLabel(self,item):
         """Returns label for item to be used in list"""

@@ -30,7 +30,7 @@ import re
 import time
 import wx
 from datetime import timedelta
-from . import SetUAC, BashFrame
+from . import BashFrame ##: drop this - decouple !
 from .. import bass, bosh, bolt, balt, env, load_order
 from ..bass import Resources
 from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
@@ -89,7 +89,7 @@ class PatchDialog(balt.Dialog):
         #--GUI elements
         self.gExecute = OkButton(self, label=_(u'Build Patch'),
                                  onButClick=self.PatchExecute)
-        SetUAC(self.gExecute)
+        _SetUAC(self.gExecute)
         self.gSelectAll = SelectAllButton(self, label=_(u'Select All'),
                                           onButClick=self.SelectAll)
         self.gDeselectAll = SelectAllButton(self, label=_(u'Deselect All'),
@@ -558,3 +558,17 @@ otherPatcherDict = {
     'CBash_StatsPatcher' : 'StatsPatcher',
     'CBash_ContentsChecker' : 'ContentsChecker',
     }
+
+def _SetUAC(item): # item must define a GetHandle() method
+    """Helper function for creating menu items or buttons that need UAC
+       Note: for this to work correctly, it needs to be run BEFORE
+       appending a menu item to a menu (and so, needs to be enabled/
+       disabled prior to that as well."""
+    if env.isUAC:
+        if isinstance(item, wx.MenuItem):
+            pass
+            #if item.IsEnabled():
+            #    bitmap = images['uac.small'].GetBitmap()
+            #    item.SetBitmaps(bitmap,bitmap)
+        else:
+            env.setUAC(item.GetHandle(), True)

@@ -2629,18 +2629,18 @@ class INIInfos(TableFileInfos):
             choice, previous_ini = -1, None
         for ini_name in _target_inis.keys():
             if ini_name == _(u'Browse...'): continue
-            path = _target_inis[ini_name]
+            ini_path = _target_inis[ini_name]
             # If user started with non-translated, 'Browse...'
             # will still be in here, but in English.  It wont get picked
             # up by the previous check, so we'll just delete any non-Path
             # objects.  That will take care of it.
-            if not isinstance(path,bolt.Path) or not path.isfile():
-                for iFile in gameInis: # don't remove game inis even if missing
-                    if iFile.abs_path == path: continue
+            if not isinstance(ini_path,bolt.Path) or not ini_path.isfile():
+                if get_game_ini(ini_path):
+                    continue # don't remove game inis even if missing
                 del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
-        csChoices = [x.lower() for x in _target_inis]
+        csChoices = set(x.lower() for x in _target_inis)
         for iFile in gameInis: # add the game inis even if missing
             if iFile.abs_path.tail.cs not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path

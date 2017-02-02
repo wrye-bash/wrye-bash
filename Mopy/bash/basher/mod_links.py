@@ -205,9 +205,7 @@ class Mod_Redate(AppendableLink, ItemLink):
             self._showError(_(u'Unrecognized date: ') + newTimeStr)
             return
         #--Do it
-        selInfos = [x for x in self.iselected_infos()]
-        selInfos.sort(key=attrgetter('mtime'))
-        for fileInfo in selInfos:
+        for fileInfo in sorted(self.iselected_infos(),key=attrgetter('mtime')):
             fileInfo.setmtime(newTime)
             newTime += 60
         #--Refresh
