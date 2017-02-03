@@ -176,6 +176,7 @@ class ess:
 iniFiles = [
     u'Fallout4.ini',
     u'Fallout4Prefs.ini',
+    u'Fallout4Custom.ini',
     ]
 
 #--INI setting to setup Save Profiles
