@@ -30,7 +30,7 @@ from .. import bass, balt, bosh, bolt, load_order
 from ..bass import Resources
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
-    CancelButton, hspace, vspace
+    CancelButton, hspace, vspace, BaltFrame
 from ..bolt import GPath, BoltError, deprint
 from ..bosh import omods
 
@@ -43,10 +43,12 @@ except ImportError:
     deprint(
         _(u'Comtypes is missing, features utilizing HTML will be disabled'))
 
-#------------------------------------------------------------------------------
-class DocBrowser(wx.Frame):
+class DocBrowser(BaltFrame):
     """Doc Browser frame."""
-    def __init__(self,modName=None):
+    _frame_settings_key = 'bash.modDocs'
+    _def_size = (300, 400)
+
+    def __init__(self, modName=None):
         """Initialize.
         modName -- current modname (or None)."""
         #--Data
@@ -62,19 +64,12 @@ class DocBrowser(wx.Frame):
         #--Singleton
         Link.Frame.docBrowser = self
         #--Window
-        pos = bass.settings['bash.modDocs.pos']
-        size = bass.settings['bash.modDocs.size']
-        wx.Frame.__init__(self, Link.Frame, title=_(u'Doc Browser'), pos=pos,
-                          size=size)
-        self.SetBackgroundColour(wx.NullColour)
-        self.SetSizeHints(250,250)
+        super(DocBrowser, self).__init__(Link.Frame, title=_(u'Doc Browser'))
         #--Mod Name
         self.modNameBox = RoTextCtrl(self, multiline=False)
         self.modNameList = balt.listBox(self,
             choices=sorted(x.s for x in self.docs.keys()), isSort=True,
             onSelect=self.DoSelectMod)
-        #--Application Icons
-        self.SetIcons(Resources.bashDocBrowser)
         #--Set Doc
         self.setButton = Button(self, _(u'Set Doc...'), onButClick=self.DoSet)
         #--Forget Doc
@@ -100,18 +95,16 @@ class DocBrowser(wx.Frame):
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
                                               wx.ART_HELP_BROWSER, (16, 16))
             self.prevButton = bitmapButton(self, bitmap,
-                                           onBBClick=self.DoPrevPage)
+                                           onBBClick=self.htmlText.GoBack)
             #--Html Forward
             bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
                                               wx.ART_HELP_BROWSER, (16, 16))
             self.nextButton = bitmapButton(self, bitmap,
-                                           onBBClick=self.DoNextPage)
+                                           onBBClick=self.htmlText.GoForward)
         else:
             self.htmlText = None
             self.prevButton = None
             self.nextButton = None
-        #--Events
-        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         #--Layout
         self.mainSizer = vSizer(
             (hSizer( #--Buttons
@@ -142,6 +135,9 @@ class DocBrowser(wx.Frame):
         self.SetMod(modName)
         self.SetDocType('txt')
 
+    @staticmethod
+    def _resources(): return Resources.bashDocBrowser
+
     def GetIsWtxt(self,docPath=None):
         """Determines whether specified path is a wtxt file."""
         docPath = docPath or GPath(self.docs.get(self.modName,u''))
@@ -153,14 +149,6 @@ class DocBrowser(wx.Frame):
             return maText is not None
         except UnicodeDecodeError:
             return False
-
-    def DoPrevPage(self):
-        """Handle "Back" button click."""
-        self.htmlText.GoBack()
-
-    def DoNextPage(self):
-        """Handle "Next" button click."""
-        self.htmlText.GoForward()
 
     def DoOpen(self):
         """Handle "Open Doc" button."""
@@ -365,27 +353,20 @@ class DocBrowser(wx.Frame):
         Remember window size, position, etc."""
         self.DoSave()
         bass.settings['bash.modDocs.show'] = False
-        if not self.IsIconized() and not self.IsMaximized():
-            bass.settings['bash.modDocs.pos'] = tuple(self.GetPosition())
-            bass.settings['bash.modDocs.size'] = tuple(self.GetSize())
         Link.Frame.docBrowser = None
-        self.Destroy()
+        super(DocBrowser, self).OnCloseWindow()
 
 #------------------------------------------------------------------------------
-class ModChecker(wx.Frame):
+class ModChecker(BaltFrame):
     """Mod Checker frame."""
+    _frame_settings_key = 'bash.modChecker'
+    _def_size = (475, 500)
+
     def __init__(self):
-        """Initialize."""
         #--Singleton
         Link.Frame.modChecker = self
         #--Window
-        pos = bass.settings.get('bash.modChecker.pos',balt.defPos)
-        size = bass.settings.get('bash.modChecker.size',(475,500))
-        wx.Frame.__init__(self, Link.Frame, title=_(u'Mod Checker'), pos=pos,
-                          size=size)
-        self.SetBackgroundColour(wx.NullColour)
-        self.SetSizeHints(250,250)
-        self.SetIcons(Resources.bashBlue)
+        super(ModChecker, self).__init__(Link.Frame, title=_(u'Mod Checker'))
         #--Data
         self.orderedActive = None
         self.merged = None
@@ -408,26 +389,19 @@ class ModChecker(wx.Frame):
             gBackButton = None
             gForwardButton = None
         gUpdateButton = Button(self, _(u'Update'), onButClick=self.CheckMods)
-        self.gShowModList = toggleButton(self, _(u'Mod List'),
-                                         onClickToggle=self.CheckMods)
-        self.gShowRuleSets = toggleButton(self, _(u'Rule Sets'),
-                                          onClickToggle=self.CheckMods)
-        self.gShowNotes = toggleButton(self, _(u'Notes'),
-                                       onClickToggle=self.CheckMods)
-        self.gShowConfig = toggleButton(self, _(u'Configuration'),
-                                        onClickToggle=self.CheckMods)
-        self.gShowSuggest = toggleButton(self, _(u'Suggestions'),
-                                         onClickToggle=self.CheckMods)
-        self.gShowCRC = toggleButton(self, _(u'CRCs'),
-                                     onClickToggle=self.CheckMods)
-        self.gShowVersion = toggleButton(self, _(u'Version Numbers'),
-                                         onClickToggle=self.CheckMods)
+        def _toggle_button(caption):
+            return toggleButton(self, caption, onClickToggle=self.CheckMods)
+        self.gShowModList = _toggle_button( _(u'Mod List'))
+        self.gShowRuleSets = _toggle_button(_(u'Rule Sets'))
+        self.gShowNotes = _toggle_button(_(u'Notes'))
+        self.gShowConfig = _toggle_button(_(u'Configuration'))
+        self.gShowSuggest = _toggle_button(_(u'Suggestions'))
+        self.gShowCRC = _toggle_button(_(u'CRCs'))
+        self.gShowVersion = _toggle_button(_(u'Version Numbers'))
         if bass.settings['bash.CBashEnabled']:
-            self.gScanDirty = toggleButton(self, _(u'Scan for Dirty Edits'),
-                                           onClickToggle=self.CheckMods)
+            self.gScanDirty = _toggle_button(_(u'Scan for Dirty Edits'))
         else:
-            self.gScanDirty = toggleButton(self, _(u"Scan for UDR's"),
-                                           onClickToggle=self.CheckMods)
+            self.gScanDirty = _toggle_button(_(u"Scan for UDR's"))
         self.gCopyText = Button(self, _(u'Copy Text'),
                                 onButClick=self.OnCopyText)
         self.gShowModList.SetValue(
@@ -443,7 +417,6 @@ class ModChecker(wx.Frame):
         self.gShowVersion.SetValue(
             bass.settings.get('bash.modChecker.showVersion', True))
         #--Events
-        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         self.Bind(wx.EVT_ACTIVATE, self.OnActivate)
         #--Layout
         self.SetSizer(
@@ -531,30 +504,21 @@ class ModChecker(wx.Frame):
             ):
             self.CheckMods()
 
-    def OnCloseWindow(self):
-        """Handle window close event.
-        Remember window size, position, etc."""
-        # TODO(ut): maybe set Link.Frame.modChecker = None (compare with DocBrowser)
-        if not self.IsIconized() and not self.IsMaximized():
-            bass.settings['bash.modChecker.pos'] = tuple(self.GetPosition())
-            bass.settings['bash.modChecker.size'] = tuple(self.GetSize())
-        self.Destroy()
-
 #------------------------------------------------------------------------------
-class InstallerProject_OmodConfigDialog(wx.Frame):
+class InstallerProject_OmodConfigDialog(BaltFrame):
     """Dialog for editing omod configuration data."""
+    _size_hints = (300, 300)
+
     def __init__(self,parent,data,project):
         #--Data
         self.data = data
         self.project = project
         self.config = config = omods.OmodConfig.getOmodConfig(project)
         #--GUI
-        wx.Frame.__init__(self, parent, title=_(u'Omod Config: ') + project.s,
-                          style=(wx.RESIZE_BORDER | wx.CAPTION |
-                                 wx.CLIP_CHILDREN | wx.TAB_TRAVERSAL))
-        self.SetIcons(Resources.bashBlue)
-        self.SetSizeHints(300,300)
-        self.SetBackgroundColour(wx.NullColour)
+        super(InstallerProject_OmodConfigDialog, self).__init__(parent,
+            title=_(u'Omod Config: ') + project.s,
+            style=wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |
+                  wx.TAB_TRAVERSAL)
         #--Fields
         self.gName = TextCtrl(self, config.name, maxChars=100)
         self.gVersion = TextCtrl(self, u'%d.%02d' % (
@@ -581,16 +545,13 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
             (hSizer(
                 hspacer, SaveButton(self, onButClick=self.DoSave,
                                     default=True),
-                hspace(), CancelButton(self, onButClick=self.DoCancel),
+                hspace(), CancelButton(self, onButClick=self.OnCloseWindow),
                 ),0,wx.EXPAND|wx.ALL,4),
             )
         #--Done
         self.SetSizerAndFit(sizer)
         self.SetSizer(sizer)
         self.SetSize((350,400))
-
-    #--Save/Cancel
-    def DoCancel(self): self.Destroy()
 
     def DoSave(self):
         """Handle save button."""
@@ -610,4 +571,4 @@ class InstallerProject_OmodConfigDialog(wx.Frame):
             config.vMajor,config.vMinor = (0,0)
         #--Done
         omods.OmodConfig.writeOmodConfig(self.project, self.config)
-        self.Destroy()
+        self.OnCloseWindow()

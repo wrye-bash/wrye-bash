@@ -258,8 +258,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         },
     #--Wrye Bash: Mod Docs
     'bash.modDocs.show': False,
-    'bash.modDocs.size': (300,400),
-    'bash.modDocs.pos': defPos,
     'bash.modDocs.dir': None,
     #--Installers
     'bash.installers.cols': ['Package','Order','Modified','Size','Files'],
