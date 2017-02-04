@@ -315,7 +315,7 @@ class Save_DiffMasters(EnabledLink):
         oldMasters = set(oldInfo.masterNames)
         if len(self.selected) == 1:
             newName = GPath(_(u'Active Masters'))
-            newMasters = set(load_order.activeCached())
+            newMasters = set(load_order.cached_active_tuple())
         else:
             newName = oldNew[1]
             newInfo = self.window.data_store[newName]
@@ -816,7 +816,7 @@ class Save_UpdateNPCLevels(EnabledLink):
     _text = _(u'Update NPC Levels...')
     help = _(u'Update NPC levels from active mods')
 
-    def _enable(self): return bool(load_order.activeCached())
+    def _enable(self): return bool(load_order.cached_active_tuple())
 
     def Execute(self):
         message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
@@ -827,7 +827,7 @@ class Save_UpdateNPCLevels(EnabledLink):
             npc_info = {}
             loadFactory = parsers.LoadFactory(
                     False, bosh.MreRecord.type_class['NPC_'])
-            ordered = list(load_order.activeCached())
+            ordered = list(load_order.cached_active_tuple())
             subProgress = SubProgress(progress,0,0.4,len(ordered))
             modErrors = []
             for index,modName in enumerate(ordered):

@@ -654,7 +654,7 @@ class Mod_ListDependent(OneItemLink):
             log = bolt.LogFile(out)
             log(u'[spoiler][xml]')
             log.setHeader(head + self.legend + u': ')
-            loOrder =  lambda tup: load_order.loIndexCachedOrMax(tup[0])
+            loOrder =  lambda tup: load_order.cached_lo_index_or_max(tup[0])
             text = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
                 if self._selected_item in info.header.masters:
@@ -702,7 +702,7 @@ class _GhostLink(ItemLink):
     def setAllow(filename): return not _GhostLink.getAllow(filename)
     @staticmethod
     def toGhost(filename): return _GhostLink.getAllow(filename) and \
-        not load_order.isActiveCached(filename) # cannot ghost active mods
+        not load_order.cached_is_active(filename) # cannot ghost active mods
     @staticmethod
     def getAllow(filename):
         return bosh.modInfos.table.getItem(filename, 'allowGhosting', True)
@@ -726,7 +726,7 @@ class _GhostLink(ItemLink):
 class _Mod_AllowGhosting_All(_GhostLink, ItemLink):
     _text, help = _(u"Allow Ghosting"), _(u'Allow Ghosting for selected mods')
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda name: not load_order.isActiveCached(name))
+    toGhost = staticmethod(lambda name: not load_order.cached_is_active(name))
 
 #------------------------------------------------------------------------------
 class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
@@ -738,7 +738,7 @@ class _Mod_DisallowGhosting_All(_GhostLink, ItemLink):
 #------------------------------------------------------------------------------
 class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     setAllow = staticmethod(lambda fname: True) # allow ghosting
-    toGhost = staticmethod(lambda name: not load_order.isActiveCached(name))
+    toGhost = staticmethod(lambda name: not load_order.cached_is_active(name))
 
     def _initData(self, window, selection):
         super(Mod_Ghost, self)._initData(window, selection)
@@ -755,7 +755,7 @@ class Mod_Ghost(_GhostLink, EnabledLink): ##: consider an unghost all Link
     def _enable(self):
         # only enable ghosting for one item if not active
         if len(self.selected) == 1 and not self.isGhost:
-            return not load_order.isActiveCached(self.mname)
+            return not load_order.cached_is_active(self.mname)
         return True
 
     def Execute(self):
@@ -872,7 +872,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         # Clean up some memory
         bolt.GPathPurge()
         # We need active mods
-        if not load_order.activeCached():
+        if not load_order.cached_active_tuple():
             self._showWarning(
                 _(u'That which does not exist cannot be patched.') + u'\n' +
                 _(u'Load some mods and try again.'),
@@ -899,8 +899,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         patch_files.executing_patch = self._selected_item
-        mods_prior_to_patch = load_order.cached_lord.loadOrder[
-                              :load_order.loIndexCached(self._selected_item)]
+        mods_prior_to_patch = load_order.cached_lower_loading(
+            self._selected_item)
         if self.doCBash or bass.settings['bash.CBashEnabled']:
             # if doing a python patch but CBash is enabled, it's very likely
             # that the merge info currently is from a CBash mode scan, rescan
@@ -911,15 +911,15 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             self.window.RefreshUI(refreshSaves=False) # rescanned mergeable
         #--Check if we should be deactivating some plugins
         active_prior_to_patch = [x for x in mods_prior_to_patch if
-                                 load_order.isActiveCached(x)]
+                                 load_order.cached_is_active(x)]
         self._ask_deactivate_mergeable(active_prior_to_patch)
         previousMods = set()
         missing = collections.defaultdict(list)
         delinquent = collections.defaultdict(list)
-        for mod in load_order.activeCached():
+        for mod in load_order.cached_active_tuple():
             if mod == self._selected_item: break
             for master in bosh.modInfos[mod].header.masters:
-                if not load_order.isActiveCached(master):
+                if not load_order.cached_is_active(master):
                     missing[mod].append(master)
                 elif master not in previousMods:
                     delinquent[mod].append(master)

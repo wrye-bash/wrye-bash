@@ -360,7 +360,7 @@ class ConfigHelpers:
         """Checks currently loaded mods against ruleset.
            mod_checker should be the instance of ModChecker, to scan."""
         from . import modInfos
-        active = set(load_order.activeCached())
+        active = set(load_order.cached_active_tuple())
         merged = modInfos.merged
         imported = modInfos.imported
         activeMerged = active | merged
@@ -479,7 +479,7 @@ class ConfigHelpers:
             else:
                 log.setHeader(warning+_(u'Missing/Delinquent Masters'))
                 previousMods = set()
-                for mod in load_order.activeCached():
+                for mod in load_order.cached_active_tuple():
                     loggedMod = False
                     for master in modInfos[mod].header.masters:
                         if master not in active:

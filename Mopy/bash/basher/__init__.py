@@ -293,9 +293,9 @@ class _ModsUIList(balt.UIList):
             items.sort(key=lambda a: not self.data_store[a].isEsm())
 
     def _activeModsFirst(self, items):
-        if self.selectedFirst:
-            items.sort(key=lambda x: x not in set(load_order.activeCached()
-                ) | bosh.modInfos.imported | bosh.modInfos.merged)
+        if self.selectedFirst: items.sort(key=lambda x: x not in
+            bosh.modInfos.imported | bosh.modInfos.merged | set(
+                load_order.cached_active_tuple()))
 
     def forceEsmFirst(self):
         return self.sort_column in _ModsUIList._esmsFirstCols
@@ -317,7 +317,7 @@ class MasterList(_ModsUIList):
     def _activeModsFirst(self, items):
         if self.selectedFirst:
             items.sort(key=lambda x: self.data_store[x].name not in set(
-                load_order.activeCached()) | bosh.modInfos.imported
+                load_order.cached_active_tuple()) | bosh.modInfos.imported
                                            | bosh.modInfos.merged)
     _extra_sortings = [_ModsUIList._sortEsmsFirst, _activeModsFirst]
     _sunkenBorder, _singleCell = False, True
@@ -409,7 +409,7 @@ class MasterList(_ModsUIList):
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
         loadOrderIndex = self.loadOrderNames.index(masters_name)
-        ordered = load_order.activeCached()
+        ordered = load_order.cached_active_tuple()
         if mi != loadOrderIndex: # there are active masters out of order
             return 20  # orange
         elif status > 0:
@@ -436,7 +436,7 @@ class MasterList(_ModsUIList):
                 item_format.text_key = 'mods.text.mergeable'
         #--Text BG
         if bosh.modInfos.isBadFileName(masters_name.s):
-            if load_order.isActiveCached(masters_name):
+            if load_order.cached_is_active(masters_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -453,7 +453,7 @@ class MasterList(_ModsUIList):
                 item_format.strong = True
         #--Image
         status = self.GetMasterStatus(mi)
-        oninc = load_order.isActiveCached(masters_name) or (
+        oninc = load_order.cached_is_active(masters_name) or (
             masters_name in bosh.modInfos.merged and 2)
         on_display = self.detailsPanel.displayed_item
         if status == 30: # master is missing
@@ -462,7 +462,8 @@ class MasterList(_ModsUIList):
         elif on_display in bosh.modInfos:
             if status == 20:
                 mouseText += _(u"Reordered relative to other masters.  ")
-            if load_order.loIndexCached(on_display) < load_order.loIndexCached(masters_name):
+            lo_index = load_order.cached_lo_index
+            if lo_index(on_display) < lo_index(masters_name):
                 mouseText += _(u"Loads after %s.  ") % on_display
                 status = 20 # paint orange
         item_format.icon_key = status, oninc
@@ -748,7 +749,7 @@ class ModList(_ModsUIList):
         'Rating'    : lambda self, a: self._get(a)('rating', u''),
         'Group'     : lambda self, a: self._get(a)('group', u''),
         'Installer' : lambda self, a: self._get(a)('installer', u''),
-        'Load Order': lambda self, a: load_order.loIndexCachedOrMax(a),
+        'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
         'Modified'  : lambda self, a: self.data_store[a].mtime,
         'Size'      : lambda self, a: self.data_store[a].size,
         'Status'    : lambda self, a: self.data_store[a].getStatus(),
@@ -820,7 +821,7 @@ class ModList(_ModsUIList):
         #--Image
         status = modInfo.getStatus()
         checkMark = (
-            1 if load_order.isActiveCached(mod_name)
+            1 if load_order.cached_is_active(mod_name)
             else 2 if mod_name in bosh.modInfos.merged
             else 3 if mod_name in bosh.modInfos.imported
             else 0)
@@ -865,12 +866,12 @@ class ModList(_ModsUIList):
         if mod_name in bosh.modInfos.bad_names:
             item_format.back_key ='mods.bkgd.doubleTime.exists'
         elif mod_name in bosh.modInfos.missing_strings:
-            if load_order.isActiveCached(mod_name):
+            if load_order.cached_is_active(mod_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif modInfo.hasBadMasterNames():
-            if load_order.isActiveCached(mod_name):
+            if load_order.cached_is_active(mod_name):
                 item_format.back_key = 'mods.bkgd.doubleTime.load'
             else:
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
@@ -955,7 +956,7 @@ class ModList(_ModsUIList):
         if code == wx.WXK_SPACE:
             selected = self.GetSelected()
             toActivate = [item for item in selected if
-                          not load_order.isActiveCached(item)]
+                          not load_order.cached_is_active(item)]
             if len(toActivate) == 0 or len(toActivate) == len(selected):
                 #--Check/Uncheck all
                 self._toggle_active_state(*selected)
@@ -1001,9 +1002,9 @@ class ModList(_ModsUIList):
         """Toggle active state of mods given - all mods must be either
         active or inactive."""
         refreshNeeded = False
-        active = [mod for mod in mods if load_order.isActiveCached(mod)]
-        inactive = [mod for mod in mods if not load_order.isActiveCached(mod)]
-        assert len(active) == len(mods) or len(inactive) == len(mods)
+        active = [mod for mod in mods if load_order.cached_is_active(mod)]
+        assert not active or len(active) == len(mods) # empty or all
+        inactive = (not active and mods) or []
         changes = collections.defaultdict(dict)
         # Deactivate ?
         touched = set()
@@ -1015,7 +1016,8 @@ class ModList(_ModsUIList):
                 if len(changed) > (act in changed): # deactivated children
                     touched |= changed
                     changed = [x for x in changed if x != act]
-                    changes[self.__deactivated_key][act] = load_order.get_ordered(changed)
+                    changes[self.__deactivated_key][act] = \
+                        load_order.get_ordered(changed)
             except BoltError as e:
                 balt.showError(self, u'%s' % e)
         # Activate ?
@@ -1768,7 +1770,7 @@ class ModPanel(BashTab):
         BashFrame.modList = self.uiList
 
     def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
-        len(load_order.activeCached()), len(bosh.modInfos))
+        len(load_order.cached_active_tuple()), len(bosh.modInfos))
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()

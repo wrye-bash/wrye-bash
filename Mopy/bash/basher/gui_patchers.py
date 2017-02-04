@@ -425,15 +425,11 @@ class _ListPatcherPanel(_PatcherPanel):
         return autoItems
 
     def _get_auto_mods(self):
-        autoItems = []
         autoRe = self.__class__.autoRe
-        mods_prior_to_patch = load_order.cached_lord.loadOrder[
-                        :load_order.loIndexCached(patch_files.executing_patch)]
-        for mod in mods_prior_to_patch:
-            if autoRe.match(mod.s) or (
-                    self.__class__.autoKey & bosh.modInfos[mod].getBashTags()):
-                autoItems.append(mod)
-        return autoItems
+        mods_prior_to_patch = load_order.cached_lower_loading(
+            patch_files.executing_patch)
+        return [mod for mod in mods_prior_to_patch if autoRe.match(mod.s) or (
+            self.__class__.autoKey & bosh.modInfos[mod].getBashTags())]
 
     def _import_config(self, default=False):
         super(_ListPatcherPanel, self)._import_config(default)
@@ -887,14 +883,11 @@ class _MergerPanel(_ListPatcherPanel):
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
-        autoItems = []
-        mods_prior_to_patch = load_order.cached_lord.loadOrder[
-                        :load_order.loIndexCached(patch_files.executing_patch)]
-        for mod in mods_prior_to_patch:
-            if (mod in bosh.modInfos.mergeable and
-                u'NoMerge' not in bosh.modInfos[mod].getBashTags()):
-                autoItems.append(mod)
-        return autoItems
+        mods_prior_to_patch = load_order.cached_lower_loading(
+            patch_files.executing_patch)
+        return [mod for mod in mods_prior_to_patch if (
+            mod in bosh.modInfos.mergeable and u'NoMerge' not in bosh.modInfos[
+                mod].getBashTags())]
 
 class _GmstTweakerPanel(_TweakPatcherPanel):
 

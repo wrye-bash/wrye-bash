@@ -61,9 +61,8 @@ class _PFile(object):
         #--Config
         self.bodyTags = 'ARGHTCCPBS' #--Default bodytags
         #--Mods
-        dex = load_order.loIndexCached
-        loadMods = [name for name in load_order.activeCached() if
-                    dex(name) < dex(self.patchName)]
+        loadMods = [m for m in load_order.cached_lower_loading(self.patchName)
+                    if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods dated before the bashed patch")
         self.setMods(loadMods, [])
@@ -449,17 +448,11 @@ class CBash_PatchFile(_PFile, ObModFile):
         #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
-        dex = load_order.loIndexCached
-        def less(mod): return dex(mod) < dex(self.patchName)
-        for name in self.mergeSet:
-            if less(name): self.Current.addMergeMod(infos[name].getPath().stail)
-        for name in self.loadSet:
-            if name not in self.mergeSet and less(name):
-                self.Current.addMod(infos[name].getPath().stail)
-        for name in self.scanSet:
-            if name not in self.mergeSet and name not in self.loadSet \
-                    and less(name):
-                self.Current.addScanMod(infos[name].getPath().stail)
+        for m in load_order.cached_lower_loading(self.patchName):
+            real_filename = infos[m].getPath().stail # beware of .ghost
+            if m in self.mergeSet: self.Current.addMergeMod(real_filename)
+            elif m in self.loadSet: self.Current.addMod(real_filename)
+            elif m in self.scanSet: self.Current.addScanMod(real_filename)
         self.patchName.temp.remove()
         patchFile = self.patchFile = self.Current.addMod(self.patchName.temp.s, CreateNew=True)
         self.Current.load()

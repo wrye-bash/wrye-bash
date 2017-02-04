@@ -1125,7 +1125,7 @@ class WryeParser(ScriptParser.Parser):
     def fnGetEspmStatus(self, filename):
         file = bolt.GPath(filename)
         if file in bosh.modInfos.merged: return 3   # Merged
-        if load_order.isActiveCached(file): return 2  # Active
+        if load_order.cached_is_active(file): return 2  # Active
         if file in bosh.modInfos.imported: return 1 # Imported (not active/merged)
         if file in bosh.modInfos: return 0          # Inactive
         return -1                                   # Not found

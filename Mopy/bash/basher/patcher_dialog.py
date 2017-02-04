@@ -248,7 +248,7 @@ class PatchDialog(balt.Dialog):
             balt.showWryeLog(self.parent,readme.root+u'.html',patch_name.s,icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patch_name.s
-            if load_order.isActiveCached(patch_name) or (
+            if load_order.cached_is_active(patch_name) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patch_name.s)):
                 try:

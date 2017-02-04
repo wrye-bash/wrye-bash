@@ -498,7 +498,7 @@ class ModChecker(wx.Frame):
         bass.settings[
             'bash.modChecker.showVersion'] = self.gShowVersion.GetValue()
         #--Cache info from modinfos to support auto-update.
-        self.orderedActive = load_order.activeCached()
+        self.orderedActive = load_order.cached_active_tuple()
         self.merged = bosh.modInfos.merged.copy()
         self.imported = bosh.modInfos.imported.copy()
         #--Do it
@@ -525,7 +525,7 @@ class ModChecker(wx.Frame):
     def OnActivate(self,event):
         """Handle window activate/deactivate. Use for auto-updating list."""
         if (event.GetActive() and (
-            self.orderedActive != load_order.activeCached() or
+            self.orderedActive != load_order.cached_active_tuple() or
             self.merged != bosh.modInfos.merged or
             self.imported != bosh.modInfos.imported)
             ):

@@ -129,7 +129,7 @@ class Mods_LoadList(ChoiceLink):
         class _SaveLink(EnabledLink):
             _text = _(u'Save Active Mods List')
             help = _(u'Save the currently active mods to a new active mods list')
-            def _enable(self): return bool(load_order.activeCached())
+            def _enable(self): return bool(load_order.cached_active_tuple())
             def Execute(self):
                 newItem = self._askText(
                     _(u'Save currently active mods list as:'))
@@ -139,7 +139,7 @@ class Mods_LoadList(ChoiceLink):
                                 u'1 and 64 characters long.')
                     return self._showError(message)
                 Mods_LoadList.loadListsDict[newItem] = list(
-                    load_order.activeCached())
+                    load_order.cached_active_tuple())
                 bass.settings.setChanged('bash.loadLists.data')
         self.extraItems = [_All(), _None(), _Selected(), _SaveLink(), _Edit(),
                            SeparatorLink()]

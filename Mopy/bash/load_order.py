@@ -164,26 +164,29 @@ def _keep_max(max_to_keep, length):
     return x, y
 
 # Load Order utility methods - make sure the cache is valid when using them
-def activeCached():
+def cached_active_tuple():
     """Return the currently cached active mods in load order as a tuple.
     :rtype : tuple[bolt.Path]
     """
     return cached_lord.activeOrdered
 
-def isActiveCached(mod):
+def cached_is_active(mod):
     """Return true if the mod is in the current active mods cache."""
     return mod in cached_lord.active
 
 # Load order and active indexes
-def loIndexCached(mod): return cached_lord.lindex(mod)
+def cached_lo_index(mod): return cached_lord.lindex(mod)
 
-def loIndexCachedOrMax(mod):
+def cached_lo_index_or_max(mod):
     try:
-        return loIndexCached(mod)
+        return cached_lo_index(mod)
     except KeyError:
         return sys.maxint # sort mods that do not have a load order LAST
 
-def activeIndexCached(mod): return cached_lord.activeIndex(mod)
+def cached_active_index(mod): return cached_lord.activeIndex(mod)
+
+def cached_lower_loading(mod):
+    return cached_lord.loadOrder[:cached_lo_index(mod)]
 
 def get_ordered(mod_names):
     """Return a list containing modNames' elements sorted into load order.
@@ -196,7 +199,7 @@ def get_ordered(mod_names):
     """
     mod_names = list(mod_names)
     mod_names.sort() # resolve time conflicts or no load order
-    mod_names.sort(key=loIndexCachedOrMax)
+    mod_names.sort(key=cached_lo_index_or_max)
     return mod_names
 
 def filter_pinned(imods):
@@ -314,7 +317,7 @@ def has_load_order_conflict(mod_name):
     return game_handle.has_load_order_conflict(mod_name)
 
 def has_load_order_conflict_active(mod_name):
-    if not isActiveCached(mod_name): return False
+    if not cached_is_active(mod_name): return False
     return game_handle.has_load_order_conflict_active(mod_name,
                                                       cached_lord.active)
 
