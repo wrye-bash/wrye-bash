@@ -71,7 +71,7 @@ from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
-from ..bosh import omods, projects_walk_cache
+from ..bosh import omods
 from ..cint import CBashApi
 
 startupinfo = bolt.startupinfo
@@ -1468,7 +1468,7 @@ class ModDetails(_SashDetailsPanel):
         try:
             bosh.modInfos.refreshFile(fileName)
             detail_item = fileName
-        except bosh.FileError:
+        except bolt.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             detail_item = None
         with load_order.Unlock():
@@ -2023,7 +2023,7 @@ class SaveDetails(_SashDetailsPanel):
         try:
             bosh.saveInfos.refreshFile(saveInfo.name)
             detail_item = saveInfo.name
-        except bosh.FileError:
+        except bolt.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             detail_item = None
         # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
@@ -2221,6 +2221,16 @@ class InstallersList(balt.UIList):
                 #--Reselected the renamed items
                 self.SelectItemsNoCallback(newselected)
             event.Veto()
+
+    def new_name(self, new_name):
+        if self.__renaming_type is bosh.InstallerMarker:
+            new_name, count = GPath(u'==' + new_name.s.strip(u'=') + u'=='), 0
+            while new_name in self.data_store:
+                count += 1
+                new_name = GPath(u'==' + new_name.s.strip(u'=') + (
+                    u' (%d)' % count) + u'==')
+            return GPath(u'==' + new_name.s.strip(u'=') + u'==')
+        return super(InstallersList, self).new_name(new_name)
 
     @staticmethod
     def _unhide_wildcard():
@@ -2670,7 +2680,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 buff = StringIO.StringIO()
                 if isPath: files = [x.s for x in files]
                 else: files = list(files)
-                files = bosh.Installer.sortFiles(files)
+                files = bolt.sortFiles(files)
                 if header: buff.write(header+u'\n')
                 for file in files:
                     oldName = installer.getEspmName(file)
@@ -2821,7 +2831,7 @@ class InstallersPanel(BashTab):
     def __init__(self,parent):
         """Initialize."""
         BashFrame.iPanel = self
-        self.listData = bosh.InstallersData()
+        self.listData = bosh.bain.InstallersData()
         super(InstallersPanel, self).__init__(parent)
         #--Refreshing
         self._data_dir_scanned = False
@@ -2858,7 +2868,7 @@ class InstallersPanel(BashTab):
             self.refreshing = False
 
     @balt.conversation
-    @projects_walk_cache
+    @bosh.bain.projects_walk_cache
     def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
                                       scan_data_dir):
         if settings.get('bash.installers.updatedCRCs',True): #only checked here
@@ -2896,7 +2906,7 @@ class InstallersPanel(BashTab):
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
-        changed = bosh.InstallersData.miscTrackedFiles.refreshTracked()
+        changed = bosh.bain.InstallersData.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
             data_sizeCrcDate = self.listData.data_sizeCrcDate
@@ -3224,7 +3234,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         try:
             bosh.bsaInfos.refreshFile(self._bsa_info.name)
             detail_item = self._bsa_info.name
-        except bosh.FileError:
+        except bolt.FileError:
             balt.showError(self,_(u'File corrupted on save!'))
             detail_item = None
         self.panel_uilist.RefreshUI(detail_item=detail_item)
@@ -4126,8 +4136,8 @@ def InitSettings(): # this must run first !
     balt.sizes = bass.settings.getChanged('bash.window.sizes',{})
     settings = bass.settings
     settings.loadDefaults(settingDefaults)
-    bosh.Installer.init_global_skips() # must be after loadDefaults - grr #178
-    bosh.Installer.init_attributes_process()
+    bosh.bain.Installer.init_global_skips() # must be after loadDefaults - grr #178
+    bosh.bain.Installer.init_attributes_process()
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')

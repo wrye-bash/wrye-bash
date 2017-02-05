@@ -167,7 +167,7 @@ class InstallerWizard(wiz.Wizard):
         # Clean up temp files
         if self.parser.bArchive:
             try:
-                self.parser.installer.rmTempDir()
+                bass.rmTempDir()
             except:
                 pass
         return self.ret
@@ -1475,7 +1475,7 @@ class WryeParser(ScriptParser.Parser):
             return
         # If not an auto-wizard, or an auto-wizard with no default option
         if self.bArchive:
-            imageJoin = self.installer.getTempDir().join
+            imageJoin = bass.getTempDir().join
         else:
             imageJoin = bass.dirs['installers'].join(self.path).join
         for i in images:

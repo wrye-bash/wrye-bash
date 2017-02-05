@@ -2181,19 +2181,22 @@ class UIList(wx.Panel):
         if not self.__class__._shellUI:
             items = self._promptDelete(items, dialogTitle, order, recycle)
         if not items: return
-        for i in items: ##: simplify and make sure delete_Refresh() runs !
+        if not self.__class__._shellUI: # non shellUI path used to delete as
+            # many as possible, mainly to show an error on trying to delete
+            # the master esm - I kept this behavior
+            for i in items:
+                try:
+                    self.data_store.delete([i], doRefresh=False,
+                                           recycle=recycle)
+                except bolt.BoltError as e: showError(self, u'%s' % e)
+                except (AccessDeniedError, CancelError, SkipError): pass
+            else:
+                self.data_store.delete_refresh(items, None,
+                                               check_existence=True)
+        else: # shellUI path tries to delete all at once
             try:
-                if not self.__class__._shellUI: # non shellUI path used to
-                    # delete as many as possible, I kept this behavior
-                    self.data_store.delete(i, doRefresh=False, recycle=recycle)
-                else: # shellUI path tries to delete all at once
-                    self.data_store.delete(items, confirm=True, recycle=recycle)
-            except bolt.BoltError as e: showError(self, u'%r' % e)
+                self.data_store.delete(items, confirm=True, recycle=recycle)
             except (AccessDeniedError, CancelError, SkipError): pass
-            finally: # FIXME: remove break from here masks tracebacks
-                if self.__class__._shellUI: break # could delete fail mid-way ?
-        else:
-            self.data_store.delete_Refresh(items, check_existence=True)
         self.RefreshUI(refreshSaves=True) # also cleans _gList internal dicts
 
     def _toDelete(self, items):
@@ -2229,7 +2232,7 @@ class UIList(wx.Panel):
             #--Do it
             with BusyCursor(): self.data_store.move_info(key, destDir)
         #--Refresh stuff
-        self.data_store.delete_Refresh(keys, check_existence=True)
+        self.data_store.delete_refresh(keys, None, check_existence=True)
 
     # Generate unique filenames when duplicating files etc
     @staticmethod

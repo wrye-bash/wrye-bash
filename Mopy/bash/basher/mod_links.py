@@ -1546,10 +1546,10 @@ class Mod_FlipSelf(_Esm_Flip):
                    )
         if not self._askContinue(message, 'bash.flipToEsmp.continue',
                                  _(u'Flip to Esm')): return
-        for fileInfo in self.iselected_infos():
-            header = fileInfo.header
+        for modInfo in self.iselected_infos():
+            header = modInfo.header
             header.flags1.esm = not header.flags1.esm
-            fileInfo.writeHeader()
+            modInfo.writeHeader()
         self._esm_flip_refresh(self.isEsm, self.selected)
 
 #------------------------------------------------------------------------------
@@ -1586,10 +1586,10 @@ class Mod_FlipMasters(OneItemLink, _Esm_Flip):
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
         updated = [self._selected_item]
         for masterPath in self.espMasters:
-            masterInfo = bosh.modInfos.get(masterPath,None)
-            if masterInfo:
-                masterInfo.header.flags1.esm = self.toEsm
-                masterInfo.writeHeader()
+            master_mod_info = bosh.modInfos.get(masterPath,None)
+            if master_mod_info:
+                master_mod_info.header.flags1.esm = self.toEsm
+                master_mod_info.writeHeader()
                 updated.append(masterPath)
         self._esm_flip_refresh(not self.toEsm, updated)
 

@@ -181,6 +181,12 @@ def round_size(siz):
     """Round non zero sizes to 1 KB."""
     return formatInteger(0 if siz == 0 else max(siz, 1024) / 1024) + u' KB'
 
+# Helpers ---------------------------------------------------------------------
+def sortFiles(files, __split=os.path.split):
+    """Utility function. Sorts files by directory, then file name."""
+    sort_keys_dict = dict((x, __split(x.lower())) for x in files)
+    return sorted(files, key=sort_keys_dict.__getitem__)
+
 # Localization ----------------------------------------------------------------
 # noinspection PyDefaultArgument
 def _findAllBashModules(files=[], bashPath=None, cwd=None,
@@ -1931,12 +1937,12 @@ class Log:
             if self.prevHeader and self.doFooter:
                 self.writeFooter()
             if self.header:
-                self.writeHeader(self.header)
+                self.writeLogHeader(self.header)
             self.prevHeader = self.header
         if message: self.writeMessage(message,appendNewline)
 
     #--Abstract/null writing functions...
-    def writeHeader(self,header):
+    def writeLogHeader(self, header):
         """Write header. Abstract/null version."""
         pass
     def writeFooter(self):
@@ -1953,7 +1959,7 @@ class LogFile(Log):
         self.out = out
         Log.__init__(self)
 
-    def writeHeader(self,header):
+    def writeLogHeader(self, header):
         self.out.write(header+u'\n')
 
     def writeFooter(self):
