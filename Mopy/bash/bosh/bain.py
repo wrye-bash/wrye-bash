@@ -2482,31 +2482,24 @@ class InstallersData(_DataStore):
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []
-        getBSAOrder = lambda b: load_order.cached_active_tuple().index(b[1].root + ".esp") ##: why list() ?
+        from . import BSAInfos, bsaInfos # YAK!
+        getBSAOrder = lambda tup: BSAInfos.active_bsa_index(tup[1])
         # Calculate bsa conflicts
         if showBSA:
-            from . import BSAInfos, bsaInfos # YAK!
-            def _filter_bsas(li): return filter(BSAInfos.rightFileType, li)
-            is_act = load_order.cached_is_active
-            def _bsa_mod_active(li): return [b for b in li if
-                        is_act(b.root + ".esp")] ##: or is_act(b.root + ".esm")
+            def _get_active_bsas(data_sizeCrc, _bsas_set=set(bsaInfos.keys())):
+                return (k for k in data_sizeCrc if
+                        k in _bsas_set and BSAInfos.is_bsa_active(k))
             # Create list of active BSA files in srcInstaller
-            srcBSAFiles = _filter_bsas(srcInstaller.data_sizeCrc)
-            activeSrcBSAFiles = _bsa_mod_active(srcBSAFiles)
-            bsas = [(x, bsaInfos[x]) for x in activeSrcBSAFiles if
-                    x in bsaInfos.keys()]
-            # Create list of all assets in BSA files for srcInstaller
-            srcBSAContents = []
-            for x,y in bsas: srcBSAContents.extend(y.assets)
+            src_bsas = [bsaInfos[x] for x in
+                        _get_active_bsas(srcInstaller.data_sizeCrc)]
+            srcBSAContents = [y.assets for y in src_bsas]
             # Create a list of all active BSA Files except the ones in srcInstaller
             activeBSAFiles = []
             for package, installer in self.iteritems():
                 if installer.order == srcOrder or not installer.isActive:
                     continue # check active installers different than src
-                inst_bsas = _filter_bsas(installer.data_sizeCrc)
                 activeBSAFiles.extend([(package, x, bsaInfos[x])
-                    for x in inst_bsas if x in bsaInfos.keys() and
-                        is_act(x.root + ".esp")])
+                    for x in _get_active_bsas(installer.data_sizeCrc)])
             # Calculate all conflicts and save them in bsaConflicts
             for package, bsaPath, bsa_info in sorted(activeBSAFiles,key=getBSAOrder):
                 curAssets = bsa_info.assets
@@ -2530,8 +2523,8 @@ class InstallersData(_DataStore):
             if showBSA:
                 buff.write(u'= %s %s\n\n' % (_(u'BSA Conflicts'),u'='*40))
                 for package, bsa, srcFiles in bsaConflicts:
-                    order = getBSAOrder((None,bsa,None))
-                    srcBSAOrder = getBSAOrder((None,activeSrcBSAFiles[0],None))
+                    order = BSAInfos.active_bsa_index(bsa)
+                    srcBSAOrder = BSAInfos.active_bsa_index(src_bsas[0].name)
                     # Print partitions
                     if showLower and (order > srcBSAOrder) != isHigher:
                         isHigher = (order > srcBSAOrder)
