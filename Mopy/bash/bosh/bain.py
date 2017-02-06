@@ -2500,21 +2500,18 @@ class InstallersData(_DataStore):
                 if b_assets:
                     src_bsa_to_assets[b] = b_assets
                     src_assets |= b_assets
-            # Create a list of all active BSA Files except the ones in srcInstaller
-            activeBSAFiles = []
+            # Calculate all conflicts and save them in bsaConflicts
             for package, installer in self.sorted_pairs():
                 if installer.order == srcOrder or (
                             not showInactive and not installer.isActive):
                     continue # check active installers different than src
-                activeBSAFiles.extend([(package, x)
-                                       for x in _get_active_bsas(installer.data_sizeCrc)])
-            # Calculate all conflicts and save them in bsaConflicts
-            for package, bsa_info in sorted(activeBSAFiles, key=lambda
-                    tup: BSAInfo.active_bsa_index(tup[1])):
-                curAssets = bsa_info.assets
-                curConflicts = bolt.sortFiles(
-                    [x for x in curAssets if x in src_assets])
-                if curConflicts: bsaConflicts.append((package, bsa_info, curConflicts))
+                for bsa_info in _get_active_bsas(installer.data_sizeCrc):
+                    curAssets = bsa_info.assets
+                    curConflicts = bolt.sortFiles(
+                        [x for x in curAssets if x in src_assets])
+                    if curConflicts:
+                        bsaConflicts.append((package, bsa_info, curConflicts))
+            bsaConflicts.sort(key=lambda tup: BSAInfo.active_bsa_index(tup[1]))
         # Calculate esp/esm conflicts
         for package, installer in self.sorted_pairs():
             if installer.order == srcOrder or (
