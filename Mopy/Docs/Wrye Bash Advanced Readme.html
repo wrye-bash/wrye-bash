@@ -420,7 +420,11 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
         <tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
-        <tr><td colspan="2">Show BSA Conflicts<td>If checked, the contents of BSAs are compared and any conflicting resources found are displayed in the conflicts list.
+        <tr><td colspan="2">Show BSA Conflicts<td>If checked, the contents of BSAs are compared and any conflicting resources found are
+            displayed in the conflicts list. Bash will only check existing and active bsas (respective esm/p must be active). <em>Lower</em>
+            and <em>Higher</em> conflicts has a different meaning than loose file conflicts. Conflicting bsas will be displayed in load
+            order - if <a href="#bainShowLowerConflicts">Show Lower Conflicts</a> is not checked lower loading conflicting bsas won't be
+            shown. Note that this may lead to a package having its bsas appear in both Higher and Lower sections depending on how they load.
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
         <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td>If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed  (for other games replace OBSE with SKSE etc)
         <tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
