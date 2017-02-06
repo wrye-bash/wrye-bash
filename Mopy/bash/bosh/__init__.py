@@ -2365,7 +2365,6 @@ class TableFileInfos(_DataStore):
         self.store_dir.makedirs()
         self.bash_dir.makedirs() # self.store_dir may need be set
         self.data = {} # populated in refresh ()
-        self.corrupted = {} #--errorMessage = corrupted[fileName]
         # the type of the table keys is always bolt.Path
         self.table = bolt.Table(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
@@ -2426,21 +2425,6 @@ class TableFileInfos(_DataStore):
                 InstallersData.track(d)
         return paths_to_keys.values()
 
-    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
-                       _in_refresh=False):
-        """Special case for the saves, inis, mods and bsas.
-        :param deleted_keys: must be the data store keys and not full paths
-        :param paths_to_keys: a dict mapping full paths to the keys
-        """
-        #--Table
-        deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
-                                             check_existence)
-        if not deleted: return deleted
-        for name in deleted:
-            self.pop(name, None); self.corrupted.pop(name, None)
-            self.table.pop(name, None)
-        return deleted
-
     def _additional_deletes(self, fileInfo, toDelete): pass
 
     def save(self):
@@ -2451,6 +2435,10 @@ class TableFileInfos(_DataStore):
 
 class FileInfos(TableFileInfos):
     """Common superclass for mod, saves and bsa infos."""
+
+    def _initDB(self, dir_):
+        super(FileInfos, self)._initDB(dir_)
+        self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
     def refreshFile(self,fileName):
@@ -2500,6 +2488,21 @@ class FileInfos(TableFileInfos):
         change = bool(_added) or bool(_updated) or bool(_deleted)
         if not change: return change
         return _added, _updated, _deleted
+
+    def delete_refresh(self, deleted_keys, paths_to_keys, check_existence,
+                       _in_refresh=False):
+        """Special case for the saves, inis, mods and bsas.
+        :param deleted_keys: must be the data store keys and not full paths
+        :param paths_to_keys: a dict mapping full paths to the keys
+        """
+        #--Table
+        deleted = self._update_deleted_paths(deleted_keys, paths_to_keys,
+                                             check_existence)
+        if not deleted: return deleted
+        for name in deleted:
+            self.pop(name, None); self.corrupted.pop(name, None)
+            self.table.pop(name, None)
+        return deleted
 
     def _get_rename_paths(self, oldName, newName):
         return [(self[oldName].getPath(), self.store_dir.join(newName))]
@@ -3738,7 +3741,8 @@ class SaveInfos(FileInfos):
     def __init__(self):
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
-        FileInfos.__init__(self, dirs['saveBase'].join(self.localSave), SaveInfo)
+        super(SaveInfos, self).__init__(dirs['saveBase'].join(self.localSave),
+                                        SaveInfo)
         # Save Profiles database
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
@@ -3883,11 +3887,8 @@ class BSAInfos(FileInfos):
                 self.pop(name, None)
                 continue
         _deleted = oldNames - newNames
-        for name in _deleted:
-            # Can run into multiple pops if one of the files is corrupted
-            self.pop(name, None); self.corrupted.pop(name, None)
-            # items deleted outside Bash, otherwise delete_refresh did this
-            self.table.pop(name, None)
+        self.delete_refresh(_deleted, None, check_existence=False,
+                            _in_refresh=True)
         change = bool(_added) or bool(_updated) or bool(_deleted)
         if not change: return change
         return _added, _updated, _deleted
