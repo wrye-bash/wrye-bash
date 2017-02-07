@@ -40,7 +40,7 @@ def _is_mergeable_no_load(modInfo, verbose):
         if not verbose: return False
         reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
     #--Bsa / voice?
-    if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
+    if tuple(modInfo.hasResources()) != (False, False):
         if not verbose: return False
         hasBsa, hasVoices = modInfo.hasResources()
         if hasBsa:

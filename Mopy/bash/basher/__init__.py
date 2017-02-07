@@ -965,9 +965,8 @@ class ModList(_ModsUIList):
                 self._toggle_active_state(*toActivate)
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            sel = map(lambda mod: self.data_store[mod].getPath().s,
-                      self.GetSelected())
-            balt.copyListToClipboard(sel)
+            balt.copyListToClipboard([self.data_store[mod].getPath().s
+                                      for mod in self.GetSelected()])
         super(ModList, self).OnKeyUp(event)
 
     def OnLeftDown(self,event):

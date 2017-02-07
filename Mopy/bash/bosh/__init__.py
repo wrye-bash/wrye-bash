@@ -1523,42 +1523,14 @@ class MasterInfo:
         return self.__class__.__name__ + u"<" + repr(self.name) + u">"
 
 #------------------------------------------------------------------------------
-class _AFileInfo(AFile):
-    """Abstract File."""
+class FileInfo(AFile):
+    """Abstract Mod, Save or BSA File."""
     _with_ctime = True # HACK ctime may not be needed
 
     def __init__(self, parent_dir, name, load_cache=False):
         self.dir = GPath(parent_dir)
         self.name = GPath(name) # ghost must be lopped off
-        super(_AFileInfo, self).__init__(self.dir.join(name), load_cache)
-
-    ##: DEPRECATED-------------------------------------------------------------
-    def getPath(self): return self.abs_path
-    @property
-    def mtime(self): return self._file_mod_time
-    @property
-    def size(self): return self._file_size
-    #--------------------------------------------------------------------------
-
-    def sameAs(self,fileInfo):
-        """Return true if other fileInfo refers to same file as this fileInfo."""
-        return ((self.size == fileInfo.size) and
-                (self.mtime == fileInfo.mtime) and
-                (self.ctime == fileInfo.ctime) and
-                (self.name == fileInfo.name))
-
-    def setmtime(self, set_time=0):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
-        set_time = int(set_time or self.mtime)
-        self.abs_path.mtime = set_time
-        self._file_mod_time = set_time
-        return set_time
-
-class FileInfo(_AFileInfo):
-    """Abstract TES4/TES4GAME File."""
-
-    def __init__(self, parent_dir, name):
-        _AFileInfo.__init__(self, parent_dir, name)
+        super(FileInfo, self).__init__(self.dir.join(name), load_cache)
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
@@ -1566,7 +1538,21 @@ class FileInfo(_AFileInfo):
         #--Ancillary storage
         self.extras = {}
 
-    #--File type tests
+    ##: DEPRECATED-------------------------------------------------------------
+    def getPath(self): return self.abs_path
+    @property
+    def mtime(self): return self._file_mod_time
+    @property
+    def size(self): return self._file_size
+
+    def sameAs(self,fileInfo):
+        """Return true if other fileInfo refers to same file as this fileInfo."""
+        return ((self.size == fileInfo.size) and
+                (self.mtime == fileInfo.mtime) and
+                (self.ctime == fileInfo.ctime) and
+                (self.name == fileInfo.name))
+    #--------------------------------------------------------------------------
+    #--File type tests ##: Belong to ModInfo!
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
         return reModExt.search(self.name.s)
@@ -1580,6 +1566,13 @@ class FileInfo(_AFileInfo):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
         return (self.isMod() and self.header and
                 self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
+
+    def setmtime(self, set_time=0):
+        """Sets mtime. Defaults to current value (i.e. reset)."""
+        set_time = int(set_time or self.mtime)
+        self.abs_path.mtime = set_time
+        self._file_mod_time = set_time
+        return set_time
 
     def info_refresh(self):
         self._file_size, self._file_mod_time, self.ctime = \
@@ -2408,7 +2401,7 @@ class TableFileInfos(_DataStore):
         self.table = bolt.Table(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
 
-    def __init__(self, dir_, factory=FileInfo):
+    def __init__(self, dir_, factory=AFile):
         """Init with specified directory and specified factory type."""
         self.factory=factory
         self._initDB(dir_)

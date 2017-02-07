@@ -1450,22 +1450,22 @@ class Mod_CopyToEsmp(EnabledLink):
 
     def _initData(self, window, selection):
         super(Mod_CopyToEsmp, self)._initData(window, selection)
-        fileInfo = bosh.modInfos[selection[0]]
-        self._is_esm = fileInfo.isEsm()
+        minfo = bosh.modInfos[selection[0]]
+        self._is_esm = minfo.isEsm()
         self._text = _(u'Copy to Esp') if self._is_esm else _(u'Copy to Esm')
 
     def _enable(self):
         """Disable if selected are mixed esm/p's or inverted mods."""
-        for fileInfo in self.iselected_infos():
-            if fileInfo.isInvertedMod() or fileInfo.isEsm() != self._is_esm:
+        for minfo in self.iselected_infos():
+            if minfo.isInvertedMod() or minfo.isEsm() != self._is_esm:
                 return False
         return True
 
     def Execute(self):
         modInfos, added = bosh.modInfos, []
         save_lo = False
-        for curName, fileInfo in ((x, modInfos[x]) for x in self.selected):
-            newType = (fileInfo.isEsm() and u'esp') or u'esm'
+        for curName, minfo in self.iselected_pairs():
+            newType = (minfo.isEsm() and u'esp') or u'esm'
             newName = curName.root + u'.' + newType # calls GPath internally
             #--Replace existing file?
             timeSource = None
@@ -1479,8 +1479,7 @@ class Mod_CopyToEsmp(EnabledLink):
             #--New Time
             newTime = modInfos[timeSource].mtime if timeSource else None
             #--Copy, set type, update mtime - will use ghosted path if needed
-            modInfos.copy_info(curName, fileInfo.dir, newName,
-                               set_mtime=newTime)
+            modInfos.copy_info(curName, minfo.dir, newName, set_mtime=newTime)
             added.append(newName)
             newInfo = modInfos[newName]
             newInfo.setType(newType)
@@ -1577,13 +1576,13 @@ class Mod_FlipSelf(_Esm_Flip):
 
     def _initData(self, window, selection):
         super(Mod_FlipSelf, self)._initData(window, selection)
-        fileInfo = bosh.modInfos[selection[0]]
-        self.isEsm = fileInfo.isEsm()
-        self._text = _(u'Espify Self') if self.isEsm else _(u'Esmify Self')
+        minfo = bosh.modInfos[selection[0]]
+        self._is_esm = minfo.isEsm()
+        self._text = _(u'Espify Self') if self._is_esm else _(u'Esmify Self')
 
     def _enable(self):
-        for item, fileInfo in self.iselected_pairs():
-            if fileInfo.isEsm() != self.isEsm or not item.cext[-1] == u'p':
+        for item, minfo in self.iselected_pairs():
+            if minfo.isEsm() != self._is_esm or not item.cext[-1] == u'p':
                 return False
         return True
 
@@ -1599,7 +1598,7 @@ class Mod_FlipSelf(_Esm_Flip):
             header = modInfo.header
             header.flags1.esm = not header.flags1.esm
             modInfo.writeHeader()
-        self._esm_flip_refresh(self.isEsm, self.selected)
+        self._esm_flip_refresh(self._is_esm, self.selected)
 
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, _Esm_Flip):

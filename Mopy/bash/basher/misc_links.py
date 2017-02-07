@@ -27,7 +27,7 @@ import time
 from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceLink, MenuLink, CheckLink, Image, UIList_Rename, OneItemLink
 from .. import bass, balt, bosh, bush
-from .import People_Link
+from .import People_Link, SaveDetails
 from ..bolt import GPath, LString
 
 __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
@@ -290,7 +290,8 @@ class Master_Disable(AppendableLink, _Master_EditList):
     _text = _(u"Disable")
     help = _(u"Disable master")
 
-    def _append(self, window): return not window.fileInfo.isMod() #--Saves only
+    def _append(self, window): #--Saves only
+        return isinstance(window.detailsPanel, SaveDetails)
 
     def Execute(self):
         masterInfo = self._selected_info
