@@ -1544,13 +1544,6 @@ class FileInfo(AFile):
     def mtime(self): return self._file_mod_time
     @property
     def size(self): return self._file_size
-
-    def sameAs(self,fileInfo):
-        """Return true if other fileInfo refers to same file as this fileInfo."""
-        return ((self.size == fileInfo.size) and
-                (self.mtime == fileInfo.mtime) and
-                (self.ctime == fileInfo.ctime) and
-                (self.name == fileInfo.name))
     #--------------------------------------------------------------------------
     #--File type tests ##: Belong to ModInfo!
     #--Note that these tests only test extension, not the file data.
@@ -1582,14 +1575,6 @@ class FileInfo(AFile):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         pass
-
-    def getHeaderError(self):
-        """Read header for file. But detects file error and returns that."""
-        try: self.readHeader()
-        except FileError as error:
-            return error.message
-        else:
-            return None
 
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
@@ -1763,12 +1748,10 @@ class ModInfo(_BackupMixin, FileInfo):
         modInfos.table.setItem(self.name,'crc_mtime', set_time)
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def sameAs(self, fileInfo):
-        try:
-            return FileInfo.sameAs(self, fileInfo) and (
-                self.isGhost == fileInfo.isGhost)
-        except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
-            return False
+    def needs_update(self):
+        self.isGhost, old_ghost = not self._abs_path.exists() and (
+            self._abs_path + u'.ghost').exists(), self.isGhost
+        super(ModInfo, self).needs_update() or self.isGhost != old_ghost
 
     @property
     def abs_path(self):
@@ -1783,7 +1766,7 @@ class ModInfo(_BackupMixin, FileInfo):
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
-        #  TODO(ut): both should never exist simultaneously
+        # Both should never exist simultaneously, Bash will warn in BashBugDump
         if normal.exists(): self.isGhost = False
         elif ghost.exists(): self.isGhost = True
         # Current status == what we want it?
@@ -2445,6 +2428,7 @@ class TableFileInfos(_DataStore):
 
     def _update_deleted_paths(self, deleted_keys, paths_to_keys,
                               check_existence):
+        """Must be called BEFORE we remove the keys from self."""
         if paths_to_keys is None: # we passed the keys in, get the paths
             paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
         if check_existence:
@@ -2487,33 +2471,27 @@ class FileInfos(TableFileInfos):
     def refresh(self, refresh_infos=True):
         """Refresh from file directory."""
         oldNames = set(self.data) | set(self.corrupted)
-        newNames = set()
         _added = set()
         _updated = set()
-        names = self._names()
-        for name in names:
-            fileInfo = self.factory(self.store_dir, name)
-            name = fileInfo.name #--Might have '.ghost' lopped off.
-            if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
+        newNames = self._names()
+        for name in newNames: #--Might have '.ghost' lopped off.
             oldInfo = self.get(name) # None if name was in corrupted
-            isAdded = name not in oldNames
-            dont_recheck = isUpdated = False
+            isUpdated = isAdded = False
             if oldInfo is not None:
-                isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
-            elif not isAdded: # known corrupted - recheck
-                dont_recheck = isUpdated = not fileInfo.getHeaderError()
+                isUpdated = oldInfo.needs_update()
+            else: # added or known corrupted, get a new info
+                oldInfo = self.factory(self.store_dir, name)
+                isAdded = True
             if isAdded or isUpdated:
-                errorMessage = not dont_recheck and fileInfo.getHeaderError()
-                if errorMessage:
-                    self.corrupted[name] = errorMessage
-                    self.pop(name,None)
-                    continue
-                else:
-                    self[name] = fileInfo
+                try:
+                    oldInfo.readHeader()
+                    self[name] = oldInfo
                     self.corrupted.pop(name,None)
                     if isAdded: _added.add(name)
                     elif isUpdated: _updated.add(name)
-            newNames.add(name) # will add known corrupted too
+                except FileError as e:
+                    self.corrupted[name] = e.message
+                    self.pop(name,None)
         _deleted = oldNames - newNames
         self.delete_refresh(_deleted, None, check_existence=False,
                             _in_refresh=True)
@@ -2981,8 +2959,16 @@ class ModInfos(FileInfos):
 
     #--Refresh-----------------------------------------------------------------
     def _names(self):
-        names = FileInfos._names(self)
-        return sorted(names, key=lambda x: x.cext == u'.ghost')
+        names = super(ModInfos, self)._names()
+        unghosted_names = set()
+        for name in sorted(names, key=lambda x: x.cext == u'.ghost'):
+            if name.cs[-6:] == u'.ghost': name = GPath(name.s[:-6])
+            if name in unghosted_names:
+                deprint(u'Both %s and its ghost exist. The ghost will be '
+                        u'ignored but this may lead to undefined behavior - '
+                        u'please remove one or the other' % name)
+            else: unghosted_names.add(name)
+        return unghosted_names
 
     def refresh(self, refresh_infos=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes.
@@ -3857,22 +3843,23 @@ class BSAInfos(FileInfos):
         newNames = self._names()
         for name in newNames:
             oldInfo = self.get(name) # None if name was in corrupted or new one
-            isAdded = name not in oldNames
-            isUpdated = False
+            isUpdated = isAdded = False
             try:
                 if oldInfo is not None:
-                    isUpdated = not isAdded and oldInfo.needs_update()
+                    isUpdated = oldInfo.needs_update()
                 else: # added or known corrupted, get a new info
                     oldInfo = self.factory(self.store_dir, name)
+                    isAdded = True
                 self[name] = oldInfo
                 self.corrupted.pop(name,None)
                 if isAdded: _added.add(name)
                 elif isUpdated: _updated.add(name)
             except BSAError as e: # old still corrupted, or new(ly) corrupted
-                deprint(u'Failed to load %s' % name, traceback=True)
-                self.corrupted[name] = e.message
+                if not name in self.corrupted \
+                        or self.corrupted[name] != e.message:
+                    deprint(u'Failed to load %s' % name, traceback=True)
+                    self.corrupted[name] = e.message
                 self.pop(name, None)
-                continue
         _deleted = oldNames - newNames
         self.delete_refresh(_deleted, None, check_existence=False,
                             _in_refresh=True)
