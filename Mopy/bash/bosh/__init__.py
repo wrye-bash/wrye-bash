@@ -1568,11 +1568,6 @@ class FileInfo(AFile):
         self._file_mod_time = set_time
         return set_time
 
-    def info_refresh(self):
-        self._file_size, self._file_mod_time, self.ctime = \
-            self.abs_path.size_mtime_ctime()
-        if self.header: self.readHeader() # if not header remains None
-
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         pass
