@@ -532,7 +532,9 @@ class Installer(object):
 
     def refreshDataSizeCrc(self, checkOBSE=False, splitExt=os.path.splitext):
         """Update self.data_sizeCrc and related variables and return
-        dest_src map for install operation....
+        dest_src map for install operation. data_sizeCrc is a dict from paths
+        to size and crc tuples that maps paths _relative to the Data dir_ - so
+        the locations the files will end up to if installed.
 
         WIP rewrite
         Used:
@@ -2482,37 +2484,43 @@ class InstallersData(_DataStore):
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []
-        getBSAOrder = lambda b: load_order.cached_active_tuple().index(b[1].root + ".esp") ##: why list() ?
         # Calculate bsa conflicts
         if showBSA:
-            from . import BSAInfos, bsaInfos # YAK!
-            def _filter_bsas(li): return filter(BSAInfos.rightFileType, li)
-            is_act = load_order.cached_is_active
-            def _bsa_mod_active(li): return [b for b in li if
-                        is_act(b.root + ".esp")] ##: or is_act(b.root + ".esm")
-            # Create list of active BSA files in srcInstaller
-            srcBSAFiles = _filter_bsas(srcInstaller.data_sizeCrc)
-            activeSrcBSAFiles = _bsa_mod_active(srcBSAFiles)
-            bsas = [(x, bsaInfos[x]) for x in activeSrcBSAFiles if
-                    x in bsaInfos.keys()]
-            # Create list of all assets in BSA files for srcInstaller
-            srcBSAContents = []
-            for x,y in bsas: srcBSAContents.extend(y.assets)
-            # Create a list of all active BSA Files except the ones in srcInstaller
-            activeBSAFiles = []
-            for package, installer in self.iteritems():
-                if installer.order == srcOrder or not installer.isActive:
-                    continue # check active installers different than src
-                inst_bsas = _filter_bsas(installer.data_sizeCrc)
-                activeBSAFiles.extend([(package, x, bsaInfos[x])
-                    for x in inst_bsas if x in bsaInfos.keys() and
-                        is_act(x.root + ".esp")])
+            from . import BSAError, BSAInfo, bsaInfos # yak! rework singletons
+            def _get_active_bsas(data_sizeCrc):
+                return (v for k, v in bsaInfos.iteritems() if
+                        k in data_sizeCrc and v.is_bsa_active())
+            # Map srcInstaller's active bsas' assets to those bsas, assigning
+            # the assets to the highest loading bsa - 99% we have just one bsa
+            src_bsa_to_assets, src_assets = collections.OrderedDict(), set()
+            for b in sorted(_get_active_bsas(srcInstaller.data_sizeCrc),
+                            key=BSAInfo.active_bsa_index, reverse=True):
+                try:
+                    b_assets = b.assets - src_assets
+                except BSAError:
+                    deprint(u'Error parsing %s [%s]' % (
+                        b.name, srcInstaller.archive), traceback=True)
+                    continue
+                if b_assets:
+                    src_bsa_to_assets[b] = b_assets
+                    src_assets |= b_assets
             # Calculate all conflicts and save them in bsaConflicts
-            for package, bsaPath, bsa_info in sorted(activeBSAFiles,key=getBSAOrder):
-                curAssets = bsa_info.assets
-                curConflicts = bolt.sortFiles(
-                    [x for x in curAssets if x in srcBSAContents])
-                if curConflicts: bsaConflicts.append((package, bsaPath, curConflicts))
+            for package, installer in self.sorted_pairs():
+                if installer.order == srcOrder or (
+                            not showInactive and not installer.isActive):
+                    continue # check active installers different than src
+                for bsa_info in _get_active_bsas(installer.data_sizeCrc):
+                    try:
+                        curAssets = bsa_info.assets
+                    except BSAError:
+                        deprint(u'Error parsing %s [%s]' % (
+                            bsa_info.name, installer.archive), traceback=True)
+                        continue
+                    curConflicts = bolt.sortFiles(
+                        [x for x in curAssets if x in src_assets])
+                    if curConflicts:
+                        bsaConflicts.append((package, bsa_info, curConflicts))
+            bsaConflicts.sort(key=lambda tup: BSAInfo.active_bsa_index(tup[1]))
         # Calculate esp/esm conflicts
         for package, installer in self.sorted_pairs():
             if installer.order == srcOrder or (
@@ -2521,28 +2529,44 @@ class InstallersData(_DataStore):
             curConflicts = bolt.sortFiles(
                 [x.s for x,y in installer.data_sizeCrc.iteritems()
                 if x in mismatched and y != src_sizeCrc[x]])
-            if curConflicts: packConflicts.append((installer,package.s,curConflicts))
-        #--Unknowns
-        isHigher = -1
+            if curConflicts:
+                packConflicts.append((installer, package.s, curConflicts))
         # Generate report
         with sio() as buff:
             # Print BSA conflicts
             if showBSA:
-                buff.write(u'= %s %s\n\n' % (_(u'BSA Conflicts'),u'='*40))
+                buff.write(u'= %s %s\n\n' % (_(u'BSA Conflicts'), u'=' * 40))
+                #map bsas (lowest loading bsas first) to their set of conflicts
+                bsa_package_to_conflicts = collections.OrderedDict()
                 for package, bsa, srcFiles in bsaConflicts:
-                    order = getBSAOrder((None,bsa,None))
-                    srcBSAOrder = getBSAOrder((None,activeSrcBSAFiles[0],None))
-                    # Print partitions
-                    if showLower and (order > srcBSAOrder) != isHigher:
-                        isHigher = (order > srcBSAOrder)
-                        buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
-                    buff.write(u'==%X== %s : %s\n' % (order, package, bsa))
-                    # Print files
-                    for file in srcFiles:
-                        buff.write(u'%s \n' % file)
-                    buff.write(u'\n')
+                    src_bsa_to_confl = collections.defaultdict(list)
+                    for confl in srcFiles:
+                        for i, j in src_bsa_to_assets.iteritems():
+                            if confl in j:
+                                src_bsa_to_confl[i].append(confl)
+                    bsa_package_to_conflicts[(bsa, package)] = src_bsa_to_confl
+                # Print partitions - bsa loading order NOT installer order
+                lower, higher = [], []
+                for (bsa, package), (src_bsa_to_confl) in \
+                        bsa_package_to_conflicts.iteritems():
+                    bsa_order = bsa.active_bsa_index()
+                    for src_bsa, confl in src_bsa_to_confl.iteritems():
+                        partition = higher if (
+                            src_bsa.active_bsa_index() < bsa_order) else lower
+                        partition.append((bsa, package, confl))
+                def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
+                    buff.write(u'= %s %s\n' % (title, u'=' * 40))
+                    for bsa_, package_, confl_ in conflicts:
+                        buff.write(u'==%X== %s : %s\n' % (
+                            bsa_.active_bsa_index(), package_, bsa_.name))
+                        buff.write(u'\n'.join(confl_) + u'\n\n')
+                if showLower and lower:
+                    _print_bsa_conflicts(lower, _(u'Lower'))
+                if higher:
+                    _print_bsa_conflicts(higher, _(u'Higher'))
             isHigher = -1
-            if showBSA: buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'),u'='*36))
+            if showBSA: buff.write(
+                u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
             # Print loose file conflicts
             for installer,package,srcFiles in packConflicts:
                 order = installer.order
@@ -2552,12 +2576,12 @@ class InstallersData(_DataStore):
                     buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
                 buff.write(u'==%d== %s\n'% (order,package))
                 # Print srcFiles
-                for file in srcFiles:
-                    oldName = installer.getEspmName(file)
+                for src_file in srcFiles:
+                    oldName = installer.getEspmName(src_file)
                     buff.write(oldName)
-                    if oldName != file:
+                    if oldName != src_file:
                         buff.write(u' -> ')
-                        buff.write(file)
+                        buff.write(src_file)
                     buff.write(u'\n')
                 buff.write(u'\n')
             report = buff.getvalue()

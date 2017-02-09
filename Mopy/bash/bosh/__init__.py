@@ -2274,6 +2274,20 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
             if self._file_mod_time != self._default_mtime:
                 self.setmtime(self._default_mtime)
 
+    def is_bsa_active(self):
+        """Return True if corresponding mod is active."""
+        is_act = load_order.cached_is_active
+        return is_act(self.name.root + '.esm') or is_act(self.name.root + '.esp')
+
+    def active_bsa_index(self):
+        """Return the index of the active bsa (the corresponding mod's
+        index) or raise ValueError if the bsa is not active."""
+        active_index = load_order.cached_active_tuple().index
+        try:
+            return active_index(self.name.root + '.esm')
+        except ValueError:
+            return active_index(self.name.root + '.esp')
+
 #------------------------------------------------------------------------------
 class _DataStore(DataDict):
     store_dir = empty_path # where the datas sit, static except for SaveInfos
