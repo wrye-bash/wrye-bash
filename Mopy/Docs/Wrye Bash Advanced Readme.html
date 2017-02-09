@@ -692,7 +692,9 @@ tab. The directories skipped are:
         <tr><td colspan="2">Jump to installer<td>Jump to the installer of the selected mod, if the Installers tab is displayed and enabled and the
             plugin has an installer. You can Alt click on the mod to the same effect.
         <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled. Will unghost a ghosted plugin if enabled.
-        <tr><td colspan="2">Ghost/Unghost<td>Displayed if a single plugin is selected. Manually ghost/unghost this plugin (active ones can't be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag if set. Note that, if Auto-Ghost is enabled, <i>manually unghosting a plugin <b>will be reverted</b> on refresh</i> - mark the plugin as <a href="#modsDontGhost">disallow ghosting</a> if you want your changes to persist.
+        <tr><td colspan="2">Ghost/Unghost<td>Displayed if a single plugin is selected. Manually ghost/unghost this plugin (active ones can't
+            be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag (if set). This will survive autoGhost till next restart. If
+            you want your changes to persist, mark the plugin as <a href="#modsDontGhost">disallow ghosting</a>.
         <tr><td colspan="2">Ghost<td>Displayed if multiple plugins are selected. Ghost selected plugins (no effect on active ones). Unghost all at once is on the todo list, if you wondered.
         <tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
         <tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
