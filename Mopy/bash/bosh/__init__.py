@@ -2261,7 +2261,8 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
             super(BSAInfo, self).__init__(parent_dir, bsa_name,
                                           load_cache=False)
         except BSAError as e:
-            raise FileError, (GPath(bsa_name), e.message), sys.exc_info()[2]
+            raise FileError, (GPath(bsa_name),
+                e.__class__.__name__ + u' ' + e.message), sys.exc_info()[2]
         self._reset_bsa_mtime()
 
     def getFileInfos(self): return bsaInfos
@@ -2463,14 +2464,15 @@ class FileInfos(TableFileInfos):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
-    def refreshFile(self,fileName):
+    def refreshFile(self, fileName, _in_refresh=False): # YAK - tmp _in_refresh
         try:
             fileInfo = self.factory(self.store_dir, fileName, load_cache=True)
             self[fileName] = fileInfo
             self.corrupted.pop(fileName, None)
         except FileError as error:
-            self.corrupted[fileName] = error.message
-            self.pop(fileName, None)
+            if not _in_refresh: # if refresh just raise so we print the error
+                self.corrupted[fileName] = error.message
+                self.pop(fileName, None)
             raise
 
     #--Refresh
@@ -2487,12 +2489,12 @@ class FileInfos(TableFileInfos):
                     if oldInfo.needs_update(): # will reread the header
                         _updated.add(name)
                 else: # added or known corrupted, get a new info
-                    self.refreshFile(name)
+                    self.refreshFile(name, _in_refresh=True)
                     _added.add(name)
             except FileError as e: # old still corrupted, or new(ly) corrupted
                 if not name in self.corrupted \
                         or self.corrupted[name] != e.message:
-                    deprint(u'Failed to load %s' % name, traceback=True)
+                    deprint(u'Failed to load %s: %s' % (name, e.message)) #, traceback=True)
                     self.corrupted[name] = e.message
                 self.pop(name, None)
         _deleted = oldNames - newNames
@@ -3179,9 +3181,9 @@ class ModInfos(FileInfos):
                 mod.reloadBashTags()
 
     #--Refresh File
-    def refreshFile(self,fileName):
+    def refreshFile(self, fileName, _in_refresh=False):
         try:
-            FileInfos.refreshFile(self,fileName)
+            FileInfos.refreshFile(self, fileName, _in_refresh)
         finally:
             self._refreshInfoLists() # not sure if needed here - track usages !
 
