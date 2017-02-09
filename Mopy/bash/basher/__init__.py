@@ -1194,6 +1194,17 @@ class _EditableMixinOnFileInfos(_EditableMixin):
             self.SetEdited()
         event.Skip()
 
+    def _refresh_detail_info(self):
+        try: # use self.file_info.name, as name may have been updated
+            self.panel_uilist.data_store.refreshFile(self.file_info.name)
+            return self.file_info.name
+        except bolt.FileError as e:
+            deprint(u'Failed to edit details for %s' % self.displayed_item,
+                    traceback=True)
+            balt.showError(self,
+                           _(u'File corrupted on save!') + u'\n' + e.message)
+            return None
+
 class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
     """Mod and Saves details panel, feature a master's list.
 
@@ -1433,7 +1444,6 @@ class ModDetails(_SashDetailsPanel):
         #--Backup
         modInfo.makeBackup()
         #--Change Name?
-        fileName = modInfo.name
         if changeName:
             oldName,newName = modInfo.name,GPath(self.fileStr.strip())
             #--Bad name?
@@ -1449,7 +1459,6 @@ class ModDetails(_SashDetailsPanel):
             settings.getChanged('bash.mods.renames')[oldName] = newName
             try:
                 bosh.modInfos.rename_info(oldName, newName)
-                fileName = newName
             except (CancelError, OSError, IOError):
                 pass
         #--Change hedr/masters?
@@ -1465,12 +1474,7 @@ class ModDetails(_SashDetailsPanel):
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
         #--Done
-        try:
-            bosh.modInfos.refreshFile(fileName)
-            detail_item = fileName
-        except bolt.FileError:
-            balt.showError(self,_(u'File corrupted on save!'))
-            detail_item = None
+        detail_item = self._refresh_detail_info()
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
@@ -2020,12 +2024,7 @@ class SaveDetails(_SashDetailsPanel):
             saveInfo.header.writeMasters(saveInfo.getPath())
             saveInfo.setmtime(prevMTime)
         #--Done
-        try:
-            bosh.saveInfos.refreshFile(saveInfo.name)
-            detail_item = saveInfo.name
-        except bolt.FileError:
-            balt.showError(self,_(u'File corrupted on save!'))
-            detail_item = None
+        detail_item = self._refresh_detail_info()
         # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
         self.panel_uilist.RefreshUI(detail_item=detail_item)
 
@@ -3231,12 +3230,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
                 self._bsa_info.name, GPath(self.fileStr.strip()))
             bosh.bsaInfos.rename_info(oldName, newName)
         #--Done
-        try:
-            bosh.bsaInfos.refreshFile(self._bsa_info.name)
-            detail_item = self._bsa_info.name
-        except bolt.FileError:
-            balt.showError(self,_(u'File corrupted on save!'))
-            detail_item = None
+        detail_item = self._refresh_detail_info()
         self.panel_uilist.RefreshUI(detail_item=detail_item)
 
 #------------------------------------------------------------------------------

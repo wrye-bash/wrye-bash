@@ -2375,6 +2375,9 @@ class TableFileInfos(_DataStore):
         self.factory=factory
         self._initDB(dir_)
 
+    def refreshFile(self,fileName):
+        self[fileName] = self.factory(self.store_dir, fileName)
+
     def _names(self): # performance intensive
         return {x for x in self.store_dir.list() if
                 self.store_dir.join(x).isfile() and self.rightFileType(x)}
