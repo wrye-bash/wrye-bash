@@ -68,15 +68,21 @@ class StatusBar_Button(ItemLink):
         if uid is None: uid = (self.__class__.__name__, self._tip)
         self.uid = uid
 
+    def IsPresent(self):
+        """Due to the way status bar buttons are implemented debugging is a
+        pain - I provided this base class method to early filter out non
+        existent buttons."""
+        return True
+
     def GetBitmapButton(self, window, style, **kwdargs):
         """Create and return gui button - you must define imageKey - WIP overrides"""
-        image = kwdargs.pop('image', None) or balt.images[self.imageKey %
+        btn_image = kwdargs.pop('image', None) or balt.images[self.imageKey %
                         bass.settings['bash.statusbar.iconSize']].GetBitmap()
         kwdargs['onRClick'] = kwdargs.pop('onRClick', None) or self.DoPopupMenu
         kwdargs['onBBClick'] = self.Execute
         if self.gButton is not None:
             self.gButton.Destroy()
-        self.gButton = bitmapButton(window, image, style=style,
+        self.gButton = bitmapButton(window, btn_image, style=style,
                                     button_tip=self.sb_button_tip, **kwdargs)
         return self.gButton
 
@@ -188,8 +194,8 @@ class App_Button(StatusBar_Button):
 
     def GetBitmapButton(self, window, style, **kwdargs):
         if not self.IsPresent(): return None
-        size = bass.settings['bash.statusbar.iconSize']
-        idex = (size / 8) - 2
+        size = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
+        idex = (size / 8) - 2 # 0, 1, 2, duh
         super(App_Button, self).GetBitmapButton(window, style=style,
               image=self.images[idex].GetBitmap())
         if self.obseTip is not None:

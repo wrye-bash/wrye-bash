@@ -49,9 +49,9 @@ from .mod_links import *
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar links."""
-    dirImages = bass.dirs['images']
     def imageList(template):
-        return [Image(dirImages.join(template % i)) for i in (16,24,32)]
+        return [Image(bass.dirs['images'].join(template % i)) for i in
+                (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs['OblivionBookCreatorPath'],
                   bass.inisettings['OblivionBookCreatorJavaArg']),

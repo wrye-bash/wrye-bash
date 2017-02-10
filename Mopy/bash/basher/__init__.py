@@ -1909,7 +1909,6 @@ class SaveDetails(_SashDetailsPanel):
         self.playerLevel = 0
         self.gameDays = 0
         self.playMinutes = 0
-        self.picData = None
         self.coSaves = u'--\n--'
 
     def SetFile(self,fileName='SAME'):
@@ -1923,7 +1922,6 @@ class SaveDetails(_SashDetailsPanel):
             self.gameDays = saveInfo.header.gameDays
             self.playMinutes = saveInfo.header.gameTicks/60000
             self.playerLevel = saveInfo.header.pcLevel
-            self.picData = saveInfo.header.image
             self.coSaves = u'%s\n%s' % saveInfo.coSaves().getTags()
         #--Set Fields
         self.file.SetValue(self.fileStr)
@@ -1931,10 +1929,10 @@ class SaveDetails(_SashDetailsPanel):
         self.gCoSaves.SetLabel(self.coSaves)
         self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
-        if not self.picData:
+        if not self.saveInfo:
             self.picture.SetBitmap(None)
         else:
-            width,height,data = self.picData
+            width,height,data = self.saveInfo.header.image
             image = Image.GetImage(data, height, width)
             self.picture.SetBitmap(image.ConvertToBitmap())
         #--Info Box
@@ -3526,6 +3524,8 @@ class BashStatusBar(DnDStatusBar):
                 continue
             # Hidden?
             if uid in hide: continue
+            # Not present ?
+            if not link.IsPresent(): continue
             # Add it
             self._addButton(link)
         # Add any new buttons

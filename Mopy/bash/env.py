@@ -137,7 +137,7 @@ def __get_error_info():
     return sErrorInfo
 
 __folderIcon = None # cached here
-def get_default_app_icon(idex, target):
+def _get_default_app_icon(idex, target):
     # Use the default icon for that file type
     if winreg is None:
         return u'not\\a\\path', idex
@@ -169,7 +169,7 @@ def get_default_app_icon(idex, target):
                 if _os.path.exists(test):
                     icon = test
                     break
-    except OSError: # WAS except:
+    except: # FIXME(ut) code above does not work for say python file shortcuts
         deprint(_(u'Error finding icon for %s:') % target.s, traceback=True)
         icon = u'not\\a\\path'
     return icon, idex
@@ -187,7 +187,7 @@ def _get_app_links(apps_dir):
         sh = win32client.Dispatch('WScript.Shell')
         for lnk in apps_dir.list():
             lnk = apps_dir.join(lnk)
-            if lnk.isfile() and lnk.cext == u'.lnk':
+            if lnk.cext == u'.lnk' and lnk.isfile():
                 shortcut = sh.CreateShortCut(lnk.s)
                 description = shortcut.Description
                 if not description:
@@ -218,7 +218,7 @@ def init_app_links(apps_dir, badIcons, iconList):
                     except:
                         icon = u'' # Icon will be set to a red x further down.
                 else:
-                    icon, idex = get_default_app_icon(idex, target)
+                    icon, idex = _get_default_app_icon(idex, target)
             icon = GPath(icon)
             # First try a custom icon
             fileName = u'%s%%i.png' % path.sbody
