@@ -26,7 +26,6 @@
    the active game."""
 
 import struct
-import itertools
 from .constants import *
 from .default_tweaks import default_tweaks
 from .records import MreHeader, MreLvli, MreLvln
@@ -72,6 +71,11 @@ vanilla_string_bsas = {
     u'dlccoast.esm': [u'DLCCoast - Main.ba2'],
     u'dlcnukaworld.esm':  [u'DLCNukaWorld - Main.ba2'],
 }
+resource_archives_keys = (
+    u'sResourceIndexFileList', u'sResourceStartUpArchiveList',
+    u'sResourceArchiveList', u'sResourceArchiveList2',
+    u'sResourceArchiveListBeta'
+)
 
 # Load order info
 using_txt_file = True
@@ -167,100 +171,6 @@ class ess:
     canEditMasters = True       # Adjusting save file masters
     canEditMore = False         # No advanced editing
     ext = u'.fos'               # Save file extension
-
-    @staticmethod
-    def load(ins,header):
-        """Extract info from save file."""
-        def unpack_str16(): return ins.read(struct.unpack('H', ins.read(2))[0])
-        #--Header
-        if ins.read(12) != 'FO4_SAVEGAME':
-            raise Exception(u'Save file is not a Fallout 4 save game.')
-        headerSize, = struct.unpack('I',ins.read(4))
-        #--Name, location
-        header.version, = struct.unpack('I',ins.read(4))
-        saveNumber, = struct.unpack('I',ins.read(4))
-        header.pcName = unpack_str16()
-        header.pcLevel, = struct.unpack('I',ins.read(4))
-        header.pcLocation = unpack_str16()
-        # Begin Game Time
-        header.gameDate = unpack_str16()
-        # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
-        days,hours,minutes,_days,_hours,_minutes = header.gameDate.split('.')
-        days = int(days[:-1])
-        hours = int(hours[:-1])
-        minutes = int(minutes[:-1])
-        header.gameDays = float(days) + float(hours)/24 + float(minutes)/(24*60)
-        # Assuming still 1000 ticks per second
-        header.gameTicks = (days*24*60*60 + hours*60*60 + minutes*60) * 1000
-        # End Game Time
-        header.pcRace = unpack_str16() # Player Race
-        header.pcSex, = struct.unpack('H',ins.read(2)) # Player Sex
-        # Read unknown 16 bytes
-        ins.read(16)
-        #--Image Data
-        ssWidth, = struct.unpack('I',ins.read(4))
-        ssHeight, = struct.unpack('I',ins.read(4))
-        if ins.tell() != headerSize + 16: raise Exception(
-            u'Save game header size (%s) not as expected (%s).' % (
-                ins.tell() - 16, headerSize))
-        #--Image Data
-        # Fallout 4 is in 32bit RGB, Bash is expecting 24bit RGB
-        ssData = ins.read(4*ssWidth*ssHeight)
-        # pick out only every 3 bytes, drop the 4th (alpha channel)
-        ## TODO: Setup Bash to use the alpha data
-        #ssAlpha = ''.join(itertools.islice(ssData, 0, None, 4))
-        ssData = ''.join(itertools.compress(ssData, itertools.cycle(reversed(range(4)))))
-        header.image = (ssWidth,ssHeight,ssData)
-        # Read unknown byte
-        ins.read(1)
-        gameVersion = unpack_str16()
-        #--Masters
-        mastersSize, = struct.unpack('I',ins.read(4))
-        header.mastersStart = ins.tell()
-        del header.masters[:]
-        numMasters, = struct.unpack('B',ins.read(1))
-        for count in xrange(numMasters):
-            header.masters.append(unpack_str16())
-        if ins.tell() != header.mastersStart + mastersSize: raise Exception(
-            u'Save game masters size (%i) not as expected (%i).' % (
-                ins.tell() - header.mastersStart, mastersSize))
-
-    @staticmethod
-    def writeMasters(ins,out,header):
-        """Rewrites masters of existing save file."""
-        def unpack(fmt, size): return struct.unpack(fmt, ins.read(size))
-        def pack(fmt, *args): out.write(struct.pack(fmt, *args))
-        def unpack_str16(): return ins.read(struct.unpack('H', ins.read(2))[0])
-        out.write(ins.read(header.mastersStart-4))
-        #--plugin info
-        unpack('I', 4) # Discard oldSize
-        newSize = 1 + sum(len(x)+2 for x in header.masters)
-        pack('I',newSize)
-        #  Skip old masters
-        oldMasters = []
-        numMasters, = unpack('B',1)
-        pack('B',len(header.masters))
-        for x in xrange(numMasters):
-            oldMasters.append(unpack_str16())
-        #  Write new masters
-        for master in header.masters:
-            pack('H',len(master))
-            out.write(master.s)
-        #--Offsets
-        offset = out.tell() - ins.tell()
-        #--File Location Table
-        for i in xrange(6):
-            # formIdArrayCount offset, unkownTable3Offset,
-            # globalDataTable1Offset, globalDataTable2Offset,
-            # changeFormsOffset, globalDataTable3Offset
-            oldOffset, = unpack('I',4)
-            pack('I',oldOffset+offset)
-        #--Copy the rest
-        while True:
-            buff = ins.read(0x5000000)
-            if not buff: break
-            out.write(buff)
-        return oldMasters
 
 #--INI files that should show up in the INI Edits tab
 iniFiles = [
@@ -374,10 +284,10 @@ class esp:
 
     #--Strings Files
     stringsFiles = [
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.STRINGS'),
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.DLSTRINGS'),
-        ('mods',(u'Strings',),u'%(body)s_%(language)s.ILSTRINGS'),
-        ]
+        ((u'Strings',), u'%(body)s_%(language)s.STRINGS'),
+        ((u'Strings',), u'%(body)s_%(language)s.DLSTRINGS'),
+        ((u'Strings',), u'%(body)s_%(language)s.ILSTRINGS'),
+    ]
 
     #--Top types in Skyrim order.
     topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TRNS', 'CMPO', 'TXST',

@@ -68,6 +68,7 @@ allow_reset_bsa_timestamps = True
 bsa_extension = ur'bsa'
 supports_mod_inis = False
 vanilla_string_bsas = {}
+resource_archives_keys = ()
 
 # Load order info
 using_txt_file = False
@@ -154,64 +155,6 @@ class ess:
     canEditMasters = True       # Adjusting save file masters
     canEditMore = True          # advanced editing
     ext = u'.ess'               # Save file extension
-
-    @staticmethod
-    def load(ins,header):
-        """Extract info from save file."""
-        def unpack_str8(): return ins.read(struct.unpack('B', ins.read(1))[0])
-        #--Header
-        if ins.read(12) != 'TES4SAVEGAME':
-            raise Exception(u'Save file is not an Oblivion save game.')
-        ins.seek(34)
-        headerSize, = struct.unpack('I',ins.read(4))
-        #--Name, location
-        ins.seek(42)
-        header.pcName = unpack_str8()
-        header.pcLevel, = struct.unpack('H',ins.read(2))
-        header.pcLocation = unpack_str8()
-        #--Image Data
-        (header.gameDays,header.gameTicks,header.gameTime,ssSize,ssWidth,
-         ssHeight) = struct.unpack('=fI16s3I',ins.read(36))
-        ssData = ins.read(3*ssWidth*ssHeight)
-        header.image = (ssWidth,ssHeight,ssData)
-        #--Masters
-        del header.masters[:]
-        numMasters, = struct.unpack('B',ins.read(1))
-        for count in xrange(numMasters):
-            header.masters.append(unpack_str8())
-
-    @staticmethod
-    def writeMasters(ins,out,header):
-        """Rewrites masters of existing save file."""
-        def unpack(fmt, size): return struct.unpack(fmt, ins.read(size))
-        def pack(fmt, *args): out.write(struct.pack(fmt, *args))
-        #--Header
-        out.write(ins.read(34))
-        #--SaveGameHeader
-        size, = unpack('I',4)
-        pack('I',size)
-        out.write(ins.read(size))
-        #--Skip old masters
-        numMasters, = unpack('B',1)
-        oldMasters = []
-        for count in xrange(numMasters):
-            size, = unpack('B',1)
-            oldMasters.append(ins.read(size))
-        #--Write new masters
-        pack('B',len(header.masters))
-        for master in header.masters:
-            pack('B',len(master))
-            out.write(master.s)
-        #--Fids Address
-        offset = out.tell() - ins.tell()
-        fidsAddress, = unpack('I',4)
-        pack('I',fidsAddress+offset)
-        #--Copy remainder
-        while True:
-            buff = ins.read(0x5000000)
-            if not buff: break
-            out.write(buff)
-        return oldMasters
 
 #--INI files that should show up in the INI Edits tab
 iniFiles = [

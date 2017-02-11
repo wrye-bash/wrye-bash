@@ -38,12 +38,15 @@ import os
 import re
 import string
 import struct
+import sys
 import time
+import traceback
 from collections import OrderedDict
 from functools import wraps
 from itertools import imap
 from operator import attrgetter
 
+from ._mergeability import isPBashMergeable, isCBashMergeable
 from .mods_metadata import ConfigHelpers
 from .. import bass, bolt, balt, bush, env, load_order, archives
 from .. import patcher # for configIsCBash()
@@ -56,7 +59,7 @@ from ..bolt import GPath, Flags, DataDict, SubProgress, cstrip, \
 from ..bolt import decode, encode
 from ..brec import MreRecord, ModReader, ModError, ModWriter, getObjectIndex, \
     getFormIndices
-from ..cint import ObCollection, CBashApi
+from ..cint import CBashApi
 from ..parsers import LoadFactory, ModFile
 
 #--Settings
@@ -493,58 +496,6 @@ class ObseFile:
         """Save data to file safely."""
         self.save(self.path.temp,self.path.mtime)
         self.path.untemp()
-
-#------------------------------------------------------------------------------
-class SaveHeader:
-    """Represents selected info from a Tes4SaveGame file."""
-    def __init__(self,path=None):
-        self.pcName = None
-        self.pcLocation = None
-        self.gameDays = 0
-        self.gameTicks = 0
-        self.pcLevel = 0
-        self.masters = []
-        self.image = None
-        if path: self.load(path)
-
-    def load(self,path):
-        """Extract info from save file."""
-        try:
-            with path.open('rb') as ins:
-                bush.game.ess.load(ins,self)
-            self.pcName = decode(cstrip(self.pcName))
-            self.pcLocation = decode(cstrip(self.pcLocation),bolt.pluginEncoding,avoidEncodings=('utf8','utf-8'))
-            self.masters = [GPath(decode(x)) for x in self.masters]
-        #--Errors
-        except:
-            deprint(u'save file error:',traceback=True)
-            raise SaveFileError(path.tail,u'File header is corrupted.')
-
-    def writeMasters(self,path):
-        """Rewrites masters of existing save file."""
-        if not path.exists():
-            raise SaveFileError(path.head,u'File does not exist.')
-        with path.open('rb') as ins:
-            with path.temp.open('wb') as out:
-                oldMasters = bush.game.ess.writeMasters(ins,out,self)
-        oldMasters = [GPath(decode(x)) for x in oldMasters]
-        path.untemp()
-        #--Cosaves
-        masterMap = dict((x,y) for x,y in zip(oldMasters,self.masters) if x != y)
-        #--Pluggy file?
-        pluggyPath = CoSaves.getPaths(path)[0]
-        if masterMap and pluggyPath.exists():
-            pluggy = PluggyFile(pluggyPath)
-            pluggy.load()
-            pluggy.mapMasters(masterMap)
-            pluggy.safeSave()
-        #--OBSE/SKSE file?
-        obsePath = CoSaves.getPaths(path)[1]
-        if masterMap and obsePath.exists():
-            obse = ObseFile(obsePath)
-            obse.load()
-            obse.mapMasters(masterMap)
-            obse.safeSave()
 
 #------------------------------------------------------------------------------
 class SaveFile:
@@ -1985,9 +1936,6 @@ class ModInfo(_BackupMixin, FileInfo):
         except UnicodeEncodeError:
             return True
 
-    def isMissingStrings(self):
-        return modInfos.isMissingStrings(self.name)
-
     def isExOverLoaded(self):
         """True if belongs to an exclusion group that is overloaded."""
         maExGroup = reExGroup.match(self.name.s)
@@ -2009,21 +1957,22 @@ class ModInfo(_BackupMixin, FileInfo):
         """Returns path to plugin's INI, if it were to exists."""
         return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
 
+    def _string_files_paths(self, language):
+        sbody, ext = self.name.sbody, self.name.ext
+        for join, format_str in bush.game.esp.stringsFiles:
+            fname = format_str % {'body': sbody, 'ext': ext,
+                                  'language': language}
+            assetPath = empty_path.join(*join).join(fname)
+            yield assetPath
+
     def getStringsPaths(self,language=u'English'):
         """If Strings Files are available as loose files, just point to
         those, otherwise extract needed files from BSA if needed."""
         baseDirJoin = self.getPath().head.join
-        files = []
-        sbody,ext = self.name.sbody,self.name.ext
-        for _dir, join, format_str in bush.game.esp.stringsFiles:
-            fname = format_str % {'body': sbody, 'ext': ext,
-                                  'language': language}
-            assetPath = empty_path.join(*join).join(fname)
-            files.append(assetPath)
         extract = set()
         paths = set()
         #--Check for Loose Files first
-        for filepath in files:
+        for filepath in self._string_files_paths(language):
             loose = baseDirJoin(filepath)
             if not loose.exists():
                 extract.add(filepath)
@@ -2031,16 +1980,15 @@ class ModInfo(_BackupMixin, FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            bsaPaths = modInfos.extra_bsas(self)
+            bsaPaths = self.extra_bsas()
             bsa_assets = OrderedDict()
             for path in bsaPaths:
                 try:
                     bsa_info = bsaInfos[path.tail] # type: BSAInfo
                     found_assets = bsa_info.has_assets(extract)
-                except (KeyError, BSAError) as e: # not existing or corrupted
-                    if isinstance(e, BSAError):
-                        deprint(u'Failed to parse %s' % path.tail,
-                                traceback=True)
+                except (KeyError, BSAError, OverflowError) as e: # not existing or corrupted
+                    if isinstance(e, (BSAError, OverflowError)):
+                        deprint(u'Failed to parse %s' % path, traceback=True)
                     continue
                 bsa_assets[bsa_info] = found_assets
                 #extract contains Paths that compare equal to lowercase strings
@@ -2058,6 +2006,55 @@ class ModInfo(_BackupMixin, FileInfo):
                                    u"'%s': %s" % (bsa.name, e))
                 paths.update(imap(out_path.join, assets))
         return paths
+
+    def extra_bsas(self):
+        """Return a list of (existing) bsa paths to get assets from.
+        :rtype: list[bolt.Path]
+        """
+        if self.name.cs in bush.game.vanilla_string_bsas: # lowercase !
+            bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
+                self.name.cs])
+        else:
+            bsaPaths = [self.getBsaPath()] # first check bsa with same name
+            for iniFile in modInfos.ini_files():
+                for key in bush.game.resource_archives_keys:
+                    extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
+                    extraBsa = (x.strip() for x in extraBsa)
+                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
+                    bsaPaths.extend(extraBsa)
+        return bsaPaths
+
+    def isMissingStrings(self, __debug=0):
+        """True if the mod says it has .STRINGS files, but the files are
+        missing."""
+        if not self.header.flags1.hasStrings: return False
+        language = oblivionIni.get_ini_language()
+        bsaPaths = self.extra_bsas()
+        for assetPath in self._string_files_paths(language):
+            # Check loose files first
+            if self.dir.join(assetPath).exists():
+                continue
+            # Check in BSA's next
+            found = False
+            if __debug == 1:
+                deprint(u'Scanning BSAs for string files for %s' % self.name)
+                __debug = 2
+            for path in bsaPaths:
+                try:
+                    bsa_info = bsaInfos[path.tail] # type: BSAInfo
+                    if bsa_info.has_asset(assetPath):
+                        found = True
+                        break
+                except (KeyError, BSAError, OverflowError) as e: # not existing or corrupted
+                    if isinstance(e, (BSAError, OverflowError)):
+                        print u'Failed to parse %s:\n%s' % (
+                            path, traceback.format_exc())
+                    elif __debug == 2: deprint(u'%s is not present' % path)
+                    continue
+                deprint(u'Asset %s not in %s' % (assetPath, path))
+            if not found:
+                return True
+        return False
 
     def hasResources(self):
         """Returns (hasBsa,hasVoices) booleans according to presence of
@@ -2200,6 +2197,7 @@ class INIInfo(IniFile):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
+from .save_files import get_save_header_type, SaveHeaderError
 class SaveInfo(_BackupMixin, FileInfo):
     def getFileInfos(self): return saveInfos
 
@@ -2220,12 +2218,39 @@ class SaveInfo(_BackupMixin, FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = SaveHeader(self.getPath())
+            self.header = get_save_header_type(bush.game.fsName)(self.getPath())
             #--Master Names/Order
             self.masterNames = tuple(self.header.masters)
             self.masterOrder = tuple() #--Reset to empty for now
-        except struct.error as rex:
-            raise SaveFileError(self.name,u'Struct.error: %s' % rex)
+        except SaveHeaderError as e:
+            raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
+
+    def write_masters(self):
+        """Rewrites masters of existing save file."""
+        if not self.abs_path.exists():
+            raise SaveFileError(self.abs_path.head, u'File does not exist.')
+        with self.abs_path.open('rb') as ins:
+            with self.abs_path.temp.open('wb') as out:
+                oldMasters = self.header.writeMasters(ins, out)
+        oldMasters = [GPath(decode(x)) for x in oldMasters]
+        self.abs_path.untemp()
+        #--Cosaves
+        masterMap = dict(
+            (x, y) for x, y in zip(oldMasters, self.header.masters) if x != y)
+        #--Pluggy file?
+        pluggyPath = CoSaves.getPaths(self.abs_path)[0]
+        if masterMap and pluggyPath.exists():
+            pluggy = PluggyFile(pluggyPath)
+            pluggy.load()
+            pluggy.mapMasters(masterMap)
+            pluggy.safeSave()
+        #--OBSE/SKSE file?
+        obsePath = CoSaves.getPaths(self.abs_path)[1]
+        if masterMap and obsePath.exists():
+            obse = ObseFile(obsePath)
+            obse.load()
+            obse.mapMasters(masterMap)
+            obse.safeSave()
 
     def coCopy(self,oldPath,newPath):
         """Copies co files corresponding to oldPath to newPath."""
@@ -3003,9 +3028,7 @@ class ModInfos(FileInfos):
         scanList = self._refreshMergeable()
         difMergeable = (oldMergeable ^ self.mergeable) & set(self.keys())
         if scanList:
-            with balt.Progress(_(u'Mark Mergeable')+u' '*30) as progress:
-                progress.setFull(len(scanList))
-                self.rescanMergeable(scanList,progress)
+            self.rescanMergeable(scanList)
         hasChanged += bool(scanList or difMergeable)
         return bool(hasChanged) or lo_changed
 
@@ -3048,12 +3071,10 @@ class ModInfos(FileInfos):
         """Refreshes which mods are supposed to have strings files, but are
         missing them (=CTD). For Skyrim you need to have a valid load order."""
         oldBad = self.missing_strings
-        bad = set(fileName for fileName in self.keys() if
-                  self.isMissingStrings(fileName))
-        new = bad - oldBad
-        self.missing_strings = bad
-        self.new_missing_strings = new
-        return bool(new)
+        self.missing_strings = set(
+            k for k, v in self.iteritems() if v.isMissingStrings())
+        self.new_missing_strings = self.missing_strings - oldBad
+        return bool(self.new_missing_strings)
 
     def autoGhost(self,force=False):
         """Automatically turn inactive files to ghosts.
@@ -3106,8 +3127,11 @@ class ModInfos(FileInfos):
         newMods = []
         self.mergeable.clear()
         name_mergeInfo = self.table.getColumn('mergeInfo')
-        #--Add known/unchanged and esms
-        for mpath, modInfo in self.iteritems():
+        #--Add known/unchanged and esms - we need to scan dependent mods
+        # first to account for mergeability of their masters
+        for mpath, modInfo in sorted(self.items(),
+                key=lambda tup: load_order.cached_lo_index(tup[0]),
+                                     reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
             # if esm bit was flipped size won't change, so check this first
             if modInfo.isEsm():
@@ -3119,7 +3143,11 @@ class ModInfos(FileInfos):
                 newMods.append(mpath)
         return newMods
 
-    def rescanMergeable(self,names,progress,doCBash=None):
+    def rescanMergeable(self, names, prog=None, doCBash=None, verbose=False):
+        with prog or balt.Progress(_(u"Mark Mergeable") + u' ' * 30) as prog:
+            return self._rescanMergeable(names, prog, doCBash, verbose)
+
+    def _rescanMergeable(self, names, progress, doCBash, verbose):
         """Will rescan specified mods."""
         if doCBash is None:
             doCBash = CBashApi.Enabled
@@ -3137,24 +3165,20 @@ class ModInfos(FileInfos):
                 canMerge = False
             else:
                 try:
-                    canMerge = is_mergeable(fileInfo)
+                    canMerge = is_mergeable(fileInfo, self, verbose)
                 except Exception as e:
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
             result[fileName] = canMerge
-            # noinspection PySimplifyBooleanCheck
-            if canMerge == True:
+            if not isinstance(canMerge, basestring) and canMerge: # True...
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
             else:
-                if canMerge == u'\n.    '+_(u"Has 'NoMerge' tag."):
-                    mod_mergeInfo[fileName] = (fileInfo.size,True)
-                    self.mergeable.add(fileName)
-                    tagged_no_merge.add(fileName)
-                else:
-                    mod_mergeInfo[fileName] = (fileInfo.size,False)
-                    self.mergeable.discard(fileName)
+                mod_mergeInfo[fileName] = (fileInfo.size,False)
+                self.mergeable.discard(fileName)
+            if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
+                tagged_no_merge.add(fileName)
         return result, tagged_no_merge
 
     def reloadBashTags(self):
@@ -3448,62 +3472,17 @@ class ModInfos(FileInfos):
         except UnicodeEncodeError:
             return True
 
-    def isMissingStrings(self,modName):
-        """True if the mod says it has .STRINGS files, but the files are missing."""
-        modInfo = self[modName]
-        if modInfo.header.flags1.hasStrings:
-            language = oblivionIni.get_ini_language()
-            sbody,ext = modName.sbody,modName.ext
-            bsaPaths = self.extra_bsas(modInfo)
-            for dir_, join, format_str in bush.game.esp.stringsFiles:
-                fname = format_str % {'body': sbody, 'ext': ext,
-                                      'language': language}
-                assetPath = empty_path.join(*join).join(fname)
-                # Check loose files first
-                if dirs[dir_].join(assetPath).exists():
-                    continue
-                # Check in BSA's next
-                found = False
-                for path in bsaPaths:
-                    try:
-                        bsa_info = bsaInfos[path.tail] # type: BSAInfo
-                        if bsa_info.has_asset(assetPath):
-                            found = True
-                            break
-                    except KeyError: # not existing or corrupted
-                        continue
-                if not found:
-                    return True
-        return False
-
     def getDirtyMessage(self, modname):
         """Returns a dirty message from LOOT."""
         if self.table.getItem(modname, 'ignoreDirty', False):
             return False, u''
         return configHelpers.getDirtyMessage(modname)
 
-    def _ini_files(self):
+    def ini_files(self):
         iniFiles = self._plugin_inis.values() # in active order
         iniFiles.reverse() # later loading inis override previous settings
         iniFiles.append(oblivionIni)
         return iniFiles
-
-    def extra_bsas(self, mod_info):
-        """Return a list of (existing) bsa paths to get assets from.
-        :rtype: list[bolt.Path]
-        """
-        if mod_info.name.cs in bush.game.vanilla_string_bsas: # lowercase !
-            bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
-                mod_info.name.cs])
-        else:
-            bsaPaths = [mod_info.getBsaPath()] # first check bsa with same name
-            for iniFile in self._ini_files():
-                for key in (u'sResourceArchiveList', u'sResourceArchiveList2'): ##: per game keys !
-                    extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
-                    extraBsa = (x.strip() for x in extraBsa)
-                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
-                    bsaPaths.extend(extraBsa)
-        return bsaPaths
 
     def calculateLO(self, mods=None): # excludes corrupt mods
         if mods is None: mods = self.keys()
@@ -3897,6 +3876,7 @@ class BSAInfos(FileInfos):
                 if isAdded: _added.add(name)
                 elif isUpdated: _updated.add(name)
             except BSAError as e: # old still corrupted, or new(ly) corrupted
+                deprint(u'Failed to load %s' % name, traceback=True)
                 self.corrupted[name] = e.message
                 self.pop(name, None)
                 continue
@@ -4027,58 +4007,6 @@ class InstallerArchive(InstallerArchive): pass
 class InstallerMarker(InstallerMarker): pass
 # noinspection PyRedeclaration
 class InstallerProject(InstallerProject): pass
-
-#------------------------------------------------------------------------------
-class ModGroups:
-    """Groups for mods with functions for importing/exporting from/to text file."""
-
-    def __init__(self):
-        self.mod_group = {}
-
-    def readFromModInfos(self,mods=None):
-        """Imports mods/groups from modInfos."""
-        column = modInfos.table.getColumn('group')
-        mods = mods or column.keys()# if mods are None read groups for all mods
-        groups = tuple(column.get(x) for x in mods)
-        self.mod_group.update((x,y) for x,y in zip(mods,groups) if y)
-
-    @staticmethod
-    def assignedGroups():
-        """Return all groups that are currently assigned to mods."""
-        column = modInfos.table.getColumn('group')
-        return set(x[1] for x in column.items() if x[1]) #x=(bolt.Path,'group')
-
-    def writeToModInfos(self,mods=None):
-        """Exports mod groups to modInfos."""
-        mods = mods or modInfos.table.data.keys()
-        mod_group = self.mod_group
-        column = modInfos.table.getColumn('group')
-        changed = 0
-        for mod in mods:
-            if mod in mod_group and column.get(mod) != mod_group[mod]:
-                column[mod] = mod_group[mod]
-                changed += 1
-        return changed
-
-    def readFromText(self,textPath):
-        """Imports mod groups from specified text file."""
-        textPath = GPath(textPath)
-        mod_group = self.mod_group
-        with bolt.CsvReader(textPath) as ins:
-            for fields in ins:
-                if len(fields) >= 2 and reModExt.search(fields[0]):
-                    mod,group = fields[:2]
-                    mod_group[GPath(mod)] = group
-
-    def writeToText(self,textPath):
-        """Exports eids to specified text file."""
-        textPath = GPath(textPath)
-        mod_group = self.mod_group
-        rowFormat = u'"%s","%s"\n'
-        with textPath.open('w',encoding='utf-8-sig') as out:
-            out.write(rowFormat % (_(u"Mod"),_(u"Group")))
-            for mod in sorted(mod_group):
-                out.write(rowFormat % (mod.s,mod_group[mod]))
 
 #------------------------------------------------------------------------------
 class SaveSpells:
@@ -4227,172 +4155,6 @@ class Save_NPCEdits:
         saveFile.pcName = newName
         saveFile.setRecord(npc.getTuple(fid,version))
         saveFile.safeSave()
-
-# Mergeability ----------------------------------------------------------------
-##: belong to patcher/patch_files (?) but used in modInfos - cyclic imports
-def _is_mergeable_no_load(modInfo, verbose):
-    reasons = []
-    if modInfo.isEsm():
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is esm.'))
-    #--Bashed Patch
-    if modInfo.header.author == u'BASHED PATCH':
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
-    #--Bsa / voice?
-    if modInfo.isMod() and tuple(modInfo.hasResources()) != (False,False):
-        if not verbose: return False
-        hasBsa, hasVoices = modInfo.hasResources()
-        if hasBsa:
-            reasons.append(u'\n.    '+_(u'Has BSA archive.'))
-        if hasVoices:
-            reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
-    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
-    tags = modInfos[modInfo.name].getBashTags()
-    if u'NoMerge' in tags:
-        if not verbose: return False
-        reasons.append(u'\n.    '+_(u"Has 'NoMerge' tag."))
-    if reasons: return reasons
-    return True
-
-def pbash_mergeable_no_load(modInfo, verbose):
-    reasons = _is_mergeable_no_load(modInfo, verbose)
-    if isinstance(reasons, list):
-        reasons = u''.join(reasons)
-    elif not reasons:
-        return False # non verbose mode
-    else: # True
-        reasons = u''
-    #--Missing Strings Files?
-    if modInfo.isMissingStrings():
-        if not verbose: return False
-        reasons += u'\n.    '+_(u'Missing String Translation Files (Strings\\%s_%s.STRINGS, etc).') % (
-            modInfo.name.sbody, oblivionIni.get_ini_language())
-    if reasons: return reasons
-    return True
-
-def isPBashMergeable(modInfo,verbose=True):
-    """Returns True or error message indicating whether specified mod is mergeable."""
-    reasons = pbash_mergeable_no_load(modInfo, verbose)
-    if isinstance(reasons, unicode):
-        pass
-    elif not reasons:
-        return False # non verbose mode
-    else: # True
-        reasons = u''
-    #--Load test
-    mergeTypes = set([recClass.classType for recClass in bush.game.mergeClasses])
-    modFile = ModFile(modInfo, LoadFactory(False, *mergeTypes))
-    try:
-        modFile.load(True,loadStrings=False)
-    except ModError as error:
-        if not verbose: return False
-        reasons += u'\n.    %s.' % error
-    #--Skipped over types?
-    if modFile.topsSkipped:
-        if not verbose: return False
-        reasons += u'\n.    '+_(u'Unsupported types: ')+u', '.join(sorted(modFile.topsSkipped))+u'.'
-    #--Empty mod
-    elif not modFile.tops:
-        if not verbose: return False
-        reasons += u'\n.    '+ u'Empty mod.'
-    #--New record
-    lenMasters = len(modFile.tes4.masters)
-    newblocks = []
-    for type,block in modFile.tops.iteritems():
-        for record in block.getActiveRecords():
-            if record.fid >> 24 >= lenMasters:
-                if record.flags1.deleted: continue #if new records exist but are deleted just skip em.
-                if not verbose: return False
-                newblocks.append(type)
-                break
-    if newblocks: reasons += u'\n.    '+_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.'
-    dependent = [name.s for name, info in modInfos.iteritems()
-                 if info.header.author != u'BASHED PATCH'
-                 if modInfo.name in info.header.masters]
-    if dependent:
-        if not verbose: return False
-        reasons += u'\n.    '+_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.'
-    if reasons: return reasons
-    return True
-
-def cbash_mergeable_no_load(modInfo, verbose):
-    """Check if mod is mergeable without taking into account the rest of mods"""
-    return _is_mergeable_no_load(modInfo, verbose)
-
-def _modIsMergeableLoad(modInfo,verbose):
-    """Check if mod is mergeable, loading it and taking into account the
-    rest of mods."""
-    allowMissingMasters = {u'Filter', u'IIM', u'InventOnly'}
-    tags = modInfos[modInfo.name].getBashTags()
-    reasons = []
-
-    #--Load test
-    with ObCollection(ModsPath=dirs['mods'].s) as Current:
-        #MinLoad, InLoadOrder, AddMasters, TrackNewTypes, SkipAllRecords
-        modFile = Current.addMod(modInfo.getPath().stail, Flags=0x00002129)
-        Current.load()
-
-        missingMasters = []
-        nonActiveMasters = []
-        masters = modFile.TES4.masters
-        for master in masters:
-            master = GPath(master)
-            if not tags & allowMissingMasters:
-                if master not in modInfos:
-                    if not verbose: return False
-                    missingMasters.append(master.s)
-                elif not load_order.cached_is_active(master):
-                    if not verbose: return False
-                    nonActiveMasters.append(master.s)
-        #--masters not present in mod list?
-        if len(missingMasters):
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Masters missing: ')+u'\n    * %s' % (u'\n    * '.join(sorted(missingMasters))))
-        if len(nonActiveMasters):
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Masters not active: ')+u'\n    * %s' % (u'\n    * '.join(sorted(nonActiveMasters))))
-        #--Empty mod
-        if modFile.IsEmpty():
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Empty mod.'))
-        #--New record
-        else:
-            if not tags & allowMissingMasters:
-                newblocks = modFile.GetNewRecordTypes()
-                if newblocks:
-                    if not verbose: return False
-                    reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
-        dependent = [name.s for name, info in modInfos.iteritems()
-            if info.header.author != u'BASHED PATCH' and
-            modInfo.name in info.header.masters and name not in modInfos.mergeable]
-        if dependent:
-            if not verbose: return False
-            reasons.append(u'\n.    '+_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))
-        if reasons: return reasons
-        return True
-
-# noinspection PySimplifyBooleanCheck
-def isCBashMergeable(modInfo,verbose=True):
-    """Returns True or error message indicating whether specified mod is mergeable."""
-    if modInfo.name.s == u"Oscuro's_Oblivion_Overhaul.esp":
-        if verbose: return u'\n.    ' + _(
-            u'Marked non-mergeable at request of mod author.')
-        return False
-    canmerge = cbash_mergeable_no_load(modInfo, verbose)
-    if verbose:
-        loadreasons = _modIsMergeableLoad(modInfo, verbose)
-        reasons = []
-        if canmerge != True:
-            reasons = canmerge
-        if loadreasons != True:
-            reasons.extend(loadreasons)
-        if reasons: return u''.join(reasons)
-        return True
-    else:
-        if canmerge == True:
-            return _modIsMergeableLoad(modInfo, verbose)
-        return False
 
 # Initialization --------------------------------------------------------------
 from ..env import get_personal_path, get_local_app_data_path
