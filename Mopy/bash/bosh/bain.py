@@ -35,7 +35,7 @@ from functools import partial, wraps
 from itertools import groupby, imap
 from operator import itemgetter
 
-from . import imageExts, _DataStore, BestIniFile, InstallerConverter, AFile
+from . import imageExts, DataStore, BestIniFile, InstallerConverter, AFile
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, load_order
 from ..archives import readExts, defaultExt, list_archive, exe7z, compress7z, \
@@ -912,7 +912,7 @@ class Installer(object):
         if newName != g_path:
             newPath = bass.dirs['installers'].join(newName)
             if not newPath.exists():
-                _DataStore._rename_operation(data, g_path, newName)
+                DataStore._rename_operation(data, g_path, newName)
                 #--Add the new archive to Bash and remove old one
                 data[newName] = self
                 del data[g_path]
@@ -1508,7 +1508,7 @@ def projects_walk_cache(func): ##: HACK ! Profile
     return _projects_walk_cache_wrapper
 
 #------------------------------------------------------------------------------
-class InstallersData(_DataStore):
+class InstallersData(DataStore):
     """Installers tank data. This is the data source for the InstallersList."""
     # track changes in installed mod inis etc _in the game Data/ dir_ and
     # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track

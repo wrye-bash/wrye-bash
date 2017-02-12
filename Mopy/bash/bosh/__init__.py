@@ -1512,7 +1512,7 @@ class MasterInfo:
 
 #------------------------------------------------------------------------------
 class FileInfo(AFile):
-    """Abstract Mod, Save or BSA File."""
+    """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _file_stat = Path.size_mtime_ctime
     _null_stat = (0, 0, 0)
 
@@ -1598,8 +1598,7 @@ class FileInfo(AFile):
         Provided so that SaveFileInfo can override for its cofiles."""
         pass
 
-class _BackupMixin(FileInfo): # this should become a real mixin - under #336
-
+    # Backup stuff - beta, see #292 -------------------------------------------
     def getFileInfos(self):
         """Return one of the FileInfos singletons depending on fileInfo type.
         :rtype: FileInfos"""
@@ -1688,7 +1687,7 @@ class _BackupMixin(FileInfo): # this should become a real mixin - under #336
 reReturns = re.compile(u'\r{2,}',re.U)
 reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
-class ModInfo(_BackupMixin, FileInfo):
+class ModInfo(FileInfo):
     """An esp/m file."""
 
     def __init__(self, parent_dir, name, load_cache=False):
@@ -1951,7 +1950,7 @@ class ModInfo(_BackupMixin, FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            bsaPaths = self.extra_bsas()
+            bsaPaths = self._extra_bsas()
             bsa_assets = OrderedDict()
             for path in bsaPaths:
                 try:
@@ -1978,7 +1977,7 @@ class ModInfo(_BackupMixin, FileInfo):
                 paths.update(imap(out_path.join, assets))
         return paths
 
-    def extra_bsas(self):
+    def _extra_bsas(self):
         """Return a list of (existing) bsa paths to get assets from.
         :rtype: list[bolt.Path]
         """
@@ -2000,7 +1999,7 @@ class ModInfo(_BackupMixin, FileInfo):
         missing."""
         if not self.header.flags1.hasStrings: return False
         language = oblivionIni.get_ini_language()
-        bsaPaths = self.extra_bsas()
+        bsaPaths = self._extra_bsas()
         for assetPath in self._string_files_paths(language):
             # Check loose files first
             if self.dir.join(assetPath).exists():
@@ -2102,8 +2101,8 @@ class INIInfo(IniFile):
                     return -10
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
-                        # Check to see if the mismatch is from another
-                        # ini tweak that is applied, and from the same installer
+                        # Check to see if the mismatch is from another ini
+                        # tweak that is applied, and from the same installer
                         mismatch = 2
                         if self_installer is None: continue
                         for name, ini_info in infos.iteritems():
@@ -2169,7 +2168,7 @@ class INIInfo(IniFile):
 
 #------------------------------------------------------------------------------
 from .save_files import get_save_header_type, SaveHeaderError
-class SaveInfo(_BackupMixin, FileInfo):
+class SaveInfo(FileInfo):
     def getFileInfos(self): return saveInfos
 
     def getStatus(self):
@@ -2245,7 +2244,7 @@ try:
 except AttributeError:
     _bsa_type = bsa_files.ABsa
 
-class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
+class BSAInfo(FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
 
@@ -2290,7 +2289,7 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
             return active_index(self.name.root + '.esp')
 
 #------------------------------------------------------------------------------
-class _DataStore(DataDict):
+class DataStore(DataDict):
     store_dir = empty_path # where the datas sit, static except for SaveInfos
 
     def delete(self, delete_keys, **kwargs):
@@ -2371,10 +2370,10 @@ class _DataStore(DataDict):
             pass
         return set(d.tail for d in destinations if d.exists())
 
-class TableFileInfos(_DataStore):
+class TableFileInfos(DataStore):
     _notify_bain_on_delete = True
-
     file_pattern = None # subclasses must define this !
+
     def _initDB(self, dir_):
         self.store_dir = dir_ #--Path
         self.store_dir.makedirs()
@@ -3507,8 +3506,9 @@ class ModInfos(FileInfos):
     def _rename_operation(self, oldName, newName):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(oldName)
-        if isSelected: self.lo_deactivate(oldName, doSave=False) # will save later
-        FileInfos._rename_operation(self, oldName, newName)
+        if isSelected:
+            self.lo_deactivate(oldName, doSave=False) # will save later
+        super(ModInfos, self)._rename_operation(oldName, newName)
         # rename in load order caches
         oldIndex = self._lo_wip.index(oldName)
         self._lo_caches_remove_mods([oldName])
@@ -3830,7 +3830,7 @@ class BSAInfos(FileInfos):
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
 
 #------------------------------------------------------------------------------
-class PeopleData(_DataStore):
+class PeopleData(DataStore):
     """Data for a People UIList. Built on a PickleDict."""
     def __init__(self):
         self.dictFile = bolt.PickleDict(dirs['saveBase'].join(u'People.dat'))
@@ -3894,7 +3894,7 @@ class PeopleData(_DataStore):
                 out.write(u'\n\n')
 
 #------------------------------------------------------------------------------
-class ScreensData(_DataStore):
+class ScreensData(DataStore):
     reImageExt = re.compile(
         ur'\.(' + ur'|'.join(ext[1:] for ext in imageExts) + ur')$',
         re.I | re.U)

@@ -471,7 +471,7 @@ class MasterList(_ModsUIList):
 
     #--Relist
     def _reList(self):
-        fileOrderNames = [v.name for v in self.data_store.values()]
+        fileOrderNames = [v.name for v in self.data_store.itervalues()]
         self.loadOrderNames = load_order.get_ordered(fileOrderNames)
 
     #--InitEdit
