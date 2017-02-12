@@ -36,7 +36,7 @@ def _is_mergeable_no_load(modInfo, verbose):
         if not verbose: return False
         reasons.append(u'\n.    '+_(u'Is esm.'))
     #--Bashed Patch
-    if modInfo.header.author == u'BASHED PATCH':
+    if modInfo.isBP():
         if not verbose: return False
         reasons.append(u'\n.    '+_(u'Is Bashed Patch.'))
     #--Bsa / voice?
@@ -105,8 +105,7 @@ def isPBashMergeable(modInfo, minfos, verbose):
                 break
     if newblocks: reasons += u'\n.    '+_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.'
     dependent = [name.s for name, info in minfos.iteritems()
-                 if info.header.author != u'BASHED PATCH'
-                 if modInfo.name in info.header.masters]
+                 if not info.isBP() and modInfo.name in info.header.masters]
     if dependent:
         if not verbose: return False
         reasons += u'\n.    '+_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.'
@@ -161,9 +160,9 @@ def _modIsMergeableLoad(modInfo, minfos, verbose):
                     if not verbose: return False
                     reasons.append(u'\n.    '+_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
         # dependent mods mergeability should be determined BEFORE their masters
-        dependent = [name.s for name, info in minfos.iteritems()
-            if info.header.author != u'BASHED PATCH' and
-            modInfo.name in info.header.masters and name not in minfos.mergeable]
+        dependent = [name.s for name, info in minfos.iteritems() if
+                     not info.isBP() and modInfo.name in info.header.masters
+                     and name not in minfos.mergeable]
         if dependent:
             if not verbose: return False
             reasons.append(u'\n.    '+_(u'Is a master of non-mergeable mod(s): %s.') % u', '.join(sorted(dependent)))

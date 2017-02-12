@@ -396,7 +396,7 @@ class MasterList(_ModsUIList):
             return
         #--Fill data and populate
         for mi, masters_name in enumerate(fileInfo.header.masters):
-            masterInfo = bosh.MasterInfo(masters_name, 0)
+            masterInfo = bosh.MasterInfo(masters_name)
             self.data_store[mi] = masterInfo
         self._reList()
         self.PopulateItems()
@@ -1275,8 +1275,8 @@ class ModDetails(_SashDetailsPanel):
         #--Version
         self.version = StaticText(top,u'v0.00')
         #--Author
-        self.author = TextCtrl(top, onKillFocus=self.OnEditAuthor,
-                               onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
+        self.gAuthor = TextCtrl(top, onKillFocus=self.OnEditAuthor,
+                                onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
         #--Modified
         self.modified = TextCtrl(top,size=(textWidth, -1),
                                  onKillFocus=self.OnEditModified,
@@ -1297,7 +1297,7 @@ class ModDetails(_SashDetailsPanel):
                 ),0,wx.EXPAND),
             (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
             vspace(), (hSizer(StaticText(top,_(u"Author:"))),0,wx.EXPAND),
-            (hSizer((self.author,1,wx.EXPAND)),0,wx.EXPAND),
+            (hSizer((self.gAuthor,1,wx.EXPAND)),0,wx.EXPAND),
             vspace(), (hSizer(StaticText(top,_(u"Modified:"))),0,wx.EXPAND),
             (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
             vspace(), (hSizer(StaticText(top,_(u"Description:"))),0,wx.EXPAND),
@@ -1335,17 +1335,17 @@ class ModDetails(_SashDetailsPanel):
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
         else: tagsStr = u''
         self.modified.SetEditable(True)
-        self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
+        self.modified.SetBackgroundColour(self.gAuthor.GetBackgroundColour())
         #--Set fields
         self.file.SetValue(self.fileStr)
-        self.author.SetValue(self.authorStr)
+        self.gAuthor.SetValue(self.authorStr)
         self.modified.SetValue(self.modifiedStr)
         self.description.SetValue(self.descriptionStr)
         self.version.SetLabel(self.versionStr)
         self.uilist.SetFileInfo(self.modInfo)
         self.gTags.SetValue(tagsStr)
         if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
-            self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
+            self.gTags.SetBackgroundColour(self.gAuthor.GetBackgroundColour())
         else:
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
         self.gTags.Refresh()
@@ -1355,7 +1355,7 @@ class ModDetails(_SashDetailsPanel):
         if not self.edited and value != control.GetValue(): self.SetEdited()
         event.Skip()
     def OnAuthorEdit(self, event):
-        self._OnTextEdit(event, self.authorStr, self.author)
+        self._OnTextEdit(event, self.authorStr, self.gAuthor)
     def OnModifiedEdit(self, event):
         self._OnTextEdit(event, self.modifiedStr, self.modified)
     def OnDescrEdit(self, event):
@@ -1364,7 +1364,7 @@ class ModDetails(_SashDetailsPanel):
 
     def OnEditAuthor(self):
         if not self.modInfo: return
-        authorStr = self.author.GetValue()
+        authorStr = self.gAuthor.GetValue()
         if authorStr != self.authorStr:
             self.authorStr = authorStr
             self.SetEdited()

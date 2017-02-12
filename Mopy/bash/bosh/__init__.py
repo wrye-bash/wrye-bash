@@ -1444,30 +1444,25 @@ class PluginsFullError(BoltError):
 
 #------------------------------------------------------------------------------
 class MasterInfo:
-    def __init__(self,name,size):
-        self.oldName = self.name = GPath(name)
-        self.modInfo = modInfos.get(self.name,None)
-        self.isGhost = self.modInfo and self.modInfo.isGhost
+
+    def _init_master_info(self):
         if self.modInfo:
             self.mtime = self.modInfo.mtime
-            self.author = self.modInfo.header.author
             self.masterNames = self.modInfo.masterNames
         else:
             self.mtime = 0
-            self.author = u''
             self.masterNames = tuple()
+
+    def __init__(self, name):
+        self.oldName = self.name = GPath(name)
+        self.modInfo = modInfos.get(self.name,None)
+        self.isGhost = self.modInfo and self.modInfo.isGhost
+        self._init_master_info()
 
     def setName(self,name):
         self.name = GPath(name)
         self.modInfo = modInfos.get(self.name,None)
-        if self.modInfo:
-            self.mtime = self.modInfo.mtime
-            self.author = self.modInfo.header.author
-            self.masterNames = self.modInfo.masterNames
-        else:
-            self.mtime = 0
-            self.author = u''
-            self.masterNames = tuple()
+        self._init_master_info()
 
     def hasChanged(self):
         return self.name != self.oldName
@@ -1887,6 +1882,9 @@ class ModInfo(_BackupMixin, FileInfo):
         self.writeHeader()
 
     #--Helpers ----------------------------------------------------------------
+    def isBP(self, __bp_authors={u'BASHED PATCH', u'BASHED LISTS'}):
+        return self.header.author in __bp_authors ##: drop BASHED LISTS
+
     def txt_status(self):
         if load_order.cached_is_active(self.name): return _(u'Active')
         elif self.name in modInfos.merged: return _(u'Merged')
@@ -3087,8 +3085,7 @@ class ModInfos(FileInfos):
         #--Bashed patches
         self.bashed_patches.clear()
         for modName, modInfo in self.iteritems():
-            if modInfo.header.author == u"BASHED PATCH":
-                self.bashed_patches.add(modName)
+            if modInfo.isBP(): self.bashed_patches.add(modName)
         #--Refresh overLoaded
         self.exGroup_mods.clear()
         active_set = set(load_order.cached_active_tuple())
@@ -3392,7 +3389,7 @@ class ModInfos(FileInfos):
             mods = load_order.get_ordered(self.keys())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
-                if self.isBP(mod): _add_to_activate(mod)
+                if self[mod].isBP(): _add_to_activate(mod)
             # then activate mods not tagged NoMerge or Deactivate or Filter
             def _activatable(modName):
                 tags = modInfos[modName].getBashTags()
@@ -3439,9 +3436,6 @@ class ModInfos(FileInfos):
         return message
 
     #--Helpers ----------------------------------------------------------------
-    def isBP(self, modName): return self[modName].header.author in (
-            u'BASHED PATCH', u'BASHED LISTS')
-
     @staticmethod
     def isBadFileName(modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -3570,9 +3564,9 @@ class ModInfos(FileInfos):
     def get_hide_dir(self, name):
         dest_dir =self.hidden_dir
         #--Use author subdirectory instead?
-        author = self[name].header.author
-        if author:
-            authorDir = dest_dir.join(author)
+        mod_author = self[name].header.author
+        if mod_author:
+            authorDir = dest_dir.join(mod_author)
             if authorDir.isdir():
                 return authorDir
         #--Use group subdirectory instead?

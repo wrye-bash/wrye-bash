@@ -886,8 +886,8 @@ class Mod_MarkMergeable(ItemLink):
 class _Mod_BP_Link(OneItemLink):
     """Enabled on Bashed patch items."""
     def _enable(self):
-        return super(_Mod_BP_Link, self)._enable() and bosh.modInfos.isBP(
-            self._selected_item)
+        return super(_Mod_BP_Link, self)._enable() \
+               and self._selected_info.isBP()
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
@@ -1060,7 +1060,7 @@ class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
     def _decide(self, window, selection):
         """Return a radio button if CBash is enabled a simple item
         otherwise."""
-        enable = len(selection) == 1 and bosh.modInfos.isBP(selection[0])
+        enable = len(selection) == 1 and bosh.modInfos[selection[0]].isBP()
         if enable and bass.settings['bash.CBashEnabled']:
             class _RadioLink(RadioLink, _Mod_Patch_Update):
                 def _check(self): return not self.CBashMismatch
@@ -1241,7 +1241,7 @@ class Mod_ScanDirty(ItemLink):
                     itms.discard(FormID(GPath(u'Oblivion.esm'),0x00AA3C))
                 else:
                     itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-            if modInfo.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
+            if modInfo.isBP(): itms = set()
             if udrs or itms:
                 pos = len(dirty)
                 dirty.append(u'* __'+modInfo.name.s+u'__:\n')
