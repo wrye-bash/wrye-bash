@@ -1634,11 +1634,15 @@ class FileInfo(AFile):
         #--Done
         self.madeBackup = True
 
-    def backup_paths(self):
-        return [(self.backup_dir.join(self.name), self.getPath())]
+    def backup_paths(self, first=False):
+        """Return a list of tuples with backup paths and their restore
+        destinations
+        :rtype: list[tuple]"""
+        return [(self.backup_dir.join(self.name) + (u'f' if first else u''),
+                 self.getPath())]
 
-    def revert_backup(self):
-        backup_paths = self.backup_paths()
+    def revert_backup(self, first=False):
+        backup_paths = self.backup_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists(): backup_paths.remove(tup)
         env.shellCopy(*zip(*backup_paths))
@@ -2230,8 +2234,8 @@ class SaveInfo(FileInfo):
         """Returns CoSaves instance corresponding to self."""
         return CoSaves(self.getPath())
 
-    def backup_paths(self):
-        save_paths = super(SaveInfo, self).backup_paths() # type: list[tuple]
+    def backup_paths(self, first=False):
+        save_paths = super(SaveInfo, self).backup_paths(first)
         save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
         return save_paths
 

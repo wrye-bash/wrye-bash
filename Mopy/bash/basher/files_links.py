@@ -259,14 +259,20 @@ class File_Backup(ItemLink):
             fileInfo.makeBackup(True)
 
 class _RevertBackup(OneItemLink):
-    _text = _(u'Revert to Backup')
+
+    def __init__(self, first=False):
+        super(_RevertBackup, self).__init__()
+        self._text = _(u'Revert to First Backup') if first else _(
+            u'Revert to Backup')
+        self.first = first
 
     def _initData(self, window, selection):
         super(_RevertBackup, self)._initData(window, selection)
         self.backup_path = self._selected_info.backup_dir.join(
-            self._selected_item)
-        self.help = _(u"Revert %(file)s to its last backup") % {
-            'file': self._selected_item}
+            self._selected_item) + (u'f' if self.first else u'')
+        self.help = _(u"Revert %(file)s to its first backup") if self.first \
+            else _(u"Revert %(file)s to its last backup")
+        self.help %= {'file': self._selected_item}
 
     def _enable(self):
         return super(_RevertBackup,
@@ -280,22 +286,13 @@ class _RevertBackup(OneItemLink):
         if not self._askYes(message): return
         with balt.BusyCursor():
             try:
-                self._selected_info.revert_backup()
+                self._selected_info.revert_backup(self.first)
                 self.window.RefreshUI(redraw=[self._selected_item],
                                       refreshSaves=False)
             except bolt.FileError:
                 self._showError(_(u'Old file is corrupt!'))
                 self.window.RefreshUI(refreshSaves=True)
 
-class _RevertFirstBackup(_RevertBackup):
-    _text = _(u'Revert to First Backup')
-
-    def _initData(self, window, selection):
-        super(_RevertFirstBackup, self)._initData(window, selection)
-        self.backup_path += u'f'
-        self.help = _(u"Revert %(file)s to its first backup") % {
-            'file': self._selected_item}
-
 class File_RevertToBackup(ChoiceLink):
     """Revert to last or first backup."""
-    extraItems = [_RevertBackup(), _RevertFirstBackup()]
+    extraItems = [_RevertBackup(), _RevertBackup(first=True)]
