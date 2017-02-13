@@ -1398,16 +1398,21 @@ class BsaFile:
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - alpha."""
-    _file_stat = Path.size_mtime
     _null_stat = (0, 0) ##:maybe use invalid values like None
+
+    @property
+    def _stat_tuple(self): return self.abs_path.size_mtime()
 
     def __init__(self, abs_path, load_cache=False):
         self._abs_path = GPath(abs_path)
         #--Settings cache
         try:
-            self._reset_cache(self._file_stat(self.abs_path), load_cache)
+            self._reset_cache(self._stat_tuple, load_cache)
         except OSError:
             self._reset_cache(self._null_stat, False)
+
+    def mark_unchanged(self):
+        AFile._reset_cache(self, self._stat_tuple, load_cache=False)
 
     @property
     def abs_path(self): return self._abs_path
@@ -1417,7 +1422,7 @@ class AFile(object):
 
     def needs_update(self):
         try:
-            stat_tuple = self._file_stat(self.abs_path)
+            stat_tuple = self._stat_tuple
         except OSError:
             self._reset_cache(self._null_stat, False)
             return False # we should not call needs_update on deleted files
@@ -1513,8 +1518,10 @@ class MasterInfo:
 #------------------------------------------------------------------------------
 class FileInfo(AFile):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
-    _file_stat = Path.size_mtime_ctime
     _null_stat = (0, 0, 0)
+
+    @property
+    def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
     def __init__(self, parent_dir, name, load_cache=False):
         self.dir = GPath(parent_dir)
@@ -1763,7 +1770,7 @@ class ModInfo(FileInfo):
             else: ghost.moveTo(normal)
             self.isGhost = isGhost
             # reset cache info as un/ghosting should not make needs_update True
-            self._reset_cache(self._file_stat(self.abs_path), load_cache=False)
+            self.mark_unchanged()
         except:
             deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
                 (ghost.s, normal.s)[isGhost]), traceback=True)
@@ -2522,6 +2529,7 @@ class FileInfos(TableFileInfos):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
+        # AFile.mark_unchanged(self[newName]) # not needed with shellMove !
         #--Done
         fileInfo.madeBackup = False ##: #292 - backups are left behind
 

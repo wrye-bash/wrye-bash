@@ -1472,8 +1472,9 @@ class ModDetails(_SashDetailsPanel):
             newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
+            detail_item = self._refresh_detail_info()
+        else: detail_item = self.file_info.name
         #--Done
-        detail_item = self._refresh_detail_info()
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
@@ -2008,13 +2009,15 @@ class SaveDetails(_SashDetailsPanel):
         changeName = (self.fileStr != saveInfo.name)
         changeMasters = self.uilist.edited
         #--Backup
-        saveInfo.makeBackup()
+        saveInfo.makeBackup() ##: why backup when just renaming - #292
         prevMTime = saveInfo.mtime
         #--Change Name?
+        to_del = []
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
             try:
                 bosh.saveInfos.rename_info(oldName, newName)
+                to_del = [oldName]
             except (CancelError, OSError, IOError):
                 pass
         #--Change masters?
@@ -2022,10 +2025,10 @@ class SaveDetails(_SashDetailsPanel):
             saveInfo.header.masters = self.uilist.GetNewMasters()
             saveInfo.write_masters()
             saveInfo.setmtime(prevMTime)
-        #--Done
-        detail_item = self._refresh_detail_info()
-        # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
-        self.panel_uilist.RefreshUI(detail_item=detail_item)
+            detail_item = self._refresh_detail_info()
+        else: detail_item = self.file_info.name
+        self.panel_uilist.RefreshUI(redraw=[self.file_info.name],
+                                    to_del=to_del, detail_item=detail_item)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
@@ -3221,16 +3224,12 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         """Event: Clicked Save button."""
         #--Change Tests
         changeName = (self.fileStr != self._bsa_info.name)
-        #--Backup
-        self._bsa_info.makeBackup()
         #--Change Name?
         if changeName:
             (oldName, newName) = (
                 self._bsa_info.name, GPath(self.fileStr.strip()))
             bosh.bsaInfos.rename_info(oldName, newName)
-        #--Done
-        detail_item = self._refresh_detail_info()
-        self.panel_uilist.RefreshUI(detail_item=detail_item)
+        self.panel_uilist.RefreshUI(detail_item=self.file_info.name)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):

@@ -85,7 +85,7 @@ class IniFile(AFile):
 
     def needs_update(self):
         try:
-            stat_tuple = self._file_stat(self.abs_path)
+            stat_tuple = self._stat_tuple
             if self._deleted:
                 self.updated = True # restored
                 self._deleted = False
