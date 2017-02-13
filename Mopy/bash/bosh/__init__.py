@@ -1593,11 +1593,6 @@ class FileInfo(AFile):
         else:
             return status
 
-    def coCopy(self,oldPath,newPath):
-        """Copies co files corresponding to oldPath to newPath.
-        Provided so that SaveFileInfo can override for its cofiles."""
-        pass
-
     # Backup stuff - beta, see #292 -------------------------------------------
     def getFileInfos(self):
         """Return one of the FileInfos singletons depending on fileInfo type.
@@ -1609,19 +1604,13 @@ class FileInfo(AFile):
         #--Skip backup?
         if not self in self.getFileInfos().values(): return
         if self.madeBackup and not forceBackup: return
-        #--Backup Directory
-        backupDir.makedirs()
-        #--File Path
-        original = self.getPath()
         #--Backup
-        backup = backupDir.join(self.name)
-        original.copyTo(backup)
-        self.coCopy(original,backup)
+        self.getFileInfos().copy_info(self.name, backupDir)
         #--First backup
-        firstBackup = backup+u'f'
+        firstBackup = backupDir.join(self.name) + u'f'
         if not firstBackup.exists():
-            original.copyTo(firstBackup)
-            self.coCopy(original,firstBackup)
+            self.getFileInfos().copy_info(self.name, backupDir,
+                                          firstBackup.tail)
 
     def tempBackup(self, forceBackup=True):
         """Creates backup(s) of file.  Uses temporary directory to avoid UAC issues."""
@@ -2225,10 +2214,6 @@ class SaveInfo(FileInfo):
             obse.load()
             obse.mapMasters(masterMap)
             obse.safeSave()
-
-    def coCopy(self,oldPath,newPath):
-        """Copies co files corresponding to oldPath to newPath."""
-        CoSaves(oldPath).copy(newPath)
 
     def coSaves(self):
         """Returns CoSaves instance corresponding to self."""
