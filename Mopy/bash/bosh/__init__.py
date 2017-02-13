@@ -1637,7 +1637,7 @@ class FileInfo(AFile):
     def backup_paths(self, first=False):
         """Return a list of tuples with backup paths and their restore
         destinations
-        :rtype: list[tuple]"""
+        :rtype: list[tuple]""" ##: drop tuples use lists !
         return [(self.backup_dir.join(self.name) + (u'f' if first else u''),
                  self.getPath())]
 
@@ -1748,7 +1748,7 @@ class ModInfo(FileInfo):
         # mark updated if ghost state changed but only reread header if needed
         super(ModInfo, self).needs_update() or self.isGhost != old_ghost
 
-    @property
+    @FileInfo.abs_path.getter
     def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
         return (self._abs_path + u'.ghost') if self.isGhost else self._abs_path
@@ -2515,7 +2515,7 @@ class FileInfos(TableFileInfos):
             self.table.pop(name, None)
         return deleted
 
-    def _get_rename_paths(self, oldName, newName):
+    def _get_rename_paths(self, oldName, newName): # FIXME(ut): rename backups
         return [(self[oldName].getPath(), self.store_dir.join(newName))]
 
     def _additional_deletes(self, fileInfo, toDelete):
@@ -2529,9 +2529,6 @@ class FileInfos(TableFileInfos):
         #--Update references
         fileInfo = self[oldName]
         #--File system
-        try:
-            if fileInfo.isGhost: newName += u'.ghost'
-        except AttributeError: pass # not a mod info
         super(FileInfos, self)._rename_operation(oldName, newName)
         #--FileInfo
         fileInfo.name = newName
@@ -2541,7 +2538,7 @@ class FileInfos(TableFileInfos):
         del self[oldName]
         self.table.moveRow(oldName,newName)
         #--Done
-        fileInfo.madeBackup = False ##: #292
+        fileInfo.madeBackup = False ##: #292 - backups are left behind
 
     #--Move
     def move_info(self, fileName, destDir):
@@ -3520,6 +3517,12 @@ class ModInfos(FileInfos):
         if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
+
+    def _get_rename_paths(self, oldName, newName):
+        renames = super(ModInfos, self)._get_rename_paths(oldName, newName)
+        if self[oldName].isGhost:
+            renames[0] = (renames[0][0], renames[0][1] + u'.ghost')
+        return renames
 
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
