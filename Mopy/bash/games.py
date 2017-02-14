@@ -758,7 +758,8 @@ class Fallout4(AsteriskGame):
                                  bolt.GPath(u'DLCCoast.esm'),
                                  bolt.GPath(u'DLCWorkshop02.esm'),
                                  bolt.GPath(u'DLCWorkshop03.esm'),
-                                 bolt.GPath(u'DLCNukaWorld.esm'),)
+                                 bolt.GPath(u'DLCNukaWorld.esm'),
+                                 bolt.GPath(u'DLCUltraHighResolution.esm'),)
 
     remove_from_plugins_txt = {bolt.GPath(u'Fallout4.esm')} | set(
         must_be_active_if_present)
