@@ -396,7 +396,7 @@ class MasterList(_ModsUIList):
             return
         #--Fill data and populate
         for mi, masters_name in enumerate(fileInfo.header.masters):
-            masterInfo = bosh.MasterInfo(masters_name, 0)
+            masterInfo = bosh.MasterInfo(masters_name)
             self.data_store[mi] = masterInfo
         self._reList()
         self.PopulateItems()
@@ -471,7 +471,7 @@ class MasterList(_ModsUIList):
 
     #--Relist
     def _reList(self):
-        fileOrderNames = [v.name for v in self.data_store.values()]
+        fileOrderNames = [v.name for v in self.data_store.itervalues()]
         self.loadOrderNames = load_order.get_ordered(fileOrderNames)
 
     #--InitEdit
@@ -965,9 +965,8 @@ class ModList(_ModsUIList):
                 self._toggle_active_state(*toActivate)
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
-            sel = map(lambda mod: self.data_store[mod].getPath().s,
-                      self.GetSelected())
-            balt.copyListToClipboard(sel)
+            balt.copyListToClipboard([self.data_store[mod].getPath().s
+                                      for mod in self.GetSelected()])
         super(ModList, self).OnKeyUp(event)
 
     def OnLeftDown(self,event):
@@ -1276,8 +1275,8 @@ class ModDetails(_SashDetailsPanel):
         #--Version
         self.version = StaticText(top,u'v0.00')
         #--Author
-        self.author = TextCtrl(top, onKillFocus=self.OnEditAuthor,
-                               onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
+        self.gAuthor = TextCtrl(top, onKillFocus=self.OnEditAuthor,
+                                onText=self.OnAuthorEdit, maxChars=511) # size=(textWidth,-1))
         #--Modified
         self.modified = TextCtrl(top,size=(textWidth, -1),
                                  onKillFocus=self.OnEditModified,
@@ -1298,7 +1297,7 @@ class ModDetails(_SashDetailsPanel):
                 ),0,wx.EXPAND),
             (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
             vspace(), (hSizer(StaticText(top,_(u"Author:"))),0,wx.EXPAND),
-            (hSizer((self.author,1,wx.EXPAND)),0,wx.EXPAND),
+            (hSizer((self.gAuthor,1,wx.EXPAND)),0,wx.EXPAND),
             vspace(), (hSizer(StaticText(top,_(u"Modified:"))),0,wx.EXPAND),
             (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
             vspace(), (hSizer(StaticText(top,_(u"Description:"))),0,wx.EXPAND),
@@ -1336,17 +1335,17 @@ class ModDetails(_SashDetailsPanel):
             tagsStr = u'\n'.join(sorted(modInfo.getBashTags()))
         else: tagsStr = u''
         self.modified.SetEditable(True)
-        self.modified.SetBackgroundColour(self.author.GetBackgroundColour())
+        self.modified.SetBackgroundColour(self.gAuthor.GetBackgroundColour())
         #--Set fields
         self.file.SetValue(self.fileStr)
-        self.author.SetValue(self.authorStr)
+        self.gAuthor.SetValue(self.authorStr)
         self.modified.SetValue(self.modifiedStr)
         self.description.SetValue(self.descriptionStr)
         self.version.SetLabel(self.versionStr)
         self.uilist.SetFileInfo(self.modInfo)
         self.gTags.SetValue(tagsStr)
         if fileName and not bosh.modInfos.table.getItem(fileName,'autoBashTags', True):
-            self.gTags.SetBackgroundColour(self.author.GetBackgroundColour())
+            self.gTags.SetBackgroundColour(self.gAuthor.GetBackgroundColour())
         else:
             self.gTags.SetBackgroundColour(self.GetBackgroundColour())
         self.gTags.Refresh()
@@ -1356,7 +1355,7 @@ class ModDetails(_SashDetailsPanel):
         if not self.edited and value != control.GetValue(): self.SetEdited()
         event.Skip()
     def OnAuthorEdit(self, event):
-        self._OnTextEdit(event, self.authorStr, self.author)
+        self._OnTextEdit(event, self.authorStr, self.gAuthor)
     def OnModifiedEdit(self, event):
         self._OnTextEdit(event, self.modifiedStr, self.modified)
     def OnDescrEdit(self, event):
@@ -1365,7 +1364,7 @@ class ModDetails(_SashDetailsPanel):
 
     def OnEditAuthor(self):
         if not self.modInfo: return
-        authorStr = self.author.GetValue()
+        authorStr = self.gAuthor.GetValue()
         if authorStr != self.authorStr:
             self.authorStr = authorStr
             self.SetEdited()
@@ -1473,8 +1472,9 @@ class ModDetails(_SashDetailsPanel):
             newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
             newTimeInt = int(time.mktime(newTimeTup))
             modInfo.setmtime(newTimeInt)
+            detail_item = self._refresh_detail_info()
+        else: detail_item = self.file_info.name
         #--Done
-        detail_item = self._refresh_detail_info()
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
         refreshSaves = changeName or (
@@ -2009,13 +2009,15 @@ class SaveDetails(_SashDetailsPanel):
         changeName = (self.fileStr != saveInfo.name)
         changeMasters = self.uilist.edited
         #--Backup
-        saveInfo.makeBackup()
+        saveInfo.makeBackup() ##: why backup when just renaming - #292
         prevMTime = saveInfo.mtime
         #--Change Name?
+        to_del = []
         if changeName:
             (oldName,newName) = (saveInfo.name,GPath(self.fileStr.strip()))
             try:
                 bosh.saveInfos.rename_info(oldName, newName)
+                to_del = [oldName]
             except (CancelError, OSError, IOError):
                 pass
         #--Change masters?
@@ -2023,10 +2025,10 @@ class SaveDetails(_SashDetailsPanel):
             saveInfo.header.masters = self.uilist.GetNewMasters()
             saveInfo.write_masters()
             saveInfo.setmtime(prevMTime)
-        #--Done
-        detail_item = self._refresh_detail_info()
-        # files=[saveInfo.name], Nope: deleted oldName drives _gList nuts
-        self.panel_uilist.RefreshUI(detail_item=detail_item)
+            detail_item = self._refresh_detail_info()
+        else: detail_item = self.file_info.name
+        self.panel_uilist.RefreshUI(redraw=[self.file_info.name],
+                                    to_del=to_del, detail_item=detail_item)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
@@ -3222,16 +3224,12 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         """Event: Clicked Save button."""
         #--Change Tests
         changeName = (self.fileStr != self._bsa_info.name)
-        #--Backup
-        self._bsa_info.makeBackup()
         #--Change Name?
         if changeName:
             (oldName, newName) = (
                 self._bsa_info.name, GPath(self.fileStr.strip()))
             bosh.bsaInfos.rename_info(oldName, newName)
-        #--Done
-        detail_item = self._refresh_detail_info()
-        self.panel_uilist.RefreshUI(detail_item=detail_item)
+        self.panel_uilist.RefreshUI(detail_item=self.file_info.name)
 
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):

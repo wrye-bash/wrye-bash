@@ -85,19 +85,19 @@ class IniFile(AFile):
 
     def needs_update(self):
         try:
-            psize, pmtime = self.abs_path.size_mtime()
+            stat_tuple = self._stat_tuple
             if self._deleted:
                 self.updated = True # restored
                 self._deleted = False
         except OSError:
-            self._file_size = self._file_mod_time = 0
+            self._reset_cache(self._null_stat, False)
             if not self._deleted:
                 # mark as deleted to avoid requesting updates on each refresh
                 self._deleted = self.updated = True
                 return True
             return False # we already know it's deleted (used for game inis)
-        if self._file_size != psize or self._file_mod_time != pmtime:
-            self._file_size, self._file_mod_time = psize, pmtime
+        if self._file_changed(stat_tuple):
+            self._reset_cache(stat_tuple, load_cache=True)
             self._settings_cache_linenum = self.__empty
             self.updated = True
             return True

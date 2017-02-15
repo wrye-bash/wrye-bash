@@ -398,7 +398,7 @@ class ConfigHelpers:
                         for i,mod in enumerate(scan):
                             udrs,itms,fog = ret[i]
                             if mod.name == GPath(u'Unofficial Oblivion Patch.esp'): itms.discard((GPath(u'Oblivion.esm'),0x00AA3C))
-                            if mod.header.author in (u'BASHED PATCH',u'BASHED LISTS'): itms = set()
+                            if mod.isBP(): itms = set()
                             if udrs or itms:
                                 cleanMsg = []
                                 if udrs:

@@ -1398,21 +1398,21 @@ class BsaFile:
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - alpha."""
-    _with_ctime = False # HACK ctime may not be needed
+    _null_stat = (0, 0) ##:maybe use invalid values like None
+
+    @property
+    def _stat_tuple(self): return self.abs_path.size_mtime()
 
     def __init__(self, abs_path, load_cache=False):
         self._abs_path = GPath(abs_path)
         #--Settings cache
         try:
-            if self._with_ctime:
-                self._file_size, self._file_mod_time, self.ctime = \
-                    self.abs_path.size_mtime_ctime()
-            else:
-                self._file_size, self._file_mod_time = \
-                    self.abs_path.size_mtime()
+            self._reset_cache(self._stat_tuple, load_cache)
         except OSError:
-            self._file_size = self._file_mod_time = 0
-            if self._with_ctime: self.ctime = 0
+            self._reset_cache(self._null_stat, False)
+
+    def mark_unchanged(self):
+        AFile._reset_cache(self, self._stat_tuple, load_cache=False)
 
     @property
     def abs_path(self): return self._abs_path
@@ -1422,23 +1422,21 @@ class AFile(object):
 
     def needs_update(self):
         try:
-            if self._with_ctime:
-                psize, pmtime, pctime = self.abs_path.size_mtime_ctime()
-            else:
-                psize, pmtime = self.abs_path.size_mtime()
+            stat_tuple = self._stat_tuple
         except OSError:
+            self._reset_cache(self._null_stat, False)
             return False # we should not call needs_update on deleted files
-        if self._file_size != psize or self._file_mod_time != pmtime or (
-            self._with_ctime and self.ctime != pctime):
-            self._reset_cache(psize, pmtime, pctime=(self._with_ctime and
-                                                        pctime) or None)
+        if self._file_changed(stat_tuple):
+            self._reset_cache(stat_tuple, load_cache=True)
             return True
         return False
 
-    def _reset_cache(self, psize, pmtime, pctime=None):
-        self._file_size, self._file_mod_time = psize, pmtime
-        if pctime is not None:
-            self.ctime = pctime
+    def _file_changed(self, stat_tuple):
+        return (self._file_size, self._file_mod_time) != stat_tuple
+
+    def _reset_cache(self, stat_tuple, load_cache):
+        # load_cache used in Mod and SaveInfo to read the header, rest is cheap
+        self._file_size, self._file_mod_time = stat_tuple
 
     def __repr__(self): return self.__class__.__name__ + u"<" + repr(
         self.abs_path.stail) + u">"
@@ -1451,30 +1449,25 @@ class PluginsFullError(BoltError):
 
 #------------------------------------------------------------------------------
 class MasterInfo:
-    def __init__(self,name,size):
-        self.oldName = self.name = GPath(name)
-        self.modInfo = modInfos.get(self.name,None)
-        self.isGhost = self.modInfo and self.modInfo.isGhost
+
+    def _init_master_info(self):
         if self.modInfo:
             self.mtime = self.modInfo.mtime
-            self.author = self.modInfo.header.author
             self.masterNames = self.modInfo.masterNames
         else:
             self.mtime = 0
-            self.author = u''
             self.masterNames = tuple()
+
+    def __init__(self, name):
+        self.oldName = self.name = GPath(name)
+        self.modInfo = modInfos.get(self.name,None)
+        self.isGhost = self.modInfo and self.modInfo.isGhost
+        self._init_master_info()
 
     def setName(self,name):
         self.name = GPath(name)
         self.modInfo = modInfos.get(self.name,None)
-        if self.modInfo:
-            self.mtime = self.modInfo.mtime
-            self.author = self.modInfo.header.author
-            self.masterNames = self.modInfo.masterNames
-        else:
-            self.mtime = 0
-            self.author = u''
-            self.masterNames = tuple()
+        self._init_master_info()
 
     def hasChanged(self):
         return self.name != self.oldName
@@ -1523,14 +1516,30 @@ class MasterInfo:
         return self.__class__.__name__ + u"<" + repr(self.name) + u">"
 
 #------------------------------------------------------------------------------
-class _AFileInfo(AFile):
-    """Abstract File."""
-    _with_ctime = True # HACK ctime may not be needed
+class FileInfo(AFile):
+    """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
+    _null_stat = (0, 0, 0)
+
+    @property
+    def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
     def __init__(self, parent_dir, name, load_cache=False):
         self.dir = GPath(parent_dir)
         self.name = GPath(name) # ghost must be lopped off
-        super(_AFileInfo, self).__init__(self.dir.join(name), load_cache)
+        self.header = None
+        self.masterNames = tuple()
+        self.masterOrder = tuple()
+        self.madeBackup = False
+        #--Ancillary storage
+        self.extras = {}
+        super(FileInfo, self).__init__(self.dir.join(name), load_cache)
+
+    def _file_changed(self, stat_tuple):
+        return (self._file_size, self._file_mod_time, self.ctime) != stat_tuple
+
+    def _reset_cache(self, stat_tuple, load_cache):
+        self._file_size, self._file_mod_time, self.ctime = stat_tuple
+        if load_cache: self.readHeader()
 
     ##: DEPRECATED-------------------------------------------------------------
     def getPath(self): return self.abs_path
@@ -1539,34 +1548,7 @@ class _AFileInfo(AFile):
     @property
     def size(self): return self._file_size
     #--------------------------------------------------------------------------
-
-    def sameAs(self,fileInfo):
-        """Return true if other fileInfo refers to same file as this fileInfo."""
-        return ((self.size == fileInfo.size) and
-                (self.mtime == fileInfo.mtime) and
-                (self.ctime == fileInfo.ctime) and
-                (self.name == fileInfo.name))
-
-    def setmtime(self, set_time=0):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
-        set_time = int(set_time or self.mtime)
-        self.abs_path.mtime = set_time
-        self._file_mod_time = set_time
-        return set_time
-
-class FileInfo(_AFileInfo):
-    """Abstract TES4/TES4GAME File."""
-
-    def __init__(self, parent_dir, name):
-        _AFileInfo.__init__(self, parent_dir, name)
-        self.header = None
-        self.masterNames = tuple()
-        self.masterOrder = tuple()
-        self.madeBackup = False
-        #--Ancillary storage
-        self.extras = {}
-
-    #--File type tests
+    #--File type tests ##: Belong to ModInfo!
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
         return reModExt.search(self.name.s)
@@ -1581,22 +1563,16 @@ class FileInfo(_AFileInfo):
         return (self.isMod() and self.header and
                 self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
-    def info_refresh(self):
-        self._file_size, self._file_mod_time, self.ctime = \
-            self.abs_path.size_mtime_ctime()
-        if self.header: self.readHeader() # if not header remains None
+    def setmtime(self, set_time=0):
+        """Sets mtime. Defaults to current value (i.e. reset)."""
+        set_time = int(set_time or self.mtime)
+        self.abs_path.mtime = set_time
+        self._file_mod_time = set_time
+        return set_time
 
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         pass
-
-    def getHeaderError(self):
-        """Read header for file. But detects file error and returns that."""
-        try: self.readHeader()
-        except FileError as error:
-            return error.message
-        else:
-            return None
 
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
@@ -1624,13 +1600,7 @@ class FileInfo(_AFileInfo):
         else:
             return status
 
-    def coCopy(self,oldPath,newPath):
-        """Copies co files corresponding to oldPath to newPath.
-        Provided so that SaveFileInfo can override for its cofiles."""
-        pass
-
-class _BackupMixin(FileInfo): # this should become a real mixin - under #336
-
+    # Backup stuff - beta, see #292 -------------------------------------------
     def getFileInfos(self):
         """Return one of the FileInfos singletons depending on fileInfo type.
         :rtype: FileInfos"""
@@ -1641,19 +1611,13 @@ class _BackupMixin(FileInfo): # this should become a real mixin - under #336
         #--Skip backup?
         if not self in self.getFileInfos().values(): return
         if self.madeBackup and not forceBackup: return
-        #--Backup Directory
-        backupDir.makedirs()
-        #--File Path
-        original = self.getPath()
         #--Backup
-        backup = backupDir.join(self.name)
-        original.copyTo(backup)
-        self.coCopy(original,backup)
+        self.getFileInfos().copy_info(self.name, backupDir)
         #--First backup
-        firstBackup = backup+u'f'
+        firstBackup = backupDir.join(self.name) + u'f'
         if not firstBackup.exists():
-            original.copyTo(firstBackup)
-            self.coCopy(original,firstBackup)
+            self.getFileInfos().copy_info(self.name, backupDir,
+                                          firstBackup.tail)
 
     def tempBackup(self, forceBackup=True):
         """Creates backup(s) of file.  Uses temporary directory to avoid UAC issues."""
@@ -1666,11 +1630,15 @@ class _BackupMixin(FileInfo): # this should become a real mixin - under #336
         #--Done
         self.madeBackup = True
 
-    def backup_paths(self):
-        return [(self.backup_dir.join(self.name), self.getPath())]
+    def backup_paths(self, first=False):
+        """Return a list of tuples with backup paths and their restore
+        destinations
+        :rtype: list[tuple]""" ##: drop tuples use lists !
+        return [(self.backup_dir.join(self.name) + (u'f' if first else u''),
+                 self.getPath())]
 
-    def revert_backup(self):
-        backup_paths = self.backup_paths()
+    def revert_backup(self, first=False):
+        backup_paths = self.backup_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
             if not tup[0].exists(): backup_paths.remove(tup)
         env.shellCopy(*zip(*backup_paths))
@@ -1719,17 +1687,17 @@ class _BackupMixin(FileInfo): # this should become a real mixin - under #336
 reReturns = re.compile(u'\r{2,}',re.U)
 reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
-class ModInfo(_BackupMixin, FileInfo):
+class ModInfo(FileInfo):
     """An esp/m file."""
 
-    def __init__(self, parent_dir, name):
+    def __init__(self, parent_dir, name, load_cache=False):
         self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
         if endsInGhost: name = GPath(name.s[:-6])
         else: # refreshFile() path
             absPath = GPath(parent_dir).join(name)
             self.isGhost = \
                 not absPath.exists() and (absPath + u'.ghost').exists()
-        FileInfo.__init__(self, parent_dir, name)
+        super(ModInfo, self).__init__(parent_dir, name, load_cache)
 
     def getFileInfos(self): return modInfos
 
@@ -1770,14 +1738,13 @@ class ModInfo(_BackupMixin, FileInfo):
         modInfos.table.setItem(self.name,'crc_mtime', set_time)
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def sameAs(self, fileInfo):
-        try:
-            return FileInfo.sameAs(self, fileInfo) and (
-                self.isGhost == fileInfo.isGhost)
-        except AttributeError: #fileInfo has no isGhost attribute - not ModInfo
-            return False
+    def needs_update(self):
+        self.isGhost, old_ghost = not self._abs_path.exists() and (
+            self._abs_path + u'.ghost').exists(), self.isGhost
+        # mark updated if ghost state changed but only reread header if needed
+        super(ModInfo, self).needs_update() or self.isGhost != old_ghost
 
-    @property
+    @FileInfo.abs_path.getter
     def abs_path(self):
         """Return joined dir and name, adding .ghost if the file is ghosted."""
         return (self._abs_path + u'.ghost') if self.isGhost else self._abs_path
@@ -1790,7 +1757,7 @@ class ModInfo(_BackupMixin, FileInfo):
         # libloadorder automatically unghosting plugins when activating them.
         # Libloadorder only un-ghosts automatically, so if both the normal
         # and ghosted version exist, treat the normal as the real one.
-        #  TODO(ut): both should never exist simultaneously
+        # Both should never exist simultaneously, Bash will warn in BashBugDump
         if normal.exists(): self.isGhost = False
         elif ghost.exists(): self.isGhost = True
         # Current status == what we want it?
@@ -1799,11 +1766,11 @@ class ModInfo(_BackupMixin, FileInfo):
         try:
             if not normal.editable() or not ghost.editable():
                 return self.isGhost
-            oldCtime = self.ctime
             if isGhost: normal.moveTo(ghost)
             else: ghost.moveTo(normal)
             self.isGhost = isGhost
-            self.ctime = oldCtime
+            # reset cache info as un/ghosting should not make needs_update True
+            self.mark_unchanged()
         except:
             deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
                 (ghost.s, normal.s)[isGhost]), traceback=True)
@@ -1914,6 +1881,9 @@ class ModInfo(_BackupMixin, FileInfo):
         self.writeHeader()
 
     #--Helpers ----------------------------------------------------------------
+    def isBP(self, __bp_authors={u'BASHED PATCH', u'BASHED LISTS'}):
+        return self.header.author in __bp_authors ##: drop BASHED LISTS
+
     def txt_status(self):
         if load_order.cached_is_active(self.name): return _(u'Active')
         elif self.name in modInfos.merged: return _(u'Merged')
@@ -1980,7 +1950,7 @@ class ModInfo(_BackupMixin, FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            bsaPaths = self.extra_bsas()
+            bsaPaths = self._extra_bsas()
             bsa_assets = OrderedDict()
             for path in bsaPaths:
                 try:
@@ -2007,7 +1977,7 @@ class ModInfo(_BackupMixin, FileInfo):
                 paths.update(imap(out_path.join, assets))
         return paths
 
-    def extra_bsas(self):
+    def _extra_bsas(self):
         """Return a list of (existing) bsa paths to get assets from.
         :rtype: list[bolt.Path]
         """
@@ -2029,7 +1999,7 @@ class ModInfo(_BackupMixin, FileInfo):
         missing."""
         if not self.header.flags1.hasStrings: return False
         language = oblivionIni.get_ini_language()
-        bsaPaths = self.extra_bsas()
+        bsaPaths = self._extra_bsas()
         for assetPath in self._string_files_paths(language):
             # Check loose files first
             if self.dir.join(assetPath).exists():
@@ -2084,8 +2054,8 @@ class INIInfo(IniFile):
         super(INIInfo, self).__init__(path)
         self._status = None
 
-    def _reset_cache(self, psize, pmtime, pctime=None):
-        super(INIInfo, self)._reset_cache(psize, pmtime, pctime)
+    def _reset_cache(self, stat_tuple, load_cache):
+        super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
         self._status = None
 
     @property
@@ -2131,8 +2101,8 @@ class INIInfo(IniFile):
                     return -10
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
-                        # Check to see if the mismatch is from another
-                        # ini tweak that is applied, and from the same installer
+                        # Check to see if the mismatch is from another ini
+                        # tweak that is applied, and from the same installer
                         mismatch = 2
                         if self_installer is None: continue
                         for name, ini_info in infos.iteritems():
@@ -2198,7 +2168,7 @@ class INIInfo(IniFile):
 
 #------------------------------------------------------------------------------
 from .save_files import get_save_header_type, SaveHeaderError
-class SaveInfo(_BackupMixin, FileInfo):
+class SaveInfo(FileInfo):
     def getFileInfos(self): return saveInfos
 
     def getStatus(self):
@@ -2218,7 +2188,7 @@ class SaveInfo(_BackupMixin, FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = get_save_header_type(bush.game.fsName)(self.getPath())
+            self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
             #--Master Names/Order
             self.masterNames = tuple(self.header.masters)
             self.masterOrder = tuple() #--Reset to empty for now
@@ -2252,16 +2222,12 @@ class SaveInfo(_BackupMixin, FileInfo):
             obse.mapMasters(masterMap)
             obse.safeSave()
 
-    def coCopy(self,oldPath,newPath):
-        """Copies co files corresponding to oldPath to newPath."""
-        CoSaves(oldPath).copy(newPath)
-
     def coSaves(self):
         """Returns CoSaves instance corresponding to self."""
         return CoSaves(self.getPath())
 
-    def backup_paths(self):
-        save_paths = super(SaveInfo, self).backup_paths() # type: list[tuple]
+    def backup_paths(self, first=False):
+        save_paths = super(SaveInfo, self).backup_paths(first)
         save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
         return save_paths
 
@@ -2274,12 +2240,17 @@ try:
 except AttributeError:
     _bsa_type = bsa_files.ABsa
 
-class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
+class BSAInfo(FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
 
-    def __init__(self, parent_dir, bsa_name):
-        super(BSAInfo, self).__init__(parent_dir, bsa_name)
+    def __init__(self, parent_dir, bsa_name, load_cache=False):
+        try: # Never load_cache for memory reasons - let it be loaded as needed
+            super(BSAInfo, self).__init__(parent_dir, bsa_name,
+                                          load_cache=False)
+        except BSAError as e:
+            raise FileError, (GPath(bsa_name),
+                e.__class__.__name__ + u' ' + e.message), sys.exc_info()[2]
         self._reset_bsa_mtime()
 
     def getFileInfos(self): return bsaInfos
@@ -2289,8 +2260,8 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
         self._reset_bsa_mtime()
         return changed
 
-    def _reset_cache(self, psize, pmtime, pctime=None):
-        super(BSAInfo, self)._reset_cache(pmtime, psize, pctime)
+    def _reset_cache(self, stat_tuple, load_cache):
+        super(BSAInfo, self)._reset_cache(stat_tuple, False)
         self._assets = self.__class__._assets
 
     def _reset_bsa_mtime(self):
@@ -2314,7 +2285,7 @@ class BSAInfo(_BackupMixin, FileInfo, _bsa_type):
             return active_index(self.name.root + '.esp')
 
 #------------------------------------------------------------------------------
-class _DataStore(DataDict):
+class DataStore(DataDict):
     store_dir = empty_path # where the datas sit, static except for SaveInfos
 
     def delete(self, delete_keys, **kwargs):
@@ -2395,10 +2366,10 @@ class _DataStore(DataDict):
             pass
         return set(d.tail for d in destinations if d.exists())
 
-class TableFileInfos(_DataStore):
+class TableFileInfos(DataStore):
     _notify_bain_on_delete = True
-
     file_pattern = None # subclasses must define this !
+
     def _initDB(self, dir_):
         self.store_dir = dir_ #--Path
         self.store_dir.makedirs()
@@ -2408,7 +2379,7 @@ class TableFileInfos(_DataStore):
         self.table = bolt.Table(
             bolt.PickleDict(self.bash_dir.join(u'Table.dat')))
 
-    def __init__(self, dir_, factory=FileInfo):
+    def __init__(self, dir_, factory=AFile):
         """Init with specified directory and specified factory type."""
         self.factory=factory
         self._initDB(dir_)
@@ -2452,6 +2423,7 @@ class TableFileInfos(_DataStore):
 
     def _update_deleted_paths(self, deleted_keys, paths_to_keys,
                               check_existence):
+        """Must be called BEFORE we remove the keys from self."""
         if paths_to_keys is None: # we passed the keys in, get the paths
             paths_to_keys = {self[n].abs_path: n for n in deleted_keys}
         if check_existence:
@@ -2480,47 +2452,39 @@ class FileInfos(TableFileInfos):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
-    def refreshFile(self,fileName):
+    def refreshFile(self, fileName, _in_refresh=False): # YAK - tmp _in_refresh
         try:
-            fileInfo = self.factory(self.store_dir, fileName)
-            fileInfo.readHeader()
+            fileInfo = self.factory(self.store_dir, fileName, load_cache=True)
             self[fileName] = fileInfo
+            self.corrupted.pop(fileName, None)
         except FileError as error:
-            self.corrupted[fileName] = error.message
-            self.pop(fileName, None)
+            if not _in_refresh: # if refresh just raise so we print the error
+                self.corrupted[fileName] = error.message
+                self.pop(fileName, None)
             raise
 
     #--Refresh
     def refresh(self, refresh_infos=True):
         """Refresh from file directory."""
         oldNames = set(self.data) | set(self.corrupted)
-        newNames = set()
         _added = set()
         _updated = set()
-        names = self._names()
-        for name in names:
-            fileInfo = self.factory(self.store_dir, name)
-            name = fileInfo.name #--Might have '.ghost' lopped off.
-            if name in newNames: continue #--Must be a ghost duplicate. Ignore it.
-            oldInfo = self.get(name) # None if name was in corrupted
-            isAdded = name not in oldNames
-            dont_recheck = isUpdated = False
-            if oldInfo is not None:
-                isUpdated = not isAdded and not fileInfo.sameAs(oldInfo)
-            elif not isAdded: # known corrupted - recheck
-                dont_recheck = isUpdated = not fileInfo.getHeaderError()
-            if isAdded or isUpdated:
-                errorMessage = not dont_recheck and fileInfo.getHeaderError()
-                if errorMessage:
-                    self.corrupted[name] = errorMessage
-                    self.pop(name,None)
-                    continue
-                else:
-                    self[name] = fileInfo
-                    self.corrupted.pop(name,None)
-                    if isAdded: _added.add(name)
-                    elif isUpdated: _updated.add(name)
-            newNames.add(name) # will add known corrupted too
+        newNames = self._names()
+        for name in newNames: #--Might have '.ghost' lopped off.
+            oldInfo = self.get(name) # None if name was in corrupted or new one
+            try:
+                if oldInfo is not None:
+                    if oldInfo.needs_update(): # will reread the header
+                        _updated.add(name)
+                else: # added or known corrupted, get a new info
+                    self.refreshFile(name, _in_refresh=True)
+                    _added.add(name)
+            except FileError as e: # old still corrupted, or new(ly) corrupted
+                if not name in self.corrupted \
+                        or self.corrupted[name] != e.message:
+                    deprint(u'Failed to load %s: %s' % (name, e.message)) #, traceback=True)
+                    self.corrupted[name] = e.message
+                self.pop(name, None)
         _deleted = oldNames - newNames
         self.delete_refresh(_deleted, None, check_existence=False,
                             _in_refresh=True)
@@ -2543,7 +2507,7 @@ class FileInfos(TableFileInfos):
             self.table.pop(name, None)
         return deleted
 
-    def _get_rename_paths(self, oldName, newName):
+    def _get_rename_paths(self, oldName, newName): # FIXME(ut): rename backups
         return [(self[oldName].getPath(), self.store_dir.join(newName))]
 
     def _additional_deletes(self, fileInfo, toDelete):
@@ -2557,9 +2521,6 @@ class FileInfos(TableFileInfos):
         #--Update references
         fileInfo = self[oldName]
         #--File system
-        try:
-            if fileInfo.isGhost: newName += u'.ghost'
-        except AttributeError: pass # not a mod info
         super(FileInfos, self)._rename_operation(oldName, newName)
         #--FileInfo
         fileInfo.name = newName
@@ -2568,8 +2529,9 @@ class FileInfos(TableFileInfos):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
+        # AFile.mark_unchanged(self[newName]) # not needed with shellMove !
         #--Done
-        fileInfo.madeBackup = False ##: #292
+        fileInfo.madeBackup = False ##: #292 - backups are left behind
 
     #--Move
     def move_info(self, fileName, destDir):
@@ -2988,8 +2950,16 @@ class ModInfos(FileInfos):
 
     #--Refresh-----------------------------------------------------------------
     def _names(self):
-        names = FileInfos._names(self)
-        return sorted(names, key=lambda x: x.cext == u'.ghost')
+        names = super(ModInfos, self)._names()
+        unghosted_names = set()
+        for name in sorted(names, key=lambda x: x.cext == u'.ghost'):
+            if name.cs[-6:] == u'.ghost': name = GPath(name.s[:-6])
+            if name in unghosted_names:
+                deprint(u'Both %s and its ghost exist. The ghost will be '
+                        u'ignored but this may lead to undefined behavior - '
+                        u'please remove one or the other' % name)
+            else: unghosted_names.add(name)
+        return unghosted_names
 
     def refresh(self, refresh_infos=True, _modTimesChange=False):
         """Update file data for additions, removals and date changes.
@@ -3108,8 +3078,7 @@ class ModInfos(FileInfos):
         #--Bashed patches
         self.bashed_patches.clear()
         for modName, modInfo in self.iteritems():
-            if modInfo.header.author == u"BASHED PATCH":
-                self.bashed_patches.add(modName)
+            if modInfo.isBP(): self.bashed_patches.add(modName)
         #--Refresh overLoaded
         self.exGroup_mods.clear()
         active_set = set(load_order.cached_active_tuple())
@@ -3197,9 +3166,9 @@ class ModInfos(FileInfos):
                 mod.reloadBashTags()
 
     #--Refresh File
-    def refreshFile(self,fileName):
+    def refreshFile(self, fileName, _in_refresh=False):
         try:
-            FileInfos.refreshFile(self,fileName)
+            FileInfos.refreshFile(self, fileName, _in_refresh)
         finally:
             self._refreshInfoLists() # not sure if needed here - track usages !
 
@@ -3413,7 +3382,7 @@ class ModInfos(FileInfos):
             mods = load_order.get_ordered(self.keys())
             # first select the bashed patch(es) and their masters
             for mod in mods: ##: usually results in exclusion group violation
-                if self.isBP(mod): _add_to_activate(mod)
+                if self[mod].isBP(): _add_to_activate(mod)
             # then activate mods not tagged NoMerge or Deactivate or Filter
             def _activatable(modName):
                 tags = modInfos[modName].getBashTags()
@@ -3460,9 +3429,6 @@ class ModInfos(FileInfos):
         return message
 
     #--Helpers ----------------------------------------------------------------
-    def isBP(self, modName): return self[modName].header.author in (
-            u'BASHED PATCH', u'BASHED LISTS')
-
     @staticmethod
     def isBadFileName(modName):
         """True if the name cannot be encoded to the proper format for plugins.txt"""
@@ -3534,8 +3500,9 @@ class ModInfos(FileInfos):
     def _rename_operation(self, oldName, newName):
         """Renames member file from oldName to newName."""
         isSelected = load_order.cached_is_active(oldName)
-        if isSelected: self.lo_deactivate(oldName, doSave=False) # will save later
-        FileInfos._rename_operation(self, oldName, newName)
+        if isSelected:
+            self.lo_deactivate(oldName, doSave=False) # will save later
+        super(ModInfos, self)._rename_operation(oldName, newName)
         # rename in load order caches
         oldIndex = self._lo_wip.index(oldName)
         self._lo_caches_remove_mods([oldName])
@@ -3543,6 +3510,12 @@ class ModInfos(FileInfos):
         if isSelected: self.lo_activate(newName, doSave=False)
         # Save to disc (load order and plugins.txt)
         self.cached_lo_save_all()
+
+    def _get_rename_paths(self, oldName, newName):
+        renames = super(ModInfos, self)._get_rename_paths(oldName, newName)
+        if self[oldName].isGhost:
+            renames[0] = (renames[0][0], renames[0][1] + u'.ghost')
+        return renames
 
     #--Delete
     def files_to_delete(self, filenames, **kwargs):
@@ -3591,9 +3564,9 @@ class ModInfos(FileInfos):
     def get_hide_dir(self, name):
         dest_dir =self.hidden_dir
         #--Use author subdirectory instead?
-        author = self[name].header.author
-        if author:
-            authorDir = dest_dir.join(author)
+        mod_author = self[name].header.author
+        if mod_author:
+            authorDir = dest_dir.join(mod_author)
             if authorDir.isdir():
                 return authorDir
         #--Use group subdirectory instead?
@@ -3690,7 +3663,7 @@ class ModInfos(FileInfos):
         basePath.mtime = baseInfo.mtime
         oldPath.mtime = newInfo.mtime
         if newInfo.isGhost:
-            oldInfo = ModInfo(self.store_dir, oldName)
+            oldInfo = self.factory(self.store_dir, oldName) # type: ModInfo
             oldInfo.setGhost(True)
         self.voCurrent = newVersion
 
@@ -3856,39 +3829,8 @@ class BSAInfos(FileInfos):
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
 
-    def refresh(self, refresh_infos=True):
-        """Refresh from file directory."""
-        oldNames = set(self.data) | set(self.corrupted)
-        _added = set()
-        _updated = set()
-        newNames = self._names()
-        for name in newNames:
-            oldInfo = self.get(name) # None if name was in corrupted or new one
-            isAdded = name not in oldNames
-            isUpdated = False
-            try:
-                if oldInfo is not None:
-                    isUpdated = not isAdded and oldInfo.needs_update()
-                else: # added or known corrupted, get a new info
-                    oldInfo = self.factory(self.store_dir, name)
-                self[name] = oldInfo
-                self.corrupted.pop(name,None)
-                if isAdded: _added.add(name)
-                elif isUpdated: _updated.add(name)
-            except BSAError as e: # old still corrupted, or new(ly) corrupted
-                deprint(u'Failed to load %s' % name, traceback=True)
-                self.corrupted[name] = e.message
-                self.pop(name, None)
-                continue
-        _deleted = oldNames - newNames
-        self.delete_refresh(_deleted, None, check_existence=False,
-                            _in_refresh=True)
-        change = bool(_added) or bool(_updated) or bool(_deleted)
-        if not change: return change
-        return _added, _updated, _deleted
-
 #------------------------------------------------------------------------------
-class PeopleData(_DataStore):
+class PeopleData(DataStore):
     """Data for a People UIList. Built on a PickleDict."""
     def __init__(self):
         self.dictFile = bolt.PickleDict(dirs['saveBase'].join(u'People.dat'))
@@ -3952,7 +3894,7 @@ class PeopleData(_DataStore):
                 out.write(u'\n\n')
 
 #------------------------------------------------------------------------------
-class ScreensData(_DataStore):
+class ScreensData(DataStore):
     reImageExt = re.compile(
         ur'\.(' + ur'|'.join(ext[1:] for ext in imageExts) + ur')$',
         re.I | re.U)
