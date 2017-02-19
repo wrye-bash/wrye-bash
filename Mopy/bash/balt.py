@@ -155,8 +155,14 @@ class Image:
         if not self.bitmap:
             if self._img_type == wx.BITMAP_TYPE_ICO:
                 self.GetIcon()
-                self.bitmap = wx.EmptyBitmap(self.iconSize,self.iconSize)
+                w, h = self.icon.GetWidth(), self.icon.GetHeight()
+                self.bitmap = wx.EmptyBitmap(w, h)
                 self.bitmap.CopyFromIcon(self.icon)
+                # Hack - when user scales windows display icon may need scaling
+                if w != self.iconSize or h != self.iconSize: # rescale !
+                    self.bitmap = wx.BitmapFromImage(
+                        wx.ImageFromBitmap(self.bitmap).Scale(
+                          self.iconSize, self.iconSize, wx.IMAGE_QUALITY_HIGH))
             else:
                 self.bitmap = wx.Bitmap(self.file.s, self._img_type)
         return self.bitmap
@@ -164,12 +170,11 @@ class Image:
     def GetIcon(self):
         if not self.icon:
             if self._img_type == wx.BITMAP_TYPE_ICO:
-                self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
-                w,h = self.icon.GetWidth(),self.icon.GetHeight()
-                if (w > self.iconSize or w == 0 or
-                    h > self.iconSize or h == 0):
-                    self.iconSize = 16
-                    self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
+                self.icon = wx.Icon(self.file.s, wx.BITMAP_TYPE_ICO,
+                                    self.iconSize, self.iconSize)
+                # we failed to get the icon? (when display resolution changes)
+                if not self.icon.GetWidth() or not self.icon.GetHeight():
+                    self.icon = wx.Icon(self.file.s, wx.BITMAP_TYPE_ICO)
             else:
                 self.icon = wx.EmptyIcon()
                 self.icon.CopyFromBitmap(self.GetBitmap())
