@@ -86,8 +86,7 @@ from ..balt import colors, images, Image, Resources
 from ..balt import Links, ItemLink
 
 # Constants -------------------------------------------------------------------
-from .constants import colorInfo, settingDefaults, karmacons, installercons, \
-    PNG, JPEG, ICO, BMP, TIF
+from .constants import colorInfo, settingDefaults, karmacons, installercons
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -4104,15 +4103,15 @@ def InitImages():
     for key,value in settings['bash.colors'].iteritems(): colors[key] = value
     #--Images
     imgDirJn = bass.dirs['images'].join
-    def _png(name): return Image(imgDirJn(name), PNG)
+    def _png(name): return Image(imgDirJn(name)) # not png necessarily, rename!
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
     #--Misc
     #images['oblivion'] = Image(GPath(bass.dirs['images'].join(u'oblivion.png')),png)
-    images['help.16'] = Image(imgDirJn(u'help16.png'))
-    images['help.24'] = Image(imgDirJn(u'help24.png'))
-    images['help.32'] = Image(imgDirJn(u'help32.png'))
+    images['help.16'] = _png(u'help16.png')
+    images['help.24'] = _png(u'help24.png')
+    images['help.32'] = _png(u'help32.png')
     #--ColorChecks
     images['checkbox.red.x'] = _png(u'checkbox_red_x.png')
     images['checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
@@ -4143,7 +4142,7 @@ def InitImages():
     images['bash.24.blue'] = _png(u'bash_24_blue.png')
     images['bash.32.blue'] = _png(u'bash_32_blue.png')
     #--Bash Patch Dialogue
-    images['monkey.16'] = Image(imgDirJn(u'wryemonkey16.jpg'), JPEG)
+    images['monkey.16'] = _png(u'wryemonkey16.jpg')
     #--DocBrowser
     images['doc.16'] = _png(u'DocBrowser16.png')
     images['doc.24'] = _png(u'DocBrowser24.png')

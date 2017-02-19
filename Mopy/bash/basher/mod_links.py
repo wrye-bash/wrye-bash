@@ -40,7 +40,7 @@ from ..bolt import GPath, SubProgress, AbstractError, CancelError, formatDate
 from ..bosh import faces
 from ..patcher import configIsCBash, exportConfig, patch_files
 from .frames import DocBrowser
-from .constants import JPEG, settingDefaults
+from .constants import settingDefaults
 from ..cint import CBashApi, FormID
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 
@@ -1724,7 +1724,7 @@ class Mod_Face_Import(OneItemLink):
             width,height,data = srcInfo.header.image
             image = Image.GetImage(data, height, width)
             imagePath.head.makedirs()
-            image.SaveFile(imagePath.s,JPEG)
+            image.SaveFile(imagePath.s, Image.typesDict['jpg'])
         self.window.RefreshUI(refreshSaves=False) # import save to esp
         self._showOk(_(u'Imported face to: %s') % npc.eid,
                      self._selected_item.s)

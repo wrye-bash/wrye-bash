@@ -30,7 +30,6 @@ import re
 import shutil
 import struct
 from . import BashFrame
-from .constants import JPEG
 from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
@@ -295,7 +294,7 @@ class Save_ExportScreenshot(OneItemLink):
         if not imagePath: return
         width, height, image_data = self._selected_info.header.image
         image = Image.GetImage(image_data, height, width)
-        image.SaveFile(imagePath.s,JPEG)
+        image.SaveFile(imagePath.s, Image.typesDict['jpg'])
 
 #------------------------------------------------------------------------------
 class Save_DiffMasters(EnabledLink):

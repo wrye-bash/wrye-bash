@@ -398,14 +398,8 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
 
 # Images ----------------------------------------------------------------------
 #------------------------------------------------------------------------------
-PNG = Image.typesDict['png']
-JPEG = Image.typesDict['jpg']
-ICO = Image.typesDict['ico']
-BMP = Image.typesDict['bmp']
-TIF = Image.typesDict['tif']
-
 imDirJn = bass.dirs['images'].join
-def _png(name): return Image(imDirJn(name), PNG)
+def _png(name): return Image(imDirJn(name)) ##: not png necessarily, rename!
 
 #--Image lists
 karmacons = ImageList(16,16)
