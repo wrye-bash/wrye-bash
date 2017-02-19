@@ -27,10 +27,9 @@ import re
 import string
 import wx
 from .. import bass, balt, bosh, bolt, load_order
-from ..bass import Resources
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
-    CancelButton, hspace, vspace, BaltFrame
+    CancelButton, hspace, vspace, BaltFrame, Resources
 from ..bolt import GPath, BoltError, deprint
 from ..bosh import omods
 

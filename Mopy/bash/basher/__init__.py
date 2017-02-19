@@ -68,7 +68,6 @@ import wx
 #--Localization
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bass import Resources
 from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
     deprint, AbstractError, formatInteger, formatDate, round_size
 from ..bosh import omods
@@ -83,7 +82,7 @@ from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
     SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import hspacer, hSizer, vSizer, hspace, vspace
-from ..balt import colors, images, Image
+from ..balt import colors, images, Image, Resources
 from ..balt import Links, ItemLink
 
 # Constants -------------------------------------------------------------------

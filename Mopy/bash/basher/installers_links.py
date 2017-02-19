@@ -29,8 +29,8 @@ import copy
 from . import Installers_Link
 from .dialogs import CreateNewProject
 from .. import bass, bosh, balt, bush
-from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, EnabledLink
-from ..bass import Resources
+from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
+    EnabledLink
 from ..bolt import GPath
 
 __all__ = ['Installers_SortActive', 'Installers_SortProjects',
@@ -193,8 +193,7 @@ class Installers_ListPackages(Installers_Link):
         installed_only = self._askYes(message, _(u'Only Show Installed?'))
         text = self.idata.getPackageList(showInactive=not installed_only)
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BAIN Packages'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'BAIN Packages'), fixedFont=False)
 
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""

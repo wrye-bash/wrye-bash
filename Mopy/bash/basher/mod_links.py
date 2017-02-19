@@ -32,7 +32,6 @@ import os
 import time
 from operator import attrgetter
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..bass import Resources
 from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, hspacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
@@ -550,7 +549,7 @@ class Mod_Details(OneItemLink):
                     buff.write(u'  %08X %s\n' % (fid,eid))
                 buff.write(u'\n')
             self._showLog(buff.getvalue(), title=self._selected_item.s,
-                          fixedFont=True, icons=Resources.bashBlue)
+                          fixedFont=True)
             buff.close()
 
 class Mod_ShowReadme(OneItemLink):
@@ -576,8 +575,7 @@ class Mod_ListBashTags(ItemLink):
         modInfos = [x for x in self.iselected_infos()]
         text = bosh.modInfos.getTagList(modInfos)
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False)
 
 def _getUrl(fileName, installer, text):
     """"Try to get the url of the file (order of priority will be: TESNexus,
@@ -643,8 +641,7 @@ class Mod_CreateBOSSReport(EnabledLink):
 
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BOSS Report'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'BOSS Report'), fixedFont=False)
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
@@ -680,8 +677,7 @@ class Mod_CopyModInfo(ItemLink):
         if spoiler: text += u'[/spoiler]'
         # Show results + copy to clipboard
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Mod Info Report'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=_(u'Mod Info Report'), fixedFont=False)
 
 class Mod_ListDependent(OneItemLink):
     """Copies list of masters to clipboard."""
@@ -721,8 +717,7 @@ class Mod_ListDependent(OneItemLink):
             log(u'[/xml][/spoiler]')
             text = bolt.winNewLines(log.out.getvalue())
         balt.copyToClipboard(text)
-        self._showLog(text, title=self.legend, fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=self.legend, fixedFont=False)
 
 class Mod_JumpToInstaller(AppendableLink, OneItemLink):
     """Go to the installers tab and highlight the mods installer"""
@@ -877,8 +872,7 @@ class Mod_MarkMergeable(ItemLink):
                 no)
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
         if message != u'':
-            self._showWryeLog(message, title=_(u'Mark Mergeable'),
-                              icons=Resources.bashBlue)
+            self._showWryeLog(message, title=_(u'Mark Mergeable'))
 
 #------------------------------------------------------------------------------
 class _Mod_BP_Link(OneItemLink):
@@ -1115,8 +1109,7 @@ class Mod_ListPatchConfig(_Mod_BP_Link):
         clip.close()
         text = log.out.getvalue()
         log.out.close()
-        self._showWryeLog(text, title=_(u'Bashed Patch Configuration'),
-                          icons=Resources.bashBlue)
+        self._showWryeLog(text, title=_(u'Bashed Patch Configuration'))
 
 class Mod_ExportPatchConfig(_Mod_BP_Link):
     """Exports the Bashed Patch configuration to a Wrye Bash readable file."""
@@ -1288,8 +1281,7 @@ class Mod_ScanDirty(ItemLink):
             log(_(u'The following %d mods had errors while scanning:') % len(error))
             for mod in error: log(mod)
         self._showWryeLog(log.out.getvalue(),
-                          title=_(u'Dirty Edit Scan Results'), asDialog=False,
-                          icons=Resources.bashBlue)
+                          title=_(u'Dirty Edit Scan Results'), asDialog=False)
         log.out.close()
 
 #------------------------------------------------------------------------------
@@ -1355,8 +1347,7 @@ class Mod_FogFixer(ItemLink):
                         u'* %4d %s' % (len(fog_fixer.fixedCells), fileName.s))
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
-            self._showWryeLog(message, title=_(u'Nvidia Fog Fix'),
-                              icons=Resources.bashBlue)
+            self._showWryeLog(message, title=_(u'Nvidia Fog Fix'))
         else:
             message = _(u'No changes required.')
             self._showOk(message)
@@ -1399,7 +1390,7 @@ class Mod_UndeleteRefs(EnabledLink):
             message = log.out.getvalue()
         else:
             message = _(u"No changes required.")
-        self._showWryeLog(message, title=self._text, icons=Resources.bashBlue)
+        self._showWryeLog(message, title=self._text)
         log.out.close()
 
 # Rest of menu Links ----------------------------------------------------------
@@ -1706,7 +1697,7 @@ class Mod_Fids_Replace(OneItemLink):
         #--Log
         if not changed: self._showOk(_(u"No changes required."))
         else: self._showLog(changed, title=_(u'Objects Changed'),
-                            asDialog=True, icons=Resources.bashBlue)
+                            asDialog=True)
 
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
@@ -1792,7 +1783,7 @@ class _Mod_Import_Link(OneItemLink):
         return changed
 
     def _showLog(self, logText, title=u'', asDialog=True, fixedFont=False,
-                 icons=Resources.bashBlue, size=True):
+                 icons=None, size=True):
         super(_Mod_Import_Link, self)._showLog(logText,
             title=title or self.__class__.progressTitle, asDialog=asDialog,
             fixedFont=fixedFont, icons=icons, size=size)
@@ -2007,7 +1998,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         exportedScripts = scriptText.writeToText(fileInfo,bass.settings['bash.mods.export.skip'],textDir,bass.settings['bash.mods.export.deprefix'],fileName.s,bass.settings['bash.mods.export.skipcomments'])
         #finally:
         self._showLog(exportedScripts, title=_(u'Export Scripts'),
-                      asDialog=True, icons=Resources.bashBlue)
+                      asDialog=True)
 
 class Mod_Scripts_Import(_Mod_Import_Link):
     """Import scripts from text file."""

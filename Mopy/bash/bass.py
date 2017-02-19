@@ -25,8 +25,8 @@
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
-import os as _os
 import ConfigParser as _cp
+import os as _os
 import re as _re
 
 language = None
@@ -47,13 +47,6 @@ def GetBashIni(iniPath=None, reload_=False): ##: needs work
             bashIni = _cp.ConfigParser()
             bashIni.read(iniPath)
     return bashIni
-
-class Resources: # this belongs to basher but leads to cyclic imports, so...
-    #--Icon Bundles
-    bashRed = None
-    bashBlue = None
-    bashDocBrowser = None
-    bashMonkey = None
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()

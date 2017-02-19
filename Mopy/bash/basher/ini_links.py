@@ -28,7 +28,6 @@ attribute points to BashFrame.iniList singleton.
 
 from itertools import imap
 from .. import bass, bosh, balt
-from ..bass import Resources
 from ..balt import ItemLink, BoolLink, EnabledLink, OneItemLink
 
 __all__ = ['INI_SortValid', 'INI_AllowNewLines', 'INI_ListINIs', 'INI_Apply',
@@ -65,8 +64,7 @@ class INI_ListINIs(ItemLink):
         """Handle printing out the errors."""
         tweak_list = self.window.ListTweaks()
         balt.copyToClipboard(tweak_list)
-        self._showLog(tweak_list, title=_(u'Active INIs'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(tweak_list, title=_(u'Active INIs'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class INI_ListErrors(EnabledLink):
@@ -83,8 +81,8 @@ class INI_ListErrors(EnabledLink):
         error_text = u'\n'.join(inf.listErrors() for inf in
                                 self.iselected_infos())
         balt.copyToClipboard(error_text)
-        self._showLog(error_text, title=_(u'INI Tweak Errors'), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(error_text, title=_(u'INI Tweak Errors'),
+                      fixedFont=False)
 
 #------------------------------------------------------------------------------
 class INI_FileOpenOrCopy(OneItemLink):

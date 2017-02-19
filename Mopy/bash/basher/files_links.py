@@ -25,7 +25,6 @@
 import re
 from .. import bass, balt, bosh, bush, bolt
 from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
-from ..bass import Resources
 from ..bolt import GPath, formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
@@ -172,7 +171,7 @@ class File_ListMasters(OneItemLink):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)
         balt.copyToClipboard(list_of_mods)
         self._showLog(list_of_mods, title=self._selected_item.s,
-                      fixedFont=False, icons=Resources.bashBlue)
+                      fixedFont=False)
 
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""

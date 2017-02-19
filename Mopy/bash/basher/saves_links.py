@@ -33,7 +33,6 @@ from . import BashFrame
 from .constants import JPEG
 from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..bass import Resources
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
 from ..bolt import GPath, ArgumentError, SubProgress, BoltError, formatInteger, \
@@ -742,8 +741,7 @@ class Save_Stats(OneItemLink):
             saveFile.logStats(log)
             progress.Destroy()
             text = log.out.getvalue()
-            self._showLog(text, title=self._selected_item.s, fixedFont=False,
-                          icons=Resources.bashBlue)
+            self._showLog(text, title=self._selected_item.s, fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Save_StatObse(AppendableLink, OneItemLink):
@@ -768,8 +766,7 @@ class Save_StatObse(AppendableLink, OneItemLink):
             saveFile.logStatObse(log)
         text = log.out.getvalue()
         log.out.close()
-        self._showLog(text, title=self._selected_item.s, fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=self._selected_item.s, fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Save_Unbloat(OneItemLink):

@@ -1663,5 +1663,5 @@ class WryeParser(ScriptParser.Parser):
         self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes, self.iniedits)
     def kwdCancel(self, msg=_(u"No reason given")):
         self.page = PageError(self.parent, _(u'The installer wizard was canceled:'), msg)
-# END --------------------------------------------------------------------------------------------------
+# END -------------------------------------------------------------------------
 bolt.codebox = WryeParser.codebox

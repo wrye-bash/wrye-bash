@@ -28,10 +28,9 @@ import wx
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, JPEG, PNG
 from .. import bass, balt, bosh, bolt, bush, env
-from ..bass import Resources
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton, ApplyButton, hspace, vspace
+    CancelButton, ApplyButton, hspace, vspace, Resources
 from ..bosh import faces
 
 class ColorDialog(balt.Dialog):
