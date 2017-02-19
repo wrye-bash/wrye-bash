@@ -3526,7 +3526,10 @@ class BashStatusBar(DnDStatusBar):
             # Not present ?
             if not link.IsPresent(): continue
             # Add it
-            self._addButton(link)
+            try:
+                self._addButton(link)
+            except AttributeError: # 'App_Button' object has no attribute 'imageKey'
+                deprint(u'Failed to load button %r' % (uid,), traceback=True)
         # Add any new buttons
         for link in BashStatusBar.buttons:
             # Already tested?
@@ -3538,7 +3541,10 @@ class BashStatusBar(DnDStatusBar):
                 hideChanged = True
             order.append(uid)
             orderChanged = True
-            self._addButton(link)
+            try:
+                self._addButton(link)
+            except AttributeError:
+                deprint(u'Failed to load button %r' % (uid,), traceback=True)
         # Update settings
         if orderChanged: settings.setChanged('bash.statusbar.order')
         if hideChanged: settings.setChanged('bash.statusbar.hide')
@@ -4134,15 +4140,6 @@ def InitImages():
     images['checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
     images['checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
     images['checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
-    #--Bash
-    images['bash.16'] = _png(u'bash_16.png')
-    images['bash.24'] = _png(u'bash_24.png')
-    images['bash.32'] = _png(u'bash_32.png')
-    images['bash.16.blue'] = _png(u'bash_16_blue.png')
-    images['bash.24.blue'] = _png(u'bash_24_blue.png')
-    images['bash.32.blue'] = _png(u'bash_32_blue.png')
-    #--Bash Patch Dialogue
-    images['monkey.16'] = _png(u'wryemonkey16.jpg')
     #--DocBrowser
     images['doc.16'] = _png(u'DocBrowser16.png')
     images['doc.24'] = _png(u'DocBrowser24.png')
@@ -4158,19 +4155,16 @@ def InitImages():
     images['pickle.32'] = _png(u'pickle32.png')
     #--Applications Icons
     Resources.bashRed = balt.ImageBundle()
-    Resources.bashRed.Add(images['bash.16'])
-    Resources.bashRed.Add(images['bash.24'])
-    Resources.bashRed.Add(images['bash.32'])
+    Resources.bashRed.AddIconFromFile(imgDirJn(u'bash_32-2.ico').s)
     #--Application Subwindow Icons
     Resources.bashBlue = balt.ImageBundle()
-    Resources.bashBlue.Add(images['bash.16.blue'])
-    Resources.bashBlue.Add(images['bash.24.blue'])
-    Resources.bashBlue.Add(images['bash.32.blue'])
+    Resources.bashBlue.AddIconFromFile(imgDirJn(u'bash_blue.svg-2.ico').s)
     Resources.bashDocBrowser = balt.ImageBundle()
     Resources.bashDocBrowser.Add(images['doc.16'])
     Resources.bashDocBrowser.Add(images['doc.24'])
     Resources.bashDocBrowser.Add(images['doc.32'])
+    #--Bash Patch Dialogue icon
     Resources.bashMonkey = balt.ImageBundle()
-    Resources.bashMonkey.Add(images['monkey.16'])
+    Resources.bashMonkey.AddIconFromFile(imgDirJn(u'wrye_monkey_87_sharp.ico').s)
 
 from .links import InitLinks

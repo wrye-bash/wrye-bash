@@ -203,6 +203,11 @@ class ImageBundle:
     def Add(self,image):
         self.images.append(image)
 
+    def AddIconFromFile(self,image):
+        if not self.iconBundle:
+            self.iconBundle = wx.IconBundle()
+        self.iconBundle.AddIconFromFile(image, wx.BITMAP_TYPE_ICO)
+
     def GetIconBundle(self):
         if not self.iconBundle:
             self.iconBundle = wx.IconBundle()
