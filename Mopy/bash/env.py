@@ -25,6 +25,7 @@
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
 import os as _os
+import pywintypes
 import re as _re
 import stat
 import shutil as _shutil
@@ -103,7 +104,7 @@ except ImportError:
 try:
     import win32com.client as win32client
 except ImportError:
-    win32client =None
+    win32client = None
 
 def clear_read_only(filepath): # copied from bolt
     _os.chmod(u'%s' % filepath, stat.S_IWUSR | stat.S_IWOTH)
@@ -149,19 +150,23 @@ def _get_default_app_icon(idex, target):
                 folderkey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, u'Folder')
                 iconkey = winreg.OpenKey(folderkey, u'DefaultIcon')
                 filedata = winreg.EnumValue(iconkey, 0)
+                # filedata == ('', u'%SystemRoot%\\System32\\shell32.dll,3', 2)
                 filedata = filedata[1]
                 __folderIcon = filedata
             else:
                 filedata = __folderIcon
         else:
-            icon_path = winreg.QueryValue(winreg.HKEY_CLASSES_ROOT,
-                                          target.cext)
+            file_association = winreg.QueryValue(winreg.HKEY_CLASSES_ROOT,
+                                                 target.cext)
             pathKey = winreg.OpenKey(winreg.HKEY_CLASSES_ROOT,
-                                     u'%s\\DefaultIcon' % icon_path)
+                                     u'%s\\DefaultIcon' % file_association)
             filedata = winreg.EnumValue(pathKey, 0)[1]
             winreg.CloseKey(pathKey)
-        icon, idex = filedata.split(u',')
-        icon = _os.path.expandvars(icon)
+        if _os.path.isabs(filedata) and _os.path.isfile(filedata):
+            icon = filedata
+        else:
+            icon, idex = filedata.split(u',')
+            icon = _os.path.expandvars(icon)
         if not _os.path.isabs(icon):
             # Get the correct path to the dll
             for dir_ in _os.environ['PATH'].split(u';'):
@@ -169,7 +174,7 @@ def _get_default_app_icon(idex, target):
                 if _os.path.exists(test):
                     icon = test
                     break
-    except: # FIXME(ut) code above does not work for say python file shortcuts
+    except: # TODO(ut) comment the code above - what exception can I get here?
         deprint(_(u'Error finding icon for %s:') % target.s, traceback=True)
         icon = u'not\\a\\path'
     return icon, idex
@@ -192,8 +197,8 @@ def _get_app_links(apps_dir):
                 description = shortcut.Description
                 if not description:
                     description = u' '.join((_(u'Launch'), lnk.sbody))
-                links[lnk] = (shortcut.TargetPath, shortcut.WorkingDirectory,
-                              shortcut.Arguments, shortcut.IconLocation,
+                links[lnk] = (shortcut.TargetPath, shortcut.IconLocation,
+                              # shortcut.WorkingDirectory, shortcut.Arguments,
                               description)
     except:
         deprint(_(u"Error initializing links:"), traceback=True)
@@ -201,39 +206,44 @@ def _get_app_links(apps_dir):
 
 def init_app_links(apps_dir, badIcons, iconList):
     init_params = []
-    for path, (target, workingdir, args, icon, description) in _get_app_links(
+    for path, (target, icon, description) in _get_app_links(
             apps_dir).iteritems():
-        if target.lower().find(ur'installer\{') != -1:
+        if target.lower().find(ur'installer\{') != -1: # msi shortcuts: dc0c8de
             target = path
         else:
             target = GPath(target)
-        if target.exists():
+        if not target.exists(): continue
+        # Target exists - extract path, icon and description
+        # First try a custom icon #TODO(ut) docs - also comments methods here!
+        fileName = u'%s%%i.png' % path.sbody
+        customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
+        if customIcons[0].exists():
+            icon = customIcons
+        # Next try the shortcut specified icon
+        else:
             icon, idex = icon.split(u',')
             if icon == u'' and win32gui is not None:
                 if target.cext == u'.exe':
                     # Use the icon embedded in the exe
+                    # noinspection PyUnresolvedReferences
                     try:
-                        win32gui.ExtractIcon(0, target.s, 0)
+                        hIcon = win32gui.ExtractIcon(0, target.s, 0)
+                        win32gui.DestroyIcon(hIcon)
                         icon = target
-                    except:
+                    except pywintypes.error: # complains error is unresolved
+                        #(1813, 'ExtractIcon', 'The specified resource type
+                        # cannot be found in the image file.')
                         icon = u'' # Icon will be set to a red x further down.
                 else:
                     icon, idex = _get_default_app_icon(idex, target)
             icon = GPath(icon)
-            # First try a custom icon
-            fileName = u'%s%%i.png' % path.sbody
-            customIcons = [apps_dir.join(fileName % x) for x in (16, 24, 32)]
-            if customIcons[0].exists():
-                icon = customIcons
-            # Next try the shortcut specified icon
+            if icon.exists():
+                fileName = u';'.join((icon.s, idex))
+                icon = iconList(fileName)
+                # Last, use the 'x' icon
             else:
-                if icon.exists():
-                    fileName = u';'.join((icon.s, idex))
-                    icon = iconList(fileName)
-                    # Last, use the 'x' icon
-                else:
-                    icon = badIcons
-            init_params.append((path, icon, description))
+                icon = badIcons
+        init_params.append((path, icon, description))
     return init_params
 
 def test_permissions(path, permissions='rwcd'):
