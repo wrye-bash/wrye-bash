@@ -449,7 +449,7 @@ class CreateNewProject(balt.Dialog):
 
     def OnClose(self, event):
         """ Create the New Project and add user specified extras. """
-        projectName = bolt.GPath(self.textName.GetValue())
+        projectName = bolt.GPath(self.textName.GetValue().strip())
         projectDir = bass.dirs['installers'].join(projectName)
 
         if projectDir.exists():
@@ -489,7 +489,7 @@ class CreateNewProject(balt.Dialog):
         try:
             env.shellMove(tempProject, projectDir, parent=self)
             # Move successful
-            BashFrame.iPanel.ShowPanel(canCancel=False)
+            BashFrame.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         except:
             pass
         finally:
