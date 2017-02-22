@@ -126,7 +126,7 @@
 <p style="clear:both;">
 
 <h2 id="intro">Introduction</h2>
-<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion and TES V: Skyrim. Its features include:
+<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, TES V: Skyrim, SSE: Skyrim Special Edition and Fallout 4. Its features include:
 <ul>
     <li>A mod installation and conflict manager
     <li>A plugin load order manager
@@ -150,7 +150,8 @@
 <ul>
 	<li><code>[Bash Version]</code>: This is the version number for the version of Wrye Bash running. Useful when troubleshooting.
 	<li><code>[Install Type]</code>: If the Python version is running, this will read <q>Python</q>. If the Standalone version is running, it will read <q>(Standalone)</q>. See the <a href="#install">Installation</a> section for more information.
-	<li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>, this will display <q>for Oblivion</q> or <q>for Skyrim</q> depending on the game it is being run for.
+	<li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>,
+    this will display <q>for Oblivion</q>, <q>for Skyrim</q> or <q>for Fallout 4</q> depending on the game it is being run for.
 	<li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
 	<li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profile">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
 	<li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
@@ -173,7 +174,7 @@
 <p style="font-style:italic;font-weight:bold;font-size:1em;color:red;">Note that the 32-bit versions are required even if you are on a 64-bit operating system.</p>
 <ul>
     <li><a href="https://www.python.org/ftp/python/2.7.12/python-2.7.12.msi">Python 2.7.12</a>.  Versions prior to 2.7.12 may work with Wrye Bash, but have not been tested.  Updating is recommended for bug and security fixes.
-    <li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 Unicode for Python 2.7</a>
+    <li><a href="http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe">wxPython 2.8.12.1 Unicode for Python 2.7</a>  (do <b>not</b> get a newer version)
     <li><a href="https://sourceforge.net/projects/pywin32/files/pywin32/Build%20220/pywin32-220.win32-py2.7.exe/download">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
     <li><a href="http://sourceforge.net/projects/comtypes/files/comtypes/0.6.2/comtypes-0.6.2.win32.exe/download">Comtypes 0.6.2</a>: This is an optional component, it is used to enable rendering of HTML via an ActiveX control.  The  following features are affected if comtypes is not installed:
         <ul>
@@ -311,7 +312,8 @@ tab. The directories skipped are:
 <h3 id="bain-se">Script Extender Plugin Installation</h3>
 <p>Script Extender (OBSE, SKSE) plugins (.dll, .dlx extensions) may be installed through BAIN if the following conditions are met:
 <ul>
-    <li>The package or subpackage containing the OBSE plugin has it in <code>OBSE\Plugins</code> (for Oblivion), <code>SKSE\Plugins</code> (for Skyrim) or a subfolder of the same.
+    <li>The package (or subpackage in the case of a Complex Bain) contains the OBSE plugin file inside <code>OBSE\Plugins\</code> (for
+        Oblivion), or <code>SKSE\Plugins\</code> (for Skyrim) sub-folders.
     <li>The <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> option found in the Installers tab column header context menu is disabled.
 </ul>
 <p>When attempting to install a specific Script Extender plugin for the first time, Wrye Bash will display a warning dialogue and ask you to confirm or deny the plugin's installation. Thereafter you can uninstall and install the plugin as you like without seeing the warning. These additional requirements are due to the significant (though currently theoretical) dangers of installing executable files.
@@ -416,7 +418,9 @@ tab. The directories skipped are:
             timestamps on the Bethsoft BSAs are changed. However, disabling this setting is the only way to allow BAIN to install Vanilla
             ESPs, ESMs, and BSAs. For example, DLC plugins which have been cleaned with xEdit and packed into a BAIN. Preferred setting:
             enabled (that is, <i>skip</i> installation of bethsoft content).
-        <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>Uses Quarn's <a href="http://devnull.sweetdanger.com/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
+        <tr><td colspan="2" id="bainBSARedirection">BSA Redirection<td>(Only for Oblivion) - Uses Quarn'ss
+            <a href="http://devnull.sweetdanger.com/archiveinvalidation/">BSA redirection technique</a> to avoid bugs with the engines
+            texture getting system. This is compatible with both OBMM and Quarn's original BSA redirection approaches.
         <tr><td colspan="2" id="bainCleanDataDirectory">Clean Data Directory<td>If this is checked, then any empty subfolders of the Data directory will be deleted. This reduces some clutter (especially after uninstalling packages). Removing unused data directories also improves game performance.
         <tr><td colspan="2" id="bainShowInactiveConflicts">Show Inactive Conflicts<td>If checked, then the conflicts report will show conflicts with inactive as well as active mods. Usually only active conflicts are of interest, however sometimes it's useful to review all conflicting packages.
         <tr><td colspan="2" id="bainShowLowerConflicts">Show Lower Conflicts<td>If checked, then the conflicts report with show conflicts with lower order packages. If you're only interested in higher order conflicts, the uncheck this to remove some clutter from the report.
@@ -471,7 +475,10 @@ tab. The directories skipped are:
             </ol>Case B) is relevant cause now Bash will recheck the files in Data that would belong to the packages that are being refreshed - this was not the case in 306, where you needed
         a full <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.
         <tr><td colspan="2" id="bainMoveTo">Move To...<td>Moves the selected package(s) to the specified position.
-        <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories.
+        <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of
+            the Data folder, and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised
+            subdirectories (Unless the files within are on the list of files which are always skipped such as .exe files .. See <a
+                    href="#bain-skipped">Skipped Files</a>)
         <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to a <a href="#bainGlobalSkips">global
             skip option</a>.
         <tr><td colspan="2" id="bainSkipVoices">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
@@ -1314,6 +1321,7 @@ and masterlist relative priority and role see the LOOT docs.
 
 <h3 id="patch-tweaks">Tweak Options In Detail</h3>
 <p>Each <q>Tweak...</q> section has a table below that details the options found within it.
+<p>Tweaks are game dependant, most apply for Oblivion, not all of them will be available for Skyrim / Fallout 4 / Skyrim SE.
 <table>
     <thead>
         <tr><th colspan="2">Race Tweaks
@@ -1440,6 +1448,12 @@ and masterlist relative priority and role see the LOOT docs.
         <tr><td>Spells<td> There is a choice of formats and whether you wish the school (e.g. D) and spell level (e.g. D2) to show.
         <tr><td>Weapons<td> There is a choice of formats and whether you want damage to be shown.
 </table>
+<p><b>Tweak Settings Note</b> in some cases for newer games the following Tweaks may become a permanent part of your saves, and so should be
+    set prior to starting a new game. <br/>Trying to change the same settings in a continued game by rebuilding your bashed patch may fail
+    for games newer than Oblivion, because the game setting will always be loaded from your ongoing save files ( which the game loads last,
+    after the Bashed Patch ). <br/>For example Timescale once you change it, is known to become permanently baked in your save game for
+    Skyrim / Skyrim SE, it can be set once, but thereafter is part of your saves, and can only be changed by console command or starting a
+    new game.
 <table>
     <thead>
         <tr><th colspan="2">Tweak Settings
@@ -2048,7 +2062,7 @@ and masterlist relative priority and role see the LOOT docs.
 
 
 <h3 id="tools-shortcuts">Keyboard Shortcuts</h3>
-<p>The following keyboard shortcuts work almost on all lists in Wrye Bash (list must have focus).
+<p>The following keyboard shortcuts can be used when a list on Bash has focus (work almost on all lists unless otherwise noted).
 <table>
     <thead><tr><th>Shortcut<th>Function
     <tbody>

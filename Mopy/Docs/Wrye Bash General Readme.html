@@ -107,7 +107,7 @@
 <p style="clear:both;">
 
 <h2 id="intro">Introduction</h2>
-<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion and TES V: Skyrim. Its features include:
+<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, TES V: Skyrim, SSE: Skyrim Special Edition and Fallout 4. Its features include:
 <ul>
 	<li>A mod installation and conflict manager
 	<li>A plugin load order manager
@@ -123,7 +123,7 @@
 <h3 id="intro-glossary">Glossary</h3>
 <p>Modding for Oblivion and Skyrim has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
 <ul>
-	<li><b>The game</b> is the game that Wrye Bash is running for, either Oblivion or Skyrim.
+	<li><b>The game</b> is the game that Wrye Bash is running for, either Oblivion, Skyrim / Skyrim SE or Fallout4.
 	<li><b>CTD</b> is an acronym for Crash To Desktop. Used to describe the game crashing.
 	<li><b>DLC</b> refers to any of the official downloadable content for the game.
 	<li><b>Mod</b> refers to any unofficial user-made modification to the game.
@@ -132,7 +132,7 @@
 	<li><b>ESM</b> (case-insensitive) refers to any file with a <code>.esm</code> extension. It is an acronym for Elder Scrolls Master.
 	<li><b>Plugin</b> refers to any ESP <u>or</u> ESM file.
 	<li><b>Master</b> refers to any plugins that another plugin is dependent on to function. (It can also refer to an ESM file, as it used to be that only ESMs could be masters, until mod authors developed methods of using ESP files as masters too. The latter definition will not be used in this documentation.)
-	<li><b>The game's master file</b> refers to the ESM that must be loaded for the game to function. For Oblivion, this is <code>Oblivion.esm</code>, and for Skyrim this is <code>Skyrim.esm</code>.
+	<li><b>The game's master file</b> refers to the ESM that must be loaded for the game to function. For Oblivion, this is <code>Oblivion.esm</code>, for Skyrim this is <code>Skyrim.esm</code>, and for Fallout 4 this is <code>Fallout4.esm</code>.
 	<li><b>Conflicts</b> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.
 	<li><b>Resource Conflicts</b> occur when two mods contain two different files that go in the same place, so one mod's file overwrites the others's file. This type of conflict can be managed by altering the install order of mods.
 	<li><b>Data Conflicts</b> occur when two mod plugins alter the same game data. This type of conflict can be managed by altering the load order of plugins.
@@ -140,17 +140,17 @@
 	<li><b>ITMs</b> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.
 	<li><b>UDRs</b> are Undeleted and Disabled References. Deleted References can cause crashing, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. This acronym is generally misused - the UDR acronym is frequently used to refer to the deleted references, rather than their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.
 </ul>
-<p>This readme will also use the placeholder <b>[Game]</b>. Replace this with <q>Oblivion</q> or <q>Skyrim</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII='/> go to pages that are not part of the Wrye Bash documentation.
+<p>This readme will also use the placeholder <b>[Game]</b>. Replace this with <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout 4</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII='/> go to pages that are not part of the Wrye Bash documentation.
 
 
 <h2 id="install">Installation</h2>
 <p>The simplest way to install Wrye Bash is using the installer, as it installs Wrye Bash and its dependencies automatically. However, the instructions below are provided if a manual install method is preferred.
 <p><b>Note:</b> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people.
-<p><b>Windows Vista &amp; Windows 7 users:</b> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
+<p><b>Windows Vista, 7, 8 &amp; 10 users:</b> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Install:
 <ol>
 	<li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
-	<li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q> or <q>Skyrim</q> depending on the game) so that the Mopy
+	<li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout 4</q> depending on the game) so that the Mopy
 		directory appears in the game folder.
 	<li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
 </ol>
@@ -161,7 +161,7 @@
 		for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
 		you may not need to install them again.
 	<li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
-	<li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q> or <q>Skyrim</q> depending on the game) so that the Mopy
+	<li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout 4</q> depending on the game) so that the Mopy
 	directory appears by the game executable. See the
 	<a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
 	<li>Navigate to the Mopy directory and run Wrye Bash by double-clicking <q>Wrye Bash Launcher.pyw</q>.
@@ -199,25 +199,44 @@
 </figure>
 
 <h3 id="bain-overview">Overview</h3>
-<p>Wrye Bash's mod installer is known as <abbr title="Bash Installers">BAIN</abbr>, and is represented by the Installers tab. The first time the Installers tab is opened, a
-	dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>, BAIN will be initialised, which can take some time. After that, the information refresh
-	performed when the Installers tab is opened is much faster. BAIN's primary function is to install mod packages. <b>BAIN Packages</b> can be <code>.zip</code>,
-	<code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <b>projects</b> while archives are usually called
-	<b>packages</b>, abusing terminology. When we refer to projects and packages together we will be also using the term <b>installer</b>.
+<p>Wrye Bash mod installer are known as <abbr title="Bash Installers">BAIN</abbr> (BAsh INstallers), and are presented on the Installers
+	Tab. The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>,
+	BAIN will be initialised, which can take some time. After that, the information refresh performed when the Installers tab is opened is
+	much faster.
+<p>BAIN's primary function is to install mod packages. <b>BAIN Packages</b> can be <code>.zip</code>,
+	<code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <b>Projects</b> while archives are usually called
+	<b>packages</b>, abusing terminology. When we refer to projects and packages together we will be also using the collective term <b>installers</b>.
 <p>If BAIN is disabled, ie. if you clicked <q>No</q> on the dialog that was displayed the first time you selected the Installers tab, it can be re-enabled by right clicking on a column header in the Installers tab and selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainEnabled">Enabled</a>.
+
+<p>Installers need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
+	created on the same level as your game directory (that is if your game exe is located in "C:\GAMES\TESIV\Oblivion" then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
+	directory on first run, but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
+	<i>not</i> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance deterioration, mods thrashing.
+<p>To add an installer to Wrye Bash Installers, you can either manually copy and paste the zip to the Bash Installers Directory, or just drag and drop the zip onto the Installers tab.
+<p>Bash will scan the Bash Installers directory and pick up all subfolders and all <code>.zip</code>, <code>.7z</code> or <code>.rar</code> archives - except for:
+
+<ol>
+	<li>folders or files that begin with <code>--</code> will be skipped
+	<li>a <code>Bain Converters</code> subdir of Bash Installers will be skipped
+	<li>folders or files that begin with <code>bash</code> will be skipped
+	<li>you may specify additional directories to be skipped via the <code>sSkippedBashInstallersDirs</code> ini setting
+</ol>
+
+<p>Now BAIN will try to classify the packages it detected in Bash Installers into its package formats - if it fails the package will display as unrecognized and will have to
+be restructured.
 
 <h3 id="bain-structure">BAIN-Compatible installer layout</h3>
 
-<p>When looking at an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. In broad lines, BAIN
-will search for specific directories and file extensions (mod, texture, nif, docs etc). The directories BAIN is aware of, independently of the game,
+<p>When looking at an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. BAIN
+ will search for specific directories and file extensions (mod plugins, textures, nifs, docs etc). The directories BAIN is aware of, independently of the game,
 are:
 
 <table>
 	<thead><tr><th>Bash directories<th>Notes
 	<tbody>
-		<tr><td>bash patches<td>yep, Bash will install files in this folder from packages
-		<tr><td>docs<td>its contents will be copied inside Data/Docs
-		<tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ - do <b>not</b> include subfolders in ini tweaks/
+		<tr><td>bash patches<td>Bash will install files in this folder from packages, usually in the form of .csv files
+		<tr><td>docs<td>Its contents will be copied inside Data/Docs
+		<tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ and appear on the INI Tab - do <b>not</b> include subfolders in ini tweaks/
 		<tr><td>screenshots<td>its contents will be copied inside Data/Docs
 	<thead><tr><th colspan="2">Vanilla game directory present on all games
 	<tbody>
@@ -251,23 +270,6 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 		<tr><td>Complex/Simple<td>A complex installer with only one top-level subdirectory. It is treated as a simple installer, starting at this
 			top level subdirectory. Examples include mods packaged with a top-level Data directory.
 </table>
-
-<p>You must dump your installer in <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
-	created on the same level as your game directory (that is if your game exe is located in "C:\GAMES\TESIV\Oblivion" then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
-	directory on first run, but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
-	<i>not</i> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance, mods thrashing and whatnot. To add an installer to the Bash
-	Installers dir it's enough to drag and drop it on the installers list.
-<p>Bash will scan the Bash Installers directory and pick up all subfolders and all <code>.zip</code>, <code>.7z</code> or <code>.rar</code> archives - except for:
-
-<ol>
-	<li>folders or files that begin with <code>--</code> will be skipped
-	<li>a <code>Bain Converters</code> subdir of Bash Installers will be skipped
-	<li>folders or files that begin with <code>bash</code> will be skipped
-	<li>you may specify additional directories to be skipped via the <code>sSkippedBashInstallersDirs</code> ini setting
-</ol>
-
-<p>Now BAIN will try to classify the packages it detected in Bash Installers into its package formats - if it fails the package will display as unrecognized and will have to
-be restructured.
 
 <h3 id="bain-convert">Restructuring Packages to be BAIN-Compatible</h3>
 <p>The easiest way to tell if a package needs manual converting to be compatible with BAIN is to try installing it. If it is listed in the Package list with a grey checkbox and name, then BAIN cannot install it. Due to BAIN's flexibility, many mods are already packaged in ways that are compatible, but for those that are not, there are a few possible cases:
@@ -664,7 +666,7 @@ from other packages previously overridden by the uninstalled package's
 </figure>
 
 <h3 id="ini-overview">Overview</h3>
-<p>The Ini Edits tab allows the user to quickly apply edits to Oblivion.ini or Skyrim.ini, depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
+<p>The Ini Edits tab allows the user to quickly apply edits to Oblivion.ini, Skyrim.ini or Fallout4Custom.ini, depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
 <p>The drop-down box allows you to select the current ini file. The <q>Browse...</q> option in the drop-down box can be used to select an ini file not listed.
 <p>Selecting a tweak will display its contents in the middle column, and highlights the changes it applies to the current ini file in the right column. To apply a tweak, right click it and select <a href="#tweakApply">Apply</a>.
 <p><b>Warning:</b> Incorrect Oblivion.ini or Skyrim.ini settings can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.
@@ -692,7 +694,7 @@ from other packages previously overridden by the uninstalled package's
 		<tr><th colspan="2">Ini Edits Tab
 		<tr><th>Button<th>Description
 	<tbody>
-		<tr><td>Remove<td>Removes the current ini file from the drop-down selection box.
+		<tr><td>Remove<td>Removes the selected ini file from the drop-down selection box. This will not remove game default INI files.
 		<tr><td>Edit...<td>Opens the current ini file for editing in the default text editor.
 </table>
 <table>
@@ -1155,7 +1157,7 @@ MemoryError</code>
 		<li>Kmacg94: Additional power exhaustion coverage.
 		<li>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.
 		<li>WrinklyNinja: The LOOT API, libloadorder and libbsa, and the rewritten documentation included in v297 and later.
-  <li>Alt3rn1ty: For supplying the screenshot images used in the documentation, many INI tweaks for Skyrim, and being an all-round bon oeuf and snappy dresser.
+  <li>Alt3rn1ty: For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim SE, and being an all-round bon oeuf.
   <li>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, trira, WrinklyNinja, and many others.
 	</ul>
 	<li><b>Misc. Resources</b>
@@ -1196,7 +1198,9 @@ MemoryError</code>
 
 
 <h2 id="contact">Contact</h2>
-<p>If you have a question/comment about Wrye Bash, it's best to post it on the current RELZ topic on the Bethesda Game Studios (BGS) forums.
+<p>If you have a question/comment about Wrye Bash, it's best to post it on the <a
+		href="https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4">current RELZ topic</a> on the
+	Bethesda Game Studios (BGS) forums.
 
 
 <h2 id="license">License</h2>
@@ -1243,7 +1247,7 @@ MemoryError</code>
 </ul>
 
 <h2 id="advanced">Advanced Readme Topics</h2>
-<p>This final section gives a brief summary of what may be found in the Advanced Readme. The some of the topics covered are:
+<p>This final section gives a brief summary of what may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Some of the topics covered are:
 <ul>
 	<li>Installers:
 	<ul>

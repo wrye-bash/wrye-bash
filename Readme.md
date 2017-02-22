@@ -1,7 +1,7 @@
 Wrye Bash
 =========
 
-###About
+### About
 
 Wrye Bash is a mod management utility for Oblivion and Skyrim with a rich set
  of features. This is a fork of the Wrye Bash related code from the
@@ -11,14 +11,17 @@ Wrye Bash is a mod management utility for Oblivion and Skyrim with a rich set
  Please read the [Contributing](#contributing) section below if interested in
  contributing.
 
-####Supported Games
+#### Supported Games
+
+Here is a list of supported games with the minimal patch version that Bash was
+tested on (previous versions or latest versions may or may not work):
 
 * Oblivion (patch 1.2.0416)
 * Skyrim (patch 1.9.32.0.8)
 * Fallout 4 (patch 1.8.7.0)
 * Skyrim Special Edition (patch 1.2.39.0.8)
 
-###Download
+### Download
 
 * [Oblivion Nexus][2]
 * [Skyrim Nexus][3]
@@ -29,7 +32,7 @@ Wrye Bash is a mod management utility for Oblivion and Skyrim with a rich set
 Docs are included in the download but we are setting them up also online
  [here][7].
 
-###Installation
+### Installation
 
 * Short version: just use the installer, and install everything to their
  default locations.
@@ -58,7 +61,7 @@ Refer to the readmes for [detailed instructions][8]. In short:
 4. Run Wrye Bash by double-clicking "Wrye Bash Launcher.pyw" in the new Mopy
  folder.
 
-####WINE
+#### WINE
 
 Wrye Bash 306 runs on WINE - with some hiccups. In short:
 
@@ -79,22 +82,20 @@ def setUAC(button_,uac=True):
 For details see our [wiki article][13].
 Wine issue: [#240][14]
 
-###Questions ? Feedback ?
+### Questions ? Feedback ?
 
-We are currently monitoring the [Oblivion thread][15] at the Bethesda forums.
-Please address your comments there. Since the threads have a 200 post limit,
-if the topic is locked, follow the link to the next thread found in the last
-post. If reporting a bug please see our "Reporting a bug" [wiki page][16].
-It is essential you produce a [bashbugdump.log][17] to get a chance your
-bug is fixed.
+We are currently monitoring [this thread][15] at the Bethesda.net SSE forums,
+for all supported games. Please address your comments there. If reporting a bug
+please see our "Reporting a bug" [wiki page][16]. It is essential you produce
+a [bashbugdump.log][17] to get a chance your bug is fixed.
 
-####Latest betas
+#### Latest betas
 
 In the [second post][18] of the Oblivion thread there are links to latest
 python and standalone (exe) builds. Be sure to check those out for bleeding
 edge bugfixes and enhancements. Feedback appreciated!
 
-###Contributing
+### Contributing
 
 To contribute to the code, fork the repo and set your fork up as
 detailed in [\[git\] Syncing a Fork with the main repository][19].
@@ -112,7 +113,7 @@ in the relevant issue and let them review. Then those branches can be pulled
 from your fork and integrated with upstream. Once this is done a couple times
 you get write rights.
 
-####Main Branches
+#### Main Branches
 
 - [`dev`](https://github.com/wrye-bash/wrye-bash/tree/dev): the main development
  branch - approved commits end up here. _Do not directly push to this branch_ -
@@ -139,7 +140,7 @@ testing very latest features/fixes.
   [12]: https://github.com/wrye-bash/wrye-bash/blob/0a47238de9e7f46f55fe755f2744e2cea521f514/Mopy/bash/balt.py#L678
   [13]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Running-Wrye-Bash-on-WINE-%28Arch-Linux%29
   [14]: https://github.com/wrye-bash/wrye-bash/issues/240
-  [15]: http://forums.bethsoft.com/topic/1606578-wrye-bash-thread-111/
+  [15]: https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4
   [16]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug
   [17]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug#the-bashbugdumplog
   [18]: http://forums.bethsoft.com/topic/1606578-wrye-bash-thread-111/#entry25216860
