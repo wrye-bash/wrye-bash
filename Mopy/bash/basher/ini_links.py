@@ -47,9 +47,9 @@ class INI_SortValid(BoolLink):
 #------------------------------------------------------------------------------
 class INI_AllowNewLines(BoolLink):
     """Consider INI Tweaks with new lines valid."""
-    _text = _(u'Allow Tweaks with New Lines')
+    _text = _(u'Allow Tweaks with New Settings')
     key = 'bash.ini.allowNewLines'
-    help = _(u'Tweak files with new lines are considered valid..')
+    help = _(u'Tweak files adding new sections/settings are considered valid')
 
     def Execute(self):
         super(INI_AllowNewLines, self).Execute()
@@ -137,8 +137,8 @@ class INI_Apply(EnabledLink):
             'ini': self.window.current_ini_name}
 
     def _enable(self):
-        return bass.settings['bash.ini.allowNewLines'] or not any( # no invalid
-            imap(lambda inf: inf.tweak_status < 0, self.iselected_infos()))
+        return all(imap(bosh.INIInfo.is_applicable,
+                        self.iselected_infos()))
 
     def Execute(self):
         """Handle applying INI Tweaks."""

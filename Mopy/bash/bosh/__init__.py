@@ -2071,34 +2071,39 @@ class INIInfo(IniFile):
             return isinstance(other, OBSEIniFile)
         return not isinstance(other, OBSEIniFile)
 
+    def is_applicable(self):
+        return self.tweak_status != -20 and (bass.settings[
+            'bash.ini.allowNewLines'] or self._status != -10)
+
     def getStatus(self, target_ini=None):
         """Returns status of the ini tweak:
         20: installed (green with check)
         15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
         10: mismatches (yellow)
         0: not installed (green)
-        -10: invalid tweak file (red).
+        -10: tweak file contains new sections/settings
+        -20: incompatible tweak file (red)
         Also caches the value in self._status"""
         infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.getSettings()
+        def _status(s):
+            self._status = s
+            return s
         if self._incompatible(target_ini) or not tweak_settings:
-            self._status = -10
-            return -10
+            return _status(-20)
         match = False
         mismatch = 0
         ini_settings = target_ini.getSettings()
         self_installer = infos.table.getItem(self.abs_path.tail, 'installer')
         for section_key in tweak_settings:
             if section_key not in ini_settings:
-                self._status = -10
-                return -10
+                return _status(-10)
             target_section = ini_settings[section_key]
             tweak_section = tweak_settings[section_key]
             for item in tweak_section:
                 if item not in target_section:
-                    self._status = -10
-                    return -10
+                    return _status(-10)
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another ini
@@ -2119,14 +2124,13 @@ class INIInfo(IniFile):
                 else:
                     match = True
         if not match:
-            self._status = 0
+            return _status(0)
         elif not mismatch:
-            self._status = 20
+            return _status(20)
         elif mismatch == 1:
-            self._status = 15
+            return _status(15)
         elif mismatch == 2:
-            self._status = 10
-        return self._status
+            return _status(10)
 
     def reset_status(self): self._status = None
 
@@ -2135,13 +2139,13 @@ class INIInfo(IniFile):
         ini_infos_ini = iniInfos.ini
         text = [u'%s:' % self.abs_path.stail]
         if self._incompatible(ini_infos_ini):
-            text.append(u' '+_(u'Format mismatch:') + u'\n  ')
+            text.append(u' ' + _(u'Format mismatch:'))
             if isinstance(self, OBSEIniFile):
-                text.append(_(u'Target format: INI') + u'\n  ' +
-                            _(u'Tweak format: Batch Script'))
+                text.append(u'  '+ _(u'Target format: INI') +
+                            u'\n  ' + _(u'Tweak format: Batch Script'))
             else:
-                text.append(_(u'Target format: Batch Script') + u'\n  ' +
-                            _(u'Tweak format: INI'))
+                text.append(u'  ' + _(u'Target format: Batch Script') +
+                            u'\n  ' + _(u'Tweak format: INI'))
         else:
             tweak_settings = self.getSettings()
             ini_settings = ini_infos_ini.getSettings()
@@ -2151,13 +2155,18 @@ class INIInfo(IniFile):
                 else:
                     text.append(_(u' No valid Batch Script format lines.'))
             else:
+                missing_settings = []
                 for key in tweak_settings:
                     if key not in ini_settings:
                         text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
                     else:
                         for item in tweak_settings[key]:
                             if item not in ini_settings[key]:
-                                text.append(u' [%s] %s' % (key, item))
+                                missing_settings.append(
+                                    u'  [%s] %s' % (key, item))
+                if missing_settings:
+                    text.append(u' ' + _(u'Settings missing from target ini:'))
+                    text.extend(missing_settings)
         if len(text) == 1:
             text.append(u' None')
         with sio() as out:
