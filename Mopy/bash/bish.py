@@ -54,6 +54,7 @@ from operator import attrgetter
 
 import archives
 import bass
+import bosh._saves
 import bosh.faces
 import parsers
 from record_groups import MobCell, MobWorld
@@ -879,7 +880,7 @@ def findSaveRecord(srcName,fid):
     """Finds specified record in save file."""
     init(3)
     srcInfo = bosh.saveInfos[GPath(srcName)]
-    srcFile = bosh.SaveFile(srcInfo)
+    srcFile = bosh._saves.SaveFile(srcInfo)
     srcFile.load()
     #--Get src npc data
     fid = int(fid,16)

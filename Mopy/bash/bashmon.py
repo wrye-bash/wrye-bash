@@ -36,6 +36,7 @@ import traceback
 
 #--Local
 import bass
+import bosh._saves
 import bush
 import bosh
 import bolt
@@ -139,7 +140,7 @@ class Data:
         #--New Save file
         saveDir, saveName = self.savesDir.join(saveName).headTail
         saveInfo = bosh.SaveInfo(saveDir,saveName)
-        saveFile = bosh.SaveFile(saveInfo)
+        saveFile = bosh._saves.SaveFile(saveInfo)
         saveFile.load()
         if saveKey: self.saves[saveKey] = saveFile
         return saveFile
