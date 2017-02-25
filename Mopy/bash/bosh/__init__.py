@@ -2577,13 +2577,13 @@ class DefaultIniInfo(DefaultIniFile, INIInfo):
 
 def ini_info_factory(parent_dir, filename):
     """:rtype: INIInfo"""
-    path = GPath(parent_dir).join(filename)
-    INICount = IniFile.formatMatch(path)
-    OBSECount = OBSEIniFile.formatMatch(path)
+    fullpath = GPath(parent_dir).join(filename)
+    INICount = IniFile.formatMatch(fullpath)
+    OBSECount = OBSEIniFile.formatMatch(fullpath)
     if INICount >= OBSECount:
-        return INIInfo(path)
+        return INIInfo(fullpath)
     else:
-        return ObseIniInfo(path)
+        return ObseIniInfo(fullpath)
 
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
@@ -2643,12 +2643,7 @@ class INIInfos(TableFileInfos):
         """:type ini_path: bolt.Path"""
         if self._ini is not None and self._ini.abs_path == ini_path:
             return # nothing to do
-        for iFile in gameInis:
-            if iFile.abs_path == ini_path:
-                self._ini = iFile
-                break
-        else:
-            self._ini = BestIniFile(ini_path)
+        self._ini = BestIniFile(ini_path)
         for ini_info in self.itervalues(): ini_info.reset_status()
 
     def _refresh_infos(self):
@@ -2719,20 +2714,23 @@ class INIInfos(TableFileInfos):
     def open_or_copy(self, tweak):
         info = self[tweak] # type: INIInfo
         if info.is_default_tweak:
-            with open(self.store_dir.join(tweak).s, 'w') as ini_file:
-                ini_file.write('\n'.join(info.read_ini_lines()))
+            self._copy_to_new_tweak(info, tweak)
             self[tweak] = self.factory(self.store_dir, tweak)
             return True # refresh
         else:
             info.abs_path.start()
             return False
 
+    def _copy_to_new_tweak(self, info, new_tweak): ##: encoding....
+        with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
+            # writelines does not do what you'd expect, would concatenate lines
+            ini_file.write('\n'.join(info.read_ini_lines()))
+
     def duplicate_ini(self, tweak, new_tweak):
         """Duplicate tweak into new_tweak, copying current target settings"""
         if not new_tweak: return False
-        info = self[tweak] # type: INIInfo
-        with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
-            ini_file.write('\n'.join(info.read_ini_lines()))
+        # new_tweak is an abs path, join works ok relative to self.store_dir
+        self._copy_to_new_tweak(self[tweak], new_tweak)
         new_info = self[new_tweak.tail] = self.factory(self.store_dir,
                                                        new_tweak)
         # Now edit it with the values from the target INI
