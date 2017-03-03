@@ -1398,7 +1398,7 @@ class BsaFile:
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - alpha."""
-    _null_stat = (0, 0) ##:maybe use invalid values like None
+    _null_stat = (-1, None)
 
     @property
     def _stat_tuple(self): return self.abs_path.size_mtime()
@@ -1409,10 +1409,7 @@ class AFile(object):
         try:
             self._reset_cache(self._stat_tuple, load_cache)
         except OSError:
-            self._reset_cache(self._null_stat, False)
-
-    def mark_unchanged(self):
-        AFile._reset_cache(self, self._stat_tuple, load_cache=False)
+            self._reset_cache(self._null_stat, load_cache=False)
 
     @property
     def abs_path(self): return self._abs_path
@@ -1424,7 +1421,7 @@ class AFile(object):
         try:
             stat_tuple = self._stat_tuple
         except OSError:
-            self._reset_cache(self._null_stat, False)
+            self._reset_cache(self._null_stat, load_cache=False)
             return False # we should not call needs_update on deleted files
         if self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True)
@@ -1435,7 +1432,10 @@ class AFile(object):
         return (self._file_size, self._file_mod_time) != stat_tuple
 
     def _reset_cache(self, stat_tuple, load_cache):
-        # load_cache used in Mod and SaveInfo to read the header, rest is cheap
+        """Reset cache flags (size, mtime,...) and possibly reload the cache.
+        :param load_cache: if True either load the cache (header in Mod and
+        SaveInfo) or reset it so it gets reloaded later
+        """
         self._file_size, self._file_mod_time = stat_tuple
 
     def __repr__(self): return self.__class__.__name__ + u"<" + repr(
@@ -1518,7 +1518,7 @@ class MasterInfo:
 #------------------------------------------------------------------------------
 class FileInfo(AFile):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
-    _null_stat = (0, 0, 0)
+    _null_stat = (-1, None, None)
 
     @property
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
@@ -1540,6 +1540,9 @@ class FileInfo(AFile):
     def _reset_cache(self, stat_tuple, load_cache):
         self._file_size, self._file_mod_time, self.ctime = stat_tuple
         if load_cache: self.readHeader()
+
+    def mark_unchanged(self):
+        self._reset_cache(self._stat_tuple, load_cache=False)
 
     ##: DEPRECATED-------------------------------------------------------------
     def getPath(self): return self.abs_path
@@ -2049,14 +2052,11 @@ def BestIniFile(path):
 #------------------------------------------------------------------------------
 class INIInfo(IniFile):
     """Ini info, adding cached status and functionality to the ini files."""
-
-    def __init__(self, path):
-        super(INIInfo, self).__init__(path)
-        self._status = None
+    _status = None
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(INIInfo, self)._reset_cache(stat_tuple, load_cache)
-        self._status = None
+        if load_cache: self._status = None
 
     @property
     def tweak_status(self):
@@ -2260,8 +2260,7 @@ class BSAInfo(FileInfo, _bsa_type):
         self._reset_bsa_mtime()
         return changed
 
-    def _reset_cache(self, stat_tuple, load_cache):
-        super(BSAInfo, self)._reset_cache(stat_tuple, False)
+    def readHeader(self): # just reset the cache
         self._assets = self.__class__._assets
 
     def _reset_bsa_mtime(self):
@@ -2529,7 +2528,7 @@ class FileInfos(TableFileInfos):
         self[newName] = self[oldName]
         del self[oldName]
         self.table.moveRow(oldName,newName)
-        # AFile.mark_unchanged(self[newName]) # not needed with shellMove !
+        # self[newName].mark_unchanged() # not needed with shellMove !
         #--Done
         fileInfo.madeBackup = False ##: #292 - backups are left behind
 
@@ -2572,9 +2571,6 @@ class FileInfos(TableFileInfos):
 class ObseIniInfo(OBSEIniFile, INIInfo): pass
 
 class DefaultIniInfo(DefaultIniFile, INIInfo):
-    def __init__(self, path, settings_dict):
-        super(DefaultIniInfo, self).__init__(path, settings_dict)
-        self._status = None # INIInfo.init won't be called so we need this
 
     @property
     def is_default_tweak(self): return True

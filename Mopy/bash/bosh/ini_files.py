@@ -90,7 +90,7 @@ class IniFile(AFile):
                 self.updated = True # restored
                 self._deleted = False
         except OSError:
-            self._reset_cache(self._null_stat, False)
+            self._reset_cache(self._null_stat, load_cache=False)
             if not self._deleted:
                 # mark as deleted to avoid requesting updates on each refresh
                 self._deleted = self.updated = True
@@ -348,7 +348,7 @@ class DefaultIniFile(IniFile):
 
     def __init__(self, path, settings_dict=__empty): # CALL SUPER
         self.abs_path = GPath(path)
-        self._file_size = self._file_mod_time = 0 # hrmph, 0 ?
+        self._file_size, self._file_mod_time = self._null_stat
         #--Settings cache
         self.lines, current_line = [], 0
         self._settings_cache_linenum = OrderedDict()
