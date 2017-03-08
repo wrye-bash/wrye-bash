@@ -633,17 +633,19 @@ class INIList(balt.UIList):
         event.Skip()
         hitItem = self._getItemClicked(event, on_icon=True)
         if not hitItem: return
-        tweak = bosh.iniInfos[hitItem] # type: bosh.INIInfo
-        if tweak.tweak_status == 20: return # already applied
-        #-- If we're applying to Oblivion.ini, show the warning
-        target, gameIni = self.data_store.ini, bosh.oblivionIni
-        if target is gameIni and not gameIni.ask_create_game_ini(
-                msg=_(u'The game ini must exist to apply a tweak to it.')):
-            return
-        choice = self.panel.detailsPanel.current_ini_path.tail
-        if not self.warn_tweak_game_ini(choice): return
-        target.applyTweakFile(tweak.read_ini_lines())
-        self.panel.ShowPanel(refresh_target=True)
+        if self.apply_tweaks((bosh.iniInfos[hitItem], )):
+            self.panel.ShowPanel(refresh_target=True)
+
+    def apply_tweaks(self, tweak_infos):
+        if not self.warn_tweak_game_ini(self.current_ini_name):
+            return False
+        needsRefresh = False
+        for ini_info in tweak_infos:
+            #--No point applying a tweak that's already applied
+            if ini_info.tweak_status == 20: continue
+            needsRefresh |= bosh.iniInfos.ini.applyTweakFile(
+                ini_info.read_ini_lines())
+        return needsRefresh
 
     @staticmethod
     @balt.conversation

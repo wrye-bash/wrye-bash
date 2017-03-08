@@ -142,16 +142,7 @@ class INI_Apply(EnabledLink):
 
     def Execute(self):
         """Handle applying INI Tweaks."""
-        #--If we're applying to Oblivion.ini, show the warning
-        if not self.window.warn_tweak_game_ini(self.window.current_ini_name):
-            return
-        needsRefresh = False
-        for ini_info in self.iselected_infos():
-            #--No point applying a tweak that's already applied
-            if ini_info.tweak_status == 20: continue
-            needsRefresh = True
-            bosh.iniInfos.ini.applyTweakFile(ini_info.read_ini_lines())
-        if needsRefresh:
+        if self.window.apply_tweaks(self.iselected_infos()):
             self.window.panel.ShowPanel(refresh_target=True)
 
 #------------------------------------------------------------------------------

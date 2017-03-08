@@ -312,8 +312,6 @@ class IniFile(AFile):
     def applyTweakFile(self, tweak_lines):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        if not self.abs_path.isfile():
-            return
         encoding = 'utf-8'
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
@@ -341,6 +339,7 @@ class IniFile(AFile):
             elif maDeleted:
                 deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
+        return True
 
 class DefaultIniFile(IniFile):
     """A default ini tweak - hardcoded."""
@@ -551,8 +550,6 @@ class OBSEIniFile(IniFile):
         self.abs_path.untemp()
 
     def applyTweakFile(self, tweak_lines):
-        if not self.abs_path.isfile():
-            return
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
@@ -588,6 +585,7 @@ class OBSEIniFile(IniFile):
             if line[-1] != u'\n': line += u'\r\n'
             section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
+        return True
 
 class OblivionIni(IniFile):
     """Oblivion.ini file."""
@@ -606,6 +604,10 @@ class OblivionIni(IniFile):
         # bUseMyGamesDirectory was not set.  Default to user profile directory
         IniFile.__init__(self, dirs['saveBase'].join(name))
 
+    def applyTweakFile(self, tweak_lines):
+        if not self.ask_create_game_ini(): return False
+        return super(OblivionIni, self).applyTweakFile(tweak_lines)
+
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
         ini_settings = {section:{key:value}}
@@ -615,7 +617,8 @@ class OblivionIni(IniFile):
         return self.getSetting(u'General', u'sLanguage', u'English')
 
     @balt.conversation
-    def ask_create_game_ini(self, msg=u''):
+    def ask_create_game_ini(self, msg=_(
+            u'The game ini must exist to apply a tweak to it.')):
         from . import oblivionIni, iniInfos # YAK
         if self is not oblivionIni: return True
         if self.abs_path.exists(): return True
