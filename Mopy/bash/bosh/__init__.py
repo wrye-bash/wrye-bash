@@ -2037,17 +2037,25 @@ class ModInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni
-def BestIniFile(path):
-    """:rtype: IniFile"""
+def get_game_ini(ini_path, is_abs=True):
+    """:rtype: OblivionIni | None"""
     for game_ini in gameInis:
-        if path == game_ini.abs_path:
+        game_ini_path = game_ini.abs_path
+        if ini_path == ((is_abs and game_ini_path) or game_ini_path.stail):
             return game_ini
-    INICount = IniFile.formatMatch(path)
-    OBSECount = OBSEIniFile.formatMatch(path)
+    return None
+
+def BestIniFile(abs_ini_path):
+    """:rtype: IniFile"""
+    game_ini = get_game_ini(abs_ini_path)
+    if game_ini:
+        return game_ini
+    INICount = IniFile.formatMatch(abs_ini_path)
+    OBSECount = OBSEIniFile.formatMatch(abs_ini_path)
     if INICount >= OBSECount:
-        return IniFile(path)
+        return IniFile(abs_ini_path)
     else:
-        return OBSEIniFile(path)
+        return OBSEIniFile(abs_ini_path)
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile):
@@ -2071,9 +2079,10 @@ class INIInfo(IniFile):
             return isinstance(other, OBSEIniFile)
         return not isinstance(other, OBSEIniFile)
 
-    def is_applicable(self):
-        return self.tweak_status != -20 and (bass.settings[
-            'bash.ini.allowNewLines'] or self._status != -10)
+    def is_applicable(self, stat=None):
+        stat = stat or self.tweak_status
+        return stat != -20 and (
+            bass.settings['bash.ini.allowNewLines'] or stat != -10)
 
     def getStatus(self, target_ini=None):
         """Returns status of the ini tweak:
