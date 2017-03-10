@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import codecs
 import re
 import time
 from collections import OrderedDict
@@ -228,6 +229,9 @@ class IniFile(AFile):
                           lineNo, deleted))
         return lines
 
+    def _open_for_writing(self, filepath): # preserve windows EOL
+        return codecs.getwriter(self.encoding)(open(filepath, 'w'))
+
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Applies dictionary of settings to ini file.
         Values in settings dictionary can be either actual values or
@@ -246,7 +250,7 @@ class IniFile(AFile):
         #--Read init, write temp
         section = sectionSettings = None
         with self.abs_path.open('r') as iniFile:
-            with self.abs_path.temp.open('w', encoding=self.encoding) as tmpFile:
+            with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
                 tmpFileWrite = tmpFile.write
                 for line in iniFile:
                     try:
@@ -334,7 +338,7 @@ class IniFile(AFile):
                 section = LString(maSection.group(1))
                 sectionSettings = ini_settings[section] = {}
             elif maSetting:
-                if line[-1:] != u'\n': line += u'\r\n' #--Make sure has trailing new line
+                if line[-1:] != u'\n': line += u'\n' #--Make sure has trailing new line
                 sectionSettings[LString(maSetting.group(1))] = line
             elif maDeleted:
                 deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
@@ -582,7 +586,7 @@ class OBSEIniFile(IniFile):
                 continue
             # Save the setting for applying
             section = settings_.setdefault(sectionKey,{})
-            if line[-1] != u'\n': line += u'\r\n'
+            if line[-1] != u'\n': line += u'\n'
             section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
         return True

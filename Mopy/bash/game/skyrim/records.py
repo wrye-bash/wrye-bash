@@ -587,17 +587,17 @@ class MelString16(MelString):
             if self.maxSize:
                 value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = encode(value,returnEncoding=True)
+                test,encoding_ = encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
                     i = -1
                     while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
+                        total += len(value[i].encode(encoding_))
                         i -= 1
                     size += i + 1
                     value = value[:size]
-                    value = encode(value,firstEncoding=encoding)
+                    value = encode(value,firstEncoding=encoding_)
                 else:
                     value = test
             else:
@@ -622,17 +622,17 @@ class MelString32(MelString):
             if self.maxSize:
                 value = winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = encode(value,returnEncoding=True)
+                test,encoding_ = encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
                     i = -1
                     while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
+                        total += len(value[i].encode(encoding_))
                         i -= 1
                     size += i + 1
                     value = value[:size]
-                    value = encode(value,firstEncoding=encoding)
+                    value = encode(value,firstEncoding=encoding_)
                 else:
                     value = test
             else:

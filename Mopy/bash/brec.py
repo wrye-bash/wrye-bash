@@ -841,17 +841,18 @@ class MelString(MelBase):
             if self.maxSize:
                 value = bolt.winNewLines(value.rstrip())
                 size = min(self.maxSize,len(value))
-                test,encoding = encode(value,firstEncoding=firstEncoding,returnEncoding=True)
+                test, encoding_ = encode(value, firstEncoding=firstEncoding,
+                                         returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
                     total = 0
                     i = -1
                     while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
+                        total += len(value[i].encode(encoding_))
                         i -= 1
                     size += i + 1
                     value = value[:size]
-                    value = encode(value,firstEncoding=encoding)
+                    value = encode(value,firstEncoding=encoding_)
                 else:
                     value = test
             else:
