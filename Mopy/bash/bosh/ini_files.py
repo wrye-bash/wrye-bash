@@ -232,11 +232,13 @@ class IniFile(AFile):
     def _open_for_writing(self, filepath): # preserve windows EOL
         return codecs.getwriter(self.encoding)(open(filepath, 'w'))
 
+    def ask_create_target_ini(self, msg=_(
+            u'The target ini must exist to apply a tweak to it.')):
+        return self.abs_path.isfile()
+
     def saveSettings(self,ini_settings,deleted_settings={}):
-        """Applies dictionary of settings to ini file.
+        """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary must be actual (setting, value) pairs."""
-        if not self.abs_path.isfile():
-            return
         #--Ensure settings dicts are using LString's as keys
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
@@ -474,11 +476,9 @@ class OBSEIniFile(IniFile):
         return lines
 
     def saveSettings(self,ini_settings,deleted_settings={}):
-        """Applies dictionary of settings to ini file.
+        """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary can be either actual values or
         full ini lines ending in newline char."""
-        if not self.abs_path.isfile():
-            return
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
         deleted_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
@@ -591,10 +591,6 @@ class OblivionIni(IniFile):
         # bUseMyGamesDirectory was not set.  Default to user profile directory
         IniFile.__init__(self, dirs['saveBase'].join(name))
 
-    def applyTweakFile(self, tweak_lines):
-        if not self.ask_create_game_ini(): return False
-        return super(OblivionIni, self).applyTweakFile(tweak_lines)
-
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
         ini_settings = {section:{key:value}}
@@ -604,7 +600,7 @@ class OblivionIni(IniFile):
         return self.getSetting(u'General', u'sLanguage', u'English')
 
     @balt.conversation
-    def ask_create_game_ini(self, msg=_(
+    def ask_create_target_ini(self, msg=_(
             u'The game ini must exist to apply a tweak to it.')):
         from . import oblivionIni, iniInfos # YAK
         if self is not oblivionIni: return True

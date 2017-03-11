@@ -3797,7 +3797,7 @@ class SaveInfos(FileInfos):
     def setLocalSave(self, localSave, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
-        if not oblivionIni.ask_create_game_ini(msg=_(
+        if not oblivionIni.ask_create_target_ini(msg=_(
                 u'Setting the save profile is done by editing the game ini.')):
             return
         self.localSave = localSave

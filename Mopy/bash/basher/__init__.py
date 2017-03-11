@@ -639,7 +639,8 @@ class INIList(balt.UIList):
     @staticmethod
     def apply_tweaks(tweak_infos, target_ini=None):
         target_ini_file = target_ini or bosh.iniInfos.ini
-        if not INIList._warn_tweak_game_ini(target_ini_file.abs_path.stail):
+        if not target_ini_file.ask_create_target_ini() or not \
+                INIList._warn_tweak_game_ini(target_ini_file.abs_path.stail):
             return False
         needsRefresh = False
         for ini_info in tweak_infos:
