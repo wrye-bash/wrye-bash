@@ -234,8 +234,7 @@ class IniFile(AFile):
 
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Applies dictionary of settings to ini file.
-        Values in settings dictionary can be either actual values or
-        full key=value line ending in newline char."""
+        Values in settings dictionary must be actual (setting, value) pairs."""
         if not self.abs_path.isfile():
             return
         #--Ensure settings dicts are using LString's as keys
@@ -252,6 +251,12 @@ class IniFile(AFile):
         with self.abs_path.open('r') as iniFile:
             with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
                 tmpFileWrite = tmpFile.write
+                def _add_remaining_new_items(section_):
+                    if section_ and ini_settings.get(section_, {}):
+                        for sett, val in ini_settings[section_].iteritems():
+                            tmpFileWrite(u'%s=%s\n' % (sett, val))
+                        del ini_settings[section_]
+                        tmpFileWrite(u'\n')
                 for line in iniFile:
                     try:
                         line = unicode(line,self.encoding)
@@ -262,16 +267,8 @@ class IniFile(AFile):
                     maSection = reSection.match(stripped)
                     maSetting = reSetting.match(stripped)
                     if maSection:
-                        if section and ini_settings.get(section,{}):
-                            # There are 'new' entries still to be added
-                            for setting in ini_settings[section]:
-                                value = ini_settings[section][setting]
-                                if isinstance(value,basestring) and value[-1:] == u'\n':
-                                    tmpFileWrite(value)
-                                else:
-                                    tmpFileWrite(u'%s=%s\n' % (setting,value))
-                            del ini_settings[section]
-                            tmpFileWrite(u'\n')
+                        # There are 'new' entries still to be added
+                        _add_remaining_new_items(section)
                         section = LString(maSection.group(1))
                         sectionSettings = ini_settings.get(section,{})
                     elif maSetting or maDeleted:
@@ -280,36 +277,19 @@ class IniFile(AFile):
                         setting = LString(match.group(1))
                         if sectionSettings and setting in sectionSettings:
                             value = sectionSettings[setting]
-                            if isinstance(value,basestring) and value[-1:] == u'\n':
-                                line = value
-                            else:
-                                line = u'%s=%s\n' % (setting,value)
+                            line = u'%s=%s\n' % (setting, value)
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-'+line
                     tmpFileWrite(line)
+                # This will occur for the last INI section in the ini file
+                _add_remaining_new_items(section)
                 # Add remaining new entries
-                if section and section in ini_settings:
-                    # This will occur for the last INI section in the ini file
-                    for setting in ini_settings[section]:
-                        value = ini_settings[section][setting]
-                        if isinstance(value,basestring) and value[-1:] == u'\n':
-                            tmpFileWrite(value)
-                        else:
-                            tmpFileWrite(u'%s=%s\n' % (setting,value))
-                    tmpFileWrite(u'\n')
-                    del ini_settings[section]
                 for section in ini_settings:
                     if ini_settings[section]:
                         tmpFileWrite(u'\n')
                         tmpFileWrite(u'[%s]\n' % section)
-                        for setting in ini_settings[section]:
-                            value = ini_settings[section][setting]
-                            if isinstance(value,basestring) and value[-1:] == u'\n':
-                                tmpFileWrite(value)
-                            else:
-                                tmpFileWrite(u'%s=%s\n' % (setting,value))
-                        tmpFileWrite(u'\n')
+                        _add_remaining_new_items(section)
         #--Done
         self.abs_path.untemp()
 
@@ -338,8 +318,8 @@ class IniFile(AFile):
                 section = LString(maSection.group(1))
                 sectionSettings = ini_settings[section] = {}
             elif maSetting:
-                if line[-1:] != u'\n': line += u'\n' #--Make sure has trailing new line
-                sectionSettings[LString(maSetting.group(1))] = line
+                sectionSettings[LString(maSetting.group(1))] = maSetting.group(
+                    2).strip()
             elif maDeleted:
                 deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
@@ -494,6 +474,9 @@ class OBSEIniFile(IniFile):
         return lines
 
     def saveSettings(self,ini_settings,deleted_settings={}):
+        """Applies dictionary of settings to ini file.
+        Values in settings dictionary can be either actual values or
+        full ini lines ending in newline char."""
         if not self.abs_path.isfile():
             return
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
