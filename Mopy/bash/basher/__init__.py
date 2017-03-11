@@ -610,11 +610,14 @@ class INIList(balt.UIList):
             icon = 10
             checkMark = 3
             mousetext = _(u'Some settings are changed.')
-        elif status == -10:
+        elif status < 0:
             # Bad tweak
-            if not settings['bash.ini.allowNewLines']: icon = 20
-            else: icon = 0
-            mousetext = _(u'Tweak is invalid')
+            if not iniInfo.is_applicable():
+                icon = 20
+                mousetext = _(u'Tweak is invalid')
+            else:
+                icon = 0
+                mousetext = _(u'Tweak adds new settings')
         if iniInfo.is_default_tweak:
             mousetext = _(u'Default Bash Tweak') + (
                 (u'.  ' + mousetext) if mousetext else u'')
@@ -630,21 +633,30 @@ class INIList(balt.UIList):
         event.Skip()
         hitItem = self._getItemClicked(event, on_icon=True)
         if not hitItem: return
-        tweak = bosh.iniInfos[hitItem] # type: bosh.INIInfo
-        if tweak.tweak_status == 20: return # already applied
-        #-- If we're applying to Oblivion.ini, show the warning
-        target, gameIni = self.data_store.ini, bosh.oblivionIni
-        if target is gameIni and not gameIni.ask_create_game_ini(
-                msg=_(u'The game ini must exist to apply a tweak to it.')):
-            return
-        choice = self.panel.detailsPanel.current_ini_path.tail
-        if not self.warn_tweak_game_ini(choice): return
-        target.applyTweakFile(tweak.read_ini_lines())
-        self.panel.ShowPanel(refresh_target=True)
+        if self.apply_tweaks((bosh.iniInfos[hitItem], )):
+            self.panel.ShowPanel(refresh_target=True)
+
+    @staticmethod
+    def apply_tweaks(tweak_infos, target_ini=None):
+        target_ini_file = target_ini or bosh.iniInfos.ini
+        if not target_ini_file.ask_create_target_ini() or not \
+                INIList._warn_tweak_game_ini(target_ini_file.abs_path.stail):
+            return False
+        needsRefresh = False
+        for ini_info in tweak_infos:
+            #--No point applying a tweak that's already applied
+            if target_ini: # if target was given calculate the status for it
+                stat = ini_info.getStatus(target_ini_file)
+                ini_info.reset_status() # iniInfos.ini may differ from target
+            else: stat = ini_info.tweak_status
+            if stat == 20 or not ini_info.is_applicable(stat): continue
+            needsRefresh |= target_ini_file.applyTweakFile(
+                ini_info.read_ini_lines())
+        return needsRefresh
 
     @staticmethod
     @balt.conversation
-    def warn_tweak_game_ini(choice):
+    def _warn_tweak_game_ini(choice):
         ask = True
         if choice in bush.game.iniFiles:
             message = (_(u"Apply an ini tweak to %s?") % choice + u'\n\n' + _(
@@ -1646,10 +1658,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         resort = False
         for name, ini_path in self.target_inis.iteritems():
             if ini_path is not None and not ini_path.isfile():
-                for iFile in bosh.gameInis:
-                    if iFile.abs_path == ini_path:
-                        break
-                else:
+                if not bosh.get_game_ini(ini_path):
                     del self.target_inis[name]
                     self.choice -= 1
                     resort = True

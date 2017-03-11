@@ -21,6 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
+import codecs
 import re
 import time
 from collections import OrderedDict
@@ -228,12 +229,16 @@ class IniFile(AFile):
                           lineNo, deleted))
         return lines
 
+    def _open_for_writing(self, filepath): # preserve windows EOL
+        return codecs.getwriter(self.encoding)(open(filepath, 'w'))
+
+    def ask_create_target_ini(self, msg=_(
+            u'The target ini must exist to apply a tweak to it.')):
+        return self.abs_path.isfile()
+
     def saveSettings(self,ini_settings,deleted_settings={}):
-        """Applies dictionary of settings to ini file.
-        Values in settings dictionary can be either actual values or
-        full key=value line ending in newline char."""
-        if not self.abs_path.isfile():
-            return
+        """Apply dictionary of settings to ini file, latter must exist!
+        Values in settings dictionary must be actual (setting, value) pairs."""
         #--Ensure settings dicts are using LString's as keys
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
@@ -246,8 +251,14 @@ class IniFile(AFile):
         #--Read init, write temp
         section = sectionSettings = None
         with self.abs_path.open('r') as iniFile:
-            with self.abs_path.temp.open('w', encoding=self.encoding) as tmpFile:
+            with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
                 tmpFileWrite = tmpFile.write
+                def _add_remaining_new_items(section_):
+                    if section_ and ini_settings.get(section_, {}):
+                        for sett, val in ini_settings[section_].iteritems():
+                            tmpFileWrite(u'%s=%s\n' % (sett, val))
+                        del ini_settings[section_]
+                        tmpFileWrite(u'\n')
                 for line in iniFile:
                     try:
                         line = unicode(line,self.encoding)
@@ -258,16 +269,8 @@ class IniFile(AFile):
                     maSection = reSection.match(stripped)
                     maSetting = reSetting.match(stripped)
                     if maSection:
-                        if section and ini_settings.get(section,{}):
-                            # There are 'new' entries still to be added
-                            for setting in ini_settings[section]:
-                                value = ini_settings[section][setting]
-                                if isinstance(value,basestring) and value[-1:] == u'\n':
-                                    tmpFileWrite(value)
-                                else:
-                                    tmpFileWrite(u'%s=%s\n' % (setting,value))
-                            del ini_settings[section]
-                            tmpFileWrite(u'\n')
+                        # There are 'new' entries still to be added
+                        _add_remaining_new_items(section)
                         section = LString(maSection.group(1))
                         sectionSettings = ini_settings.get(section,{})
                     elif maSetting or maDeleted:
@@ -276,44 +279,25 @@ class IniFile(AFile):
                         setting = LString(match.group(1))
                         if sectionSettings and setting in sectionSettings:
                             value = sectionSettings[setting]
-                            if isinstance(value,basestring) and value[-1:] == u'\n':
-                                line = value
-                            else:
-                                line = u'%s=%s\n' % (setting,value)
+                            line = u'%s=%s\n' % (setting, value)
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-'+line
                     tmpFileWrite(line)
+                # This will occur for the last INI section in the ini file
+                _add_remaining_new_items(section)
                 # Add remaining new entries
-                if section and section in ini_settings:
-                    # This will occur for the last INI section in the ini file
-                    for setting in ini_settings[section]:
-                        value = ini_settings[section][setting]
-                        if isinstance(value,basestring) and value[-1:] == u'\n':
-                            tmpFileWrite(value)
-                        else:
-                            tmpFileWrite(u'%s=%s\n' % (setting,value))
-                    tmpFileWrite(u'\n')
-                    del ini_settings[section]
                 for section in ini_settings:
                     if ini_settings[section]:
                         tmpFileWrite(u'\n')
                         tmpFileWrite(u'[%s]\n' % section)
-                        for setting in ini_settings[section]:
-                            value = ini_settings[section][setting]
-                            if isinstance(value,basestring) and value[-1:] == u'\n':
-                                tmpFileWrite(value)
-                            else:
-                                tmpFileWrite(u'%s=%s\n' % (setting,value))
-                        tmpFileWrite(u'\n')
+                        _add_remaining_new_items(section)
         #--Done
         self.abs_path.untemp()
 
     def applyTweakFile(self, tweak_lines):
         """Read Ini tweak file and apply its settings to oblivion.ini.
         Note: Will ONLY apply settings that already exist."""
-        if not self.abs_path.isfile():
-            return
         encoding = 'utf-8'
         reDeleted = self.reDeletedSetting
         reComment = self.reComment
@@ -336,11 +320,12 @@ class IniFile(AFile):
                 section = LString(maSection.group(1))
                 sectionSettings = ini_settings[section] = {}
             elif maSetting:
-                if line[-1:] != u'\n': line += u'\r\n' #--Make sure has trailing new line
-                sectionSettings[LString(maSetting.group(1))] = line
+                sectionSettings[LString(maSetting.group(1))] = maSetting.group(
+                    2).strip()
             elif maDeleted:
                 deleted_settings.setdefault(section,set()).add(LString(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
+        return True
 
 class DefaultIniFile(IniFile):
     """A default ini tweak - hardcoded."""
@@ -491,8 +476,9 @@ class OBSEIniFile(IniFile):
         return lines
 
     def saveSettings(self,ini_settings,deleted_settings={}):
-        if not self.abs_path.isfile():
-            return
+        """Apply dictionary of settings to ini file, latter must exist!
+        Values in settings dictionary can be either actual values or
+        full ini lines ending in newline char."""
         ini_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
             for x,y in ini_settings.iteritems())
         deleted_settings = dict((LString(x),dict((LString(u),v) for u,v in y.iteritems()))
@@ -551,8 +537,6 @@ class OBSEIniFile(IniFile):
         self.abs_path.untemp()
 
     def applyTweakFile(self, tweak_lines):
-        if not self.abs_path.isfile():
-            return
         reDeleted = self.reDeleted
         reComment = self.reComment
         reSet = self.reSet
@@ -585,9 +569,10 @@ class OBSEIniFile(IniFile):
                 continue
             # Save the setting for applying
             section = settings_.setdefault(sectionKey,{})
-            if line[-1] != u'\n': line += u'\r\n'
+            if line[-1] != u'\n': line += u'\n'
             section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
+        return True
 
 class OblivionIni(IniFile):
     """Oblivion.ini file."""
@@ -615,7 +600,8 @@ class OblivionIni(IniFile):
         return self.getSetting(u'General', u'sLanguage', u'English')
 
     @balt.conversation
-    def ask_create_game_ini(self, msg=u''):
+    def ask_create_target_ini(self, msg=_(
+            u'The game ini must exist to apply a tweak to it.')):
         from . import oblivionIni, iniInfos # YAK
         if self is not oblivionIni: return True
         if self.abs_path.exists(): return True

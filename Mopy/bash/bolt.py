@@ -92,12 +92,12 @@ def _getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
     result = chardet.detect(bitstream)
-    encoding,confidence = result['encoding'],result['confidence']
-    encoding = _encodingSwap.get(encoding,encoding)
+    encoding_,confidence = result['encoding'],result['confidence']
+    encoding_ = _encodingSwap.get(encoding_,encoding_)
     ## Debug: uncomment the following to output stats on encoding detection
     #print
     #print '%s: %s (%s)' % (repr(bitstream),encoding,confidence)
-    return encoding,confidence
+    return encoding_,confidence
 
 def decode(byte_str, encoding=None, avoidEncodings=()):
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str

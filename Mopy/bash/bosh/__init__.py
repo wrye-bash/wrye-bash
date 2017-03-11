@@ -2037,17 +2037,25 @@ class ModInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni
-def BestIniFile(path):
-    """:rtype: IniFile"""
+def get_game_ini(ini_path, is_abs=True):
+    """:rtype: OblivionIni | None"""
     for game_ini in gameInis:
-        if path == game_ini.abs_path:
+        game_ini_path = game_ini.abs_path
+        if ini_path == ((is_abs and game_ini_path) or game_ini_path.stail):
             return game_ini
-    INICount = IniFile.formatMatch(path)
-    OBSECount = OBSEIniFile.formatMatch(path)
+    return None
+
+def BestIniFile(abs_ini_path):
+    """:rtype: IniFile"""
+    game_ini = get_game_ini(abs_ini_path)
+    if game_ini:
+        return game_ini
+    INICount = IniFile.formatMatch(abs_ini_path)
+    OBSECount = OBSEIniFile.formatMatch(abs_ini_path)
     if INICount >= OBSECount:
-        return IniFile(path)
+        return IniFile(abs_ini_path)
     else:
-        return OBSEIniFile(path)
+        return OBSEIniFile(abs_ini_path)
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile):
@@ -2071,34 +2079,40 @@ class INIInfo(IniFile):
             return isinstance(other, OBSEIniFile)
         return not isinstance(other, OBSEIniFile)
 
+    def is_applicable(self, stat=None):
+        stat = stat or self.tweak_status
+        return stat != -20 and (
+            bass.settings['bash.ini.allowNewLines'] or stat != -10)
+
     def getStatus(self, target_ini=None):
         """Returns status of the ini tweak:
         20: installed (green with check)
         15: mismatches (green with dot) - mismatches are with another tweak from same installer that is applied
         10: mismatches (yellow)
         0: not installed (green)
-        -10: invalid tweak file (red).
+        -10: tweak file contains new sections/settings
+        -20: incompatible tweak file (red)
         Also caches the value in self._status"""
         infos = iniInfos
         target_ini = target_ini or infos.ini
         tweak_settings = self.getSettings()
+        def _status(s):
+            self._status = s
+            return s
         if self._incompatible(target_ini) or not tweak_settings:
-            self._status = -10
-            return -10
+            return _status(-20)
         match = False
         mismatch = 0
         ini_settings = target_ini.getSettings()
         self_installer = infos.table.getItem(self.abs_path.tail, 'installer')
         for section_key in tweak_settings:
             if section_key not in ini_settings:
-                self._status = -10
-                return -10
+                return _status(-10)
             target_section = ini_settings[section_key]
             tweak_section = tweak_settings[section_key]
             for item in tweak_section:
                 if item not in target_section:
-                    self._status = -10
-                    return -10
+                    return _status(-10)
                 if tweak_section[item][0] != target_section[item][0]:
                     if mismatch < 2:
                         # Check to see if the mismatch is from another ini
@@ -2119,14 +2133,13 @@ class INIInfo(IniFile):
                 else:
                     match = True
         if not match:
-            self._status = 0
+            return _status(0)
         elif not mismatch:
-            self._status = 20
+            return _status(20)
         elif mismatch == 1:
-            self._status = 15
+            return _status(15)
         elif mismatch == 2:
-            self._status = 10
-        return self._status
+            return _status(10)
 
     def reset_status(self): self._status = None
 
@@ -2135,13 +2148,13 @@ class INIInfo(IniFile):
         ini_infos_ini = iniInfos.ini
         text = [u'%s:' % self.abs_path.stail]
         if self._incompatible(ini_infos_ini):
-            text.append(u' '+_(u'Format mismatch:') + u'\n  ')
+            text.append(u' ' + _(u'Format mismatch:'))
             if isinstance(self, OBSEIniFile):
-                text.append(_(u'Target format: INI') + u'\n  ' +
-                            _(u'Tweak format: Batch Script'))
+                text.append(u'  '+ _(u'Target format: INI') +
+                            u'\n  ' + _(u'Tweak format: Batch Script'))
             else:
-                text.append(_(u'Target format: Batch Script') + u'\n  ' +
-                            _(u'Tweak format: INI'))
+                text.append(u'  ' + _(u'Target format: Batch Script') +
+                            u'\n  ' + _(u'Tweak format: INI'))
         else:
             tweak_settings = self.getSettings()
             ini_settings = ini_infos_ini.getSettings()
@@ -2151,13 +2164,18 @@ class INIInfo(IniFile):
                 else:
                     text.append(_(u' No valid Batch Script format lines.'))
             else:
+                missing_settings = []
                 for key in tweak_settings:
                     if key not in ini_settings:
                         text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
                     else:
                         for item in tweak_settings[key]:
                             if item not in ini_settings[key]:
-                                text.append(u' [%s] %s' % (key, item))
+                                missing_settings.append(
+                                    u'  [%s] %s' % (key, item))
+                if missing_settings:
+                    text.append(u' ' + _(u'Settings missing from target ini:'))
+                    text.extend(missing_settings)
         if len(text) == 1:
             text.append(u' None')
         with sio() as out:
@@ -2577,13 +2595,13 @@ class DefaultIniInfo(DefaultIniFile, INIInfo):
 
 def ini_info_factory(parent_dir, filename):
     """:rtype: INIInfo"""
-    path = GPath(parent_dir).join(filename)
-    INICount = IniFile.formatMatch(path)
-    OBSECount = OBSEIniFile.formatMatch(path)
+    fullpath = GPath(parent_dir).join(filename)
+    INICount = IniFile.formatMatch(fullpath)
+    OBSECount = OBSEIniFile.formatMatch(fullpath)
     if INICount >= OBSECount:
-        return INIInfo(path)
+        return INIInfo(fullpath)
     else:
-        return ObseIniInfo(path)
+        return ObseIniInfo(fullpath)
 
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
@@ -2643,12 +2661,7 @@ class INIInfos(TableFileInfos):
         """:type ini_path: bolt.Path"""
         if self._ini is not None and self._ini.abs_path == ini_path:
             return # nothing to do
-        for iFile in gameInis:
-            if iFile.abs_path == ini_path:
-                self._ini = iFile
-                break
-        else:
-            self._ini = BestIniFile(ini_path)
+        self._ini = BestIniFile(ini_path)
         for ini_info in self.itervalues(): ini_info.reset_status()
 
     def _refresh_infos(self):
@@ -2719,20 +2732,23 @@ class INIInfos(TableFileInfos):
     def open_or_copy(self, tweak):
         info = self[tweak] # type: INIInfo
         if info.is_default_tweak:
-            with open(self.store_dir.join(tweak).s, 'w') as ini_file:
-                ini_file.write('\n'.join(info.read_ini_lines()))
+            self._copy_to_new_tweak(info, tweak)
             self[tweak] = self.factory(self.store_dir, tweak)
             return True # refresh
         else:
             info.abs_path.start()
             return False
 
+    def _copy_to_new_tweak(self, info, new_tweak): ##: encoding....
+        with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
+            # writelines does not do what you'd expect, would concatenate lines
+            ini_file.write('\n'.join(info.read_ini_lines()))
+
     def duplicate_ini(self, tweak, new_tweak):
         """Duplicate tweak into new_tweak, copying current target settings"""
         if not new_tweak: return False
-        info = self[tweak] # type: INIInfo
-        with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
-            ini_file.write('\n'.join(info.read_ini_lines()))
+        # new_tweak is an abs path, join works ok relative to self.store_dir
+        self._copy_to_new_tweak(self[tweak], new_tweak)
         new_info = self[new_tweak.tail] = self.factory(self.store_dir,
                                                        new_tweak)
         # Now edit it with the values from the target INI
@@ -3781,7 +3797,7 @@ class SaveInfos(FileInfos):
     def setLocalSave(self, localSave, refreshSaveInfos=True):
         """Sets SLocalSavePath in Oblivion.ini."""
         self.table.save()
-        if not oblivionIni.ask_create_game_ini(msg=_(
+        if not oblivionIni.ask_create_target_ini(msg=_(
                 u'Setting the save profile is done by editing the game ini.')):
             return
         self.localSave = localSave

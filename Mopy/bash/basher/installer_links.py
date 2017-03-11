@@ -283,40 +283,30 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                         installer.archive)
             # trigger refresh UI and unnecessary bosh.iniInfos.refresh()
             ui_refresh[1] = True
-            is_game_ini, target_path = False, bass.dirs['mods'].join(iniFile)
-            for game_ini in bosh.gameInis:
-                if iniFile == game_ini.abs_path.stail:
-                    target_path = game_ini.abs_path
-                    is_game_ini = True
-                    target_ini_file = game_ini
-                    break
-            else: target_ini_file = None
-            if iniFile in installer.data_sizeCrc or is_game_ini:
-                if not ret.Install and not is_game_ini:
+            # We wont automatically apply tweaks to anything other than
+            # Oblivion.ini or an ini from this installer
+            game_ini = bosh.get_game_ini(iniFile, is_abs=False)
+            if game_ini:
+                target_path = game_ini.abs_path
+                target_ini_file = game_ini
+            else: # suppose that the target ini file is in the Data/ dir
+                target_path = bass.dirs['mods'].join(iniFile)
+                new_targets.add(target_path)
+                if not (iniFile in installer.data_sizeCrc and ret.Install):
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto
                     # install after the wizard, we'll show a message telling
                     # the User what tweaks to apply manually.
                     manuallyApply.append((outFile, iniFile))
                     continue
-                # Editing an INI file from this installer is ok, but editing
-                # Oblivion.ini give a warning message
-                if not INIList.warn_tweak_game_ini(iniFile): continue
-                target_ini_file = target_ini_file or bosh.BestIniFile(target_path)
-                if bosh.iniInfos[outFile.tail].getStatus(target_ini_file) in (20, -10):
-                    continue # applied or invalid
-                target_ini_file.applyTweakFile(
-                    bosh.iniInfos[outFile.tail].read_ini_lines())
+                target_ini_file = bosh.BestIniFile(target_path)
+            if INIList.apply_tweaks((bosh.iniInfos[outFile.tail],),
+                                    target_ini_file):
                 lastApplied = outFile.tail
-                if not is_game_ini: new_targets.add(target_path)
-            else:
-                # We wont automatically apply tweaks to anything other than
-                # Oblivion.ini or an ini from this installer
-                manuallyApply.append((outFile, iniFile))
         #--Refresh after all the tweaks are applied
+        BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
         if lastApplied is not None:
             if BashFrame.iniList is not None:
-                BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
                 BashFrame.iniList.panel.detailsPanel.set_choice(target_path)
                 BashFrame.iniList.panel.ShowPanel(refresh_target=True,
                     focus_list=False, detail_item=lastApplied)

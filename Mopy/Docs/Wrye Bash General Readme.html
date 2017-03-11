@@ -700,11 +700,12 @@ from other packages previously overridden by the uninstalled package's
 		<tr><th colspan="2">Column Header Context Menu
 		<tr><th>Command<th>Description
 	<tbody>
-		<tr><td>Sort By<td>This submenu allows you to choose by which column the save list is sorted. This is equivalent to clicking on a column header.
-		<tr><td>Columns<td>This submenu allows you to choose which columns are visible in the save list.
-		<tr><td>Allow Tweaks with New Lines<td>
-		<tr><td>Open...<td>
-		<tr><td>List Active INIs...<td>
+		<tr><td>Sort By<td>This submenu allows you to choose by which column the ini list is sorted. This is equivalent to clicking on a column header.
+		<tr><td>Columns<td>This submenu allows you to choose which columns are visible in the ini list.
+		<tr><td id="allowTweaksWithNewSettings">Allow Tweaks with New Settings<td>Allows tweaks which have new sections and/or settings to
+			be installed. Use carefully as you might inadvertently add bogus sections/settings to your ini.
+		<tr><td>Open...<td>Open the <code>Data/INI Tweaks</code> folder
+		<tr><td>List Active INIs...<td>Lists all currently applied INI tweaks to the selected INI.
 </table>
 <table>
 	<thead>
@@ -713,9 +714,13 @@ from other packages previously overridden by the uninstalled package's
 	<tbody>
 		<tr><td id="tweakApply">Apply<td>Applies the tweak to the current ini file.
 		<tr><td>Create Tweak with current settings...<td>Creates a new tweak with the same settings as the selected tweak, but uses the values in the current ini file.
-		<tr><td>List Errors...<td>If the tweak is invalid, this will show you which entries in the tweak don't exist in the current ini file.
-		<tr><td>Open...<td>Open the tweak for editing in the default text editor.
-		<tr><td>Delete<td>Delete the tweak.
+		<tr><td>List Errors...<td>Lists invalid tweaks (for instance OBSE ini tweaks are invalid if current target ini is Oblivion ini), and
+			also lists section headers and/or individual settings that are present in selected tweak(s) but are missing from the current
+			target ini. These tweaks may be installed however - depending on <a href="#allowTweaksWithNewSettings">Allow Tweaks with New
+				Settings</a> setting.
+		<tr><td>Open/Copy...<td>If the (single) selected item is a default Bash tweak this menu item copies it to the
+            <code>Data/INI Tweaks</code> folder, otherwise it opens the tweak with the default text editor for .ini files.
+		<tr><td>Delete<td>Delete the tweak. Default (hardcoded) Bash ini tweaks can't be deleted.
 </table>
 
 <h2 id="launchers">Launching Applications</h2>
