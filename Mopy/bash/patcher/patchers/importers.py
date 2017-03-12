@@ -167,7 +167,7 @@ class _SimpleImporter(ImportPatcher):
         """Common buildPatch() pattern of:
 
             GraphicsPatcher, ActorImporter, KFFZPatcher, DeathItemPatcher,
-            ImportScripts, SoundPatcher
+            ImportScripts, SoundPatcher, DestructiblePatcher
         Consists of a type selection loop which could be rewritten to support
         more patchers (maybe using filter()) and an inner loop that should be
         provided by a patcher specific, _inner_loop() method.
@@ -491,42 +491,32 @@ class DestructiblePatcher(_SimpleImporter):
     rec_attrs = dict((x, ('destructible',)) for x in longTypes)
 
     #--Patch Phase ------------------------------------------------------------
-    def buildPatch(self, log, progress, types=None):
-        """Merge last version of record with patched destructible data as needed."""
-        if not self.isActive: return
-        modFile = self.patchFile
-        keep = self.patchFile.getKeeper()
-        id_data = self.id_data
-        type_count = {}
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            type_count[type] = 0
-            for record in modFile.tops[type].records:
-                fid = record.fid
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    if isinstance(record.__getattribute__(attr),str) and isinstance(value, str):
-                        if record.__getattribute__(attr).lower() != value.lower():
+    def _inner_loop(self, keep, records, top_mod_rec, type_count):
+        id_data, set_id_data = self.id_data, set(self.id_data)
+        for record in records:
+            fid = record.fid
+            if fid not in set_id_data: continue
+            for attr, value in id_data[fid].iteritems():
+                rec_attr = record.__getattribute__(attr)
+                if isinstance(rec_attr, str) and isinstance(value, str):
+                    if rec_attr.lower() != value.lower():
+                        break
+                    continue
+                elif attr == 'model':
+                    try:
+                        if rec_attr.modPath.lower() != value.modPath.lower():
                             break
                         continue
-                    elif attr == 'model':
-                        try:
-                            if record.__getattribute__(attr).modPath.lower() != value.modPath.lower():
-                                break
-                            continue
-                        except:
-                            break #assume they are not equal (ie they aren't __both__ NONE)
-                    if record.__getattribute__(attr) != value:
-                        break
-                else:
-                    continue
-                for attr,value in id_data[fid].iteritems():
-                    record.__setattr__(attr,value)
-                keep(fid)
-                type_count[type] += 1
-        id_data = None
-        self._patchLog(log, type_count)
+                    except:
+                        break #assume they are not equal (ie they aren't __both__ NONE)
+                if rec_attr != value:
+                    break
+            else:
+                continue
+            for attr, value in id_data[fid].iteritems():
+                record.__setattr__(attr, value)
+            keep(fid)
+            type_count[top_mod_rec] += 1
 
 #------------------------------------------------------------------------------
 class _AGraphicsPatcher(AImportPatcher):
