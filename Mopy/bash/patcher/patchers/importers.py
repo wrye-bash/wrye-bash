@@ -26,6 +26,7 @@
 import collections
 import operator
 import re
+from operator import attrgetter
 # Internal
 from ... import bosh # for modInfos
 from ... import load_order
@@ -176,14 +177,14 @@ class _SimpleImporter(ImportPatcher):
         modFileTops = self.patchFile.tops
         keep = self.patchFile.getKeeper()
         type_count = collections.defaultdict(int)
-        types = filter(lambda x: x in modFileTops,
-                   types if types else map(lambda x: x.classType, self.srcClasses))
+        types = filter(modFileTops.__contains__, types if types else map(
+            attrgetter('classType'), self.srcClasses))
         for top_mod_rec in types:
             records = modFileTops[top_mod_rec].records
             self._inner_loop(keep, records, top_mod_rec, type_count)
         self.id_data.clear() # cleanup to save memory
         # Log
-        self._patchLog(log,type_count)
+        self._patchLog(log, type_count)
 
 class _RecTypeModLogging(CBash_ImportPatcher):
     """Import patchers that log type -> [mod-> count]"""
