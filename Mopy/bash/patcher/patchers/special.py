@@ -23,16 +23,15 @@
 # =============================================================================
 import collections
 import copy
-from operator import itemgetter, attrgetter
 import string
+from operator import itemgetter, attrgetter
 # Internal
-from ... import bosh, load_order # for modInfos
-from ...bolt import GPath, SubProgress, CsvReader
-from .. import getPatchesPath
-from ... import bush
-from ...cint import FormID
 from .base import Patcher, CBash_Patcher, SpecialPatcher, ListPatcher, \
     CBash_ListPatcher, AListPatcher
+from ... import bosh, load_order  # for modInfos
+from ... import bush
+from ...bolt import GPath, SubProgress
+from ...cint import FormID
 
 # Patchers: 40 ----------------------------------------------------------------
 class _AListsMerger(SpecialPatcher, AListPatcher):
@@ -48,21 +47,6 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
     tip = _(u"Merges changes to leveled lists from all active mods.")
     autoKey = {u'Delev', u'Relev'}
     iiMode = True
-
-    #--Static------------------------------------------------------------------
-    @staticmethod
-    def getDefaultTags():
-        tags = {}
-        for fileName in (u'Leveled Lists.csv',u'My Leveled Lists.csv'):
-            textPath = getPatchesPath(fileName)
-            if textPath.exists():
-                with CsvReader(textPath) as reader:
-                    for fields in reader:
-                        if len(fields) < 2 or not fields[0] or \
-                            fields[1] not in (u'DR', u'R', u'D', u'RD', u''):
-                            continue
-                        tags[GPath(fields[0])] = fields[1]
-        return tags
 
 class ListsMerger(_AListsMerger, ListPatcher):
 
@@ -523,19 +507,6 @@ class FidListsMerger(_AListsMerger,ListPatcher):
     tip = _(u"Merges changes to formid lists from all active mods.")
     autoKey = {u'Deflst'}
     iiMode = True
-
-    #--Static------------------------------------------------------------------
-    @staticmethod
-    def getDefaultTags():
-        tags = {}
-        for fileName in (u'FormID Lists.csv',u'My FormId Lists.csv'):
-            textPath = getPatchesPath(fileName)
-            if textPath.exists():
-                with CsvReader(textPath) as reader:
-                    for fields in reader:
-                        if len(fields) < 2 or not fields[0] or fields[1] not in (u'DR',u'R',u'D',u'RD',u''): continue
-                        tags[GPath(fields[0])] = fields[1]
-        return tags
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
