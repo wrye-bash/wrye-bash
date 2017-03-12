@@ -145,6 +145,26 @@ class _SimpleImporter(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
+    def scanModFile2(self, modFile, progress):
+        """Scan mod file against source data."""
+        if not self.isActive: return
+        id_data = self.id_data
+        mapper = modFile.getLongMapper()
+        if self.longTypes:
+            modFile.convertToLongFids(self.longTypes)
+        for recClass in self.srcClasses:
+            if recClass.classType not in modFile.tops: continue
+            patchBlock = getattr(self.patchFile, recClass.classType)
+            for record in modFile.tops[recClass.classType].getActiveRecords():
+                fid = record.fid
+                if not record.longFids: fid = mapper(fid)
+                if fid not in id_data: continue
+                for attr, value in id_data[fid].iteritems():
+                    # OOPS: line below is the only diff from _scanModFile()
+                    if reduce(getattr, attr.split('.'), record) != value:
+                        patchBlock.setRecord(record.getTypeCopy(mapper))
+                        break
+
     def _inner_loop(self, keep, records, top_mod_rec, type_count):
         """Most common pattern for the internal buildPatch() loop.
 
@@ -827,26 +847,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                         (subattr, reduce(getattr, subattr.split('.'), record))
                         for subattr in attr)
 
-    def scanModFile(self, modFile, progress): # scanModFile1: reduce(...)
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    # OOPS: line below is the only diff from _scanModFile()
-                    if reduce(getattr,attr.split('.'),record) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
+    scanModFile = _SimpleImporter.scanModFile2
 
     def _inner_loop(self, keep, records, top_mod_rec, type_count):
         id_data, set_id_data = self.id_data, set(self.id_data)
