@@ -2986,7 +2986,7 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
                     record._RecordID = override._RecordID
 
 #------------------------------------------------------------------------------
-class WeaponModsPatcher(ImportPatcher):
+class WeaponModsPatcher(_SimpleImporter):
     """Merge changes to weapon modifications for FalloutNV."""
     scanOrder = 27
     editOrder = 27
@@ -2995,27 +2995,14 @@ class WeaponModsPatcher(ImportPatcher):
     tip = text
     autoRe = re.compile(r"^UNDEFINED$",re.I)
     autoKey = {u'WeaponMods'}
-    _record_attributes = ('modelWithMods', 'firstPersonModelWithMods',
+    rec_attrs = {'WEAP': ('modelWithMods', 'firstPersonModelWithMods',
         'weaponMods', 'soundMod1Shoot3Ds', 'soundMod1Shoot2D', 'effectMod1',
         'effectMod2', 'effectMod3', 'valueAMod1', 'valueAMod2', 'valueAMod3',
         'valueBMod1', 'valueBMod2', 'valueBMod3', 'reloadAnimationMod',
         'vatsModReqiured', 'scopeModel', 'dnamFlags1.hasScope',
-        'dnamFlags2.scopeFromMod')
+        'dnamFlags2.scopeFromMod')}
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        super(WeaponModsPatcher, self).initPatchFile(patchFile, loadMods)
-        self.id_data = {} #--Names keyed by long fid.
-        self.srcClasses = set() #--Record classes actually provided by src mods/files.
-        self.classestemp = set()
-        #--Type Fields
-        recAttrs_class = self.recAttrs_class = {}
-        recFidAttrs_class = self.recFidAttrs_class = {}
-        self.longTypes = {'WEAP'}
-        for recClass in (MreRecord.type_class[x] for x in self.longTypes):
-            recAttrs_class[recClass] = WeaponModsPatcher._record_attributes
-
     def initData(self,progress):
         """Get graphics from source files."""
         if not self.isActive: return
@@ -3038,25 +3025,10 @@ class WeaponModsPatcher(ImportPatcher):
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
-                recFidAttrs = self.recFidAttrs_class.get(recClass, None)
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
-                    if recFidAttrs:
-                        #attr_fidvalue = dict((attr,record.__getattribute__(attr)) for attr in recFidAttrs)
-                        attr_fidvalue = dict((attr,reduce(getattr, attr.split('.'), record)) for attr in recFidAttrs)
-                        for fidvalue in attr_fidvalue.values():
-                            if fidvalue and (fidvalue[0] is None or fidvalue[0] not in self.patchFile.loadSet):
-                                #Ignore the record. Another option would be to just ignore the attr_fidvalue result
-                                mod_skipcount = self.patchFile.patcher_mod_skipcount.setdefault(self.name,{})
-                                mod_skipcount[srcMod] = mod_skipcount.setdefault(srcMod, 0) + 1
-                                break
-                        else:
-                            #temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-                            temp_id_data[fid] = dict((attr,reduce(getattr, attr.split('.'), record)) for attr in recAttrs)
-                            temp_id_data[fid].update(attr_fidvalue)
-                    else:
-                        #temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-                        temp_id_data[fid] = dict((attr,reduce(getattr, attr.split('.'), record)) for attr in recAttrs)
+                    #temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
+                    temp_id_data[fid] = dict((attr, reduce(getattr, attr.split('.'), record)) for attr in recAttrs)
             for master in masters:
                 if not master in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -3068,7 +3040,7 @@ class WeaponModsPatcher(ImportPatcher):
                     masterFile.convertToLongFids(longTypes)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                for recClass,recAttrs in recAttrs_class.iteritems():
+                for recClass in self.recAttrs_class:
                     if recClass.classType not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
                     for record in masterFile.tops[recClass.classType].getActiveRecords():
@@ -3078,14 +3050,10 @@ class WeaponModsPatcher(ImportPatcher):
                             #if value == record.__getattribute__(attr): continue
                             if value == reduce(getattr, attr.split('.'), record): continue
                             else:
-                                if fid not in id_data: id_data[fid] = dict()
-                                try:
-                                    id_data[fid][attr] = temp_id_data[fid][attr]
-                                except KeyError:
-                                    id_data[fid].setdefault(attr,value)
+                                id_data[fid][attr] = value
             progress.plus()
         temp_id_data = None
-        self.longTypes = self.longTypes & set(x.classType for x in self.srcClasses)
+        self.longTypes &= set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
 
     def scanModFile(self, modFile, progress):
@@ -3110,7 +3078,7 @@ class WeaponModsPatcher(ImportPatcher):
                         patchBlock.setRecord(record.getTypeCopy(mapper))
                         break
 
-    def buildPatch(self,log,progress):
+    def buildPatch(self, log, progress, types=None):
         """Merge last version of record with patched destructible data as needed."""
         if not self.isActive: return
         modFile = self.patchFile
