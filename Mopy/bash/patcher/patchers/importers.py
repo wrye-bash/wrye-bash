@@ -3012,14 +3012,12 @@ class WeaponModsPatcher(_SimpleImporter):
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
-            for recClass,recAttrs in recAttrs_class.iteritems():
+            for recClass in self.recAttrs_class:
                 if recClass.classType not in srcFile.tops: continue
                 self.srcClasses.add(recClass)
                 self.classestemp.add(recClass)
-                for record in srcFile.tops[recClass.classType].getActiveRecords():
-                    fid = mapper(record.fid)
-                    #temp_id_data[fid] = dict((attr,record.__getattribute__(attr)) for attr in recAttrs)
-                    temp_id_data[fid] = dict((attr, reduce(getattr, attr.split('.'), record)) for attr in recAttrs)
+                self._init_data_loop(mapper, recClass, srcFile, srcMod,
+                                     temp_id_data)
             for master in masters:
                 if not master in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
@@ -3043,9 +3041,18 @@ class WeaponModsPatcher(_SimpleImporter):
                             else:
                                 id_data[fid][attr] = value
             progress.plus()
-        temp_id_data = None
         self.longTypes &= set(x.classType for x in self.srcClasses)
         self.isActive = bool(self.srcClasses)
+
+    def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
+        recAttrs = self.recAttrs_class[recClass]
+        for record in srcFile.tops[recClass.classType].getActiveRecords():
+            fid = mapper(record.fid)
+            #temp_id_data[fid] = dict((attr,record.__getattribute__(attr))
+            # for attr in recAttrs)
+            temp_id_data[fid] = dict(
+                (attr, reduce(getattr, attr.split('.'), record)) for attr in
+                recAttrs)
 
     def scanModFile(self, modFile, progress):
         """Scan mod file against source data."""
