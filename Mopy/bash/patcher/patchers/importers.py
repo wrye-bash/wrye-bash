@@ -2999,9 +2999,9 @@ class WeaponModsPatcher(_SimpleImporter):
         """Get graphics from source files."""
         if not self.isActive: return
         id_data = self.id_data
-        recAttrs_class = self.recAttrs_class
-        loadFactory = LoadFactory(False,*recAttrs_class.keys())
-        longTypes = self.longTypes & set(x.classType for x in recAttrs_class)
+        loadFactory = LoadFactory(False, *self.recAttrs_class.keys())
+        longTypes = self.longTypes & set(
+            x.classType for x in self.recAttrs_class)
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         for index,srcMod in enumerate(self.srcs):
@@ -3033,7 +3033,8 @@ class WeaponModsPatcher(_SimpleImporter):
                 for recClass in self.recAttrs_class:
                     if recClass.classType not in masterFile.tops: continue
                     if recClass not in self.classestemp: continue
-                    for record in masterFile.tops[recClass.classType].getActiveRecords():
+                    for record in masterFile.tops[
+                        recClass.classType].getActiveRecords():
                         fid = mapper(record.fid)
                         if fid not in temp_id_data: continue
                         for attr, value in temp_id_data[fid].iteritems():
@@ -3055,27 +3056,7 @@ class WeaponModsPatcher(_SimpleImporter):
                 (attr, reduce(getattr, attr.split('.'), record)) for attr in
                 recAttrs)
 
-    def scanModFile(self, modFile, progress):
-        """Scan mod file against source data."""
-        if not self.isActive: return
-        id_data = self.id_data
-        modName = modFile.fileInfo.name
-        mapper = modFile.getLongMapper()
-        if self.longTypes:
-            modFile.convertToLongFids(self.longTypes)
-        for recClass in self.srcClasses:
-            type = recClass.classType
-            if type not in modFile.tops: continue
-            patchBlock = getattr(self.patchFile,type)
-            for record in modFile.tops[type].getActiveRecords():
-                fid = record.fid
-                if not record.longFids: fid = mapper(fid)
-                if fid not in id_data: continue
-                for attr,value in id_data[fid].iteritems():
-                    #if record.__getattribute__(attr) != value:
-                    if reduce(getattr, attr.split('.'), record) != value:
-                        patchBlock.setRecord(record.getTypeCopy(mapper))
-                        break
+    scanModFile = _SimpleImporter.scanModFile2
 
     def buildPatch(self, log, progress, types=None):
         """Merge last version of record with patched destructible data as needed."""
