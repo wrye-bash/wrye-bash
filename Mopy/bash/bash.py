@@ -554,19 +554,17 @@ def _wxSelectGame(ret, msgtext, _wx):
 
 # Version checks --------------------------------------------------------------
 def _rightWxVersion(_wx):
-    run = True
     wxver = _wx.version()
-    if not u'unicode' in wxver.lower() and not u'2.9' in wxver:
-        # Can't use translatable strings, because they'd most likely end up
-        # being in unicode!
-        run = balt.askYes(None,
-                          'Warning: you appear to be using a non-unicode '
-                          'version of wxPython (%s).  This will cause '
-                          'problems!  It is highly recommended you use a '
-                          'unicode version of wxPython instead.  Do you '
-                          'still want to run Wrye Bash?' % wxver,
-                          'Warning: Non-Unicode wxPython detected', )
-    return run
+    wxver_tuple = _wx.VERSION
+    if wxver != '2.8.12.1 (msw-unicode)' and wxver_tuple < (2,9):
+        return balt.askYes(
+            None, 'Warning: you appear to be using a non-supported version '
+            'of wxPython (%s).  This will cause problems!  It is highly '
+            'recommended you use either version 2.8.12.1 (msw-unicode) or, '
+            'at your discretion, a later version (untested). Do you still '
+            'want to run Wrye Bash?' % wxver,
+            'Warning: Non-Supported wxPython detected', )
+    return True
 
 def _rightPythonVersion():
     sysVersion = sys.version_info[:3]
