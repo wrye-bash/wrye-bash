@@ -40,7 +40,7 @@ import barg
 opts = barg.parse()
 bass.language = opts.language
 import bolt
-from bolt import GPath
+from bolt import GPath, deprint
 import env
 basher = balt = barb = None
 is_standalone = hasattr(sys, 'frozen')
@@ -321,35 +321,31 @@ def main():
 
     # Detect the game we're running for ---------------------------------------
     import bush
-    if opts.debug: print u'Searching for game to manage:'
+    deprint (u'Searching for game to manage:')
     # set the Bash ini global in bass
     bashIni = bass.GetBashIni()
-    ret = bush.setGame(opts.gameName, opts.oblivionPath, bashIni)
+    ret = bush.detect_and_set_game(opts.oblivionPath, bashIni)
     if ret is not None: # None == success
-        if len(ret) == 1:
-            if opts.debug: print u'Single game found:', ret[0]
-            retCode = ret[0]
+        if len(ret) == 0:
+            msgtext = _(
+                u"Wrye Bash could not find a game to manage. Please use "
+                u"-o command line argument to specify the game path")
         else:
-            if len(ret) == 0:
-                msgtext = _(
-                    u"Wrye Bash could not find a game to manage. Please use "
-                    u"-o command line argument to specify the game path")
-            else:
-                msgtext = _(
-                    u"Wrye Bash could not determine which game to manage.  "
-                    u"The following games have been detected, please select "
-                    u"one to manage.")
-                msgtext += u'\n\n'
-                msgtext += _(
-                    u'To prevent this message in the future, use the -g '
-                    u'command line argument to specify the game')
-            retCode = _wxSelectGame(ret, msgtext, wx)
-            if retCode is None:
-                print u"No games were found or Selected. Aborting."
-                return
+            msgtext = _(
+                u"Wrye Bash could not determine which game to manage.  "
+                u"The following games have been detected, please select "
+                u"one to manage.")
+            msgtext += u'\n\n'
+            msgtext += _(
+                u'To prevent this message in the future, use the -o command '
+                u'line argument or the bash.ini to specify the game path')
+        retCode = _wxSelectGame(ret, msgtext, wx)
+        if retCode is None:
+            deprint(u"No games were found or Selected. Aborting.")
+            return
         # Add the game to the command line, so we use it if we restart
-        sys.argv += ['-g', retCode]
-        bush.setGame(retCode, opts.oblivionPath, bashIni)
+        sys.argv += ['-o', bush.game_path(retCode).s]
+        bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
 
     # from now on bush.game is set
 

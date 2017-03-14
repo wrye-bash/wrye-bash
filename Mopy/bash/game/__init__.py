@@ -26,8 +26,10 @@
 from .. import brec
 # from .constants import * # TODO(ut): create a .constants module
 
-#--Name of the game
-name = u'' ## Example: u'Oblivion'
+#--Name of the game to use in UI.
+displayName = u'' ## Example: u'Skyrim'
+#--Name of the game's filesystem folder.
+fsName = u'' ## Example: u'Skyrim'
 #--Alternate display name of Wrye Bash when managing this game
 altName = u'' ## Example: u'Wrye Smash'
 

@@ -41,6 +41,8 @@ foundGames = {}     # 'name':Path dict used by the Settings switch game menu
 # Module Cache
 _allGames={} # 'name'->module
 _registryGames={} # 'name'->path
+_fsName_display = {}
+_display_fsName = {}
 
 def _supportedGames(useCache=True):
     """Set games supported by Bash and return their paths from the registry."""
@@ -48,6 +50,8 @@ def _supportedGames(useCache=True):
     # rebuilt cache
     _allGames.clear()
     _registryGames.clear()
+    _fsName_display.clear()
+    _display_fsName.clear()
     import pkgutil
     # Detect the known games
     for importer, modname, ispkg in pkgutil.iter_modules(game_init.__path__):
@@ -55,18 +59,19 @@ def _supportedGames(useCache=True):
         # Equivalent of "from game import <modname>"
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
-        except ImportError:
+            submod = getattr(module,modname)
+            _allGames[submod.fsName] = submod
+            _fsName_display[submod.fsName] = submod.displayName
+            #--Get this game's install path
+            game_path = get_game_path(submod)
+        except (ImportError, AttributeError):
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
-        submod = getattr(module,modname)
-        if not hasattr(submod,'fsName') or not hasattr(submod,'exe'): continue
-        _allGames[submod.fsName.lower()] = submod
-        #--Get this game's install path
-        game_path = get_game_path(submod)
-        if game_path: _registryGames[submod.fsName.lower()] = game_path
+        if game_path: _registryGames[submod.fsName] = game_path
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
+    _display_fsName.update({v: k for k, v in _fsName_display.iteritems()})
     deprint(u'Detected the following supported games via Windows Registry:')
     for foundName in _registryGames:
         deprint(u' %s:' % foundName, _registryGames[foundName])
@@ -141,12 +146,11 @@ def _detectGames(cli_path=u'',bashIni=None):
     # no game found in installPaths - foundGames are the ones from the registry
     return foundGames_, None
 
-def __setGame(foundGames_, name, msg):
+def __setGame(name, msg):
     """Set bush game globals - raise if they are already set."""
-    global gamePath, game, foundGames
+    global gamePath, game
     if game is not None: raise BoltError(u'Trying to reset the game')
-    foundGames = foundGames_
-    gamePath = foundGames_[name]
+    gamePath = foundGames[name]
     game = _allGames[name]
     deprint(msg % {'gamename': name}, gamePath)
     # Unload the other modules from the cache
@@ -154,30 +158,24 @@ def __setGame(foundGames_, name, msg):
         if i != name: del _allGames[i]
     game.init()
 
-def setGame(gameName, workingDir=u'', bashIni=None):
-    foundGames_, name = _detectGames(workingDir, bashIni)
-    gameName = gameName.lower()
-    #--See if the game specified (either passed in initially or passed in
-    # because it was the single available game) is one that was found
-    if gameName in foundGames_:
-        # The game specified was found
-        __setGame(foundGames_, gameName,
-                 u'Specified game "%(gamename)s" was found:')
-        return None
-    #--Specified game not found, or game was not specified,
-    #  so use the game found via workingDir or the cwd
+def detect_and_set_game(cli_game_dir=u'', bashIni=None, name=None):
+    if name is None: # detect available games
+        foundGames_, name = _detectGames(cli_game_dir, bashIni)
+        foundGames.update(foundGames_) # set the global name -> game path dict
     else:
-        if gameName == u'':
-            deprint(u'No preferred game specified.')
-        else:
-            deprint(u'Specified game "%s" was not found.' % gameName)
-        if name in foundGames_:
-            # Game specified was not found, or no game was specified
-            # try the game returned by detectGames()
-            __setGame(foundGames_, name, u' Using %(gamename)s game:')
-            return None
-    # No match found return the list of possible games
-    return foundGames_.keys() # may be empty if nothing is found in registry
+        name = _display_fsName[name] # we are passed a display name in
+    if name is not None: # try the game returned by detectGames() or specified
+        __setGame(name, u' Using %(gamename)s game:')
+        return None
+    elif len(foundGames) == 1:
+        __setGame(foundGames.keys()[0], u'Single game found [%(gamename)s]:')
+        return None
+    # No match found, return the list of possible games (may be empty if
+    # nothing is found in registry)
+    return [_fsName_display[k] for k in foundGames]
+
+def game_path(display_name): return foundGames[_display_fsName[display_name]]
+def get_display_name(fs_name): return _fsName_display[fs_name]
 
 # Tes3 Group/Top Types --------------------------------------------------------
 groupTypes = [

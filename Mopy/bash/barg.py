@@ -111,13 +111,6 @@ def parse():
                                   'backup file).')
 
     #### Individual Arguments ####
-    parser.add_argument('-g', '--game',
-                        action='store',
-                        default='',
-                        dest='gameName',
-                        help='Specifies the game Wrye Bash should try to '
-                             'manage. Use this argument if more than one game '
-                             'Wrye Bash supports is installed.')
     parser.add_argument('-d', '--debug',
                         action='store_true',
                         default=False,

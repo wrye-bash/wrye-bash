@@ -363,22 +363,21 @@ class Settings_Games(MenuLink):
 
     def __init__(self):
         super(Settings_Games, self).__init__(_(u'Game'))
-        for game in bush.foundGames:
-            game = game[0].upper()+game[1:]
-            self.links.append(_Settings_Game(game))
+        for fsName in bush.foundGames:
+            self.links.append(_Settings_Game(fsName))
 
 class _Settings_Game(RadioLink):
     def __init__(self,game):
         super(_Settings_Game, self).__init__()
-        self.game = self._text = game
+        self._text = bush.get_display_name(game)
         self.help = _(u"Restart Wrye Bash to manage %(game)s.") % (
-            {'game': game})
+            {'game': self._text})
 
-    def _check(self): return self.game.lower() == bush.game.fsName.lower()
+    def _check(self): return self._text == bush.game.displayName
 
     def Execute(self):
-        if self.game.lower() == bush.game.fsName.lower(): return
-        Link.Frame.Restart(('--game',self.game))
+        if self._check(): return
+        Link.Frame.Restart(('-o', bush.game_path(self._text).s))
 
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(TransLink):

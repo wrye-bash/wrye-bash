@@ -159,8 +159,19 @@
 
 <h2 id="install">Advanced Installation</h2>
 <h3 id="install-alternate">Alternative Install Locations</h3>
-<p>Wrye Bash can be installed in any folder, but if it is installed outside of the game's folder, then the OblivionPath bash.ini option must be adjusted.
-<p>To do so:
+<p>Wrye Bash can be installed in any folder, and actually if you do manage multiple games the preferred way of installing Bash is to have a
+    single installation and redirect Bash via the command line and/or ini. But in this case you must tell Bash where the game folder is.
+    Bash checks (in this order) the <code>-o</code> argument, the sOblivionPath ini option and the position of the Mopy folder (namely
+    checks if Mopy's parent folder contains a supported game exe). The first of those three methods that yields a path to a supported game
+    exe will "win" and this game will be used. But in case those options are not set or a supported game exe (NB: only exe name is checked)
+    is not found using them, Bash reads the windows registry to find supported games. If no games are found in the registry Bash will notify
+    you and exit. If one game is found then Bash will use that. If however more than one games are found Bash will prompt you to choose
+    amongst those games.
+<p>So if you have installed Bash outside of a game folder (recommended for multi-game installs), and you don't want to be prompted (or your
+    games do not figure in the registry) you have to either launch Wrye Bash with the -o argument or set the bash.ini <q>sOblivionPath</q>
+    setting.
+
+<p>To set the OblivionPath bash.ini option:
 <ol>
     <li>Open <code>bash_default.ini</code> in the <code>Mopy</code> folder and save it as <code>bash.ini</code>.
     <li>In the new bash.ini, enter the full path of your game's installation folder (the one that contains the game's executable) for the <q>sOblivionPath</q> setting.
@@ -2088,19 +2099,6 @@ and masterlist relative priority and role see the LOOT docs.
 			<th>Function
 	<tbody>
 		<tr>
-			<td><code>-g&nbsp;GAMENAME, --game=GAMENAME</code>
-			<td>Bash reads the windows registry to find supported games and
-			checks the <code>-o</code> argument, the sOblivionPath ini option
-			and the position of the Mopy folder (namely checks if Mopy's parent
-			folder contains a supported game exe). If via any of the last three
-			methods a path to a supported game is found then this game will be
-			used, even if <code>-g</code> is not set. But in case those options
-			are not set or a supported game exe (NB: only exe name is checked)
-			is not found using them, Bash will prompt you to choose amongst the
-			games found in the registry (if any) except if <code>-g</code> is
-			set. <code>-g</code> takes precedence on the heuristics above which
-			may lead to surprises.
-		<tr>
 			<td><code>-d, --debug</code>
 			<td>Useful if bash is crashing on startup or if you want to
 				print a lot of information (e.g. while developing or debugging).
@@ -2128,12 +2126,10 @@ and masterlist relative priority and role see the LOOT docs.
 					--oblivionPath=OBLIVIONPATH</code>
 			<td>Specifies the game directory (the one containing the game's
 			exe). Use this argument if Bash is located outside of the game
-			directory and you have no ini option (or want to override it).
-			Bash reads the windows registry to find supported games
-			so this is not needed if the game entry is present in the registry.
-			If however more than one game entries are present in the registry
-			consider providing the <code>--game</code> argument to specify
-			which one to use - otherwise Bash will prompt you.
+			directory and you have no ini option (or want to override the ini).
+			Bash reads the windows registry to find supported games so this is not
+            needed if the game entry is the only one present in the registry.
+            See <a href="#install-alternate">Alternative Install Locations</a>
     <thead>
 		<tr>
 			<th>User Directory Arguments
