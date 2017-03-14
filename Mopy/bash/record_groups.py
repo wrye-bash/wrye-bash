@@ -63,7 +63,7 @@ class MobBase(object):
         if self.debug: print u'GRUP load:',self.label
         #--Read, but don't analyze.
         if not unpack:
-            self.data = ins.read(self.size - self.header.__class__.size,type)
+            self.data = ins.read(self.size - self.header.__class__.size, type(self))
         #--Analyze ins.
         elif ins is not None:
             self.loadData(ins,

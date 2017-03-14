@@ -817,22 +817,21 @@ class ModInfo(FileInfo):
         """Returns path to plugin's INI, if it were to exists."""
         return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
 
-    def _string_files_paths(self, language):
+    def _string_files_paths(self, lang):
         sbody, ext = self.name.sbody, self.name.ext
         for join, format_str in bush.game.esp.stringsFiles:
-            fname = format_str % {'body': sbody, 'ext': ext,
-                                  'language': language}
+            fname = format_str % {'body': sbody, 'ext': ext, 'language': lang}
             assetPath = empty_path.join(*join).join(fname)
             yield assetPath
 
-    def getStringsPaths(self,language=u'English'):
+    def getStringsPaths(self, lang=u'English'):
         """If Strings Files are available as loose files, just point to
         those, otherwise extract needed files from BSA if needed."""
         baseDirJoin = self.getPath().head.join
         extract = set()
         paths = set()
         #--Check for Loose Files first
-        for filepath in self._string_files_paths(language):
+        for filepath in self._string_files_paths(lang):
             loose = baseDirJoin(filepath)
             if not loose.exists():
                 extract.add(filepath)
@@ -888,14 +887,13 @@ class ModInfo(FileInfo):
         """True if the mod says it has .STRINGS files, but the files are
         missing."""
         if not self.header.flags1.hasStrings: return False
-        language = oblivionIni.get_ini_language()
+        lang = oblivionIni.get_ini_language()
         bsaPaths = self._extra_bsas()
-        for assetPath in self._string_files_paths(language):
+        for assetPath in self._string_files_paths(lang):
             # Check loose files first
             if self.dir.join(assetPath).exists():
                 continue
             # Check in BSA's next
-            found = False
             if __debug == 1:
                 deprint(u'Scanning BSAs for string files for %s' % self.name)
                 __debug = 2
@@ -903,16 +901,16 @@ class ModInfo(FileInfo):
                 try:
                     bsa_info = bsaInfos[path.tail] # type: BSAInfo
                     if bsa_info.has_asset(assetPath):
-                        found = True
-                        break
+                        break # found
                 except (KeyError, BSAError, OverflowError) as e: # not existing or corrupted
                     if isinstance(e, (BSAError, OverflowError)):
                         print u'Failed to parse %s:\n%s' % (
                             path, traceback.format_exc())
                     elif __debug == 2: deprint(u'%s is not present' % path)
                     continue
-                deprint(u'Asset %s not in %s' % (assetPath, path))
-            if not found:
+                if __debug == 2:
+                    deprint(u'Asset %s not in %s' % (assetPath, path))
+            else: # not found
                 return True
         return False
 
@@ -1827,11 +1825,11 @@ class ModInfos(FileInfos):
         self._lo_wip[previous_index + 1:previous_index + 1] = [new_mod]
 
     def cached_lo_last_esm(self):
-        esm = self.masterName
+        last_esm = self.masterName
         for mod in self._lo_wip[1:]:
-            if not self[mod].isEsm(): return esm
-            esm = mod
-        return esm
+            if not self[mod].isEsm(): return last_esm
+            last_esm = mod
+        return last_esm
 
     def cached_lo_insert_at(self, first, modlist):
         # hasty method for Mod_OrderByName

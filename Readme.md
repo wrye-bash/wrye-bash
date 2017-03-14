@@ -85,9 +85,10 @@ Wine issue: [#240][14]
 ### Questions ? Feedback ?
 
 We are currently monitoring [this thread][15] at the Bethesda.net SSE forums,
-for all supported games. Please address your comments there. If reporting a bug
-please see our "Reporting a bug" [wiki page][16]. It is essential you produce
-a [bashbugdump.log][17] to get a chance your bug is fixed.
+for all supported games - or alternatively [this thread][26], at AFK mods.
+Please be sure to ask there first before reporting an issue here. If asking for
+help please provide the info detailed in our [Reporting a bug][16] wiki page.
+In particular it is _essential_ you produce a [bashbugdump.log][17].
 
 #### Latest betas
 
@@ -143,7 +144,7 @@ testing very latest features/fixes.
   [15]: https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4
   [16]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug
   [17]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug#the-bashbugdumplog
-  [18]: http://forums.bethsoft.com/topic/1606578-wrye-bash-thread-111/#entry25216860
+  [18]: https://bethesda.net/community/post/200780
   [19]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository
   [20]: https://github.com/wrye-bash/wrye-bash/issues?utf8=%E2%9C%93&q=sort%3Aupdated-desc%20is%3Aopen
   [21]: https://github.com/wrye-bash/wrye-bash/issues/200
@@ -151,3 +152,4 @@ testing very latest features/fixes.
   [23]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository
   [24]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase
   [25]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style
+  [26]: https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games

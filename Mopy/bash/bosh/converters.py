@@ -521,14 +521,14 @@ class InstallerConverter(object):
         if len(self.bcf_missing_files):
             #--Unpack missing files
             bass.rmTempDir()
-            destInstaller.unpackToTemp(self.bcf_missing_files,
+            unpack_dir = destInstaller.unpackToTemp(self.bcf_missing_files,
                 SubProgress(progress, lastStep, lastStep + 0.2))
             lastStep += 0.2
             #--Move the temp dir to tempDir\BCF-Missing
             #--Work around since moveTo doesn't allow direct moving of a
             # directory into its own subdirectory
-            bass.getTempDir().moveTo(tempDir2)
-            tempDir2.moveTo(bass.getTempDir().join(u'BCF-Missing'))
+            unpack_dir.moveTo(tempDir2)
+            tempDir2.moveTo(unpack_dir.join(u'BCF-Missing'))
         #--Make the temp dir in case it doesn't exist
         tmpDir = bass.getTempDir()
         tmpDir.makedirs()

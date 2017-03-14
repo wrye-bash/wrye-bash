@@ -306,7 +306,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
             tags = bashTags & set(self.recAttrs)
             if not tags: continue
             attrs = set(reduce(# adds tuples together, then takes the set
-                operator.add, (self.recAttrs[bashKey] for bashKey in tags)))
+                operator.concat, (self.recAttrs[bashKey] for bashKey in tags)))
             flags = tuple(self.recFlags[bashKey] for bashKey in tags if
                           self.recFlags[bashKey] != u'')
             if 'CELL' in srcFile.tops:

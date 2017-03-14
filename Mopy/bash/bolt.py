@@ -218,14 +218,14 @@ def _findAllBashModules(files=[], bashPath=None, cwd=None,
             cwd=os.path.join(cwd, p[1]), _firstRun=True)
     return files
 
-def dumpTranslator(outPath,language,*files):
+def dumpTranslator(outPath, lang, *files):
     """Dumps all translatable strings in python source files to a new text file.
        as this requires the source files, it will not work in WBSA mode, unless
        the source files are also installed"""
-    outTxt = u'%sNEW.txt' % language
+    outTxt = u'%sNEW.txt' % lang
     fullTxt = os.path.join(outPath,outTxt)
-    tmpTxt = os.path.join(outPath,u'%sNEW.tmp' % language)
-    oldTxt = os.path.join(outPath,u'%s.txt' % language)
+    tmpTxt = os.path.join(outPath,u'%sNEW.tmp' % lang)
+    oldTxt = os.path.join(outPath,u'%s.txt' % lang)
     if not files: files = _findAllBashModules()
     args = [u'p',u'-a',u'-o',fullTxt]
     args.extend(files)
@@ -309,22 +309,22 @@ def dumpTranslator(outPath,language,*files):
                 except: pass
     return outTxt
 
-def initTranslator(language=None,path=None):
-    if not language:
+def initTranslator(lang=None, path=None):
+    if not lang:
         try:
-            language = locale.getlocale()[0].split('_',1)[0]
-            language = decode(language)
+            lang = locale.getlocale()[0].split('_', 1)[0]
+            lang = decode(lang)
         except UnicodeError:
             deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
             # Default to English
-            language = u'English'
+            lang = u'English'
     path = path or os.path.join(u'bash',u'l10n')
-    if language.lower() == u'german': language = u'de'
-    txt,po,mo = (os.path.join(path,language+ext)
+    if lang.lower() == u'german': lang = u'de'
+    txt,po,mo = (os.path.join(path, lang + ext)
                  for ext in (u'.txt',u'.po',u'.mo'))
     if not os.path.exists(txt) and not os.path.exists(mo):
-        if language.lower() != u'english':
-            print u'No translation file for language:', language
+        if lang.lower() != u'english':
+            print u'No translation file for language:', lang
         trans = gettext.NullTranslations()
     else:
         try:
@@ -1918,7 +1918,7 @@ def getMatch(reMatch,group=0):
 def intArg(arg,default=None):
     """Returns argument as an integer. If argument is a string, then it converts it using int(arg,0)."""
     if arg is None: return default
-    elif isinstance(arg,types.StringTypes): return int(arg,0)
+    elif isinstance(arg, basestring): return int(arg,0)
     else: return int(arg)
 
 def winNewLines(inString):
@@ -2072,11 +2072,11 @@ class StringTable(dict):
         u'russian': 'cp1251',
         }
 
-    def load(self,modFilePath,language=u'English',progress=Progress()):
+    def load(self, modFilePath, lang=u'English', progress=Progress()):
         baseName = modFilePath.tail.body
         baseDir = modFilePath.head.join(u'Strings')
-        files = (baseName+u'_'+language+x for x in (u'.STRINGS',u'.DLSTRINGS',
-                                                   u'.ILSTRINGS'))
+        files = (baseName + u'_' + lang + x for x in
+                 (u'.STRINGS', u'.DLSTRINGS', u'.ILSTRINGS'))
         files = (baseDir.join(file) for file in files)
         self.clear()
         progress.setFull(3)
@@ -2084,11 +2084,9 @@ class StringTable(dict):
             progress(i)
             self.loadFile(file,SubProgress(progress,i,i+1))
 
-    def loadFile(self,path,progress,language=u'english'):
-        if path.cext == u'.strings': format = 0
-        else: format = 1
-        language = language.lower()
-        backupEncoding = self.encodings.get(language,'cp1252')
+    def loadFile(self, path, progress, lang=u'english'):
+        formatted = path.cext != u'.strings'
+        backupEncoding = self.encodings.get(lang.lower(), 'cp1252')
         try:
             with BinaryFile(path.s) as ins:
                 insSeek = ins.seek
@@ -2101,15 +2099,19 @@ class StringTable(dict):
                 eof = insTell()
                 insSeek(0)
                 if eof < 8:
-                    deprint(u"Warning: Strings file '%s' file size (%d) is less than 8 bytes.  8 bytes are the minimum required by the expected format, assuming the Strings file is empty."
-                            % (path, eof))
+                    deprint(u"Warning: Strings file '%s' file size (%d) is "
+                            u"less than 8 bytes.  8 bytes are the minimum "
+                            u"required by the expected format, assuming the "
+                            u"Strings file is empty." % (path, eof))
                     return
 
                 numIds,dataSize = insUnpack('=2I',8)
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
-                    deprint(u"Warning: Strings file '%s' dataSize element (%d) results in a string start location of %d, but the expected location is %d"
+                    deprint(u"Warning: Strings file '%s' dataSize element "
+                            u"(%d) results in a string start location of %d, "
+                            u"but the expected location is %d"
                             % (path, dataSize, eof-dataSize, stringsStart))
 
                 id_ = -1
@@ -2120,7 +2122,7 @@ class StringTable(dict):
                         id_,offset = insUnpack('=2I',8)
                         pos = insTell()
                         insSeek(stringsStart+offset)
-                        if format:
+                        if formatted:
                             strLen, = insUnpack('I',4)
                             value = insRead(strLen)
                         else:

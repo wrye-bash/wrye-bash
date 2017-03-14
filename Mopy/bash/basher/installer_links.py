@@ -119,7 +119,7 @@ class _InstallerLink(Installers_Link, EnabledLink):
             iArchive = self._get_refreshed(archive_path, installer,
                                            is_project=False, do_refresh=False)
             iArchive.blockSize = blockSize
-            #--Refresh UI
+            #--Refresh
             self.idata.irefresh(what='I', pending=[archive_path])
         self.window.RefreshUI(detail_item=archive_path)
 
@@ -701,7 +701,7 @@ class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
     _text = _(u'Copy Conflicts to Project')
     help = _(u'Copy all files that conflict with the selected installer into a'
-             u' new project') + u'  .' + _(
+             u' new project') + u'.  ' + _(
         u'Conflicts with inactive installers are included')
 
     @balt.conversation
@@ -714,12 +714,13 @@ class Installer_CopyConflicts(_SingleInstallable):
         def _ok(msg): self._showOk(msg % self._selected_item)
         if not src_sizeCrc:
             return _ok(_(u'No files to install for %s'))
+        src_order = self._selected_info.order
         with balt.Progress(_(u"Scanning Packages..."),
                            u'\n' + u' ' * 60) as progress:
             progress.setFull(len(self.idata))
             numFiles = 0
             destDir = GPath(u"Conflicts - %03d (%s)" % (
-                self._selected_info.order, self._selected_item))
+                src_order, self._selected_item))
             for i,(package, installer) in enumerate(self.idata.sorted_pairs()):
                 curConflicts = set()
                 progress(i, _(u"Scanning Packages...") + u'\n' + package.s)
@@ -750,10 +751,10 @@ class Installer_CopyConflicts(_SingleInstallable):
                         srcFull.copyTo(destFull)
                         curFile += 1
             else:
-                inst.unpackToTemp(curConflicts,
+                unpack_dir = inst.unpackToTemp(curConflicts,
                     SubProgress(progress, curFile, curFile + len(curConflicts),
                                 len(curConflicts)))
-                bass.getTempDir().moveTo(ijoin(destDir, g_path))
+                unpack_dir.moveTo(ijoin(destDir, g_path))
                 curFile += len(curConflicts)
             return curFile
         with balt.Progress(_(u"Copying Conflicts..."),
@@ -765,8 +766,7 @@ class Installer_CopyConflicts(_SingleInstallable):
             curFile = _copy_conflicts(curFile)
             for order,package,curConflicts in packConflicts:
                 g_path = GPath(u"%03d - %s" % (
-                    order if order < self._selected_info.order else order + 1,
-                    package.s))
+                    order if order < src_order else order + 1, package.s))
                 curFile = _copy_conflicts(curFile)
         self._get_refreshed(destDir, self._selected_info)
         self.window.RefreshUI(detail_item=destDir)

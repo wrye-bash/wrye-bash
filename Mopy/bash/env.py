@@ -40,6 +40,10 @@ try:
     import win32gui
 except ImportError: # linux
     win32gui = None
+try:
+    import win32api
+except ImportError:
+    win32api = None
 
 def get_registry_path(subkey, entry, exe):
     """Check registry for a path to a program."""
@@ -326,15 +330,14 @@ def get_file_version(filename):
     """Return the version of a dll/exe, using the native win32 functions
     if available and otherwise a pure python implementation that works
     on Linux. The return value is a 4-int tuple, for example (1.9.32.0)."""
-    try:
-        import win32api
-    except ImportError:
+    if win32api is None:
         return _linux_get_file_version_info(filename)
     else:
         info = win32api.GetFileVersionInfo(filename, u'\\')
         ms = info['FileVersionMS']
         ls = info['FileVersionLS']
-        return win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls)
+        return win32api.HIWORD(ms), win32api.LOWORD(ms), \
+               win32api.HIWORD(ls), win32api.LOWORD(ls)
 
 def _linux_get_file_version_info(filename):
     """A python replacement for win32api.GetFileVersionInfo that can be used

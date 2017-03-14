@@ -16,16 +16,17 @@ In particular:
 
 ## Reporting Bugs
 
-**IMPORTANT**: Before posting an issue, be sure to ask at the official thread (linked
-under [Questions & Feedback](https://github.com/wrye-bash/wrye-bash#questions--feedback-)
-); maybe the bug is already fixed in some development version
-or you are doing something wrong. Post an issue on github **ONLY** after doing so
+**IMPORTANT**:
+Before posting an issue, be sure to ask at one of the forum threads linked under
+[Questions & Feedback](https://github.com/wrye-bash/wrye-bash#questions--feedback-);
+maybe the bug is already fixed in some development version or you are doing
+something wrong. **Post an issue on github *ONLY* after doing so**
 and then making sure the bug is not already on the bug tracker by [searching on
 the key elements of your problem](https://help.github.com/articles/searching-issues/)
 
 ### Asking for help / Posting issues
 
-When asking for help (initially at the official forums thread linked to above)
+When asking for help (initially at one of the forum threads linked to above)
 please provide all of the following info:
 
 * **Bug description** - be sure to include:

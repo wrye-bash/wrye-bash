@@ -579,9 +579,9 @@ class Installer(object):
                 'bash.installers.autoRefreshBethsoft']
         if renameStrings:
             from . import oblivionIni
-            language = oblivionIni.get_ini_language()
-        else: language = u''
-        languageLower = language.lower()
+            lang = oblivionIni.get_ini_language()
+        else: lang = u''
+        languageLower = lang.lower()
         hasExtraData = self.hasExtraData
         if type_ == 2: # exclude u'' from active subpackages
             activeSubs = set(
@@ -707,7 +707,7 @@ class Installer(object):
                 extSep = fileLower.rfind(u'.')
                 lang = fileLower[langSep+1:extSep]
                 if lang != languageLower:
-                    dest = u''.join((file[:langSep],u'_',language,file[extSep:]))
+                    dest = u''.join((file[:langSep],u'_',lang,file[extSep:]))
                     # Check to ensure not overriding an already provided
                     # language file for that language
                     key = GPath(dest)
@@ -1103,15 +1103,17 @@ class InstallerArchive(Installer):
                 numFiles = countFilesInArchive(arch, self.tempList, recurse)
                 progress.setFull(numFiles)
             #--Extract files
-            command = extractCommand(arch, bass.getTempDir())
+            unpack_dir = bass.getTempDir()
+            command = extractCommand(arch, unpack_dir)
             command += u' @%s' % self.tempList.s
             if recurse: command += u' -r'
             try:
                 extract7z(command, GPath(self.archive), progress)
             finally:
                 self.tempList.remove()
-                bolt.clearReadOnly(bass.getTempDir())
+                bolt.clearReadOnly(unpack_dir)
         #--Done -> don't clean out temp dir, it's going to be used soon
+        return unpack_dir
 
     def install(self, destFiles, progress=None):
         """Install specified files to Game\Data directory."""
@@ -1122,10 +1124,10 @@ class InstallerArchive(Installer):
         progress = progress if progress else bolt.Progress()
         #--Extract
         progress(0, self.archive + u'\n' + _(u'Extracting files...'))
-        self.unpackToTemp(dest_src.values(), SubProgress(progress, 0, 0.9))
+        unpackDir = self.unpackToTemp(dest_src.values(),
+                                      SubProgress(progress, 0, 0.9))
         #--Rearrange files
         progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
-        unpackDir = bass.getTempDir() #--returns directory used by unpackToTemp
         unpackDirJoin = unpackDir.join
         stageDir = bass.newTempDir()  #--forgets the old temp dir, creates a new one
         subprogress = SubProgress(progress,0.9,1.0)
@@ -1164,12 +1166,12 @@ class InstallerArchive(Installer):
         if destDir.exists(): destDir.rmtree(safety=u'Installers')
         #--Extract
         progress(0,project.s+u'\n'+_(u'Extracting files...'))
-        self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
+        unpack_dir = self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
-        bolt.clearReadOnly(bass.getTempDir())
-        tempDirJoin = bass.getTempDir().join
+        bolt.clearReadOnly(unpack_dir)
+        tempDirJoin = unpack_dir.join
         destDirJoin = destDir.join
         for file_ in files:
             srcFull = tempDirJoin(file_)
@@ -1207,15 +1209,15 @@ class InstallerArchive(Installer):
     def open_readme(self):
         with balt.BusyCursor():
             # This is going to leave junk temp files behind...
-            self.unpackToTemp([self.hasReadme])
-        bass.getTempDir().join(self.hasReadme).start()
+            unpack_dir = self.unpackToTemp([self.hasReadme])
+        unpack_dir.join(self.hasReadme).start()
 
     def open_wizard(self):
         with balt.BusyCursor():
             # This is going to leave junk temp files behind...
             try:
-                self.unpackToTemp([self.hasWizard])
-                bass.getTempDir().join(self.hasWizard).start()
+                unpack_dir = self.unpackToTemp([self.hasWizard])
+                unpack_dir.join(self.hasWizard).start()
             except:
                 # Don't clean up temp dir here.  Sometimes the editor
                 # That starts to open the wizard.txt file is slower than
@@ -1227,7 +1229,7 @@ class InstallerArchive(Installer):
         with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
                            abort=True) as progress:
             # Extract the wizard, and any images as well
-            self.unpackToTemp([self.hasWizard,
+            unpack_dir = self.unpackToTemp([self.hasWizard,
                 u'*.bmp',            # BMP's
                 u'*.jpg', u'*.jpeg', # JPEG's
                 u'*.png',            # PNG's
@@ -1242,7 +1244,7 @@ class InstallerArchive(Installer):
                 u'*.cur',            # CUR's
                 u'*.ani',            # ANI's
                 ], bolt.SubProgress(progress,0,0.9), recurse=True)
-        return bass.getTempDir().join(self.hasWizard)
+        return unpack_dir.join(self.hasWizard)
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -1730,9 +1732,9 @@ class InstallersData(DataStore):
             progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
             bass.rmTempDir()
-            installer.unpackToTemp([installer.hasBCF],
-                                   SubProgress(progress, i, i + 0.5))
-            srcBcfFile = bass.getTempDir().join(installer.hasBCF)
+            unpack_dir = installer.unpackToTemp([installer.hasBCF],
+                SubProgress(progress, i, i + 0.5))
+            srcBcfFile = unpack_dir.join(installer.hasBCF)
             bcfFile = bass.dirs['converters'].join(u'temp-' + srcBcfFile.stail)
             srcBcfFile.moveTo(bcfFile)
             bass.rmTempDir()

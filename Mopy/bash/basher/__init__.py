@@ -2096,14 +2096,15 @@ class InstallersList(balt.UIList):
         to_rename = self.GetSelected()
         #--Only rename multiple items of the same type
         self.__renaming_type = type(self.data_store[to_rename[0]])
-        for item in to_rename[1:]:
+        last_marker = GPath(u'==Last==')
+        for item in to_rename:
             if not isinstance(self.data_store[item], self.__renaming_type):
                 balt.showError(self, _(
                     u"Bash can't rename mixed installers types"))
                 event.Veto()
                 return
             #--Also, don't allow renaming the 'Last' marker
-            elif item == u'==Last==':
+            elif item == last_marker:
                 event.Veto()
                 return
         self.edit_control.Bind(wx.EVT_CHAR, self._OnEditLabelChar)
@@ -2820,19 +2821,17 @@ class InstallersPanel(BashTab):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
         if not settings['bash.installers.enabled'] or self.refreshing: return
-        refresh_ui = [False]
         try:
             self.refreshing = True
-            self._refresh_installers_if_needed(refresh_ui, canCancel,
-                                               fullRefresh, scan_data_dir)
-            if refresh_ui[0]: self.uiList.RefreshUI(focus_list=False)
+            self._refresh_installers_if_needed(canCancel, fullRefresh,
+                                               scan_data_dir)
             super(InstallersPanel, self).ShowPanel()
         finally:
             self.refreshing = False
 
     @balt.conversation
     @bosh.bain.projects_walk_cache
-    def _refresh_installers_if_needed(self, refreshui, canCancel, fullRefresh,
+    def _refresh_installers_if_needed(self, canCancel, fullRefresh,
                                       scan_data_dir):
         if settings.get('bash.installers.updatedCRCs',True): #only checked here
             settings['bash.installers.updatedCRCs'] = False
@@ -2847,14 +2846,15 @@ class InstallersPanel(BashTab):
                                                              fullRefresh)
             do_refresh = refresh_info.refresh_needed()
         else: refresh_info = None
+        refreshui = False
         if do_refresh:
             with balt.Progress(_(u'Refreshing Installers...'),
                                u'\n' + u' ' * 60, abort=canCancel) as progress:
                 try:
                     what = 'DISC' if scan_data_dir else 'IC'
-                    refreshui[0] |= self.listData.irefresh(progress, what,
-                                                           fullRefresh,
-                                                           refresh_info)
+                    refreshui |= self.listData.irefresh(progress, what,
+                                                        fullRefresh,
+                                                        refresh_info)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
@@ -2864,8 +2864,8 @@ class InstallersPanel(BashTab):
             with balt.Progress(_(u'Refreshing Converters...'),
                                u'\n' + u' ' * 60) as progress:
                 try:
-                    refreshui[0] |= self.listData.irefresh(progress, 'C',
-                                                           fullRefresh)
+                    refreshui |= self.listData.irefresh(progress, 'C',
+                                                        fullRefresh)
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
@@ -2886,8 +2886,8 @@ class InstallersPanel(BashTab):
                     refresh = True
                 else:
                     refresh |= bool(data_sizeCrcDate.pop(path, None))
-            if refresh:
-                refreshui[0] |= self.listData.refreshInstallersStatus()
+            refreshui |= refresh and self.listData.refreshInstallersStatus()
+        if refreshui: self.uiList.RefreshUI(focus_list=False)
 
     def __extractOmods(self):
         with balt.Progress(_(u'Extracting OMODs...'),

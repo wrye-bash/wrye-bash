@@ -270,8 +270,8 @@ class Settings_Languages(TransLink):
                 languages.append(file.body)
         if languages:
             subMenu = MenuLink(_(u'Language'))
-            for language in languages:
-                subMenu.links.append(Settings_Language(language.s))
+            for lang in languages:
+                subMenu.links.append(Settings_Language(lang.s))
             if GPath('english') not in languages:
                 subMenu.links.append(Settings_Language('English'))
             return subMenu
@@ -296,14 +296,14 @@ class Settings_Language(RadioLink):
         u'english': _(u'English') + u' (English)',
         }
 
-    def __init__(self,language):
+    def __init__(self, lang):
         super(Settings_Language, self).__init__()
-        self.language = language
-        self._text = self.__class__.languageMap.get(self.language.lower(),
-                                                    self.language)
+        self._lang = lang
+        self._text = self.__class__.languageMap.get(self._lang.lower(),
+                                                    self._lang)
 
     def _initData(self, window, selection):
-        if self.language == _bassLang():
+        if self._lang == _bassLang():
             self.help = _(
                 "Currently using %(languagename)s as the active language.") % (
                             {'languagename': self._text})
@@ -317,11 +317,11 @@ class Settings_Language(RadioLink):
     def _check(self): return self.check
 
     def Execute(self):
-        if self.language == _bassLang(): return
+        if self._lang == _bassLang(): return
         if balt.askYes(Link.Frame,
                 _(u'Wrye Bash needs to restart to change languages.  Do you '
                   u'want to restart?'), _(u'Restart Wrye Bash')):
-            Link.Frame.Restart(('--Language',self.language))
+            Link.Frame.Restart(('--Language',self._lang))
 
 #------------------------------------------------------------------------------
 class Settings_PluginEncodings(MenuLink):
