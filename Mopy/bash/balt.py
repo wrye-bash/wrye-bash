@@ -802,6 +802,19 @@ def _showLogClose(evt=None):
         _settings['balt.LogMessage.size'] = tuple(window.GetSize())
     window.Destroy()
 
+def _dialog_or_frame(asDialog, log_icons, parent, pos, size, title):
+    #--Dialog or Frame
+    if asDialog:
+        window = Dialog(parent, title, pos=pos, size=size)
+    else:
+        window = wx.Frame(parent, defId, title, pos=pos, size=size, style=(
+        wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX |
+        wx.CLIP_CHILDREN))
+        if log_icons: window.SetIcons(log_icons)
+    window.SetSizeHints(200, 200)
+    window.Bind(wx.EVT_CLOSE, _showLogClose)
+    return window
+
 def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
             log_icons=None, size=True):
     """Display text in a log window"""
@@ -809,15 +822,7 @@ def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
     pos = _settings.get('balt.LogMessage.pos',defPos)
     if size:
         size = _settings.get('balt.LogMessage.size',(400,400))
-    #--Dialog or Frame
-    if asDialog:
-        window = Dialog(parent, title, pos=pos, size=size)
-    else:
-        window = wx.Frame(parent,defId,title,pos=pos,size=size,
-            style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
-        if log_icons: window.SetIcons(log_icons)
-    window.SetSizeHints(200,200)
-    window.Bind(wx.EVT_CLOSE,_showLogClose)
+    window = _dialog_or_frame(asDialog, log_icons, parent, pos, size, title)
     window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
     #--Text
     txtCtrl = RoTextCtrl(window, logText, special=True, autotooltip=False)
@@ -844,43 +849,21 @@ def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
 #------------------------------------------------------------------------------
 def showWryeLog(parent, logText, title=u'', asDialog=True, log_icons=None):
     """Convert logText from wtxt to html and display. Optionally, logText can be path to an html file."""
+    logText = _get_log_text(logText)
     try:
         import wx.lib.iewin
     except ImportError:
         # Comtypes not available most likely! so do it this way:
-        import os
         import webbrowser
-        if not isinstance(logText,bolt.Path):
-            logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
-            cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
-            with logPath.open('w',encoding='utf-8-sig') as out, \
-                 bolt.sio(logText+u'\n{{CSS:wtxt_sand_small.css}}') as ins:
-                bolt.WryeText.genHtml(ins,out,cssDir)
-            logText = logPath
         webbrowser.open(logText.s)
         return
 
     #--Sizing
     pos = _settings.get('balt.WryeLog.pos',defPos)
     size = _settings.get('balt.WryeLog.size',(400,400))
-    #--Dialog or Frame
-    if asDialog:
-        window = Dialog(parent, title, pos=pos, size=size)
-    else:
-        window = wx.Frame(parent,defId,title,pos=pos,size=size,
-            style= (wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX | wx.CLIP_CHILDREN))
-        if log_icons: window.SetIcons(log_icons)
-    window.SetSizeHints(200,200)
-    window.Bind(wx.EVT_CLOSE,_showLogClose)
+    window = _dialog_or_frame(asDialog, log_icons, parent, pos, size, title)
     #--Text
     textCtrl_ = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
-    if not isinstance(logText,bolt.Path):
-        logPath = _settings.get('balt.WryeLog.temp', bolt.Path.getcwd().join(u'WryeLogTemp.html'))
-        cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
-        with logPath.open('w',encoding='utf-8-sig') as out, \
-             bolt.sio(logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
-            bolt.WryeText.genHtml(ins,out,cssDir)
-        logText = logPath
     textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
     #--Buttons
     bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
@@ -911,6 +894,17 @@ def showWryeLog(parent, logText, title=u'', asDialog=True, log_icons=None):
             window.Destroy()
     else:
         window.Show()
+
+def _get_log_text(logText):
+    if not isinstance(logText, bolt.Path):
+        logPath = _settings.get('balt.WryeLog.temp',
+                                bolt.Path.getcwd().join(u'WryeLogTemp.html'))
+        cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
+        with logPath.open('w', encoding='utf-8-sig') as out, bolt.sio(
+                    logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
+            bolt.WryeText.genHtml(ins, out, cssDir)
+        logText = logPath
+    return logText
 
 def playSound(parent,sound):
     if not sound: return

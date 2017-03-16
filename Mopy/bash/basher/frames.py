@@ -35,12 +35,30 @@ from ..bosh import omods
 
 # If comtypes is not installed, the IE ActiveX control cannot be imported
 try:
-    import wx.lib.iewin
-    bHaveComTypes = True
+    import wx.lib.iewin as wx_lib_iewin
 except ImportError:
-    bHaveComTypes = False
+    wx_lib_iewin = None
     deprint(
         _(u'Comtypes is missing, features utilizing HTML will be disabled'))
+
+class HtmlCtrl(object):
+    def __init__(self, parent):
+        if not wx_lib_iewin:
+            self.text_ctrl = RoTextCtrl(parent, special=True)
+            self.prevButton = self.nextButton = None
+            return
+        self.text_ctrl = wx.lib.iewin.IEHtmlWindow(parent,
+            style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        #--Html Back
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK, wx.ART_HELP_BROWSER,
+                                          (16, 16))
+        self.prevButton = bitmapButton(parent, bitmap,
+                                       onBBClick=self.text_ctrl.GoBack)
+        #--Html Forward
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
+                                          wx.ART_HELP_BROWSER, (16, 16))
+        self.nextButton = bitmapButton(parent, bitmap,
+                                       onBBClick=self.text_ctrl.GoForward)
 
 class DocBrowser(BaltFrame):
     """Doc Browser frame."""
@@ -87,19 +105,11 @@ class DocBrowser(BaltFrame):
         self.docNameBox = RoTextCtrl(self, multiline=False)
         #--Doc display
         self.plainText = RoTextCtrl(self, special=True, autotooltip=False)
-        if bHaveComTypes:
-            self.htmlText = wx.lib.iewin.IEHtmlWindow(
-                self, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-            #--Html Back
-            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
-                                              wx.ART_HELP_BROWSER, (16, 16))
-            self.prevButton = bitmapButton(self, bitmap,
-                                           onBBClick=self.htmlText.GoBack)
-            #--Html Forward
-            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
-                                              wx.ART_HELP_BROWSER, (16, 16))
-            self.nextButton = bitmapButton(self, bitmap,
-                                           onBBClick=self.htmlText.GoForward)
+        if wx_lib_iewin:
+            html_ctrl = HtmlCtrl(self)
+            self.htmlText = html_ctrl.text_ctrl
+            self.prevButton = html_ctrl.prevButton
+            self.nextButton = html_ctrl.nextButton
         else:
             self.htmlText = None
             self.prevButton = None
@@ -295,7 +305,7 @@ class DocBrowser(BaltFrame):
                 self.editButton.SetValue(editing)
                 self.plainText.SetEditable(editing)
             self.docIsWtxt = (docExt == u'.txt')
-        elif docExt in (u'.htm',u'.html',u'.mht') and bHaveComTypes:
+        elif docExt in (u'.htm',u'.html',u'.mht') and self.htmlText:
             self.htmlText.Navigate(docPath.s,0x2) #--0x2: Clear History
             self.SetDocType('html')
         else:
@@ -310,8 +320,8 @@ class DocBrowser(BaltFrame):
                 not htmlPath.exists() or (docPath.mtime > htmlPath.mtime)):
                 docsDir = bosh.modInfos.store_dir.join(u'Docs')
                 bolt.WryeText.genHtml(docPath,None,docsDir)
-            if not editing and htmlPath and htmlPath.exists() and \
-                    bHaveComTypes:
+            if not editing and htmlPath and htmlPath.exists() \
+                    and self.htmlText:
                 self.htmlText.Navigate(htmlPath.s,0x2) #--0x2: Clear History
                 self.SetDocType('html')
             else:
@@ -333,14 +343,14 @@ class DocBrowser(BaltFrame):
         if docType == self.docType:
             return
         sizer = self.mainSizer
-        if docType == 'html' and bHaveComTypes:
+        if docType == 'html' and self.htmlText:
             sizer.Show(self.plainText,False)
             sizer.Show(self.htmlText,True)
             self.prevButton.Enable(True)
             self.nextButton.Enable(True)
         else:
             sizer.Show(self.plainText,True)
-            if bHaveComTypes:
+            if self.htmlText:
                 sizer.Show(self.htmlText,False)
                 self.prevButton.Enable(False)
                 self.nextButton.Enable(False)
@@ -371,22 +381,10 @@ class ModChecker(BaltFrame):
         self.merged = None
         self.imported = None
         #--Text
-        if bHaveComTypes:
-            self.gTextCtrl = wx.lib.iewin.IEHtmlWindow(
-                self, style=wx.NO_FULL_REPAINT_ON_RESIZE)
-            #--Buttons
-            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,
-                                              wx.ART_HELP_BROWSER, (16, 16))
-            gBackButton = bitmapButton(self, bitmap,
-                                       onBBClick=self.gTextCtrl.GoBack)
-            bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
-                                              wx.ART_HELP_BROWSER, (16, 16))
-            gForwardButton = bitmapButton(self, bitmap,
-                                          onBBClick=self.gTextCtrl.GoForward)
-        else:
-            self.gTextCtrl = RoTextCtrl(self, special=True)
-            gBackButton = None
-            gForwardButton = None
+        self._html_ctrl = HtmlCtrl(self)
+        self.gTextCtrl = self._html_ctrl.text_ctrl
+        gBackButton = self._html_ctrl.prevButton # may be None
+        gForwardButton = self._html_ctrl.nextButton # may be None
         gUpdateButton = Button(self, _(u'Update'), onButClick=self.CheckMods)
         def _toggle_button(caption):
             return toggleButton(self, caption, onClickToggle=self.CheckMods)
@@ -484,7 +482,7 @@ class ModChecker(BaltFrame):
             bass.settings['bash.modChecker.showVersion'],
             mod_checker=(None, self)[self.gScanDirty.GetValue()]
             )
-        if bHaveComTypes:
+        if wx_lib_iewin:
             logPath = bass.dirs['saveBase'].join(u'ModChecker.html')
             cssDir = bass.settings.get('balt.WryeLog.cssDir', GPath(u''))
             ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
