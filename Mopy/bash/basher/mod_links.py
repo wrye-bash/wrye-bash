@@ -1782,11 +1782,11 @@ class _Mod_Import_Link(OneItemLink):
             progress(1.0, _(u'Done.'))
         return changed
 
-    def _showLog(self, logText, title=u'', asDialog=True, fixedFont=False,
-                 icons=None, size=True):
+    def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
+                 icons=Link._default_icons):
         super(_Mod_Import_Link, self)._showLog(logText,
             title=title or self.__class__.progressTitle, asDialog=asDialog,
-            fixedFont=fixedFont, icons=icons, size=size)
+            fixedFont=fixedFont, icons=icons)
 
     def _log(self, changed, fileName):
         with bolt.sio() as buff:

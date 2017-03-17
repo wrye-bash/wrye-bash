@@ -242,8 +242,8 @@ class PatchDialog(balt.Dialog):
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             bosh.modInfos.table.setItem(patch_name,'doc',readme)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
-            balt.showWryeLog(self.parent, readme.root +u'.html', patch_name.s,
-                             log_icons=Resources.bashBlue)
+            balt.WryeLog(self.parent, readme.root + u'.html', patch_name.s,
+                         log_icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patch_name.s
             if load_order.cached_is_active(patch_name) or (

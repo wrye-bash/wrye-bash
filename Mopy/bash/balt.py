@@ -794,106 +794,109 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
 #------------------------------------------------------------------------------
-def _showLogClose(evt=None):
-    """Handle log message closing."""
-    window = evt.GetEventObject()
-    if not window.IsIconized() and not window.IsMaximized():
-        _settings['balt.LogMessage.pos'] = tuple(window.GetPosition())
-        _settings['balt.LogMessage.size'] = tuple(window.GetSize())
-    window.Destroy()
+class _Log(object):
+    _settings_key = 'balt.LogMessage'
+    def __init__(self, parent, logText, title=u'', asDialog=True,
+                 fixedFont=False, log_icons=None):
+        self.asDialog = asDialog
+        self.window = self._dialog_or_frame(log_icons, parent, title)
 
-def _dialog_or_frame(asDialog, log_icons, parent, pos, size, title):
-    #--Dialog or Frame
-    if asDialog:
-        window = Dialog(parent, title, pos=pos, size=size)
-    else:
-        window = wx.Frame(parent, defId, title, pos=pos, size=size, style=(
-        wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU | wx.CLOSE_BOX |
-        wx.CLIP_CHILDREN))
+    def _dialog_or_frame(self, log_icons, parent, title):
+        #--Sizing
+        pos = _settings.get(self._settings_key + '.pos', defPos)
+        size = _settings.get(self._settings_key + '.size', (400, 400))
+        #--Dialog or Frame
+        if self.asDialog:
+            window = Dialog(parent, title, pos=pos, size=size)
+        else:
+            window = wx.Frame(parent, defId, title, pos=pos, size=size, style=(
+                wx.RESIZE_BORDER | wx.CAPTION | wx.SYSTEM_MENU |
+                wx.CLOSE_BOX | wx.CLIP_CHILDREN))
         if log_icons: window.SetIcons(log_icons)
-    window.SetSizeHints(200, 200)
-    window.Bind(wx.EVT_CLOSE, _showLogClose)
-    return window
+        window.SetSizeHints(200, 200)
+        window.Bind(wx.EVT_CLOSE, self._showLogClose) # Destroy the window!
+        return window
 
-def showLog(parent, logText, title=u'', asDialog=True, fixedFont=False,
-            log_icons=None, size=True):
-    """Display text in a log window"""
-    #--Sizing
-    pos = _settings.get('balt.LogMessage.pos',defPos)
-    if size:
-        size = _settings.get('balt.LogMessage.size',(400,400))
-    window = _dialog_or_frame(asDialog, log_icons, parent, pos, size, title)
-    window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
-    #--Text
-    txtCtrl = RoTextCtrl(window, logText, special=True, autotooltip=False)
-    txtCtrl.SetValue(logText)
-    if fixedFont:
-        fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
-        fixedFont.SetPointSize(8)
-        fixedStyle = wx.TextAttr()
-        #fixedStyle.SetFlags(0x4|0x80)
-        fixedStyle.SetFont(fixedFont)
-        txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
-    #--Buttons
-    gOkButton = OkButton(window, onButClick=window.Close, default=True)
-    #--Layout
-    window.SetSizer(
-        vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-               (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-        ))
-    #--Show
-    if asDialog:
-        with window: window.ShowModal()
-    else: window.Show()
+    def _showLogClose(self, evt=None):
+        """Handle log message closing."""
+        window = evt.GetEventObject()
+        if not window.IsIconized() and not window.IsMaximized():
+            _settings[self._settings_key + '.pos'] = tuple(window.GetPosition())
+            _settings[self._settings_key + '.size'] = tuple(window.GetSize())
+        window.Destroy()
+
+    def ShowLog(self):
+        #--Show
+        if self.asDialog: self.window.ShowModal()
+        else: self.window.Show()
+
+class Log(_Log):
+    def __init__(self, parent, logText, title=u'', asDialog=True,
+                 fixedFont=False, log_icons=None):
+        """Display text in a log window"""
+        super(Log, self).__init__(parent, logText, title, asDialog, fixedFont,
+                                  log_icons)
+        self.window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
+        #--Text
+        txtCtrl = RoTextCtrl(self.window, logText, special=True, autotooltip=False)
+        txtCtrl.SetValue(logText)
+        if fixedFont:
+            fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
+            fixedFont.SetPointSize(8)
+            fixedStyle = wx.TextAttr()
+            #fixedStyle.SetFlags(0x4|0x80)
+            fixedStyle.SetFont(fixedFont)
+            txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
+        #--Buttons
+        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
+        #--Layout
+        self.window.SetSizer(
+            vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                   (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
+            ))
+        self.ShowLog()
 
 #------------------------------------------------------------------------------
-def showWryeLog(parent, logText, title=u'', asDialog=True, log_icons=None):
-    """Convert logText from wtxt to html and display. Optionally, logText can be path to an html file."""
-    logText = _get_log_text(logText)
-    try:
-        import wx.lib.iewin
-    except ImportError:
-        # Comtypes not available most likely! so do it this way:
-        import webbrowser
-        webbrowser.open(logText.s)
-        return
-
-    #--Sizing
-    pos = _settings.get('balt.WryeLog.pos',defPos)
-    size = _settings.get('balt.WryeLog.size',(400,400))
-    window = _dialog_or_frame(asDialog, log_icons, parent, pos, size, title)
-    #--Text
-    textCtrl_ = wx.lib.iewin.IEHtmlWindow(window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
-    textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
-    #--Buttons
-    bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-    gBackButton = bitmapButton(window,bitmap, onBBClick=textCtrl_.GoBack)
-    bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-    gForwardButton = bitmapButton(window,bitmap, onBBClick=textCtrl_.GoForward)
-    gOkButton = OkButton(window, onButClick=window.Close, default=True)
-    if not asDialog:
-        window.SetBackgroundColour(gOkButton.GetBackgroundColour())
-    #--Layout
-    window.SetSizer(
-        vSizer(
-            (textCtrl_,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-            (hSizer(
-                gBackButton,
-                gForwardButton,
-                hspacer,
-                gOkButton,
-                ),0,wx.ALL|wx.EXPAND,4),
+class WryeLog(_Log):
+    _settings_key = 'balt.WryeLog'
+    def __init__(self, parent, logText, title=u'', asDialog=True,
+                 fixedFont=False, log_icons=None):
+        """Convert logText from wtxt to html and display. Optionally,
+        logText can be path to an html file."""
+        logText = _get_log_text(logText)
+        try:
+            import wx.lib.iewin
+        except ImportError:
+            # Comtypes not available most likely! so do it this way:
+            import webbrowser
+            webbrowser.open(logText.s)
+            return
+        super(WryeLog, self).__init__(parent, logText, title, asDialog,
+                                      fixedFont, log_icons)
+        #--Text
+        textCtrl_ = wx.lib.iewin.IEHtmlWindow(self.window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
+        textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
+        #--Buttons
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
+        gBackButton = bitmapButton(self.window,bitmap, onBBClick=textCtrl_.GoBack)
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
+        gForwardButton = bitmapButton(self.window,bitmap, onBBClick=textCtrl_.GoForward)
+        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
+        if not asDialog:
+            self.window.SetBackgroundColour(gOkButton.GetBackgroundColour())
+        #--Layout
+        self.window.SetSizer(
+            vSizer(
+                (textCtrl_,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                (hSizer(
+                    gBackButton,
+                    gForwardButton,
+                    hspacer,
+                    gOkButton,
+                    ),0,wx.ALL|wx.EXPAND,4),
+                )
             )
-        )
-    #--Show
-    if asDialog:
-        window.ShowModal()
-        if window:
-            _settings['balt.WryeLog.pos'] = tuple(window.GetPosition())
-            _settings['balt.WryeLog.size'] = tuple(window.GetSize())
-            window.Destroy()
-    else:
-        window.Show()
+        self.ShowLog()
 
 def _get_log_text(logText):
     if not isinstance(logText, bolt.Path):
@@ -2383,17 +2386,19 @@ class Link(object):
         return askSave(self.window, title, defaultDir, defaultFile, wildcard,
                        style)
 
+    _default_icons = object()
     def _showLog(self, logText, title=u'', asDialog=False, fixedFont=False,
-                 icons=None, size=True):
-        if icons is None: icons = Resources.bashBlue
-        showLog(self.window, logText, title, asDialog, fixedFont, icons, size)
+                 icons=_default_icons):
+        if icons is self._default_icons: icons = Resources.bashBlue
+        Log(self.window, logText, title, asDialog, fixedFont, log_icons=icons)
 
     def _showInfo(self, message, title=_(u'Information'), **kwdargs):
         return showInfo(self.window, message, title, **kwdargs)
 
-    def _showWryeLog(self, logText, title=u'', asDialog=True, icons=None):
-        if icons is None: icons = Resources.bashBlue
-        return showWryeLog(self.window, logText, title, asDialog, icons)
+    def _showWryeLog(self, logText, title=u'', asDialog=True,
+                     icons=_default_icons):
+        if icons is self._default_icons: icons = Resources.bashBlue
+        WryeLog(self.window, logText, title, asDialog, log_icons=icons)
 
     def _askNumber(self, message, prompt=u'', title=u'', value=0, min=0,
                    max=10000):
