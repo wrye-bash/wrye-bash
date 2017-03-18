@@ -794,6 +794,33 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
 #------------------------------------------------------------------------------
+# If comtypes is not installed, the IE ActiveX control cannot be imported
+try:
+    import wx.lib.iewin as wx_lib_iewin
+except ImportError:
+    wx_lib_iewin = None
+    deprint(
+        _(u'Comtypes is missing, features utilizing HTML will be disabled'))
+
+class HtmlCtrl(object):
+    def __init__(self, parent):
+        if not wx_lib_iewin:
+            self.text_ctrl = RoTextCtrl(parent, special=True)
+            self.prevButton = self.nextButton = None
+            return
+        self.text_ctrl = wx.lib.iewin.IEHtmlWindow(parent,
+            style=wx.NO_FULL_REPAINT_ON_RESIZE)
+        #--Html Back
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK, wx.ART_HELP_BROWSER,
+                                          (16, 16))
+        self.prevButton = bitmapButton(parent, bitmap,
+                                       onBBClick=self.text_ctrl.GoBack)
+        #--Html Forward
+        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
+                                          wx.ART_HELP_BROWSER, (16, 16))
+        self.nextButton = bitmapButton(parent, bitmap,
+                                       onBBClick=self.text_ctrl.GoForward)
+
 class _Log(object):
     _settings_key = 'balt.LogMessage'
     def __init__(self, parent, logText, title=u'', asDialog=True,
@@ -864,9 +891,7 @@ class WryeLog(_Log):
         """Convert logText from wtxt to html and display. Optionally,
         logText can be path to an html file."""
         logText = _get_log_text(logText)
-        try:
-            import wx.lib.iewin
-        except ImportError:
+        if wx_lib_iewin is None:
             # Comtypes not available most likely! so do it this way:
             import webbrowser
             webbrowser.open(logText.s)
@@ -874,23 +899,17 @@ class WryeLog(_Log):
         super(WryeLog, self).__init__(parent, logText, title, asDialog,
                                       fixedFont, log_icons)
         #--Text
-        textCtrl_ = wx.lib.iewin.IEHtmlWindow(self.window, defId, style = wx.NO_FULL_REPAINT_ON_RESIZE)
-        textCtrl_.Navigate(logText.s,0x2) #--0x2: Clear History
+        self._html_ctrl = HtmlCtrl(self.window)
+        self._html_ctrl.text_ctrl.Navigate(logText.s,0x2) #--0x2: Clear History
         #--Buttons
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK,wx.ART_HELP_BROWSER, (16,16))
-        gBackButton = bitmapButton(self.window,bitmap, onBBClick=textCtrl_.GoBack)
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,wx.ART_HELP_BROWSER, (16,16))
-        gForwardButton = bitmapButton(self.window,bitmap, onBBClick=textCtrl_.GoForward)
         gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
         if not asDialog:
             self.window.SetBackgroundColour(gOkButton.GetBackgroundColour())
         #--Layout
         self.window.SetSizer(
             vSizer(
-                (textCtrl_,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                (hSizer(
-                    gBackButton,
-                    gForwardButton,
+                (self._html_ctrl.text_ctrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
+                (hSizer(self._html_ctrl.prevButton, self._html_ctrl.nextButton,
                     hspacer,
                     gOkButton,
                     ),0,wx.ALL|wx.EXPAND,4),

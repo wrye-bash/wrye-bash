@@ -28,37 +28,10 @@ import string
 import wx
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
-    RoTextCtrl, bitmapButton, bell, Link, toggleButton, SaveButton, \
-    CancelButton, hspace, vspace, BaltFrame, Resources
-from ..bolt import GPath, BoltError, deprint
+    RoTextCtrl, bell, Link, toggleButton, SaveButton, CancelButton, hspace, \
+    vspace, BaltFrame, Resources, HtmlCtrl, wx_lib_iewin
+from ..bolt import GPath, BoltError
 from ..bosh import omods
-
-# If comtypes is not installed, the IE ActiveX control cannot be imported
-try:
-    import wx.lib.iewin as wx_lib_iewin
-except ImportError:
-    wx_lib_iewin = None
-    deprint(
-        _(u'Comtypes is missing, features utilizing HTML will be disabled'))
-
-class HtmlCtrl(object):
-    def __init__(self, parent):
-        if not wx_lib_iewin:
-            self.text_ctrl = RoTextCtrl(parent, special=True)
-            self.prevButton = self.nextButton = None
-            return
-        self.text_ctrl = wx.lib.iewin.IEHtmlWindow(parent,
-            style=wx.NO_FULL_REPAINT_ON_RESIZE)
-        #--Html Back
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK, wx.ART_HELP_BROWSER,
-                                          (16, 16))
-        self.prevButton = bitmapButton(parent, bitmap,
-                                       onBBClick=self.text_ctrl.GoBack)
-        #--Html Forward
-        bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_FORWARD,
-                                          wx.ART_HELP_BROWSER, (16, 16))
-        self.nextButton = bitmapButton(parent, bitmap,
-                                       onBBClick=self.text_ctrl.GoForward)
 
 class DocBrowser(BaltFrame):
     """Doc Browser frame."""
