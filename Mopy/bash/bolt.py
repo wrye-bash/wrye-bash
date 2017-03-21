@@ -555,7 +555,7 @@ class Path(object):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = ('_s', '_cs', '_csroot', '_sroot', '_shead', '_stail', '_ext',
+    __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
                  '_cext', '_sbody', '_csbody')
 
     def __init__(self, name):
@@ -578,7 +578,6 @@ class Path(object):
         self._sroot,self._ext = os.path.splitext(self._s)
         self._shead,self._stail = os.path.split(self._s)
         self._cext = os.path.normcase(self._ext)
-        self._csroot = os.path.normcase(self._sroot)
         self._sbody = os.path.basename(self._sroot)
         self._csbody = os.path.normcase(self._sbody)
 
@@ -601,10 +600,6 @@ class Path(object):
     def cs(self):
         """Path as string in normalized case."""
         return self._cs
-    @property
-    def csroot(self):
-        """Root as string."""
-        return self._csroot
     @property
     def sroot(self):
         """Root as string."""
