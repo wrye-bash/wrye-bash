@@ -187,18 +187,16 @@ class AVORB_NPCSkeletonPatcher(AMultiTweakItem):
             skeletonSetSpecial gets files that match "skel_special_*.nif" """
         # Since bass.dirs hasn't been populated when __init__ executes,
         # we do this here
-        skeletonList = skeletonSetSpecial =[]
         skeletonDir = bass.dirs['mods'].join(u'Meshes', u'Characters',
                                                   u'_male')
-        if skeletonDir.exists():
-            skeletonList = [x for x in skeletonDir.list() if
-                                 x.csbody.startswith(
-                                     u'skel_') and not x.csbody.startswith(
-                                     u'skel_special_') and x.cext == u'.nif']
-            skeletonSetSpecial = set((x.s for x in skeletonDir.list() if
-                                           x.csbody.startswith(
-                                               u'skel_special_') and x.cext
-                                           == u'.nif'))
+        list_skel_dir = skeletonDir.list() # empty if dir does not exist
+        skel_nifs = [x for x in list_skel_dir if
+                     x.cs.startswith(u'skel_') and x.cext == u'.nif']
+        skeletonList = [x for x in skel_nifs if
+                        not x.cs.startswith(u'skel_special_')]
+        set_skeletonList = set(skeletonList)
+        skeletonSetSpecial = set(
+            x.s for x in skel_nifs if x not in set_skeletonList)
         return skeletonList, skeletonSetSpecial
 
 class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
@@ -210,7 +208,7 @@ class VORB_NPCSkeletonPatcher(AVORB_NPCSkeletonPatcher,BasalNPCTweaker):
         modSkeletonDir = GPath(u'Characters').join(u'_male')
         skeletonList, skeletonSetSpecial = \
             AVORB_NPCSkeletonPatcher._initSkeletonCollections()
-        if len(skeletonList) > 0:
+        if skeletonList:
             femaleOnly = self.choiceValues[self.chosen][0] == 1
             maleOnly = self.choiceValues[self.chosen][0] == 2
             playerFid = (GPath(u'Oblivion.esm'),0x000007)

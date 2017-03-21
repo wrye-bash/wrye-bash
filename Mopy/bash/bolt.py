@@ -556,7 +556,7 @@ class Path(object):
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
     __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
-                 '_cext', '_sbody', '_csbody')
+                 '_cext', '_sbody')
 
     def __init__(self, name):
         """Initialize."""
@@ -579,7 +579,6 @@ class Path(object):
         self._shead,self._stail = os.path.split(self._s)
         self._cext = os.path.normcase(self._ext)
         self._sbody = os.path.basename(self._sroot)
-        self._csbody = os.path.normcase(self._sbody)
 
     def __len__(self):
         return len(self._s)
@@ -619,7 +618,7 @@ class Path(object):
     @property
     def csbody(self):
         """For alpha\beta.gamma returns beta as string in normalized case."""
-        return self._csbody
+        return os.path.normcase(self._sbody)
 
     #--Head, tail
     @property
