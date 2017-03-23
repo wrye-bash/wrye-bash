@@ -796,19 +796,23 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
 #------------------------------------------------------------------------------
 # If comtypes is not installed, the IE ActiveX control cannot be imported
 try:
-    import wx.lib.iewin as wx_lib_iewin
+    import wx.lib.iewin as _wx_lib_iewin
 except ImportError:
-    wx_lib_iewin = None
+    _wx_lib_iewin = None
     deprint(
         _(u'Comtypes is missing, features utilizing HTML will be disabled'))
 
 class HtmlCtrl(object):
+
+    @staticmethod
+    def html_lib_available(): return _wx_lib_iewin
+
     def __init__(self, parent):
-        if not wx_lib_iewin:
+        if not _wx_lib_iewin:
             self.text_ctrl = RoTextCtrl(parent, special=True)
             self.prevButton = self.nextButton = None
             return
-        self.text_ctrl = wx.lib.iewin.IEHtmlWindow(parent,
+        self.text_ctrl = _wx_lib_iewin.IEHtmlWindow(parent,
             style=wx.NO_FULL_REPAINT_ON_RESIZE)
         #--Html Back
         bitmap = wx.ArtProvider_GetBitmap(wx.ART_GO_BACK, wx.ART_HELP_BROWSER,
@@ -890,17 +894,22 @@ class WryeLog(_Log):
                  fixedFont=False, log_icons=None):
         """Convert logText from wtxt to html and display. Optionally,
         logText can be path to an html file."""
-        logText = _get_log_text(logText)
-        if wx_lib_iewin is None:
+        if isinstance(logText, bolt.Path):
+            logPath = logText
+        else:
+            logPath = _settings.get('balt.WryeLog.temp',
+                bolt.Path.getcwd().join(u'WryeLogTemp.html'))
+            convert_wtext_to_html(logPath, logText)
+        if _wx_lib_iewin is None:
             # Comtypes not available most likely! so do it this way:
             import webbrowser
-            webbrowser.open(logText.s)
+            webbrowser.open(logPath.s)
             return
         super(WryeLog, self).__init__(parent, logText, title, asDialog,
                                       fixedFont, log_icons)
         #--Text
         self._html_ctrl = HtmlCtrl(self.window)
-        self._html_ctrl.text_ctrl.Navigate(logText.s,0x2) #--0x2: Clear History
+        self._html_ctrl.text_ctrl.Navigate(logPath.s,0x2) #--0x2: Clear History
         #--Buttons
         gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
         if not asDialog:
@@ -917,16 +926,11 @@ class WryeLog(_Log):
             )
         self.ShowLog()
 
-def _get_log_text(logText):
-    if not isinstance(logText, bolt.Path):
-        logPath = _settings.get('balt.WryeLog.temp',
-                                bolt.Path.getcwd().join(u'WryeLogTemp.html'))
-        cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
-        with logPath.open('w', encoding='utf-8-sig') as out, bolt.sio(
+def convert_wtext_to_html(logPath, logText):
+    cssDir = _settings.get('balt.WryeLog.cssDir', GPath(u''))
+    with logPath.open('w', encoding='utf-8-sig') as out, bolt.sio(
                     logText + u'\n{{CSS:wtxt_sand_small.css}}') as ins:
-            bolt.WryeText.genHtml(ins, out, cssDir)
-        logText = logPath
-    return logText
+        bolt.WryeText.genHtml(ins, out, cssDir)
 
 def playSound(parent,sound):
     if not sound: return

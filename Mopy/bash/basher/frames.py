@@ -29,7 +29,7 @@ import wx
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bell, Link, toggleButton, SaveButton, CancelButton, hspace, \
-    vspace, BaltFrame, Resources, HtmlCtrl, wx_lib_iewin
+    vspace, BaltFrame, Resources, HtmlCtrl
 from ..bolt import GPath, BoltError
 from ..bosh import omods
 
@@ -78,7 +78,7 @@ class DocBrowser(BaltFrame):
         self.docNameBox = RoTextCtrl(self, multiline=False)
         #--Doc display
         self.plainText = RoTextCtrl(self, special=True, autotooltip=False)
-        if wx_lib_iewin:
+        if HtmlCtrl.html_lib_available():
             html_ctrl = HtmlCtrl(self)
             self.htmlText = html_ctrl.text_ctrl
             self.prevButton = html_ctrl.prevButton
@@ -316,17 +316,13 @@ class DocBrowser(BaltFrame):
         if docType == self.docType:
             return
         sizer = self.mainSizer
-        if docType == 'html' and self.htmlText:
-            sizer.Show(self.plainText,False)
-            sizer.Show(self.htmlText,True)
-            self.prevButton.Enable(True)
-            self.nextButton.Enable(True)
-        else:
-            sizer.Show(self.plainText,True)
-            if self.htmlText:
-                sizer.Show(self.htmlText,False)
-                self.prevButton.Enable(False)
-                self.nextButton.Enable(False)
+        html_doc = docType == 'html'
+        # show plain text if it's not an html doc or the html control is None
+        sizer.Show(self.plainText, not html_doc or not self.htmlText)
+        if self.htmlText: #if the html control is not None show it for html doc
+            sizer.Show(self.htmlText, html_doc)
+            self.prevButton.Enable(html_doc)
+            self.nextButton.Enable(html_doc)
         self.Layout()
 
     #--Window Closing
@@ -455,12 +451,9 @@ class ModChecker(BaltFrame):
             bass.settings['bash.modChecker.showVersion'],
             mod_checker=(None, self)[self.gScanDirty.GetValue()]
             )
-        if wx_lib_iewin:
+        if HtmlCtrl.html_lib_available():
             logPath = bass.dirs['saveBase'].join(u'ModChecker.html')
-            cssDir = bass.settings.get('balt.WryeLog.cssDir', GPath(u''))
-            ins = StringIO.StringIO(self.text+u'\n{{CSS:wtxt_sand_small.css}}')
-            with logPath.open('w',encoding='utf-8-sig') as out:
-                bolt.WryeText.genHtml(ins,out,cssDir)
+            balt.convert_wtext_to_html(logPath, self.text)
             self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
         else:
             self.gTextCtrl.SetValue(self.text)
