@@ -2646,12 +2646,13 @@ class INIInfos(TableFileInfos):
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
         if _(u'Browse...') not in _target_inis:
             _target_inis[_(u'Browse...')] = None
-        settings['bash.ini.choices'] = _target_inis
-        if previous_ini: choice = _target_inis.keys().index(previous_ini)
-        settings['bash.ini.choice'] = choice
-        if choice > 0:
-            self.ini = _target_inis.values()[choice]
-        else: self.ini = oblivionIni.abs_path
+        self.__sort_target_inis()
+        if previous_ini:
+            choice = bass.settings['bash.ini.choices'].keys().index(
+                previous_ini)
+        settings['bash.ini.choice'] = choice if choice >= 0 else 0
+        self.ini = bass.settings['bash.ini.choices'].values()[
+            settings['bash.ini.choice']]
 
     @property
     def ini(self):
@@ -2663,6 +2664,31 @@ class INIInfos(TableFileInfos):
             return # nothing to do
         self._ini = BestIniFile(ini_path)
         for ini_info in self.itervalues(): ini_info.reset_status()
+
+    @staticmethod
+    def update_targets(targets_dict):
+        """Update 'bash.ini.choices' with targets_dict then re-sort the dict
+        of target INIs"""
+        for existing_ini in bass.settings['bash.ini.choices']:
+            targets_dict.pop(existing_ini, None)
+        if targets_dict:
+            bass.settings['bash.ini.choices'].update(targets_dict)
+            # now resort
+            INIInfos.__sort_target_inis()
+        return targets_dict
+
+    @staticmethod
+    def __sort_target_inis():
+        keys = bass.settings['bash.ini.choices'].keys()
+        # Sort alphabetically
+        keys.sort()
+        # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
+        game_inis = bush.game.iniFiles
+        len_inis = len(game_inis)
+        keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
+                      len_inis + 1 if a == _(u'Browse...') else len_inis))
+        bass.settings['bash.ini.choices'] = collections.OrderedDict(
+            [(k, bass.settings['bash.ini.choices'][k]) for k in keys])
 
     def _refresh_infos(self):
         """Refresh from file directory."""

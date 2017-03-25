@@ -271,7 +271,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         #Build any ini tweaks
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
-        new_targets = set()
+        new_targets = {}
         for iniFile, wizardEdits in ret.IniEdits.iteritems():
             outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
                 (installer.archive, iniFile.sbody))
@@ -291,7 +291,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 target_ini_file = game_ini
             else: # suppose that the target ini file is in the Data/ dir
                 target_path = bass.dirs['mods'].join(iniFile)
-                new_targets.add(target_path)
+                new_targets[target_path.stail] = target_path
                 if not (iniFile in installer.data_sizeCrc and ret.Install):
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto
@@ -304,16 +304,14 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                                     target_ini_file):
                 lastApplied = outFile.tail
         #--Refresh after all the tweaks are applied
-        BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
         if lastApplied is not None:
             if BashFrame.iniList is not None:
+                BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
                 BashFrame.iniList.panel.detailsPanel.set_choice(target_path)
                 BashFrame.iniList.panel.ShowPanel(refresh_target=True,
                     focus_list=False, detail_item=lastApplied)
             else:
-                targets = bass.settings['bash.ini.choices']
-                for target in new_targets:
-                    if target.tail not in targets: targets[target.tail] = target ##: we must sort!
+                bosh.INIInfos.update_targets(new_targets)
             ui_refresh[1] = False
         if len(manuallyApply) > 0:
             message = balt.fill(_(

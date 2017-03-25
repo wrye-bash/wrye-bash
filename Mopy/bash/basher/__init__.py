@@ -1564,7 +1564,6 @@ class ModDetails(_SashDetailsPanel):
 
 #------------------------------------------------------------------------------
 class INIDetailsPanel(_DetailsMixin, SashPanel):
-    """:type target_inis: dict[unicode, bolt.Path]"""
     keyPrefix = 'bash.ini.details'
 
     @property
@@ -1584,15 +1583,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.editButton = balt.Button(right, _(u'Edit...'),
                                       onButClick=self._OnEdit)
         #--Choices
-        self.target_inis = settings['bash.ini.choices'] # set in IniInfos init
         self.choice = settings['bash.ini.choice'] # type: int
-        if self.choice == -1: # ini removed
-            self.choice, previous_ini = 0, None
-        else:
-            previous_ini = self.target_inis.keys()[self.choice]
-        self.SortChoices()
-        if previous_ini:
-            self.choice = self.target_inis.keys().index(previous_ini)
         self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
         #--Ini file
         self.iniContents = TargetINILineCtrl(right)
@@ -1631,6 +1622,12 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         return self.target_inis.values()[self.choice]
 
     @property
+    def target_inis(self):
+        """Return settings['bash.ini.choices'], set in IniInfos#__init__.
+        :rtype: OrderedDict[unicode, bolt.Path]"""
+        return settings['bash.ini.choices']
+
+    @property
     def ini_name(self): return self.target_inis.keys()[self.choice]
 
     def _resetDetails(self): pass
@@ -1648,49 +1645,33 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
 
     def _OnRemove(self):
         """Called when the 'Remove' button is pressed."""
-        del self.target_inis[self.ini_name]
+        del self.target_inis[self.ini_name] # does NOT change sorting
         self.choice -= 1
-        self.comboBox.SetItems(self.SortChoices())
+        self._combo_reset()
         self.ShowPanel(target_changed=True)
         self._ini_panel.uiList.RefreshUI()
 
+    def _combo_reset(self):
+        self.comboBox.SetItems(self.target_inis.keys())
+
     def _clean_targets(self):
-        resort = False
         for name, ini_path in self.target_inis.iteritems():
             if ini_path is not None and not ini_path.isfile():
                 if not bosh.get_game_ini(ini_path):
                     del self.target_inis[name]
                     self.choice -= 1
-                    resort = True
-        if resort: self.comboBox.SetItems(self.SortChoices())
+        self._combo_reset()
 
     def _OnEdit(self):
         """Called when the 'Edit' button is pressed."""
         selection = self.comboBox.GetValue()
         self.target_inis[selection].start()
 
-    def SortChoices(self):
-        """Sorts the list of target INIs alphabetically, but with
-        Oblivion.ini at the top and 'Browse...' at the bottom"""
-        keys = self.target_inis.keys()
-        # Sort alphabetically
-        keys.sort()
-        # Sort Oblivion.ini to the top, and 'Browse...' to the bottom
-        len_inis = len(bush.game.iniFiles)
-        keys.sort(key=lambda a:
-                  bush.game.iniFiles.index(a) if a in bush.game.iniFiles
-                  else (len_inis + 1 if a == _(u'Browse...') else len_inis))
-        self.target_inis = collections.OrderedDict(
-            [(k, self.target_inis[k]) for k in keys])
-        return keys
-
     def add_targets(self, paths):
-        for abs_target_path in paths:
-            if abs_target_path.stail not in self.target_inis:
-                current_choice = self.ini_name
-                self.target_inis[abs_target_path.stail] = abs_target_path
-                self.comboBox.SetItems(self.SortChoices())
-                self.choice = self.target_inis.keys().index(current_choice)
+        current_choice = self.ini_name
+        if bosh.INIInfos.update_targets(paths):
+            self._combo_reset()
+            self.choice = self.target_inis.keys().index(current_choice)
 
     def set_choice(self, target_path):
         self.choice = self.target_inis.keys().index(target_path.stail)
@@ -1714,9 +1695,8 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
                 self.comboBox.SetSelection(self.choice)
                 return
         # new file or selected an existing one different from current choice
-        if full_path.stail not in self.target_inis: # added
-            self.target_inis[full_path.stail] = full_path
-            self.comboBox.SetItems(self.SortChoices()) # to set self.choice
+        if bosh.INIInfos.update_targets({full_path.stail: full_path}): # added
+            self._combo_reset()
         self.choice = self.target_inis.keys().index(full_path.stail)
         self.ShowPanel(target_changed=True)
         self._ini_panel.uiList.RefreshUI()
@@ -1737,7 +1717,6 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
 
     def ClosePanel(self, destroy=False):
         super(INIDetailsPanel, self).ClosePanel(destroy)
-        settings['bash.ini.choices'] = self.target_inis
         settings['bash.ini.choice'] = self.choice
         settings['bash.ini.lastDir'] = self.lastDir
         if destroy: self.comboBox.Unbind(wx.EVT_SIZE)
