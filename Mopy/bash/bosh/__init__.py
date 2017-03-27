@@ -4251,7 +4251,7 @@ def initDirs(bashIni, personal, localAppData):
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
     global gameInis
     global oblivionIni
-    gameInis = [OblivionIni(x) for x in bush.game.iniFiles]
+    gameInis = tuple(OblivionIni(x) for x in bush.game.iniFiles)
     oblivionIni = gameInis[0]
     try:
         if oblivionIni.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':

@@ -1582,8 +1582,6 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         #--Edit button
         self.editButton = balt.Button(right, _(u'Edit...'),
                                       onButClick=self._OnEdit)
-        #--Choices
-        self.choice = settings['bash.ini.choice'] # type: int
         self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
         #--Ini file
         self.iniContents = TargetINILineCtrl(right)
@@ -1593,7 +1591,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.tweakName = RoTextCtrl(left, noborder=True, multiline=False)
         self._enable_buttons()
         self.comboBox = balt.ComboBox(right, value=self.ini_name,
-                                      choices=self.target_inis.keys())
+                                      choices=self._ini_keys)
         #--Events
         self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
         #--Layout
@@ -1616,10 +1614,11 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
             )
         left.SetSizer(lSizer)
 
+    # Read only wrappers around bass.settings['bash.ini.choices']
     @property
     def current_ini_path(self):
         """ Return path of currently chosen ini."""
-        return self.target_inis.values()[self.choice]
+        return self.target_inis.values()[settings['bash.ini.choice']]
 
     @property
     def target_inis(self):
@@ -1628,7 +1627,10 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         return settings['bash.ini.choices']
 
     @property
-    def ini_name(self): return self.target_inis.keys()[self.choice]
+    def _ini_keys(self): return settings['bash.ini.choices'].keys()
+
+    @property
+    def ini_name(self): return self._ini_keys[settings['bash.ini.choice']]
 
     def _resetDetails(self): pass
 
@@ -1645,21 +1647,18 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
 
     def _OnRemove(self):
         """Called when the 'Remove' button is pressed."""
-        del self.target_inis[self.ini_name] # does NOT change sorting
-        self.choice -= 1
+        self.__remove(self.ini_name)
         self._combo_reset()
         self.ShowPanel(target_changed=True)
         self._ini_panel.uiList.RefreshUI()
 
-    def _combo_reset(self):
-        self.comboBox.SetItems(self.target_inis.keys())
+    def _combo_reset(self): self.comboBox.SetItems(self._ini_keys)
 
     def _clean_targets(self):
         for name, ini_path in self.target_inis.iteritems():
             if ini_path is not None and not ini_path.isfile():
                 if not bosh.get_game_ini(ini_path):
-                    del self.target_inis[name]
-                    self.choice -= 1
+                    self.__remove(name)
         self._combo_reset()
 
     def _OnEdit(self):
@@ -1667,14 +1666,13 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         selection = self.comboBox.GetValue()
         self.target_inis[selection].start()
 
-    def add_targets(self, paths):
-        current_choice = self.ini_name
-        if bosh.INIInfos.update_targets(paths):
-            self._combo_reset()
-            self.choice = self.target_inis.keys().index(current_choice)
+    def __remove(self, ini_str_name): # does NOT change sorting
+        del self.target_inis[ini_str_name]
+        settings['bash.ini.choice'] -= 1
 
-    def set_choice(self, target_path):
-        self.choice = self.target_inis.keys().index(target_path.stail)
+    def set_choice(self, ini_str_name, reset_choices=True):
+        if reset_choices: self._combo_reset()
+        settings['bash.ini.choice'] = self._ini_keys.index(ini_str_name)
 
     def OnSelectDropDown(self,event):
         """Called when the user selects a new target INI from the drop down."""
@@ -1690,14 +1688,13 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
                                      wildcard=wildcard, mustExist=True)
             if full_path: self.lastDir = full_path.shead
             if not full_path or ( # reselected the current target ini
-                full_path.stail in self.target_inis and
-                self.choice == self.target_inis.keys().index(full_path.stail)):
-                self.comboBox.SetSelection(self.choice)
+                full_path.stail in self.target_inis and settings[
+                  'bash.ini.choice'] == self._ini_keys.index(full_path.stail)):
+                self.comboBox.SetSelection(settings['bash.ini.choice'])
                 return
         # new file or selected an existing one different from current choice
-        if bosh.INIInfos.update_targets({full_path.stail: full_path}): # added
-            self._combo_reset()
-        self.choice = self.target_inis.keys().index(full_path.stail)
+        self.set_choice(full_path.stail, bool(bosh.INIInfos.update_targets(
+            {full_path.stail: full_path}))) # reset choices if ini was added
         self.ShowPanel(target_changed=True)
         self._ini_panel.uiList.RefreshUI()
 
@@ -1713,11 +1710,10 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         # first RefreshIniContents as RefreshTweakLineCtrl needs its lines
         if new_target or target_changed:
             self.iniContents.RefreshIniContents(new_target)
-        self.comboBox.SetSelection(self.choice)
+        self.comboBox.SetSelection(settings['bash.ini.choice'])
 
     def ClosePanel(self, destroy=False):
         super(INIDetailsPanel, self).ClosePanel(destroy)
-        settings['bash.ini.choice'] = self.choice
         settings['bash.ini.lastDir'] = self.lastDir
         if destroy: self.comboBox.Unbind(wx.EVT_SIZE)
 
@@ -4054,14 +4050,11 @@ class BashApp(wx.App):
     @staticmethod
     def InitData(progress):
         """Initialize all data. Called by Init()."""
-        bosh.gameInis = tuple(
-            bosh.ini_files.OblivionIni(x) for x in bush.game.iniFiles)
         progress(0.05, _(u'Initializing BsaInfos'))
         #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
         bosh.bsaInfos = bosh.BSAInfos()
         bosh.bsaInfos.refresh()
         progress(0.20, _(u'Initializing ModInfos'))
-        bosh.oblivionIni = bosh.gameInis[0]
         bosh.modInfos = bosh.ModInfos()
         bosh.modInfos.refresh()
         progress(0.50, _(u'Initializing SaveInfos'))

@@ -305,13 +305,12 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
                 lastApplied = outFile.tail
         #--Refresh after all the tweaks are applied
         if lastApplied is not None:
+            target_updated = bosh.INIInfos.update_targets(new_targets)
             if BashFrame.iniList is not None:
-                BashFrame.iniList.panel.detailsPanel.add_targets(new_targets)
-                BashFrame.iniList.panel.detailsPanel.set_choice(target_path)
+                BashFrame.iniList.panel.detailsPanel.set_choice(
+                    target_path.stail, reset_choices=target_updated)
                 BashFrame.iniList.panel.ShowPanel(refresh_target=True,
                     focus_list=False, detail_item=lastApplied)
-            else:
-                bosh.INIInfos.update_targets(new_targets)
             ui_refresh[1] = False
         if len(manuallyApply) > 0:
             message = balt.fill(_(
