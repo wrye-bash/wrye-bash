@@ -3706,7 +3706,7 @@ class ModInfos(FileInfos):
             except CancelError:
                 #Undo any changes
                 rename_operation(oldName, self.masterName)
-                # return
+                return
             break
         else:
             #Undo any changes

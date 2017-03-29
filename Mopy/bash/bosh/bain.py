@@ -1287,10 +1287,9 @@ class InstallerProject(Installer):
                 rpFile = GPath(os.path.join(rsDir, sFile))
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
-                size = os.path.getsize(asFile)
-                get_mtime = os.path.getmtime(asFile)
-                max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
-                date = int(get_mtime)
+                lstat = os.lstat(asFile)
+                size, date = lstat.st_size, int(lstat.st_mtime)
+                max_mtime = max_mtime if max_mtime >= date else date
                 oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
                 if size == oSize and date == oDate:
                     new_sizeCrcDate[rpFile] = (oSize, oCrc, oDate, asFile)
@@ -1939,22 +1938,20 @@ class InstallersData(DataStore):
             progress(index)
             rsDir = asDir[relPos:]
             for sFile in sFiles:
-                sFileLower = sFile.lower()
-                ext = sFileLower[sFileLower.rfind(u'.'):]
                 top_level_espm = False
                 if not rsDir:
+                    rpFile = GPath(sFile) # relative Path to file
+                    rpFile = ghostGet(rpFile, rpFile)
+                    ext = rpFile.cs[rpFile.s.rfind(u'.'):]
                     if ext in skipExts: continue
-                    if sFileLower in bethFiles: continue
+                    if rpFile.cs in bethFiles: continue
                     top_level_espm = ext in {u'.esp', u'.esm'}
-                    rpFile = GPath(os.path.join(rsDir, sFile))
-                    rpFile = ghostGet(rpFile,rpFile)
                 else: rpFile = GPath(os.path.join(rsDir, sFile))
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 try:
-                    size = os.path.getsize(asFile)
-                    get_mtime = os.path.getmtime(asFile)
-                    date = int(get_mtime)
+                    lstat = os.lstat(asFile)
+                    size, date = lstat.st_size, int(lstat.st_mtime)
                     oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
                     if top_level_espm or size != oSize or date != oDate:
                         pending[rpFile] = (size, oCrc, date, asFile)
