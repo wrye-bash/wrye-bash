@@ -1924,6 +1924,7 @@ class InstallersData(DataStore):
 
         :param dirDirsFiles: list of tuples in the format of the output of walk
         """
+        from . import modInfos # to get the crcs for espms
         progress.setFull(1 + len(dirDirsFiles))
         pending, pending_size = {}, 0
         new_sizeCrcDate = {}
@@ -1951,10 +1952,19 @@ class InstallersData(DataStore):
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 try:
+                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
+                    if top_level_espm: # modInfos MUST BE UPDATED
+                        try:
+                            modInfo = modInfos[rpFile]
+                            new_sizeCrcDate[rpFile] = (modInfo.size,
+                                modInfos.table.getItem(rpFile, 'crc'),
+                                modInfo.mtime, asFile)
+                            continue
+                        except KeyError:
+                            pass # corrupted/missing, let os.lstat decide
                     lstat = os.lstat(asFile)
                     size, date = lstat.st_size, int(lstat.st_mtime)
-                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
-                    if top_level_espm or size != oSize or date != oDate:
+                    if size != oSize or date != oDate:
                         pending[rpFile] = (size, oCrc, date, asFile)
                         pending_size += size
                     else:

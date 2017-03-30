@@ -28,7 +28,7 @@ points to the InstallersList singleton."""
 import copy
 from . import Installers_Link
 from .dialogs import CreateNewProject
-from .. import bass, bosh, balt, bush
+from .. import bass, bosh, balt, bush, load_order
 from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
     EnabledLink
 from ..bolt import GPath
@@ -84,6 +84,9 @@ class Installers_MonitorInstall(Installers_Link):
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
+        bosh.bsaInfos.refresh()
+        with load_order.Unlock(): bosh.modInfos.refresh()
+        bosh.iniInfos.refresh()
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
