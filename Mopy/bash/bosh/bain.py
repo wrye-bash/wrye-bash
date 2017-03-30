@@ -1957,8 +1957,7 @@ class InstallersData(DataStore):
                         try:
                             modInfo = modInfos[rpFile]
                             new_sizeCrcDate[rpFile] = (modInfo.size,
-                                modInfos.table.getItem(rpFile, 'crc'),
-                                modInfo.mtime, asFile)
+                               modInfo.cached_mod_crc(), modInfo.mtime, asFile)
                             continue
                         except KeyError:
                             pass # corrupted/missing, let os.lstat decide

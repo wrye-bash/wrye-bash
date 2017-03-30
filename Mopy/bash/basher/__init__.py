@@ -750,7 +750,7 @@ class ModList(_ModsUIList):
         'Size'      : lambda self, a: self.data_store[a].size,
         'Status'    : lambda self, a: self.data_store[a].getStatus(),
         'Mod Status': lambda self, a: self.data_store[a].txt_status(),
-        'CRC'       : lambda self, a: self.data_store[a].cachedCrc(),
+        'CRC'       : lambda self, a: self.data_store[a].cached_mod_crc(),
     }
     _extra_sortings = [_ModsUIList._sortEsmsFirst,
                        _ModsUIList._activeModsFirst]
@@ -767,8 +767,7 @@ class ModList(_ModsUIList):
         ('Size',       lambda self, p: round_size(self.data_store[p].size)),
         ('Author',     lambda self, p: self.data_store[p].header.author if
                                        self.data_store[p].header else u'-'),
-        ('CRC',        lambda self, p:
-                                    u'%08X' % self.data_store[p].cachedCrc()),
+        ('CRC',        lambda self, p: self.data_store[p].crc_string()),
         ('Mod Status', lambda self, p: self.data_store[p].txt_status()),
     ])
 
@@ -1461,7 +1460,7 @@ class ModDetails(_SashDetailsPanel):
             modInfo.writeHeader()
         #--Change date?
         if changeDate:
-            self._set_date(modInfo)
+            self._set_date(modInfo) # crc recalculated in writeHeader if needed
         if changeDate or changeHedr or changeMasters:
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.name

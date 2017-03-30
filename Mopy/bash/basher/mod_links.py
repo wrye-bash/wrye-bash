@@ -627,7 +627,7 @@ class Mod_CreateBOSSReport(EnabledLink):
             if version:
                 text += u'\n'+_(u'Version')+u': %s' % version
             #-- CRC
-            text += u'\n'+_(u'CRC')+u': %08X' % fileInfo.cachedCrc()
+            text += u'\n'+_(u'CRC')+u': ' + fileInfo.crc_string()
             #-- Dirty edits
             if udr_itm_fog:
                 udrs,itms,fogs = udr_itm_fog[i]

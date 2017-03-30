@@ -454,7 +454,7 @@ class FileInfo(AFile):
         return (self.isMod() and self.header and
                 self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
-    def setmtime(self, set_time=0):
+    def setmtime(self, set_time=0, crc_changed=False):
         """Sets mtime. Defaults to current value (i.e. reset)."""
         set_time = int(set_time or self.mtime)
         self.abs_path.mtime = set_time
@@ -534,7 +534,7 @@ class FileInfo(AFile):
             if not tup[0].exists(): backup_paths.remove(tup)
         env.shellCopy(*zip(*backup_paths))
         # do not change load order for timestamp games - rest works ok
-        self.setmtime(self._file_mod_time)
+        self.setmtime(self._file_mod_time, crc_changed=True)
         self.getFileInfos().refreshFile(self.name)
 
     def getNextSnapshot(self):
@@ -589,6 +589,11 @@ class ModInfo(FileInfo):
                 not absPath.exists() and (absPath + u'.ghost').exists()
         super(ModInfo, self).__init__(parent_dir, name, load_cache)
 
+    def _reset_cache(self, stat_tuple, load_cache):
+        super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
+        # check if we have a cached crc for this file, use fresh mtime and size
+        if load_cache: self.calculate_crc() # for added and hopefully updated
+
     def getFileInfos(self): return modInfos
 
     def setType(self, esm_or_esp):
@@ -602,30 +607,39 @@ class ModInfo(FileInfo):
             modFile.seek(8)
             modFile.write(struct.pack('=I',int(flags1)))
         self.header.flags1 = flags1
-        self.setmtime()
+        self.setmtime(crc_changed=True)
 
-    def cachedCrc(self, recalculate=False):
-        """Stores a cached crc, for quicker execution."""
-        path = self.getPath()
-        size, mtime = path.size_mtime()
+    def calculate_crc(self, recalculate=False):
         cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
         cached_size = modInfos.table.getItem(self.name, 'crc_size')
-        if recalculate or mtime != cached_mtime or size != cached_size:
-            path_crc = path.crc
-            if path_crc != modInfos.table.getItem(self.name,'crc'):
+        cached_crc = modInfos.table.getItem(self.name, 'crc')
+        if recalculate or cached_crc is None \
+                or self._file_mod_time != cached_mtime or \
+                        self._file_size != cached_size:
+            path_crc = self.abs_path.crc
+            if path_crc != cached_crc:
                 modInfos.table.setItem(self.name,'crc',path_crc)
                 modInfos.table.setItem(self.name,'ignoreDirty',False)
-            modInfos.table.setItem(self.name,'crc_mtime',mtime)
-            modInfos.table.setItem(self.name,'crc_size',size)
-        else:
-            path_crc = modInfos.table.getItem(self.name,'crc')
-        return path_crc
+            modInfos.table.setItem(self.name, 'crc_mtime', self._file_mod_time)
+            modInfos.table.setItem(self.name, 'crc_size', self._file_size)
 
-    def setmtime(self, set_time=0):
-        """Sets mtime. Defaults to current value (i.e. reset)."""
+    def cached_mod_crc(self): # be sure it's valid before using it!
+        return modInfos.table.getItem(self.name, 'crc')
+
+    def crc_string(self):
+        try:
+            return u'%08X' % modInfos.table.getItem(self.name, 'crc')
+        except TypeError: # None, should not happen so let it show
+            return u'UNKNOWN!'
+
+    def setmtime(self, set_time=0, crc_changed=False):
+        """Set mtime and if crc_changed is True recalculate the crc."""
         set_time = FileInfo.setmtime(self, set_time)
         # Prevent re-calculating the File CRC
-        modInfos.table.setItem(self.name,'crc_mtime', set_time)
+        if not crc_changed:
+            modInfos.table.setItem(self.name,'crc_mtime', set_time)
+        else:
+            self.calculate_crc(recalculate=True)
 
     # Ghosting and ghosting related overrides ---------------------------------
     def needs_update(self):
@@ -757,7 +771,7 @@ class ModInfo(FileInfo):
                     raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Remove original and replace with temp
         filePath.untemp()
-        self.setmtime()
+        self.setmtime(crc_changed=True)
         #--Merge info
         size,canMerge = modInfos.table.getItem(self.name,'mergeInfo',(None,None))
         if size is not None:
@@ -2170,7 +2184,7 @@ class ModInfos(FileInfos):
                     version = self.getVersion(name)
                     if version: text += _(u'  [Version %s]') % version
                 if showCRC:
-                    text +=_(u'  [CRC: %08X]') % (self[name].cachedCrc())
+                    text +=_(u'  [CRC: %s]') % (self[name].crc_string())
                 log(text)
                 if name in masters:
                     for master2 in self[name].header.masters:
