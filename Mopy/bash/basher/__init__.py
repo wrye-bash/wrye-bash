@@ -1427,9 +1427,7 @@ class ModDetails(_SashDetailsPanel):
         if changeName and not self._askResourcesOk(modInfo): return
         #--Only change date?
         if changeDate and not (changeName or changeHedr or changeMasters):
-            newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
-            newTimeInt = int(time.mktime(newTimeTup))
-            modInfo.setmtime(newTimeInt)
+            self._set_date(modInfo)
             with load_order.Unlock():
                 bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=True)
             BashFrame.modList.RefreshUI( # refresh saves if lo changed
@@ -1463,10 +1461,9 @@ class ModDetails(_SashDetailsPanel):
             modInfo.header.changed = True
             modInfo.writeHeader()
         #--Change date?
+        if changeDate:
+            self._set_date(modInfo)
         if changeDate or changeHedr or changeMasters:
-            newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
-            newTimeInt = int(time.mktime(newTimeTup))
-            modInfo.setmtime(newTimeInt)
             detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.name
         #--Done
@@ -1476,6 +1473,11 @@ class ModDetails(_SashDetailsPanel):
             changeDate and not load_order.using_txt_file())
         self.panel_uilist.RefreshUI(refreshSaves=refreshSaves,
                                     detail_item=detail_item)
+
+    def _set_date(self, modInfo):
+        newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
+        newTimeInt = int(time.mktime(newTimeTup))
+        modInfo.setmtime(newTimeInt)
 
     #--Bash Tags
     def ShowBashTagsMenu(self):

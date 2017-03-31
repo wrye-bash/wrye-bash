@@ -710,20 +710,18 @@ class Installer_CopyConflicts(_SingleInstallable):
         installers to a project."""
         srcConflicts = set()
         packConflicts = []
-        srcArchive = self._selected_item
-        srcInstaller = self._selected_info
-        src_sizeCrc = srcInstaller.data_sizeCrc # dictionary Path -> (int, int)
-        all_files = set(src_sizeCrc) # bolt.PathS of ALL installer's files
-        if not all_files:
-            self._showOk(_(u'No files to install for %s') % srcArchive)
-            return
+        src_sizeCrc = self._selected_info.data_sizeCrc # dictionary Path -> (int, int)
+        def _ok(msg): self._showOk(msg % self._selected_item)
+        if not src_sizeCrc:
+            return _ok(_(u'No files to install for %s'))
         with balt.BusyCursor():
             numFiles = 0
-            destDir = GPath(u"%03d - Conflicts" % srcInstaller.order)
+            destDir = GPath(u"%03d (%s) - Conflicts" % (
+                self._selected_info.order, self._selected_item))
             for package, installer in self.idata.sorted_pairs():
                 curConflicts = set()
                 for z, y in installer.refreshDataSizeCrc().iteritems():
-                    if z in all_files and installer.data_sizeCrc[z] != \
+                    if z in src_sizeCrc and installer.data_sizeCrc[z] != \
                             src_sizeCrc[z]:
                         curConflicts.add(y)
                         srcConflicts.add(src_sizeCrc[z])
@@ -731,12 +729,11 @@ class Installer_CopyConflicts(_SingleInstallable):
                 if curConflicts: packConflicts.append(
                     (installer.order, package, curConflicts))
             srcConflicts = set( # we need the paths rel to the archive not Data
-                src for src,size,crc in srcInstaller.fileSizeCrcs if
+                src for src, size, crc in self._selected_info.fileSizeCrcs if
                 (size,crc) in srcConflicts)
             numFiles += len(srcConflicts)
         if not numFiles:
-            self._showOk(_(u'No conflicts detected for %s') % srcArchive)
-            return
+            return _ok(_(u'No conflicts detected for %s'))
         ijoin = self.idata.store_dir.join
         def _copy_conflicts(curFile):
             inst = self.idata[package]
@@ -745,7 +742,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                     srcFull = ijoin(package, src)
                     destFull = ijoin(destDir, g_path, src)
                     if srcFull.exists():
-                        progress(curFile, srcArchive.s + u'\n' + _(
+                        progress(curFile, self._selected_item.s + u'\n' + _(
                             u'Copying files...') + u'\n' + src)
                         srcFull.copyTo(destFull)
                         curFile += 1
@@ -760,17 +757,16 @@ class Installer_CopyConflicts(_SingleInstallable):
                            u'\n' + u' ' * 60) as progress:
             progress.setFull(numFiles)
             curFile = 0
-            package = srcArchive
+            g_path = package = self._selected_item
             curConflicts = srcConflicts
-            g_path = GPath(package.s)
             curFile = _copy_conflicts(curFile)
             for order,package,curConflicts in packConflicts:
                 g_path = GPath(u"%03d - %s" % (
-                    order if order < srcInstaller.order else order + 1,
+                    order if order < self._selected_info.order else order + 1,
                     package.s))
                 curFile = _copy_conflicts(curFile)
             project = destDir.root
-        self._get_refreshed(project, srcInstaller)
+        self._get_refreshed(project, self._selected_info)
         self.window.RefreshUI(detail_item=project)
 
 #------------------------------------------------------------------------------

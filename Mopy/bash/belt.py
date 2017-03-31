@@ -1380,9 +1380,9 @@ class WryeParser(ScriptParser.Parser):
                 List = []
                 if isinstance(self.installer,bosh.InstallerProject):
                     sub = bass.dirs['installers'].join(self.path, subpackage)
-                    for root, dirs, files in sub.walk():
+                    for root_dir, dirs, files in sub.walk():
                         for file_ in files:
-                            rel = root.join(file_).relpath(sub)
+                            rel = root_dir.join(file_).relpath(sub)
                             List.append(rel.s)
                 else:
                     # Archive

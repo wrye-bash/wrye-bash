@@ -168,22 +168,8 @@ def oneInstanceChecker(_wx):
                         dialog.ShowModal()
                 else:
                     print 'error: %r' % e
-                    import Tkinter
-                    root = Tkinter.Tk()
-                    frame = Tkinter.Frame(root)
-                    frame.pack()
-
-                    button = Tkinter.Button(frame,text=_(u"Ok"),
-                                            command=root.destroy,pady=15,
-                                            borderwidth=5,
-                                            relief=Tkinter.GROOVE)
-                    button.pack(fill=Tkinter.BOTH,expand=1,side=Tkinter.BOTTOM)
-
-                    w = Tkinter.Text(frame)
-                    w.insert(Tkinter.END, msg)
-                    w.config(state=Tkinter.DISABLED)
-                    w.pack()
-                    root.mainloop()
+                    but_kwargs = {'text': _(u"Ok")}
+                    _tkinter_error_dial(msg, but_kwargs)
         except Exception as e:
             print 'error: %r' % e
             pass
@@ -510,23 +496,23 @@ def _showErrorInAnyGui(msg, _wx=None):
         _app.MainLoop()
         del _app
     else:
+        but_kwargs = {'text' : _(u"QUIT"), 'fg':'red'} #foreground button color
         # Python mode, use Tkinter
-        import Tkinter
+        _tkinter_error_dial(msg, but_kwargs)
 
-        root = Tkinter.Tk()
-        frame = Tkinter.Frame(root)
-        frame.pack()
-
-        button = Tkinter.Button(frame, text=_(u"QUIT"), fg="red",
-                                command=root.destroy, pady=15, borderwidth=5,
-                                relief=Tkinter.GROOVE)
-        button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
-
-        w = Tkinter.Text(frame)
-        w.insert(Tkinter.END, msg)
-        w.config(state=Tkinter.DISABLED)
-        w.pack()
-        root.mainloop()
+def _tkinter_error_dial(msg, but_kwargs):
+    import Tkinter
+    root_widget = Tkinter.Tk()
+    frame = Tkinter.Frame(root_widget)
+    frame.pack()
+    button = Tkinter.Button(frame, command=root_widget.destroy, pady=15,
+                            borderwidth=5, relief=Tkinter.GROOVE, **but_kwargs)
+    button.pack(fill=Tkinter.BOTH, expand=1, side=Tkinter.BOTTOM)
+    w = Tkinter.Text(frame)
+    w.insert(Tkinter.END, msg)
+    w.config(state=Tkinter.DISABLED)
+    w.pack()
+    root_widget.mainloop()
 
 class _AppReturnCode(object):
     def __init__(self, default=None): self.value = default

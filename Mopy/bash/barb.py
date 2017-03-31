@@ -287,12 +287,12 @@ class RestoreSettings(BaseBackupSettings):
         fpath = dirs['saveBase'].join(u'Saves')
         path = temp_dir.join(tpath)
         if path.exists():
-            for root, folders, files in path.walk(True,None,True):
-                root = GPath(u'.'+root.s)
+            for root_dir, folders, files in path.walk(True,None,True):
+                root_dir = GPath(u'.'+root_dir.s)
                 for name in files:
-                    deprint(tpath.join(root,name).s + u' --> '
-                            + fpath.join(root,name).s)
-                    path.join(root,name).copyTo(fpath.join(root,name))
+                    deprint(tpath.join(root_dir,name).s + u' --> '
+                            + fpath.join(root_dir,name).s)
+                    path.join(root_dir,name).copyTo(fpath.join(root_dir,name))
 
         # tell the user the restore is compete and warn about restart
         self.WarnRestart()

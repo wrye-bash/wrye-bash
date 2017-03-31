@@ -3353,25 +3353,25 @@ class ModInfos(FileInfos):
         return balt.askWarning(parent, msg, title + name)
 
     #--Active mods management -------------------------------------------------
-    def lo_activate(self, fileName, doSave=True, modSet=None, children=None,
+    def lo_activate(self, fileName, doSave=True, _modSet=None, _children=None,
                     _activated=None):
         """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
             if len(self._active_wip) == 255:
                 raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
-            children = (children or tuple()) + (fileName,)
-            if fileName in children[:-1]:
-                raise BoltError(u'Circular Masters: '+u' >> '.join(x.s for x in children))
+            _children = (_children or tuple()) + (fileName,)
+            if fileName in _children[:-1]:
+                raise BoltError(u'Circular Masters: ' +u' >> '.join(x.s for x in _children))
             #--Select masters
-            if modSet is None: modSet = set(self.keys())
+            if _modSet is None: _modSet = set(self.keys())
             #--Check for bad masternames:
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
             ##    return
             for master in self[fileName].header.masters:
-                if master in modSet:
-                    self.lo_activate(master, False, modSet, children, _activated)
+                if master in _modSet: self.lo_activate(master, False, _modSet,
+                                                       _children, _activated)
             #--Select in plugins
             if fileName not in self._active_wip:
                 self._active_wip.append(fileName)

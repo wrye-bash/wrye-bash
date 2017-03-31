@@ -803,11 +803,11 @@ class Path(object):
         """Like os.walk."""
         if relative:
             start = len(self._s)
-            for root,dirs,files in os.walk(self._s,topdown,onerror):
-                yield (GPath(root[start:]),[GPath(x) for x in dirs],[GPath(x) for x in files])
+            for root_dir,dirs,files in os.walk(self._s,topdown,onerror):
+                yield (GPath(root_dir[start:]),[GPath(x) for x in dirs],[GPath(x) for x in files])
         else:
-            for root,dirs,files in os.walk(self._s,topdown,onerror):
-                yield (GPath(root),[GPath(x) for x in dirs],[GPath(x) for x in files])
+            for root_dir,dirs,files in os.walk(self._s,topdown,onerror):
+                yield (GPath(root_dir),[GPath(x) for x in dirs],[GPath(x) for x in files])
 
     def split(self):
         """Splits the path into each of it's sub parts.  IE: C:\Program Files\Bethesda Softworks
@@ -866,8 +866,8 @@ class Path(object):
             except UnicodeError:
                 flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
-                for root,dirs,files in os.walk(self._s):
-                    rootJoin = root.join
+                for root_dir,dirs,files in os.walk(self._s):
+                    rootJoin = root_dir.join
                     for directory in dirs:
                         try: chmod(rootJoin(directory),flags)
                         except: pass

@@ -411,7 +411,7 @@ class ModChecker(BaltFrame):
 
     def OnCopyText(self):
         """Copies text of report to clipboard."""
-        text_ = u'[spoiler]\n' + self.text + u'[/spoiler]'
+        text_ = u'[spoiler]\n' + self.check_mods_text + u'[/spoiler]'
         text_ = re.sub(ur'\[\[.+?\|\s*(.+?)\]\]', ur'\1', text_, re.U)
         text_ = re.sub(u'(__|\*\*|~~)', u'', text_, re.U)
         text_ = re.sub(u'&bull; &bull;', u'**', text_, re.U)
@@ -441,7 +441,7 @@ class ModChecker(BaltFrame):
         self.merged = bosh.modInfos.merged.copy()
         self.imported = bosh.modInfos.imported.copy()
         #--Do it
-        self.text = bosh.configHelpers.checkMods(
+        self.check_mods_text = bosh.configHelpers.checkMods(
             bass.settings['bash.modChecker.showModList'],
             bass.settings['bash.modChecker.showRuleSets'],
             bass.settings['bash.modChecker.showNotes'],
@@ -453,10 +453,10 @@ class ModChecker(BaltFrame):
             )
         if HtmlCtrl.html_lib_available():
             logPath = bass.dirs['saveBase'].join(u'ModChecker.html')
-            balt.convert_wtext_to_html(logPath, self.text)
+            balt.convert_wtext_to_html(logPath, self.check_mods_text)
             self.gTextCtrl.Navigate(logPath.s,0x2) #--0x2: Clear History
         else:
-            self.gTextCtrl.SetValue(self.text)
+            self.gTextCtrl.SetValue(self.check_mods_text)
 
     def OnActivate(self,event):
         """Handle window activate/deactivate. Use for auto-updating list."""

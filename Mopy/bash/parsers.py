@@ -1719,7 +1719,7 @@ class ScriptText:
         eid_data = self.eid_data
         textPath = GPath(textPath)
         with Progress(_(u"Import Scripts")) as progress:
-            for root, dirs, files in textPath.walk():
+            for root_dir, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
                 for name in files:
@@ -1728,8 +1728,8 @@ class ScriptText:
                         progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
-                    with root.join(name).open('r',
-                                              encoding='utf-8-sig') as text:
+                    with root_dir.join(name).open('r', encoding='utf-8-sig') \
+                            as text:
                         lines = text.readlines()
                     try:
                         modName,FormID,eid = lines[0][1:-2],lines[1][1:-2], \
@@ -1843,7 +1843,7 @@ class CBash_ScriptText:
         eid_data = self.eid_data
         textPath = GPath(textPath)
         with Progress(_(u"Import Scripts")) as progress:
-            for root, dirs, files in textPath.walk():
+            for root_dir, dirs, files in textPath.walk():
                 y = len(files)
                 z = 0
                 for name in files:
@@ -1852,8 +1852,8 @@ class CBash_ScriptText:
                         progress(((1/y)*z),_(u"Skipping file %s.") % name.s)
                         continue
                     progress(((1 / y) * z),_(u"Reading file %s.") % name.s)
-                    with root.join(name).open('r',
-                                              encoding='utf-8-sig') as text:
+                    with root_dir.join(name).open('r', encoding='utf-8-sig') \
+                            as text:
                         lines = text.readlines()
                     if not lines: continue
                     modName,formID,eid = lines[0][1:-2],lines[1][1:-2],\

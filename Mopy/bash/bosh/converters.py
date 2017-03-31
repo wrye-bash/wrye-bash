@@ -473,9 +473,9 @@ class InstallerConverter(object):
             tmpDir = bass.getTempDir()
             for crc in tmpDir.list():
                 fpath = tmpDir.join(crc)
-                for root, y, files in fpath.walk():
+                for root_dir, y, files in fpath.walk():
                     for file in files:
-                        file = root.join(file)
+                        file = root_dir.join(file)
                         archivedFiles[file.crc] = (crc, file.s[len(fpath)+1:])
             #--Add the extracted files to the source files list
             srcFiles.update(archivedFiles)
