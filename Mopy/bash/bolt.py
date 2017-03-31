@@ -996,19 +996,31 @@ class Path(object):
             return self._cs == other._cs
         else:
             return self._cs == Path.__getCase(other)
-    def __ne__(self, other): return not (self == other)
+    def __ne__(self, other):
+        if isinstance(other, Path):
+            return self._cs != other._cs
+        else:
+            return self._cs != Path.__getCase(other)
     def __lt__(self, other):
         if isinstance(other, Path):
             return self._cs < other._cs
         else:
             return self._cs < Path.__getCase(other)
-    def __ge__(self, other): return not (self < other)
+    def __ge__(self, other):
+        if isinstance(other, Path):
+            return self._cs >= other._cs
+        else:
+            return self._cs >= Path.__getCase(other)
     def __gt__(self, other):
         if isinstance(other, Path):
             return self._cs > other._cs
         else:
             return self._cs > Path.__getCase(other)
-    def __le__(self, other): return not (self > other)
+    def __le__(self, other):
+        if isinstance(other, Path):
+            return self._cs <= other._cs
+        else:
+            return self._cs <= Path.__getCase(other)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
