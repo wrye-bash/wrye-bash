@@ -2645,11 +2645,9 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         if initialized: return
         else: self.infoPages[index][1] = True
         pageName = gPage.GetName()
-        def dumpFiles(files, header=u'', isPath=True):
+        def dumpFiles(files, header=u''):
             if files:
                 buff = StringIO.StringIO()
-                if isPath: files = [x.s for x in files]
-                else: files = list(files)
                 files = bolt.sortFiles(files)
                 if header: buff.write(header+u'\n')
                 for file in files:
@@ -2722,11 +2720,10 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         elif pageName == 'gDirty':
             gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
         elif pageName == 'gSkipped':
-            gPage.SetValue(u'\n'.join((
-                dumpFiles(installer.skipExtFiles,
-                          u'== ' + _(u'Skipped (Extension)'), isPath=False),
-                dumpFiles(installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)'),
-                          isPath=False),)) or _(u'[None]'))
+            gPage.SetValue(u'\n'.join((dumpFiles(
+                installer.skipExtFiles, u'== ' + _(u'Skipped (Extension)')),
+                                       dumpFiles(
+                installer.skipDirFiles, u'== ' + _(u'Skipped (Dir)')))))
 
     #--Config
     def refreshCurrent(self,installer):
@@ -2878,7 +2875,6 @@ class InstallersPanel(BashTab):
         changed = bosh.bain.InstallersData.refreshTracked()
         if changed:
             # Some tracked files changed, update the ui
-            data_sizeCrcDate = self.listData.data_sizeCrcDate
             refresh = False
             for apath in changed:
                 # the Game/Data dir - will give correct relative path for both
@@ -2888,10 +2884,12 @@ class InstallersPanel(BashTab):
                 else:
                     path = apath
                 if apath.exists():
-                    data_sizeCrcDate[path] = (apath.size,apath.crc,apath.mtime)
+                    self.listData.data_sizeCrcDate[path.s] = (
+                        apath.size, apath.crc, apath.mtime)
                     refresh = True
                 else:
-                    refresh |= bool(data_sizeCrcDate.pop(path, None))
+                    refresh |= bool(
+                        self.listData.data_sizeCrcDate.pop(path.s, None))
             refreshui |= refresh and self.listData.refreshInstallersStatus()
         if refreshui: self.uiList.RefreshUI(focus_list=False)
 
