@@ -33,7 +33,7 @@ import time
 from binascii import crc32
 from functools import partial, wraps
 from itertools import groupby, imap
-from operator import itemgetter
+from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, AFile
 from .. import balt # YAK!
@@ -118,6 +118,7 @@ class Installer(object):
         #--Update crcs?
         Installer.calc_crcs(pending, pending_size, rootName,
                             new_sizeCrcDate, progress)
+        # drop _asFile
         old_sizeCrcDate.clear()
         for rpFile, (size, crc, date, _asFile) in new_sizeCrcDate.iteritems():
             old_sizeCrcDate[rpFile] = (size, crc, date)
@@ -174,6 +175,9 @@ class Installer(object):
         self.subNames = []
         self.subActives = []
         self.extras_dict = {} # hack to add more persistent attributes
+        #--Set by refreshDataSizeCrc
+        self.dirty_sizeCrc = {}
+        self.packageDoc = self.packagePic = None
         #--User Only
         self.skipVoices = False
         self.hasExtraData = False
@@ -193,7 +197,6 @@ class Installer(object):
         self.hasWizard = False
         self.hasBCF = False
         self.espmMap = collections.defaultdict(list)
-        self.packageDoc = self.packagePic = None
         self.hasReadme = False
         self.hasBethFiles = False
         self.data_sizeCrc = {}
@@ -201,7 +204,6 @@ class Installer(object):
         self.skipDirFiles = set()
         self.espms = set()
         self.unSize = 0
-        self.dirty_sizeCrc = {}
         #--Volatile: set by refreshStatus
         self.status = 0
         self.underrides = set()
@@ -243,8 +245,7 @@ class Installer(object):
     def resetAllEspmNames(self):
         for espm in self.remaps.keys():
             # Need to use .keys(), since 'resetEspmName' will use
-            # del self.remaps[oldName], changing the dictionary
-            # size.
+            # del self.remaps[oldName], changing the dictionary size.
             self.resetEspmName(self.remaps[espm])
 
     def getEspmName(self,currentName):
@@ -948,7 +949,7 @@ class Installer(object):
         """
         raise AbstractError
 
-    def install(self, destFiles, data_sizeCrcDate, progress=None):
+    def install(self, destFiles, progress=None):
         """Install specified files to Oblivion\Data directory."""
         raise AbstractError
 
@@ -1017,7 +1018,7 @@ class InstallerMarker(Installer):
         """Marker: size is -1, fileSizeCrcs empty, modified = creation time."""
         pass
 
-    def install(self, destFiles, data_sizeCrcDate, progress=None):
+    def install(self, destFiles, progress=None):
         """Install specified files to Oblivion\Data directory."""
         pass
 
@@ -1112,7 +1113,7 @@ class InstallerArchive(Installer):
                 bolt.clearReadOnly(bass.getTempDir())
         #--Done -> don't clean out temp dir, it's going to be used soon
 
-    def install(self, destFiles, data_sizeCrcDate, progress=None):
+    def install(self, destFiles, progress=None):
         """Install specified files to Game\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
@@ -1128,7 +1129,7 @@ class InstallerArchive(Installer):
         unpackDirJoin = unpackDir.join
         stageDir = bass.newTempDir()  #--forgets the old temp dir, creates a new one
         subprogress = SubProgress(progress,0.9,1.0)
-        subprogress.setFull(max(len(dest_src),1))
+        subprogress.setFull(len(dest_src))
         subprogressPlus = subprogress.plus
         stageDataDir = stageDir.join(u'Data')
         stageDataDirJoin = stageDataDir.join
@@ -1136,25 +1137,22 @@ class InstallerArchive(Installer):
         norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = {}
         timestamps = load_order.install_last()
-        count = 0
-        for dest,src in  dest_src.iteritems():
+        for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = unpackDirJoin(src)
             stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
             if srcFull.exists():
                 if bass.reModExt.search(srcFull.s): timestamps(srcFull)
                 data_sizeCrcDate_update[dest] = (size,crc,srcFull.mtime)
-                count += 1
                 # Move to staging directory
                 srcFull.moveTo(stageFull)
                 subprogressPlus()
         #--Clean up unpacked dir
         unpackDir.rmtree(safety=unpackDir.stail)
         #--Now Move
-        self._move(count, progress, stageDataDir)
+        self._move(len(data_sizeCrcDate_update), progress, stageDataDir)
         #--Update Installers data
-        data_sizeCrcDate.update(data_sizeCrcDate_update)
-        return count
+        return data_sizeCrcDate_update
 
     def unpackToProject(self, project, progress=None):
         """Unpacks archive to build directory."""
@@ -1358,7 +1356,7 @@ class InstallerProject(Installer):
         self.crc = cumCRC & 0xFFFFFFFFL
         self.project_refreshed = True
 
-    def install(self, destFiles, data_sizeCrcDate, progress=None):
+    def install(self, destFiles, progress=None):
         """Install specified files to Oblivion\Data directory."""
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
@@ -1379,7 +1377,6 @@ class InstallerProject(Installer):
         srcDirJoin = srcDir.join
         data_sizeCrcDate_update = {}
         timestamps = load_order.install_last()
-        count = 0
         for dest,src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
@@ -1388,12 +1385,10 @@ class InstallerProject(Installer):
                 srcFull.copyTo(stageFull)
                 if bass.reModExt.search(srcFull.s): timestamps(srcFull)
                 data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
-                count += 1
                 progressPlus()
-        self._move(count, progress, stageDataDir)
+        self._move(len(data_sizeCrcDate_update), progress, stageDataDir)
         #--Update Installers data
-        data_sizeCrcDate.update(data_sizeCrcDate_update)
-        return count
+        return data_sizeCrcDate_update
 
     def syncToData(self, projFiles):
         """Copies specified projFiles from Oblivion\Data to project
@@ -1853,13 +1848,12 @@ class InstallersData(DataStore):
 
     def refreshNorm(self):
         """Refresh self.abnorm_sizeCrc."""
-        active = [x for x in self.itervalues() if x.isActive]
-        active.sort(key=lambda pac: pac.order)
+        active_sorted = sorted([x for x in self.itervalues() if x.isActive],
+                               key=attrgetter('order'))
         #--norm
         norm_sizeCrc = {}
-        normUpdate = norm_sizeCrc.update
-        for package in active:
-            normUpdate(package.data_sizeCrc)
+        for package in active_sorted:
+            norm_sizeCrc.update(package.data_sizeCrc)
         #--Abnorm
         abnorm_sizeCrc = {}
         dataGet = self.data_sizeCrcDate.get
@@ -2076,14 +2070,14 @@ class InstallersData(DataStore):
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):
         """Move specified archives to specified position."""
-        old_ordered = self.sorted_pairs(set(self.data) - set(moveList))
-        new_ordered = self.sorted_pairs(moveList)
+        old_ordered = self.sorted_values(set(self.data) - set(moveList))
+        new_ordered = self.sorted_values(moveList)
         if newPos >= len(self.keys()): newPos = len(old_ordered)
-        for index,(archive,installer) in enumerate(old_ordered[:newPos]):
+        for index, installer in enumerate(old_ordered[:newPos]):
             installer.order = index
-        for index,(archive,installer) in enumerate(new_ordered):
+        for index, installer in enumerate(new_ordered):
             installer.order = newPos + index
-        for index,(archive,installer) in enumerate(old_ordered[newPos:]):
+        for index, installer in enumerate(old_ordered[newPos:]):
             installer.order = newPos + len(new_ordered) + index
         self.setChanged()
 
@@ -2195,20 +2189,16 @@ class InstallersData(DataStore):
                     mask |= set(installer.data_sizeCrc)
         #--Install packages in turn
         progress.setFull(len(packages))
-        for index, (archive, installer) in enumerate(
-                self.sorted_pairs(packages, reverse=True)):
-            progress(index,archive.s)
+        for index, installer in enumerate(
+                self.sorted_values(packages, reverse=True)):
+            progress(index,installer.archive)
             destFiles = set(installer.data_sizeCrc) - mask
             if not override:
                 destFiles &= installer.missingFiles
             if destFiles:
                 self._createTweaks(destFiles, installer, tweaksCreated)
-                installer.install(destFiles, self.data_sizeCrcDate,
-                                  SubProgress(progress, index, index + 1))
-                mods_changed, inis_changed = InstallersData.updateTable(
-                    destFiles, archive.s)
-                refresh_ui[0] |= mods_changed
-                refresh_ui[1] |= inis_changed
+                self.__installer_install(installer, destFiles, index, progress,
+                                         refresh_ui)
             installer.isActive = True
             mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
@@ -2216,15 +2206,34 @@ class InstallersData(DataStore):
             refresh_ui[1] |= bool(tweaksCreated)
         return tweaksCreated
 
+    def __installer_install(self, installer, destFiles, index, progress,
+                            refresh_ui):
+        sub_progress = SubProgress(progress, index, index + 1)
+        data_sizeCrcDate_update = installer.install(destFiles, sub_progress)
+        self.data_sizeCrcDate.update(data_sizeCrcDate_update)
+        mods_changed, inis_changed = InstallersData.updateTable(destFiles,
+            installer.archive)
+        refresh_ui[0] |= mods_changed
+        refresh_ui[1] |= inis_changed
+
     def sorted_pairs(self, package_keys=None, reverse=False):
         """Return pairs of key, installer for package_keys in self, sorted by
         install order.
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[(Path, Installer)]
         """
-        if package_keys is None: package_keys = self.keys()
-        pairs = [(installer, self[installer]) for installer in package_keys]
+        if package_keys is None: pairs = self.items()
+        else: pairs = [(k, self[k]) for k in package_keys]
         return sorted(pairs, key=lambda tup: tup[1].order, reverse=reverse)
+
+    def sorted_values(self, package_keys=None, reverse=False):
+        """Return installers for package_keys in self, sorted by install order.
+        :type package_keys: None | collections.Iterable[Path]
+        :rtype: list[Installer]
+        """
+        if package_keys is None: pairs = self.values()
+        else: pairs = [self[k] for k in package_keys]
+        return sorted(pairs, key=attrgetter('order'), reverse=reverse)
 
     def bain_install(self, packages, refresh_ui, progress=None, last=False,
                      override=True):
@@ -2307,7 +2316,7 @@ class InstallersData(DataStore):
             for relPath in removes:
                 data_sizeCrcDatePop(relPath, None)
 
-    def __restore(self, archive, installer, removes, restores):
+    def __restore(self, installer, removes, restores):
         """Populate restores dict with files to be restored by this
         installer, removing those from removes.
 
@@ -2316,12 +2325,13 @@ class InstallersData(DataStore):
         # get all destination files for this installer
         files = set(installer.data_sizeCrc)
         # keep those to be removed while not restored by a higher order package
-        myRestores = (removes & files) - set(restores)
-        for dest_file in myRestores:
+        to_keep = (removes & files) - set(restores)
+        for dest_file in to_keep:
             if installer.data_sizeCrc[dest_file] != \
                     self.data_sizeCrcDate.get(dest_file,(0, 0, 0))[:2]:
-                restores[dest_file] = archive
-            removes.discard(dest_file)
+                # restore it from this installer
+                restores[dest_file] = GPath(installer.archive)
+            removes.discard(dest_file) # don't remove it anyway
         return files
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
@@ -2350,7 +2360,7 @@ class InstallersData(DataStore):
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
-                masked |= self.__restore(archive, installer, removes, restores)
+                masked |= self.__restore(installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, refresh_ui, progress)
@@ -2359,11 +2369,11 @@ class InstallersData(DataStore):
                 self[archive].isActive = False
             #--Restore files
             if bass.settings['bash.installers.autoAnneal']:
-                self._restoreFiles(restores, progress, refresh_ui)
+                self._restoreFiles(restores, refresh_ui, progress)
         finally:
             self.irefresh(what='NS')
 
-    def _restoreFiles(self, restores, progress, refresh_ui):
+    def _restoreFiles(self, restores, refresh_ui, progress):
         installer_destinations = {}
         restores = sorted(restores.items(), key=itemgetter(1))
         for key, group in groupby(restores, key=itemgetter(1)):
@@ -2376,12 +2386,8 @@ class InstallersData(DataStore):
             progress(index, archive.s)
             if destFiles:
                 installer = self[archive]
-                installer.install(destFiles, self.data_sizeCrcDate,
-                                  SubProgress(progress, index, index + 1))
-                mods_changed, inis_changed = InstallersData.updateTable(
-                     destFiles, archive.s)
-                refresh_ui[0] |= mods_changed
-                refresh_ui[1] |= inis_changed
+                self.__installer_install(installer, destFiles, index, progress,
+                                         refresh_ui)
 
     def bain_anneal(self, anPackages, refresh_ui, progress=None):
         """Anneal selected packages. If no packages are selected, anneal all.
@@ -2401,16 +2407,16 @@ class InstallersData(DataStore):
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = {}
-        for archive, installer in self.sorted_pairs(reverse=True):
+        for installer in self.sorted_values(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                self.__restore(archive, installer, removes, restores)
+                self.__restore(installer, removes, restores)
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, refresh_ui, progress)
             #--Restore files
-            self._restoreFiles(restores, progress, refresh_ui)
+            self._restoreFiles(restores, refresh_ui, progress)
         finally:
             self.irefresh(what='NS')
 
@@ -2477,10 +2483,10 @@ class InstallersData(DataStore):
             mismatched = set(srcInstaller.data_sizeCrc)
         else:
             mismatched = srcInstaller.underrides
+        if not mismatched: return u''
         showInactive = conflictsMode and bass.settings['bash.installers.conflictsReport.showInactive']
         showLower = conflictsMode and bass.settings['bash.installers.conflictsReport.showLower']
         showBSA = bass.settings['bash.installers.conflictsReport.showBSAConflicts']
-        if not mismatched: return u''
         src_sizeCrc = srcInstaller.data_sizeCrc
         packConflicts = []
         bsaConflicts = []

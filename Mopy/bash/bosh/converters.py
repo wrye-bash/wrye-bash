@@ -74,17 +74,17 @@ class ConvertersData(DataDict):
         converterGet = self.bcfPath_sizeCrcDate.get
         archivesAdd = archives_set.add
         scannedAdd = scanned.add
-        for archive in converters_dir.list():
-            apath = convertersJoin(archive)
-            if apath.isfile() and self.validConverterName(archive):
+        for bcf_archive in converters_dir.list():
+            apath = convertersJoin(bcf_archive)
+            if apath.isfile() and self.validConverterName(bcf_archive):
                 scannedAdd(apath)
         if len(scanned) != len(self.bcfPath_sizeCrcDate):
             return True
-        for archive in scanned:
-            size, crc, modified = converterGet(archive, (None, None, None))
-            if crc is None or (size, modified) != archive.size_mtime():
+        for bcf_archive in scanned:
+            size, crc, modified = converterGet(bcf_archive, (None, None, None))
+            if crc is None or (size, modified) != bcf_archive.size_mtime():
                 return True
-            archivesAdd(archive)
+            archivesAdd(bcf_archive)
         #--Added/removed packages?
         return archives_set != set(self.bcfPath_sizeCrcDate)
 
@@ -105,10 +105,10 @@ class ConvertersData(DataDict):
         if fullRefresh:
             self.bcfPath_sizeCrcDate.clear()
             self.srcCRC_converters.clear()
-        for archive in converters_dir.list():
-            bcfPath = convJoin(archive)
+        for bcf_archive in converters_dir.list():
+            bcfPath = convJoin(bcf_archive)
             if bcfPath.isdir(): continue
-            if self.validConverterName(archive):
+            if self.validConverterName(bcf_archive):
                 size, crc, modified = self.bcfPath_sizeCrcDate.get(bcfPath, (
                     None, None, None))
                 size_mtime = bcfPath.size_mtime()
@@ -124,7 +124,7 @@ class ConvertersData(DataDict):
                         continue
                 self.bcfPath_sizeCrcDate[bcfPath] = (size, crc, modified)
                 if fullRefresh or crc not in bcfCRC_converter:
-                    pending.add(archive)
+                    pending.add(bcf_archive)
                 else:
                     newData[crc] = bcfCRC_converter[crc]
                     newData[crc].fullPath = bcfPath
@@ -134,10 +134,10 @@ class ConvertersData(DataDict):
         if bool(pending):
             progress(0, _(u"Scanning Converters..."))
             progress.setFull(len(pending))
-            for index, archive in enumerate(sorted(pending)):
+            for index, bcf_archive in enumerate(sorted(pending)):
                 progress(index,
-                         _(u'Scanning Converter...') + u'\n' + archive.s)
-                pendingChanged |= self.addConverter(archive)
+                         _(u'Scanning Converter...') + u'\n' + bcf_archive.s)
+                pendingChanged |= self.addConverter(bcf_archive)
         changed = pendingChanged or (len(newData) != len(bcfCRC_converter))
         self._prune_converters()
         return changed
@@ -431,13 +431,13 @@ class InstallerConverter(object):
         srcFiles = {}
         destFiles = []
         destInstaller = data[destArchive]
-        self.missingFiles = []
+        self.bcf_missing_files = []
         self.blockSize = blockSize
         subArchives = dict()
         srcAdd = self.srcCRCs.add
         convertedFileAppend = self.convertedFiles.append
         destFileAppend = destFiles.append
-        missingFileAppend = self.missingFiles.append
+        missingFileAppend = self.bcf_missing_files.append
         dupeGet = self.dupeCount.get
         srcGet = srcFiles.get
         subGet = subArchives.get
@@ -492,7 +492,7 @@ class InstallerConverter(object):
         #--Smooth the progress bar progression since some of the subroutines
         #  won't always run
         if lastStep == 0:
-            if len(self.missingFiles):
+            if len(self.bcf_missing_files):
                 #--No subArchives, but files to pack
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.6)
                 lastStep += 0.6
@@ -501,7 +501,7 @@ class InstallerConverter(object):
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.8)
                 lastStep += 0.8
         else:
-            if len(self.missingFiles):
+            if len(self.bcf_missing_files):
                 #--All subroutines will run
                 sProgress = SubProgress(progress, lastStep, lastStep + 0.3)
                 lastStep += 0.3
@@ -518,10 +518,10 @@ class InstallerConverter(object):
                     u'Mapping files...') + u'\n' + fileName)
         #--Build the BCF
         tempDir2 = bass.newTempDir().join(u'BCF-Missing')
-        if len(self.missingFiles):
+        if len(self.bcf_missing_files):
             #--Unpack missing files
             bass.rmTempDir()
-            destInstaller.unpackToTemp(self.missingFiles,
+            destInstaller.unpackToTemp(self.bcf_missing_files,
                 SubProgress(progress, lastStep, lastStep + 0.2))
             lastStep += 0.2
             #--Move the temp dir to tempDir\BCF-Missing

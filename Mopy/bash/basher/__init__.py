@@ -2417,8 +2417,8 @@ class InstallersList(balt.UIList):
     def addMarker(self):
         selected_installers = self.GetSelected()
         if selected_installers:
-            pairs = self.data_store.sorted_pairs(selected_installers)
-            max_order = pairs[-1][1].order + 1 # place it after last selected
+            sorted_inst = self.data_store.sorted_values(selected_installers)
+            max_order = sorted_inst[-1].order + 1 #place it after last selected
         else:
             max_order = None
         new_marker = GPath(u'====')
@@ -2446,10 +2446,10 @@ class InstallersList(balt.UIList):
                                abort=abort) as progress:
                 progress.setFull(len(toRefresh))
                 dest = set() # installer's destination paths rel to Data/
-                for index, (name, installer) in enumerate(
-                        self.data_store.sorted_pairs(toRefresh)):
+                for index, installer in enumerate(
+                        self.data_store.sorted_values(toRefresh)):
                     progress(index, _(u'Refreshing Packages...') + u'\n' +
-                                    name.s)
+                             installer.archive)
                     dest.update(installer.refreshBasic(
                         SubProgress(progress, index, index + 1),
                         recalculate_project_crc=calculate_projects_crc).keys())

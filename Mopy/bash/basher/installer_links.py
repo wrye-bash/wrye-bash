@@ -96,15 +96,15 @@ class _InstallerLink(Installers_Link, EnabledLink):
                 u"Enter '0' to use 7z's default size."), prompt=u'MB',
             title=title, value=value, min=0, max=102400)
 
-    def _pack(self, archive, installer, project, release=False):
+    def _pack(self, archive_path, installer, project, release=False):
         #--Archive configuration options
         blockSize = None
-        if archive.cext in archives.noSolidExts:
+        if archive_path.cext in archives.noSolidExts:
             isSolid = False
         else:
             if not u'-ms=' in bass.inisettings['7zExtraCompressionArguments']:
                 isSolid = self._askYes(_(u'Use solid compression for %s?')
-                                       % archive.s, default=False)
+                                       % archive_path.s, default=False)
                 if isSolid:
                     blockSize = self._promptSolidBlockSize(title=self._text)
             else:
@@ -112,39 +112,39 @@ class _InstallerLink(Installers_Link, EnabledLink):
         with balt.Progress(_(u'Packing to Archive...'),
                            u'\n' + u' ' * 60) as progress:
             #--Pack
-            installer.packToArchive(project, archive, isSolid, blockSize,
+            installer.packToArchive(project, archive_path, isSolid, blockSize,
                                     SubProgress(progress, 0, 0.8),
                                     release=release)
             #--Add the new archive to Bash
-            iArchive = self._get_refreshed(archive, installer,
+            iArchive = self._get_refreshed(archive_path, installer,
                                            is_project=False, do_refresh=False)
             iArchive.blockSize = blockSize
             #--Refresh UI
-            self.idata.irefresh(what='I', pending=[archive])
-        self.window.RefreshUI(detail_item=archive)
+            self.idata.irefresh(what='I', pending=[archive_path])
+        self.window.RefreshUI(detail_item=archive_path)
 
     def _askFilename(self, message, filename):
         """:rtype: bolt.Path"""
         result = self._askText(message, title=self.dialogTitle,
                                default=filename)
         if not result: return
-        archive = GPath(result).tail
+        archive_path = GPath(result).tail
         #--Error checking
-        if not archive.s:
+        if not archive_path.s:
             self._showWarning(_(u'%s is not a valid archive name.') % result)
             return
-        if self.idata.store_dir.join(archive).isdir():
-            self._showWarning(_(u'%s is a directory.') % archive.s)
+        if self.idata.store_dir.join(archive_path).isdir():
+            self._showWarning(_(u'%s is a directory.') % archive_path.s)
             return
-        if archive.cext not in archives.writeExts:
+        if archive_path.cext not in archives.writeExts:
             self._showWarning(
                 _(u'The %s extension is unsupported. Using %s instead.') % (
-                    archive.cext, archives.defaultExt))
-            archive = GPath(archive.sroot + archives.defaultExt).tail
-        if archive in self.idata:
+                    archive_path.cext, archives.defaultExt))
+            archive_path = GPath(archive_path.sroot + archives.defaultExt).tail
+        if archive_path in self.idata:
             if not self._askYes(_(u'%s already exists. Overwrite it?') %
-                    archive.s, title=self.dialogTitle, default=False): return
-        return archive
+                    archive_path.s, title=self.dialogTitle, default=False): return
+        return archive_path
 
 class _SingleInstallable(OneItemLink, _InstallerLink):
 
@@ -212,7 +212,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             installer = self._selected_info
             subs = []
             oldRemaps = copy.copy(installer.remaps)
-            installer.remaps = {}
+            installer.remaps = {} # FIXME(ut): only clear if not cancelled ?
             idetails = self.iPanel.detailsPanel
             idetails.refreshCurrent(installer)
             for index in xrange(idetails.gSubList.GetCount()):
@@ -1165,8 +1165,12 @@ class InstallerConverter_Create(_InstallerLink):
             log(u'  *  '+_(u'Has Extra Directories')+u' = %s'%bool(converter.hasExtraData))
             log(u'  *  '+_(u'Has Esps Unselected')+u'   = %s'%bool(converter.espmNots))
             log(u'  *  '+_(u'Has Packages Selected')+u' = %s'%bool(converter.subActives))
-            log.setHeader(u'. '+_(u'Contains')+u': %s'%formatInteger(len(converter.missingFiles))+ (_(u'file'),_(u'files'))[len(converter.missingFiles) > 1])
-            log(u'  * '+u'\n  * '.join(sorted(u'%s' % x for x in converter.missingFiles)))
+            len_missing = len(converter.bcf_missing_files)
+            log.setHeader(
+                u'. ' + _(u'Contains') + u': %s' % formatInteger(len_missing) +
+                (_(u'file'), _(u'files'))[len_missing > 1])
+            log(u'  * ' +u'\n  * '.join(sorted(u'%s' % x for x in converter
+                                               .bcf_missing_files)))
         if log:
             self._showLog(log.out.getvalue(), title=_(u'BCF Information'))
 

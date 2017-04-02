@@ -1400,14 +1400,13 @@ class AFile(object):
     """Abstract file, supports caching - alpha."""
     _null_stat = (-1, None)
 
-    @property
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
     def __init__(self, abs_path, load_cache=False):
         self._abs_path = GPath(abs_path)
         #--Settings cache
         try:
-            self._reset_cache(self._stat_tuple, load_cache)
+            self._reset_cache(self._stat_tuple(), load_cache)
         except OSError:
             self._reset_cache(self._null_stat, load_cache=False)
 
@@ -1419,7 +1418,7 @@ class AFile(object):
 
     def needs_update(self):
         try:
-            stat_tuple = self._stat_tuple
+            stat_tuple = self._stat_tuple()
         except OSError:
             self._reset_cache(self._null_stat, load_cache=False)
             return False # we should not call needs_update on deleted files
@@ -1520,7 +1519,6 @@ class FileInfo(AFile):
     """Abstract Mod, Save or BSA File. Features a half baked Backup API."""
     _null_stat = (-1, None, None)
 
-    @property
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
     def __init__(self, parent_dir, name, load_cache=False):
@@ -1542,7 +1540,7 @@ class FileInfo(AFile):
         if load_cache: self.readHeader()
 
     def mark_unchanged(self):
-        self._reset_cache(self._stat_tuple, load_cache=False)
+        self._reset_cache(self._stat_tuple(), load_cache=False)
 
     ##: DEPRECATED-------------------------------------------------------------
     def getPath(self): return self.abs_path
@@ -1724,15 +1722,15 @@ class ModInfo(FileInfo):
         cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
         cached_size = modInfos.table.getItem(self.name, 'crc_size')
         if recalculate or mtime != cached_mtime or size != cached_size:
-            crc = path.crc
-            if crc != modInfos.table.getItem(self.name,'crc'):
-                modInfos.table.setItem(self.name,'crc',crc)
+            path_crc = path.crc
+            if path_crc != modInfos.table.getItem(self.name,'crc'):
+                modInfos.table.setItem(self.name,'crc',path_crc)
                 modInfos.table.setItem(self.name,'ignoreDirty',False)
             modInfos.table.setItem(self.name,'crc_mtime',mtime)
             modInfos.table.setItem(self.name,'crc_size',size)
         else:
-            crc = modInfos.table.getItem(self.name,'crc')
-        return crc
+            path_crc = modInfos.table.getItem(self.name,'crc')
+        return path_crc
 
     def setmtime(self, set_time=0):
         """Sets mtime. Defaults to current value (i.e. reset)."""

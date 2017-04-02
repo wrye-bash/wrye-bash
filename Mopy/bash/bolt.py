@@ -831,10 +831,6 @@ class Path(object):
         """Returns the drive part of the path string."""
         return GPath(os.path.splitdrive(self._s)[0])
 
-    def cdrive(self):
-        """Returns the case-insensitive drive part of the path string."""
-        return GPath(os.path.splitdrive(self._cs)[0])
-
     #--File system info
     #--THESE REALLY OUGHT TO BE PROPERTIES.
     def exists(self):
