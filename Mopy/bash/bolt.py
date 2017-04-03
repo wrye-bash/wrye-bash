@@ -577,7 +577,6 @@ class Path(object):
         self._cs = os.path.normcase(self._s)
         self._sroot,self._ext = os.path.splitext(self._s)
         self._shead,self._stail = os.path.split(self._s)
-        self._cext = os.path.normcase(self._ext)
         self._sbody = os.path.basename(self._sroot)
 
     def __len__(self):
@@ -653,7 +652,11 @@ class Path(object):
     @property
     def cext(self):
         """Extension in normalized case."""
-        return self._cext
+        try:
+            return self._cext
+        except AttributeError:
+            self._cext = os.path.normcase(self._ext)
+            return self._cext
     @property
     def temp(self,unicodeSafe=True):
         """Temp file path.  If unicodeSafe is True, the returned
@@ -895,7 +898,7 @@ class Path(object):
     #--start, move, copy, touch, untemp
     def start(self, exeArgs=None):
         """Starts file as if it had been doubleclicked in file explorer."""
-        if self._cext == u'.exe':
+        if self.cext == u'.exe':
             if not exeArgs:
                 subprocess.Popen([self.s], close_fds=close_fds)
             else:
