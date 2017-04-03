@@ -575,7 +575,6 @@ class Path(object):
         if not isinstance(norm,unicode): norm = decode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
-        self._shead,self._stail = os.path.split(self._s)
 
     def __len__(self):
         return len(self._s)
@@ -607,11 +606,19 @@ class Path(object):
     @property
     def shead(self):
         """Head as string."""
-        return self._shead
+        try:
+            return self._shead
+        except AttributeError:
+            self._shead, self._stail = os.path.split(self._s)
+            return self._shead
     @property
     def stail(self):
         """Tail as string."""
-        return self._stail
+        try:
+            return self._stail
+        except AttributeError:
+            self._shead, self._stail = os.path.split(self._s)
+            return self._stail
     @property
     def sbody(self):
         """For alpha\beta.gamma returns beta as string."""
@@ -629,15 +636,15 @@ class Path(object):
     @property
     def headTail(self):
         """For alpha\beta.gamma returns (alpha,beta.gamma)"""
-        return map(GPath,(self._shead,self._stail))
+        return map(GPath,(self.shead,self.stail))
     @property
     def head(self):
         """For alpha\beta.gamma, returns alpha."""
-        return GPath(self._shead)
+        return GPath(self.shead)
     @property
     def tail(self):
         """For alpha\beta.gamma, returns beta.gamma."""
-        return GPath(self._stail)
+        return GPath(self.stail)
     @property
     def body(self):
         """For alpha\beta.gamma, returns beta."""
@@ -876,8 +883,8 @@ class Path(object):
                         except: pass
 
     def open(self,*args,**kwdargs):
-        if self._shead and not os.path.exists(self._shead):
-            os.makedirs(self._shead)
+        if self.shead and not os.path.exists(self.shead):
+            os.makedirs(self.shead)
         if 'encoding' in kwdargs:
             return codecs.open(self._s,*args,**kwdargs)
         else:
@@ -918,8 +925,8 @@ class Path(object):
         if self.isdir():
             shutil.copytree(self._s,destName._s)
         else:
-            if destName._shead and not os.path.exists(destName._shead):
-                os.makedirs(destName._shead)
+            if destName.shead and not os.path.exists(destName.shead):
+                os.makedirs(destName.shead)
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
     def moveTo(self,destName):
@@ -927,8 +934,8 @@ class Path(object):
             raise StateError(self._s + u' cannot be moved because it does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
-        if destPath._shead and not os.path.exists(destPath._shead):
-            os.makedirs(destPath._shead)
+        if destPath.shead and not os.path.exists(destPath.shead):
+            os.makedirs(destPath.shead)
         elif destPath.exists():
             destPath.remove()
         try:
