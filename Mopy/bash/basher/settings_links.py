@@ -85,7 +85,6 @@ class Settings_BackupSettings(ItemLink):
             backup.WarnFailed()
         except barb.BackupCancelled:
             pass
-        finally: del backup # deletes tmp dir
 
 #------------------------------------------------------------------------------
 class Settings_RestoreSettings(ItemLink):
@@ -96,7 +95,11 @@ class Settings_RestoreSettings(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        if not barb.RestoreSettings.PromptConfirm(): return
+        msg = _(u'Do you want to restore your Bash settings from a backup?')
+        msg += u'\n\n' + _(u'This will force a restart of Wrye Bash once your '
+                           u'settings are restored.')
+        if not balt.askYes(Link.Frame, msg, _(u'Restore Bash Settings?')):
+            return
         backup = None # barb.RestoreSettings may raise....
         try:
             backup = barb.RestoreSettings(Link.Frame)
@@ -109,8 +112,6 @@ class Settings_RestoreSettings(ItemLink):
             if backup: backup.WarnFailed()
         except barb.BackupCancelled:
             pass
-        finally:
-            if backup: del backup # deletes tmp dir
 
 #------------------------------------------------------------------------------
 class Settings_SaveSettings(ItemLink):

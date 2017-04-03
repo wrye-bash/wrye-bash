@@ -34,8 +34,8 @@ import bosh
 import bush
 from . import images_list
 from bolt import BoltError, AbstractError, GPath, deprint
-from balt import askSave, askYes, askOpen, askWarning, showError, \
-    showWarning, showInfo, Link, BusyCursor
+from balt import askSave, askOpen, askWarning, showError, showWarning, \
+    showInfo, Link, BusyCursor
 
 #------------------------------------------------------------------------------
 class BackupCancelled(BoltError):
@@ -61,15 +61,6 @@ class BaseBackupSettings:
         self.parent = parent
         self.verDat = bass.settings['bash.version']
         self.files = {}
-        self.tmp = None
-
-    def __del__(self): ## FIXME: does not delete immediately - used to lead to
-    # file not found as ~tmp was deleted in mid restore ....
-        if self.tmp and self.tmp.exists(): self.tmp.rmtree(safety=u'WryeBash_')
-
-    def maketmp(self):
-        # create a ~tmp directory
-        self.tmp = bolt.Path.tempDir()
 
     def Apply(self):
         raise AbstractError
@@ -77,22 +68,8 @@ class BaseBackupSettings:
     def PromptFile(self):
         raise AbstractError
 
-    @staticmethod
-    def PromptConfirm(msg=None):
-        raise AbstractError
-
-    def PromptMismatch(self):
-        raise AbstractError
-
-    def CmpDataVersion(self):
-        return cmp(self.verDat, bass.settings['bash.version'])
-
-    def SameDataVersion(self):
-        return not self.CmpDataVersion()
-
-    @staticmethod
-    def SameAppVersion():
-        return not cmp(bass.AppVersion, bass.settings['bash.version'])
+def SameAppVersion():
+    return not cmp(bass.AppVersion, bass.settings['bash.version'])
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
@@ -172,13 +149,21 @@ class BackupSettings(BaseBackupSettings):
         if not self.PromptFile(): return
         deprint(u'')
         deprint(_(u'BACKUP BASH SETTINGS: ') + self._dir.join(self.archive).s)
+        temp_settings_backup_dir = bolt.Path.tempDir()
+        try:
+            self._backup_settings(temp_settings_backup_dir)
+        finally:
+            if temp_settings_backup_dir and temp_settings_backup_dir.exists():
+                temp_settings_backup_dir.rmtree(safety=u'WryeBash_')
+
+    def _backup_settings(self, temp_dir):
         with BusyCursor():
             # copy all files to ~tmp backup dir
             for tpath,fpath in self.files.iteritems():
                 deprint(tpath.s + u' <-- ' + fpath.s)
-                fpath.copyTo(self.tmp.join(tpath))
+                fpath.copyTo(temp_dir.join(tpath))
             # dump the version info and file listing
-            with self.tmp.join(u'backup.dat').open('wb') as out:
+            with temp_dir.join(u'backup.dat').open('wb') as out:
                 # data version, if this doesn't match the installed data
                 # version, do not allow restore
                 cPickle.dump(self.verDat, out, -1)
@@ -187,8 +172,8 @@ class BackupSettings(BaseBackupSettings):
                 cPickle.dump(self.verApp, out, -1)
             # create the backup archive in 7z format WITH solid compression
             # may raise StateError
-            command = archives.compressCommand(self.archive, self._dir, self.tmp)
-            archives.compress7z(command, self._dir, self.archive, self.tmp)
+            command = archives.compressCommand(self.archive, self._dir, temp_dir)
+            archives.compress7z(command, self._dir, self.archive, temp_dir)
             bass.settings['bash.backupPath'] = self._dir
         self.InfoSuccess()
 
@@ -206,39 +191,7 @@ class BackupSettings(BaseBackupSettings):
                 self.archive = path.tail
             elif not self.archive:
                 self.archive = filename
-        self.maketmp()
         return True
-
-    @staticmethod
-    def PromptConfirm(msg=None):
-        msg = msg or _(u'Do you want to backup your Bash settings now?')
-        return askYes(Link.Frame, msg, _(u'Backup Bash Settings?'))
-
-    @staticmethod
-    def PromptMismatch():
-        #returns False if same app version or old version == 0 (as in not previously installed) or user cancels
-        if bass.settings['bash.version'] == 0: return False
-        return not BaseBackupSettings.SameAppVersion() and BackupSettings.PromptConfirm(
-            _(u'A different version of Wrye Bash was previously installed.')+u'\n' +
-            _(u'Previous Version: ')+(u'%s\n' % bass.settings['bash.version']) +
-            _(u'Current Version: ')+(u'%s\n' % bass.AppVersion) +
-            _(u'Do you want to create a backup of your Bash settings before they are overwritten?'))
-
-    def PromptContinue(self):
-        #returns False if user quits
-        return not askYes(self.parent,
-            _(u'You did not create a backup of the Bash settings.')+u'\n' +
-            _(u'If you continue, your current settings may be overwritten.')+u'\n' +
-            _(u'Do you want to quit Wrye Bash now?'),
-            _(u'No backup created!'))
-
-    def PromptQuit(self):
-        #returns True if user quits
-        return askYes(self.parent,
-            _(u'There was an error while trying to backup the Bash settings!')+u'\n' +
-            _(u'If you continue, your current settings may be overwritten.')+u'\n' +
-            _(u'Do you want to quit Wrye Bash now?'),
-            _(u'Unable to create backup!'))
 
     def WarnFailed(self):
         showWarning(self.parent,
@@ -259,14 +212,22 @@ class RestoreSettings(BaseBackupSettings):
         BaseBackupSettings.__init__(self, parent, path, do_quit)
         if not self.PromptFile():
             raise BackupCancelled()
-        command = archives.extractCommand(self._dir.join(self.archive), self.tmp)
-        archives.extract7z(command, self._dir.join(self.archive))
-        with self.tmp.join(u'backup.dat').open('rb') as ins:
-            self.verDat = cPickle.load(ins)
-            self.verApp = cPickle.load(ins)
-            self.restore_images = restore_images
+        self.restore_images = restore_images
 
     def Apply(self):
+        temp_settings_restore_dir = bolt.Path.tempDir()
+        try:
+            self._Apply(temp_settings_restore_dir)
+        finally:
+            if temp_settings_restore_dir and temp_settings_restore_dir.exists():
+                temp_settings_restore_dir.rmtree(safety=u'WryeBash_')
+
+    def _Apply(self, temp_dir):
+        command = archives.extractCommand(self._dir.join(self.archive), temp_dir)
+        archives.extract7z(command, self._dir.join(self.archive))
+        with temp_dir.join(u'backup.dat').open('rb') as ins:
+            self.verDat = cPickle.load(ins)
+            self.verApp = cPickle.load(ins)
         if self.ErrorConflict():
             self.WarnFailed()
             return
@@ -278,7 +239,7 @@ class RestoreSettings(BaseBackupSettings):
 
         # reinitialize bass.dirs using the backup copy of bash.ini if it exists
         game, dirs = bush.game.fsName, bass.dirs
-        tmpBash = self.tmp.join(game+u'\\Mopy\\bash.ini')
+        tmpBash = temp_dir.join(game+u'\\Mopy\\bash.ini')
         opts = bash.opts
 
         bash.SetUserPath(tmpBash.s,opts.userPath)
@@ -313,7 +274,7 @@ class RestoreSettings(BaseBackupSettings):
                 restore_paths += (
                     (dirs['images'],                game+u'\\Mopy\\bash\\images'),)
         for fpath, tpath in restore_paths:
-            path = self.tmp.join(tpath)
+            path = temp_dir.join(tpath)
             if path.exists():
                 for name in path.list():
                     if path.join(name).isfile():
@@ -324,7 +285,7 @@ class RestoreSettings(BaseBackupSettings):
         #restore savegame profile settings
         tpath = GPath(u'My Games\\'+game+u'\\Saves')
         fpath = dirs['saveBase'].join(u'Saves')
-        path = self.tmp.join(tpath)
+        path = temp_dir.join(tpath)
         if path.exists():
             for root, folders, files in path.walk(True,None,True):
                 root = GPath(u'.'+root.s)
@@ -346,19 +307,11 @@ class RestoreSettings(BaseBackupSettings):
             if not path: return False
             self._dir = path.head
             self.archive = path.tail
-        self.maketmp()
         return True
-
-    @staticmethod
-    def PromptConfirm(msg=None):
-        # returns False if user cancels
-        msg = msg or _(u'Do you want to restore your Bash settings from a backup?')
-        msg += u'\n\n' + _(u'This will force a restart of Wrye Bash once your settings are restored.')
-        return askYes(Link.Frame, msg, _(u'Restore Bash Settings?'))
 
     def PromptMismatch(self):
         # return True if same app version or user confirms
-        return BaseBackupSettings.SameAppVersion() or askWarning(self.parent,
+        return SameAppVersion() or askWarning(self.parent,
               _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
               _(u'Backup v%s does not match v%s') % (self.verApp, bass.settings['bash.version']) + u'\n' +
               u'\n' +
@@ -366,8 +319,8 @@ class RestoreSettings(BaseBackupSettings):
               _(u'Warning: Version Mismatch!'))
 
     def ErrorConflict(self):
-        #returns True if the data format doesn't match
-        if self.CmpDataVersion() > 0:
+        # returns positive if the settings are from a newer Bash version
+        if cmp(self.verDat, bass.settings['bash.version']) > 0:
             showError(self.parent,
                   _(u'The data format of the selected backup file is newer than the current Bash version!')+u'\n' +
                   _(u'Backup v%s is not compatible with v%s') % (self.verApp, bass.settings['bash.version']) + u'\n' +
