@@ -575,9 +575,7 @@ class Path(object):
         if not isinstance(norm,unicode): norm = decode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
-        self._sroot,self._ext = os.path.splitext(self._s)
         self._shead,self._stail = os.path.split(self._s)
-        self._sbody = os.path.basename(self._sroot)
 
     def __len__(self):
         return len(self._s)
@@ -601,7 +599,11 @@ class Path(object):
     @property
     def sroot(self):
         """Root as string."""
-        return self._sroot
+        try:
+            return self._sroot
+        except AttributeError:
+            self._sroot, self._ext = os.path.splitext(self._s)
+            return self._sroot
     @property
     def shead(self):
         """Head as string."""
@@ -613,11 +615,15 @@ class Path(object):
     @property
     def sbody(self):
         """For alpha\beta.gamma returns beta as string."""
-        return self._sbody
+        try:
+            return self._sbody
+        except AttributeError:
+            self._sbody = os.path.basename(self.sroot)
+            return self._sbody
     @property
     def csbody(self):
         """For alpha\beta.gamma returns beta as string in normalized case."""
-        return os.path.normcase(self._sbody)
+        return os.path.normcase(self.sbody)
 
     #--Head, tail
     @property
@@ -635,27 +641,28 @@ class Path(object):
     @property
     def body(self):
         """For alpha\beta.gamma, returns beta."""
-        return GPath(self._sbody)
+        return GPath(self.sbody)
 
     #--Root, ext
     @property
-    def rootExt(self):
-        return GPath(self._sroot),self._ext
-    @property
     def root(self):
         """For alpha\beta.gamma returns alpha\beta"""
-        return GPath(self._sroot)
+        return GPath(self.sroot)
     @property
     def ext(self):
         """Extension (including leading period, e.g. '.txt')."""
-        return self._ext
+        try:
+            return self._ext
+        except AttributeError:
+            self._sroot, self._ext = os.path.splitext(self._s)
+            return self._ext
     @property
     def cext(self):
         """Extension in normalized case."""
         try:
             return self._cext
         except AttributeError:
-            self._cext = os.path.normcase(self._ext)
+            self._cext = os.path.normcase(self.ext)
             return self._cext
     @property
     def temp(self,unicodeSafe=True):

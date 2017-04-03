@@ -129,12 +129,11 @@ class File_Duplicate(ItemLink):
             #--Mod with resources? Warn on rename if file has bsa and/or dialog
             if not self._askResourcesOk(fileInfo): continue
             #--Continue copy
-            (root, ext) = to_duplicate.rootExt
             if bosh.saveInfos.bak_file_pattern.match(to_duplicate.s):
                 continue #YAK!
-            (destDir, wildcard) = (fileInfo.dir, u'*' + ext)
-            destName = self.window.new_path(GPath(root + u' Copy' + ext),
-                                            destDir)
+            (destDir, wildcard) = (fileInfo.dir, u'*' + to_duplicate.ext)
+            destName = self.window.new_path(
+                GPath(to_duplicate.root + u' Copy' + to_duplicate.ext), destDir)
             destDir.makedirs()
             if len(self.selected) == 1:
                 destPath = self._askSave(

@@ -1651,7 +1651,7 @@ class FileInfo(AFile):
         """Returns parameters for next snapshot."""
         destDir = self.snapshot_dir
         destDir.makedirs()
-        (root,ext) = self.name.rootExt
+        (root,ext) = self.name.root, self.name.ext
         separator = u'-'
         snapLast = [u'00']
         #--Look for old snapshots.
@@ -3868,8 +3868,8 @@ class SaveInfos(FileInfos):
         if value == enabled or re.match(u'(autosave|quicksave)', fileName.s,
                                           re.I | re.U):
             return fileName
-        (root,ext) = fileName.rootExt
-        newName = root + (bush.game.ess.ext if value else ext[:-1] + u'r')
+        newName = fileName.root + (
+            bush.game.ess.ext if value else fileName.ext[:-1] + u'r')
         try:
             self.rename_info(fileName, newName)
             return newName
