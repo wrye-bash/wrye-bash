@@ -205,7 +205,7 @@ def get_ordered(mod_names):
 def filter_pinned(imods):
     return filter(game_handle.pinned_mods.__contains__, imods)
 
-# Get and set API
+# Get and set API -------------------------------------------------------------
 def save_lo(lord, acti=None, __index_move=0, quiet=False):
     """Save the Load Order (rewrite loadorder.txt or set modification times).
 
@@ -326,7 +326,7 @@ def get_free_time(start_time, default_time='+1', end_time=None):
 
 def install_last(): return game_handle.install_last()
 
-# Lock load order
+# Lock load order -------------------------------------------------------------
 def toggle_lock_load_order():
     global locked
     lock = not locked

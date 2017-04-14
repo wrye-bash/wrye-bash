@@ -28,7 +28,6 @@ points to BashFrame.modList singleton."""
 import re as _re
 from .. import bosh, balt, bass, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
-from ..bass import Resources
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
 from ..bolt import GPath, BoltError
@@ -252,8 +251,7 @@ class Mods_ListMods(ItemLink):
         #--Get masters list
         text = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Active Mod Files"), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Active Mod Files"), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
@@ -264,8 +262,7 @@ class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
     def Execute(self):
         text = bosh.modInfos.getTagList()
         balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False,
-                      icons=Resources.bashBlue)
+        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):

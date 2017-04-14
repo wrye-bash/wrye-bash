@@ -30,12 +30,11 @@ import re
 import time
 import wx
 from datetime import timedelta
-from . import SetUAC, BashFrame
+from . import BashFrame ##: drop this - decouple !
 from .. import bass, bosh, bolt, balt, env, load_order
-from ..bass import Resources
 from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
-    RevertToSavedButton, RevertButton, hspace, vspace
+    RevertToSavedButton, RevertButton, hspace, vspace, Resources
 from ..bolt import SubProgress, GPath, CancelError, BoltError, SkipError, Path
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
@@ -89,7 +88,7 @@ class PatchDialog(balt.Dialog):
         #--GUI elements
         self.gExecute = OkButton(self, label=_(u'Build Patch'),
                                  onButClick=self.PatchExecute)
-        SetUAC(self.gExecute)
+        _SetUAC(self.gExecute)
         self.gSelectAll = SelectAllButton(self, label=_(u'Select All'),
                                           onButClick=self.SelectAll)
         self.gDeselectAll = SelectAllButton(self, label=_(u'Deselect All'),
@@ -243,7 +242,8 @@ class PatchDialog(balt.Dialog):
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
             bosh.modInfos.table.setItem(patch_name,'doc',readme)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
-            balt.showWryeLog(self.parent,readme.root+u'.html',patch_name.s,icons=Resources.bashBlue)
+            balt.WryeLog(self.parent, readme.root + u'.html', patch_name.s,
+                         log_icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patch_name.s
             if load_order.cached_is_active(patch_name) or (
@@ -558,3 +558,17 @@ otherPatcherDict = {
     'CBash_StatsPatcher' : 'StatsPatcher',
     'CBash_ContentsChecker' : 'ContentsChecker',
     }
+
+def _SetUAC(item): # item must define a GetHandle() method
+    """Helper function for creating menu items or buttons that need UAC
+       Note: for this to work correctly, it needs to be run BEFORE
+       appending a menu item to a menu (and so, needs to be enabled/
+       disabled prior to that as well."""
+    if env.isUAC:
+        if isinstance(item, wx.MenuItem):
+            pass
+            #if item.IsEnabled():
+            #    bitmap = images['uac.small'].GetBitmap()
+            #    item.SetBitmaps(bitmap,bitmap)
+        else:
+            env.setUAC(item.GetHandle(), True)
