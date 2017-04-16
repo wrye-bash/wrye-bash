@@ -2121,17 +2121,13 @@ class InstallersData(DataStore):
         mods_changed, inis_changed = False, False
         from . import modInfos, iniInfos
         for ci_dest in destFiles:
-            # if value == u'' we come from delete !
             i = GPath(ci_dest)
-            if value and bass.reModExt.match(i.cext):
+            if bass.reModExt.match(i.cext):
                 mods_changed = True
                 modInfos.table.setItem(i, 'installer', value)
             elif i.head.cs == u'ini tweaks':
                 inis_changed = True
-                if value:
-                    iniInfos.table.setItem(i.tail, 'installer', value)
-                else: # installer is the only column used in iniInfos table
-                    iniInfos.table.delRow(i.tail)
+                iniInfos.table.setItem(i.tail, 'installer', value)
         return mods_changed, inis_changed
 
     #--Install
@@ -2303,28 +2299,37 @@ class InstallersData(DataStore):
             emptyDirs -= exclude
         return removedFiles
 
+    @staticmethod
+    def _is_ini_tweak(ci_relPath):
+        parts = ci_relPath.lower().split(os_sep)
+        return len(parts) == 2 and parts[0] == u'ini tweaks' \
+           and parts[1][-4:] == u'.ini'
+
     def _removeFiles(self, removes, refresh_ui, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'bain_uninstall' and 'bain_anneal'."""
         modsDirJoin = bass.dirs['mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
-        removedFiles = set()
-        removedFilesAdd = removedFiles.add
+        nonPlugins = set()
         reModExtSearch = bass.reModExt.search
         removedPlugins = set()
+        removedInis = set()
         #--Construct list of files to delete
-        for relPath in removes:
-            path = modsDirJoin(relPath)
+        norm_ghost = Installer.getGhosted()
+        for ci_relPath in removes:
+            path = modsDirJoin(norm_ghost.get(ci_relPath, ci_relPath))
             if path.exists():
-                removedFilesAdd(path)
-            if reModExtSearch(relPath):
-                removedPlugins.add(GPath(relPath))
-            emptyDirsAdd(path.head)
+                if reModExtSearch(ci_relPath):
+                    removedPlugins.add(GPath(ci_relPath))
+                elif self._is_ini_tweak(ci_relPath):
+                    removedInis.add(GPath(ci_relPath[11:]))
+                else:
+                    nonPlugins.add(path)
+                    emptyDirsAdd(path.head)
         #--Now determine which directories will be empty, replacing subsets of
         # removedFiles by their parent dir if the latter will be emptied
-        removedFiles = self._determineEmptyDirs(emptyDirs, removedFiles)
-        nonPlugins = removedFiles - set(imap(modsDirJoin, removedPlugins))
+        nonPlugins = self._determineEmptyDirs(emptyDirs, nonPlugins)
         ex = None # if an exception is raised we must again check removes
         try: #--Do the deletion
             if nonPlugins:
@@ -2336,20 +2341,20 @@ class InstallersData(DataStore):
                 refresh_ui[0] = True
                 modInfos.delete(removedPlugins, doRefresh=False, recycle=False,
                                 raise_on_master_deletion=False)
+            if removedInis:
+                from . import iniInfos
+                refresh_ui[1] = True
+                iniInfos.delete(removedInis, doRefresh=False, recycle=False)
         except (CancelError, SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()
             raise
         finally:
             if ex:removes = [f for f in removes if not modsDirJoin(f).exists()]
-            mods_changed, inis_changed = InstallersData.updateTable(removes,
-                                                                    u'')
-            refresh_ui[0] |= mods_changed
-            refresh_ui[1] |= inis_changed
             #--Update InstallersData
             data_sizeCrcDatePop = self.data_sizeCrcDate.pop
-            for relPath in removes:
-                data_sizeCrcDatePop(relPath, None)
+            for ci_relPath in removes:
+                data_sizeCrcDatePop(ci_relPath, None)
 
     def __restore(self, installer, removes, restores):
         """Populate restores dict with files to be restored by this
