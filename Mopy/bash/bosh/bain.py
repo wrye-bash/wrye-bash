@@ -2115,20 +2115,19 @@ class InstallersData(DataStore):
         self.setChanged()
 
     @staticmethod
-    def updateTable(destFiles, value):
-        """Set the 'installer' column in mod and ini tables for the
-        destFiles."""
-        mods_changed, inis_changed = False, False
+    def _update_tables(destFiles, value):
+        """Set the 'installer' column in mod and ini tables"""
+        mods, inis = set(), set()
         from . import modInfos, iniInfos
         for ci_dest in destFiles:
             i = GPath(ci_dest)
             if bass.reModExt.match(i.cext):
-                mods_changed = True
+                mods.add(i)
                 modInfos.table.setItem(i, 'installer', value)
-            elif i.head.cs == u'ini tweaks':
-                inis_changed = True
+            elif InstallersData._is_ini_tweak(ci_dest):
+                inis.add(i)
                 iniInfos.table.setItem(i.tail, 'installer', value)
-        return mods_changed, inis_changed
+        return inis, mods
 
     #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):
@@ -2243,10 +2242,9 @@ class InstallersData(DataStore):
         sub_progress = SubProgress(progress, index, index + 1)
         data_sizeCrcDate_update = installer.install(destFiles, sub_progress)
         self.data_sizeCrcDate.update(data_sizeCrcDate_update)
-        mods_changed, inis_changed = InstallersData.updateTable(destFiles,
-            installer.archive)
-        refresh_ui[0] |= mods_changed
-        refresh_ui[1] |= inis_changed
+        inis, mods = self._update_tables(destFiles, installer.archive)
+        refresh_ui[0] |= bool(mods)
+        refresh_ui[1] |= bool(inis)
 
     def sorted_pairs(self, package_keys=None, reverse=False):
         """Return pairs of key, installer for package_keys in self, sorted by
@@ -2308,6 +2306,7 @@ class InstallersData(DataStore):
     def _removeFiles(self, removes, refresh_ui, progress=None):
         """Performs the actual deletion of files and updating of internal data.clear
            used by 'bain_uninstall' and 'bain_anneal'."""
+        if not removes: return
         modsDirJoin = bass.dirs['mods'].join
         emptyDirs = set()
         emptyDirsAdd = emptyDirs.add
@@ -2356,9 +2355,11 @@ class InstallersData(DataStore):
             for ci_relPath in removes:
                 data_sizeCrcDatePop(ci_relPath, None)
 
-    def __restore(self, installer, removes, restores):
+    def __restore(self, installer, removes, restores, cede_ownership):
         """Populate restores dict with files to be restored by this
-        installer, removing those from removes.
+        installer, removing those from removes. In case a mod or ini belongs
+        to another package, we must make sure we cede ownership, even if the
+        mod or ini is not restored (restore takes care of that).
 
         Returns all of the files this installer would install. Used by
         'bain_uninstall' and 'bain_anneal'."""
@@ -2366,18 +2367,21 @@ class InstallersData(DataStore):
         files = set(installer.data_sizeCrc)
         # keep those to be removed while not restored by a higher order package
         to_keep = (removes & files) - set(restores)
+        if to_keep: g_path = GPath(installer.archive)
         for dest_file in to_keep:
             if installer.data_sizeCrc[dest_file] != \
                     self.data_sizeCrcDate.get(dest_file,(0, 0, 0))[:2]:
                 # restore it from this installer
-                restores[dest_file] = GPath(installer.archive)
+                restores[dest_file] = g_path
+            else:
+                cede_ownership[installer.archive].add(dest_file)
             removes.discard(dest_file) # don't remove it anyway
         return files
 
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
         if unArchives == 'ALL': unArchives = self.data
-        unArchives = set(unArchives)
+        unArchives = set(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that
@@ -2387,11 +2391,12 @@ class InstallersData(DataStore):
         #  removed.
         masked = set()
         removes = set()
+        #--March through packages in reverse order...
         restores = bolt.LowerDict()
-        #--March through archives in reverse order...
-        for archive, installer in self.sorted_pairs(reverse=True):
+        cede_ownership = collections.defaultdict(set)
+        for installer in self.sorted_values(reverse=True):
             #--Uninstall archive?
-            if archive in unArchives:
+            if installer in unArchives:
                 for data_sizeCrc in (installer.data_sizeCrc,installer.dirty_sizeCrc):
                     for cistr_file,sizeCrc in data_sizeCrc.iteritems():
                         sizeCrcDate = data_sizeCrcDate.get(cistr_file)
@@ -2400,16 +2405,25 @@ class InstallersData(DataStore):
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
-                masked |= self.__restore(installer, removes, restores)
+                masked |= self.__restore(installer, removes, restores,
+                                         cede_ownership)
+        anneal = bass.settings['bash.installers.autoAnneal']
+        self._remove_restore(removes, restores, refresh_ui, cede_ownership,
+                             progress, unArchives, anneal)
+
+    def _remove_restore(self, removes, restores, refresh_ui, cede_ownership,
+                        progress, unArchives=frozenset(), anneal=True):
         try:
             #--Remove files, update InstallersData, update load order
             self._removeFiles(removes, refresh_ui, progress)
             #--De-activate
-            for archive in unArchives:
-                self[archive].isActive = False
+            for inst in unArchives:
+                inst.isActive = False
             #--Restore files
-            if bass.settings['bash.installers.autoAnneal']:
+            if anneal:
                 self._restoreFiles(restores, refresh_ui, progress)
+            for k, v in cede_ownership.iteritems():
+                self._update_tables(v, k)
         finally:
             self.irefresh(what='NS')
 
@@ -2435,30 +2449,25 @@ class InstallersData(DataStore):
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = set(anPackages or self.keys())
+        anPackages = (self[pack] for pack in (anPackages or self.keys()))
         #--Get remove/refresh files from anPackages
         removes = set()
-        for package in anPackages:
-            installer = self[package]
+        for installer in anPackages:
             removes |= installer.underrides
             if installer.isActive:
-                removes |= installer.missingFiles
+                removes |= installer.missingFiles # re-added in __restore
                 removes |= set(installer.dirty_sizeCrc)
             installer.dirty_sizeCrc.clear()
         #--March through packages in reverse order...
         restores = bolt.LowerDict()
+        cede_ownership = collections.defaultdict(set)
         for installer in self.sorted_values(reverse=True):
             #--Other active package. May provide a restore file.
             #  And/or may block later uninstalls.
             if installer.isActive:
-                self.__restore(installer, removes, restores)
-        try:
-            #--Remove files, update InstallersData, update load order
-            self._removeFiles(removes, refresh_ui, progress)
-            #--Restore files
-            self._restoreFiles(restores, refresh_ui, progress)
-        finally:
-            self.irefresh(what='NS')
+                self.__restore(installer, removes, restores, cede_ownership)
+        self._remove_restore(removes, restores, refresh_ui, cede_ownership,
+                             progress)
 
     def clean_data_dir(self, refresh_ui):
         getArchiveOrder = lambda x: x.order
