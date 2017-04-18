@@ -3653,56 +3653,81 @@ class ModInfos(FileInfos):
             + u'\n\n' + _(u'Try again?') % (old.s, new.s, old.s),
             _(u'File in use'))
 
-    def setOblivionVersion(self,newVersion):
-        """Swaps Oblivion.esm to to specified version."""
-        #--Old info
-        baseName = self.masterName
+    def _get_version_paths(self, newVersion):
+        baseName = self.masterName # Oblivion.esm, say it's currently SI one
         newSize = self.version_voSize[newVersion]
         oldSize = self[baseName].size
-        if newSize == oldSize: return
+        if newSize == oldSize: return None, None
         if oldSize not in self.size_voVersion:
             raise StateError(u"Can't match current main ESM to known version.")
-        oldName = GPath(baseName.sbody+u'_'+self.size_voVersion[oldSize]+u'.esm')
+        oldName = GPath( # Oblivion_SI.esm: we will rename Oblivion.esm to this
+            baseName.sbody + u'_' + self.size_voVersion[oldSize] + u'.esm')
         if self.store_dir.join(oldName).exists():
             raise StateError(u"Can't swap: %s already exists." % oldName)
-        newName = GPath(baseName.sbody+u'_'+newVersion+u'.esm')
+        newName = GPath(baseName.sbody + u'_' + newVersion + u'.esm')
         if newName not in self.data:
             raise StateError(u"Can't swap: %s doesn't exist." % newName)
-        #--Rename
-        baseInfo = self[baseName]
+        return newName, oldName
+
+    def setOblivionVersion(self,newVersion):
+        """Swaps Oblivion.esm to to specified version."""
+        # if new version is u'1.1' then newName is Path(Oblivion_1.1.esm)
+        newName, oldName = self._get_version_paths(newVersion)
+        if newName is None: return
         newInfo = self[newName]
-        basePath = baseInfo.getPath()
-        newPath = newInfo.getPath()
-        oldPath = self.store_dir.join(oldName)
-        try:
-            basePath.moveTo(oldPath)
-        except OSError as werr:
-            while werr.errno == errno.EACCES and self._retry(basePath,oldPath):
-                try:
-                    basePath.moveTo(oldPath)
-                except OSError as werr:
-                    continue
-                break
-            else:
-                raise
-        try:
-            newPath.moveTo(basePath)
-        except OSError as werr:
-            while werr.errno == errno.EACCES and self._retry(newPath,basePath):
-                try:
-                    newPath.moveTo(basePath)
-                except OSError as werr:
-                    continue
-                break
-            else:
+        #--Rename
+        baseInfo = self[self.masterName]
+        master_time = baseInfo.mtime
+        new_info_time = newInfo.mtime
+        is_master_active = load_order.cached_is_active(self.masterName)
+        is_new_info_active = load_order.cached_is_active(newName)
+        # can't use ModInfos rename cause it will mess up the load order
+        rename_operation = super(ModInfos, self)._rename_operation
+        first_try = True
+        while first_try or (werr.errno == errno.EACCES and
+                self._retry(baseInfo.getPath(), self.store_dir.join(oldName))):
+            first_try = False
+            try:
+                rename_operation(self.masterName, oldName)
+            except OSError as werr: # can only occur if SHFileOperation
+                # isn't called, yak - file operation API badly needed
+                continue
+            except CancelError:
+                return
+            break
+        else:
+            raise
+        first_try = True
+        while first_try or (werr.errno == errno.EACCES and
+                self._retry(newInfo.getPath(), baseInfo.getPath())):
+            first_try = False
+            try:
+                rename_operation(newName, self.masterName)
+            except OSError as werr:
+                continue
+            except CancelError:
                 #Undo any changes
-                oldPath.moveTo(basePath)
-                raise
-        basePath.mtime = baseInfo.mtime
-        oldPath.mtime = newInfo.mtime
-        if newInfo.isGhost:
-            oldInfo = self.factory(self.store_dir, oldName) # type: ModInfo
-            oldInfo.setGhost(True)
+                rename_operation(oldName, self.masterName)
+                # return
+            break
+        else:
+            #Undo any changes
+            rename_operation(oldName, self.masterName)
+            raise
+        # set mtimes to previous respective values
+        self[self.masterName].setmtime(master_time)
+        self[oldName].setmtime(new_info_time)
+        oldIndex = self._lo_wip.index(newName)
+        self._lo_caches_remove_mods([newName])
+        self._lo_wip.insert(oldIndex, oldName)
+        def _activate(active, mod):
+            if active: self[mod].setGhost(False) # needed if autoGhost is False
+            (self.lo_activate if active else self.lo_deactivate)(mod,
+                                                                 doSave=False)
+        _activate(is_new_info_active, oldName)
+        _activate(is_master_active, self.masterName)
+        # Save to disc (load order and plugins.txt)
+        self.cached_lo_save_all() # sets ghost as needed iff autoGhost is True
         self.voCurrent = newVersion
 
     def swapPluginsAndMasterVersion(self, arcSaves, newSaves):

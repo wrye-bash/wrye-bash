@@ -198,7 +198,6 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
         """Handle selection."""
         if bosh.modInfos.voCurrent == self.key: return
         bosh.modInfos.setOblivionVersion(self.key)
-        bosh.modInfos.refresh()
         self.window.RefreshUI(refreshSaves=True) # True: refresh save's masters
         if self.setProfile:
             bosh.saveInfos.profiles.setItem(bosh.saveInfos.localSave,'vOblivion',self.key)
