@@ -555,8 +555,8 @@ class Path(object):
     #--Instance stuff --------------------------------------------------
     #--Slots: _s is normalized path. All other slots are just pre-calced
     #  variations of it.
-    __slots__ = ('_s', '_cs', '_csroot', '_sroot', '_shead', '_stail', '_ext',
-                 '_cext', '_sbody', '_csbody')
+    __slots__ = ('_s', '_cs', '_sroot', '_shead', '_stail', '_ext',
+                 '_cext', '_sbody')
 
     def __init__(self, name):
         """Initialize."""
@@ -575,12 +575,6 @@ class Path(object):
         if not isinstance(norm,unicode): norm = decode(norm)
         self._s = norm
         self._cs = os.path.normcase(self._s)
-        self._sroot,self._ext = os.path.splitext(self._s)
-        self._shead,self._stail = os.path.split(self._s)
-        self._cext = os.path.normcase(self._ext)
-        self._csroot = os.path.normcase(self._sroot)
-        self._sbody = os.path.basename(self._sroot)
-        self._csbody = os.path.normcase(self._sbody)
 
     def __len__(self):
         return len(self._s)
@@ -602,64 +596,81 @@ class Path(object):
         """Path as string in normalized case."""
         return self._cs
     @property
-    def csroot(self):
-        """Root as string."""
-        return self._csroot
-    @property
     def sroot(self):
         """Root as string."""
-        return self._sroot
+        try:
+            return self._sroot
+        except AttributeError:
+            self._sroot, self._ext = os.path.splitext(self._s)
+            return self._sroot
     @property
     def shead(self):
         """Head as string."""
-        return self._shead
+        try:
+            return self._shead
+        except AttributeError:
+            self._shead, self._stail = os.path.split(self._s)
+            return self._shead
     @property
     def stail(self):
         """Tail as string."""
-        return self._stail
+        try:
+            return self._stail
+        except AttributeError:
+            self._shead, self._stail = os.path.split(self._s)
+            return self._stail
     @property
     def sbody(self):
         """For alpha\beta.gamma returns beta as string."""
-        return self._sbody
+        try:
+            return self._sbody
+        except AttributeError:
+            self._sbody = os.path.basename(self.sroot)
+            return self._sbody
     @property
     def csbody(self):
         """For alpha\beta.gamma returns beta as string in normalized case."""
-        return self._csbody
+        return os.path.normcase(self.sbody)
 
     #--Head, tail
     @property
     def headTail(self):
         """For alpha\beta.gamma returns (alpha,beta.gamma)"""
-        return map(GPath,(self._shead,self._stail))
+        return map(GPath,(self.shead,self.stail))
     @property
     def head(self):
         """For alpha\beta.gamma, returns alpha."""
-        return GPath(self._shead)
+        return GPath(self.shead)
     @property
     def tail(self):
         """For alpha\beta.gamma, returns beta.gamma."""
-        return GPath(self._stail)
+        return GPath(self.stail)
     @property
     def body(self):
         """For alpha\beta.gamma, returns beta."""
-        return GPath(self._sbody)
+        return GPath(self.sbody)
 
     #--Root, ext
     @property
-    def rootExt(self):
-        return GPath(self._sroot),self._ext
-    @property
     def root(self):
         """For alpha\beta.gamma returns alpha\beta"""
-        return GPath(self._sroot)
+        return GPath(self.sroot)
     @property
     def ext(self):
         """Extension (including leading period, e.g. '.txt')."""
-        return self._ext
+        try:
+            return self._ext
+        except AttributeError:
+            self._sroot, self._ext = os.path.splitext(self._s)
+            return self._ext
     @property
     def cext(self):
         """Extension in normalized case."""
-        return self._cext
+        try:
+            return self._cext
+        except AttributeError:
+            self._cext = os.path.normcase(self.ext)
+            return self._cext
     @property
     def temp(self,unicodeSafe=True):
         """Temp file path.  If unicodeSafe is True, the returned
@@ -872,8 +883,8 @@ class Path(object):
                         except: pass
 
     def open(self,*args,**kwdargs):
-        if self._shead and not os.path.exists(self._shead):
-            os.makedirs(self._shead)
+        if self.shead and not os.path.exists(self.shead):
+            os.makedirs(self.shead)
         if 'encoding' in kwdargs:
             return codecs.open(self._s,*args,**kwdargs)
         else:
@@ -901,7 +912,7 @@ class Path(object):
     #--start, move, copy, touch, untemp
     def start(self, exeArgs=None):
         """Starts file as if it had been doubleclicked in file explorer."""
-        if self._cext == u'.exe':
+        if self.cext == u'.exe':
             if not exeArgs:
                 subprocess.Popen([self.s], close_fds=close_fds)
             else:
@@ -914,8 +925,8 @@ class Path(object):
         if self.isdir():
             shutil.copytree(self._s,destName._s)
         else:
-            if destName._shead and not os.path.exists(destName._shead):
-                os.makedirs(destName._shead)
+            if destName.shead and not os.path.exists(destName.shead):
+                os.makedirs(destName.shead)
             shutil.copyfile(self._s,destName._s)
             destName.mtime = self.mtime
     def moveTo(self,destName):
@@ -923,8 +934,8 @@ class Path(object):
             raise StateError(self._s + u' cannot be moved because it does not exist.')
         destPath = GPath(destName)
         if destPath._cs == self._cs: return
-        if destPath._shead and not os.path.exists(destPath._shead):
-            os.makedirs(destPath._shead)
+        if destPath.shead and not os.path.exists(destPath.shead):
+            os.makedirs(destPath.shead)
         elif destPath.exists():
             destPath.remove()
         try:
@@ -1002,19 +1013,31 @@ class Path(object):
             return self._cs == other._cs
         else:
             return self._cs == Path.__getCase(other)
-    def __ne__(self, other): return not (self == other)
+    def __ne__(self, other):
+        if isinstance(other, Path):
+            return self._cs != other._cs
+        else:
+            return self._cs != Path.__getCase(other)
     def __lt__(self, other):
         if isinstance(other, Path):
             return self._cs < other._cs
         else:
             return self._cs < Path.__getCase(other)
-    def __ge__(self, other): return not (self < other)
+    def __ge__(self, other):
+        if isinstance(other, Path):
+            return self._cs >= other._cs
+        else:
+            return self._cs >= Path.__getCase(other)
     def __gt__(self, other):
         if isinstance(other, Path):
             return self._cs > other._cs
         else:
             return self._cs > Path.__getCase(other)
-    def __le__(self, other): return not (self > other)
+    def __le__(self, other):
+        if isinstance(other, Path):
+            return self._cs <= other._cs
+        else:
+            return self._cs <= Path.__getCase(other)
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""

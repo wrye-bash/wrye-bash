@@ -402,7 +402,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
         curName = self._selected_item
         isdir = self.idata.store_dir.join(curName).isdir()
         if isdir: root,ext = curName,u''
-        else: root,ext = curName.rootExt
+        else: root,ext = curName.root, curName.ext
         newName = self.window.new_name(root + _(u' Copy') + ext)
         result = self._askText(_(u"Duplicate %s to:") % curName.s,
                                default=newName.s)

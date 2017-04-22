@@ -679,7 +679,7 @@ class App_GenPickle(StatusBar_Button):
         maxOld = maxId
         print 'maxId', hex(maxId)
         #--Eid list? - if the GMST has a 00000000 eid when looking at it in
-        # the cs with nothing but oblivion.esm loaded you need to add the
+        # the CS with nothing but oblivion.esm loaded you need to add the
         # gmst to this list, rebuild the pickle and overwrite the old one.
         for eid in bush.game.gmstEids:
             if eid not in fids:
