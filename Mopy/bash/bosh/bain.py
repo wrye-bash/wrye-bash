@@ -748,9 +748,9 @@ class Installer(object):
         #--Update dirty?
         if self.isActive and data_sizeCrc != old_sizeCrc:
             dirty_sizeCrc = self.dirty_sizeCrc
-            for file,sizeCrc in old_sizeCrc.iteritems():
-                if file not in dirty_sizeCrc and sizeCrc != data_sizeCrc.get(file):
-                    dirty_sizeCrc[file] = sizeCrc
+            for filename,sizeCrc in old_sizeCrc.iteritems():
+                if filename not in dirty_sizeCrc and sizeCrc != data_sizeCrc.get(filename):
+                    dirty_sizeCrc[filename] = sizeCrc
         #--Done (return dest_src for install operation)
         return dest_src
 
@@ -879,7 +879,7 @@ class Installer(object):
         """
         data_sizeCrc = self.data_sizeCrc
         data_sizeCrcDate = installersData.data_sizeCrcDate
-        abnorm_sizeCrc = installersData.abnorm_sizeCrc
+        ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
         missing = self.missingFiles
         mismatched = self.mismatchedFiles
         misEspmed = self.mismatchedEspms
@@ -891,28 +891,28 @@ class Installer(object):
         if self.type == 0:
             status = -20
         elif data_sizeCrc:
-            for file,sizeCrc in data_sizeCrc.iteritems():
-                sizeCrcDate = data_sizeCrcDate.get(file)
+            for filename,sizeCrc in data_sizeCrc.iteritems():
+                sizeCrcDate = data_sizeCrcDate.get(filename)
                 if not sizeCrcDate:
-                    missing.add(file)
+                    missing.add(filename)
                 elif sizeCrc != sizeCrcDate[:2]:
-                    mismatched.add(file)
-                    if not os.path.split(file)[0] and bass.reModExt.search(file):
-                        misEspmed.add(file)
-                if sizeCrc == abnorm_sizeCrc.get(file):
-                    underrides.add(file)
+                    mismatched.add(filename)
+                    if not os.path.split(filename)[0] and bass.reModExt.search(filename):
+                        misEspmed.add(filename)
+                if sizeCrc == ci_underrides_sizeCrc.get(filename):
+                    underrides.add(filename)
             if missing: status = -10
             elif misEspmed: status = 10
             elif mismatched: status = 20
             else: status = 30
         #--Clean Dirty
         dirty_sizeCrc = self.dirty_sizeCrc
-        for file,sizeCrc in dirty_sizeCrc.items():
-            sizeCrcDate = data_sizeCrcDate.get(file)
+        for filename,sizeCrc in dirty_sizeCrc.items():
+            sizeCrcDate = data_sizeCrcDate.get(filename)
             if (not sizeCrcDate or sizeCrc != sizeCrcDate[:2] or
-                sizeCrc == data_sizeCrc.get(file)
+                sizeCrc == data_sizeCrc.get(filename)
                 ):
-                del dirty_sizeCrc[file]
+                del dirty_sizeCrc[filename]
         #--Done
         (self.status,oldStatus) = (status,self.status)
         (self.underrides,oldUnderrides) = (underrides,self.underrides)
@@ -1538,7 +1538,7 @@ class InstallersData(DataStore):
             bass.dirs['converters'], bass.dirs['dupeBCFs'],
             bass.dirs['corruptBCFs'], bass.dirs['installers'])
         #--Volatile
-        self.abnorm_sizeCrc = bolt.LowerDict() #--Normative sizeCrc, according to order of active packages
+        self.ci_underrides_sizeCrc = bolt.LowerDict() # underridden files
         self.bcfPath_sizeCrcDate = {}
         self.hasChanged = False
         self.loaded = False
@@ -1874,23 +1874,23 @@ class InstallersData(DataStore):
         return changed
 
     def refreshNorm(self):
-        """Refresh self.abnorm_sizeCrc."""
-        active_sorted = sorted([x for x in self.itervalues() if x.isActive],
-                               key=attrgetter('order'))
-        #--norm
+        """Populate self.ci_underrides_sizeCrc with all underridden files."""
+        active_sorted = (x for x in self.sorted_values() if x.isActive)
+        #--dict mapping all should-be-installed files to their attributes
         norm_sizeCrc = bolt.LowerDict()
         for package in active_sorted:
             norm_sizeCrc.update(package.data_sizeCrc)
         #--Abnorm
-        abnorm_sizeCrc = bolt.LowerDict()
+        ci_underrides_sizeCrc = bolt.LowerDict()
         dataGet = self.data_sizeCrcDate.get
         for path,sizeCrc in norm_sizeCrc.iteritems():
             sizeCrcDate = dataGet(path)
-            if sizeCrcDate and sizeCrc != sizeCrcDate[:2]:
-                abnorm_sizeCrc[path] = sizeCrcDate[:2]
-        self.abnorm_sizeCrc, oldAbnorm_sizeCrc = \
-            abnorm_sizeCrc, self.abnorm_sizeCrc
-        return abnorm_sizeCrc != oldAbnorm_sizeCrc
+            if sizeCrcDate and sizeCrc != sizeCrcDate[:2]: # file is installed
+                # in data dir, but from a lower loading installer (or manually)
+                ci_underrides_sizeCrc[path] = sizeCrcDate[:2]
+        self.ci_underrides_sizeCrc, oldAbnorm_sizeCrc = \
+            ci_underrides_sizeCrc, self.ci_underrides_sizeCrc
+        return ci_underrides_sizeCrc != oldAbnorm_sizeCrc
 
     def refreshInstallersStatus(self):
         """Refresh installer status."""
@@ -2388,10 +2388,10 @@ class InstallersData(DataStore):
             #--Uninstall archive?
             if archive in unArchives:
                 for data_sizeCrc in (installer.data_sizeCrc,installer.dirty_sizeCrc):
-                    for file,sizeCrc in data_sizeCrc.iteritems():
-                        sizeCrcDate = data_sizeCrcDate.get(file)
-                        if file not in masked and sizeCrcDate and sizeCrcDate[:2] == sizeCrc:
-                            removes.add(file)
+                    for cistr_file,sizeCrc in data_sizeCrc.iteritems():
+                        sizeCrcDate = data_sizeCrcDate.get(cistr_file)
+                        if cistr_file not in masked and sizeCrcDate and sizeCrcDate[:2] == sizeCrc:
+                            removes.add(cistr_file)
             #--Other active archive. May undo previous removes, or provide a restore file.
             #  And/or may block later uninstalls.
             elif installer.isActive:
