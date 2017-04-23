@@ -382,6 +382,18 @@ class OBSEIniFile(IniFile):
         section = self.ci_pseudosections.get(section, section)
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
+    _regex_tuples = ((reSet, u']set[', u'set %s to %s\n'),
+      (reSetGS, u']setGS[', u'setGS %s %s\n'),
+      (reSetNGS, u']SetNumericGameSetting[', u'SetNumericGameSetting %s %s\n'))
+
+    @classmethod
+    def _parse_obse_line(cls, line):
+        for regex, sectionKey, format_string in cls._regex_tuples:
+            match = regex.match(line)
+            if match:
+                return match, sectionKey, format_string
+        return None, None, None
+
     @classmethod
     def _get_ci_settings(cls, tweakPath):
         """Get the settings in the ini script."""
@@ -389,9 +401,6 @@ class OBSEIniFile(IniFile):
         deleted_settings = LowerDict()
         reDeleted = cls.reDeleted
         reComment = cls.reComment
-        reSet     = cls.reSet
-        reSetGS   = cls.reSetGS
-        reSetNGS  = cls.reSetNGS
         with tweakPath.open('r') as iniFile:
             for i,line in enumerate(iniFile.readlines()):
                 maDeleted = reDeleted.match(line)
@@ -401,14 +410,10 @@ class OBSEIniFile(IniFile):
                 else:
                     settings = ini_settings
                 stripped = reComment.sub(u'',line).strip()
-                for regex, section in [(reSet, u']set['),
-                                       (reSetGS, u']setGS['),
-                                       (reSetNGS, u']SetNumericGameSetting[')]:
-                    match = regex.match(stripped)
-                    if match:
-                        section = settings.setdefault(section, LowerDict())
-                        section[match.group(1)] = match.group(2).strip(), i
-                        break
+                match, section_key, _fmt = cls._parse_obse_line(stripped)
+                if match:
+                    section = settings.setdefault(section_key, LowerDict())
+                    section[match.group(1)] = match.group(2).strip(), i
         return ini_settings, deleted_settings, False
 
     def get_lines_infos(self, tweak_lines):
@@ -416,9 +421,6 @@ class OBSEIniFile(IniFile):
         ci_settings, deletedSettings = self.getSettings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        reSet = self.reSet
-        reSetGS = self.reSetGS
-        reSetNGS = self.reSetNGS
         section = u''
         for line in tweak_lines:
             # Check for deleted lines
@@ -427,13 +429,9 @@ class OBSEIniFile(IniFile):
             else: stripped = line
             stripped = reComment.sub(u'',stripped).strip()
             # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-            for regex, section in [(reSet, u']set['),
-                                   (reSetGS, u']setGS['),
-                                   (reSetNGS, u']SetNumericGameSetting[')]:
-                match = regex.match(stripped)
-                if match:
-                    groups = match.groups()
-                    break
+            match, section_key, _fmt = self._parse_obse_line(stripped)
+            if match:
+                groups = match.groups()
             else:
                 if stripped:
                     # Some other kind of line
@@ -442,7 +440,6 @@ class OBSEIniFile(IniFile):
                     # Just a comment line
                     lines.append((line.strip('\r\n'),u'',u'',u'',0,-1,False))
                 continue
-            status = 0
             setting = groups[0].strip()
             value = groups[1].strip()
             lineNo = -1
@@ -470,45 +467,33 @@ class OBSEIniFile(IniFile):
             for x,y in deleted_settings.iteritems())
         reDeleted = self.reDeleted
         reComment = self.reComment
-        reSet = self.reSet
-        reSetGS = self.reSetGS
-        reSetNGS = self.reSetNGS
-        setFormat = u'set %s to %s\n'
-        setGSFormat = u'setGS %s %s\n'
-        setNGSFormat = u'SetNumericGameSetting %s %s\n'
-        section = {}
         with self.abs_path.open('r') as iniFile:
             with self.abs_path.temp.open('w') as tmpFile:
                 # Modify/Delete existing lines
                 for line in iniFile:
-                    # Test if line is currently delted
+                    # Test if line is currently deleted
                     maDeleted = reDeleted.match(line)
                     if maDeleted: stripped = maDeleted.group(1)
                     else: stripped = line
                     # Test what kind of line it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-                    stripped = reComment.sub(u'',line).strip()
-                    for regex, sectionKey, format in [
-                        (reSet, u']set[', setFormat),
-                        (reSetGS, u']setGS[', setGSFormat),
-                        (reSetNGS, u']SetNumericGameSetting[', setNGSFormat)]:
-                        match = regex.match(stripped)
-                        if match:
-                            section = sectionKey
-                            setting = match.group(1)
-                            break
+                    stripped = reComment.sub(u'',stripped).strip()
+                    match, section_key, format_string = self._parse_obse_line(
+                        stripped)
+                    if match:
+                        setting = match.group(1)
                     else:
                         tmpFile.write(line)
                         continue
                     # Apply the modification
-                    if section in ini_settings and setting in ini_settings[section]:
+                    if section_key in ini_settings and setting in ini_settings[section_key]:
                         # Un-delete/modify it
-                        value = ini_settings[section][setting]
-                        del ini_settings[section][setting]
+                        value = ini_settings[section_key][setting]
+                        del ini_settings[section_key][setting]
                         if isinstance(value,basestring) and value[-1:] == u'\n':
                             line = value
                         else:
-                            line = format % (setting,value)
-                    elif not maDeleted and section in deleted_settings and setting in deleted_settings[section]:
+                            line = format_string % (setting,value)
+                    elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:
                         # It isn't deleted, but we want it deleted
                         line = u';-'+line
                     tmpFile.write(line)
@@ -522,9 +507,6 @@ class OBSEIniFile(IniFile):
     def applyTweakFile(self, tweak_lines):
         reDeleted = self.reDeleted
         reComment = self.reComment
-        reSet = self.reSet
-        reSetGS = self.reSetGS
-        reSetNGS = self.reSetNGS
         ini_settings = LowerDict()
         deleted_settings = LowerDict()
         for line in tweak_lines:
@@ -538,16 +520,13 @@ class OBSEIniFile(IniFile):
                 settings_ = ini_settings
             # Check which kind of line - 'set' or 'setGS' or 'SetNumericGameSetting'
             stripped = reComment.sub(u'',stripped).strip()
-            for regex,sectionKey in [(reSet, u']set['), (reSetGS, u']setGS['),
-                                     (reSetNGS, u']SetNumericGameSetting[')]:
-                match = regex.match(stripped)
-                if match:
-                    setting = match.group(1)
-                    break
+            match, section_key, _fmt = self._parse_obse_line(stripped)
+            if match:
+                setting = match.group(1)
             else:
                 continue
             # Save the setting for applying
-            section = settings_.setdefault(sectionKey, LowerDict())
+            section = settings_.setdefault(section_key, LowerDict())
             if line[-1] != u'\n': line += u'\n'
             section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
