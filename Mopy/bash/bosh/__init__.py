@@ -1656,7 +1656,6 @@ class INIInfos(TableFileInfos):
         info = self[tweak] # type: INIInfo
         if info.is_default_tweak:
             self._copy_to_new_tweak(info, tweak)
-            self[tweak] = self.factory(self.store_dir, tweak)
             return True # refresh
         else:
             info.abs_path.start()
@@ -1666,14 +1665,14 @@ class INIInfos(TableFileInfos):
         with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
             # writelines does not do what you'd expect, would concatenate lines
             ini_file.write('\n'.join(info.read_ini_lines()))
+        self.refreshFile(new_tweak.tail)
+        return self[new_tweak.tail]
 
     def duplicate_ini(self, tweak, new_tweak):
         """Duplicate tweak into new_tweak, copying current target settings"""
         if not new_tweak: return False
         # new_tweak is an abs path, join works ok relative to self.store_dir
-        self._copy_to_new_tweak(self[tweak], new_tweak)
-        new_info = self[new_tweak.tail] = self.factory(self.store_dir,
-                                                       new_tweak)
+        new_info = self._copy_to_new_tweak(self[tweak], new_tweak)
         # Now edit it with the values from the target INI
         new_tweak_settings = copy.copy(new_info.getSettings())
         target_settings = self.ini.getSettings()

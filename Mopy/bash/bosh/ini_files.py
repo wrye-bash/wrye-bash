@@ -47,7 +47,7 @@ class IniFile(AFile):
         super(IniFile, self).__init__(abs_path)
         self.isCorrupted = False
         #--Settings cache
-        self._settings_cache_linenum = self.__empty
+        self._ci_settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
         self._deleted = False
         self.updated = False # notify iniInfos which should clear this flag
@@ -76,12 +76,13 @@ class IniFile(AFile):
         do a copy first !"""
         if not self.abs_path.isfile():
             return ({}, {}) if with_deleted else {}
-        if self._settings_cache_linenum is self.__empty or self.do_update():
-            self._settings_cache_linenum, self._deleted_cache, \
-                self.isCorrupted = self._get_settings(self.abs_path)
+        if self._ci_settings_cache_linenum is self.__empty \
+                or self.do_update():
+            self._ci_settings_cache_linenum, self._deleted_cache, \
+                self.isCorrupted = self._get_ci_settings(self.abs_path)
         if with_deleted:
-            return self._settings_cache_linenum, self._deleted_cache
-        return self._settings_cache_linenum
+            return self._ci_settings_cache_linenum, self._deleted_cache
+        return self._ci_settings_cache_linenum
 
     def do_update(self):
         try:
@@ -98,14 +99,16 @@ class IniFile(AFile):
             return False # we already know it's deleted (used for game inis)
         if self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True)
-            self._settings_cache_linenum = self.__empty
+            self._ci_settings_cache_linenum = self.__empty
             self.updated = True
             return True
         return False
 
     @classmethod
-    def _get_settings(cls, tweakPath):
-        """Gets settings in a tweak file."""
+    def _get_ci_settings(cls, tweakPath):
+        """Get settings as nested dict[dict] of section -> (setting -> value).
+        Keys in both levels are case insensitive. Values are stripped of
+        whitespace. "deleted settings" keep line number instead of value (?)"""
         ci_settings = LowerDict()
         ci_deleted_settings = LowerDict()
         default_section = cls.defaultSection
@@ -333,28 +336,30 @@ class DefaultIniFile(IniFile):
         self._file_size, self._file_mod_time = self._null_stat
         #--Settings cache
         self.lines, current_line = [], 0
-        self._settings_cache_linenum = _LowerOrderedDict()
+        self._ci_settings_cache_linenum = _LowerOrderedDict()
         for sect, setts in settings_dict.iteritems():
             self.lines.append('[' + str(sect) + ']')
-            self._settings_cache_linenum[sect] = _LowerOrderedDict()
+            self._ci_settings_cache_linenum[sect] = _LowerOrderedDict()
             current_line += 1
             for sett, val in setts.iteritems():
                 self.lines.append(str(sett) + '=' + str(val))
-                self._settings_cache_linenum[sect][sett] = (val, current_line)
+                self._ci_settings_cache_linenum[sect][sett] = (val, current_line)
                 current_line += 1
         self._deleted_cache = self.__empty
 
     def getSettings(self, with_deleted=False):
         if with_deleted:
-            return self._settings_cache_linenum, self._deleted_cache
-        return self._settings_cache_linenum
+            return self._ci_settings_cache_linenum, self._deleted_cache
+        return self._ci_settings_cache_linenum
 
     def read_ini_lines(self): return self.lines
 
-    # YAK! track uses!
+    # Abstract for DefaultIniFile, bit of a smell
     def do_update(self): raise AbstractError
     @classmethod
-    def _get_settings(cls, tweakPath): raise AbstractError
+    def _get_ci_settings(cls, tweakPath):
+        """Do not call this on DefaultTweaks - settings are set in __init__"""
+        raise AbstractError
     def applyTweakFile(self, tweak_lines): raise AbstractError
     def saveSettings(self,ini_settings,deleted_settings={}):
         raise AbstractError
@@ -378,7 +383,7 @@ class OBSEIniFile(IniFile):
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
     @classmethod
-    def _get_settings(cls, tweakPath):
+    def _get_ci_settings(cls, tweakPath):
         """Get the settings in the ini script."""
         ini_settings = LowerDict()
         deleted_settings = LowerDict()
@@ -442,14 +447,12 @@ class OBSEIniFile(IniFile):
             value = groups[1].strip()
             lineNo = -1
             if section in ci_settings and setting in ci_settings[section]:
-                item = ci_settings[section][setting]
-                lineNo = item[1]
-                if maDeleted:          status = 10
-                elif item[0] == value: status = 20
-                else:                  status = 10
+                ini_value, lineNo = ci_settings[section][setting]
+                if maDeleted:            status = 10
+                elif ini_value == value: status = 20
+                else:                    status = 10
             elif section in deletedSettings and setting in deletedSettings[section]:
-                item = deletedSettings[section][setting]
-                lineNo = item[1]
+                _del_value, lineNo = deletedSettings[section][setting]
                 if maDeleted: status = 20
                 else:         status = 10
             else:
