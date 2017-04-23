@@ -28,7 +28,7 @@ from ..balt import EnabledLink, AppendableLink, ItemLink, RadioLink, \
     ChoiceLink, MenuLink, CheckLink, Image, UIList_Rename, OneItemLink
 from .. import bass, balt, bosh, bush
 from .import People_Link, SaveDetails
-from ..bolt import GPath, LString
+from ..bolt import GPath
 
 __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
            'Screens_NextScreenShot', 'Screen_JpgQuality',
@@ -65,11 +65,10 @@ class Screens_NextScreenShot(EnabledLink):
         if not pattern: return
         maPattern = self.__class__.rePattern.match(pattern)
         newBase,newNext = maPattern.groups()
-        settings = {LString(u'Display'):{
-            LString(u'SScreenShotBaseName'): newBase,
-            LString(u'iScreenShotIndex'): (newNext or next_),
-            LString(u'bAllowScreenShot'): u'1',
-            }}
+        settings = {u'Display': {
+            u'SScreenShotBaseName': newBase,
+            u'iScreenShotIndex': (newNext or next_),
+            u'bAllowScreenShot': u'1', }}
         screensDir = GPath(newBase).head
         if screensDir:
             if not screensDir.isabs(): screensDir = bass.dirs['app'].join(
