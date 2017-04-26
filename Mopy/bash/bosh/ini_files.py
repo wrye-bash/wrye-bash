@@ -67,11 +67,11 @@ class IniFile(AFile):
     def getSetting(self, section, key, default):
         """Gets a single setting from the file."""
         try:
-            return self.getSettings()[section][key][0]
+            return self.get_ci_settings()[section][key][0]
         except KeyError:
             return default
 
-    def getSettings(self, with_deleted=False):
+    def get_ci_settings(self, with_deleted=False):
         """Populate and return cached settings - if not just reading them
         do a copy first !"""
         if not self.abs_path.isfile():
@@ -147,7 +147,7 @@ class IniFile(AFile):
         return ci_settings, ci_deleted_settings, isCorrupted
 
     def read_ini_lines(self):
-        try: #TODO(ut) parse getSettings instead-see constructing default tweak
+        try: #TODO(ut) parse get_ci_settings instead-see constructing default tweak
             with self.abs_path.open('r') as f:
                 return f.readlines()
         except OSError:
@@ -173,7 +173,7 @@ class IniFile(AFile):
         deleted: deleted line (?)"""
         lines = []
         encoding = 'utf-8'
-        ci_settings, ci_deletedSettings = self.getSettings(with_deleted=True)
+        ci_settings, ci_deletedSettings = self.get_ci_settings(with_deleted=True)
         reComment = self.reComment
         reSection = self.reSection
         reDeleted = self.reDeletedSetting
@@ -347,7 +347,7 @@ class DefaultIniFile(IniFile):
                 current_line += 1
         self._deleted_cache = self.__empty
 
-    def getSettings(self, with_deleted=False):
+    def get_ci_settings(self, with_deleted=False):
         if with_deleted:
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
@@ -418,7 +418,7 @@ class OBSEIniFile(IniFile):
 
     def get_lines_infos(self, tweak_lines):
         lines = []
-        ci_settings, deletedSettings = self.getSettings(with_deleted=True)
+        ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
         section = u''
@@ -481,21 +481,18 @@ class OBSEIniFile(IniFile):
                         stripped)
                     if match:
                         setting = match.group(1)
-                    else:
-                        tmpFile.write(line)
-                        continue
-                    # Apply the modification
-                    if section_key in ini_settings and setting in ini_settings[section_key]:
-                        # Un-delete/modify it
-                        value = ini_settings[section_key][setting]
-                        del ini_settings[section_key][setting]
-                        if isinstance(value,basestring) and value[-1:] == u'\n':
-                            line = value
-                        else:
-                            line = format_string % (setting,value)
-                    elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:
-                        # It isn't deleted, but we want it deleted
-                        line = u';-'+line
+                        # Apply the modification
+                        if section_key in ini_settings and setting in ini_settings[section_key]:
+                            # Un-delete/modify it
+                            value = ini_settings[section_key][setting]
+                            del ini_settings[section_key][setting]
+                            if isinstance(value,basestring) and value[-1:] == u'\n':
+                                line = value
+                            else:
+                                line = format_string % (setting,value)
+                        elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:
+                            # It isn't deleted, but we want it deleted
+                            line = u';-'+line
                     tmpFile.write(line)
                 # Add new lines
                 for sectionKey in ini_settings:
@@ -523,12 +520,10 @@ class OBSEIniFile(IniFile):
             match, section_key, _fmt = self._parse_obse_line(stripped)
             if match:
                 setting = match.group(1)
-            else:
-                continue
-            # Save the setting for applying
-            section = settings_.setdefault(section_key, LowerDict())
-            if line[-1] != u'\n': line += u'\n'
-            section[setting] = line
+                # Save the setting for applying
+                section = settings_.setdefault(section_key, LowerDict())
+                if line[-1] != u'\n': line += u'\n'
+                section[setting] = line
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
