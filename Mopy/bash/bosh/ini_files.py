@@ -29,7 +29,7 @@ from collections import OrderedDict
 from . import AFile
 from .. import env, bush, balt
 from ..bass import dirs
-from ..bolt import LowerDict, CIstr, deprint, GPath
+from ..bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict
 from ..exception import AbstractError, CancelError, SkipError
 
 class IniFile(AFile):
@@ -106,11 +106,14 @@ class IniFile(AFile):
 
     @classmethod
     def _get_ci_settings(cls, tweakPath):
-        """Get settings as nested dict[dict] of section -> (setting -> value).
+        """Get settings as defaultdict[dict] of section -> (setting -> value).
         Keys in both levels are case insensitive. Values are stripped of
-        whitespace. "deleted settings" keep line number instead of value (?)"""
-        ci_settings = LowerDict()
-        ci_deleted_settings = LowerDict()
+        whitespace. "deleted settings" keep line number instead of value (?)
+        :rtype: tuple(DefaultLowerDict[bolt.LowerDict], DefaultLowerDict[
+        bolt.LowerDict], boolean)
+        """
+        ci_settings = DefaultLowerDict(LowerDict)
+        ci_deleted_settings = DefaultLowerDict(LowerDict)
         default_section = cls.defaultSection
         encoding = cls.encoding
         isCorrupted = False
@@ -133,17 +136,16 @@ class IniFile(AFile):
                 maSetting = reSetting.match(stripped)
                 if maSection:
                     section = maSection.group(1)
-                    sectionSettings = ci_settings.setdefault(section, LowerDict())
+                    sectionSettings = ci_settings[section]
                 elif maSetting:
                     if sectionSettings is None:
-                        sectionSettings = ci_settings.setdefault(
-                            default_section, LowerDict())
+                        sectionSettings = ci_settings[default_section]
                         isCorrupted = True
                     sectionSettings[maSetting.group(1)] = maSetting.group(
                         2).strip(), i
                 elif maDeleted:
                     if not section: continue
-                    ci_deleted_settings.setdefault(section, LowerDict())[maDeleted.group(1)] = i
+                    ci_deleted_settings[section][maDeleted.group(1)] = i
         return ci_settings, ci_deleted_settings, isCorrupted
 
     def read_ini_lines(self):
@@ -302,9 +304,9 @@ class IniFile(AFile):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read Tweak file
-        ini_settings = LowerDict()
-        deleted_settings = LowerDict()
-        section = sectionSettings = None
+        ini_settings = DefaultLowerDict(LowerDict)
+        deleted_settings = DefaultLowerDict(set)
+        section = None
         for line in tweak_lines:
             try:
                 line = unicode(line,encoding)
@@ -316,12 +318,11 @@ class IniFile(AFile):
             maSetting = reSetting.match(stripped)
             if maSection:
                 section = maSection.group(1)
-                sectionSettings = ini_settings[section] = LowerDict()
             elif maSetting:
-                sectionSettings[maSetting.group(1)] = maSetting.group(
+                ini_settings[section][maSetting.group(1)] = maSetting.group(
                     2).strip()
             elif maDeleted:
-                deleted_settings.setdefault(section,set()).add(CIstr(maDeleted.group(1)))
+                deleted_settings[section].add(CIstr(maDeleted.group(1)))
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
@@ -397,8 +398,8 @@ class OBSEIniFile(IniFile):
     @classmethod
     def _get_ci_settings(cls, tweakPath):
         """Get the settings in the ini script."""
-        ini_settings = LowerDict()
-        deleted_settings = LowerDict()
+        ini_settings = DefaultLowerDict(LowerDict)
+        deleted_settings = DefaultLowerDict(LowerDict)
         reDeleted = cls.reDeleted
         reComment = cls.reComment
         with tweakPath.open('r') as iniFile:
@@ -412,8 +413,8 @@ class OBSEIniFile(IniFile):
                 stripped = reComment.sub(u'',line).strip()
                 match, section_key, _fmt = cls._parse_obse_line(stripped)
                 if match:
-                    section = settings.setdefault(section_key, LowerDict())
-                    section[match.group(1)] = match.group(2).strip(), i
+                    settings[section_key][match.group(1)] = match.group(
+                        2).strip(), i
         return ini_settings, deleted_settings, False
 
     def get_lines_infos(self, tweak_lines):
@@ -504,8 +505,8 @@ class OBSEIniFile(IniFile):
     def applyTweakFile(self, tweak_lines):
         reDeleted = self.reDeleted
         reComment = self.reComment
-        ini_settings = LowerDict()
-        deleted_settings = LowerDict()
+        ini_settings = DefaultLowerDict(LowerDict)
+        deleted_settings = DefaultLowerDict(LowerDict)
         for line in tweak_lines:
             # Check for deleted lines
             maDeleted = reDeleted.match(line)
@@ -521,9 +522,8 @@ class OBSEIniFile(IniFile):
             if match:
                 setting = match.group(1)
                 # Save the setting for applying
-                section = settings_.setdefault(section_key, LowerDict())
                 if line[-1] != u'\n': line += u'\n'
-                section[setting] = line
+                settings_[section_key][setting] = line
         self.saveSettings(ini_settings,deleted_settings)
         return True
 
