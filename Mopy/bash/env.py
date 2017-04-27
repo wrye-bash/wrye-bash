@@ -25,7 +25,6 @@
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
 import os as _os
-import pywintypes
 import re as _re
 import stat
 import shutil as _shutil
@@ -222,18 +221,14 @@ def init_app_links(apps_dir, badIcons, iconList):
         # Next try the shortcut specified icon
         else:
             icon, idex = icon.split(u',')
-            if icon == u'' and win32gui is not None:
+            if icon == u'':
                 if target.cext == u'.exe':
-                    # Use the icon embedded in the exe
-                    # noinspection PyUnresolvedReferences
-                    try:
-                        hIcon = win32gui.ExtractIcon(0, target.s, 0)
-                        win32gui.DestroyIcon(hIcon)
+                    if win32gui and win32gui.ExtractIconEx(target.s, -1):
+                        # -1 queries num of icons embedded in the exe
                         icon = target
-                    except pywintypes.error: # complains error is unresolved
-                        #(1813, 'ExtractIcon', 'The specified resource type
-                        # cannot be found in the image file.')
-                        icon = u'' # Icon will be set to a red x further down.
+                    else: # generic exe icon, hardcoded and good to go
+                        icon, idex = _os.path.expandvars(
+                            u'%SystemRoot%\\System32\\shell32.dll'), u'2'
                 else:
                     icon, idex = _get_default_app_icon(idex, target)
             icon = GPath(icon)
