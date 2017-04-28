@@ -214,10 +214,12 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     asterisk method)."""
     acti_list = list(acti) if acti is not None else None
     load_list = list(lord) if lord is not None else None
+    fix_lo = games.FixInfo() if not quiet else None
     lord, acti = game_handle.set_load_order(load_list, acti_list,
                                             list(cached_lord.loadOrder),
                                             list(cached_lord.activeOrdered),
-                                            quiet=quiet)
+                                            fix_lo=fix_lo)
+    if fix_lo: fix_lo.lo_deprint()
     _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
     return cached_lord
 
@@ -228,7 +230,10 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
     """
     global cached_lord
     try:
-        lord, acti_sorted = game_handle.get_load_order(lord, acti_sorted)
+        fix_lo = games.FixInfo()
+        lord, acti_sorted = game_handle.get_load_order(lord, acti_sorted,
+                                                       fix_lo)
+        fix_lo.lo_deprint()
         cached_lord = LoadOrder(lord, acti_sorted)
     except Exception:
         bolt.deprint(u'Error updating load_order cache')

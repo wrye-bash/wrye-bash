@@ -26,7 +26,6 @@
 """Game class initially introduced to encapsulate load order handling and
 eventually to wrap the bush.game module to a class API to be used in the rest
 of Bash."""
-import env
 
 __author__ = 'Utumno'
 
@@ -35,6 +34,7 @@ import time
 from collections import defaultdict
 # Local
 import bolt
+import env
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:
@@ -111,6 +111,76 @@ def _parse_plugins_txt_(path, mod_infos, _star):
             if is_active: active.append(modname)
     return active, modnames
 
+class FixInfo(object):
+    """Encapsulate info on load order and active lists fixups."""
+    def __init__(self):
+        self.lo_removed = set()
+        self.lo_added = set()
+        self.lo_duplicates = set()
+        self.lo_reordered = False
+        # active mods corrections
+        self.act_removed = set()
+        self.act_added = set()
+        self.act_duplicates = set()
+        self.act_reordered = ()
+        self.act_order_differs_from_load_order = u''
+        self.master_not_active = False
+        self.missing_must_be_active = []
+        self.selectedExtra = []
+        self.act_header = u''
+
+    def lo_changed(self):
+        return bool(self.lo_removed or self.lo_added or self.lo_duplicates or
+                    self.lo_reordered)
+
+    def act_changed(self):
+        return bool(
+            self.act_removed or self.act_added or self.act_duplicates or
+            self.act_reordered or self.act_order_differs_from_load_order or
+            self.master_not_active or self.missing_must_be_active)
+
+    def lo_deprint(self):
+        self.warn_lo()
+        self.warn_active()
+
+    def warn_lo(self):
+        if not self.lo_changed(): return
+        added = _pl(self.lo_added) or u'None'
+        removed = _pl(self.lo_removed) or u'None'
+        duplicates = (u'lo_duplicates(%s), ' % _pl(self.lo_duplicates)) \
+            if self.lo_duplicates else u''
+        reordered = u'(No)' if not self.lo_reordered else _pl(
+            self.lo_reordered[0], u'from:\n', joint=u'\n') + _pl(
+            self.lo_reordered[1], u'\nto:\n', joint=u'\n')
+        msg = u'Fixed Load Order: added(%s), removed(%s), %sreordered %s' % (
+            added, removed, duplicates, reordered)
+        bolt.deprint(msg)
+
+    def warn_active(self):
+        if not self.act_header: return
+        msg = self.act_header
+        if self.act_removed:
+            msg += u'Active list contains mods not present in Data/ ' \
+                   u'directory or corrupted: ' + _pl(self.act_removed) + u'\n'
+        if self.master_not_active:
+            msg += u'%s not present in active mods\n' % self.master_not_active
+        for path in self.missing_must_be_active:
+            msg += (u'%s not present in active list while present in Data '
+                    u'folder' % path) + u'\n'
+        msg += self.act_order_differs_from_load_order
+        if self.selectedExtra:
+            msg += u'Active list contains more than 255 plugins' \
+                   u' - the following plugins will be deactivated: '
+            msg += _pl(self.selectedExtra)
+        if self.act_duplicates:
+            msg += u'Removed duplicate entries from active list : '
+            msg += _pl(self.act_duplicates)
+        if len(self.act_reordered) == 2: # from, to
+            msg += u'Reordered active plugins with fixed order '
+            msg += _pl(self.act_reordered[0], u'from:\n', joint=u'\n')
+            msg += _pl(self.act_reordered[1], u'\nto:\n', joint=u'\n')
+        bolt.deprint(msg)
+
 class Game(object):
 
     allow_deactivate_master = False
@@ -132,7 +202,7 @@ class Game(object):
 
     # API ---------------------------------------------------------------------
     def get_load_order(self, cached_load_order, cached_active_ordered,
-                       quiet=False):
+                       fix_lo=None):
         """Get and validate current load order and active plugins information.
 
         Meant to fetch at once both load order and active plugins
@@ -155,13 +225,11 @@ class Game(object):
         # load order (except redated master). For text based games however
         # the fetched order could be in whatever state, so get this fixed
         if cached_load_order is None: ##: if not should we assert is valid ?
-            removed, added, reordered = self._fix_load_order(lo, quiet=quiet)
-        else: removed = added = reordered = set()
+            self._fix_load_order(lo, fix_lo=fix_lo)
         # having a valid load order we may fix active too if we fetched them
         fixed_active = cached_active_ordered is None and \
-                self._fix_active_plugins(active, lo, on_disc=True, quiet=quiet)
-        self._save_fixed_load_order(removed, added, reordered,
-                                    fixed_active, lo, active)
+          self._fix_active_plugins(active, lo, on_disc=True, fix_active=fix_lo)
+        self._save_fixed_load_order(fix_lo, fixed_active, lo, active)
         return tuple(lo), tuple(active)
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
@@ -174,17 +242,15 @@ class Game(object):
                                                        cached_active)
         return list(cached_load_order), list(cached_active)
 
-    def _save_fixed_load_order(self, removed, added, reordered, fixed_active,
-                               lo, active):
-        if removed or added or reordered:
+    def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
+        if fix_lo.lo_changed():
             self._persist_load_order(lo, None) # active is not used here
 
     def set_load_order(self, lord, active, previous_lord=None,
-                       previous_active=None, dry_run=False, quiet=False):
-        quiet = quiet or dry_run
+                       previous_active=None, dry_run=False, fix_lo=None):
         assert lord is not None or active is not None, \
             'load order or active must be not None'
-        if lord is not None: self._fix_load_order(lord, quiet=quiet)
+        if lord is not None: self._fix_load_order(lord, fix_lo=fix_lo)
         if (previous_lord is None or previous_lord != lord) and active is None:
             # changing load order - must test if active plugins must change too
             assert previous_active is not None, \
@@ -206,7 +272,8 @@ class Game(object):
                 'you need to pass a load order in to set active plugins'
             # a load order is needed for all games to validate active against
             test = lord if lord is not None else previous_lord
-            self._fix_active_plugins(active, test, on_disc=False, quiet=quiet)
+            self._fix_active_plugins(active, test, on_disc=False,
+                                     fix_active=fix_lo)
         lord = lord if lord is not None else previous_lord
         active = active if active is not None else previous_active
         assert lord is not None and active is not None, \
@@ -303,7 +370,7 @@ class Game(object):
             self.plugins_txt_path.size_mtime()
 
     # VALIDATION --------------------------------------------------------------
-    def _fix_load_order(self, lord, quiet=False):
+    def _fix_load_order(self, lord, fix_lo):
         """Fix inconsistencies between given loadorder and actually installed
         mod files as well as impossible load orders. We need a refreshed
         bosh.modInfos reflecting the contents of Data/.
@@ -314,6 +381,7 @@ class Game(object):
         leads to hacks (like the _selected parameter).
         :type lord: list[bolt.Path]
         """
+        if fix_lo is None: fix_lo = FixInfo() # discard fix info
         old_lord = lord[:]
         # game's master might be out of place (if using timestamps for load
         # ordering or a manually edited loadorder.txt) so move it up
@@ -321,34 +389,32 @@ class Game(object):
         master_dex = 0
         try:
             master_dex = lord.index(master_name)
-            _addedFiles = set()
         except ValueError:
             if not master_name in self.mod_infos:
                 raise bolt.BoltError(
                     u'%s is missing or corrupted' % master_name)
-            _addedFiles = {master_name}
+            fix_lo.lo_added = {master_name}
         if master_dex > 0:
             bolt.deprint(
                 u'%s has index %d (must be 0)' % (master_name, master_dex))
             lord.remove(master_name)
             lord.insert(0, master_name)
-            _reordered = True
-        else: _reordered = False
+            fix_lo.lo_reordered = True
         # below do not apply to timestamp method (on getting it)
         loadorder_set = set(lord)
         mods_set = set(self.mod_infos.keys())
-        _removedFiles = loadorder_set - mods_set # may remove corrupted mods
+        fix_lo.lo_removed = loadorder_set - mods_set # may remove corrupted mods
         # present in text file, we are supposed to take care of that
-        _addedFiles |= mods_set - loadorder_set
+        fix_lo.lo_added |= mods_set - loadorder_set
         # Remove non existent plugins from load order
-        lord[:] = [x for x in lord if x not in _removedFiles]
+        lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
         lord.sort(key=lambda m: not self.mod_infos[m].isEsm())
-        _reordered |= ol != lord
+        fix_lo.lo_reordered |= ol != lord
         # Append new plugins to load order
         index_first_esp = self._index_of_first_esp(lord)
-        for mod in _addedFiles:
+        for mod in fix_lo.lo_added:
             if self.mod_infos[mod].isEsm():
                 if not mod == master_name:
                     lord.insert(index_first_esp, mod)
@@ -358,61 +424,49 @@ class Game(object):
                 index_first_esp += 1
             else: lord.append(mod)
         # end textfile get
-        duplicates = self._check_for_duplicates(lord)
-        _reordered |= self._order_fixed(lord)
-        if not quiet: warn_lo_fixed(_addedFiles, _removedFiles, _reordered,
-                                    duplicates, lord, old_lord)
-        return _removedFiles, _addedFiles, _reordered
+        fix_lo.lo_duplicates = self._check_for_duplicates(lord)
+        fix_lo.lo_reordered |= self._order_fixed(lord)
+        if fix_lo.lo_reordered: fix_lo.lo_reordered = old_lord, lord
 
-    def _fix_active_plugins(self, acti, lord, on_disc, quiet=False):
+    def _fix_active_plugins(self, acti, lord, on_disc, fix_active):
         # filter plugins not present in modInfos - this will disable
         # corrupted too! Preserve acti order
+        quiet = fix_active is None
+        if quiet: fix_active = FixInfo() # discard fix info
         acti_filtered = [x for x in acti if x in self.mod_infos]
-        _removed = set(acti) - set(acti_filtered)
-        if _removed: # take note as we may need to rewrite plugins txt
-            msg = u'Active list contains mods not present ' \
-                  u'in Data/ directory or corrupted: ' + _pl(_removed) + u'\n'
-            if not quiet: self.mod_infos.selectedBad = _removed
-        else: msg = u''
+        fix_active.act_removed = set(acti) - set(acti_filtered)
+        if fix_active.act_removed and not quiet:
+            # take note as we may need to rewrite plugins txt
+            self.mod_infos.selectedBad = fix_active.lo_removed
         if not self.allow_deactivate_master:
             if not self.master_path in acti_filtered:
                 acti_filtered.insert(0, self.master_path)
-                msg += (u'%s not present in active mods\n' % self.master_path)
-        added_active_paths = []
+                fix_active.master_not_active = self.master_path
         for path in self.must_be_active_if_present:
             if path in lord and not path in acti_filtered:
-                msg += (u'%s not present in active list '
-                        u'while present in Data folder' % path) + u'\n'
-                added_active_paths.append(path)
+                fix_active.missing_must_be_active.append(path)
         # order - affects which mods are chopped off if > 255 (the ones that
         # load last) - won't trigger saving but for Skyrim
-        msg += self._check_active_order(acti_filtered, lord)
-        for path in added_active_paths: # insert after the last master
+        fix_active.act_order_differs_from_load_order += \
+            self._check_active_order(acti_filtered, lord)
+        for path in fix_active.missing_must_be_active: # insert after the last master
             acti_filtered.insert(self._index_of_first_esp(acti_filtered), path)
+        # Check for duplicates
+        fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # check if we have more than 256 active mods
         if len(acti_filtered) > 255:
-            msg += u'Active list contains more than 255 plugins' \
-                   u' - the following plugins will be deactivated: '
-            self.mod_infos.selectedExtra = acti_filtered[255:]
-            msg += _pl(self.mod_infos.selectedExtra)
-        # Check for duplicates
-        duplicates = self._check_for_duplicates(acti_filtered)
-        if duplicates:
-            msg += u'Removed duplicate entries from active list : '
-            msg += _pl(duplicates)
+            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
+                acti_filtered[255:]
         acti[:] = acti_filtered[:255] # chop off extra, update acti in place
         if self._order_fixed(acti):
-            msg += u'Reordered active plugins with fixed order '
-            msg += _pl(acti_filtered[:255], u'from:\n', joint=u'\n') + _pl(
-                acti, u'\nto:\n', joint=u'\n')
-        if msg:
+            fix_active.act_reordered = (acti_filtered[:255], acti)
+        if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user - ##: maybe backup previous plugin txt ?
-                msg = u'Invalid Plugin txt corrected:\n' + msg
+                fix_active.act_header = u'Invalid Plugin txt corrected:\n'
                 self._persist_active_plugins(acti, lord)
             else: # active list we passed in when setting load order is invalid
-                msg = u'Invalid active plugins list corrected:\n' + msg
-            if not quiet: bolt.deprint(msg)
+                fix_active.act_header = u'Invalid active plugins list corrected:\n'
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
 
@@ -536,14 +590,13 @@ class TimestampGame(Game):
         if previous_active is None or set(previous_active) != set(active):
             self._persist_active_plugins(active, lord)
 
-    def _fix_load_order(self, lord, quiet=False):
-        _removedFiles, _addedFiles, _reordered = super(TimestampGame,
-            self)._fix_load_order(lord, quiet)
-        if _addedFiles and not quiet: # should not occur, except if undoing
+    def _fix_load_order(self, lord, fix_lo):
+        super(TimestampGame, self)._fix_load_order(lord, fix_lo)
+        if fix_lo is not None and fix_lo.lo_added:
+            # should not occur, except if undoing
             bolt.deprint(u'Incomplete load order passed in to set_load_order. '
-                         u'Missing: ' + u', '.join(x.s for x in _addedFiles))
+                u'Missing: ' + u', '.join(x.s for x in fix_lo.lo_added))
             lord[:] = self.mod_infos.calculateLO(mods=lord)
-        return _removedFiles, _addedFiles, _reordered
 
 class TextfileGame(Game):
 
@@ -714,10 +767,9 @@ class AsteriskGame(Game):
     def _persist_active_plugins(self, active, lord):
         self._persist_load_order(lord, active)
 
-    def _save_fixed_load_order(self, removed, added, reordered, fixed_active,
-                               lo, active):
+    def _save_fixed_load_order(self, fix_lo, fixed_active, lo, active):
         if fixed_active: return # plugins.txt already saved
-        if removed or added or reordered: self._persist_load_order(lo, active)
+        if fix_lo.lo_changed(): self._persist_load_order(lo, active)
 
     def _persist_if_changed(self, active, lord, previous_active,
                             previous_lord):
@@ -817,14 +869,5 @@ def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
         return TimestampGame(mod_infos, plugins_txt_path)
 
 # Print helpers
-def warn_lo_fixed(_addedFiles, _removedFiles, _reordered, duplicates,
-                  lord, old_lord):
-    if not (_removedFiles or _addedFiles or _reordered): return
-    bolt.deprint(u'Fixed Load Order: added(%s), removed(%s), %sreordered %s'
-             % (_pl(_addedFiles) or u'None', _pl(_removedFiles) or u'None',
-                u'duplicates(%s), ' % (_pl(duplicates) if duplicates else u''),
-                u'(No)' if not _reordered else _pl(old_lord, u'from:\n',
-                            joint=u'\n') + _pl(lord, u'\nto:\n', joint=u'\n')))
-
 def _pl(it, legend=u'', joint=u', '):
     return legend + joint.join(u'%s' % x for x in it) # use Path.__unicode__
