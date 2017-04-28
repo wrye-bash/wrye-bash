@@ -26,7 +26,7 @@ import string
 from types import IntType, LongType
 import wx
 from . import bEnableWizard, tabInfo, BashFrame
-from .constants import colorInfo, settingDefaults, JPEG, PNG
+from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
@@ -336,8 +336,8 @@ class ImportFaceDialog(balt.Dialog):
         self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
         itemImagePath = bass.dirs['mods'].join(u'Docs', u'Images', '%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
-        bitmap = (itemImagePath.exists() and
-                  Image(itemImagePath.s, imageType=JPEG).GetBitmap()) or None
+        bitmap = itemImagePath.exists() and Image(
+            itemImagePath.s).GetBitmap() or None
         self.picture.SetBitmap(bitmap)
         self.listBox.SetSelection(itemDex)
 
@@ -414,8 +414,7 @@ class CreateNewProject(balt.Dialog):
         # Event Handlers
         self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
         # Dialog Icon Handlers
-        self.SetIcon(wx.Icon(
-            bass.dirs['images'].join(u'diamond_white_off.png').s, PNG))
+        self.SetIcon(installercons.get_image('off.white.dir').GetIcon())
         self.OnCheckBoxChange()
 
     def OnCheckProjectsColorTextCtrl(self,event):
@@ -434,14 +433,13 @@ class CreateNewProject(balt.Dialog):
         be when created. """
         if self.checkEsp.IsChecked():
             if self.checkWizard.IsChecked():
-                self.SetIcon(wx.Icon(
-                    bass.dirs['images'].join(u'diamond_white_off_wiz.png').s, PNG))
+                self.SetIcon(
+                    installercons.get_image('off.white.dir.wiz').GetIcon())
             else:
-                self.SetIcon(wx.Icon(
-                    bass.dirs['images'].join(u'diamond_white_off.png').s, PNG))
+                self.SetIcon(
+                    installercons.get_image('off.white.dir').GetIcon())
         else:
-            self.SetIcon(wx.Icon(
-                bass.dirs['images'].join(u'diamond_grey_off.png').s, PNG))
+            self.SetIcon(installercons.get_image('off.grey.dir').GetIcon())
 
     @staticmethod
     def OnCancel(event): event.Skip()

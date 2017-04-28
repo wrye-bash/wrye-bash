@@ -28,7 +28,6 @@ also defined in these functions."""
 from . import InstallersPanel, InstallersList, INIList, ModList, SaveList, \
     BSAList, ScreensList, MasterList, bEnableWizard, PeopleList, \
     BashStatusBar, BashNotebook
-from .constants import PNG, BMP, TIF, ICO, JPEG
 from .. import bass, balt, bush
 from ..cint import CBashApi
 from ..balt import Image, MenuLink, SeparatorLink, UIList_OpenItems, \
@@ -49,9 +48,9 @@ from .mod_links import *
 #------------------------------------------------------------------------------
 def InitStatusBar():
     """Initialize status bar links."""
-    dirImages = bass.dirs['images']
     def imageList(template):
-        return [Image(dirImages.join(template % i)) for i in (16,24,32)]
+        return [Image(bass.dirs['images'].join(template % i)) for i in
+                (16, 24, 32)]
     def _init_tool_buttons(): # tooldirs must have been initialized
         return (((bass.tooldirs['OblivionBookCreatorPath'],
                   bass.inisettings['OblivionBookCreatorJavaArg']),
@@ -172,7 +171,8 @@ def InitStatusBar():
     dirApps = bass.dirs['mopy'].join(u'Apps')
     badIcons = [Image(bass.dirs['images'].join(u'x.png'))] * 3
     def iconList(fileName):
-        return [Image(fileName, ICO, x) for x in (16, 24, 32)]
+        return [Image(fileName, Image.typesDict['ico'], x) for x in
+                (16, 24, 32)]
     for pth, icon, description in init_app_links(dirApps, badIcons, iconList):
             BashStatusBar.buttons.append(
                 App_Button((pth, ()), icon, description, canHide=False))
@@ -668,10 +668,11 @@ def InitScreenLinks():
     ScreensList.itemMenu.append(SeparatorLink())
     if True: #--Convert
         convertMenu = MenuLink(_(u'Convert'))
-        convertMenu.links.append(Screen_ConvertTo(u'jpg',JPEG))
-        convertMenu.links.append(Screen_ConvertTo(u'png',PNG))
-        convertMenu.links.append(Screen_ConvertTo(u'bmp',BMP))
-        convertMenu.links.append(Screen_ConvertTo(u'tif',TIF))
+        image_type = Image.typesDict
+        convertMenu.links.append(Screen_ConvertTo(u'jpg', image_type['jpg']))
+        convertMenu.links.append(Screen_ConvertTo(u'png', image_type['png']))
+        convertMenu.links.append(Screen_ConvertTo(u'bmp', image_type['bmp']))
+        convertMenu.links.append(Screen_ConvertTo(u'tif', image_type['tif']))
         ScreensList.itemMenu.append(convertMenu)
 
 #------------------------------------------------------------------------------

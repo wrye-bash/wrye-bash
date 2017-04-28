@@ -86,8 +86,7 @@ from ..balt import colors, images, Image, Resources
 from ..balt import Links, ItemLink
 
 # Constants -------------------------------------------------------------------
-from .constants import colorInfo, settingDefaults, karmacons, installercons, \
-    PNG, JPEG, ICO, BMP, TIF
+from .constants import colorInfo, settingDefaults, karmacons, installercons
 
 # BAIN wizard support, requires PyWin32, so import will fail if it's not installed
 try:
@@ -1909,7 +1908,6 @@ class SaveDetails(_SashDetailsPanel):
         self.playerLevel = 0
         self.gameDays = 0
         self.playMinutes = 0
-        self.picData = None
         self.coSaves = u'--\n--'
 
     def SetFile(self,fileName='SAME'):
@@ -1923,7 +1921,6 @@ class SaveDetails(_SashDetailsPanel):
             self.gameDays = saveInfo.header.gameDays
             self.playMinutes = saveInfo.header.gameTicks/60000
             self.playerLevel = saveInfo.header.pcLevel
-            self.picData = saveInfo.header.image
             self.coSaves = u'%s\n%s' % saveInfo.coSaves().getTags()
         #--Set Fields
         self.file.SetValue(self.fileStr)
@@ -1931,10 +1928,10 @@ class SaveDetails(_SashDetailsPanel):
         self.gCoSaves.SetLabel(self.coSaves)
         self.uilist.SetFileInfo(self.saveInfo)
         #--Picture
-        if not self.picData:
+        if not self.saveInfo:
             self.picture.SetBitmap(None)
         else:
-            width,height,data = self.picData
+            width,height,data = self.saveInfo.header.image
             image = Image.GetImage(data, height, width)
             self.picture.SetBitmap(image.ConvertToBitmap())
         #--Info Box
@@ -3526,8 +3523,13 @@ class BashStatusBar(DnDStatusBar):
                 continue
             # Hidden?
             if uid in hide: continue
+            # Not present ?
+            if not link.IsPresent(): continue
             # Add it
-            self._addButton(link)
+            try:
+                self._addButton(link)
+            except AttributeError: # 'App_Button' object has no attribute 'imageKey'
+                deprint(u'Failed to load button %r' % (uid,), traceback=True)
         # Add any new buttons
         for link in BashStatusBar.buttons:
             # Already tested?
@@ -3539,7 +3541,10 @@ class BashStatusBar(DnDStatusBar):
                 hideChanged = True
             order.append(uid)
             orderChanged = True
-            self._addButton(link)
+            try:
+                self._addButton(link)
+            except AttributeError:
+                deprint(u'Failed to load button %r' % (uid,), traceback=True)
         # Update settings
         if orderChanged: settings.setChanged('bash.statusbar.order')
         if hideChanged: settings.setChanged('bash.statusbar.hide')
@@ -4104,15 +4109,15 @@ def InitImages():
     for key,value in settings['bash.colors'].iteritems(): colors[key] = value
     #--Images
     imgDirJn = bass.dirs['images'].join
-    def _png(name): return Image(imgDirJn(name), PNG)
+    def _png(name): return Image(imgDirJn(name)) # not png necessarily, rename!
     #--Standard
     images['save.on'] = _png(u'save_on.png')
     images['save.off'] = _png(u'save_off.png')
     #--Misc
     #images['oblivion'] = Image(GPath(bass.dirs['images'].join(u'oblivion.png')),png)
-    images['help.16'] = Image(imgDirJn(u'help16.png'))
-    images['help.24'] = Image(imgDirJn(u'help24.png'))
-    images['help.32'] = Image(imgDirJn(u'help32.png'))
+    images['help.16'] = _png(u'help16.png')
+    images['help.24'] = _png(u'help24.png')
+    images['help.32'] = _png(u'help32.png')
     #--ColorChecks
     images['checkbox.red.x'] = _png(u'checkbox_red_x.png')
     images['checkbox.red.x.16'] = _png(u'checkbox_red_x.png')
@@ -4135,15 +4140,6 @@ def InitImages():
     images['checkbox.blue.off.16'] = _png(u'checkbox_blue_off.png')
     images['checkbox.blue.off.24'] = _png(u'checkbox_blue_off_24.png')
     images['checkbox.blue.off.32'] = _png(u'checkbox_blue_off_32.png')
-    #--Bash
-    images['bash.16'] = _png(u'bash_16.png')
-    images['bash.24'] = _png(u'bash_24.png')
-    images['bash.32'] = _png(u'bash_32.png')
-    images['bash.16.blue'] = _png(u'bash_16_blue.png')
-    images['bash.24.blue'] = _png(u'bash_24_blue.png')
-    images['bash.32.blue'] = _png(u'bash_32_blue.png')
-    #--Bash Patch Dialogue
-    images['monkey.16'] = Image(imgDirJn(u'wryemonkey16.jpg'), JPEG)
     #--DocBrowser
     images['doc.16'] = _png(u'DocBrowser16.png')
     images['doc.24'] = _png(u'DocBrowser24.png')
@@ -4159,19 +4155,16 @@ def InitImages():
     images['pickle.32'] = _png(u'pickle32.png')
     #--Applications Icons
     Resources.bashRed = balt.ImageBundle()
-    Resources.bashRed.Add(images['bash.16'])
-    Resources.bashRed.Add(images['bash.24'])
-    Resources.bashRed.Add(images['bash.32'])
+    Resources.bashRed.AddIconFromFile(imgDirJn(u'bash_32-2.ico').s)
     #--Application Subwindow Icons
     Resources.bashBlue = balt.ImageBundle()
-    Resources.bashBlue.Add(images['bash.16.blue'])
-    Resources.bashBlue.Add(images['bash.24.blue'])
-    Resources.bashBlue.Add(images['bash.32.blue'])
+    Resources.bashBlue.AddIconFromFile(imgDirJn(u'bash_blue.svg-2.ico').s)
     Resources.bashDocBrowser = balt.ImageBundle()
     Resources.bashDocBrowser.Add(images['doc.16'])
     Resources.bashDocBrowser.Add(images['doc.24'])
     Resources.bashDocBrowser.Add(images['doc.32'])
+    #--Bash Patch Dialogue icon
     Resources.bashMonkey = balt.ImageBundle()
-    Resources.bashMonkey.Add(images['monkey.16'])
+    Resources.bashMonkey.AddIconFromFile(imgDirJn(u'wrye_monkey_87_sharp.ico').s)
 
 from .links import InitLinks

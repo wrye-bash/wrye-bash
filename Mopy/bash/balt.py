@@ -132,14 +132,19 @@ class Image:
 
     typesDict = {'png': wx.BITMAP_TYPE_PNG,
                  'jpg': wx.BITMAP_TYPE_JPEG,
+                 'jpeg': wx.BITMAP_TYPE_JPEG,
                  'ico': wx.BITMAP_TYPE_ICO,
                  'bmp': wx.BITMAP_TYPE_BMP,
                  'tif': wx.BITMAP_TYPE_TIF,
                 }
 
-    def __init__(self, filename, imageType=wx.BITMAP_TYPE_ANY, iconSize=16):
+    def __init__(self, filename, imageType=None, iconSize=16):
         self.file = GPath(filename)
-        self.type = imageType
+        try:
+            self._img_type = imageType or self.typesDict[self.file.cext[1:]]
+        except KeyError:
+            deprint(u'Unknown image extension %s' % self.file.cext)
+            self._img_type = wx.BITMAP_TYPE_ANY
         self.bitmap = None
         self.icon = None
         self.iconSize = iconSize
@@ -148,23 +153,28 @@ class Image:
 
     def GetBitmap(self):
         if not self.bitmap:
-            if self.type == wx.BITMAP_TYPE_ICO:
+            if self._img_type == wx.BITMAP_TYPE_ICO:
                 self.GetIcon()
-                self.bitmap = wx.EmptyBitmap(self.iconSize,self.iconSize)
+                w, h = self.icon.GetWidth(), self.icon.GetHeight()
+                self.bitmap = wx.EmptyBitmap(w, h)
                 self.bitmap.CopyFromIcon(self.icon)
+                # Hack - when user scales windows display icon may need scaling
+                if w != self.iconSize or h != self.iconSize: # rescale !
+                    self.bitmap = wx.BitmapFromImage(
+                        wx.ImageFromBitmap(self.bitmap).Scale(
+                          self.iconSize, self.iconSize, wx.IMAGE_QUALITY_HIGH))
             else:
-                self.bitmap = wx.Bitmap(self.file.s,self.type)
+                self.bitmap = wx.Bitmap(self.file.s, self._img_type)
         return self.bitmap
 
     def GetIcon(self):
         if not self.icon:
-            if self.type == wx.BITMAP_TYPE_ICO:
-                self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
-                w,h = self.icon.GetWidth(),self.icon.GetHeight()
-                if (w > self.iconSize or w == 0 or
-                    h > self.iconSize or h == 0):
-                    self.iconSize = 16
-                    self.icon = wx.Icon(self.file.s,wx.BITMAP_TYPE_ICO,self.iconSize,self.iconSize)
+            if self._img_type == wx.BITMAP_TYPE_ICO:
+                self.icon = wx.Icon(self.file.s, wx.BITMAP_TYPE_ICO,
+                                    self.iconSize, self.iconSize)
+                # we failed to get the icon? (when display resolution changes)
+                if not self.icon.GetWidth() or not self.icon.GetHeight():
+                    self.icon = wx.Icon(self.file.s, wx.BITMAP_TYPE_ICO)
             else:
                 self.icon = wx.EmptyIcon()
                 self.icon.CopyFromBitmap(self.GetBitmap())
@@ -198,6 +208,11 @@ class ImageBundle:
     def Add(self,image):
         self.images.append(image)
 
+    def AddIconFromFile(self,image):
+        if not self.iconBundle:
+            self.iconBundle = wx.IconBundle()
+        self.iconBundle.AddIconFromFile(image, wx.BITMAP_TYPE_ICO)
+
     def GetIconBundle(self):
         if not self.iconBundle:
             self.iconBundle = wx.IconBundle()
@@ -229,13 +244,15 @@ class ImageList:
                 indices[key] = imageList.Add(image.GetBitmap())
         return self.imageList
 
+    def get_image(self, key): return self.images[self[key]][1] # YAK !
+
     def __getitem__(self,key):
         self.GetImageList()
         return self.indices[key]
 
 # Images ----------------------------------------------------------------------
 class ColorChecks(ImageList):
-    """ColorChecks ImageList. Used by several List classes."""
+    """ColorChecks ImageList. Used by several UIList classes."""
     def __init__(self):
         ImageList.__init__(self, 16, 16)
         for state in (u'on', u'off', u'inc', u'imp'):
