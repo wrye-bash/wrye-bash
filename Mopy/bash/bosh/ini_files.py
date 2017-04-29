@@ -32,6 +32,9 @@ from ..bass import dirs
 from ..bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict
 from ..exception import AbstractError, CancelError, SkipError
 
+def _to_lower(ini_settings): # transform dict of dict to LowerDict of LowerDict
+    return LowerDict((x, LowerDict(y)) for x, y in ini_settings.iteritems())
+
 class IniFile(AFile):
     """Any old ini file."""
     reComment = re.compile(u';.*',re.U)
@@ -240,8 +243,7 @@ class IniFile(AFile):
     def saveSettings(self,ini_settings,deleted_settings={}):
         """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary must be actual (setting, value) pairs."""
-        ini_settings = LowerDict((x, LowerDict(y))
-            for x,y in ini_settings.iteritems())
+        ini_settings = _to_lower(ini_settings)
         deleted_settings = LowerDict((x, set(CIstr(u) for u in y)) for x, y in
                                      deleted_settings.iteritems())
         reDeleted = self.reDeletedSetting
@@ -264,25 +266,24 @@ class IniFile(AFile):
                         line = unicode(line,self.encoding)
                     except UnicodeDecodeError:
                         line = unicode(line,'cp1252')
-                    maDeleted = reDeleted.match(line)
                     stripped = reComment.sub(u'',line).strip()
                     maSection = reSection.match(stripped)
-                    maSetting = reSetting.match(stripped)
                     if maSection:
-                        # There are 'new' entries still to be added
+                        # 'new' entries still to be added from previous section
                         _add_remaining_new_items(section)
-                        section = maSection.group(1)
+                        section = maSection.group(1) # entering new section
                         sectionSettings = ini_settings.get(section,{})
-                    elif maSetting or maDeleted:
-                        if maSetting: match = maSetting
-                        else: match = maDeleted
-                        setting = match.group(1)
-                        if sectionSettings and setting in sectionSettings:
-                            value = sectionSettings[setting]
-                            line = u'%s=%s\n' % (setting, value)
-                            del sectionSettings[setting]
-                        elif section in deleted_settings and setting in deleted_settings[section]:
-                            line = u';-'+line
+                    else:
+                        match = reSetting.match(stripped) or reDeleted.match(
+                            line) # note we run maDeleted on LINE
+                        if match:
+                            setting = match.group(1)
+                            if sectionSettings and setting in sectionSettings:
+                                value = sectionSettings[setting]
+                                line = u'%s=%s\n' % (setting, value)
+                                del sectionSettings[setting]
+                            elif section in deleted_settings and setting in deleted_settings[section]:
+                                line = u';-'+line
                     tmpFileWrite(line)
                 # This will occur for the last INI section in the ini file
                 _add_remaining_new_items(section)
@@ -462,10 +463,8 @@ class OBSEIniFile(IniFile):
         """Apply dictionary of settings to ini file, latter must exist!
         Values in settings dictionary can be either actual values or
         full ini lines ending in newline char."""
-        ini_settings = LowerDict((x, LowerDict(y))
-            for x,y in ini_settings.iteritems())
-        deleted_settings = LowerDict((x, LowerDict(y))
-            for x,y in deleted_settings.iteritems())
+        ini_settings = _to_lower(ini_settings)
+        deleted_settings = _to_lower(deleted_settings)
         reDeleted = self.reDeleted
         reComment = self.reComment
         with self.abs_path.open('r') as iniFile:
@@ -532,6 +531,7 @@ class OblivionIni(IniFile):
     bsaRedirectors = {u'archiveinvalidationinvalidated!.bsa',
                       u'..\\obmm\\bsaredirection.bsa'}
     encoding = 'cp1252'
+    _ini_language = None
 
     def __init__(self,name):
         # Use local copy of the oblivion.ini if present
@@ -549,8 +549,11 @@ class OblivionIni(IniFile):
         ini_settings = {section:{key:value}}
         self.saveSettings(ini_settings)
 
-    def get_ini_language(self):
-        return self.getSetting(u'General', u'sLanguage', u'English')
+    def get_ini_language(self, cached=True):
+        if not cached or self._ini_language is None:
+            self._ini_language = self.getSetting(u'General', u'sLanguage',
+                                                 u'English')
+        return self._ini_language
 
     @balt.conversation
     def ask_create_target_ini(self, msg=_(
