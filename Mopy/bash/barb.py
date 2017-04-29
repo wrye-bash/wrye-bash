@@ -48,6 +48,7 @@ class BaseBackupSettings:
     verApp = bass.AppVersion
 
     def __init__(self, parent=None, path=None, do_quit=False):
+        path = GPath(path)
         if path is not None and path.ext == u'' and not path.exists():
             path = None
         if path is None: path = bass.settings['bash.backupPath']
