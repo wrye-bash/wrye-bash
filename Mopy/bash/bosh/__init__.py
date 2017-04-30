@@ -1297,8 +1297,15 @@ class TableFileInfos(DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def refreshFile(self,fileName):
-        self[fileName] = self.factory(self.store_dir, fileName)
+    def add_info(self, fileName, load_cache=True, _in_refresh=False):
+        info = self[fileName] = self.factory(self.store_dir, fileName,
+                                             load_cache=load_cache)
+        return info
+
+    def refreshFile(self, fileName, load_cache=False, _in_refresh=False): # YAK - tmp _in_refresh
+        info = self.add_info(fileName, load_cache, _in_refresh)
+        self._notify_bain(changed={info.abs_path})
+        return info
 
     def _names(self): # performance intensive
         return {x for x in self.store_dir.list() if
@@ -1347,7 +1354,9 @@ class TableFileInfos(DataStore):
         return paths_to_keys.values()
 
     def _notify_bain(self, deleted=frozenset(), changed=frozenset()):
-        # we need absolute paths !
+        """We need absolute paths for deleted and changed!
+        :type deleted: set[bolt.Path]
+        :type changed: set[bolt.Path]"""
         if self.__class__._bain_notify:
             from .bain import InstallersData
             InstallersData.notify_external(deleted=deleted, changed=changed)
@@ -1368,11 +1377,12 @@ class FileInfos(TableFileInfos):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
-    def refreshFile(self, fileName, _in_refresh=False): # YAK - tmp _in_refresh
+    def add_info(self, fileName, load_cache=True, _in_refresh=False):
         try:
-            fileInfo = self.factory(self.store_dir, fileName, load_cache=True)
-            self[fileName] = fileInfo
+            fileInfo = super(FileInfos, self).add_info(
+                fileName, load_cache=load_cache)
             self.corrupted.pop(fileName, None)
+            return fileInfo
         except FileError as error:
             if not _in_refresh: # if refresh just raise so we print the error
                 self.corrupted[fileName] = error.message
@@ -1393,7 +1403,8 @@ class FileInfos(TableFileInfos):
                     if oldInfo.do_update(): # will reread the header
                         _updated.add(name)
                 else: # added or known corrupted, get a new info
-                    self.refreshFile(name, _in_refresh=True)
+                    # TODO(ut): notify BAIN for added files but not on boot
+                    self.add_info(name, _in_refresh=True)
                     _added.add(name)
             except FileError as e: # old still corrupted, or new(ly) corrupted
                 if not name in self.corrupted \
@@ -1404,6 +1415,8 @@ class FileInfos(TableFileInfos):
         _deleted = oldNames - newNames
         self.delete_refresh(_deleted, None, check_existence=False,
                             _in_refresh=True)
+        if _updated:
+            self._notify_bain(changed={self[n].abs_path for n in _updated})
         change = bool(_added) or bool(_updated) or bool(_deleted)
         if not change: return change
         return _added, _updated, _deleted
@@ -1476,7 +1489,7 @@ class FileInfos(TableFileInfos):
             destPath = destDir.join(destName)
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
         if destDir == self.store_dir:
-            self.refreshFile(destName)
+            self.refreshFile(destName) # use refreshFile so BAIN is notified
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
                 if set_mtime == '+1':
@@ -1616,6 +1629,8 @@ class INIInfos(TableFileInfos):
                 if k in _deleted: # we restore default over copy
                     _updated.add(k)
                     default_info.reset_status()
+        if _updated:
+            self._notify_bain(changed={self[n].abs_path for n in _updated})
         return _added, _deleted, _updated
 
     def refresh(self, refresh_infos=True, refresh_target=True):
@@ -1630,6 +1645,10 @@ class INIInfos(TableFileInfos):
         change = bool(_added) or bool(_updated) or bool(_deleted) or changed
         if not change: return change
         return _added, _updated, _deleted, changed
+
+    def add_info(self, fileName, load_cache=True, _in_refresh=False):
+        info = self[fileName] = self.factory(self.store_dir, fileName)
+        return info
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
@@ -2110,9 +2129,10 @@ class ModInfos(FileInfos):
         return pairs
 
     #--Refresh File
-    def refreshFile(self, fileName, _in_refresh=False):
+    def refreshFile(self, fileName, load_cache=True, _in_refresh=False):
         try:
-            FileInfos.refreshFile(self, fileName, _in_refresh)
+            super(ModInfos, self).refreshFile(fileName, load_cache=load_cache,
+                                              _in_refresh=_in_refresh)
         finally:
             self._refreshInfoLists() # not sure if needed here - track usages !
 
