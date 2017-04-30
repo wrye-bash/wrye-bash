@@ -2872,25 +2872,8 @@ class InstallersPanel(BashTab):
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
-        changed = bosh.bain.InstallersData.refreshTracked()
-        if changed:
-            # Some tracked files changed, update the ui
-            refresh = False
-            for apath in changed:
-                # the Game/Data dir - will give correct relative path for both
-                # Ini tweaks and mods - those are keyed in data by rel path...
-                if apath.cs.startswith(bass.dirs['mods'].cs):
-                    path = apath.relpath(bass.dirs['mods'])
-                else:
-                    path = apath
-                if apath.exists():
-                    self.listData.data_sizeCrcDate[path.s] = (
-                        apath.size, apath.crc, apath.mtime)
-                    refresh = True
-                else:
-                    refresh |= bool(
-                        self.listData.data_sizeCrcDate.pop(path.s, None))
-            refreshui |= refresh and self.listData.refreshInstallersStatus()
+        refresh = self.listData.refreshTracked()
+        refreshui |= refresh and self.listData.refreshInstallersStatus()
         if refreshui: self.uiList.RefreshUI(focus_list=False)
 
     def __extractOmods(self):

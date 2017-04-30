@@ -1506,6 +1506,10 @@ class InstallersData(DataStore):
     # deletions of mods/Ini Tweaks. Keys are absolute paths (so we can track
     # ini deletions from Data/Ini Tweaks as well as mods/xmls etc in Data/)
     _miscTrackedFiles = {}
+    # we only scan Data dir on first refresh - therefore we need be informed
+    # for updates/deletions that happen outside our control - mods/inis/bsas
+    _externally_deleted = set()
+    _externally_updated = set()
     # cache with paths in Data/ that would be skipped but are not, due to
     # an installer having the override skip etc flag on - when turning the skip
     # off leave the files here - will be cleaned on restart (files will show
@@ -2079,15 +2083,34 @@ class InstallersData(DataStore):
         InstallersData._miscTrackedFiles[abspath] = AFile(abspath)
 
     @staticmethod
-    def refreshTracked():
-        changed = set()
+    def notify_external(changed=frozenset(), deleted=frozenset()):
+        InstallersData._externally_updated.update(changed)
+        InstallersData._externally_deleted.update(deleted)
+
+    def refreshTracked(self):
+        deleted, changed = set(InstallersData._externally_deleted), set(
+            InstallersData._externally_updated)
+        InstallersData._externally_updated.clear()
+        InstallersData._externally_deleted.clear()
         for abspath, tracked in InstallersData._miscTrackedFiles.items():
             if not abspath.exists(): # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(abspath, None)
-                changed.add(abspath)
+                deleted.add(abspath)
             elif tracked.do_update():
                 changed.add(abspath)
-        return changed
+        refresh = False
+        for apath in changed | deleted:
+            # the Game/Data dir - will give correct relative path for both
+            # Ini tweaks and mods - those are keyed in data by rel path...
+            relpath = apath.relpath(bass.dirs['mods'])
+            # ghosts...
+            key = relpath.root.s if relpath.cs[-6:] == u'.ghost' else relpath.s
+            if apath in changed:
+                self.data_sizeCrcDate[key] = (apath.size,apath.crc,apath.mtime)
+                refresh = True
+            else:
+                refresh |= bool(self.data_sizeCrcDate.pop(key, None))
+        return refresh # Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):

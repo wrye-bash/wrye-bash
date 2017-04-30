@@ -1280,7 +1280,7 @@ class DataStore(DataDict):
         return set(d.tail for d in destinations if d.exists())
 
 class TableFileInfos(DataStore):
-    _notify_bain_on_delete = True
+    _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
 
     def _initDB(self, dir_):
@@ -1343,11 +1343,14 @@ class TableFileInfos(DataStore):
             for filePath in paths_to_keys.keys():
                 if filePath.exists():
                     del paths_to_keys[filePath] # item was not deleted
-        if self.__class__._notify_bain_on_delete:
-            from .bain import InstallersData
-            for d in paths_to_keys: # we need absolute paths
-                InstallersData.track(d)
+        self._notify_bain(deleted=paths_to_keys)
         return paths_to_keys.values()
+
+    def _notify_bain(self, deleted=frozenset(), changed=frozenset()):
+        # we need absolute paths !
+        if self.__class__._bain_notify:
+            from .bain import InstallersData
+            InstallersData.notify_external(deleted=deleted, changed=changed)
 
     def _additional_deletes(self, fileInfo, toDelete): pass
 
@@ -2647,7 +2650,7 @@ class ModInfos(FileInfos):
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
-    _notify_bain_on_delete = False
+    _bain_notify = False
     try:
         _ext = ur'\.' + bush.game.ess.ext[1:]
     except AttributeError: # 'NoneType' object has no attribute 'ess'

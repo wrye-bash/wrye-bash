@@ -501,7 +501,12 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainAutoWizard">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
         <tr><td colspan="2" id="bainViewWizard">View Wizard...<td>Opens the wizard.txt for viewing.
         <tr><td colspan="2" id="bainOpenReadme">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
-        <tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors.
+        <tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors. Note: If an already
+            installed file is changed outside of Wrye Bash control, Wrye Bash will not anneal that file. Anneal is relative to other
+            installed packages. This is because we do not want to override user changes like cleaning plugins and the like. If you do want
+            to override the change use <a href="#bainInstall">Install</a> instead. Note2: The change will be detected immediately in case of
+            ini tweaks, mods or bsas, but on next Bash load for other files (like nifs etc). To detect the change without restarting
+            <a href="#bainQuickRefresh">(Quick) Refresh</a> the package.
         <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package except for files that would be overridden by later packages.
         <tr><td colspan="2" id="bainInstallLast">Install Last<td>Moves the package to the end of the order list and installs it.
         <tr><td colspan="2" id="bainInstallMissing">Install Missing<td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.
