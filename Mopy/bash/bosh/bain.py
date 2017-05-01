@@ -968,20 +968,47 @@ class Installer(object):
         """Install specified files to Oblivion\Data directory."""
         raise AbstractError
 
-    def _move(self, count, progress, stageDataDir):
+    def _fs_install(self, dest_src, srcDirJoin, stageDir, progress,
+                    subprogressPlus, unpackDir):
+        """Filesystem install, if unpackDir is not None we are installing
+         an archive."""
+        stageDataDir = stageDir.join(u'Data')
+        stageDataDirJoin = stageDataDir.join
+        norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
+        norm_ghostGet = norm_ghost.get
+        data_sizeCrcDate_update = bolt.LowerDict()
+        timestamps = load_order.install_last()
+        data_sizeCrc = self.data_sizeCrc
+        for dest, src in dest_src.iteritems():
+            size,crc = data_sizeCrc[dest]
+            srcFull = srcDirJoin(src)
+            stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
+            if srcFull.exists():
+                if unpackDir: # Move to staging directory if an archive
+                    srcFull.moveTo(stageFull) ##: TODO stats filesystem......
+                else: # Copy if it's a project
+                    srcFull.copyTo(stageFull) ##: TODO sets mtime, stats filesystem......
+                if bass.reModExt.search(srcFull.s): timestamps(stageFull)
+                data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
+                subprogressPlus()
+        #--Clean up unpacked dir
+        if unpackDir: unpackDir.rmtree(safety=unpackDir.stail)
+        #--Now Move
         # TODO: Find the operation that does not properly close the Oblivion\Data dir.
         # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
         # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened
         # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
         # install a mod for Oblivion.
         try:
-            if count:
+            if data_sizeCrcDate_update:
                 destDir = bass.dirs['mods'].head + u'\\Data'
                 stageDataDir += u'\\*'
                 env.shellMove(stageDataDir, destDir, progress.getParent())
         finally:
             #--Clean up staging dir
             bass.rmTempDir()
+        #--Update Installers data
+        return data_sizeCrcDate_update
 
     def listSource(self):
         """Return package structure as text."""
@@ -1132,7 +1159,6 @@ class InstallerArchive(Installer):
     def install(self, destFiles, progress=None):
         """Install specified files to Game\Data directory."""
         destFiles = set(destFiles)
-        data_sizeCrc = self.data_sizeCrc
         dest_src = self.refreshDataSizeCrc(True)
         for k in dest_src.keys():
             if k not in destFiles: del dest_src[k]
@@ -1144,33 +1170,13 @@ class InstallerArchive(Installer):
                                       SubProgress(progress, 0, 0.9))
         #--Rearrange files
         progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
-        unpackDirJoin = unpackDir.join
+        srcDirJoin = unpackDir.join
         stageDir = bass.newTempDir()  #--forgets the old temp dir, creates a new one
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(len(dest_src))
         subprogressPlus = subprogress.plus
-        stageDataDir = stageDir.join(u'Data')
-        stageDataDirJoin = stageDataDir.join
-        norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
-        norm_ghostGet = norm_ghost.get
-        data_sizeCrcDate_update = bolt.LowerDict()
-        timestamps = load_order.install_last()
-        for dest, src in dest_src.iteritems():
-            size,crc = data_sizeCrc[dest]
-            srcFull = unpackDirJoin(src)
-            stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
-            if srcFull.exists():
-                if bass.reModExt.search(srcFull.s): timestamps(srcFull)
-                data_sizeCrcDate_update[dest] = (size,crc,srcFull.mtime)
-                # Move to staging directory
-                srcFull.moveTo(stageFull)
-                subprogressPlus()
-        #--Clean up unpacked dir
-        unpackDir.rmtree(safety=unpackDir.stail)
-        #--Now Move
-        self._move(len(data_sizeCrcDate_update), progress, stageDataDir)
-        #--Update Installers data
-        return data_sizeCrcDate_update
+        return self._fs_install(dest_src, srcDirJoin, stageDir, progress,
+                                subprogressPlus, unpackDir)
 
     def unpackToProject(self, project, progress=None):
         """Unpacks archive to build directory."""
@@ -1377,7 +1383,6 @@ class InstallerProject(Installer):
     def install(self, destFiles, progress=None):
         """Install specified files to Oblivion\Data directory."""
         destFiles = set(destFiles)
-        data_sizeCrc = self.data_sizeCrc
         dest_src = self.refreshDataSizeCrc(True)
         for k in dest_src.keys():
             if k not in destFiles: del dest_src[k]
@@ -1389,26 +1394,10 @@ class InstallerProject(Installer):
         #--Copy Files
         bass.rmTempDir()
         stageDir = bass.getTempDir()
-        stageDataDir = stageDir.join(u'Data')
-        stageDataDirJoin = stageDataDir.join
-        norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
-        norm_ghostGet = norm_ghost.get
         srcDir = bass.dirs['installers'].join(self.archive)
         srcDirJoin = srcDir.join
-        data_sizeCrcDate_update = bolt.LowerDict()
-        timestamps = load_order.install_last()
-        for dest,src in dest_src.iteritems():
-            size,crc = data_sizeCrc[dest]
-            srcFull = srcDirJoin(src)
-            stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
-            if srcFull.exists():
-                srcFull.copyTo(stageFull)
-                if bass.reModExt.search(srcFull.s): timestamps(srcFull)
-                data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
-                progressPlus()
-        self._move(len(data_sizeCrcDate_update), progress, stageDataDir)
-        #--Update Installers data
-        return data_sizeCrcDate_update
+        return self._fs_install(dest_src, srcDirJoin, stageDir, progress,
+                                progressPlus, None)
 
     def syncToData(self, projFiles):
         """Copies specified projFiles from Oblivion\Data to project
@@ -2202,36 +2191,35 @@ class InstallersData(DataStore):
 
     def _install(self, packages, refresh_ui, progress=None, last=False,
                  override=True):
-        """Install selected packages.
-        what:
-            'MISSING': only missing files.
-            Otherwise: all (unmasked) files.
-        """
+        """Install selected packages. If override is False install only
+        missing files. Otherwise, all (unmasked) files."""
         progress = progress or bolt.Progress()
         tweaksCreated = set()
         #--Mask and/or reorder to last
         mask = set()
         if last:
             self.moveArchives(packages, len(self))
-        else:
-            maxOrder = max(self[x].order for x in packages)
-            for installer in self.itervalues():
-                if installer.order > maxOrder and installer.isActive:
-                    mask |= set(installer.data_sizeCrc)
+        to_install = set(self[x] for x in packages)
+        min_order = min(x.order for x in to_install)
         #--Install packages in turn
         progress.setFull(len(packages))
-        for index, installer in enumerate(
-                self.sorted_values(packages, reverse=True)):
-            progress(index,installer.archive)
-            destFiles = set(installer.data_sizeCrc) - mask
-            if not override:
-                destFiles &= installer.missingFiles
-            if destFiles:
-                self._createTweaks(destFiles, installer, tweaksCreated)
-                self.__installer_install(installer, destFiles, index, progress,
-                                         refresh_ui)
-            installer.isActive = True
-            mask |= set(installer.data_sizeCrc)
+        index = 0
+        for installer in self.sorted_values(reverse=True):
+            if installer in to_install:
+                progress(index,installer.archive)
+                destFiles = set(installer.data_sizeCrc) - mask
+                if not override:
+                    destFiles &= installer.missingFiles
+                if destFiles:
+                    self._createTweaks(destFiles, installer, tweaksCreated)
+                    self.__installer_install(installer, destFiles, index,
+                                             progress, refresh_ui)
+                index += 1 # increment after it's used in __installer_install
+                installer.isActive = True
+                if installer.order == min_order:
+                    break # we are done
+            #prevent lower packages from installing any files of this installer
+            if installer.isActive: mask |= set(installer.data_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
             refresh_ui[1] |= bool(tweaksCreated)
