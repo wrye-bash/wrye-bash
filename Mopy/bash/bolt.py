@@ -68,8 +68,9 @@ encodingOrder = (
     'utf8',
     'cp500',
     'UTF-16LE',
-    'mbcs',
     )
+if os.name == u'nt':
+    encodingOrder += ('mbcs',)
 
 _encodingSwap = {
     # The encoding detector reports back some encodings that
@@ -764,15 +765,13 @@ class Path(object):
 
     @property
     def version(self):
-        """File version (exe/dll) embedded in the file properties
-        (windows only)."""
+        """File version (exe/dll) embedded in the file properties."""
+        from env import get_file_version
         try:
-            import win32api
-            info = win32api.GetFileVersionInfo(self._s,u'\\')
-            ms = info['FileVersionMS']
-            ls = info['FileVersionLS']
-            version = (win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls))
-        except:
+            version = get_file_version(self._s)
+            if version is None:
+                version = (0,0,0,0)
+        except: # TODO: pywintypes.error?
             version = (0,0,0,0)
         return version
 

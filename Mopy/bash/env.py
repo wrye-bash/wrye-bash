@@ -27,6 +27,7 @@
 import os as _os
 import re as _re
 import stat
+import struct
 import shutil as _shutil
 from bolt import GPath, BoltError, deprint, CancelError, SkipError, Path, \
     decode
@@ -40,10 +41,9 @@ try:
 except ImportError: # linux
     win32gui = None
 
-def get_game_path(submod):
-    """Check registry supplied game paths for the game.exe."""
+def get_registry_path(subkey, entry, exe):
+    """Check registry for a path to a program."""
     if not winreg: return None
-    subkey, entry = submod.regInstallKeys
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
         for wow6432 in (u'', u'Wow6432Node\\'):
             try:
@@ -55,10 +55,15 @@ def get_game_path(submod):
             if value[1] != winreg.REG_SZ: continue
             installPath = GPath(value[0])
             if not installPath.exists(): continue
-            exePath = installPath.join(submod.exe)
+            exePath = installPath.join(exe)
             if not exePath.exists(): continue
             return installPath
     return None
+
+def get_game_path(submod):
+    """Check registry supplied game paths for the game.exe."""
+    subkey, entry = submod.regInstallKeys
+    return get_registry_path(subkey, entry, submod.exe)
 
 try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon
@@ -316,6 +321,96 @@ def test_permissions(path, permissions='rwcd'):
             raise
     return True
 
+# OS agnostic get file version function and helper functions
+def get_file_version(filename):
+    """Return the version of a dll/exe, using the native win32 functions
+    if available and otherwise a pure python implementation that works
+    on Linux. The return value is a 4-int tuple, for example (1.9.32.0)."""
+    try:
+        import win32api
+    except ImportError:
+        return _linux_get_file_version_info(filename)
+    else:
+        info = win32api.GetFileVersionInfo(filename, u'\\')
+        ms = info['FileVersionMS']
+        ls = info['FileVersionLS']
+        return win32api.HIWORD(ms),win32api.LOWORD(ms),win32api.HIWORD(ls),win32api.LOWORD(ls)
+
+def _linux_get_file_version_info(filename):
+    """A python replacement for win32api.GetFileVersionInfo that can be used
+    on systems where win32api isn't available."""
+    _WORD, _DWORD = (('H', 2), ('I', 4))
+    def _read(fmt, file_obj, offset=0, count=1, absolute=False):
+        """Read one or more chunks from the file, either a word or dword."""
+        file_obj.seek(offset, not absolute)
+        result = [struct.unpack('<' + fmt[0], file_obj.read(fmt[1]))[0]
+                  for _ in xrange(count)]
+        return result[0] if count == 1 else result
+    def _find_version(file_obj, pos, offset):
+        """Look through the RT_VERSION and return VS_VERSION_INFO."""
+        def _pad(num):
+            return num if num % 4 == 0 else num + 4 - (num % 4)
+        file_obj.seek(pos + offset)
+        len_, val_len, type_ = _read(_WORD, file_obj, count=3)
+        info = u''
+        for i in xrange(200):
+            info += unichr(_read(_WORD, file_obj))
+            if info[-1] == u'\x00': break
+        offset = _pad(file_obj.tell()) - pos
+        file_obj.seek(pos + offset)
+        if type_ == 0: # binary data
+            if info[:-1] == 'VS_VERSION_INFO':
+                file_v = _read(_WORD, file_obj, count=4, offset=8)
+                # prod_v = _read(_WORD, f, count=4) # this isn't used
+                return 0, (file_v[1], file_v[0], file_v[3], file_v[2])
+                # return 0, {'FileVersionMS': (file_v[1], file_v[0]),
+                #            'FileVersionLS': (file_v[3], file_v[2]),
+                #            'ProductVersionMS': (prod_v[1], prod_v[0]),
+                #            'ProductVersionLS': (prod_v[3], prod_v[2])}
+            offset += val_len
+        else: # text data (utf-16)
+            offset += val_len * 2
+        while offset < len_:
+            offset, result = _find_version(file_obj, pos, offset)
+            if result is not None:
+                return 0, result
+        return _pad(offset), None
+    version_pos = None
+    with open(filename, 'rb') as f:
+        f.seek(_read(_DWORD, f, offset=60))
+        section_count = _read(_WORD, f, offset=6)
+        optional_header_size = _read(_WORD, f, offset=12)
+        optional_header_pos = f.tell() + 2
+        # jump to the datatable and check the third entry
+        resources_va = _read(_DWORD, f, offset=98 + 2*8)
+        section_table_pos = optional_header_pos + optional_header_size
+        for section_num in xrange(section_count):
+            section_pos = section_table_pos + 40 * section_num
+            f.seek(section_pos)
+            if f.read(8).rstrip('\x00') != '.rsrc':  # section name
+                continue
+            section_va = _read(_DWORD, f, offset=4)
+            raw_data_pos = _read(_DWORD, f, offset=4)
+            section_resources_pos = raw_data_pos + resources_va - section_va
+            num_named, num_id = _read(_WORD, f, count=2, absolute=True,
+                                      offset=section_resources_pos + 12)
+            for resource_num in xrange(num_named + num_id):
+                resource_pos = section_resources_pos + 16 + 8 * resource_num
+                name = _read(_DWORD, f, offset=resource_pos, absolute=True)
+                if name != 16: continue # RT_VERSION
+                for i in xrange(3):
+                    res_offset = _read(_DWORD, f)
+                    if i < 2:
+                        res_offset &= 0x7FFFFFFF
+                    ver_dir = section_resources_pos + res_offset
+                    f.seek(ver_dir + (20 if i < 2 else 0))
+                version_va = _read(_DWORD, f)
+                version_pos = raw_data_pos + version_va - section_va
+                break
+        if version_pos is not None:
+            return _find_version(f, version_pos, 0)[1]
+        return None
+
 # Shell (OS) File Operations --------------------------------------------------
 #------------------------------------------------------------------------------
 class FileOperationError(OSError):
@@ -515,7 +610,8 @@ def shellMakeDirs(dirs, parent=None):
     #--Check for dirs that are impossible to create (the drive they are
     #  supposed to be on doesn't exist
     def _filterUnixPaths(path):
-        return not path.s.startswith(u"\\") and not path.drive().exists()
+        return _os.name != 'posix' and not path.s.startswith(u"\\")\
+               and not path.drive().exists()
     errorPaths = [d for d in dirs if _filterUnixPaths(d)]
     if errorPaths:
         raise NonExistentDriveError(errorPaths)
@@ -561,6 +657,8 @@ def setUAC(handle, uac=True):
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
 def testUAC(gameDataPath):
+    if _os.name != 'nt': # skip this when not in Windows
+        return False
     print 'testing UAC' # TODO(ut): bypass in Linux !
     tmpDir = Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
@@ -577,6 +675,15 @@ def testUAC(gameDataPath):
 
 def getJava():
     """Locate javaw.exe to launch jars from Bash."""
+    if _os.name == 'posix':
+        import subprocess
+        java_bin_path = ''
+        try:
+            java_bin_path = subprocess.check_output('command -v java',
+                                                    shell=True).rstrip('\n')
+        except subprocess.CalledProcessError:
+            pass # what happens when java doesn't exist?
+        return GPath(java_bin_path)
     try:
         java_home = GPath(_os.environ['JAVA_HOME'])
         java = java_home.join('bin', u'javaw.exe')

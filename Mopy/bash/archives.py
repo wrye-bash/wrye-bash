@@ -28,7 +28,7 @@ import subprocess
 import bass
 from bolt import startupinfo, StateError, GPath, deprint
 
-exe7z = u'7z.exe'
+exe7z = u'7z.exe' if os.name == u'nt' else u'7z'
 defaultExt = u'.7z'
 writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.7z.001', u'.001'}
@@ -148,7 +148,7 @@ def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
             u'-y', u'-r', # quiet, recursive
             u'-o"%s"' % destDir.s,
             u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
-            u"%s\\*" % srcFolder.s]
+            srcFolder.join(u'*').s] # add a wildcard at the end of the path
 
 def extractCommand(archivePath, outDirPath):
     command = u'"%s" x "%s" -y -bb1 -o"%s" -scsUTF-8 -sccUTF-8' % (

@@ -33,7 +33,7 @@ import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
 from balt import vspace, hspace
-import win32api
+from env import get_file_version
 import StringIO
 import traceback
 #---------------------------------------------------
@@ -1635,12 +1635,9 @@ class WryeParser(ScriptParser.Parser):
         except:
             need = u'None'
         return need
-    def _TestVersion(self, need, file):
-        if file.exists():
-            info = win32api.GetFileVersionInfo(file.s, u'\\')
-            ms = info['FileVersionMS']
-            ls = info['FileVersionLS']
-            have = win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), win32api.LOWORD(ls)
+    def _TestVersion(self, need, file_):
+        if file_.exists():
+            have = get_file_version(file_.s)
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]

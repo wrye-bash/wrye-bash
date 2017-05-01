@@ -809,6 +809,8 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
 #------------------------------------------------------------------------------
 # If comtypes is not installed, the IE ActiveX control cannot be imported
 try:
+    if wx.Platform != '__WXMSW__':
+        raise ImportError # the import below will crash on linux
     import wx.lib.iewin as _wx_lib_iewin
 except ImportError:
     _wx_lib_iewin = None
@@ -1188,10 +1190,11 @@ class TabDragMixin(object):
         self.__dragX = 0
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
-        self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
-        self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
-        self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
-        self.Bind(wx.EVT_MOTION, self.__OnDragging)
+        if wx.Platform == '__WXMSW__': # CaptureMouse() works badly in wxGTK
+            self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
+            self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
+            self.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__OnDragEndForced)
+            self.Bind(wx.EVT_MOTION, self.__OnDragging)
 
     def __OnDragStart(self, event):
         pos = event.GetPosition()
@@ -2949,11 +2952,12 @@ class DnDStatusBar(wx.StatusBar):
         gButton = link.GetBitmapButton(self, style=wx.NO_BORDER)
         if gButton:
             self.buttons.append(gButton)
-            # DnD events
-            gButton.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
-            gButton.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
-            gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.OnDragEndForced)
-            gButton.Bind(wx.EVT_MOTION, self.OnDrag)
+            # DnD events (only on windows, CaptureMouse works badly in wxGTK)
+            if wx.Platform == '__WXMSW__':
+                gButton.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
+                gButton.Bind(wx.EVT_LEFT_UP, self.OnDragEnd)
+                gButton.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.OnDragEndForced)
+                gButton.Bind(wx.EVT_MOTION, self.OnDrag)
 
     def _getButtonIndex(self, mouseEvent):
         id_ = mouseEvent.GetId()

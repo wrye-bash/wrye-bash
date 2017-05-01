@@ -2609,7 +2609,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                     [x not in installer.espmNots for x in names])
             #--Comments
             self.gComments.SetValue(installer.comments)
-        self.gPackage.HideNativeCaret()
+        if wx.Platform == '__WXMSW__': # this only works on windows
+            self.gPackage.HideNativeCaret()
 
     def _resetDetails(self):
         self.gPackage.SetValue(u'')

@@ -3134,23 +3134,10 @@ def initDefaultTools():
     else:
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
-        from ..env import winreg
-        if not winreg: return
-        for hkey in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
-            for wow6432 in (u'',u'Wow6432Node\\'):
-                try:
-                    key = winreg.OpenKey(hkey,u'Software\\%sBoss' % wow6432)
-                    value = winreg.QueryValueEx(key,u'Installed Path')
-                except:
-                    continue
-                if value[1] != winreg.REG_SZ: continue
-                installedPath = GPath(value[0])
-                if not installedPath.exists(): continue
-                tooldirs['boss'] = installedPath.join(u'BOSS.exe')
-                break
-            else:
-                continue
-            break
+        path_in_registry = env.get_registry_path(u'Boss', u'Installed Path',
+                                                 u'BOSS.exe')
+        if path_in_registry:
+            tooldirs['boss'] = path_in_registry
 
     tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
@@ -3329,7 +3316,8 @@ def initBosh(personal=empty_path, localAppData=empty_path, bashIni=None):
         deprint('Error creating log file', traceback=True)
     from .bain import Installer
     Installer.init_bain_dirs()
-    archives.exe7z = dirs['compiled'].join(archives.exe7z).s
+    if os.name == u'nt': # don't add local directory to binaries on linux
+        archives.exe7z = dirs['compiled'].join(archives.exe7z).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):
