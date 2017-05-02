@@ -31,6 +31,7 @@
 __author__ = 'Utumno'
 
 import itertools
+import StringIO
 import struct
 import sys
 from collections import OrderedDict
@@ -227,12 +228,72 @@ class SkyrimSaveHeader(SaveFileHeader):
 
     def load_masters(self, ins):
         if self.version == 12:
-            self.masters = []
-            # TODO: Skyrim SE masters can't be listed without lz4 support
-            return
-        ins.read(1) # drop unknown byte
-        #--Masters
-        self._load_masters_16(ins)
+            self._load_masters_16(self._decompress_masters_sse(ins))
+        else:
+            ins.read(1) # drop unknown byte
+            #--Masters
+            self._load_masters_16(ins)
+
+    def _decompress_masters_sse(self, ins):
+        """Read the start of the LZ4 compressed data in the SSE savefile and
+        stop when the whole master table is found.
+        Return a file-like object that can be read by _load_masters_16
+        containing the now decompressed master table.
+        See https://fastcompression.blogspot.se/2011/05/lz4-explained.html
+        for an LZ4 explanation/specification."""
+        def _read_lsic_int():
+            # type: () -> int
+            """Read a compressed int from the stream.
+            In short, add every byte to the output until a byte lower than
+            255 is found, then add that as well and return the total sum.
+            LSIC stands for linear small-integer code, taken from
+            https://ticki.github.io/blog/how-lz4-works."""
+            result = 0
+            while True:  # there is no size limit to LSIC values
+                num = unpack_byte(ins)
+                result += num
+                if num != 255:
+                    return result
+        # Skip decompressed/compressed size, we only want the masters table
+        ins.seek(8, 1)
+        self._mastersStart = ins.tell()
+        uncompressed = ''
+        masters_size = None  # type: int
+        while True:  # parse and decompress each block here
+            token = unpack_byte(ins)
+            # How many bytes long is the literals-field?
+            literal_length = token >> 4
+            if literal_length == 15:  # add more if we hit max value
+                literal_length += _read_lsic_int()
+            # Read all the literals (which are good ol' uncompressed bytes)
+            uncompressed += ins.read(literal_length)
+            # The offset is how many bytes back in the uncompressed string the
+            # start of the match-field (copied bytes) is
+            offset = unpack_short(ins)
+            # How many bytes long is the match-field?
+            match_length = token & 0b1111
+            if match_length == 15:
+                match_length += _read_lsic_int()
+            match_length += 4  # the match-field always gets an extra 4 bytes
+            # The boundary of the match-field
+            start_pos = len(uncompressed) - offset
+            end_pos = start_pos + match_length
+            # Matches can be overlapping (aka including not yet decompressed
+            # data) so we can't jump the whole match_length directly
+            while start_pos < end_pos:
+                uncompressed += uncompressed[start_pos:min(start_pos + offset,
+                                                           end_pos)]
+                start_pos += offset
+            # The masters table's size is found in bytes 1-5
+            if masters_size is None and len(uncompressed) >= 5:
+                masters_size = struct.unpack('I', uncompressed[1:5])[0]
+            # Stop when we have the whole masters table
+            if masters_size is not None:
+                if len(uncompressed) >= masters_size + 5:
+                    break
+        # Wrap the decompressed data in a file-like object and return it,
+        # skipping the first byte since the master size starts at the second
+        return StringIO.StringIO(uncompressed[1:])
 
     def calc_time(self):
         # gameDate format: hours.minutes.seconds
