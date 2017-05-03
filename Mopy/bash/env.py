@@ -411,15 +411,15 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
     abspath = _os.path.abspath
     # source may be anything - see SHFILEOPSTRUCT - accepts list or item
     if isinstance(source, (Path, basestring)):
-        source = [GPath(abspath(GPath(source).s))]
+        source = [abspath(u'%s' % source)]
     else:
-        source = [GPath(abspath(GPath(x).s)) for x in source]
+        source = [abspath(u'%s' % x) for x in source]
     # target may be anything ...
     target = target if target else u'' # abspath(u''): cwd (can be Game/Data)
     if isinstance(target, (Path, basestring)):
-        target = [GPath(abspath(GPath(target).s))]
+        target = [abspath(u'%s' % target)]
     else:
-        target = [GPath(abspath(GPath(x).s)) for x in target]
+        target = [abspath(u'%s' % x) for x in target]
     if shell is not None:
         # flags
         flags = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
@@ -429,8 +429,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
         if silent: flags |= shellcon.FOF_SILENT
         # null terminated strings
-        source = u'\x00'.join(x.s for x in source)
-        target = u'\x00'.join(x.s for x in target)
+        source = u'\x00'.join(source) # nope: + u'\x00'
+        target = u'\x00'.join(target)
         # get the handle to parent window to feed to win api
         parent = parent.GetHandle() if parent else None
         # See SHFILEOPSTRUCT for deciphering return values
@@ -452,6 +452,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             raise FileOperationErrorMap.get(result, FileOperationError(result))
     else: # Use custom dialogs and such
         import balt # TODO(ut): local import, env should be above balt...
+        source = map(GPath, source)
+        target = map(GPath, target)
         if operation == FO_DELETE:
             # allowUndo - no effect, can't use recycle bin this way
             # confirm - ask if confirm is True

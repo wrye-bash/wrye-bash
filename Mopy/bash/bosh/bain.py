@@ -1118,7 +1118,7 @@ class InstallerArchive(Installer):
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
-        if not dest_src: return 0
+        if not dest_src: return {}
         progress = progress if progress else bolt.Progress()
         #--Extract
         progress(0, self.archive + u'\n' + _(u'Extracting files...'))
@@ -1360,9 +1360,9 @@ class InstallerProject(Installer):
         destFiles = set(destFiles)
         data_sizeCrc = self.data_sizeCrc
         dest_src = dict((x,y) for x,y in self.refreshDataSizeCrc(True).iteritems() if x in destFiles)
-        if not dest_src: return 0
+        if not dest_src: return {}
         progress = progress if progress else bolt.Progress()
-        progress.setFull(max(len(dest_src),1))
+        progress.setFull(len(dest_src))
         progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files

@@ -232,15 +232,15 @@ be restructured.
 are:
 
 <table>
-	<thead><tr><th>Bash directories<th>Notes
-	<tbody>
-		<tr><td>bash patches<td>Bash will install files in this folder from packages, usually in the form of .csv files
-		<tr><td>docs<td>Its contents will be copied inside Data/Docs
-		<tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ and appear on the INI Tab - do <b>not</b> include subfolders in ini tweaks/
-		<tr><td>screenshots<td>its contents will be copied inside Data/Docs
-	<thead><tr><th colspan="2">Vanilla game directory present on all games
-	<tbody>
-		<tr><td colspan="2">meshes, music, textures, video
+    <thead><tr><th>Bash directories<th>Notes
+    <tbody>
+        <tr><td>bash patches<td>Bash will install files in this folder from packages, usually in the form of .csv files
+        <tr><td>docs<td>Its contents will be copied inside Data/Docs
+        <tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ and appear on the INI Tab - do <b>not</b> include subfolders in ini tweaks/
+        <tr><td>screenshots<td>its contents will be copied inside Data/Docs
+    <thead><tr><th colspan="2">Vanilla game directories present on all games
+    <tbody>
+        <tr><td colspan="2"><div style="text-align: center;">meshes, music, textures, video</div>
 </table>
 
 but there are game specific directories as well (all directory detection is <i>case insensitive</i>):
@@ -253,7 +253,7 @@ but there are game specific directories as well (all directory detection is <i>c
 		<tr><td>Fallout 4<td>interface, lodsettings, materials, misc, programs, scripts, shadersfx, sounds, strings, vis<td>f4se, ini
 </table>
 
-All these directories (either in the Global or Extra and Bonus Game directories) constitute the <i>standard game directories</i> for this game. If
+All these directories (either in the Global or Extra and Bonus Game directories) constitute the <b>standard game directories</b> for this game. If
 <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories">Has Extra Directories</a> is not on for the package, any other top level directory in the (sub)package
 will be skipped (and their content listed in Skipped tab). There are also some directories and files that will be always skipped (for all the gory details see
 <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-skipped">Skipped Files</a>).
@@ -261,14 +261,15 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 <p>There are, loosely speaking, three types of BAIN-compatible package structures:
 
 <table>
-	<thead><tr><th>Structure<th>Description
-	<tbody>
-		<tr><td>Simple<td>Installer has .esp, .esm and/or .bsa files, and/or any of the standard game subdirectories at the top level of the package/project.
-		<tr><td>Complex<td>Installer has top-level subdirectories that each have a simple structure (as defined above). The top level subdirectories
-			(known as subpackages) <b>must not have the same name as any of the regular game subdirectories for this game.</b>
-			Each top-level subdirectory will be treated as a sub-package, and can be independently activated or deactivated as desired.
-		<tr><td>Complex/Simple<td>A complex installer with only one top-level subdirectory. It is treated as a simple installer, starting at this
-			top level subdirectory. Examples include mods packaged with a top-level Data directory.
+    <thead><tr><th>Structure<th>Description
+    <tbody>
+        <tr><td>Simple<td>Installer has .esp, .esm and/or .bsa files, and/or any of the standard game subdirectories at the top level of the package/project.
+        <tr><td>Complex<td>Installer has top-level subdirectories that each have a simple structure (as defined above). The top level
+			subdirectories (known as subpackages) <b>must NOT have the same name as any of the standard game directories for this game</b>
+			(like docs, or meshes). Otherwise BAIN thinks this is a simple package and will skip subpackages.<br>
+            Each top-level subdirectory will be treated as a sub-package, and can be independently activated or deactivated as desired.
+        <tr><td>Complex/Simple<td>A complex installer with only one top-level subdirectory. It is treated as a simple installer, starting at this
+            top level subdirectory. Examples include mods packaged with a top-level Data directory.
 </table>
 
 <h3 id="bain-convert">Restructuring Packages to be BAIN-Compatible</h3>

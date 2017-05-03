@@ -29,9 +29,9 @@ When asking for help (initially at the official forums thread linked to above)
 please provide all of the following info:
 
 * **Bug description** - be sure to include:
- - what you did (_step-by-step_),
- - what you expected, and
- - what happened.
+  * what you did (_step-by-step_),
+  * what you expected, and
+  * what happened.
 
 * Any and every **error message** you encounter: please produce the
 **BashBugDump.log** (see the section [below](#the-bashbugdumplog)). Failing to do so
