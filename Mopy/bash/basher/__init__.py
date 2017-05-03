@@ -2963,13 +2963,10 @@ class InstallersPanel(BashTab):
         """Refresh UI plus refresh mods state."""
         self.uiList.RefreshUI()
         if mods_changed:
-            with load_order.Unlock():
-                bosh.modInfos.refresh()
             BashFrame.modList.RefreshUI(refreshSaves=True, focus_list=False)
             Link.Frame.warn_corrupted(warn_saves=False)
             Link.Frame.warn_load_order()
         if inis_changed:
-            bosh.iniInfos.refresh(refresh_target=False)
             if BashFrame.iniList is not None:
                 BashFrame.iniList.RefreshUI(focus_list=False)
         bosh.bsaInfos.refresh() # TODO(ut) : add bsas_changed param! (or rather move this inside BAIN)

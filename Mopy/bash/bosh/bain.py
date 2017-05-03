@@ -43,7 +43,7 @@ from ..archives import readExts, defaultExt, list_archive, compress7z, \
 from ..bolt import Path, deprint, formatInteger, round_size, GPath, \
     sio, SubProgress
 from ..exception import AbstractError, ArgumentError, BSAError, \
-    CancelError, InstallerArchiveError, SkipError, StateError
+    CancelError, InstallerArchiveError, SkipError, StateError, FileError
 
 os_sep = unicode(os.path.sep)
 
@@ -965,7 +965,16 @@ class Installer(object):
         raise AbstractError
 
     def install(self, destFiles, progress=None):
-        """Install specified files to Oblivion\Data directory."""
+        """Install specified files to Game\Data directory."""
+        destFiles = set(destFiles)
+        dest_src = self.refreshDataSizeCrc(True)
+        for k in dest_src.keys():
+            if k not in destFiles: del dest_src[k]
+        if not dest_src: return bolt.LowerDict(), set(), set()
+        progress = progress if progress else bolt.Progress()
+        return self._install(dest_src, progress)
+
+    def _install(self, dest_src, progress):
         raise AbstractError
 
     def _fs_install(self, dest_src, srcDirJoin, stageDir, progress,
@@ -977,8 +986,8 @@ class Installer(object):
         norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = bolt.LowerDict()
-        timestamps = load_order.install_last()
         data_sizeCrc = self.data_sizeCrc
+        mods, inis = set(), set()
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
@@ -988,8 +997,14 @@ class Installer(object):
                     srcFull.moveTo(stageFull) ##: TODO stats filesystem......
                 else: # Copy if it's a project
                     srcFull.copyTo(stageFull) ##: TODO sets mtime, stats filesystem......
-                if bass.reModExt.search(srcFull.s): timestamps(stageFull)
-                data_sizeCrcDate_update[dest] = (size,crc,stageFull.mtime)
+                if bass.reModExt.search(srcFull.s):
+                    mods.add(srcFull.tail) # src as stage may end in ghost !
+                    date = stageFull.mtime if load_order.using_txt_file() else -1
+                else:
+                    date = stageFull.mtime
+                    if InstallersData._is_ini_tweak(dest):
+                        inis.add(srcFull.tail)
+                data_sizeCrcDate_update[dest] = (size, crc, date)
                 subprogressPlus()
         #--Clean up unpacked dir
         if unpackDir: unpackDir.rmtree(safety=unpackDir.stail)
@@ -1008,7 +1023,7 @@ class Installer(object):
             #--Clean up staging dir
             bass.rmTempDir()
         #--Update Installers data
-        return data_sizeCrcDate_update
+        return data_sizeCrcDate_update, mods, inis
 
     def listSource(self):
         """Return package structure as text."""
@@ -1156,14 +1171,7 @@ class InstallerArchive(Installer):
         #--Done -> don't clean out temp dir, it's going to be used soon
         return unpack_dir
 
-    def install(self, destFiles, progress=None):
-        """Install specified files to Game\Data directory."""
-        destFiles = set(destFiles)
-        dest_src = self.refreshDataSizeCrc(True)
-        for k in dest_src.keys():
-            if k not in destFiles: del dest_src[k]
-        if not dest_src: return bolt.LowerDict()
-        progress = progress if progress else bolt.Progress()
+    def _install(self, dest_src, progress):
         #--Extract
         progress(0, self.archive + u'\n' + _(u'Extracting files...'))
         unpackDir = self.unpackToTemp(dest_src.values(),
@@ -1380,14 +1388,7 @@ class InstallerProject(Installer):
         self.crc = cumCRC & 0xFFFFFFFFL
         self.project_refreshed = True
 
-    def install(self, destFiles, progress=None):
-        """Install specified files to Oblivion\Data directory."""
-        destFiles = set(destFiles)
-        dest_src = self.refreshDataSizeCrc(True)
-        for k in dest_src.keys():
-            if k not in destFiles: del dest_src[k]
-        if not dest_src: return bolt.LowerDict()
-        progress = progress if progress else bolt.Progress()
+    def _install(self, dest_src, progress):
         progress.setFull(len(dest_src))
         progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
@@ -2127,9 +2128,8 @@ class InstallersData(DataStore):
         self.setChanged()
 
     @staticmethod
-    def _update_tables(destFiles, value):
+    def _update_tables(destFiles, value, mods, inis):
         """Set the 'installer' column in mod and ini tables"""
-        mods, inis = set(), set()
         from . import modInfos, iniInfos
         for ci_dest in destFiles:
             i = GPath(ci_dest)
@@ -2139,7 +2139,6 @@ class InstallersData(DataStore):
             elif InstallersData._is_ini_tweak(ci_dest):
                 inis.add(i)
                 iniInfos.table.setItem(i.tail, 'installer', value)
-        return inis, mods
 
     #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):
@@ -2180,6 +2179,7 @@ class InstallersData(DataStore):
         """Edit created ini tweaks with settings that differ and/or don't exist
         in the new ini."""
         removed = set()
+        from . import iniInfos
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
@@ -2210,6 +2210,8 @@ class InstallersData(DataStore):
                 ini.write(u'; INI Tweak created by Wrye Bash, using settings '
                           u'from old file.\n\n')
                 ini.writelines(lines)
+            # we notify BAIN below, although highly improbable the created ini
+            iniInfos.refreshFile(tweakPath.tail) # is included to a package
         tweaksCreated -= removed
 
     def _install(self, packages, refresh_ui, progress=None, last=False,
@@ -2251,11 +2253,28 @@ class InstallersData(DataStore):
     def __installer_install(self, installer, destFiles, index, progress,
                             refresh_ui):
         sub_progress = SubProgress(progress, index, index + 1)
-        data_sizeCrcDate_update = installer.install(destFiles, sub_progress)
-        self.data_sizeCrcDate.update(data_sizeCrcDate_update)
-        inis, mods = self._update_tables(destFiles, installer.archive)
+        data_sizeCrcDate_update, mods, inis = installer.install(destFiles,
+                                                                sub_progress)
         refresh_ui[0] |= bool(mods)
         refresh_ui[1] |= bool(inis)
+        # refresh modInfos, iniInfos adding new/modified mods
+        from . import modInfos, iniInfos
+        for mod in set(mods):
+            try:
+                modInfos.add_info(mod)
+                modInfos.table.setItem(mod, 'installer', installer.archive)
+            except FileError:
+                mods.discard(mod)
+        modInfos.cached_lo_append_if_missing(mods)
+        # now that we saved load order update missing mtimes for mods:
+        if not load_order.using_txt_file():
+            for mod in mods:
+                s, c, _d = data_sizeCrcDate_update[mod.s]
+                data_sizeCrcDate_update[mod.s] = (s, c, modInfos[mod].mtime)
+        self.data_sizeCrcDate.update(data_sizeCrcDate_update)
+        for ini in inis:
+            iniInfos.add_info(ini)
+            iniInfos.table.setItem(ini, 'installer', installer.archive)
 
     def sorted_pairs(self, package_keys=None, reverse=False):
         """Return pairs of key, installer for package_keys in self, sorted by
@@ -2349,12 +2368,12 @@ class InstallersData(DataStore):
             if removedPlugins:
                 from . import modInfos
                 refresh_ui[0] = True
-                modInfos.delete(removedPlugins, doRefresh=False, recycle=False,
+                modInfos.delete(removedPlugins, recycle=False,
                                 raise_on_master_deletion=False)
             if removedInis:
                 from . import iniInfos
                 refresh_ui[1] = True
-                iniInfos.delete(removedInis, doRefresh=False, recycle=False)
+                iniInfos.delete(removedInis, recycle=False)
         except (CancelError, SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()
@@ -2433,8 +2452,11 @@ class InstallersData(DataStore):
             #--Restore files
             if anneal:
                 self._restoreFiles(restores, refresh_ui, progress)
+            mods, inis = set(), set()
             for k, v in cede_ownership.iteritems():
-                self._update_tables(v, k)
+                self._update_tables(v, k, mods, inis)
+            refresh_ui[0] |= bool(mods)
+            refresh_ui[1] |= bool(inis)
         finally:
             self.irefresh(what='NS')
 
@@ -2504,28 +2526,26 @@ class InstallersData(DataStore):
 
     def _clean_data_dir(self, destDir, removes, skipPrefixes,
                         refresh_ui): # we do _not_ remove Ini Tweaks/*
-        emptyDirs = set()
-        def isMod(p): return bass.reModExt.search(p.s) is not None
+        emptyDirs, mods = set(), set()
+        norm_ghost = Installer.getGhosted()
         for filename in removes:
             # don't remove files in Wrye Bash-related directories
             if filename.lower().startswith(skipPrefixes): continue
-            full_path = bass.dirs['mods'].join(filename)
+            full_path = bass.dirs['mods'].join(
+                norm_ghost.get(filename, filename))
             try:
-                if full_path.exists():
-                    full_path.moveTo(destDir.join(filename))
-                    if not refresh_ui[0]: refresh_ui[0] = isMod(full_path)
-                else: # Try if it's a ghost - belongs to modInfos...
-                    full_path = GPath(full_path.s + u'.ghost')
-                    if full_path.exists():
-                        full_path.moveTo(destDir.join(filename))
-                        refresh_ui[0] = True
-                    else: continue # don't pop if file was not removed
+                full_path.moveTo(destDir.join(filename)) # will drop .ghost
+                if bass.reModExt.search(full_path.s):
+                    mods.add(GPath(filename))
+                    refresh_ui[0] = True
                 self.data_sizeCrcDate.pop(filename, None)
                 emptyDirs.add(full_path.head)
             except:
                 # It's not imperative that files get moved, so ignore errors
                 deprint(u'Clean Data: moving %s to % s failed' % (
                             full_path, destDir), traceback=True)
+        from . import modInfos
+        modInfos.delete_refresh(mods, None, check_existence=False)
         for emptyDir in emptyDirs:
             if emptyDir.isdir() and not emptyDir.list():
                 emptyDir.removedirs()

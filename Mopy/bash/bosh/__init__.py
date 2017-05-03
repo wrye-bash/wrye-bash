@@ -1881,6 +1881,19 @@ class ModInfos(FileInfos):
             self._lo_wip.append(mod)
         self._lo_wip[first_dex:first_dex] = modlist
 
+    def cached_lo_append_if_missing(self, mods):
+        new = mods - set(self._lo_wip)
+        if not new: return
+        esms = set(x for x in new if self[x].isEsm())
+        if esms:
+            last = self.cached_lo_last_esm()
+            for esm in esms:
+                self.cached_lo_insert_after(last, esm)
+                last = esm
+            new -= esms
+        self._lo_wip.extend(new)
+        self.cached_lo_save_lo()
+
     @staticmethod
     def hexIndexString(mod):
         return u'%02X' % (load_order.cached_active_index(mod),) \

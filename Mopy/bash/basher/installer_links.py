@@ -266,7 +266,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             bosh.iniInfos.add_info(outFile.tail) # add it to the iniInfos
             bosh.iniInfos.table.setItem(outFile.tail, 'installer',
                                         installer.archive)
-            # trigger refresh UI and unnecessary bosh.iniInfos.refresh()
+            # trigger refresh UI
             ui_refresh[1] = True
             # We wont automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
