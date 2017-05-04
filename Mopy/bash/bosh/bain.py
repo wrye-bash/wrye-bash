@@ -37,7 +37,7 @@ from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, AFile
 from .. import balt # YAK!
-from .. import bush, bass, bolt, env, load_order, archives
+from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     countFilesInArchive, extractCommand, extract7z, compressionSettings
 from ..bolt import Path, deprint, formatInteger, round_size, GPath, \
@@ -977,51 +977,41 @@ class Installer(object):
     def _install(self, dest_src, progress):
         raise AbstractError
 
-    def _fs_install(self, dest_src, srcDirJoin, stageDir, progress,
+    def _fs_install(self, dest_src, srcDirJoin, progress,
                     subprogressPlus, unpackDir):
         """Filesystem install, if unpackDir is not None we are installing
          an archive."""
-        stageDataDir = stageDir.join(u'Data')
-        stageDataDirJoin = stageDataDir.join
         norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.data_sizeCrc
         mods, inis = set(), set()
+        created_dirs = set()
+        srcs, dests = [], []
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
-            stageFull = stageDataDirJoin(norm_ghostGet(dest,dest))
-            if srcFull.exists():
-                if unpackDir: # Move to staging directory if an archive
-                    srcFull.moveTo(stageFull) ##: TODO stats filesystem......
-                else: # Copy if it's a project
-                    srcFull.copyTo(stageFull) ##: TODO sets mtime, stats filesystem......
+            if srcFull.exists(): ## drop this syscall !
+                stageFull = bass.dirs['mods'].join(norm_ghostGet(dest, dest))
+                if stageFull.head not in created_dirs: ## FIXME(ut): needed ? In both env shell and non shell paths?
+                    stageFull.head.makedirs()
+                    created_dirs.add(stageFull.head)
                 if bass.reModExt.search(srcFull.s):
-                    mods.add(srcFull.tail) # src as stage may end in ghost !
-                    date = stageFull.mtime if load_order.using_txt_file() else -1
-                else:
-                    date = stageFull.mtime
-                    if InstallersData._is_ini_tweak(dest):
-                        inis.add(srcFull.tail)
-                data_sizeCrcDate_update[dest] = (size, crc, date)
+                    mods.add(srcFull.tail)
+                elif InstallersData._is_ini_tweak(dest):
+                    inis.add(srcFull.tail)
+                data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
+                srcs.append(srcFull)
+                dests.append(stageFull)
                 subprogressPlus()
-        #--Clean up unpacked dir
-        if unpackDir: unpackDir.rmtree(safety=unpackDir.stail)
         #--Now Move
-        # TODO: Find the operation that does not properly close the Oblivion\Data dir.
-        # The addition of \\Data and \\* are a kludgy fix for a bug. An operation that is sometimes executed
-        # before this locks the Oblivion\Data dir (only for Oblivion, Skyrim is fine)  so it can not be opened
-        # with write access. It can be reliably reproduced by deleting the Table.dat file and then trying to
-        # install a mod for Oblivion.
         try:
             if data_sizeCrcDate_update:
-                destDir = bass.dirs['mods'].head + u'\\Data'
-                stageDataDir += u'\\*'
-                env.shellMove(stageDataDir, destDir, progress.getParent())
+                fs_operation = env.shellMove if unpackDir else env.shellCopy
+                fs_operation(srcs, dests, progress.getParent())
         finally:
-            #--Clean up staging dir
-            bass.rmTempDir()
+            #--Clean up unpack dir if we're an archive
+            if unpackDir: bass.rmTempDir()
         #--Update Installers data
         return data_sizeCrcDate_update, mods, inis
 
@@ -1179,11 +1169,10 @@ class InstallerArchive(Installer):
         #--Rearrange files
         progress(0.9, self.archive + u'\n' + _(u'Organizing files...'))
         srcDirJoin = unpackDir.join
-        stageDir = bass.newTempDir()  #--forgets the old temp dir, creates a new one
         subprogress = SubProgress(progress,0.9,1.0)
         subprogress.setFull(len(dest_src))
         subprogressPlus = subprogress.plus
-        return self._fs_install(dest_src, srcDirJoin, stageDir, progress,
+        return self._fs_install(dest_src, srcDirJoin, progress,
                                 subprogressPlus, unpackDir)
 
     def unpackToProject(self, project, progress=None):
@@ -1393,12 +1382,10 @@ class InstallerProject(Installer):
         progress(0, self.archive + u'\n' + _(u'Moving files...'))
         progressPlus = progress.plus
         #--Copy Files
-        bass.rmTempDir()
-        stageDir = bass.getTempDir()
         srcDir = bass.dirs['installers'].join(self.archive)
         srcDirJoin = srcDir.join
-        return self._fs_install(dest_src, srcDirJoin, stageDir, progress,
-                                progressPlus, None)
+        return self._fs_install(dest_src, srcDirJoin, progress, progressPlus,
+                                None)
 
     def syncToData(self, projFiles):
         """Copies specified projFiles from Oblivion\Data to project
@@ -2267,11 +2254,13 @@ class InstallersData(DataStore):
                 mods.discard(mod)
         modInfos.cached_lo_append_if_missing(mods)
         # now that we saved load order update missing mtimes for mods:
-        if not load_order.using_txt_file():
-            for mod in mods:
-                s, c, _d = data_sizeCrcDate_update[mod.s]
-                data_sizeCrcDate_update[mod.s] = (s, c, modInfos[mod].mtime)
-        self.data_sizeCrcDate.update(data_sizeCrcDate_update)
+        for mod in mods:
+            s, c, _d = data_sizeCrcDate_update[mod.s]
+            data_sizeCrcDate_update[mod.s] = (s, c, modInfos[mod].mtime)
+        # and for rest of the files - we do mods separately for ghosts
+        self.data_sizeCrcDate.update((dest, (
+            s, c, (d != -1 and d) or bass.dirs['mods'].join(dest).mtime)) for
+            dest, (s, c, d) in data_sizeCrcDate_update.iteritems())
         for ini in inis:
             iniInfos.add_info(ini)
             iniInfos.table.setItem(ini, 'installer', installer.archive)
