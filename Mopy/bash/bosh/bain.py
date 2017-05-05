@@ -39,7 +39,7 @@ from . import imageExts, DataStore, BestIniFile, InstallerConverter, AFile
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
-    countFilesInArchive, extractCommand, extract7z, compressionSettings
+    extractCommand, extract7z, compressionSettings
 from ..bolt import Path, deprint, formatInteger, round_size, GPath, \
     sio, SubProgress
 from ..exception import AbstractError, ArgumentError, BSAError, \
@@ -946,8 +946,9 @@ class Installer(object):
                 return True, bool(mfiles), bool(ifiles)
         return False, False, False
 
-    def open_readme(self): pass
-    def open_wizard(self): pass
+    def open_readme(self): self._open_txt_file(self.hasReadme)
+    def open_wizard(self): self._open_txt_file(self.hasWizard)
+    def _open_txt_file(self, rel_path): raise AbstractError
     def wizard_file(self): raise AbstractError
 
     def __repr__(self):
@@ -1140,9 +1141,7 @@ class InstallerArchive(Installer):
         with apath.unicodeSafe() as arch:
             if progress:
                 progress.state = 0
-                progress(0, u'%s\n' % self.archive + _(u'Counting files...') + u'\n')
-                numFiles = countFilesInArchive(arch, self.tempList, recurse)
-                progress.setFull(numFiles)
+                progress.setFull(len(fileNames))
             #--Extract files
             unpack_dir = bass.getTempDir()
             command = extractCommand(arch, unpack_dir)
@@ -1220,18 +1219,12 @@ class InstallerArchive(Installer):
         return self._installer_rename(data,
                                       name_new.root + GPath(self.archive).ext)
 
-    def open_readme(self):
-        with balt.BusyCursor():
-            # This is going to leave junk temp files behind...
-            unpack_dir = self.unpackToTemp([self.hasReadme])
-        unpack_dir.join(self.hasReadme).start()
-
-    def open_wizard(self):
+    def _open_txt_file(self, rel_path):
         with balt.BusyCursor():
             # This is going to leave junk temp files behind...
             try:
-                unpack_dir = self.unpackToTemp([self.hasWizard])
-                unpack_dir.join(self.hasWizard).start()
+                unpack_dir = self.unpackToTemp([rel_path])
+                unpack_dir.join(rel_path).start()
             except:
                 # Don't clean up temp dir here.  Sometimes the editor
                 # That starts to open the wizard.txt file is slower than
@@ -1243,21 +1236,15 @@ class InstallerArchive(Installer):
         with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
                            abort=True) as progress:
             # Extract the wizard, and any images as well
-            unpack_dir = self.unpackToTemp([self.hasWizard,
-                u'*.bmp',            # BMP's
-                u'*.jpg', u'*.jpeg', # JPEG's
-                u'*.png',            # PNG's
-                u'*.gif',            # GIF's
-                u'*.pcx',            # PCX's
-                u'*.pnm',            # PNM's
-                u'*.tif', u'*.tiff', # TIFF's
-                u'*.tga',            # TGA's
-                u'*.iff',            # IFF's
-                u'*.xpm',            # XPM's
-                u'*.ico',            # ICO's
-                u'*.cur',            # CUR's
-                u'*.ani',            # ANI's
-                ], bolt.SubProgress(progress,0,0.9), recurse=True)
+            files_to_extract = [self.hasWizard]
+            files_to_extract.extend(x for (x, _s, _c) in self.fileSizeCrcs if
+                                    x.lower().endswith((
+                                        u'bmp', u'jpg', u'jpeg', u'png',
+                                        u'gif', u'pcx', u'pnm', u'tif',
+                                        u'tiff', u'tga', u'iff', u'xpm',
+                                        u'ico', u'cur', u'ani',)))
+            unpack_dir = self.unpackToTemp(files_to_extract,
+                bolt.SubProgress(progress,0,0.9), recurse=True)
         return unpack_dir.join(self.hasWizard)
 
 #------------------------------------------------------------------------------
@@ -1455,11 +1442,8 @@ class InstallerProject(Installer):
     def renameInstaller(self, name_new, data):
         return self._installer_rename(data, name_new)
 
-    def open_readme(self):
-        bass.dirs['installers'].join(self.archive, self.hasReadme).start()
-
-    def open_wizard(self):
-        bass.dirs['installers'].join(self.archive, self.hasWizard).start()
+    def _open_txt_file(self, rel_path):
+        bass.dirs['installers'].join(self.archive, rel_path).start()
 
     def wizard_file(self):
         return bass.dirs['installers'].join(self.archive, self.hasWizard)
