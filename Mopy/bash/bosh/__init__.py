@@ -2417,7 +2417,7 @@ class TableFileInfos(DataStore):
 
     #--Delete
     def files_to_delete(self, fileNames, **kwargs):
-        toDelete = []
+        abs_delete_paths = []
         #--Cache table updates
         tableUpdate = {}
         #--Go through each file
@@ -2428,13 +2428,13 @@ class TableFileInfos(DataStore):
                 fileInfo = self.factory(self.store_dir, fileName)
             #--File
             filePath = fileInfo.abs_path
-            toDelete.append(filePath)
-            self._additional_deletes(fileInfo, toDelete)
+            abs_delete_paths.append(filePath)
+            self._additional_deletes(fileInfo, abs_delete_paths)
             #--Table
             tableUpdate[filePath] = fileName
         #--Now do actual deletions
-        toDelete = [x for x in toDelete if x.exists()]
-        return toDelete, tableUpdate
+        abs_delete_paths = set(x for x in abs_delete_paths if x.exists())
+        return abs_delete_paths, tableUpdate
 
     def _update_deleted_paths(self, deleted_keys, paths_to_keys,
                               check_existence):
@@ -3582,9 +3582,8 @@ class ModInfos(FileInfos):
 
     def _additional_deletes(self, fileInfo, toDelete):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
-        #--Misc. Editor backups (mods only)
-        for ext in (u'.bak', u'.tmp', u'.old', u'.ghost'):
-            toDelete.append(fileInfo.name + ext)
+        # Add ghosts - the file may exist in both states (bug, or user mistake)
+        toDelete.append(self.store_dir.join(fileInfo.name + u'.ghost'))
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir."""
