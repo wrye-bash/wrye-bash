@@ -202,17 +202,18 @@ class ImageBundle:
 
     Allows image bundle to be specified before wx.App is initialized."""
     def __init__(self):
-        self.images = []
+        self._image_paths = []
         self.iconBundle = None
 
-    def Add(self,image):
-        self.images.append(image)
+    def Add(self, img_path):
+        self._image_paths.append(img_path)
 
     def GetIconBundle(self):
         if not self.iconBundle:
             self.iconBundle = wx.IconBundle()
-            for image in self.images:
-                self.iconBundle.AddIcon(image.GetIcon())
+            for img_path in self._image_paths:
+                self.iconBundle.AddIconFromFile(
+                    img_path.s, Image.typesDict[img_path.cext[1:]])
         return self.iconBundle
 
 #------------------------------------------------------------------------------

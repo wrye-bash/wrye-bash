@@ -4155,16 +4155,14 @@ def InitImages():
     images['pickle.32'] = _png(u'pickle32.png')
     #--Applications Icons
     Resources.bashRed = balt.ImageBundle()
-    Resources.bashRed.Add(_png(u'bash_32-2.ico'))
+    Resources.bashRed.Add(imgDirJn(u'bash_32-2.ico'))
     #--Application Subwindow Icons
     Resources.bashBlue = balt.ImageBundle()
-    Resources.bashBlue.Add(_png(u'bash_blue.svg-2.ico'))
+    Resources.bashBlue.Add(imgDirJn(u'bash_blue.svg-2.ico'))
     Resources.bashDocBrowser = balt.ImageBundle()
-    Resources.bashDocBrowser.Add(images['doc.16'])
-    Resources.bashDocBrowser.Add(images['doc.24'])
-    Resources.bashDocBrowser.Add(images['doc.32'])
+    Resources.bashDocBrowser.Add(imgDirJn(u'docbrowser32.ico'))
     #--Bash Patch Dialogue icon
     Resources.bashMonkey = balt.ImageBundle()
-    Resources.bashMonkey.Add(_png(u'wrye_monkey_87_sharp.ico'))
+    Resources.bashMonkey.Add(imgDirJn(u'wrye_monkey_87_sharp.ico'))
 
 from .links import InitLinks
