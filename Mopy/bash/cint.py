@@ -38,7 +38,6 @@
 ####### END LICENSE BLOCK ######
 
 from ctypes import *
-import struct
 import math
 import os
 from os.path import exists, join
@@ -15301,8 +15300,9 @@ class FnvModFile(object):
                      ("CMNY", self.CMNY),("CDCK", self.CDCK),("DEHY", self.DEHY),
                      ("HUNG", self.HUNG),("SLPD", self.SLPD),))
 
-class ObCollection:
-    __slots__ = ['_CollectionID','_WhichGame','_ModIndex','_ModType','LoadOrderMods','AllMods']
+class ObCollection(object):
+    __slots__ = ['_CollectionID', '_WhichGame', '_ModIndex', '_ModType',
+                 'LoadOrderMods', 'AllMods', '_cwd']
     """Collection of esm/esp's."""
     def __init__(self, CollectionID=None, ModsPath=".", CollectionType=0):
         #CollectionType == 0, Oblivion
@@ -15313,10 +15313,12 @@ class ObCollection:
         self._ModType = ObModFile if self._WhichGame == 0 else FnvModFile
 
     def __enter__(self):
+        self._cwd = os.getcwd()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.Close()
+        os.chdir(self._cwd)
 
     def __eq__(self, other):
         return self._CollectionID == other._CollectionID if type(other) is type(self) else False

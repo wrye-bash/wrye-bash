@@ -415,7 +415,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
     else:
         source = [abspath(u'%s' % x) for x in source]
     # target may be anything ...
-    target = target if target else u'' # abspath(u''): cwd (can be Game/Data)
+    target = target if target else u'' # abspath(u''): cwd (must be Mopy/)
     if isinstance(target, (Path, basestring)):
         target = [abspath(u'%s' % target)]
     else:
