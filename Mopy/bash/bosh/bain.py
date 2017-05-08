@@ -1698,12 +1698,11 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        progressSetFull = progress.setFull
         for subPending, iClass in zip((pending - projects, pending & projects),
                                       (InstallerArchive, InstallerProject)):
             if not subPending: continue
             progress(0,_(u"Scanning Packages..."))
-            progressSetFull(len(subPending))
+            progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
                 installer = self.get(package, None)

@@ -714,12 +714,15 @@ class Installer_CopyConflicts(_SingleInstallable):
         def _ok(msg): self._showOk(msg % self._selected_item)
         if not src_sizeCrc:
             return _ok(_(u'No files to install for %s'))
-        with balt.BusyCursor():
+        with balt.Progress(_(u"Scanning Packages..."),
+                           u'\n' + u' ' * 60) as progress:
+            progress.setFull(len(self.idata))
             numFiles = 0
-            destDir = GPath(u"%03d (%s) - Conflicts" % (
+            destDir = GPath(u"Conflicts - %03d (%s)" % (
                 self._selected_info.order, self._selected_item))
-            for package, installer in self.idata.sorted_pairs():
+            for i,(package, installer) in enumerate(self.idata.sorted_pairs()):
                 curConflicts = set()
+                progress(i, _(u"Scanning Packages...") + u'\n' + package.s)
                 for z, y in installer.refreshDataSizeCrc().iteritems():
                     if z in src_sizeCrc and installer.data_sizeCrc[z] != \
                             src_sizeCrc[z]:
@@ -765,9 +768,8 @@ class Installer_CopyConflicts(_SingleInstallable):
                     order if order < self._selected_info.order else order + 1,
                     package.s))
                 curFile = _copy_conflicts(curFile)
-            project = destDir.root
-        self._get_refreshed(project, self._selected_info)
-        self.window.RefreshUI(detail_item=project)
+        self._get_refreshed(destDir, self._selected_info)
+        self.window.RefreshUI(detail_item=destDir)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Espm Links -------------------------------------------------
