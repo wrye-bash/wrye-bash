@@ -37,8 +37,8 @@ from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, AFile
 from .. import balt # YAK!
-from .. import bush, bass, bolt, env, load_order
-from ..archives import readExts, defaultExt, list_archive, exe7z, compress7z, \
+from .. import bush, bass, bolt, env, load_order, archives
+from ..archives import readExts, defaultExt, list_archive, compress7z, \
     countFilesInArchive, extractCommand, extract7z, compressionSettings
 from ..bolt import Path, deprint, formatInteger, round_size, GPath, \
     AbstractError, sio, ArgumentError, SubProgress, StateError
@@ -1438,7 +1438,7 @@ class InstallerProject(Installer):
                     out.write(u'--*\\')
             #--Compress
             command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (
-                exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
+                archives.exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
             try:
                 compress7z(command, outDir, outFile.tail, projectDir, progress)
             finally:
