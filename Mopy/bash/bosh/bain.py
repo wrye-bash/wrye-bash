@@ -1176,21 +1176,20 @@ class InstallerArchive(Installer):
         if not files: return 0
         #--Clear Project
         destDir = bass.dirs['installers'].join(project)
-        if destDir.exists(): destDir.rmtree(safety=u'Installers')
+        destDir.rmtree(safety=u'Installers')
         #--Extract
         progress(0,project.s+u'\n'+_(u'Extracting files...'))
         unpack_dir = self.unpackToTemp(files, SubProgress(progress, 0, 0.9))
         #--Move
         progress(0.9,project.s+u'\n'+_(u'Moving files...'))
         count = 0
-        bolt.clearReadOnly(unpack_dir)
         tempDirJoin = unpack_dir.join
         destDirJoin = destDir.join
         for file_ in files:
             srcFull = tempDirJoin(file_)
             destFull = destDirJoin(file_)
             if srcFull.exists():
-                srcFull.moveTo(destFull)
+                srcFull.moveTo(destFull) # will try and clean read only flag
                 count += 1
         bass.rmTempDir()
         return count

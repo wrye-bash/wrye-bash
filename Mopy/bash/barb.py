@@ -149,7 +149,7 @@ class BackupSettings(BaseBackupSettings):
         try:
             self._backup_settings(temp_settings_backup_dir)
         finally:
-            if temp_settings_backup_dir and temp_settings_backup_dir.exists():
+            if temp_settings_backup_dir:
                 temp_settings_backup_dir.rmtree(safety=u'WryeBash_')
 
     def _backup_settings(self, temp_dir):
@@ -215,7 +215,7 @@ class RestoreSettings(BaseBackupSettings):
         try:
             self._Apply(temp_settings_restore_dir)
         finally:
-            if temp_settings_restore_dir and temp_settings_restore_dir.exists():
+            if temp_settings_restore_dir:
                 temp_settings_restore_dir.rmtree(safety=u'WryeBash_')
 
     def _Apply(self, temp_dir):
