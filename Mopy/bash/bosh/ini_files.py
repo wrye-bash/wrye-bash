@@ -287,7 +287,7 @@ class IniFile(AFile):
                 # This will occur for the last INI section in the ini file
                 _add_remaining_new_items(section)
                 # Add remaining new entries
-                for section in ini_settings:
+                for section in set(ini_settings): # _add_remaining_new_items may modify ini_settings
                     if ini_settings[section]:
                         tmpFileWrite(u'\n')
                         tmpFileWrite(u'[%s]\n' % section)
