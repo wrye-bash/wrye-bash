@@ -141,11 +141,9 @@ class Installer(object):
             crc = 0L
             try:
                 with open(asFile, 'rb') as ins:
-                    insRead = ins.read
                     insTell = ins.tell
-                    while insTell() < size:
-                        crc = crc32(insRead(2097152),
-                                    crc) # 2MB at a time, probably ok
+                    for block in iter(partial(ins.read, 2097152), ''):
+                        crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
             except IOError:
                 deprint(_(u'Failed to calculate crc for %s - please report '

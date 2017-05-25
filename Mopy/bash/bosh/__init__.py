@@ -42,7 +42,7 @@ import sys
 import time
 import traceback
 from collections import OrderedDict
-from functools import wraps
+from functools import wraps, partial
 from itertools import imap
 #--Local
 from ._mergeability import isPBashMergeable, isCBashMergeable
@@ -761,12 +761,9 @@ class ModInfo(FileInfo):
                     self.header.getSize()
                     self.header.dump(out)
                     #--Write remainder
-                    insRead = ins.read
                     outWrite = out.write
-                    while True:
-                        buffer= insRead(0x5000000)
-                        if not buffer: break
-                        outWrite(buffer)
+                    for block in iter(partial(ins.read, 0x5000000), ''):
+                        outWrite(block)
                 except struct.error as rex:
                     raise ModError(self.name,u'Struct.error: %s' % rex)
         #--Remove original and replace with temp

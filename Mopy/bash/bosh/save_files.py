@@ -27,12 +27,14 @@
 - rework encoding/decoding
 - use the alpha data from the image
 """
+
 __author__ = 'Utumno'
 
 import itertools
 import struct
 import sys
 from collections import OrderedDict
+from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip
 
@@ -131,10 +133,8 @@ class SaveFileHeader(object):
         out.write(ins.read(self._mastersStart))
         oldMasters = self._write_masters(ins, out, pack)
         #--Copy the rest
-        while True:
-            buff = ins.read(0x5000000)
-            if not buff: break
-            out.write(buff)
+        for block in iter(partial(ins.read, 0x5000000), ''):
+            out.write(block)
         return oldMasters
 
     def _write_masters(self, ins, out, pack):
