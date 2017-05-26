@@ -4053,7 +4053,8 @@ class ModFile(object):
         self.fileInfo.tempBackup()
         filePath = self.fileInfo.getPath()
         self.save(filePath.temp)
-        filePath.temp.mtime = self.fileInfo.mtime
+        if self.fileInfo.mtime is not None: # fileInfo created before the file
+            filePath.temp.mtime = self.fileInfo.mtime
         # FIXME If saving a locked (by TES4Edit f.i.) bashed patch a bogus UAC
         # permissions dialog is displayed (should display file in use)
         env.shellMove(filePath.temp, filePath, parent=None) # silent=True just returns - no error!

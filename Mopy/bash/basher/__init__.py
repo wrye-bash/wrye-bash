@@ -4053,7 +4053,10 @@ class BashApp(wx.App):
         if bush.game.esp.canBash:
             if not bosh.modInfos.bashed_patches and bass.inisettings['EnsurePatchExists']:
                 progress(0.68, _(u'Generating Blank Bashed Patch'))
-                bosh.modInfos.generateNextBashedPatch(selected_mods=())
+                try:
+                    bosh.modInfos.generateNextBashedPatch(selected_mods=())
+                except: # YAK but this may blow and has blown on whatever coding error, crashing Bash on boot
+                    deprint(u'Failed to create new bashed patch', traceback=True)
 
     @staticmethod
     def InitVersion():
