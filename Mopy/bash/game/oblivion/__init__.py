@@ -23,6 +23,7 @@
 # =============================================================================
 """GameInfo override for TES IV: Oblivion."""
 
+from os.path import join as _j
 from .. import GameInfo
 from ... import brec
 from ...brec import MreGlob
@@ -113,16 +114,13 @@ class OblivionGameInfo(GameInfo):
     wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
         u'ArchiveInvalidationInvalidated!.bsa'}
     ignoreDataFiles = {
-        u'OBSE\\Plugins\\Construction Set Extender.dll',
-        u'OBSE\\Plugins\\Construction Set Extender.ini'
-    }
+        _j(u'OBSE', u'Plugins', u'Construction Set Extender.dll'),
+        _j(u'OBSE', u'Plugins', u'Construction Set Extender.ini')}
     ignoreDataFilePrefixes = {
-        u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
-    }
-    ignoreDataDirs = {
-        u'OBSE\\Plugins\\ComponentDLLs\\CSE',
-        u'LSData'
-    }
+        _j(u'Meshes', u'Characters', u'_Male', u'specialanims',
+           u'0FemaleVariableWalk_')}
+    ignoreDataDirs = {_j(u'OBSE', u'Plugins', u'ComponentDLLs', u'CSE'),
+        u'LSData'}
 
     class esp(GameInfo.esp):
         canBash = True

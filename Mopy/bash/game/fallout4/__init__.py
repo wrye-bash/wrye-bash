@@ -23,6 +23,7 @@
 # =============================================================================
 """GameInfo override for Fallout 4."""
 
+from os.path import join as _j
 from .. import GameInfo
 from ... import brec
 
@@ -36,7 +37,7 @@ class Fallout4GameInfo(GameInfo):
     version_detect_file = [u'Fallout4.exe']
     masterFiles = [u'Fallout4.esm']
     iniFiles = [u'Fallout4.ini', u'Fallout4Prefs.ini', u'Fallout4Custom.ini', ]
-    pklfile = u'bash\\db\\Fallout4_ids.pkl'
+    pklfile = _j(u'bash', u'db', u'Fallout4_ids.pkl')
     masterlist_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'

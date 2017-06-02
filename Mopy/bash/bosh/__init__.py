@@ -2742,6 +2742,8 @@ class SaveInfos(FileInfos):
         if self.localSave.endswith(u'\\'): self.localSave = self.localSave[:-1]
         # Hopefully will solve issues with unicode usernames # TODO(ut) test
         self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
+        # if os.name == 'posix':
+        #     self.localSave = self.localSave.replace('\\', '/')
 
     def __init__(self):
         _ext = re.escape(bush.game.ess.ext)

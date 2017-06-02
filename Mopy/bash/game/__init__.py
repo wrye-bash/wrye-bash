@@ -26,6 +26,7 @@ state and methods. game.GameInfo#init classmethod is used to import rest of
 active game package as needed (currently the record and constants modules)
 and to set some brec.RecordHeader/MreRecord class variables."""
 import importlib
+from os.path import join as _j
 
 from .. import brec
 
@@ -59,7 +60,7 @@ class GameInfo(object):
     iniFiles = []
     # The pickle file for this game.  Holds encoded GMST IDs from the big list
     # below
-    pklfile = u'bash\\db\\*GAMENAME*_ids.pkl'
+    pklfile = _j(u'bash', u'db', u'*GAMENAME*_ids.pkl')
     # The directory containing the masterlist for this game, relative to
     # 'Mopy/Bash Patches'
     masterlist_dir = u''
@@ -244,9 +245,11 @@ class GameInfo(object):
         # Use lowercase names
     ))
     # Files to exclude from clean data
-    wryeBashDataFiles = {u'Docs\\Bash Readme Template.html',
-                         u'Docs\\wtxt_sand_small.css', u'Docs\\wtxt_teal.css',
-                         u'Docs\\Bash Readme Template.txt'}
+    wryeBashDataFiles = {_j(u'Docs', u'Bash Readme Template.html'),
+                         _j(u'Docs', u'wtxt_sand_small.css'),
+                         _j(u'Docs', u'wtxt_teal.css'),
+                         _j(u'Docs', u'Bash Readme Template.txt'),
+                         }
     wryeBashDataDirs = {u'Bash Patches', u'BashTags', u'INI Tweaks'}
     ignoreDataFiles = set()
     ignoreDataFilePrefixes = set()

@@ -658,7 +658,7 @@ class App_Help(StatusBar_Button):
     imageKey, _tip = u'help.%s', _(u"Help File")
 
     def Execute(self):
-        html = bass.dirs['mopy'].join(u'Docs\Wrye Bash General Readme.html')
+        html = bass.dirs['mopy'].join(u'Docs', u'Wrye Bash General Readme.html')
         if html.exists():
             html.start()
         else:
