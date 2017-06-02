@@ -77,9 +77,11 @@ class Installer(ListInfo):
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
+    # backslash has to be escaped
+    _s = os_sep + (os_sep if os.name == 'nt' else u'')
     reReadMe = re.compile(
-        u'' r'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
-        u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
+        u'' r'^.*?([^' + _s + u']*)(read[ _]?me|lisez[ _]?moi)([^' + _s + u']*)'
+        u'(' +u'|'.join(docExts) + u')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm',
@@ -1627,7 +1629,7 @@ class InstallerProject(Installer):
             for entry in os.listdir(folder):
                 path = os.path.join(folder, entry)
                 if os.path.isdir(path):
-                    log(u' ' * depth + entry + u'\\')
+                    log(u' ' * depth + entry + os_sep)
                     depth += 2
                     walkPath(path, depth)
                     depth -= 2
