@@ -26,10 +26,10 @@
 import re
 import struct
 import itertools
-from ...bolt import StateError, Flags, BoltError, sio, DataDict, winNewLines, \
+from ...bolt import Flags, sio, DataDict, winNewLines, \
     encode
-from ...brec import MelRecord, ModError, MelStructs, \
-    ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
+from ...brec import MelRecord, MelStructs, \
+    MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
     MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
@@ -38,6 +38,7 @@ from ...bass import null1, null2, null3, null4
 from ... import bush
 from constants import allConditions, fid1Conditions, fid2Conditions, \
     fid5Conditions
+from ...exception import BoltError, ModError, ModSizeError, StateError
 
 from_iterable = itertools.chain.from_iterable
 

@@ -25,15 +25,16 @@
 """This module contains the oblivion record classes. Ripped from oblivion.py"""
 import re
 import struct
-from ...bolt import StateError, Flags, BoltError, sio, DataDict
-from ...brec import MelRecord, ModError, MelStructs, \
-    ModSizeError, MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
+from ...bolt import Flags, sio, DataDict
+from ...brec import MelRecord, MelStructs, \
+    MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelXpci, MelModel, MelFull0, \
     MelFidList, MelStructA, MelStrings, MreRecord, MreGmstBase, MelTuple
 from ...bass import null1, null2, null3, null4
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
 from constants import allConditions, fid1Conditions, fid2Conditions
+from ...exception import BoltError, ModError, ModSizeError, StateError
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------

@@ -27,7 +27,7 @@ import re
 from operator import itemgetter
 import wx
 # Internal
-from .. import bass, bosh, bush, balt, load_order, bolt
+from .. import bass, bosh, bush, balt, load_order, bolt, exception
 from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
     Links, SeparatorLink, CheckLink, Link, vspace, VSizer
 from ..bolt import GPath
@@ -472,7 +472,7 @@ class _ChoiceMenuMixin(object):
             self.mouse_pos = None
             event.Skip()
 
-    def ShowChoiceMenu(self, event): raise bolt.AbstractError
+    def ShowChoiceMenu(self, event): raise exception.AbstractError
 
 #------------------------------------------------------------------------------
 class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):

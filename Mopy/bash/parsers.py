@@ -38,14 +38,13 @@ import bosh # for modInfos
 import env
 import load_order
 from balt import Progress
-from bolt import GPath, decode, deprint, CsvReader, csvFormat, ArgumentError, \
-    SubProgress, StateError, BoltError
+from bolt import GPath, decode, deprint, CsvReader, csvFormat, SubProgress
 from bass import dirs, inisettings
-from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModError, \
-    ModWriter
+from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter
 from cint import ObCollection, FormID, aggregateTypes, validTypes, \
     MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
     ValidateDict, IUNICODE, getattr_deep, setattr_deep
+from exception import ArgumentError, MasterMapError, ModError, StateError
 from record_groups import MobDials, MobICells, MobWorlds, MobObjects, MobBase
 
 class ActorFactions:
@@ -3818,11 +3817,6 @@ class CBash_CellBlockInfo:
 #------------------------------------------------------------------------------
 # Mod Blocks, File ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MasterMapError(BoltError):
-    """Attempt to map a fid when mapping does not exist."""
-    def __init__(self,modIndex):
-        BoltError.__init__(self,u'No valid mapping for mod index 0x%02X' % modIndex)
-
 class MasterMap:
     """Serves as a map between two sets of masters."""
     def __init__(self,inMasters,outMasters):

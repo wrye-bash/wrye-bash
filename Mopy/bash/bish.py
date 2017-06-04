@@ -57,6 +57,7 @@ import bass
 import bosh._saves
 import bosh.faces
 import parsers
+import exception
 from record_groups import MobCell, MobWorld
 from game.oblivion import MreNpc, MreRace, MreScpt, MreBook, MreGmst, \
     MreWeap, MreSkil, MreInfo, MreDial, MreRegn
@@ -283,7 +284,7 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
     """Copies eyes and hair from one race to another."""
     init(3)
     if dstMod.lower() == 'oblivion.esm':
-        raise bolt.BoltError(u"You don't REALLY want to overwrite Oblivion.esm, do you?")
+        raise exception.BoltError(u"You don't REALLY want to overwrite Oblivion.esm, do you?")
     srcFactory = parsers.LoadFactory(False, MreRace)
     dstFactory = parsers.LoadFactory(True, MreRace)
     srcInfo = bosh.modInfos[GPath(srcMod)]
@@ -302,8 +303,8 @@ def importRacialEyesHair(srcMod,srcRaceEid,dstMod,dstRaceEid):
         if record.eid == dstRaceEid:
             dstRace = record
             break
-    if not srcRace: raise bosh.ModError(srcMod,u"Didn't find race (eid) %s." % srcRaceEid)
-    if not dstRace: raise bosh.ModError(dstMod,u"Didn't find race (eid) %s." % dstRaceEid)
+    if not srcRace: raise exception.ModError(srcMod, u"Didn't find race (eid) %s." % srcRaceEid)
+    if not dstRace: raise exception.ModError(dstMod, u"Didn't find race (eid) %s." % dstRaceEid)
     #--Get mapper
     srcMasters = srcFile.tes4.masters[:] + [GPath(srcMod)]
     dstMasters = dstFile.tes4.masters[:] + [GPath(dstMod)]
@@ -718,7 +719,7 @@ def getIds(fileName=None):
             sizeCheck, = struct.unpack('I',ins.read(4))
             decomp = zlib.decompress(ins.read(size-4))
             if len(decomp) != sizeCheck:
-                raise bosh.ModError(self.inName,
+                raise exception.ModError(self.inName,
                     u'Mis-sized compressed data. Expected %d, got %d.' % (size,len(decomp)))
             reader = bosh.ModReader(fileName,stringBuffer(decomp))
             return (reader,sizeCheck)

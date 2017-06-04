@@ -30,8 +30,9 @@ from .. import bass, balt, bosh, bolt, load_order
 from ..balt import TextCtrl, StaticText, vSizer, hSizer, hspacer, Button, \
     RoTextCtrl, bell, Link, toggleButton, SaveButton, CancelButton, hspace, \
     vspace, BaltFrame, Resources, HtmlCtrl
-from ..bolt import GPath, BoltError
+from ..bolt import GPath
 from ..bosh import omods
+from ..exception import BoltError
 
 class DocBrowser(BaltFrame):
     """Doc Browser frame."""

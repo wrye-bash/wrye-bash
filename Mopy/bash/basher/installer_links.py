@@ -41,8 +41,9 @@ from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
 from ..belt import InstallerWizard, generateTweakLines
-from ..bolt import CancelError, SkipError, GPath, StateError, deprint, \
-    SubProgress, LogFile, formatInteger, round_size
+from ..bolt import GPath, deprint, SubProgress, LogFile, formatInteger, \
+    round_size
+from ..exception import CancelError, SkipError, StateError
 
 __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_OpenSearch', 'Installer_OpenTESA',

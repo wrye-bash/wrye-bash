@@ -29,9 +29,9 @@ import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
-from env import AccessDeniedError ##:same as above, env and balt should not mix
-from bolt import GPath, deprint, BoltError, AbstractError, ArgumentError, \
-    StateError, CancelError, SkipError
+from bolt import GPath, deprint
+from exception import AbstractError, AccessDeniedError, ArgumentError, \
+    BoltError, CancelError, SkipError, StateError
 #--Python
 import cPickle
 import textwrap
@@ -2230,7 +2230,7 @@ class UIList(wx.Panel):
                 try:
                     self.data_store.delete([i], doRefresh=False,
                                            recycle=recycle)
-                except bolt.BoltError as e: showError(self, u'%s' % e)
+                except BoltError as e: showError(self, u'%s' % e)
                 except (AccessDeniedError, CancelError, SkipError): pass
             else:
                 self.data_store.delete_refresh(items, None,

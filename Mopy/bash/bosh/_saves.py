@@ -29,18 +29,16 @@ import struct
 from operator import attrgetter
 
 from .. import bolt, bush
-from ..bolt import Flags, sio, FileError, GPath, decode, deprint, encode, \
-    cstrip, StateError, SubProgress
-from ..brec import ModReader, MreRecord, ModWriter, ModError, getObjectIndex, \
+from ..bolt import Flags, sio, GPath, decode, deprint, encode, \
+    cstrip, SubProgress
+from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices
+from ..exception import FileError, ModError, StateError
 from ..parsers import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
 # Save I/O --------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class SaveFileError(FileError):
-    """TES4 Save File Error: File is corrupted."""
-    pass
 
 # Save Change Records ---------------------------------------------------------
 class SreNPC(object):

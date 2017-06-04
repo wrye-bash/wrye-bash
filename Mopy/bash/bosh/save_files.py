@@ -38,9 +38,7 @@ from collections import OrderedDict
 from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip
-
-# Exceptions ------------------------------------------------------------------
-class SaveHeaderError(Exception): pass
+from ..exception import SaveHeaderError
 
 # Structure wrappers ----------------------------------------------------------
 def unpack_str8(ins): return ins.read(struct.unpack('B', ins.read(1))[0])

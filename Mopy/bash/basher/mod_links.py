@@ -36,12 +36,13 @@ from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
     StaticText, hspacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
     RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
     OkButton
-from ..bolt import GPath, SubProgress, AbstractError, CancelError, formatDate
+from ..bolt import GPath, SubProgress, formatDate
 from ..bosh import faces
 from ..patcher import configIsCBash, exportConfig, patch_files
 from .frames import DocBrowser
 from .constants import settingDefaults
 from ..cint import CBashApi, FormID
+from ..exception import AbstractError, BoltError, CancelError
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
@@ -613,7 +614,7 @@ class Mod_CreateBOSSReport(EnabledLink):
         try:
             with balt.Progress(_(u"Dirty Edits"),u'\n'+u' '*60,abort=True) as progress:
                 udr_itm_fog = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress)
-        except bolt.CancelError:
+        except CancelError:
             return
         # Create the report
         for i, (fileName, fileInfo) in enumerate(self.iselected_pairs()):
@@ -1205,7 +1206,7 @@ class Mod_ScanDirty(ItemLink):
         try:
             with balt.Progress(_(u'Dirty Edits'),u'\n'+u' '*60,abort=True) as progress:
                 ret = bosh.mods_metadata.ModCleaner.scan_Many(modInfos, progress=progress, detailed=True)
-        except bolt.CancelError:
+        except CancelError:
             return
         log = bolt.LogFile(StringIO.StringIO())
         log.setHeader(u'= '+_(u'Scan Mods'))
@@ -2339,7 +2340,7 @@ class Mod_EditorIds_Import(_Mod_Import_Link):
                 text = buff.getvalue()
                 buff.close()
                 self._showLog(text, title=_(u'Objects Changed'))
-        except bolt.BoltError as e:
+        except BoltError as e:
             self._showWarning('%r' % e)
 
 #------------------------------------------------------------------------------

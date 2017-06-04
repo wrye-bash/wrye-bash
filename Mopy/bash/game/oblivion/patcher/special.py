@@ -24,7 +24,7 @@
 import collections
 import os
 import re
-from ....bolt import GPath, sio, SubProgress, StateError, CsvReader
+from ....bolt import GPath, sio, SubProgress, CsvReader
 from ....patcher import getPatchesPath
 from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord, ModReader
@@ -32,6 +32,7 @@ from ....bass import null4
 # from  bush import  genericAVEffects
 from .... import bush, bosh, load_order
 from ....cint import MGEFCode, FormID
+from ....exception import StateError
 from ....patcher.base import Patcher, CBash_Patcher
 from ....patcher.patchers.base import SpecialPatcher, ListPatcher, \
     CBash_ListPatcher

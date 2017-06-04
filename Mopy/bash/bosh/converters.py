@@ -30,8 +30,8 @@ import sys
 from ..archives import defaultExt, readExts, compressionSettings, \
     compressCommand, extractCommand
 from .. import bolt, archives, bass
-from ..bolt import DataDict, PickleDict, GPath, Path, StateError, sio, \
-    SubProgress, ArgumentError
+from ..bolt import DataDict, PickleDict, GPath, Path, sio, SubProgress
+from ..exception import ArgumentError, StateError
 
 converters_dir = None
 installers_dir = None
@@ -359,7 +359,7 @@ class InstallerConverter(object):
         #--Move files around and pack them
         try:
             self._arrangeFiles(SubProgress(progress, lastStep, 0.7))
-        except bolt.StateError:
+        except StateError:
             raise
         else:
             self.pack(bass.getTempDir(), destArchive, installers_dir,

@@ -34,9 +34,10 @@ import re
 # Internal
 from ... import bush # for defaultEyes (?)
 from ... import bosh # for modInfos
-from ...bolt import SubProgress, BoltError, GPath, deprint
+from ...bolt import SubProgress, GPath, deprint
 from ...brec import MreRecord, MelObject, strFid
 from ...cint import ValidateDict, FormID
+from ...exception import BoltError
 from ...patcher.base import AMultiTweakItem, AListPatcher
 from .base import MultiTweakItem, CBash_MultiTweakItem, SpecialPatcher, \
     ListPatcher, CBash_ListPatcher

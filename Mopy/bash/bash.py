@@ -36,6 +36,7 @@ import platform
 import traceback
 
 import bass
+import exception
 # NO LOCAL IMPORTS HERE !
 basher = balt = barb = None
 is_standalone = hasattr(sys, 'frozen')
@@ -77,7 +78,7 @@ def _new_bash_version_prompt_backup():
         u'Do you want to create a backup of your Bash settings before they '
         u'are overwritten?'))
 
-def cmdBackup(bolt, opts):
+def cmdBackup(opts):
     # backup settings if app version has changed or on user request
     global basher, balt, barb
     if not basher: import basher, balt, barb
@@ -89,7 +90,7 @@ def cmdBackup(bolt, opts):
                                      opts.backup_images)
         try:
             backup.Apply()
-        except bolt.StateError:
+        except exception.StateError:
             if barb.SameAppVersion():
                 backup.WarnFailed()
             elif balt.askYes(frame, u'\n'.join([
@@ -98,7 +99,7 @@ def cmdBackup(bolt, opts):
             _(u'Do you want to quit Wrye Bash now?')]),
                              title=_(u'Unable to create backup!')):
                 return False # Quit
-        except barb.BackupCancelled:
+        except exception.BackupCancelled:
             if not barb.SameAppVersion() and balt.askYes(frame, u'\n'.join([
             _(u'You did not create a backup of the Bash settings.'),
             _(u'If you continue, your current settings may be overwritten.'),
@@ -118,7 +119,7 @@ def cmdRestore(opts):
             backup = barb.RestoreSettings(balt.Link.Frame, path, should_quit,
                                           opts.backup_images)
             backup.Apply()
-        except barb.BackupCancelled:
+        except exception.BackupCancelled:
             pass
     return should_quit
 
@@ -373,7 +374,8 @@ def main(opts):
         import basher
         import barb
         import balt
-    except (bolt.PermissionError, bolt.BoltError, ImportError) as e:
+    except (exception.PermissionError,
+            exception.BoltError, ImportError) as e:
         _showErrorInGui(e, _wx=wx, bolt=bolt)
         return
 
@@ -400,7 +402,7 @@ def main(opts):
 
     # process backup/restore options
     # quit if either is true, but only after calling both
-    should_quit = cmdBackup(bolt, opts)
+    should_quit = cmdBackup(opts)
     should_quit = cmdRestore(opts) or should_quit
     if should_quit: return
 

@@ -41,32 +41,13 @@ from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
 from ..bolt import deprint
+from ..exception import BSAError, BSADecodingError, BSAFlagError, \
+    BSANotImplemented
 
 _bsa_encoding = 'cp1252' # rumor has it that's the files/folders names encoding
 path_sep = u'\\'
 
 # Exceptions ------------------------------------------------------------------
-class BSAError(Exception): pass
-
-class BSANotImplemented(BSAError): pass
-
-class BSAVersionError(BSAError):
-
-    def __init__(self, version, expected_version):
-        super(BSAVersionError, self).__init__(
-            u'Unexpected version %r - expected %r' % (
-                version, expected_version))
-
-class BSAFlagError(BSAError):
-
-    def __init__(self, msg, flag):
-        super(BSAFlagError, self).__init__(msg +  u' (flag %d) unset' % flag)
-
-class BSADecodingError(BSAError):
-
-    def __init__(self, string):
-        super(BSADecodingError, self).__init__(
-            u'Undecodable string %r' % string)
 
 def _decode_path(string_path):
     try:

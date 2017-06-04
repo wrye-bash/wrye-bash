@@ -35,7 +35,9 @@ from .. import bass, bosh, bolt, balt, env, load_order
 from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
     RevertToSavedButton, RevertButton, hspace, vspace, Resources
-from ..bolt import SubProgress, GPath, CancelError, BoltError, SkipError, Path
+from ..bolt import SubProgress, GPath, Path
+from ..exception import BoltError, CancelError, FileEditError, \
+    PluginsFullError, SkipError
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 from ..patcher.base import AListPatcher
@@ -255,14 +257,14 @@ class PatchDialog(balt.Dialog):
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
-                except bosh.PluginsFullError:
+                except PluginsFullError:
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
                                    % patch_name.s)
             bosh.modInfos.refreshFile(patch_name)
             bosh.modInfos[patch_name].calculate_crc(recalculate=True) # yak fix refreshFile
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
-        except bolt.FileEditError as error:
+        except FileEditError as error:
             balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
         except CancelError:

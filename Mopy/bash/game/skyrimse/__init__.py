@@ -42,9 +42,9 @@ from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, MreInfo, \
     MreLctn, MreTact, MreBptd, MreDobj, MreLscr, MreDlvw, MreTree, MreWatr, \
     MreFlor, MreEyes, MreWeap, MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, \
     MreLcrt, MreStat, MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, \
-    MreIpct, MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MreVoli, MreLens, \
-    ModError
+    MreIpct, MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MreVoli, MreLens
 from ...brec import MreGlob, BaseRecordHeader
+from ...exception import ModError
 # Common with Skyrim
 from ..skyrim import patchURL, patchTip, allow_reset_bsa_timestamps, \
     bsa_extension, using_txt_file, cs, se, sd, sp, se_sd, ge, laa, dontSkip, \

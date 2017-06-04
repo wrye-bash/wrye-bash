@@ -29,8 +29,9 @@ import random
 import re
 # Internal
 from ... import bass # for dirs
-from ...bolt import AbstractError, GPath
+from ...bolt import GPath
 from ...cint import FormID
+from ...exception import AbstractError
 from ...patcher.base import AMultiTweakItem
 from .base import MultiTweakItem, CBash_MultiTweakItem, MultiTweaker, \
     CBash_MultiTweaker

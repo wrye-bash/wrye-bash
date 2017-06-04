@@ -46,6 +46,7 @@ import balt
 import bass
 import bolt
 import bush
+import exception
 # Game instance providing load order operations API
 import games
 game_handle = None # type: games.Game
@@ -78,7 +79,7 @@ class LoadOrder(object):
 
     def __init__(self, loadOrder=__empty, active=__none):
         if set(active) - set(loadOrder):
-            raise bolt.BoltError(
+            raise exception.BoltError(
                 u'Active mods with no load order: ' + u', '.join(
                     [x.s for x in (set(active) - set(loadOrder))]))
         self._loadOrder = tuple(loadOrder)

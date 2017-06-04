@@ -51,11 +51,12 @@ from .. import bass, bolt, balt, bush, env, load_order, archives
 from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs, reModExt
-from ..bolt import BoltError, AbstractError, ArgumentError, StateError, \
-    PermissionError, FileError, CancelError, SkipError
 from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode
-from ..brec import MreRecord, ModReader, ModError
+from ..brec import MreRecord, ModReader
 from ..cint import CBashApi
+from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
+    CancelError, FileError, ModError, NonExistentDriveError, PermissionError, \
+    PluginsFullError, SaveFileError, SaveHeaderError, SkipError, StateError
 from ..parsers import ModFile
 
 #--Settings
@@ -329,12 +330,6 @@ class AFile(object):
 
     def __repr__(self): return self.__class__.__name__ + u"<" + repr(
         self.abs_path.stail) + u">"
-
-#------------------------------------------------------------------------------
-class PluginsFullError(BoltError):
-    """Usage Error: Attempt to add a mod to plugins when plugins is full."""
-    def __init__(self,message=_(u'Load list is full.')):
-        BoltError.__init__(self,message)
 
 #------------------------------------------------------------------------------
 class MasterInfo:
@@ -1086,8 +1081,8 @@ class INIInfo(IniFile):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-from .save_files import get_save_header_type, SaveHeaderError
-from ._saves import PluggyFile, ObseFile, SaveFileError
+from .save_files import get_save_header_type
+from ._saves import PluggyFile, ObseFile
 class SaveInfo(FileInfo):
     def getFileInfos(self): return saveInfos
 
@@ -1153,7 +1148,6 @@ class SaveInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 from . import bsa_files
-from .bsa_files import BSAError
 
 try:
     _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
@@ -2470,7 +2464,7 @@ class ModInfos(FileInfos):
         for f in set(filenames):
             if f.s in bush.game.masterFiles:
                 if kwargs.pop('raise_on_master_deletion', True):
-                    raise bolt.BoltError(
+                    raise BoltError(
                         u"Cannot delete the game's master file(s).")
                 else:
                     filenames.remove(f)
@@ -3093,7 +3087,7 @@ def initDirs(bashIni, personal, localAppData):
             'bainData', 'bsaCache')
     try:
         env.shellMakeDirs([dirs[key] for key in keys])
-    except env.NonExistentDriveError as e:
+    except NonExistentDriveError as e:
         # NonExistentDriveError is thrown by shellMakeDirs if any of the
         # directories cannot be created due to residing on a non-existing
         # drive. Find which keys are causing the errors

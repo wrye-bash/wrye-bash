@@ -31,10 +31,11 @@ from ..balt import readme_url
 from .. import load_order
 from .. import bass
 from ..parsers import LoadFactory, ModFile, MasterSet
-from ..brec import MreRecord, ModError
-from ..bolt import GPath, BoltError, CancelError, SubProgress, deprint, \
-    Progress, StateError, AbstractError
+from ..brec import MreRecord
+from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
+from ..exception import AbstractError, BoltError, CancelError, ModError, \
+    StateError
 from ..record_groups import MobObjects
 
 # the currently executing patch set in _Mod_Patch_Update before showing the

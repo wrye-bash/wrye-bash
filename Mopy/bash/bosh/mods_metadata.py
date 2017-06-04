@@ -28,9 +28,10 @@ import struct
 import sys
 
 from .. import balt, bolt, bush, bass, load_order
-from ..bolt import GPath, BoltError, deprint, sio
-from ..brec import ModReader, MreRecord, ModError
+from ..bolt import GPath, deprint, sio
+from ..brec import ModReader, MreRecord
 from ..cint import ObBaseRecord, ObCollection
+from ..exception import BoltError, CancelError, ModError
 from ..patcher import getPatchesPath, getPatchesList
 
 try:
@@ -280,7 +281,7 @@ class ConfigHelpers:
                             % parsing, traceback=True)
         #--No masterlist or an error occurred while reading it, use the taglist
         if not self.tagList.exists():
-            raise bolt.BoltError(u'Mopy\\Bash Patches\\' + bush.game.fsName +
+            raise BoltError(u'Mopy\\Bash Patches\\' + bush.game.fsName +
                 u'\\taglist.yaml could not be found.  Please ensure Wrye '
                 u'Bash is installed correctly.')
         if self.tagList.mtime == self.tagListModTime: return
@@ -407,7 +408,7 @@ class ConfigHelpers:
                                     cleanMsg.append(u'ITM(%i)' % len(itms))
                                 cleanMsg = u', '.join(cleanMsg)
                                 shouldClean[mod.name] = cleanMsg
-                except bolt.CancelError:
+                except CancelError:
                     pass
             # below is always empty with current implementation
             shouldCleanMaybe = [(x, y[1]) for x, y in dirty_msgs if
@@ -852,7 +853,7 @@ class ModCleaner:
                                                 udr[udrFid].parentParentEid = eid
                                     else:
                                         insRead(size)
-                    except bolt.CancelError:
+                    except CancelError:
                         raise
                     except:
                         deprint(u'Error scanning %s, file read pos: %i:\n' % (modInfo.name.s,ins.tell()),traceback=True)

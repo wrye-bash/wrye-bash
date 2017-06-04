@@ -33,15 +33,10 @@ import bolt
 import bosh
 import bush
 from . import images_list
-from bolt import BoltError, AbstractError, GPath, deprint
+from bolt import GPath, deprint
 from balt import askSave, askOpen, askWarning, showError, showWarning, \
     showInfo, Link, BusyCursor
-
-#------------------------------------------------------------------------------
-class BackupCancelled(BoltError):
-# user cancelled operation
-    def __init__(self,message=u'Cancelled'):
-        BoltError.__init__(self,message)
+from exception import AbstractError, BackupCancelled
 
 #------------------------------------------------------------------------------
 class BaseBackupSettings:

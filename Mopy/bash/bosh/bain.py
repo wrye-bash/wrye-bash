@@ -41,7 +41,9 @@ from .. import bush, bass, bolt, env, load_order, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     countFilesInArchive, extractCommand, extract7z, compressionSettings
 from ..bolt import Path, deprint, formatInteger, round_size, GPath, \
-    AbstractError, sio, ArgumentError, SubProgress, StateError
+    sio, SubProgress
+from ..exception import AbstractError, ArgumentError, BSAError, \
+    CancelError, InstallerArchiveError, SkipError, StateError
 
 os_sep = unicode(os.path.sep)
 
@@ -1032,9 +1034,6 @@ class InstallerMarker(Installer):
 
     def refreshBasic(self, progress, recalculate_project_crc=True):
         return {}
-
-#------------------------------------------------------------------------------
-class InstallerArchiveError(bolt.BoltError): pass
 
 #------------------------------------------------------------------------------
 class InstallerArchive(Installer):
@@ -2311,7 +2310,7 @@ class InstallersData(DataStore):
                 refresh_ui[0] = True
                 modInfos.delete(removedPlugins, doRefresh=False, recycle=False,
                                 raise_on_master_deletion=False)
-        except (bolt.CancelError, bolt.SkipError): ex = sys.exc_info()
+        except (CancelError, SkipError): ex = sys.exc_info()
         except:
             ex = sys.exc_info()
             raise
@@ -2502,7 +2501,7 @@ class InstallersData(DataStore):
         bsaConflicts = []
         # Calculate bsa conflicts
         if showBSA:
-            from . import BSAError, BSAInfo, bsaInfos # yak! rework singletons
+            from . import BSAInfo, bsaInfos # yak! rework singletons
             def _get_active_bsas(data_sizeCrc):
                 return (v for k, v in bsaInfos.iteritems() if
                         k in data_sizeCrc and v.is_bsa_active())

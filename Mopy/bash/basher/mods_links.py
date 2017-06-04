@@ -30,7 +30,8 @@ from .. import bosh, balt, bass, load_order
 from .. import bush # for Mods_LoadListData, Mods_LoadList
 from ..balt import ItemLink, CheckLink, BoolLink, EnabledLink, ChoiceLink, \
     SeparatorLink, Link
-from ..bolt import GPath, BoltError
+from ..bolt import GPath
+from .. import exception
 
 __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
@@ -101,11 +102,11 @@ class Mods_LoadList(ChoiceLink):
                 """Select all mods."""
                 try:
                     bosh.modInfos.lo_activate_all()
-                except bosh.PluginsFullError:
+                except exception.PluginsFullError:
                     self._showError(
                         _(u"Mod list is full, so some mods were skipped"),
                         _(u'Select All'))
-                except BoltError as e:
+                except exception.BoltError as e:
                     self._showError(u'%s' % e, _(u'Select All'))
                 self._refresh()
         class _None(__Activate):

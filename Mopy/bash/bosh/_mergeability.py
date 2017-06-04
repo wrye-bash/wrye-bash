@@ -25,8 +25,8 @@
 # FIXME(ut): methods return True or a list resulting in if result == True tests and complicated logic
 from .. import bass, bush
 from ..bolt import GPath
-from ..brec import ModError
 from ..cint import ObCollection
+from ..exception import ModError
 from ..load_order import cached_is_active
 from ..parsers import ModFile, LoadFactory
 

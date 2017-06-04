@@ -27,11 +27,11 @@
 from operator import itemgetter
 import struct
 # Wrye Bash imports
-from bolt import AbstractError, ArgumentError
-from brec import ModError, ModReader
+from brec import ModReader
 from bolt import sio
 import bush # for groupTypes
 import bosh # for modInfos
+from exception import AbstractError, ArgumentError, ModError
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not

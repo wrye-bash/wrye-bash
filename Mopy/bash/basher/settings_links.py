@@ -28,7 +28,7 @@ import wx
 from ..balt import ItemLink, vSizer, hSizer, hspacer, Button, AppendableLink, \
     RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
     StaticText, tooltip, Link, staticBitmap, hspace
-from .. import barb, bush, balt, bass, bolt, env
+from .. import barb, bush, balt, bass, bolt, env, exception
 from ..bolt import deprint, GPath
 from . import BashFrame, BashStatusBar
 from .dialogs import ColorDialog
@@ -80,10 +80,10 @@ class Settings_BackupSettings(ItemLink):
             backup = barb.BackupSettings(Link.Frame,backup_images=images)
         try: # no BusyCursor() here, the prompt in Apply will invalidate it
             backup.Apply()
-        except bolt.StateError:
+        except exception.StateError:
             deprint(u'Backup settings failed', traceback=True)
             backup.WarnFailed()
-        except barb.BackupCancelled:
+        except exception.BackupCancelled:
             pass
 
 #------------------------------------------------------------------------------
@@ -107,10 +107,10 @@ class Settings_RestoreSettings(ItemLink):
                 _(u'Do you want to restore saved images as well as settings?'),
                 _(u'Restore Settings'))
             with balt.BusyCursor(): backup.Apply()
-        except bolt.StateError:
+        except exception.StateError:
             deprint(u'Restore settings failed:', traceback=True)
             if backup: backup.WarnFailed()
-        except barb.BackupCancelled:
+        except exception.BackupCancelled:
             pass
 
 #------------------------------------------------------------------------------

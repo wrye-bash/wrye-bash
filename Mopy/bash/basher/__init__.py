@@ -68,10 +68,12 @@ import wx
 #--Localization
 #..Handled by bosh, so import that.
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import BoltError, CancelError, SkipError, GPath, SubProgress, \
-    deprint, AbstractError, formatInteger, formatDate, round_size
+from ..bolt import GPath, SubProgress, deprint, formatInteger, formatDate, \
+    round_size
 from ..bosh import omods
 from ..cint import CBashApi
+from ..exception import AbstractError, BoltError, CancelError, FileError, \
+    SkipError
 
 startupinfo = bolt.startupinfo
 
@@ -806,7 +808,7 @@ class ModList(_ModsUIList):
         #--Save and Refresh
         try:
             bosh.modInfos.cached_lo_save_all()
-        except bolt.BoltError as e:
+        except BoltError as e:
             balt.showError(self, u'%s' % e)
         self.RefreshUI(refreshSaves=True)
 
@@ -1029,7 +1031,7 @@ class ModList(_ModsUIList):
                     touched |= set(activated)
                     activated = [x for x in activated if x != inact]
                     changes[self.__activated_key][inact] = activated
-            except bolt.BoltError as e:
+            except BoltError as e:
                 balt.showError(self, u'%s' % e)
                 break
         #--Refresh
@@ -1192,7 +1194,7 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         try: # use self.file_info.name, as name may have been updated
             self.panel_uilist.data_store.refreshFile(self.file_info.name)
             return self.file_info.name
-        except bolt.FileError as e:
+        except FileError as e:
             deprint(u'Failed to edit details for %s' % self.displayed_item,
                     traceback=True)
             balt.showError(self,

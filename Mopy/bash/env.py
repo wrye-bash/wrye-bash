@@ -29,8 +29,10 @@ import re as _re
 import stat
 import struct
 import shutil as _shutil
-from bolt import GPath, BoltError, deprint, CancelError, SkipError, Path, \
-    decode
+from bolt import GPath, deprint, Path, decode
+from exception import BoltError, CancelError, SkipError, AccessDeniedError, \
+    DirectoryFileCollisionError, InvalidPathsError, FileOperationError, \
+    NonExistentDriveError
 
 try:
     import _winreg as winreg
@@ -414,36 +416,6 @@ def _linux_get_file_version_info(filename):
             return _find_version(f, version_pos, 0)[1]
         return None
 
-# Shell (OS) File Operations --------------------------------------------------
-#------------------------------------------------------------------------------
-class FileOperationError(OSError):
-    def __init__(self, errorCode):
-        self.errno = errorCode
-        Exception.__init__(self, u'FileOperationError: %i' % errorCode)
-
-class AccessDeniedError(FileOperationError):
-    def __init__(self):
-        self.errno = 5
-        Exception.__init__(self, u'FileOperationError: Access Denied')
-
-class _InvalidPathsError(FileOperationError):
-    def __init__(self, source, target):
-        self.errno = 124
-        Exception.__init__(self, u'FileOperationError: Invalid paths:'
-                u'\nsource: %s\ntarget: %s' % (source, target))
-
-class _DirectoryFileCollisionError(FileOperationError):
-    def __init__(self, source, dest):
-        self.errno = -1
-        Exception.__init__(self,
-            u'FileOperationError: collision: moving %s to %s' %(source, dest))
-
-class NonExistentDriveError(FileOperationError):
-    def __init__(self, failed_paths):
-        self.errno = -1
-        self.failed_paths = failed_paths
-        Exception.__init__(self,u'FileOperationError: non existent drive')
-
 # NB: AccessDeniedError is not 5 but 120 as seen in:
 # https://msdn.microsoft.com/en-us/library/windows/desktop/bb762164%28v=vs.85%29.aspx
 FileOperationErrorMap = {120: AccessDeniedError,
@@ -472,7 +444,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
             dest_dir = fileTo.join(fileFrom.tail)
             if dest_dir.exists():
                 if not dest_dir.isdir():
-                    raise _DirectoryFileCollisionError(fileFrom, dest_dir)
+                    raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
                 for content in _os.listdir(fileFrom.s):
                     __copyOrMove(operation, [fileFrom.join(content)],
@@ -545,7 +517,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             return dict(mapping)
         else:
             if result == 124:
-                raise _InvalidPathsError(source.replace(u'\x00', u'\n'),
+                raise InvalidPathsError(source.replace(u'\x00', u'\n'),
                                          target.replace(u'\x00', u'\n'))
             raise FileOperationErrorMap.get(result, FileOperationError(result))
     else: # Use custom dialogs and such

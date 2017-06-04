@@ -68,7 +68,7 @@ class MreMato(MelRecord):
                 return
             elif size == 48: # old skyrim record
                 raise ModSizeError(record.inName, readId, 52, size, True,
-                                   oldSkyrim=True)
+                                   old_skyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,52,size,True)
 
@@ -100,7 +100,7 @@ class MreMovt(MelRecord):
                 return
             elif size == 40:
                 raise ModSizeError(record.inName, readId, 44, size, True,
-                                   oldSkyrim=True)
+                                   old_skyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,44,size,True)
 
@@ -184,7 +184,7 @@ class MreStat(MelRecord):
                 return
             elif size == 8: # old skyrim record
                 raise ModSizeError(record.inName, readId, 12, size, True,
-                                   oldSkyrim=True)
+                                   old_skyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,12,size,True)
 
@@ -217,7 +217,7 @@ class MreWatr(MelRecord):
                 return
             elif size == 228: # old skyrim record
                 raise ModSizeError(record.inName, readId, 232, size, True,
-                                   oldSkyrim=True)
+                                   old_skyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,232,size,True)
 
@@ -360,7 +360,7 @@ class MreWeap(MelRecord):
                 return
             elif size == 16: # old skyrim record
                 raise ModSizeError(record.inName, readId, 24, size, True,
-                                   oldSkyrim=True)
+                                   old_skyrim=True)
             else:
                 raise ModSizeError(record.inName,readId,24,size,True)
 

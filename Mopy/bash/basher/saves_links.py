@@ -34,9 +34,9 @@ from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
-from ..bolt import GPath, ArgumentError, SubProgress, BoltError, formatInteger, \
-    CancelError
+from ..bolt import GPath, SubProgress, formatInteger
 from ..bosh import faces, _saves
+from ..exception import ArgumentError, BoltError, CancelError, ModError
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
            'Save_LoadMasters', 'Save_DiffMasters', 'Save_Stats',
@@ -832,7 +832,7 @@ class Save_UpdateNPCLevels(EnabledLink):
                 modFile = parsers.ModFile(modInfo, loadFactory)
                 try:
                     modFile.load(True)
-                except bosh.ModError as x:
+                except ModError as x:
                     modErrors.append(u'%s'%x)
                     continue
                 if 'NPC_' not in modFile.tops: continue
