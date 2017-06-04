@@ -433,6 +433,9 @@ def _main(opts, wx_locale):
                                  title=_(u'Unable to create backup!')):
                     return  # Quit
     frame = app.Init() # Link.Frame is set here !
+    # TODO remove this, this is only for debugging //nycz
+    # import wx.lib.inspection as wxinspect
+    # wxinspect.InspectionTool().Show()
     frame.ensureDisplayed()
     frame.bind_refresh()
     app.MainLoop()

@@ -412,6 +412,7 @@ def GPath(str_or_uni):
     :rtype: Path"""
     if isinstance(str_or_uni, Path) or str_or_uni is None: return str_or_uni
     if not str_or_uni: return Path(u'') # needed, os.path.normpath(u'') = u'.'!
+    # elif isinstance(str_or_uni,list): str_or_uni = os.path.normpath(os.path.join(*str_or_uni))
     if str_or_uni in _gpaths: return _gpaths[str_or_uni]
     return _gpaths.setdefault(str_or_uni, Path(os.path.normpath(str_or_uni)))
 
@@ -962,6 +963,7 @@ class Path(object):
         return self._cs <= (os.path.normpath(dec).lower() if dec else dec)
 
 def clearReadOnly(dirPath):
+    # nycz TODO: windows blarg
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
     cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath
     subprocess.call(cmd, startupinfo=startupinfo)

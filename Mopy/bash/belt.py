@@ -1314,9 +1314,11 @@ class WryeParser(ScriptParser.Parser):
         for i in images:
             # Try looking inside the package first, then look if it's using one
             # of the images packaged with Wrye Bash (from Mopy/bash/images)
-            wiz_img_path = imageJoin(i)
+            # FIXME(nycz): ugly garbage hack
+            i = i.split('\\') if os.name == 'posix' else [i]
+            wiz_img_path = imageJoin(*i)
             if not wiz_img_path.isfile():
-                std_img_path = bass.dirs[u'images'].join(i)
+                std_img_path = bass.dirs[u'images'].join(*i)
                 if std_img_path.isfile():
                     wiz_img_path = std_img_path
             image_paths.append(wiz_img_path)
