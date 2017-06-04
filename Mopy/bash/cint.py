@@ -151,6 +151,8 @@ def PositiveIsErrorCheck(result, function, cArguments, *args):
     return result
 
 _CBash = None
+if os.name == u'posix':
+    raise ImportError(u"Don't import DLLs on Linux")
 # Have to hardcode this relative to the cwd, because passing any non-unicode
 # characters to CDLL tries to encode them as ASCII and crashes
 # PY3: fixed in py3, remove this on upgrade

@@ -337,6 +337,7 @@ def GPath(name):
     if name is None: return None
     elif isinstance(name,Path): norm = name._s
     elif not name: norm = name # empty string - bin this if ?
+    # elif isinstance(name,list): norm = os.path.normpath(os.path.join(*name))
     elif isinstance(name,unicode): norm = os.path.normpath(name)
     else: norm = os.path.normpath(decode(name))
     path = _gpaths.get(norm)
@@ -884,6 +885,7 @@ class Path(object):
             return self._cs <= Path.__getCase(other)
 
 def clearReadOnly(dirPath):
+    # nycz TODO: windows blarg
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
     cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath.s
     subprocess.call(cmd, startupinfo=startupinfo)

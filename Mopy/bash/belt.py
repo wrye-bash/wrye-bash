@@ -1363,9 +1363,12 @@ class WryeParser(ScriptParser.Parser):
         else:
             imageJoin = bass.dirs['installers'].join(self.path).join
         for i in images:
-            path = imageJoin(i)
-            if not path.exists() and bass.dirs['mopy'].join(i).exists():
-                path = bass.dirs['mopy'].join(i)
+            # FIXME(nycz): ugly garbage hack
+            i = i.split('\\') if os.name == 'posix' else [i]
+            path = imageJoin(*i)
+            if not path.exists() and bass.dirs['mopy'].join(*i).exists():
+                path = bass.dirs['mopy'].join(*i)
+            print path
             image_paths.append(path)
         self.page = PageSelect(self._wiz_parent, bMany, _(u'Installer Wizard'),
                                main_desc, titles.keys(), descs, image_paths,
