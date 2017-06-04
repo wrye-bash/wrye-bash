@@ -149,10 +149,6 @@ def parse():
                         dest='uac',
                         help='always start in admin mode if UAC protection is '
                              'detected.')
-    parser.add_argument('--bashmon',
-                        action='store_true',
-                        help='bashmon is a monitor program which handles '
-                             'requests from Breeze582000\'s OBSE Extension')
     parser.add_argument('--genHtml',
                         default=None,
                         help=argparse.SUPPRESS)

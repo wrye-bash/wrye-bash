@@ -177,10 +177,6 @@ def InitStatusBar():
             BashStatusBar.buttons.append(
                 App_Button((pth, ()), icon, description, canHide=False))
     #--Final couple
-    BashStatusBar.buttons.append(
-        App_Button((bass.dirs['mopy'].join(u'Wrye Bash Launcher.pyw'), u'-d',
-                    u'--bashmon'), imageList(u'bashmon%s.png'),
-                   _(u"Launch BashMon"), uid=u'Bashmon'))
     BashStatusBar.buttons.append(App_DocBrowser(uid=u'DocBrowser'))
     BashStatusBar.buttons.append(App_ModChecker(uid=u'ModChecker'))
     BashStatusBar.buttons.append(App_Settings(uid=u'Settings',canHide=False))
