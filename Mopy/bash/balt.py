@@ -2284,6 +2284,7 @@ class UIList(wx.Panel):
         return new_name, count
 
     def new_name(self, new_name):
+        new_name = GPath(new_name)
         base_name, count = new_name, 0
         while new_name in self.data_store:
             new_name, count = self._new_name(base_name, count)

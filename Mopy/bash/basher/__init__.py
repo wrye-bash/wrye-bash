@@ -2089,15 +2089,14 @@ class InstallersList(balt.UIList):
         #--TODO: add mouse  mouse tips
         self.mouseTexts[item] = mouse_text
 
-    __renaming_type = None # type of items currently being renamed
     def OnBeginEditLabel(self,event):
         """Start renaming installers"""
         to_rename = self.GetSelected()
         #--Only rename multiple items of the same type
-        self.__renaming_type = type(self.data_store[to_rename[0]])
+        renaming_type = type(self.data_store[to_rename[0]])
         last_marker = GPath(u'==Last==')
         for item in to_rename:
-            if not isinstance(self.data_store[item], self.__renaming_type):
+            if not isinstance(self.data_store[item], renaming_type):
                 balt.showError(self, _(
                     u"Bash can't rename mixed installers types"))
                 event.Veto()
@@ -2108,16 +2107,18 @@ class InstallersList(balt.UIList):
                 return
         self.edit_control.Bind(wx.EVT_CHAR, self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
-        if self.__renaming_type is bosh.InstallerMarker:
+        if renaming_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
             self.edit_control.SetSelection(2, to)
         #--Archives, change the selection to not include the extension
-        elif self.__renaming_type is bosh.InstallerArchive:
+        elif renaming_type is bosh.InstallerArchive:
             super(InstallersList, self).OnBeginEditLabel(event)
 
     def _OnEditLabelChar(self, event):
         """For pressing F2 on the edit box for renaming"""
         if event.GetKeyCode() == wx.WXK_F2:
+            to_rename = self.GetSelected()
+            renaming_type = type(self.data_store[to_rename[0]])
             editbox = self.edit_control
             # (start, stop), if start==stop there is no selection
             selection_span = editbox.GetSelection()
@@ -2131,9 +2132,9 @@ class InstallersList(balt.UIList):
                 lenNextLower = lenWithExt
             else:
                 lenNextLower = len(textNextLower.s)
-            if self.__renaming_type is bosh.InstallerArchive:
+            if renaming_type is bosh.InstallerArchive:
                 selection_span = (0, lenNextLower)
-            elif self.__renaming_type is bosh.InstallerMarker:
+            elif renaming_type is bosh.InstallerMarker:
                 selection_span = (2, lenWithExt - 2)
             else:
                 selection_span = (0, lenWithExt)
@@ -2146,10 +2147,11 @@ class InstallersList(balt.UIList):
     def OnLabelEdited(self, event):
         """Renamed some installers"""
         selected = self.GetSelected()
+        renaming_type = type(self.data_store[selected[0]])
         installables = self.data_store.filterInstallables(selected)
         validate = partial(self.validate_filename, event,
                            is_filename=bool(installables))
-        if self.__renaming_type is bosh.InstallerArchive:
+        if renaming_type is bosh.InstallerArchive:
             root, newName, _numStr = validate(ext=self.__ext_group)
         else:
             root, newName, _numStr = validate()
@@ -2185,7 +2187,10 @@ class InstallersList(balt.UIList):
             event.Veto()
 
     def new_name(self, new_name):
-        if self.__renaming_type is bosh.InstallerMarker:
+        new_name = GPath(new_name)
+        to_rename = self.GetSelected()
+        renaming_type = to_rename and type(self.data_store[to_rename[0]])
+        if renaming_type is bosh.InstallerMarker:
             new_name, count = GPath(u'==' + new_name.s.strip(u'=') + u'=='), 0
             while new_name in self.data_store:
                 count += 1

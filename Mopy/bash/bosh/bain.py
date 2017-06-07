@@ -1449,7 +1449,7 @@ class InstallerProject(Installer):
     def createFromData(projectPath,files,progress=None):
         if not files: return
         progress = progress if progress else bolt.Progress()
-        projectPath = GPath(projectPath)
+        projectPath = bass.dirs['installers'].join(projectPath)
         progress.setFull(len(files))
         srcJoin = bass.dirs['mods'].join
         dstJoin = projectPath.join

@@ -84,9 +84,11 @@ class Installers_MonitorInstall(Installers_Link):
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
         # Refresh Data
-        bosh.bsaInfos.refresh()
-        with load_order.Unlock(): bosh.modInfos.refresh()
-        bosh.iniInfos.refresh()
+        bosh.bsaInfos.refresh() # TODO: add bsas to BAIN refresh
+        with load_order.Unlock():
+            mods_changed = bosh.modInfos.refresh()
+        inis_changed = bosh.iniInfos.refresh()
+        ui_refresh = map(bool, [mods_changed, inis_changed])
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Determine changes
         curData = self.idata.data_sizeCrcDate
@@ -105,15 +107,9 @@ class Installers_MonitorInstall(Installers_Link):
             self._showOk(_(u'No changes were detected in the Data directory.'),
                          _(u'External Installation'))
             return
-
-        # Change to list for sorting
-        newFiles = list(newFiles)
-        newFiles.sort()
-        delFiles = list(delFiles)
-        changedFiles = list(changedFiles)
-        changedFiles.sort()
-        touchedFiles = list(touchedFiles)
-        touchedFiles.sort()
+        newFiles = sorted(newFiles)
+        changedFiles = sorted(changedFiles)
+        touchedFiles = sorted(touchedFiles)
         # Show results, select which files to include
         checklists = []
         newFilesKey = _(u'New Files: %(count)i') % {'count':len(newFiles)}
@@ -121,28 +117,27 @@ class Installers_MonitorInstall(Installers_Link):
         touchedFilesKey = _(u'Touched Files: %(count)i') % {'count':len(touchedFiles)}
         delFilesKey = _(u'Deleted Files')
         if newFiles:
-            group = [newFilesKey,
-                     _(u'These files are newly added to the Data directory.'),
-                     ]
+            group = [newFilesKey, _(
+                u'These files are newly added to the Data directory.'), ]
             group.extend(newFiles)
             checklists.append(group)
         if changedFiles:
-            group = [changedFilesKey,
-                     _(u'These files were modified.'),
-                     ]
+            group = [changedFilesKey, _(u'These files were modified.'), ]
             group.extend(changedFiles)
             checklists.append(group)
         if touchedFiles:
-            group = [touchedFilesKey,
-                     _(u'These files were not changed, but had their modification time altered.  Most likely, these files are included in the external installation, but were the same version as already existed.'),
-                     ]
+            group = [touchedFilesKey, _(
+                u'These files were not changed, but had their modification '
+                u'time altered.  Most likely, these files are included in '
+                u'the external installation, but were the same version as '
+                u'already existed.'), ]
             group.extend(touchedFiles)
             checklists.append(group)
         if delFiles:
-            group = [delFilesKey,
-                     _(u'These files were deleted.  BAIN does not have the capability to remove files when installing.'),
-                     ]
-            group.extend(delFiles)
+            group = [delFilesKey, _(
+                u'These files were deleted.  BAIN does not have the '
+                u'capability to remove files when installing.'), ]
+            group.extend(sorted(delFiles))
         with ListBoxes(self.window, _(u'External Installation'),
             _(u'The following changes were detected in the Data directory'),
             checklists, bOk=_(u'Create Project')) as dialog:
@@ -158,22 +153,14 @@ class Installers_MonitorInstall(Installers_Link):
                                     _(u'External Installation'))
         if not projectName:
             return
-        path = bass.dirs['installers'].join(projectName).root
-        if path.exists():
-            num = 2
-            tmpPath = path + u' (%i)' % num
-            while tmpPath.exists():
-                num += 1
-                tmpPath = path + u' (%i)' % num
-            path = tmpPath
+        path = self.window.new_name(projectName)
         # Copy Files
         with balt.Progress(_(u'Creating Project...'),u'\n'+u' '*60) as progress:
             bosh.InstallerProject.createFromData(path,include,progress)
         # Refresh Installers - so we can manipulate the InstallerProject item
+        self.iPanel.frameActivated = True # yak, refresh data directly here
         self.iPanel.ShowPanel()
         # Update the status of the installer (as installer last)
-        path = path.relpath(bass.dirs['installers'])
-        ui_refresh = [False, False]
         try:
             self.idata.bain_install([path], ui_refresh, last=True,
                                     override=False)
