@@ -26,6 +26,7 @@ Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
 import struct
+from itertools import starmap, repeat
 from operator import attrgetter
 
 from .. import bolt, bush
@@ -90,10 +91,8 @@ class SreNPC(object):
                  acbs.level, acbs.calcMin, acbs.calcMax) = unpack('=I3Hh2H',16)
                 acbs.flags = bush.game.MreNpc._flags(acbs.flags)
             if flags.factions:
-                self.factions = []
                 num, = unpack('H',2)
-                for count in range(num):
-                    self.factions.append(unpack('=Ib',5))
+                self.factions = list(starmap(unpack, repeat(('=Ib', 5), num)))
             if flags.spells:
                 num, = unpack('H',2)
                 self.spells = list(unpack('%dI' % num,4*num))
@@ -103,9 +102,7 @@ class SreNPC(object):
                 self.health, self.unused2 = unpack('H2s',4)
             if flags.modifiers:
                 num, = unpack('H',2)
-                self.modifiers = []
-                for count in range(num):
-                    self.modifiers.append(unpack('=Bf',5))
+                self.modifiers = list(starmap(unpack, repeat(('=Bf', 5), num)))
             if flags.full:
                 size, = unpack('B',1)
                 self.full = ins.read(size)
@@ -124,8 +121,8 @@ class SreNPC(object):
     def getData(self):
         """Returns self.data."""
         with sio() as out:
-            def pack(format,*args):
-                out.write(struct.pack(format,*args))
+            def pack(fmt, *args):
+                out.write(struct.pack(fmt, *args))
             #--Form
             if self.form is not None:
                 pack('I',self.form)
@@ -233,7 +230,8 @@ class PluggyFile:
 
     def mapMasters(self,masterMap):
         """Update plugin names according to masterMap."""
-        if not self.valid: raise FileError(self.name,"File not initialized.")
+        if not self.valid:
+            raise FileError(self.path.tail, u"File not initialized.")
         self._plugins = [(x, y, masterMap.get(z,z)) for x,y,z in self._plugins]
 
     def load(self):
@@ -245,22 +243,26 @@ class PluggyFile:
             crc32, = struct.unpack('=i',ins.read(4))
         crcNew = binascii.crc32(buff)
         if crc32 != crcNew:
-            raise FileError(self.name,u'CRC32 file check failed. File: %X, Calc: %X' % (crc32,crcNew))
+            raise FileError(self.path.tail,
+                            u'CRC32 file check failed. File: %X, Calc: %X' % (
+                                crc32, crcNew))
         #--Header
         with sio(buff) as ins:
             def unpack(format,size):
                 return struct.unpack(format,ins.read(size))
             if ins.read(10) != 'PluggySave':
-                raise FileError(self.name,u'File tag != "PluggySave"')
+                raise FileError(self.path.tail, u'File tag != "PluggySave"')
             self.version, = unpack('I',4)
             #--Reject versions earlier than 1.02
             if self.version < 0x01020000:
-                raise FileError(self.name,u'Unsupported file version: %X' % self.version)
+                raise FileError(self.path.tail,
+                                u'Unsupported file version: %X' % self.version)
             #--Plugins
             self._plugins = []
             type, = unpack('=B',1)
             if type != 0:
-                raise FileError(self.name,u'Expected plugins record, but got %d.' % type)
+                raise FileError(self.path.tail,
+                                u'Expected plugins record, but got %d.' % type)
             count, = unpack('=I',4)
             for x in range(count):
                 espid,index,modLen = unpack('=2BI',6)
@@ -275,7 +277,8 @@ class PluggyFile:
     def save(self,path=None,mtime=0):
         """Saves."""
         import binascii
-        if not self.valid: raise FileError(self.name,u"File not initialized.")
+        if not self.valid:
+            raise FileError(self.path.tail, u"File not initialized.")
         #--Buffer
         with sio() as buff:
             #--Save
@@ -465,7 +468,6 @@ class SaveFile:
     def load(self,progress=None):
         """Extract info from save file."""
         # TODO: This is Oblivion only code.  Needs to be refactored
-        # out into oblivion.py, and a version implemented for skyrim as well
         import array
         path = self.fileInfo.getPath()
         with bolt.StructFile(path.s,'rb') as ins:
@@ -848,74 +850,83 @@ class SaveFile:
                 else:
                     log(u'  %04X  %-4u  %08X' % (chunkTypeNum,chunkVersion,len(chunkBuff)))
                 with sio(chunkBuff) as ins:
-                    def unpack(format,size):
-                        return struct.unpack(format,ins.read(size))
+                    def unpack(fmt, size):
+                        return struct.unpack(fmt, ins.read(size))
                     if opcodeBase == 0x1400:  # OBSE
-                        if chunkType == 'RVTS':
-                            #--OBSE String
-                            modIndex,stringID,stringLength, = unpack('=BIH',7)
-                            stringData = decode(ins.read(stringLength))
-                            log(u'    '+_(u'Mod :')+u'  %02X (%s)' % (modIndex, self.masters[modIndex].s))
-                            log(u'    '+_(u'ID  :')+u'  %u' % stringID)
-                            log(u'    '+_(u'Data:')+u'  %s' % stringData)
-                        elif chunkType == 'RVRA':
-                            #--OBSE Array
-                            modIndex,arrayID,keyType,isPacked, = unpack('=BIBB',7)
-                            if modIndex == 255:
-                                log(_(u'    Mod :  %02X (Save File)') % modIndex)
-                            else:
-                                log(_(u'    Mod :  %02X (%s)') % (modIndex, self.masters[modIndex].s))
-                            log(_(u'    ID  :  %u') % arrayID)
-                            if keyType == 1: #Numeric
-                                if isPacked:
-                                    log(_(u'    Type:  Array'))
-                                else:
-                                    log(_(u'    Type:  Map'))
-                            elif keyType == 3:
-                                log(_(u'    Type:  StringMap'))
-                            else:
-                                log(_(u'    Type:  Unknown'))
-                            if chunkVersion >= 1:
-                                numRefs, = unpack('=I',4)
-                                if numRefs > 0:
-                                    log(u'    Refs:')
-                                    for x in range(numRefs):
-                                        refModID, = unpack('=B',1)
-                                        if refModID == 255:
-                                            log(_(u'      %02X (Save File)') % refModID)
-                                        else:
-                                            log(u'      %02X (%s)' % (refModID, self.masters[refModID].s))
-                            numElements, = unpack('=I',4)
-                            log(_(u'    Size:  %u') % numElements)
-                            for i in range(numElements):
-                                if keyType == 1:
-                                    key, = unpack('=d',8)
-                                    keyStr = u'%f' % key
-                                elif keyType == 3:
-                                    keyLen, = unpack('=H',2)
-                                    key = ins.read(keyLen)
-                                    keyStr = decode(key)
-                                else:
-                                    keyStr = 'BAD'
-                                dataType, = unpack('=B',1)
-                                if dataType == 1:
-                                    data, = unpack('=d',8)
-                                    dataStr = u'%f' % data
-                                elif dataType == 2:
-                                    data, = unpack('=I',4)
-                                    dataStr = u'%08X' % data
-                                elif dataType == 3:
-                                    dataLen, = unpack('=H',2)
-                                    data = ins.read(dataLen)
-                                    dataStr = decode(data)
-                                elif dataType == 4:
-                                    data, = unpack('=I',4)
-                                    dataStr = u'%u' % data
-                                log(u'    [%s]:%s = %s' % (keyStr,(u'BAD',u'NUM',u'REF',u'STR',u'ARR')[dataType],dataStr))
+                        self._handle_obse(chunkType, chunkVersion, ins, log,
+                                          unpack)
                     elif opcodeBase == 0x2330:    # Pluggy
                         self._handle_pluggy(chunkBuff, chunkTypeNum,
                                             chunkVersion, espMap, ins, log,
                                             unpack)
+
+    def _handle_obse(self, chunkType, chunkVersion, ins, log, unpack):
+        if chunkType == 'RVTS':
+            #--OBSE String
+            modIndex, stringID, stringLength, = unpack('=BIH', 7)
+            stringData = decode(ins.read(stringLength))
+            log(u'    ' + _(u'Mod :') + u'  %02X (%s)' % (
+                modIndex, self.masters[modIndex].s))
+            log(u'    ' + _(u'ID  :') + u'  %u' % stringID)
+            log(u'    ' + _(u'Data:') + u'  %s' % stringData)
+        elif chunkType == 'RVRA':
+            #--OBSE Array
+            modIndex, arrayID, keyType, isPacked, = unpack('=BIBB', 7)
+            if modIndex == 255:
+                log(_(u'    Mod :  %02X (Save File)') % modIndex)
+            else:
+                log(_(u'    Mod :  %02X (%s)') % (
+                    modIndex, self.masters[modIndex].s))
+            log(_(u'    ID  :  %u') % arrayID)
+            if keyType == 1: #Numeric
+                if isPacked:
+                    log(_(u'    Type:  Array'))
+                else:
+                    log(_(u'    Type:  Map'))
+            elif keyType == 3:
+                log(_(u'    Type:  StringMap'))
+            else:
+                log(_(u'    Type:  Unknown'))
+            if chunkVersion >= 1:
+                numRefs, = unpack('=I', 4)
+                if numRefs > 0:
+                    log(u'    Refs:')
+                    for x in range(numRefs):
+                        refModID, = unpack('=B', 1)
+                        if refModID == 255:
+                            log(_(u'      %02X (Save File)') % refModID)
+                        else:
+                            log(u'      %02X (%s)' % (
+                                refModID, self.masters[refModID].s))
+            numElements, = unpack('=I', 4)
+            log(_(u'    Size:  %u') % numElements)
+            for i in range(numElements):
+                if keyType == 1:
+                    key, = unpack('=d', 8)
+                    keyStr = u'%f' % key
+                elif keyType == 3:
+                    keyLen, = unpack('=H', 2)
+                    key = ins.read(keyLen)
+                    keyStr = decode(key)
+                else:
+                    keyStr = 'BAD'
+                dataType, = unpack('=B', 1)
+                if dataType == 1:
+                    data, = unpack('=d', 8)
+                    dataStr = u'%f' % data
+                elif dataType == 2:
+                    data, = unpack('=I', 4)
+                    dataStr = u'%08X' % data
+                elif dataType == 3:
+                    dataLen, = unpack('=H', 2)
+                    data = ins.read(dataLen)
+                    dataStr = decode(data)
+                elif dataType == 4:
+                    data, = unpack('=I', 4)
+                    dataStr = u'%u' % data
+                log(u'    [%s]:%s = %s' % (
+                    keyStr, (u'BAD', u'NUM', u'REF', u'STR', u'ARR')[dataType],
+                    dataStr))
 
     @staticmethod
     def _handle_pluggy(chunkBuff, chunkTypeNum, chunkVersion, espMap, ins, log,

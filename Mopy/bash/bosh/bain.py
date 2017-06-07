@@ -2376,7 +2376,7 @@ class InstallersData(DataStore):
     def bain_uninstall(self, unArchives, refresh_ui, progress=None):
         """Uninstall selected archives."""
         if unArchives == 'ALL': unArchives = self.data
-        unArchives = set(self[x] for x in unArchives)
+        unArchives = frozenset(self[x] for x in unArchives)
         data_sizeCrcDate = self.data_sizeCrcDate
         #--Determine files to remove and files to restore. Keep in mind that
         #  multiple input archives may be interspersed with other archives that

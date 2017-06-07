@@ -1018,7 +1018,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                 u"While it is not important to Wrye Bash functionality or "
                 u"the end contents of the Bashed Patch, it is suggested that "
                 u"they be deactivated and merged into the patch.  This helps "
-                u"avoid the Oblivion maximum esp/esm limit."), ]
+                u"avoid the maximum esp/esm limit."), ]
             group.extend(merge)
             checklists.append(group)
         if noMerge:
@@ -1580,10 +1580,11 @@ class Mod_FlipSelf(_Esm_Flip):
 
     @balt.conversation
     def Execute(self):
-        message = (_(u'WARNING! For advanced modders only!')
-                   + u'\n\n' +
-                   _(u'This command flips an internal bit in the mod, converting an esp to an esm and vice versa.  Note that it is this bit and NOT the file extension that determines the esp/esm state of the mod.')
-                   )
+        message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
+            _(u'This command flips an internal bit in the mod, converting an '
+              u'esp to an esm and vice versa.  Note that it is this bit and '
+              u'NOT the file extension that determines the esp/esm state of '
+              u'the mod.'))
         if not self._askContinue(message, 'bash.flipToEsmp.continue',
                                  _(u'Flip to Esm')): return
         for modInfo in self.iselected_infos():
@@ -2518,7 +2519,10 @@ class MasterList_AddMasters(ItemLink): # CRUFT
     help = _(u'Adds specified master to list of masters')
 
     def Execute(self):
-        message = _(u"WARNING!  For advanced modders only!  Adds specified master to list of masters, thus ceding ownership of new content of this mod to the new master.  Useful for splitting mods into esm/esp pairs.")
+        message = _(u"WARNING!  For advanced modders only!  Adds specified "
+            u"master to list of masters, thus ceding ownership of new content "
+            u"of this mod to the new master.  Useful for splitting mods into "
+            u"esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Masters')): return
         modInfo = self.window.fileInfo

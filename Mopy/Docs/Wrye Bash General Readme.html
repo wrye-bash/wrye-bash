@@ -349,10 +349,21 @@ from other packages previously overridden by the uninstalled package's
  files will be automatically restored.
 
 <h3 id="bain-order">BAIN Package Order</h3>
-<p>The install order of packages in BAIN is important as this decides which mod gets its files installed in the case of resource conflicts. Packages may be listed in install order by left-clicking on the <q>Order</q> column header. If two mods try to install the same file, then the mod lower down in the list will have its file overwrite the file of the mod higher up in the list.
-<p>The order of sub-packages within a package follow the same rules as packages. Checked sub-packages lower in the sub-package list will overwrite conflicting content from sub-packages above them.
-<p>Package conflicts are detailed in the <q>Conflicts</q> tab to the right of the package list when you select a package. This tab tells you which packages have which files that conflict with files in your currently-selected package. It gives this information for packages both above and below the selected package in the package list.
-<p>BAIN allows you to easily adjust the conflict status of packages by moving their order around. This can be done by dragging and dropping packages within the list, or by right-clicking packages and selecting the <a href="#bainMoveTo">Move To...</a> option. You can also select multiple packages and move them, in which case they will be moved as a group, retaining their order relative to one another in their new location. A third option is to select the package(s) and use Ctrl-Up or Ctrl-Down to move them up or down respectively.
+<p>The Install Order of packages in BAIN is important as this decides which package gets its files installed in the case of resource
+    conflicts.Packages may be listed in Install Order by left-clicking on the <q>Order</q> column header. If two packages try to install the
+    same file, then the package installing later in the list will have its file overwrite the file of the package installing earlier in the
+    list. For example, files in a package in install order position 06, would overwrite conflicting files in a package at install order
+    position 04. Note that packages with a higher install order appear lower in the list of packages, and that may lead to confusion as
+    people refer to them as "lower".
+<p>The order of sub-packages within a package follow the same rules as packages. Checked sub-packages later (lower) in the sub-package list
+    will overwrite conflicting content from sub-packages earlier (higher in the list) than them.
+<p>Package conflicts are detailed in the <q>Conflicts</q> tab to the right of the package list when you select a package. This tab tells you
+    which packages have which files that conflict with files in your currently-selected package. It gives this information for packages in
+    the Install Order both earlier and later than the selected package in the package list.
+<p>BAIN allows you to easily adjust the conflict status of packages by moving their order around. This can be done by dragging and dropping
+    packages within the list, or by right-clicking packages and selecting the <a href="#bainMoveTo">Move To...</a> option. You can also
+    select multiple packages and move them, in which case they will be moved as a group, retaining their order relative to one another in
+    their new location. A third option is to select the package(s) and use Ctrl-Up or Ctrl-Down to move them up or down respectively.
 
 <h3 id="bain-symbols">What Symbols &amp; Colours Mean</h3>
 <p>BAIN uses the colours of packages in the package list and the state of their checkboxes to convey information about their status to the user. A checkbox state may be combined with any checkbox or text colour, and the possible states and colours are described in the tables below.
@@ -441,12 +452,13 @@ from other packages previously overridden by the uninstalled package's
 <h3 id="load-overview">Overview</h3>
 <p>Wrye Bash displays your installed plugins in its <q>Mods</q> tab. Your load order of active installed plugins, which Wrye Bash marks with a
     ticked checkbox, is important as it decides what plugin 'wins' any conflict between plugins, with later loading plugins overriding those
-    that change the same thing. <b>Load order is not the same thing as BAIN install order!</b> Install order determines which mods' files overwrite
-    other mods' files when they conflict. Load order determines which plugins' effects override other plugins' effects in-game when they conflict.
+    that change the same thing. A mod loading later in the list will have a greater number in the Load Order column, and will "win"
+    if there's a conflict with a mod loading earlier (which will have a lower number). <b>Load order is not the same thing as BAIN install
+        order!</b> Install order determines which package's files overwrite other packages files when they conflict.
 <p>Although in general "Load Order" stands for the load order of the <i>active</i> plugins, all installed plugins have a load order assigned
     to them. In Oblivion this is based on the modification time of the plugin, in Skyrim based to an agreed upon text-file based standard,
     while Fallout 4 finally dumps all installed plugins in its plugins.txt, marking active ones with an asterisk. Bash needs plugins load
-    order even for inactive plugins to correctly merge inactive mods in the bashed patch, among others.
+    order even for inactive plugins to correctly merge inactive mods in the bashed patch, for instance.
 <p>Plugins may be activated by clicking their checkbox so that it is ticked, or by selecting a plugin or group of plugins and pressing the
     space bar on your keyboard. Plugins may be deactivated by again clicking their checkbox or pressing the spacebar. If a group of selected
     plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
@@ -1228,7 +1240,7 @@ MemoryError</code>
         <li>Details:
         <ul>
             <li>cint.py - For v0.7.0, cint.py is in sync between Wrye Bash vs CBash repos, at the time of writing this.
-            <li>C/C++ Source Code: Version 0.7.x of CBash is built off directly from the GITHUB source code, which can be found in the CBash github repository, <a href="https://github.com/wrye-bash/CBash">here</a>. 
+            <li>C/C++ Source Code: Version 0.7.x of CBash is built off directly from the GITHUB source code, which can be found in the CBash github repository, <a href="https://github.com/wrye-bash/CBash">here</a>.
             <li>The code is for all intents and purposes the same as the old v0.6.x CBash version, just with a few minor fixes and an updated runtime dependence on <a href="https://www.microsoft.com/en-us/download/details.aspx?id=48234">Microsoft's Universal C Runtime</a> which should be already installed on any Windows 7 PC that's normally updated through the Windows Update system.</li>
             <li>Original CBash project was hosted in <a href="http://sourceforge.net/projects/cbash/">SourceForge</a>, but now the code that is present there is for the old v0.6.x version, minus some changes contributed by <a href="https://github.com/Ethatron/CBash">Ethathron</a>, and later forked by <a href="https://github.com/lojack5/CBash">Lojack5</a> (which, in turn, was the ancestor of the <a href="https://github.com/wrye-bash/CBash">current development repository</a>.)</li>
             <li>The state of that old SourceForge repository was imported to <a href="https://github.com/leandor/CBashSF.git">this</a> GITHUB read-only mirror, for easier sharing and branching, and history keeping reasons.</li>

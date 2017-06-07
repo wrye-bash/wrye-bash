@@ -2543,7 +2543,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         #--Comments
         commentsPanel = wx.Panel(bottom)
         commentsLabel = StaticText(commentsPanel, _(u'Comments'))
-        self.gComments = TextCtrl(commentsPanel, multiline=True)
+        self.gComments = TextCtrl(commentsPanel, multiline=True,
+                                  autotooltip=False)
         #--Splitter settings
         self.checkListSplitter.SetMinimumPaneSize(50)
         self.checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
@@ -3658,6 +3659,7 @@ class BashFrame(wx.Frame):
 
     @balt.conversation
     def warnTooManyModsBsas(self):
+        if bush.game.fsName != u'Oblivion': return
         if not bass.inisettings['WarnTooManyFiles']: return
         if not len(bosh.bsaInfos): bosh.bsaInfos.refresh()
         if len(bosh.bsaInfos) + len(bosh.modInfos) >= 325 and not \

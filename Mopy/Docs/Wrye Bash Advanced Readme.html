@@ -60,6 +60,7 @@
         <li><a href="#bain-se">Script Extender Plugin Installation</a>
         <li><a href="#bain-omod">OMOD Conversion Data</a>
         <li><a href="#bain-bcf">BAIN Conversion Files</a>
+        <li><a href="#bain-monitor">Monitor External Installation</a>
         <li><a href="#bain-commands">Context Menu Commands</a>
     </ol>
     <li><a href="#mods">Mods Tab</a>
@@ -80,6 +81,8 @@
         <li><a href="#patch-csv">Default CSV Files</a>
         <li><a href="#patch-lists">Leveled Lists</a>
     </ol>
+</ol>
+<ol start="6" style="float:left;margin-top:0;">
     <li><a href="#saves">Saves Tab</a>
     <ol>
         <li><a href="#saves-overview">Overview</a>
@@ -89,8 +92,6 @@
         <li><a href="#saves-face">Face Import</a>
         <li><a href="#saves-commands">Context Menu Commands</a>
     </ol>
-</ol>
-<ol start="7" style="float:left;margin-top:0;">
     <li><a href="#screenshots">Screenshots Tab</a>
     <ol>
         <li><a href="#screenshots-overview">Overview</a>
@@ -360,6 +361,78 @@ tab. The directories skipped are:
     <li>BCFs store the configuration settings of the original converted archive used when creating the BCF, allowing authors to pre-select options (see instructions above).
     <li>BCFs found to be duplicates will be moved to <code>[Game] Mods\Bash Installers\Bain Converters\--Duplicates</code>.
     <li>BCFs use data CRCs to verify the integrity of source archives. These use the contents of an archive, but not the name or type of the archive, so a source archive may be renamed or recompressed without affecting its ability to be used by a BCF. Wrye Bash displays the data CRCs of packages on the General Info tab for this reason.
+</ul>
+
+<h3 id="bain-monitor">Monitor External Installation</h3>
+
+<p>Wrye Bash can monitor your game's Data directory to detect any changes made by an external application or manual installation. It will
+    take the new or changed files and create a new BAIN package that can be handled, installed, and uninstalled just like any other standard
+    BAIN. This is very useful for mod authors or anyone that
+    wants to keep strict control of what gets placed into their data directory.
+
+<h4>Example usage scenarios</h4>
+
+<ul>
+    <li><b>Creation Kit/GECK monitoring</b>
+- When creating or managing content in the Creation Kit or GECK, Wrye Bash can capture any output from the CK/GECK in a BAIN package. This
+        is useful for example when capturing FaceGen data as NPCs are managed, and it will also capture any loose files, ESP, or BSA created in the
+    editor.
+    <li><b>BodySlide</b>
+- BodySlide is a utility used to create custom bodies and armor to fit these bodies, as well as from armors by third-parties to a
+    custom body. Wrye Bash can capture all output from BodySlide and package it into a BAIN for easy management. These files can then be
+    packaged and distributed, backed up, or used to build another mod.
+    <li><b>Nexus Mod Manager / Other Mod Managers</b>
+- Since Wrye Bash does not currently support the Nexus Mod Manager FOMOD XML installer format, sometimes it is necessary to use the Nexus
+    Mod Manager to install poorly packaged mods that cannot be installed via the usual "click the checkbox" BAIN methods. The monitor
+    external installation feature watches as NMM installs files and captures any changes to the content of Data, which can then be
+    uninstalled by NMM and reinstalled cleanly from the newly created BAIN with Wrye Bash instead.
+</ul>
+
+<h4>How to use the "Monitor External Installation" feature</h4>
+
+<ol>
+    <li>Launch Wrye Bash and switch to the Installers tab.</li>
+    <li>At the top of any column (e.g. Packages), right click and select "Monitor External Installation..." from the context menu.</li>
+    <li>Wrye Bash will then begin to scan your data directory to snapshot all data contained within it before any changes are made.</li>
+    <li>Once this has completed, you will be prompted to begin your external installation.</li>
+    <li>At this point, switch to your external application and perform the installation or content creation you intend to perform. There is
+        no time limit.
+    </li>
+    <li>Once you have completed the task in the external application, switch back to Wrye Bash and click the OK button to proceed.</li>
+    <li>Wrye Bash will scan the data folder again to calculate what files have changed, or what new files have been placed into your game's
+        data directory.
+    </li>
+    <li>Once this has completed, Wrye Bash will present a dialog box with a list of files that are new or changed. You can select and
+        deselect files to be included in the BAIN package at this point. It is advisable to exclude log files and other non-essential files
+        from the final BAIN package.
+    </li>
+    <li>Click OK when you are ready to build the package.</li>
+    <li>You will now be prompted for a name for your package. Enter a name and confirm.</li>
+    <li>Wrye Bash will then create the package and run a final CRC scan on the newly created BAIN package to add it to the installer
+        manifest. This will take a few seconds depending on the speed of your computer and the size of the data being packaged.
+    </li>
+    <li>The resulting project can be found at the bottom (highest number) of your package order on the Installer tab. You can then
+        install, uninstall, or anneal the project as you would any other regular BAIN package, or zip it up as a BAIN archive.
+    </li>
+</ol>
+
+<h4>Usage Notes</h4>
+
+<ul>
+    <li>When naming your new BAIN package it is safest to avoid spaces in the name (e,g. use underscores between words) as the created BAIN
+        package is written to an actual folder on your hard drive.
+    </li>
+    <li>If you use Mod Organiser (or any mod manager that utilises a virtual installation of files instead of actually installing them into
+        Data\), then Monitor External Installation can only be used if Wrye Bash is launched by the other Mod manager so that it will feed
+        Wrye Bash the files it needs from the virtual folder. See <a
+                href="https://github.com/wrye-bash/wrye-bash/wiki/Wrye-Bash-and-Mod-Organizer" target="_blank">this wiki article</a> for
+        more information on integrating Wrye Bash with Mod Organizer.
+    </li>
+    <li>When installing mods via Nexus Mod Manager, it is recommended that you start monitoring, install the mod via NMM, then before
+        closing NMM, complete the monitoring session. Create the BAIN package, then switch back to NMM and uninstall the mod. You can then
+        close NMM. Switch back to Wrye Bash then install the mod from Wrye Bash. This ensures the mod is cleanly installed, all conflicts
+        are recorded / resolved in Wrye Bash, and therefore able to be cleanly uninstalled.
+    </li>
 </ul>
 
 

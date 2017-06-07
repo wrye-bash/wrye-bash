@@ -706,8 +706,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                            u'\n' + u' ' * 60) as progress:
             progress.setFull(len(self.idata))
             numFiles = 0
-            destDir = GPath(u"Conflicts - %03d (%s)" % (
-                src_order, self._selected_item))
+            destDir = GPath(u"Conflicts - %03d" % src_order)
             for i,(package, installer) in enumerate(self.idata.sorted_pairs()):
                 curConflicts = set()
                 progress(i, _(u"Scanning Packages...") + u'\n' + package.s)

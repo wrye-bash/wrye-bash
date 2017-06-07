@@ -25,7 +25,6 @@ import errno
 import os
 import re
 import struct
-import sys
 
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, deprint, sio

@@ -93,7 +93,6 @@ class cs:
 
 #--Script Extender information
 class se:
-    ## TODO: verify filenames once F4SE is released
     shortName = u'F4SE'                      # Abbreviated name
     longName = u'Fallout 4 Script Extender'  # Full name
     exe = u'f4se_loader.exe'                 # Exe to run

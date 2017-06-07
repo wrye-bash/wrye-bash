@@ -237,7 +237,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
 
 class Installers_UninstallAllUnknownFiles(Installers_Link):
     """Uninstall all files that do not come from a current package/bethesda
-    files. For safety just moved to Oblivion Mods\Bash Installers\Bash\Data
+    files. For safety just moved to Game Mods\Bash Installers\Bash\Data
     Folder Contents (date/time)\."""
     _text = _(u'Clean Data')
     help = _(u'This will remove all mod files that are not linked to an'
@@ -248,7 +248,7 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
         u'being deleted so you can retrieve them later if necessary.  '
         u'Note that if you use TES4LODGen, this will also clean out the '
         u'DistantLOD folder, so on completion please run TES4LodGen again.'
-        ) % ur'Oblivion Mods\Bash Installers\Bash\Data Folder Contents <date>'
+        ) % bass.dirs['bainData'].join(u'Data Folder Contents <date>')
 
     @balt.conversation
     def Execute(self):

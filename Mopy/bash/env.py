@@ -75,7 +75,8 @@ def get_game_path(submod):
 
 try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon
-    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, FO_RENAME
+    from win32com.shell.shellcon import FO_DELETE, FO_MOVE, FO_COPY, \
+        FO_RENAME, FOF_NOCONFIRMMKDIR
 
     def _getShellPath(shellKey):
         path = shell.SHGetFolderPath(0, shellKey, None, 0)
@@ -86,6 +87,7 @@ except ImportError:
     FO_COPY = 2
     FO_DELETE = 3
     FO_RENAME = 4
+    FOF_NOCONFIRMMKDIR = 512
     reEnv = _re.compile(u'%(\w+)%', _re.U)
     envDefs = _os.environ
 
@@ -492,6 +494,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
     if shell is not None:
         # flags
         flags = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
+        flags |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
         flags |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
         if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
         if not confirm: flags |= shellcon.FOF_NOCONFIRMATION
@@ -558,11 +561,11 @@ def shellDelete(files, parent=None, confirm=False, recycle=False):
             return None
         raise
 
-def shellDeletePass(folder, parent=None):
+def shellDeletePass(node, parent=None):
     """Delete tmp dirs/files - ignore errors (but log them)."""
-    if folder.exists():
-        try: shellDelete(folder, parent=parent, confirm=False, recycle=False)
-        except: deprint(u"Error deleting %s:" % folder, traceback=True)
+    if node.exists():
+        try: shellDelete(node, parent=parent, confirm=False, recycle=False)
+        except OSError: deprint(u"Error deleting %s:" % node, traceback=True)
 
 def shellMove(filesFrom, filesTo, parent=None, askOverwrite=False,
               allowUndo=False, autoRename=False, silent=False):
@@ -633,17 +636,17 @@ def setUAC(handle, uac=True):
 def testUAC(gameDataPath):
     if _os.name != 'nt': # skip this when not in Windows
         return False
-    print 'testing UAC' # TODO(ut): bypass in Linux !
+    print 'testing UAC'
     tmpDir = Path.tempDir()
     tempFile = tmpDir.join(u'_tempfile.tmp')
     dest = gameDataPath.join(u'_tempfile.tmp')
     with tempFile.open('wb'): pass # create the file
     try: # to move it into the Game/Data/ directory
-        shellMove(tempFile, dest, askOverwrite=True, silent=True)
+        shellMove(tempFile, dest, silent=True)
     except AccessDeniedError:
         return True
     finally:
-        tmpDir.rmtree(safety=tmpDir.stail)
+        shellDeletePass(tmpDir)
         shellDeletePass(dest)
     return False
 

@@ -57,7 +57,7 @@ class Settings_BackupSettings(ItemLink):
     def Execute(self):
         msg = _(u'Do you want to backup your Bash settings now?')
         if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
-        BashFrame.SaveSettings(Link.Frame)
+        with balt.BusyCursor(): BashFrame.SaveSettings(Link.Frame)
         dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
         icon = staticBitmap(dialog)
         sizer = vSizer(
