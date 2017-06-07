@@ -79,9 +79,10 @@ startupinfo = bolt.startupinfo
 
 #--Balt
 from .. import balt
-from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, \
-    Link, ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
-    SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel
+from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, Link, \
+    ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
+    SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel, \
+    BaltFrame
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import hspacer, hSizer, vSizer, hspace, vspace
 from ..balt import colors, images, Image, Resources
@@ -3613,7 +3614,7 @@ class BashStatusBar(DnDStatusBar):
         return None
 
 #------------------------------------------------------------------------------
-class BashFrame(wx.Frame):
+class BashFrame(BaltFrame):
     """Main application frame."""
     ##:ex basher globals - hunt their use down - replace with methods - see #63
     docBrowser = None
@@ -3627,6 +3628,10 @@ class BashFrame(wx.Frame):
     bsaList = None
     # Panels - use sparingly
     iPanel = None # BAIN panel
+    # initial size/position
+    _frame_settings_key = 'bash.frame'
+    _def_size = (1024, 512)
+    _size_hints = (512, 512)
 
     @property
     def statusBar(self): return self.GetStatusBar()
@@ -3635,27 +3640,22 @@ class BashFrame(wx.Frame):
         #--Singleton
         balt.Link.Frame = self
         #--Window
-        wx.Frame.__init__(self, parent, title=u'Wrye Bash',
-                          pos=settings['bash.framePos'],
-                          size=settings['bash.frameSize'])
-        minSize = settings['bash.frameSize.min']
-        self.SetSizeHints(minSize[0],minSize[1])
+        super(BashFrame, self).__init__(parent, title=u'Wrye Bash')
         self.SetTitle()
-        #--Application Icons
-        self.SetIcons(Resources.bashRed)
         #--Status Bar
         self.SetStatusBar(BashStatusBar(self))
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
         self.oblivionIniCorrupted = self.oblivionIniMissing = False
         self.notebook = BashNotebook(self)
-        #--Events
-        self.Bind(wx.EVT_CLOSE, lambda __event: self.OnCloseWindow())
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
         self.incompleteInstallError = False
+
+    @staticmethod
+    def _resources(): return Resources.bashRed
 
     @balt.conversation
     def warnTooManyModsBsas(self):
@@ -3893,9 +3893,15 @@ class BashFrame(wx.Frame):
     def OnCloseWindow(self):
         """Handle Close event. Save application data."""
         try:
+            # copy pasted from super.OnCloseWindow() -> in the finally clause
+            # here position is not saved
+            _key = self.__class__._frame_settings_key
+            if _key and not self.IsIconized() and not self.IsMaximized():
+                bass.settings[_key + '.pos'] = tuple(self.GetPosition())
+                bass.settings[_key + '.size'] = tuple(self.GetSize())
             self.BindRefresh(bind=False)
             self.SaveSettings(destroy=True)
-        except: ##: this has swallowed exceptions since forever
+        except:
                 deprint(_(u'An error occurred while trying to save settings:'),
                         traceback=True)
         finally:
@@ -3908,9 +3914,6 @@ class BashFrame(wx.Frame):
         # Clean out unneeded settings
         self.CleanSettings()
         if Link.Frame.docBrowser: Link.Frame.docBrowser.DoSave()
-        if not (self.IsIconized() or self.IsMaximized()):
-            settings['bash.framePos'] = tuple(self.GetPosition())
-            settings['bash.frameSize'] = tuple(self.GetSize())
         settings['bash.frameMax'] = self.IsMaximized()
         settings['bash.page'] = self.notebook.GetSelection()
         # use tabInfo below so we save settings of panels that the user closed
