@@ -155,15 +155,11 @@ class Installers_MonitorInstall(Installers_Link):
             return
         path = self.window.new_name(projectName)
         # Copy Files
-        with balt.Progress(_(u'Creating Project...'),u'\n'+u' '*60) as progress:
-            bosh.InstallerProject.createFromData(path,include,progress)
-        # Refresh Installers - so we can manipulate the InstallerProject item
-        self.iPanel.frameActivated = True # yak, refresh data directly here
-        self.iPanel.ShowPanel()
-        # Update the status of the installer (as installer last)
+        with balt.Progress(_(u'Creating Project...'), u'\n' + u' '*60) as prog:
+            self.idata.createFromData(path, include, prog) # will order last
+        # createFromData placed the new project last in install order - install
         try:
-            self.idata.bain_install([path], ui_refresh, last=True,
-                                    override=False)
+            self.idata.bain_install([path], ui_refresh, override=False)
         finally:
             self.iPanel.RefreshUIMods(*ui_refresh)
         # Select new installer

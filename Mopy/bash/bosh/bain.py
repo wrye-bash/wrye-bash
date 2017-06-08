@@ -1446,18 +1446,6 @@ class InstallerProject(Installer):
             outFile.moveTo(realOutFile)
 
     @staticmethod
-    def createFromData(projectPath,files,progress=None):
-        if not files: return
-        progress = progress if progress else bolt.Progress()
-        projectPath = bass.dirs['installers'].join(projectPath)
-        progress.setFull(len(files))
-        srcJoin = bass.dirs['mods'].join
-        dstJoin = projectPath.join
-        for i,file in enumerate(files):
-            progress(i,file.s)
-            srcJoin(file).copyTo(dstJoin(file))
-
-    @staticmethod
     def _list_package(apath, log):
         def walkPath(folder, depth):
             for entry in os.listdir(folder):
@@ -1682,7 +1670,6 @@ class InstallersData(DataStore):
         """
         # TODO(ut):we need to return the refresh_info for more granular control
         # in irefresh and also add extra processing for deleted files
-        from . import InstallerArchive, InstallerProject # use the bosh types
         progress = progress or bolt.Progress()
         #--Current archives
         if refresh_info is deleted is pending is None:
@@ -1695,23 +1682,38 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, iClass in zip((pending - projects, pending & projects),
-                                      (InstallerArchive, InstallerProject)):
+        for subPending, is_project in zip(
+                (pending - projects, pending & projects), (False, True)):
             if not subPending: continue
             progress(0,_(u"Scanning Packages..."))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
-                installer = self.get(package, None)
-                if not installer:
-                    installer = self.setdefault(package, iClass(package))
-                installer.refreshBasic(SubProgress(progress, index, index + 1),
-                                       recalculate_project_crc=fullRefresh)
+                self.refresh_installer(package, is_project, progress,
+                                       _index=index, _fullRefresh=fullRefresh)
         return changed
 
     def crc_installer(self):
         return dict((x.crc, x) for x in self.itervalues() if
                     isinstance(x, InstallerArchive))
+
+    def refresh_installer(self, package, is_project, progress,
+                          install_order=None, do_refresh=False, _index=None,
+                          _fullRefresh=False, __types=[]):
+        if not __types: # use the bosh types
+            from . import InstallerArchive, InstallerProject
+            __types = [InstallerArchive, InstallerProject]
+        installer = self.get(package, None)
+        if not installer:
+            installer = self[package] = __types[is_project](package)
+            if install_order is not None:
+                self.moveArchives([package], install_order)
+        if _index is not None:
+            progress = SubProgress(progress, _index, _index + 1)
+        installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
+        if do_refresh:
+            self.irefresh(what='NS')
+        return installer
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
@@ -2641,3 +2643,17 @@ class InstallersData(DataStore):
         def _package(x):
             return isinstance(self[x], (InstallerArchive, InstallerProject))
         return filter(_package, installerKeys)
+
+    def createFromData(self, projectPath, ci_files, progress):
+        if not ci_files: return
+        norm_ghost = Installer.getGhosted()
+        subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))
+        srcJoin = bass.dirs['mods'].join
+        dstJoin = self.store_dir.join(projectPath).join
+        for i,filename in enumerate(ci_files):
+            subprogress(i, u'%s' % filename)
+            srcJoin(norm_ghost.get(filename, filename)).copyTo(
+                dstJoin(filename))
+        # Refresh, so we can manipulate the InstallerProject item
+        self.refresh_installer(projectPath, True, progress, do_refresh=True,
+                               install_order=len(self)) # install last
