@@ -213,7 +213,7 @@ class ConvertersData(DataDict):
 class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
 
-    def __init__(self, srcArchives=None, data=None, destArchive=None,
+    def __init__(self, srcArchives=None, idata=None, destArchive=None,
                  BCFArchive=None, blockSize=None, progress=None):
         #--Persistent variables are saved in the data tank for normal
         # operations.
@@ -251,10 +251,10 @@ class InstallerConverter(object):
         self.convertedFiles = []
         self.dupeCount = {}
         #--Cheap init overloading...
-        if data is not None:
+        if idata is not None:
             #--Build a BCF from scratch
             self.fullPath = converters_dir.join(BCFArchive)
-            self.build(srcArchives, data, destArchive, BCFArchive, blockSize,
+            self.build(srcArchives, idata, destArchive, BCFArchive, blockSize,
                        progress)
             self.crc = self.fullPath.crc
         elif isinstance(srcArchives, bolt.Path):
@@ -422,7 +422,7 @@ class InstallerConverter(object):
         #--Done with unpacked directory directory
         tmpDir.rmtree(safety=tmpDir.s)
 
-    def build(self, srcArchives, data, destArchive, BCFArchive, blockSize,
+    def build(self, srcArchives, idata, destArchive, BCFArchive, blockSize,
               progress=None):
         """Builds and packages a BCF"""
         progress = progress if progress else bolt.Progress()
@@ -430,7 +430,7 @@ class InstallerConverter(object):
         bass.rmTempDir()
         srcFiles = {}
         destFiles = []
-        destInstaller = data[destArchive]
+        destInstaller = idata[destArchive]
         self.bcf_missing_files = []
         self.blockSize = blockSize
         subArchives = dict()
@@ -446,7 +446,7 @@ class InstallerConverter(object):
         attrs = self.settings
         map(self.__setattr__, attrs, map(destInstaller.__getattribute__,attrs))
         #--Make list of source files
-        for installer in [data[x] for x in srcArchives]:
+        for installer in [idata[x] for x in srcArchives]:
             installerCRC = installer.crc
             srcAdd(installerCRC)
             fileList = subGet(installerCRC, [])
@@ -463,8 +463,9 @@ class InstallerConverter(object):
             #--Extract any subArchives
             #--It would be faster to read them with 7z l -slt
             #--But it is easier to use the existing recursive extraction
+            crc_installer = idata.crc_installer()
             for index, (installerCRC) in enumerate(subArchives):
-                installer = data.crc_installer[installerCRC]
+                installer = crc_installer[installerCRC]
                 self._unpack(installer, subArchives[installerCRC],
                              SubProgress(progress, lastStep, nextStep))
                 lastStep = nextStep

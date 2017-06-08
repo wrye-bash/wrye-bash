@@ -1524,7 +1524,6 @@ class InstallersData(DataStore):
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
         self.data = {}
         self.data_sizeCrcDate = {}
-        self.crc_installer = {}
         from . import converters
         self.converters_data = converters.ConvertersData(bass.dirs['bainData'],
             bass.dirs['converters'], bass.dirs['dupeBCFs'],
@@ -1588,7 +1587,6 @@ class InstallersData(DataStore):
         data = self.dictFile.data
         self.data = data.get('installers', {})
         self.data_sizeCrcDate = data.get('sizeCrcDate', {})
-        self.crc_installer = data.get('crc_installer', {})
         # fixup: all markers had their archive attribute set to u'===='
         for key, value in self.iteritems():
             if isinstance(value, InstallerMarker):
@@ -1601,7 +1599,7 @@ class InstallersData(DataStore):
         if self.hasChanged:
             self.dictFile.data['installers'] = self.data
             self.dictFile.data['sizeCrcDate'] = self.data_sizeCrcDate
-            self.dictFile.data['crc_installer'] = self.crc_installer
+            self.dictFile.data['crc_installer'] = self.crc_installer()
             self.dictFile.vdata['version'] = 1
             self.dictFile.save()
             self.converters_data.save()
@@ -1674,8 +1672,7 @@ class InstallersData(DataStore):
         Note that if any of those are not None "changed" will be always
         True, triggering the rest of the refreshes in irefresh. Once
         refresh_info is calculated, deleted are removed, refreshBasic is
-        called on added/updated files and crc_installer updated. If you
-        don't need that last step you may directly call refreshBasic.
+        called on added/updated files.
         :type progress: bolt.Progress | None
         :type fullRefresh: bool
         :type refresh_info: InstallersData._RefreshInfo | None
@@ -1710,9 +1707,11 @@ class InstallersData(DataStore):
                     installer = self.setdefault(package, iClass(package))
                 installer.refreshBasic(SubProgress(progress, index, index + 1),
                                        recalculate_project_crc=fullRefresh)
-        if changed: self.crc_installer = dict((x.crc, x) for x in
-                        self.itervalues() if isinstance(x, InstallerArchive))
         return changed
+
+    def crc_installer(self):
+        return dict((x.crc, x) for x in self.itervalues() if
+                    isinstance(x, InstallerArchive))
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
@@ -1743,7 +1742,8 @@ class InstallersData(DataStore):
                     u'An error occurred while applying an Embedded BCF.')
                 self.apply_converter(converter, destArchive,
                                      SubProgress(progress, i + 0.5, i + 1.0),
-                                     msg, installer, pending)
+                                     msg, installer, pending,
+                                     crc_installer=self.crc_installer())
             except StateError:
                 # maybe short circuit further attempts to extract
                 # installer.hasBCF = False
@@ -1754,9 +1754,10 @@ class InstallersData(DataStore):
 
     def apply_converter(self, converter, destArchive, progress, msg,
                         installer=None, pending=None, show_warning=None,
-                        position=-1):
+                        position=-1, crc_installer=None):
+        crc_installer = crc_installer or self.crc_installer()
         try:
-            converter.apply(destArchive, self.crc_installer,
+            converter.apply(destArchive, crc_installer,
                             bolt.SubProgress(progress, 0.0, 0.99),
                             embedded=installer.crc if installer else 0L)
             #--Add the new archive to Bash
