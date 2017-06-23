@@ -74,8 +74,8 @@ class _ATextInput(_AComponent):
         if no_border: style |= _wx.BORDER_NONE
         super(_ATextInput, self).__init__(_wx.TextCtrl, parent, style=style)
         if init_text: self._native_widget.SetValue(init_text)
-        if max_length:
-            self._native_widget.SetMaxLength(max_length)
+        # if max_length:
+        #     self._native_widget.SetMaxLength(max_length)
         # Events
         # Internal use only - used to implement auto_tooltip below
         self._on_size_changed = self._evt_handler(_wx.EVT_SIZE)
