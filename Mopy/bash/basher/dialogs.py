@@ -30,7 +30,7 @@ from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
 from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
     checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton, ApplyButton, hspace, vspace, Resources
+    CancelButton, ApplyButton, hspace, vspace, Resources, set_event_hook, Events
 from ..bosh import faces
 
 class ColorDialog(balt.Dialog):
@@ -50,10 +50,9 @@ class ColorDialog(balt.Dialog):
         super(ColorDialog, self).__init__(parent=Link.Frame, resize=False)
         self.changes = dict()
         #--ComboBox
-        keys = [x for x in colors]
         def _display_text(k):
             return _(self._keys_to_tabs[k.split('.')[0]]) + colorInfo[k][0]
-        self.text_key = dict((_display_text(x), x) for x in keys)
+        self.text_key = dict((_display_text(x), x) for x in colors)
         colored = self.text_key.keys()
         colored.sort(key=unicode.lower)
         combo_text = colored[0]
@@ -80,8 +79,9 @@ class ColorDialog(balt.Dialog):
         self.ok = OkButton(self, onButClickEventful=self.OnApplyAll,
                            default=True)
         #--Events
-        self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnComboBox)
-        self.picker.Bind(wx.EVT_COLOURPICKER_CHANGED,self.OnColorPicker)
+        set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE, self.OnComboBox)
+        set_event_hook(self.picker, Events.COLORPICKER_CHANGED,
+                       self.OnColorPicker)
         #--Layout
         sizer = vSizer(
             (hSizer((self.comboBox,1,wx.EXPAND), hspace(5), self.picker,
@@ -413,7 +413,8 @@ class CreateNewProject(balt.Dialog):
         self.SetSizer(vsizer)
         self.SetInitialSize()
         # Event Handlers
-        self.textName.Bind(wx.EVT_TEXT,self.OnCheckProjectsColorTextCtrl)
+        set_event_hook(self.textName, Events.TEXT_CHANGED,
+                       self.OnCheckProjectsColorTextCtrl)
         # Dialog Icon Handlers
         self.SetIcon(installercons.get_image('off.white.dir').GetIcon())
         self.OnCheckBoxChange()

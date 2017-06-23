@@ -34,7 +34,8 @@ from . import BashFrame ##: drop this - decouple !
 from .. import bass, bosh, bolt, balt, env, load_order
 from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
-    RevertToSavedButton, RevertButton, hspace, vspace, Resources
+    RevertToSavedButton, RevertButton, hspace, vspace, Resources, \
+    set_event_hook, Events
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError
@@ -117,10 +118,10 @@ class PatchDialog(balt.Dialog):
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize) # save dialog size
-        self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
+        set_event_hook(self, Events.RESIZE, self.OnSize) # save dialog size
+        set_event_hook(self.gPatchers, Events.MOUSE_MOTION, self.OnMouse)
+        set_event_hook(self.gPatchers, Events.MOUSE_LEAVE_WINDOW, self.OnMouse)
+        set_event_hook(self.gPatchers, Events.CHAR_KEY_PRESSED, self.OnChar)
         self.mouse_dex = -1
         #--Layout
         self.gConfigSizer = gConfigSizer = vSizer()

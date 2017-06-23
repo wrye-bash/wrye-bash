@@ -34,7 +34,7 @@ from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
-from balt import vspace, hspace
+from balt import vspace, hspace, set_event_hook, Events
 from env import get_file_version
 import StringIO
 import traceback
@@ -101,14 +101,14 @@ class InstallerWizard(wiz.Wizard):
         self.wizard_file = installer.wizard_file()
         self.parser = WryeParser(self, installer, subs, bAuto)
         #Intercept the changing event so we can implement 'blockChange'
-        self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnChange)
+        set_event_hook(self, Events.WIZARD_PAGE_CHANGING, self.OnChange)
         self.ret = WizardReturn()
         self.ret.wizard_size = pageSize
         # So we can save window size
-        self.Bind(wx.EVT_SIZE, self.OnSize)
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-        self.Bind(wiz.EVT_WIZARD_CANCEL, self.OnClose)
-        self.Bind(wiz.EVT_WIZARD_FINISHED, self.OnClose)
+        set_event_hook(self, Events.RESIZE, self.OnSize)
+        set_event_hook(self, Events.CLOSE, self.OnClose)
+        set_event_hook(self, Events.WIZARD_CANCEL, self.OnClose)
+        set_event_hook(self, Events.WIZARD_FINISHED, self.OnClose)
         #Set the minimum size for pages, and setup OnSize to resize the
         #First page to the saved size
         self.SetPageSize((600,500))
@@ -264,8 +264,10 @@ class PageSelect(PageInstaller):
         sizerMain.AddGrowableRow(4)
         sizerMain.AddGrowableCol(0)
         self.Layout()
-        self.bmpItem.Bind(wx.EVT_LEFT_DCLICK, self.OnDoubleClick)
-        self.bmpItem.Bind(wx.EVT_MIDDLE_UP, self.OnDoubleClick)
+        set_event_hook(self.bmpItem, Events.MOUSE_LEFT_DOUBLECLICK,
+                       self.OnDoubleClick)
+        set_event_hook(self.bmpItem, Events.MOUSE_MIDDLE_UP,
+                       self.OnDoubleClick)
 
     def OnSelect(self, event):
         """:type event: wx._core.CommandEvent"""
