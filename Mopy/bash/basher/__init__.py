@@ -3783,7 +3783,7 @@ class BashStatusBar(DnDStatusBar):
         if refresh_icon_size: self.SetSize((-1, self.iconsSize))
         # Causes the status bar to fill half the screen on wxGTK
         ##: See if removing this call entirely causes problems on Windows
-        if wx.Platform != u'__WXGTK__': self.SendSizeEventToParent()
+        if wx.Platform != u'__WXGTK__': self.SendSizeEventToParent() # self.PostSizeEventToParent()
         self.OnSize()
 
 #------------------------------------------------------------------------------
