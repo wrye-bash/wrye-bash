@@ -639,9 +639,8 @@ class Installer_Refresh(_InstallerLink):
         self.calculate_projects_crc = calculate_projects_crc
         if not calculate_projects_crc:
             self._text = _(u'Quick Refresh')
-            self.help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
-                u'Ignores skip refresh flag on projects') + u'.  ' + _(
-            u'Will not recalculate cached crcs of files in a project')
+            self.help = Installer_Refresh.help + u'.  ' + _(
+                u'Will not recalculate cached crcs of files in a project')
 
     def _enable(self): return bool(self.idata.filterPackages(self.selected))
 

@@ -2445,12 +2445,15 @@ class InstallersList(balt.UIList):
             self.Rename([new_marker])
 
     def rescanInstallers(self, toRefresh, abort, update_from_data=True,
-                         calculate_projects_crc=False):
+                         calculate_projects_crc=False, shallow=False):
         """Refresh installers, ignoring skip refresh flag.
 
         Will also update InstallersData for the paths this installer would
         install, in case a refresh is requested because those files were
-        modified/deleted (BAIN only scans Data/ once or boot)."""
+        modified/deleted (BAIN only scans Data/ once or boot). If 'shallow' is
+        True (only the configurations of the installers changed) it will run
+        refreshDataSizeCrc of the installers, otherwise a full refreshBasic."""
+        toRefresh = self.data_store.filterPackages(toRefresh)
         if not toRefresh: return
         try:
             with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
@@ -2461,16 +2464,20 @@ class InstallersList(balt.UIList):
                         self.data_store.sorted_values(toRefresh)):
                     progress(index, _(u'Refreshing Packages...') + u'\n' +
                              installer.archive)
-                    dest.update(installer.refreshBasic(
-                        SubProgress(progress, index, index + 1),
-                        recalculate_project_crc=calculate_projects_crc).keys())
+                    if shallow:
+                        op = installer.refreshDataSizeCrc
+                    else:
+                        op = partial(installer.refreshBasic,
+                                     SubProgress(progress, index, index + 1),
+                                     calculate_projects_crc)
+                    dest.update(op().keys())
                 self.data_store.hasChanged = True  # is it really needed ?
                 if update_from_data:
                     progress(0, _(u'Refreshing From Data...') + u'\n' + u' ' * 60)
                     self.data_store.update_data_SizeCrcDate(dest, progress)
         except CancelError:  # User canceled the refresh
             if not abort: raise # I guess CancelError is raised on aborting
-        self.data_store.irefresh(what='NSC')
+        self.data_store.irefresh(what='NS')
         self.RefreshUI()
 
 #------------------------------------------------------------------------------
