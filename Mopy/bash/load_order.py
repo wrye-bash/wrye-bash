@@ -56,6 +56,8 @@ locked = False
 warn_locked = False
 _lords_pickle = None # type: bolt.PickleDict
 
+max_espms = games.max_espms
+
 def initialize_load_order_files():
     if bass.dirs['saveBase'] == bass.dirs['app']:
         #--If using the game directory as rather than the appdata dir.

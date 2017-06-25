@@ -23,9 +23,8 @@
 #
 # =============================================================================
 
-"""Game class initially introduced to encapsulate load order handling and
-eventually to wrap the bush.game module to a class API to be used in the rest
-of Bash."""
+"""Game class implementing load order handling - **only** imported in
+load_order.py."""
 
 __author__ = 'Utumno'
 
@@ -36,6 +35,8 @@ from collections import defaultdict
 import bolt
 import exception
 import env
+
+max_espms = 255
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:
@@ -170,7 +171,7 @@ class FixInfo(object):
                     u'folder' % path) + u'\n'
         msg += self.act_order_differs_from_load_order
         if self.selectedExtra:
-            msg += u'Active list contains more than 255 plugins' \
+            msg += u'Active list contains more than 255 espms' \
                    u' - the following plugins will be deactivated: '
             msg += _pl(self.selectedExtra)
         if self.act_duplicates:
@@ -451,12 +452,10 @@ class Game(object):
         # Check for duplicates
         fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # check if we have more than 256 active mods
-        if len(acti_filtered) > 255:
-            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
-                acti_filtered[255:]
-        acti[:] = acti_filtered[:255] # chop off extra, update acti in place
+        self._check_active_limit(acti, acti_filtered, fix_active)
+        before_reorder = acti # with overflowed plugins removed
         if self._order_fixed(acti):
-            fix_active.act_reordered = (acti_filtered[:255], acti)
+            fix_active.act_reordered = (before_reorder, acti)
         if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user - ##: maybe backup previous plugin txt ?
@@ -466,6 +465,12 @@ class Game(object):
                 fix_active.act_header = u'Invalid active plugins list corrected:\n'
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
+
+    def _check_active_limit(self, acti, acti_filtered, fix_active):
+        if len(acti_filtered) > max_espms:
+            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
+                acti_filtered[max_espms:]
+        acti[:] = acti_filtered[:max_espms] # chop off extra, update acti in place
 
     def _order_fixed(self, lord): return False
 
@@ -789,6 +794,16 @@ class AsteriskGame(Game):
             lord[:] = add + lo
             return True
         return False
+
+    # esls
+    def _check_active_limit(self, acti, acti_filtered, fix_active):
+        acti_filtered_espm = [x for x in acti_filtered if x.cext != u'.esl']
+        if len(acti_filtered_espm) > max_espms:
+            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
+                acti_filtered_espm[max_espms:]
+        disable = set(acti_filtered_espm[max_espms:])
+        # chop off extra, update acti in place
+        acti[:] = [x for x in acti_filtered if x not in disable]
 
     # Asterisk game specific: plugins with fixed load order -------------------
     def _readd_in_lists(self, lo, active):

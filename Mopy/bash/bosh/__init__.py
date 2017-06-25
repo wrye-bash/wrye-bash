@@ -2299,8 +2299,12 @@ class ModInfos(FileInfos):
         """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
-            if len(self._active_wip) == 255:
-                raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
+            if fileName.cext != u'.esl': # don't check limit if activating an esl
+                acti_filtered_espm = [x for x in self._active_wip if
+                                      x.cext != u'.esl']
+                if len(acti_filtered_espm) == load_order.max_espms:
+                    raise PluginsFullError(u'%s: Trying to activate more than '
+                        u'%d espms' % (fileName,load_order.max_espms))
             _children = (_children or tuple()) + (fileName,)
             if fileName in _children[:-1]:
                 raise BoltError(u'Circular Masters: ' +u' >> '.join(x.s for x in _children))
@@ -2392,10 +2396,12 @@ class ModInfos(FileInfos):
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
         listToSelect = load_order.get_ordered(toSelect)
-        skipped = listToSelect[255:]
+        acti_filtered_espm = [x for x in listToSelect if x.cext != u'.esl']
+        skipped = acti_filtered_espm[load_order.max_espms:]
         #--Save
-        final_selection = listToSelect[:255]
-        self.cached_lo_save_active(active=final_selection)
+        if skipped:
+            listToSelect = [x for x in listToSelect if x not in set(skipped)]
+        self.cached_lo_save_active(active=listToSelect)
         #--Done/Error Message
         message = u''
         if missingSet:
