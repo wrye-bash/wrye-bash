@@ -163,8 +163,13 @@ def formatInteger(value):
 
 def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
-    return decode(time.strftime('%c', time.localtime(value)),
-                  locale.getpreferredencoding())
+    try:
+        local = time.localtime(value)
+    except ValueError: # local time in windows can't handle negative values
+        local = time.gmtime(value)
+        # deprint(u'Timestamp %d failed to convert to local, using %s' % (
+        #     value, local))
+    return decode(time.strftime('%c', local), locale.getpreferredencoding())
 
 def unformatDate(date, formatStr):
     """Basically a wrapper around time.strptime. Exists to get around bug in
