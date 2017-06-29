@@ -80,9 +80,9 @@ from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
     SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel, \
+    VLayout, HLayout, Stretch, LayoutOptions, Spacer, \
     BaltFrame, set_event_hook, Events
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
-from ..balt import hspacer, hSizer, vSizer, hspace, vspace
 from ..balt import colors, images, Image, Resources
 from ..balt import Links, ItemLink
 
@@ -183,10 +183,8 @@ class SashPanel(NotebookPanel):
         # Don't allow unsplitting
         splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda event: event.Veto())
         splitter.SetMinimumPaneSize(self.__class__.minimumSize)
-        sizer = vSizer(
-            (splitter,1,wx.EXPAND),
-            )
-        self.SetSizer(sizer)
+        VLayout(default_weight=1, default_fill=True,
+                items=[splitter]).apply_to(self)
 
     def ShowPanel(self, **kwargs):
         if self._firstShow:
@@ -250,8 +248,10 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
         super(BashTab, self).__init__(parent, isVertical)
         self.detailsPanel = self._details_panel_type(self.right)
         #--Layout
-        self.right.SetSizer(hSizer((self.detailsPanel, 1, wx.EXPAND)))
-        self.left.SetSizer(hSizer((self.uiList, 2, wx.EXPAND)))
+        HLayout(default_fill=True, default_weight=1,
+                items=[self.detailsPanel]).apply_to(self.right)
+        HLayout(default_fill=True, default_weight=2,
+                items=[self.uiList]).apply_to(self.left)
 
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
@@ -1269,11 +1269,11 @@ class _SashDetailsPanel(_EditableMixinOnFileInfos, SashPanel):
         #--Masters
         self.uilist = MasterList(self.masterPanel, keyPrefix=self.keyPrefix,
                                  panel=mod_or_save_panel, detailsPanel=self)
-        mastersSizer = vSizer(
-            vspace(), hSizer(StaticText(self.masterPanel,_(u"Masters:"))),
-            (hSizer((self.uilist,1,wx.EXPAND)),1,wx.EXPAND),
-            vspace(), hSizer(self.save, hspace(), self.cancel))
-        self.masterPanel.SetSizer(mastersSizer)
+        VLayout(spacing=4, items=[
+            StaticText(self.masterPanel, _(u"Masters:")),
+            (self.uilist, LayoutOptions(weight=1, fill=True)),
+            HLayout(spacing=4, items=[self.save, self.cancel])
+        ]).apply_to(self.masterPanel)
 
     def ShowPanel(self, **kwargs):
         if self._firstShow:
@@ -1328,26 +1328,23 @@ class ModDetails(_SashDetailsPanel):
         self.gTags = RoTextCtrl(self._bottom_low_panel, autotooltip=False,
                                 size=(textWidth, 64))
         #--Layout
-        detailsSizer = vSizer(vspace(),
-            (hSizer(
-                (StaticText(top,_(u"File:"))), hspacer,
-                self.version, hspace()
-                ),0,wx.EXPAND),
-            (hSizer((self.file,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(), (hSizer(StaticText(top,_(u"Author:"))),0,wx.EXPAND),
-            (hSizer((self.gAuthor,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(), (hSizer(StaticText(top,_(u"Modified:"))),0,wx.EXPAND),
-            (hSizer((self.modified,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(), (hSizer(StaticText(top,_(u"Description:"))),0,wx.EXPAND),
-            (hSizer((self.description,1,wx.EXPAND)),1,wx.EXPAND))
-        detailsSizer.SetSizeHints(top)
-        top.SetSizer(detailsSizer)
-        tagsSizer = vSizer(vspace(),
-            (StaticText(self._bottom_low_panel, _(u"Bash Tags:"))),
-            (hSizer((self.gTags, 1, wx.EXPAND)), 1, wx.EXPAND))
-        tagsSizer.SetSizeHints(masterPanel)
-        self._bottom_low_panel.SetSizer(tagsSizer)
-        bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
+        VLayout(spacing=4, default_fill=True, items=[
+            HLayout(items=[
+                StaticText(top, _(u'File:')), Stretch(), self.version]),
+            self.file,
+            StaticText(top, _(u"Author:")),
+            self.gAuthor,
+            StaticText(top, _(u"Modified:")),
+            self.modified,
+            StaticText(top, _(u"Description:")),
+            (self.description, LayoutOptions(fill=True, weight=1))
+        ]).apply_to(top)
+        VLayout(spacing=4, items=[
+            StaticText(self._bottom_low_panel, _(u'Bash Tags:')),
+            (self.gTags, LayoutOptions(fill=True, weight=1))
+        ]).apply_to(self._bottom_low_panel)
+        VLayout(default_weight=1, default_fill=True,
+                items=[subSplitter]).apply_to(bottom)
         #--Events
         set_event_hook(self.gTags, Events.CONTEXT_MENU,
                        lambda __event: self.ShowBashTagsMenu())
@@ -1652,24 +1649,16 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE,
                        self.OnSelectDropDown)
         #--Layout
-        iniSizer = vSizer(
-                (hSizer(
-                    (self.comboBox,1,wx.ALIGN_CENTER|wx.EXPAND|wx.TOP,1),
-                    ((4,0),0),
-                    (self.button,0,wx.ALIGN_TOP,0),
-                    (self.editButton,0,wx.ALIGN_TOP,0),
-                    ),0,wx.EXPAND), vspace(),
-                (self.iniContents,1,wx.EXPAND),
-                )
-        right.SetSizer(iniSizer)
-        iniSizer.SetSizeHints(right)
-        lSizer = hSizer(
-            (vSizer(
-                vspace(6), (self.tweakName,0,wx.EXPAND),
-                (self.tweakContents,1,wx.EXPAND),
-                ),1,wx.EXPAND),
-            )
-        left.SetSizer(lSizer)
+        VLayout(default_fill=True, spacing=4, items=[
+            HLayout(spacing=4, items=[
+                (self.comboBox, LayoutOptions(fill=True, weight=1)),
+                self.button, self.editButton]),
+            (self.iniContents, LayoutOptions(weight=1))
+        ]).apply_to(right)
+        VLayout(default_fill=True, items=[
+            self.tweakName,
+            (self.tweakContents, LayoutOptions(weight=1))
+        ]).apply_to(left)
 
     # Read only wrappers around bass.settings['bash.ini.choices']
     @property
@@ -1966,23 +1955,20 @@ class SaveDetails(_SashDetailsPanel):
         self.gInfo = TextCtrl(self._bottom_low_panel, size=(textWidth, 64),
                               multiline=True, onText=self.OnInfoEdit,
                               maxChars=2048)
-        #--Layout
-        detailsSizer = vSizer(
-            vspace(), (self.file,0,wx.EXPAND),
-            vspace(), (hSizer(
-                (self.playerInfo,1,wx.EXPAND), (self.gCoSaves,0,wx.EXPAND),)
-            ,0,wx.EXPAND),
-            vspace(), (self.picture,1,wx.EXPAND),
-            )
-        detailsSizer.SetSizeHints(top)
-        top.SetSizer(detailsSizer)
-        noteSizer = vSizer(vspace(),
-            (StaticText(self._bottom_low_panel, _(u"Save Notes:"))),
-            (hSizer((self.gInfo,1,wx.EXPAND)),1,wx.EXPAND),
-            )
-        noteSizer.SetSizeHints(masterPanel)
-        self._bottom_low_panel.SetSizer(noteSizer)
-        bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
+        #--Layouts
+        VLayout(default_fill=True, items=[
+            self.file,
+            HLayout(default_fill=True, items=[
+                (self.playerInfo, LayoutOptions(weight=1)),
+                self.gCoSaves]),
+            (self.picture, LayoutOptions(weight=1))
+        ]).apply_to(top)
+        VLayout(items=[
+            StaticText(self._bottom_low_panel, _(u"Save Notes:")),
+            (self.gInfo, LayoutOptions(fill=True, weight=1))
+        ]).apply_to(self._bottom_low_panel)
+        VLayout(default_fill=True, default_weight=1,
+                items=[subSplitter]).apply_to(bottom)
 
     def _resetDetails(self):
         self.saveInfo = None
@@ -2372,26 +2358,22 @@ class InstallersList(balt.UIList):
                             u'Bash.')
             message += u'\n' + _(u'What would you like to do with them?')
             with balt.Dialog(self,_(u'Move or Copy?')) as dialog:
-                icon = staticBitmap(dialog)
                 gCheckBox = checkBox(dialog,
                                      _(u"Don't show this in the future."))
-                sizer = vSizer(
-                    (hSizer(
-                        (icon,0,wx.ALL,6), hspace(6),
-                        (StaticText(dialog,message),1,wx.EXPAND),
-                        ),1,wx.EXPAND|wx.ALL,6),
-                    (gCheckBox,0,wx.EXPAND|wx.ALL^wx.TOP,6),
-                    (hSizer(
-                        hspacer,
-                        balt.Button(dialog,label=_(u'Move'),
+                VLayout(border=6, spacing=6, items=[
+                    HLayout(spacing=6, default_border=6, items=[
+                        (staticBitmap(dialog), LayoutOptions(v_align=balt.TOP)),
+                        (StaticText(dialog, message), LayoutOptions(fill=True))
+                    ]),
+                    Stretch(), Spacer(10), gCheckBox,
+                    (HLayout(spacing=4, items=[
+                        balt.Button(dialog, label=_(u'Move'),
                                     onButClick=lambda: dialog.EndModal(1)),
-                        hspace(),
                         balt.Button(dialog, label=_(u'Copy'),
                                     onButClick=lambda: dialog.EndModal(2)),
-                        hspace(), CancelButton(dialog),
-                        ),0,wx.EXPAND|wx.ALL^wx.TOP,6),
-                    )
-                dialog.SetSizer(sizer)
+                        CancelButton(dialog)
+                     ]), LayoutOptions(h_align=balt.RIGHT))
+                ]).apply_to(dialog)
                 result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
                 if result == 1: action = 'MOVE'
                 elif result == 2: action = 'COPY'
@@ -2616,7 +2598,6 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                        self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(self.checkListSplitter)
-        espmsLabel = StaticText(espmsPanel, _(u'Plugin Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
                                       kind='checklist',
@@ -2627,7 +2608,6 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                        self._on_plugin_filter_dclick)
         #--Comments
         commentsPanel = wx.Panel(bottom)
-        commentsLabel = StaticText(commentsPanel, _(u'Comments'))
         self.gComments = TextCtrl(commentsPanel, multiline=True,
                                   autotooltip=False)
         #--Splitter settings
@@ -2641,24 +2621,20 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         commentsSplitter.SplitHorizontally(subSplitter, commentsPanel)
         commentsSplitter.SetSashGravity(1.0)
         #--Layout
-        subPackagesSizer = vSizer(subPackagesLabel,(self.gSubList,1,wx.EXPAND))
-        subPackagesSizer.SetSizeHints(subPackagesPanel)
-        subPackagesPanel.SetSizer(subPackagesSizer)
-        espmsSizer = vSizer(espmsLabel, (self.gEspmList, 1, wx.EXPAND))
-        espmsSizer.SetSizeHints(espmsPanel)
-        espmsPanel.SetSizer(espmsSizer)
-        topSizer = vSizer(vspace(2),
-            (self.gPackage,0,wx.EXPAND|wx.LEFT,3),
-            (subSplitter,1,wx.EXPAND),
-            )
-        top.SetSizer(topSizer)
-        commentsSizer = vSizer(commentsLabel, (self.gComments,1,wx.EXPAND))
-        commentsSizer.SetSizeHints(commentsPanel)
-        commentsPanel.SetSizer(commentsSizer)
-        bottomSizer = vSizer(
-            (commentsPanel,1,wx.EXPAND))
-        bottomSizer.SetSizeHints(bottom)
-        bottom.SetSizer(bottomSizer)
+        VLayout(items=[subPackagesLabel,
+                       (self.gSubList, LayoutOptions(fill=True, weight=1))]
+                ).apply_to(subPackagesPanel)
+        VLayout(items=[StaticText(espmsPanel, _(u'Plugin Filter')),
+                       (self.gEspmList, LayoutOptions(fill=True, weight=1))]
+                ).apply_to(espmsPanel)
+        VLayout(default_fill=True,
+                items=[self.gPackage, (subSplitter, LayoutOptions(weight=1))]
+                ).apply_to(top)
+        VLayout(items=[StaticText(commentsPanel, _(u'Comments')),
+                       (self.gComments, LayoutOptions(fill=True, weight=1))]
+                ).apply_to(commentsPanel)
+        VLayout(default_fill=True, default_weight=1, items=[commentsPanel]
+                ).apply_to(bottom)
 
     def OnShowInfoPage(self,event):
         """A specific info page has been selected."""
@@ -3170,7 +3146,8 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
         super(ScreensDetails, self).__init__(parent)
         self.screenshot_control = balt.Picture(parent, 256, 192, background=colors['screens.bkgd.image'])
         self.displayed_screen = None # type: bolt.Path
-        self.SetSizer(hSizer((self.screenshot_control,1,wx.GROW)))
+        HLayout(default_fill=True, default_weight=True,
+                items=[self.screenshot_control]).apply_to(self)
 
     @property
     def displayed_item(self): return self.displayed_screen
@@ -3248,17 +3225,12 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         self.gInfo = TextCtrl(self.bottom, multiline=True,
                               onText=self.OnInfoEdit, maxChars=2048)
         #--Layout
-        nameSizer = vSizer(vspace(),
-            (hSizer(StaticText(self.top, _(u'File:'))), 0, wx.EXPAND),
-            (hSizer((self.file, 1, wx.EXPAND)), 0, wx.EXPAND))
-        nameSizer.SetSizeHints(self.top)
-        self.top.SetSizer(nameSizer)
-        infoSizer = vSizer(
-            (hSizer((self.gInfo,1,wx.EXPAND)),0,wx.EXPAND),
-            vspace(),
-        (hSizer(self.save, hspace(), self.cancel,),0,wx.EXPAND),)
-        infoSizer.SetSizeHints(self.bottom)
-        self.bottom.SetSizer(infoSizer)
+        VLayout(default_fill=True, items=[StaticText(self.top, _(u'File:')),
+                                          self.file]).apply_to(self.top)
+        VLayout(spacing=4, items=[
+            (self.gInfo, LayoutOptions(fill=True)),
+            HLayout(spacing=4, items=[self.save, self.cancel])
+        ]).apply_to(self.bottom)
 
     def _resetDetails(self):
         self._bsa_info = None
@@ -3355,12 +3327,11 @@ class PeopleDetails(_DetailsMixin, NotebookPanel):
         self.gKarma = spinCtrl(self,u'0',min=-5,max=5,onSpin=self.OnSpin)
         self.gKarma.SetSizeHints(40,-1)
         #--Layout
-        self.SetSizer(vSizer(
-            (hSizer((self.gName, 1, wx.GROW),
-                    (self.gKarma, 0, wx.GROW),
-                    ), 0, wx.GROW),
-            vspace(), (self.gText, 1, wx.GROW),
-        ))
+        VLayout(spacing=4, default_fill=True, items=[
+            HLayout(default_fill=True, items=[
+                (self.gName, LayoutOptions(weight=1)), self.gKarma]),
+            (self.gText, LayoutOptions(weight=1))
+        ]).apply_to(self)
 
     def OnSpin(self):
         """Karma spin."""

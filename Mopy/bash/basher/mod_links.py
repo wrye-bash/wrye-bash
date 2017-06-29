@@ -36,9 +36,10 @@ from .constants import settingDefaults
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, hspacer, \
-    StaticText, CheckLink, EnabledLink, AppendableLink, TransLink, RadioLink, \
-    SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, OkButton
+from ..balt import ItemLink, Link, TextCtrl, StaticText, CheckLink, \
+    EnabledLink, AppendableLink, TransLink, RadioLink, SeparatorLink, \
+    ChoiceLink, OneItemLink, Image, ListBoxes, OkButton, VLayout, HLayout, \
+    CancelButton, LayoutOptions, Spacer, Stretch, checkBox
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
@@ -2043,30 +2044,30 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             bass.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
-        okButton = OkButton(dialog, onButClick=OnOk)
         gskip = TextCtrl(dialog)
         gdeprefix = TextCtrl(dialog)
-        gskipcomments = toggleButton(dialog, _(u'Filter Out Comments'),
-            toggle_tip=_(u"If active doesn't export comments in the scripts"))
+        gskipcomments = checkBox(dialog, _(u'Filter Out Comments'),
+            checkbox_tip=_(u"If active doesn't export comments in the scripts"))
         gskip.SetValue(bass.settings['bash.mods.export.skip'])
         gdeprefix.SetValue(bass.settings['bash.mods.export.deprefix'])
         gskipcomments.SetValue(bass.settings['bash.mods.export.skipcomments'])
-        sizer = vSizer(
-            StaticText(dialog,_(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),noAutoResize=True),
-            gskip,
-            hspacer,
-            StaticText(dialog,(_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
-                               + u'\n' +
-                               _(u'as DenockInit.ext rather than as cobDenockInit.ext')
-                               + u'\n' +
-                               _(u'(Leave blank to not cut any prefix, non-case sensitive):')
-                               ),noAutoResize=True),
-            gdeprefix,
-            hspacer,
+        VLayout(border=6, spacing=4, items=[
+            StaticText(dialog, _(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),
+                       noAutoResize=True),
+            (gskip, LayoutOptions(fill=True)),
+            Spacer(10),
+            StaticText(dialog, (_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
+                                + u'\n' + _(u'as DenockInit.ext rather than as cobDenockInit.ext')
+                                + u'\n' + _(u'(Leave blank to not cut any prefix, non-case sensitive):')),
+                       noAutoResize=True),
+            (gdeprefix, LayoutOptions(fill=True)),
+            Spacer(10),
             gskipcomments,
-            balt.ok_and_cancel_sizer(dialog, okButton=okButton),
-            )
-        dialog.SetSizer(sizer)
+            Stretch(),
+            (HLayout(spacing=4, items=[
+                OkButton(dialog,onButClick=OnOk), CancelButton(dialog)]),
+             LayoutOptions(h_align=balt.RIGHT))
+        ]).apply_to(dialog, fit=True)
         with dialog: questions = dialog.ShowModal()
         if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!
         if not defaultPath.exists():

@@ -30,7 +30,8 @@ import wx
 from .. import bass, balt, bosh, bolt, load_order
 from ..balt import TextCtrl, StaticText, Button, \
     RoTextCtrl, bell, Link, toggleButton, SaveButton, CancelButton, \
-    BaltFrame, Resources, HtmlCtrl, HBox, VBox, GridBox, checkBox, set_event_hook
+    BaltFrame, Resources, HtmlCtrl, HLayout, VLayout, GridLayout, checkBox, \
+    LayoutOptions, Stretch, set_event_hook, Spacer
 from ..bolt import GPath
 from ..bosh import omods
 
@@ -81,21 +82,19 @@ class DocBrowser(BaltFrame):
         self._buttons = [self._set_btn, self._forget_btn, self._rename_btn,
                          self._edit_btn, self._open_btn,
                          self._prev_btn, self._next_btn]
-        #--New layout
-        mod_list_layout = VBox(mod_list_window, spacing=4, default_grow=True)
-        mod_list_layout.add(self._mod_name_box)
-        mod_list_layout.add(self._mod_list, weight=1)
-
-        button_row_sizer = HBox(default_grow=True)
-        button_row_sizer.add_many(*self._buttons)
-        main_layout = VBox(main_window, spacing=4, default_grow=True)
-        main_layout.add(button_row_sizer)
-        main_layout.add(self._doc_name_box)
-        main_layout.add(self._doc_ctrl.web_viewer, weight=3)
-
+        #--Mod list
+        VLayout(spacing=4, default_fill=True, items=[
+            self._mod_name_box, (self._mod_list, LayoutOptions(weight=1))
+        ]).apply_to(mod_list_window)
+        #--Text field and buttons
+        VLayout(spacing=4, default_fill=True, items=[
+            HLayout(default_fill=True, items=self._buttons),
+            self._doc_name_box,
+            (self._doc_ctrl.web_viewer, LayoutOptions(weight=3))
+        ]).apply_to(main_window)
         root_window.SplitVertically(mod_list_window, main_window, 250)
-        root_layout = VBox(self)
-        root_layout.add(root_window, weight=1, grow=True, border=4)
+        VLayout(default_fill=1, default_border=4, default_weight=1,
+                items=[root_window])
         for btn in self._buttons:
             btn.Disable()
 
@@ -344,24 +343,17 @@ class ModChecker(BaltFrame):
         _f(_UPDATE,     'click',  _(u'Update'))
         #--Events
         set_event_hook(self, balt.Events.ACTIVATE, self.OnActivate)
-        # Top row
-        top_row = HBox(spacing=4)
-        top_row.add_many(back_button, forward_button,
-                         self._buttons[_MOD_LIST], self._buttons[_CRC],
-                         self._buttons[_VERSION])
-        top_row.add_stretch()
-        top_row.add(self._buttons[_COPY_TEXT])
-        # Bottom row
-        bottom_row = HBox(spacing=4)
-        bottom_row.add_many(self._buttons[_SCAN_DIRTY],
-                            self._buttons[_RULE_SETS], self._buttons[_NOTES],
-                            self._buttons[_CONFIG], self._buttons[_SUGGEST])
-        bottom_row.add_stretch()
-        bottom_row.add(self._buttons[_UPDATE])
-        # Main layout
-        main_layout = VBox(self, default_grow=True, default_border=4)
-        main_layout.add(self._html_ctrl.web_viewer, weight=1)
-        main_layout.add_many(top_row, bottom_row)
+        VLayout(border=4, spacing=4, default_fill=True, items=[
+            (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
+            HLayout(spacing=4, items=[
+                back_button, forward_button, self._buttons[_MOD_LIST],
+                self._buttons[_CRC], self._buttons[_VERSION], Stretch(),
+                self._buttons[_COPY_TEXT]]),
+            HLayout(spacing=4, items=[
+                self._buttons[_SCAN_DIRTY], self._buttons[_RULE_SETS],
+                self._buttons[_NOTES], self._buttons[_CONFIG],
+                self._buttons[_SUGGEST], Stretch(), self._buttons[_UPDATE]])
+        ]).apply_to(self)
         self.CheckMods()
 
     def OnCopyText(self):
@@ -444,27 +436,24 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         self.gEmail = TextCtrl(self, config.email, maxChars=512)
         self.gAbstract = TextCtrl(self, config.abstract, multiline=True,
                                   maxChars=4 * 1024)
-        grid = GridBox(h_spacing=4, v_spacing=4)
-        for row, (text, widget) in enumerate([(_(u'Name:'), self.gName),
-                                              (_(u'Version:'), self.gVersion),
-                                              (_(u'Website:'), self.gWebsite),
-                                              (_(u'Author:'), self.gAuthor),
-                                              (_(u'Email:'), self.gEmail)]):
-            grid.add(0, row, StaticText(self, text))
-            grid.add(1, row, widget, grow=True)
-        grid.set_stretch(col=1, weight=1)
-
-        # Bottom row
-        bottom_row = HBox(spacing=4)
-        bottom_row.add_stretch()
-        bottom_row.add(SaveButton(self, onButClick=self.DoSave, default=True))
-        bottom_row.add(CancelButton(self, onButClick=self.OnCloseWindow))
-        # Main layout
-        main_layout = VBox(self, default_grow=True, default_border=4)
-        main_layout.add(grid)
-        main_layout.add(StaticText(self, _(u'Abstract')), grow=False)
-        main_layout.add(self.gAbstract, weight=1)
-        main_layout.add(bottom_row)
+        #--Layout
+        def _no_fill_text(txt):
+            return StaticText(self, txt), LayoutOptions(fill=False)
+        VLayout(default_fill=True, spacing=4, border=4, items=[
+            GridLayout(h_spacing=4, v_spacing=4, default_v_align=balt.CENTER,
+                       stretch_cols=[1], default_fill=True, items=[
+                (_no_fill_text(_(u'Name:')), self.gName),
+                (_no_fill_text(_(u'Version:')), self.gVersion),
+                (_no_fill_text(_(u'Website:')), self.gWebsite),
+                (_no_fill_text(_(u'Author:')), self.gAuthor),
+                (_no_fill_text(_(u'Email:')), self.gEmail)]),
+            Spacer(10),
+            _no_fill_text(_(u'Abstract')),
+            (self.gAbstract, LayoutOptions(weight=1)),
+            HLayout(spacing=4, items=[
+                SaveButton(self, onButClick=self.DoSave, default=True),
+                CancelButton(self, onButClick=self.OnCloseWindow)])
+        ]).apply_to(self)
         self.SetSize((350,400))
 
     def DoSave(self):

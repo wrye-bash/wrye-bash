@@ -28,14 +28,13 @@ import copy
 import errno
 import re
 import time
-import wx
 from datetime import timedelta
 from . import BashFrame ##: drop this - decouple !
 from .. import bass, bosh, bolt, balt, env, load_order
-from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
-    SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
-    RevertToSavedButton, RevertButton, hspace, vspace, Resources, \
-    set_event_hook, Events
+from ..balt import StaticText, Link, OkButton, SelectAllButton, CancelButton, \
+    SaveAsButton, OpenButton, RevertToSavedButton, RevertButton, Resources, \
+    VLayout, HLayout, LayoutOptions, Stretch, set_event_hook, Events, \
+    HorizontalLine
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError
@@ -124,33 +123,26 @@ class PatchDialog(balt.Dialog):
         set_event_hook(self.gPatchers, Events.CHAR_KEY_PRESSED, self.OnChar)
         self.mouse_dex = -1
         #--Layout
-        self.gConfigSizer = gConfigSizer = vSizer()
-        sizer = vSizer(
-            (hSizer(
-                (self.gPatchers,0,wx.EXPAND), hspace(),
-                (self.gConfigSizer,1,wx.EXPAND),
-                ),1,wx.EXPAND|wx.ALL,4),
-            (self.gTipText,0,wx.EXPAND|wx.ALL^wx.TOP,4),
-            (wx.StaticLine(self),0,wx.EXPAND), vspace(),
-            (hSizer(hspacer,
-                hspace(), self.gExportConfig,
-                hspace(), self.gImportConfig,
-                hspace(), self.gRevertConfig,
-                hspace(), self.gRevertToDefault,
-                ),0,wx.EXPAND|wx.ALL^wx.TOP,4),
-            (hSizer(hspacer,
-                self.gExecute,
-                hspace(), self.gSelectAll,
-                hspace(), self.gDeselectAll,
-                hspace(), cancelButton,
-                ),0,wx.EXPAND|wx.ALL^wx.TOP,4)
-            )
-        self.SetSizer(sizer)
+        self.config_layout = VLayout(default_fill=True, default_weight=1)
+        VLayout(border=4, spacing=4, default_fill=True, items=[
+            (HLayout(spacing=4, default_fill=True, items=[
+                self.gPatchers,
+                (self.config_layout, LayoutOptions(weight=1))
+             ]), LayoutOptions(weight=1)),
+            self.gTipText,
+            HorizontalLine(parent),
+            HLayout(spacing=4, items=[
+                Stretch(), self.gExportConfig, self.gImportConfig,
+                self.gRevertConfig, self.gRevertToDefault]),
+            HLayout(spacing=4, items=[
+                Stretch(), self.gExecute, self.gSelectAll, self.gDeselectAll,
+                cancelButton])
+        ]).apply_to(self)
         self.SetIcons(Resources.bashMonkey)
         #--Patcher panels
         for patcher in self.patchers:
-            gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
-            gConfigSizer.Show(gConfigPanel,False)
+            patcher.GetConfigPanel(self, self.config_layout,
+                                   self.gTipText).Hide()
         initial_select = min(len(self.patchers)-1,1)
         if initial_select >= 0:
             self.gPatchers.SetSelection(initial_select) # callback not fired
@@ -167,12 +159,10 @@ class PatchDialog(balt.Dialog):
 
     def ShowPatcher(self,patcher):
         """Show patcher panel."""
-        gConfigSizer = self.gConfigSizer
         if patcher == self.currentPatcher: return
         if self.currentPatcher is not None:
-            gConfigSizer.Show(self.currentPatcher.gConfigPanel,False)
-        gConfigPanel = patcher.GetConfigPanel(self,gConfigSizer,self.gTipText)
-        gConfigSizer.Show(gConfigPanel,True)
+            self.currentPatcher.gConfigPanel.Hide()
+        patcher.GetConfigPanel(self, self.config_layout, self.gTipText).Show()
         self.Layout()
         patcher.Layout()
         self.currentPatcher = patcher

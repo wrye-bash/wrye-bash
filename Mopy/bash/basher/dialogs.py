@@ -27,9 +27,10 @@ import wx
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
-from ..balt import Button, hSizer, Link, colors, RoTextCtrl, vSizer, hspacer, \
-    checkBox, StaticText, Image, bell, TextCtrl, tooltip, OkButton, \
-    CancelButton, ApplyButton, hspace, vspace, Resources, set_event_hook, Events
+from ..balt import Button, Link, colors, RoTextCtrl, checkBox, StaticText, \
+    Image, bell, TextCtrl, tooltip, OkButton, CancelButton, ApplyButton, \
+    Resources, VLayout, HLayout, GridLayout, LayoutOptions, set_event_hook, \
+    Events, Stretch
 from ..bosh import faces
 
 class ColorDialog(balt.Dialog):
@@ -82,21 +83,18 @@ class ColorDialog(balt.Dialog):
         set_event_hook(self.picker, Events.COLORPICKER_CHANGED,
                        self.OnColorPicker)
         #--Layout
-        sizer = vSizer(
-            (hSizer((self.comboBox,1,wx.EXPAND), hspace(5), self.picker,
-                ),0,wx.EXPAND|wx.ALL,5),
-            (self.textCtrl,1,wx.EXPAND|wx.ALL,5),
-            (hSizer(self.defaultAll, hspace(5),
-                    self.applyAll, hspace(5),
-                    self.export_config,
-                    ),0,wx.EXPAND|wx.ALL,5),
-            (hSizer(self.default, hspace(5),
-                    self.apply, hspace(5),
-                    self.importConfig, hspacer, self.ok,
-                    ),0,wx.EXPAND|wx.ALL,5),
-            )
+        VLayout(border=5, default_fill=True, spacing=5, items=[
+            HLayout(items=[
+                (self.comboBox, LayoutOptions(fill=True, weight=1)),
+                self.picker]),
+            (self.textCtrl, LayoutOptions(weight=1)),
+            GridLayout(h_spacing=5, v_spacing=5, default_fill=True,
+                       stretch_cols=[3], items=[
+                (self.defaultAll, self.applyAll, self.export_config),
+                (self.default, self.apply, self.importConfig, None, self.ok)
+            ])
+        ]).apply_to(self)
         self.comboBox.SetFocus()
-        self.SetSizer(sizer)
         self.SetIcons(Resources.bashBlue)
         self.UpdateUIButtons()
 
@@ -302,40 +300,21 @@ class ImportFaceDialog(balt.Dialog):
         importButton = Button(self, label=_(u'Import'),
                               onButClick=self.DoImport, default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
-        #--Layout
-        fgSizer = wx.FlexGridSizer(5,2,2,4)
-        fgSizer.AddGrowableCol(1,1)
-        fgSizer.AddMany([
-            self.nameCheck,
-            self.nameText,
-            self.raceCheck,
-            self.raceText,
-            self.genderCheck,
-            self.genderText,
-            self.statsCheck,
-            self.statsText,
-            self.classCheck,
-            self.classText,
-            ])
-        sizer = hSizer(
-            (self.listBox,1,wx.EXPAND|wx.TOP,4),
-            (vSizer(
-                self.picture, vspace(),
-                (hSizer(
-                    (fgSizer,1),
-                    (vSizer(
-                        (importButton,0,wx.ALIGN_RIGHT),
-                        vspace(), CancelButton(self),
-                        )),
-                    ),0,wx.EXPAND),
-                ),0,wx.EXPAND|wx.ALL,4),
-            )
-        #--Done
-        if 'ImportFaceDialog' in balt.sizes:
-            self.SetSizer(sizer)
-            self.SetSize(balt.sizes['ImportFaceDialog'])
-        else:
-            self.SetSizerAndFit(sizer)
+        GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
+            # Row 1
+            ((self.listBox, LayoutOptions(row_span=2, fill=True)),
+             (self.picture, LayoutOptions(col_span=2, fill=True))),
+            # Row 2
+            (None,  # note the row_span in the prev row
+             GridLayout(h_spacing=4, v_spacing=2, stretch_cols=[1], items=[
+                 (self.nameCheck, self.nameText),
+                 (self.raceCheck, self.raceText),
+                 (self.genderCheck, self.genderText),
+                 (self.statsCheck, self.statsText),
+                 (self.classCheck, self.classText)]),
+             (VLayout(spacing=4, items=[importButton, CancelButton(self)]),
+              LayoutOptions(h_align=balt.RIGHT, v_align=balt.BOTTOM)))
+        ]).apply_to(self)
 
     def EvtListBox(self,event):
         """Responds to listbox selection."""
@@ -399,29 +378,19 @@ class CreateNewProject(balt.Dialog):
             self.checkWizard.Disable()
             self.checkWizardImages.Disable()
         self.checkDocs = checkBox(self,_(u'Docs Directory'))
-        # self.checkScreenshot = checkBox(self,_(u'Preview Screenshot(No.ext)(re-enable for BAIT)'))
-        # self.checkScreenshot.Disable() #Remove this when BAIT gets preview stuff done
-        okButton = OkButton(self, onButClickEventful=self.OnClose)
-        cancelButton = CancelButton(self, onButClickEventful=self.OnCancel)
         # Panel Layout
-        hsizer = balt.hSizer()
-        hsizer.Add(okButton,0,wx.ALL|wx.ALIGN_CENTER,10)
-        hsizer.Add(cancelButton,0,wx.ALL|wx.ALIGN_CENTER,10)
-        vsizer = balt.vSizer()
-        vsizer.Add(StaticText(self,_(u'What do you want to name the New Project?'),style=wx.TE_RICH2),0,wx.ALL|wx.ALIGN_CENTER,10)
-        vsizer.Add(self.textName,0,wx.ALL|wx.ALIGN_CENTER|wx.EXPAND,2)
-        vsizer.Add(StaticText(self,_(u'What do you want to add to the New Project?')),0,wx.ALL|wx.ALIGN_CENTER,10)
-        vsizer.Add(self.checkEsp,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkEspMasterless,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkWizard,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkWizardImages,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(self.checkDocs,0,wx.ALL|wx.ALIGN_TOP,5)
-        # vsizer.Add(self.checkScreenshot,0,wx.ALL|wx.ALIGN_TOP,5)
-        vsizer.Add(wx.StaticLine(self))
-        vsizer.AddStretchSpacer()
-        vsizer.Add(hsizer,0,wx.ALIGN_CENTER)
-        vsizer.AddStretchSpacer()
-        self.SetSizer(vsizer)
+        VLayout(border=5, spacing=5, items=[
+            StaticText(self, _(u'What do you want to name the New Project?')),
+            (self.textName, LayoutOptions(fill=True)),
+            StaticText(self,_(u'What do you want to add to the New Project?')),
+            self.checkEsp, self.checkEspMasterless, self.checkWizard,
+            self.checkWizardImages, self.checkDocs,
+            Stretch(),
+            (HLayout(spacing=5, items=[
+                OkButton(self, onButClickEventful=self.OnClose),
+                CancelButton(self, onButClickEventful=self.OnCancel)]),
+             LayoutOptions(h_align=balt.CENTER))
+        ]).apply_to(self)
         self.SetInitialSize()
         # Event Handlers
         set_event_hook(self.textName, Events.TEXT_CHANGED,

@@ -35,7 +35,8 @@ from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
-from balt import vspace, hspace, set_event_hook, Events
+from balt import VLayout, LayoutOptions, HBoxedLayout, Image, \
+    GridLayout, Stretch, set_event_hook, Events, HLayout
 from env import get_file_version
 
 #Translateable strings
@@ -201,13 +202,11 @@ class PageError(PageInstaller):
         #Disable the "Finish"/"Next" button
         self._enableForward(False)
         #Layout stuff
-        sizerMain = wx.FlexGridSizer(2, 1, 5, 5)
-        textError = balt.RoTextCtrl(self, errorMsg, autotooltip=False)
-        sizerMain.Add(balt.StaticText(parent, label=title))
-        sizerMain.Add(textError, 0, wx.ALL|wx.CENTER|wx.EXPAND)
-        sizerMain.AddGrowableCol(0)
-        sizerMain.AddGrowableRow(1)
-        self.SetSizer(sizerMain)
+        VLayout(spacing=5, items=[
+            balt.StaticText(self, label=title),
+            (balt.RoTextCtrl(self, errorMsg, autotooltip=False),
+                        LayoutOptions(weight=1, fill=True))
+        ]).apply_to(self)
         self.Layout()
 
     def GetNext(self): return None
@@ -226,19 +225,10 @@ class PageSelect(PageInstaller):
         self.bMany = bMany
         self.bmp = wx.EmptyBitmap(1, 1)
         self.index = None
-        sizerMain = wx.FlexGridSizer(5, 1, 5, 0)
-        sizerTitle = balt.hsbSizer(self)
         self.TitleDesc = balt.StaticText(self, desc)
         self.TitleDesc.Wrap(parent.GetPageSize()[0]-10)
-        sizerTitle.Add(self.TitleDesc, 1, wx.ALIGN_CENTER|wx.ALL)
-        sizerMain.Add(sizerTitle, 0, wx.EXPAND)
-        sizerMain.Add(balt.StaticText(self, _(u'Options:')))
-        sizerBoxes = wx.GridSizer(1, 2, 5, 5)
         self.textItem = balt.RoTextCtrl(self, autotooltip=False)
         self.bmpItem = balt.Picture(self,0,0,background=None)
-        if parent.parser.choiceIdex < len(parent.parser.choices):
-            oldChoices = parent.parser.choices[parent.parser.choiceIdex]
-            defaultMap = [choice in oldChoices for choice in listItems]
         list_box = partial(balt.listBox, self, choices=listItems,
                            isHScroll=True, onSelect=self.OnSelect)
         if bMany:
@@ -253,15 +243,15 @@ class PageSelect(PageInstaller):
                     self.listOptions.SetSelection(index)
                     self.Selection(index)
                     break
-        sizerBoxes.Add(self.listOptions, 1, wx.ALL|wx.EXPAND)
-        sizerBoxes.Add(self.bmpItem, 1, wx.ALL|wx.EXPAND)
-        sizerMain.Add(sizerBoxes, wx.ID_ANY, wx.EXPAND)
-        sizerMain.Add(balt.StaticText(self, _(u'Description:')))
-        sizerMain.Add(self.textItem, wx.ID_ANY, wx.EXPAND|wx.ALL)
-        self.SetSizer(sizerMain)
-        sizerMain.AddGrowableRow(2)
-        sizerMain.AddGrowableRow(4)
-        sizerMain.AddGrowableCol(0)
+        VLayout(default_fill=True, spacing=5, items=[
+            HBoxedLayout(self, items=[self.TitleDesc]),
+            balt.StaticText(self, _(u'Options:')),
+            (HLayout(default_fill=True, default_weight=1,
+                     items=[self.listOptions, self.bmpItem]),
+             LayoutOptions(weight=1)),
+            balt.StaticText(self, _(u'Description:')),
+            (self.textItem, LayoutOptions(weight=1))
+        ]).apply_to(self)
         self.Layout()
         set_event_hook(self.bmpItem, Events.MOUSE_LEFT_DOUBLECLICK,
                        self.OnDoubleClick)
@@ -367,22 +357,15 @@ class PageFinish(PageInstaller):
         #--make the list that will be displayed
         displayed_plugins = []
         for x in plugins:
-            if x in plugin_renames:
-                displayed_plugins.append(x + u' -> ' + plugin_renames[x])
-            else:
-                displayed_plugins.append(x)
+            displayed_plugins.append(x + (u' -> ' + plugin_renames[x]
+                                          if x in plugin_renames else u''))
         displayed_plugins = [x.replace(u'&',u'&&') for x in displayed_plugins]
-        sizerMain = balt.vSizer()
         parent.parser.choiceIdex += 1
-        #--Heading
-        sizerTitle = balt.hsbSizer(self)
-        textTitle = balt.StaticText(self, _(u"The installer script has finished, and will apply the following settings:"))
+        def _text(text): return balt.StaticText(self, text)
+        textTitle = _text(_(u'The installer script has finished, and will '
+                            u'apply the following settings:'))
         textTitle.Wrap(parent.GetPageSize()[0]-10)
-        sizerTitle.Add(textTitle,0,wx.ALIGN_CENTER)
-        sizerMain.Add(sizerTitle,0,wx.EXPAND)
-        #--Subpackages and Plugins
-        subPackageSizer = balt.vSizer(
-            balt.StaticText(self, _(u'Sub-Packages')), vspace(2))
+        # Sub-packages
         self.listSubs = balt.listBox(self, choices=subs, kind='checklist',
                                      onCheck=self.OnSelectSubs)
         for index,key in enumerate(subs):
@@ -390,9 +373,6 @@ class PageFinish(PageInstaller):
             if subsList[key]:
                 self.listSubs.Check(index, True)
                 self.parent.ret.select_sub_packages.append(key)
-        subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
-        plugin_sizer = balt.vSizer(balt.StaticText(self, _(u'Plugins')),
-                                   vspace(2))
         self.plugin_selection = balt.listBox(self, choices=displayed_plugins,
                                              kind='checklist',
                                              onCheck=self._on_select_plugin)
@@ -400,54 +380,48 @@ class PageFinish(PageInstaller):
             if plugin_list[key]:
                 self.plugin_selection.Check(index, True)
                 self.parent.ret.select_plugins.append(key)
-        plugin_sizer.Add(self.plugin_selection, 1, wx.EXPAND)
         self.parent.ret.rename_plugins = plugin_renames
-        sizer_subs_plugins = balt.hSizer(
-            (subPackageSizer, 1, wx.EXPAND), hspace(5),
-            (plugin_sizer, 1, wx.EXPAND))
-        sizerMain.Add(*vspace(5))
-        sizerMain.Add(sizer_subs_plugins, 2, wx.EXPAND)
-        sizerMain.Add(*vspace(5))
-        #--Ini tweaks
-        sizerTweaks = balt.vSizer(balt.StaticText(self, _(u'Ini Tweaks:')),
-                                  vspace(2))
+        # Ini tweaks
         self.listInis = balt.listBox(self, onSelect=self.OnSelectIni,
                                      choices=[x.s for x in iniedits.keys()])
-        sizerTweaks.Add(self.listInis,1,wx.EXPAND)
-        sizerContents = balt.vSizer(balt.StaticText(self, u''), vspace(2))
         self.listTweaks = balt.listBox(self)
-        sizerContents.Add(self.listTweaks,1,wx.EXPAND)
-        sizerIniTweaks = balt.hSizer((sizerTweaks, 1, wx.EXPAND),
-            hspace(5), (sizerContents, 1, wx.EXPAND))
-        sizerMain.Add(sizerIniTweaks, 2, wx.EXPAND)
-        sizerMain.Add(*vspace(5))
         self.parent.ret.ini_edits = iniedits
-        #--Notes
-        sizerMain.Add(balt.StaticText(self, _(u'Notes:')))
-        sizerMain.Add(*vspace(2))
-        sizerMain.Add(
-            balt.RoTextCtrl(self, u''.join(notes), autotooltip=False), 1,
-            wx.EXPAND)
-        checkSizer = balt.hSizer()
-        checkSizer.AddStretchSpacer()
-        # Apply the selections
+        # Apply/install checkboxes
         self.checkApply = balt.checkBox(self, _(u'Apply these selections'),
                                         onCheck=self.OnCheckApply,
                                         checked=bAuto)
-        checkSubSizer = balt.vSizer(self.checkApply, vspace(2))
-        # Also install/anneal the package
         auto = bass.settings['bash.installers.autoWizard']
         self.checkInstall = balt.checkBox(self, _(u'Install this package'),
                                           onCheck=self.OnCheckInstall,
                                           checked=auto)
         self.parent.ret.should_install = auto
-        checkSubSizer.Add(self.checkInstall)
-        checkSizer.Add(checkSubSizer,0,wx.EXPAND)
-        sizerMain.Add(checkSizer,0,wx.TOP|wx.RIGHT|wx.EXPAND,5)
+        # Layout
+        layout = VLayout(default_fill=True, spacing=4, items=[
+            HBoxedLayout(self, items=[textTitle]),
+            (HLayout(default_fill=True, default_weight=1, spacing=5, items=[
+                VLayout(default_fill=True,
+                        items=[_text(_(u'Sub-Packages')),
+                               (self.listSubs, LayoutOptions(weight=1))]),
+                VLayout(default_fill=True,
+                        items=[_text(_(u'Plugins')),
+                               (self.plugin_selection,
+                                LayoutOptions(weight=1))]),
+             ]), LayoutOptions(weight=1)),
+            _text(_(u'Ini Tweaks:')),
+            (HLayout(default_fill=True, default_weight=1, spacing=5,
+                     items=[self.listInis, self.listTweaks]),
+             LayoutOptions(weight=1)),
+            _text(_(u'Notes:')),
+            (balt.RoTextCtrl(self, u''.join(notes), autotooltip=False),
+             LayoutOptions(weight=1)),
+            HLayout(items=[
+                Stretch(),
+                VLayout(spacing=2, items=[self.checkApply, self.checkInstall])
+            ])
+        ])
+        layout.apply_to(self)
         self._enableForward(bAuto)
         self.parent.finishing = True
-        sizerMain.SetSizeHints(self)
-        self.SetSizer(sizerMain)
         self.Layout()
 
     def OnCheckApply(self):
@@ -465,7 +439,8 @@ class PageFinish(PageInstaller):
 
     def _on_select_plugin(self, event):
         index = event.GetSelection()
-        self.plugin_selection.Check(index, not self.plugin_selection.IsChecked(index))
+        self.plugin_selection.Check(
+            index, not self.plugin_selection.IsChecked(index))
 
     def OnSelectIni(self, event):
         index = event.GetSelection()
@@ -481,20 +456,15 @@ class PageVersions(PageInstaller):
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
-        bmp = [wx.Bitmap(bass.dirs['images'].join(u'error_cross_24.png').s),
-               wx.Bitmap(bass.dirs['images'].join(u'checkmark_24.png').s)]
-        sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
-        self.textWarning = balt.StaticText(self, _(u'WARNING: The following version requirements are not met for using this installer.'))
-        self.textWarning.Wrap(parent.GetPageSize()[0]-20)
-        sizerMain.Add(self.textWarning, 0, wx.ALL|wx.ALIGN_CENTER, 5)
-        sizerVersionsTop = balt.hsbSizer(self, _(u'Version Requirements'))
-        sizerVersions = wx.FlexGridSizer(5, 4, 5, 5)
-        sizerVersionsTop.Add(sizerVersions, 1, wx.EXPAND, 0)
-        sizerVersions.AddStretchSpacer()
-        sizerVersions.Add(balt.StaticText(self, _(u'Need')))
-        sizerVersions.Add(balt.StaticText(self, _(u'Have')))
-        sizerVersions.AddStretchSpacer()
-
+        bmp = [Image(bass.dirs['images'].join(u'error_cross_24.png').s)
+                   .GetBitmap(),
+               Image(bass.dirs['images'].join(u'checkmark_24.png').s)
+                   .GetBitmap()]
+        def _text(text): return balt.StaticText(self, text)
+        versions_layout = GridLayout(h_spacing=5, v_spacing=5,
+                                     stretch_cols=[0, 1, 2, 3])
+        versions_layout.append_row([None, _text(_(u'Need')),
+                                    _text(_(u'Have'))])
         def _hyperlink(label, url): return wx.HyperlinkCtrl(self, balt.defId,
                                                        label=label, url=url)
         # Game
@@ -502,57 +472,44 @@ class PageVersions(PageInstaller):
             linkGame = _hyperlink(bush.game.displayName, bush.game.patchURL)
             linkGame.SetVisitedColour(linkGame.GetNormalColour())
         else:
-            linkGame = balt.StaticText(self, bush.game.displayName)
+            linkGame = _text(bush.game.displayName)
         linkGame.SetToolTip(balt.tooltip(bush.game.patchTip))
-        sizerVersions.Add(linkGame)
-        sizerVersions.Add(balt.StaticText(self, gameNeed))
-        sizerVersions.Add(balt.StaticText(self, gameHave))
-        sizerVersions.Add(balt.staticBitmap(self, bmp[bGameOk]))
+        versions_layout.append_row([linkGame, _text(gameNeed), _text(gameHave),
+                                    balt.staticBitmap(self, bmp[bGameOk])])
+        def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
+                      tooltip=None):
+            if tool is None or tool_name != u'':
+                link = _hyperlink(title or tool.long_name, url or tool.url)
+                link.SetVisitedColour(link.GetNormalColour())
+                link.SetToolTip(balt.tooltip(tooltip or tool.url_tip))
+                versions_layout.append_row([link, _text(need), _text(have),
+                                            balt.staticBitmap(self, bmp[ok])])
         # Script Extender
-        if bush.game.se.se_abbrev != u'':
-            linkSE = _hyperlink(bush.game.se.long_name, bush.game.se.url)
-            linkSE.SetVisitedColour(linkSE.GetNormalColour())
-            linkSE.SetToolTip(balt.tooltip(bush.game.se.url_tip))
-            sizerVersions.Add(linkSE)
-            sizerVersions.Add(balt.StaticText(self, seNeed))
-            sizerVersions.Add(balt.StaticText(self, seHave))
-            sizerVersions.Add(balt.staticBitmap(self, bmp[bSEOk]))
+        _link_row(bush.game.se, bush.game.se.se_abbrev, seNeed, seHave, bSEOk)
         # Graphics extender
-        if bush.game.ge.ge_abbrev != u'':
-            linkGE = _hyperlink(bush.game.ge.long_name, bush.game.ge.url)
-            linkGE.SetVisitedColour(linkGE.GetNormalColour())
-            linkGE.SetToolTip(balt.tooltip(bush.game.ge.url_tip))
-            sizerVersions.Add(linkGE)
-            sizerVersions.Add(balt.StaticText(self, geNeed))
-            sizerVersions.Add(balt.StaticText(self, geHave))
-            sizerVersions.Add(balt.staticBitmap(self, bmp[bGEOk]))
-        linkWB = _hyperlink(u'Wrye Bash',
-                            u'https://www.nexusmods.com/oblivion/mods/22368')
-        linkWB.SetVisitedColour(linkWB.GetNormalColour())
-        linkWB.SetToolTip(balt.tooltip(u'https://www.nexusmods.com/oblivion'))
-        sizerVersions.Add(linkWB)
-        sizerVersions.Add(balt.StaticText(self, wbNeed))
-        sizerVersions.Add(balt.StaticText(self, wbHave))
-        sizerVersions.Add(balt.staticBitmap(self, bmp[bWBOk]))
-        sizerVersions.AddGrowableCol(0)
-        sizerVersions.AddGrowableCol(1)
-        sizerVersions.AddGrowableCol(2)
-        sizerVersions.AddGrowableCol(3)
-        sizerMain.Add(sizerVersionsTop, 2, wx.ALL|wx.EXPAND, 5)
-        sizerMain.AddStretchSpacer()
-        sizerCheck = wx.FlexGridSizer(1, 2, 5, 5)
+        _link_row(bush.game.ge, bush.game.ge.ge_abbrev, geNeed, geHave, bGEOk)
+        # Wrye Bash
+        _link_row(None, u'', wbNeed, wbHave, bWBOk, title=u'Wrye Bash',
+                  url=u'https://www.nexusmods.com/oblivion/mods/22368',
+                  tooltip=u'https://www.nexusmods.com/oblivion')
+        versions_box = HBoxedLayout(self, _(u'Version Requirements'),
+                                    default_fill=True, default_weight=1,
+                                    items=[versions_layout])
+        text_warning = _text(_(u'WARNING: The following version requirements '
+                               u'are not met for using this installer.'))
+        text_warning.Wrap(parent.GetPageSize()[0]-20)
         self.checkOk = balt.checkBox(self, _(u'Install anyway.'),
                                      onCheck=self.OnCheck)
+        VLayout(items=[
+            Stretch(1),
+            (text_warning, LayoutOptions(h_align=balt.CENTER)),
+            Stretch(1),
+            (versions_box, LayoutOptions(fill=True, weight=1)),
+            Stretch(2),
+            (self.checkOk, LayoutOptions(h_align=balt.RIGHT,
+                                         v_align=balt.BOTTOM, border=5))
+        ]).apply_to(self)
         self._enableForward(False)
-        sizerCheck.AddStretchSpacer()
-        sizerCheck.Add(self.checkOk)
-        sizerCheck.AddGrowableRow(0)
-        sizerCheck.AddGrowableCol(0)
-        sizerMain.Add(sizerCheck, 3, wx.EXPAND)
-        self.SetSizer(sizerMain)
-        sizerMain.AddGrowableRow(0)
-        sizerMain.AddGrowableRow(2)
-        sizerMain.AddGrowableCol(0)
         self.Layout()
 
     def OnCheck(self):

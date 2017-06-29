@@ -351,6 +351,10 @@ def tooltip(tooltip_text, wrap=50):
     tooltip_text = textwrap.fill(tooltip_text, wrap)
     return wx.ToolTip(tooltip_text)
 
+def HorizontalLine(parent):
+    """Returns a simple horizontal graphical line."""
+    return wx.StaticLine(parent)
+
 class TextCtrl(wx.TextCtrl):
     """wx.TextCtrl with automatic tooltip if text goes past the width of the
     control."""
@@ -461,9 +465,9 @@ class CancelButton(Button):
     _id = wx.ID_CANCEL
     label = _(u'Cancel')
 
-def ok_and_cancel_sizer(parent, okButton=None):
-    return (hSizer(hspacer, okButton or OkButton(parent), hspace(),
-                   CancelButton(parent)), 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6)
+def ok_and_cancel_group(parent, on_ok=None):
+    return HLayout(spacing=4, items=[OkButton(parent, onButClick=on_ok),
+                                     CancelButton(parent)])
 
 class SaveButton(Button):
     _id = wx.ID_SAVE
@@ -553,127 +557,272 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
                                   unicode(special, "utf-8") + u' given')
     return wx.StaticBitmap(parent, defId, bitmap)
 
-# Sizers ----------------------------------------------------------------------
-hspacer = ((0, 0), 1) #--Used to space elements apart.
-def hspace(pixels=4):
-    return (pixels, 0),
 
-def vspace(pixels=4):
-    return (0, pixels),
+# Layouts ---------------------------------------------------------------------
+CENTER, LEFT, RIGHT, TOP, BOTTOM = 'center', 'left', 'right', 'top', 'bottom'
+_H_ALIGNS = {None: wx.ALIGN_LEFT,
+             CENTER: wx.ALIGN_CENTER_HORIZONTAL,
+             LEFT: wx.ALIGN_LEFT,
+             RIGHT: wx.ALIGN_RIGHT}
+_V_ALIGNS = {None: wx.ALIGN_CENTER_VERTICAL,
+             CENTER: wx.ALIGN_CENTER_VERTICAL,
+             TOP: wx.ALIGN_TOP,
+             BOTTOM: wx.ALIGN_BOTTOM}
 
-def _aSizer(sizer, *elements):
-    """Adds elements to a sizer."""
-    for element in elements:
-        if isinstance(element,tuple):
-            if element[0] is not None:
-                sizer.Add(*element)
-        elif element is not None:
-            sizer.Add(element)
-    return sizer
+class Spacer(object):
+    """A fixed-size space in a layout."""
+    def __init__(self, size=0):
+        self.size = size
 
-def hSizer(*elements):
-    """Horizontal sizer."""
-    return _aSizer(wx.BoxSizer(wx.HORIZONTAL), *elements)
+class Stretch(object):
+    """A space that will take up as much space as possible in a layout."""
+    def __init__(self, weight=1):
+        self.weight = weight
 
-def vSizer(*elements):
-    """Vertical sizer and elements."""
-    return _aSizer(wx.BoxSizer(wx.VERTICAL), *elements)
+class LayoutOptions(object):
+    """Container for all layouts' options. Note that some options may only
+    work with certain kinds of layouts (eg. col_span and row_span).
 
-class VSizer(wx.BoxSizer):
-    """Alpha sizer API attempt - don't use!"""
+    border (int)
+        The width (in pixels) of the empty space around an item.
+    fill (bool)
+        Whether the items should fill the entire space the layout has
+        allocated for it or not.
+    weight (int)
+        The relative amount an item will grow beyond the space the
+        layout has allocated for it. If in one layout there is only one item
+        with weight > 0, it will take up all remaining space. If multiple
+        items all have equal weight > 0, they will share the space equally.
+        If one item has twice the weight of another, it will take up twice
+        the space, etc.
+    h_align (LEFT/CENTER/RIGHT), v_align (TOP/CENTER/BOTTOM)
+        The horizontal and vertical alignment for an item
+        within the space the layout has allocated for it, specified with the
+        enums LEFT/CENTER/RIGHT for h_align and TOP/CENTER/BOTTOM for v_align.
+        Note that these options do nothing if fill is true, since the item
+        then takes up all of the space and has no room to move.
+    col_span, row_span (int)
+        The number of columns or rows this items should take up.
+    """
+    def __init__(self, border=None, fill=None, weight=None,
+                 h_align=None, v_align=None, col_span=None, row_span=None):
+        self.border = border
+        self.fill = fill
+        self.weight = weight
+        self.h_align = h_align
+        self.v_align = v_align
+        self.col_span = col_span
+        self.row_span = row_span
 
-    def __init__(self, *args):
-        super(VSizer, self).__init__(wx.VERTICAL)
-        _aSizer(self, *args)
-
-    def AddElements(self, *args):
-        _aSizer(self, *args)
-
-def hsbSizer(parent, box_label=u'', *elements):
-    """A horizontal box sizer, but surrounded by a static box."""
-    return _aSizer(wx.StaticBoxSizer(wx.StaticBox(parent, label=box_label),
-                                     wx.HORIZONTAL), *elements)
-class _SizerWrapper(object):
-    pass
-
-class Box(_SizerWrapper):
-    def __init__(self, vertical=False, parent=None, spacing=0,
-                 default_weight=0, default_grow=False, default_border=0):
-        self._spacing = spacing
-        self._sizer = wx.BoxSizer(wx.VERTICAL if vertical else wx.HORIZONTAL)
-        if parent is not None:
-            parent.SetSizer(self._sizer)
-        self.default_weight = default_weight
-        self.default_grow = default_grow
+class _Layout(object):
+    """Base class for all layouts, do not use directly!"""
+    def __init__(self, sizer, border=0, default_border=0, default_fill=False,
+                 default_h_align=None, default_v_align=None):
+        self._sizer = sizer
+        if border > 0:
+            self._border_wrapper = wx.BoxSizer(wx.VERTICAL)
+            self._border_wrapper.AddSizer(self._sizer, proportion=1,
+                                          flag=wx.ALL|wx.EXPAND,
+                                          border=border)
+        else:
+            self._border_wrapper = None
         self.default_border = default_border
+        self.default_fill = default_fill
+        self.default_h_align = default_h_align
+        self.default_v_align = default_v_align
+        self._parent = None
 
-    def add(self, element, weight=None, grow=None, border=None):
-        if isinstance(element, _SizerWrapper):
-            element = element._sizer
-        if weight is None:
-            weight = self.default_weight
-        if grow is None:
-            grow = self.default_grow
-        if border is None:
-            border = self.default_border
-        flags = wx.ALL | wx.ALIGN_CENTER_VERTICAL
-        if grow:
-            flags |= wx.EXPAND
-        if self._spacing > 0 and not self._sizer.IsEmpty():
-            self._sizer.AddSpacer(self._spacing)
-        self._sizer.Add(element, proportion=weight, flag=flags, border=border)
+    def apply_to(self, parent, fit=False):
+        """Apply this layout to to the parent."""
+        self._parent = parent
+        sizer = self._border_wrapper or self._sizer
+        if fit:
+            parent.SetSizerAndFit(sizer)
+        else:
+            parent.SetSizer(sizer)
 
-    def add_many(self, *elements):
-        for element in elements:
-            self.add(element)
+    def _get_item_options(self, item):
+        """Internal helper function to get possible options from the item."""
+        options = None
+        if isinstance(item, tuple):
+            item, options = item
+        if isinstance(item, _Layout):
+            item = item._sizer
+        border = self.default_border
+        fill_ = self.default_fill
+        h_align = self.default_h_align
+        v_align = self.default_v_align
+        if options:
+            if options.border is not None: border = options.border
+            if options.fill is not None: fill_ = options.fill
+            if options.h_align is not None: h_align = options.h_align
+            if options.v_align is not None: v_align = options.v_align
+        flags = wx.ALL | _H_ALIGNS[h_align] | _V_ALIGNS[v_align]
+        if fill_: flags |= wx.EXPAND
+        return item, options, border, flags
 
-    def add_spacer(self, height=4):
-        self._sizer.AddSpacer(height)
+class LineLayout(_Layout):
+    """A one-dimensional base layout. Do not instance this directly!"""
+    def __init__(self, sizer, border=0, spacing=0,
+                 default_border=0, default_fill=False, default_weight=0,
+                 default_h_align=None, default_v_align=None, items=()):
+        """Initiate the layout.
+        The default_* arguments are for when those options are not provided
+        when adding an item. See LayoutOptions for more information.
+        :param sizer: The sizer this layout will wrap around.
+        :param border: Size in pixels of an empty border around the layout.
+                       NOTE: this is around the layout, not individual items.
+        :param spacing: Size in pixels of spacing between each item.
+        :param items: Items or (item, options) pairs to add directly.
+        """
+        self.spacing = spacing
+        self.default_weight = default_weight
+        super(LineLayout, self).__init__(sizer, border=border,
+                                         default_border=default_border,
+                                         default_fill=default_fill,
+                                         default_h_align=default_h_align,
+                                         default_v_align=default_v_align)
+        if items: self.add_many(items)
+
+    def add(self, item):
+        """Add one item to the layout.
+        The argument may be a (item, options) pair."""
+        item, options, border, flags = super(LineLayout, self)._get_item_options(item)
+        if item is None: return
+        weight = (options.weight if options and options.weight is not None
+                  else self.default_weight)
+        if self.spacing > 0 and not self._sizer.IsEmpty():
+            self._sizer.AddSpacer(self.spacing)
+        self._sizer.Add(item, proportion=weight, flag=flags, border=border)
+
+    def add_many(self, items):
+        """Add multiple items to the layout.
+        The items may be (item, options) pairs, Stretch- or Spacer objects."""
+        for item in items:
+            if isinstance(item, Stretch):
+                self.add_stretch(item.weight)
+            elif isinstance(item, Spacer):
+                self.add_spacer(item.size)
+            else:
+                self.add(item)
+
+    def add_spacer(self, length=4):
+        """Add a fixed space to the layout."""
+        self._sizer.AddSpacer(length)
 
     def add_stretch(self, weight=1):
+        """Add a growing space to the layout."""
         self._sizer.AddStretchSpacer(prop=weight)
 
+class HBoxedLayout(LineLayout):
+    """A horizontal layout with a border around it and an optional title."""
+    def __init__(self, parent, title=u'', **kwargs):
+        sizer = wx.StaticBoxSizer(wx.StaticBox(parent, label=title),
+                                  wx.HORIZONTAL)
+        super(HBoxedLayout, self).__init__(sizer, **kwargs)
 
-class HBox(Box):
+class HLayout(LineLayout):
+    """A simple horizontal layout."""
     def __init__(self, *args, **kwargs):
-        super(HBox, self).__init__(False, *args, **kwargs)
+        super(HLayout, self).__init__(wx.BoxSizer(wx.HORIZONTAL),
+                                      *args, **kwargs)
 
-class VBox(Box):
+class VLayout(LineLayout):
+    """A simple vertical layout."""
     def __init__(self, *args, **kwargs):
-        super(VBox, self).__init__(True, *args, **kwargs)
+        super(VLayout, self).__init__(wx.BoxSizer(wx.VERTICAL),
+                                      *args, **kwargs)
 
-class GridBox(_SizerWrapper):
-    def __init__(self, parent=None, h_spacing=0, v_spacing=0,
-                 default_grow=False, default_border=0):
-        self._sizer = wx.GridBagSizer(hgap=h_spacing, vgap=v_spacing)
-        if parent is not None:
-            parent.SetSizer(self._sizer)
-        self.default_grow = default_grow
-        self.default_border = default_border
+class GridLayout(_Layout):
+    """A flexible grid layout.
+    It has no fixed or set number of rows or columns, but will instead grow to
+    fit its content. The weight of items are handled on a per-row and -col
+    basis, specified with stretch_cols/stretch_rows or set_stretch()."""
+    def __init__(self, border=0, h_spacing=0, v_spacing=0,
+                 stretch_cols=(), stretch_rows=(),
+                 default_fill=False, default_border=0,
+                 default_h_align=None, default_v_align=None, items=()):
+        """
+        Initiate the grid layout.
 
-    def add(self, col, row, element, grow=None, border=None):
-        if isinstance(element, _SizerWrapper):
-            element = element._sizer
-        if grow is None:
-            grow = self.default_grow
-        if border is None:
-            border = self.default_border
-        flags = wx.ALL
-        if grow:
-            flags |= wx.EXPAND
-        self._sizer.Add(element, (row, col), flag=flags,
-                        border=border)
+        :param h_spacing: the width (in pixels) of space between columns
+        :param v_spacing: the height (in pixels) of space between rows
+        :param stretch_cols: the columns (as a list of ints) that should
+            grow and fill available space
+        :param stretch_rows: the rows (as a list of ints) that should
+            grow and fill available space
+        :param items: Items or (item, options) pairs to add directly.
+        """
+        super(GridLayout, self).__init__(wx.GridBagSizer(hgap=h_spacing,
+                                                         vgap=v_spacing),
+                                         border=border,
+                                         default_border=default_border,
+                                         default_fill=default_fill,
+                                         default_h_align=default_h_align,
+                                         default_v_align=default_v_align)
+        if items:
+            self.append_rows(items)
+        for col in stretch_cols:
+            self.set_stretch(col=col)
+        for row in stretch_rows:
+            self.set_stretch(row=row)
+
+    def add(self, col, row, item):
+        """Add an item to the specified place in the layout.
+        If there is an item there already, it will be replaced.
+        If item is None, nothing will be added."""
+        item, options, border, flags = super(GridLayout, self)._get_item_options(item)
+        if item is None: return
+        col_span, row_span = 1, 1
+        if options:
+            if options.col_span is not None: col_span = options.col_span
+            if options.row_span is not None: row_span = options.row_span
+        self._sizer.Add(item, (row, col), span=(row_span, col_span),
+                        flag=flags, border=border)
+
+    def append_row(self, items):
+        """Add a row of items to the bottom of the layout."""
+        row = self._sizer.GetRows()
+        for col, item in enumerate(items):
+            if item is not None:
+                self.add(col, row, item)
+
+    def append_rows(self, item_rows):
+        """Add multiple rows of items to the bottom of the layout."""
+        row_num = self._sizer.GetRows()
+        for row, items in enumerate(item_rows, row_num):
+            for col, item in enumerate(items):
+                if item is not None:
+                    self.add(col, row, item)
+
+    def col_count(self):
+        """Return the number of columns in the layout."""
+        return self._sizer.GetCols()
+
+    def row_count(self):
+        """Return the number of rows in the layout."""
+        return self._sizer.GetRows()
 
     def set_stretch(self, col=None, row=None, weight=0):
+        """Set the relative weight of a column or a row."""
+        # The sizer blows up if you try to set a column or row to grow if
+        # there isn't something in it, so we add a space if that happens
         if row is not None:
-            if self._sizer.IsRowGrowable(row):
-                self._sizer.RemoveGrowableRow(row)
-            self._sizer.AddGrowableRow(row, proportion=weight)
+            if self._sizer.IsRowGrowable(row): # can't set growable...
+                self._sizer.RemoveGrowableRow(row) # ...if it's already set
+            try:
+                self._sizer.AddGrowableRow(row, proportion=weight)
+            except wx.PyAssertionError: # the sizer blows up
+                self._sizer.Add((0, 0), (row, 0)) # add space to the first col
+                self._sizer.AddGrowableRow(row, proportion=weight)
         if col is not None:
             if self._sizer.IsColGrowable(col):
                 self._sizer.RemoveGrowableCol(col)
-            self._sizer.AddGrowableCol(col, proportion=weight)
-
+            try:
+                self._sizer.AddGrowableCol(col, proportion=weight)
+            except wx.PyAssertionError:
+                self._sizer.Add((0, 0), (0, col))
+                self._sizer.AddGrowableCol(col, proportion=weight)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -739,19 +888,18 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
     return False
 
 def _continueDialog(parent, message, title, checkBoxText):
-    with Dialog(parent, title, size=(350, 200)) as dialog:
-        icon = staticBitmap(dialog)
+    with Dialog(parent, title, size=(350, -1)) as dialog:
         gCheckBox = checkBox(dialog, checkBoxText)
         #--Layout
-        sizer = vSizer(
-            (hSizer((icon, 0, wx.ALL, 6), hspace(6),
-                    (StaticText(dialog, message, noAutoResize=True), 1,
-                     wx.EXPAND)
-                    ), 1, wx.EXPAND | wx.ALL, 6),
-            (gCheckBox, 0, wx.EXPAND | wx.ALL ^ wx.TOP, 6),
-            ok_and_cancel_sizer(dialog),
-            )
-        dialog.SetSizer(sizer)
+        VLayout(border=6, spacing=6, default_fill=True, items=[
+            (HLayout(spacing=6, items=[
+                (staticBitmap(dialog), LayoutOptions(border=6, v_align=TOP)),
+                (StaticText(dialog, message, noAutoResize=True),
+                 LayoutOptions(fill=True, weight=1))]),
+             LayoutOptions(weight=1)),
+            gCheckBox,
+            ok_and_cancel_group(dialog)
+        ]).apply_to(dialog)
         #--Get continue key setting and return
         result = dialog.ShowModal()
         check = gCheckBox.GetValue()
@@ -931,8 +1079,8 @@ class HtmlCtrl(object):
                 lambda event: self._open_in_external(event.GetURL()))
             items.append(self._html_ctrl)
             self._text_ctrl.Disable()
-        main_layout = VBox(ctrl, default_weight=4, default_grow=True)
-        main_layout.add_many(*items)
+        VLayout(default_weight=4, default_fill=True,
+                items=items).apply_to(ctrl)
         self.switch_to_text() # default to text
 
     @staticmethod
@@ -1062,13 +1210,12 @@ class Log(_Log):
             #fixedStyle.SetFlags(0x4|0x80)
             fixedStyle.SetFont(fixedFont)
             txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
-        #--Buttons
-        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
         #--Layout
-        self.window.SetSizer(
-            vSizer((txtCtrl,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                   (gOkButton,0,wx.ALIGN_RIGHT|wx.ALL,4),
-            ))
+        VLayout(border=2, items=[
+            (txtCtrl, LayoutOptions(fill=True, weight=1, border=2)),
+            (OkButton(self.window, onButClick=self.window.Close, default=True),
+             LayoutOptions(h_align=RIGHT, border=2))
+        ]).apply_to(self.window)
         self.ShowLog()
 
 #------------------------------------------------------------------------------
@@ -1094,16 +1241,12 @@ class WryeLog(_Log):
         if not asDialog:
             self.window.SetBackgroundColour(gOkButton.GetBackgroundColour())
         #--Layout
-        prev_button, next_button = self._html_ctrl.get_buttons()
-        self.window.SetSizer(
-            vSizer(
-                (self._html_ctrl.web_viewer,1,wx.EXPAND|wx.ALL^wx.BOTTOM,2),
-                (hSizer(prev_button, next_button,
-                    hspacer,
-                    gOkButton,
-                    ),0,wx.ALL|wx.EXPAND,4),
-                )
-            )
+        VLayout(border=2, default_fill=True, items=[
+            (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
+            (HLayout(items=(self._html_ctrl.get_buttons()
+                            + (Stretch(), gOkButton))),
+             LayoutOptions(border=2))
+        ]).apply_to(self.window)
         self.ShowLog()
 
 def convert_wtext_to_html(logPath, logText):
@@ -1245,29 +1388,26 @@ class ListEditor(Dialog):
         for k,v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
-            buttons = vSizer()
-            for (flag,defLabel,func) in buttonSet:
-                if not flag: continue
-                label = (flag == True and defLabel) or flag
-                buttons.Add(Button(self, label, onButClick=func),
-                            0, wx.LEFT | wx.TOP, 4)
+            buttons = VLayout(spacing=4, items=[
+                Button(self, (flag == True and defLabel) or flag,
+                       onButClick=func)
+                for flag, defLabel, func in buttonSet if flag])
         else:
             buttons = None
         #--Layout
-        sizer = vSizer(
-            (captionText,0,wx.LEFT|wx.TOP,4),
-            (hSizer(
-                (self.listBox,1,wx.EXPAND|wx.TOP,4),
-                (self.gInfoBox,self._listEditorData.infoWeight,wx.EXPAND|wx.TOP,4),
-                (buttons,0,wx.EXPAND),
-                ),1,wx.EXPAND)
-            )
+        layout = VLayout(border=4, spacing=4, items=[
+            captionText,
+            (HLayout(spacing=4, default_fill=True, items=[
+                (self.listBox, LayoutOptions(weight=1)),
+                (self.gInfoBox, LayoutOptions(weight=self._listEditorData.infoWeight)),
+                buttons
+             ]), LayoutOptions(weight=1, fill=True))])
         #--Done
         if self.sizesKey in sizes:
-            self.SetSizer(sizer)
+            layout.apply_to(self)
             self.SetSize(sizes[self.sizesKey])
         else:
-            self.SetSizerAndFit(sizer)
+            layout.apply_to(self, fit=True)
 
     def GetSelected(self):
         return self.listBox.GetNextItem(-1,wx.LIST_NEXT_ALL,wx.LIST_STATE_SELECTED)
@@ -1835,9 +1975,6 @@ class UIList(wx.Panel):
         wx.Panel.__init__(self, parent, style=wx.WANTS_CHARS)
         self.data_store = listData # never use as local variable name !
         self.panel = panel
-        #--Layout
-        sizer = vSizer()
-        self.SetSizer(sizer)
         #--Settings key
         self.keyPrefix = keyPrefix
         #--Columns
@@ -1885,8 +2022,9 @@ class UIList(wx.Panel):
         self.mouseTextPrev = u''
         self.__gList.Bind(wx.EVT_MOTION, self.OnMouse)
         self.__gList.Bind(wx.EVT_LEAVE_WINDOW, self.OnMouse)
-        # Sizer
-        self.SetSizer(vSizer((self.__gList, 1, wx.EXPAND)))
+        #--Layout
+        VLayout(default_fill=True, default_weight=1,
+                items=[self.__gList]).apply_to(self)
         # Columns
         self.PopulateColumns()
         #--Items
@@ -2981,20 +3119,16 @@ class ListBoxes(Dialog):
         self.itemMenu.append(_CheckList_SelectAll(False))
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
-        sizer = wx.FlexGridSizer(len(lists) + 2, 1, 0, 0)
         self.text = StaticText(self, message)
         self.text.Rewrap(minWidth) # otherwise self.text expands to max width
-        sizer.AddGrowableRow(0) # needed so text fits - glitch on resize
-        sizer.Add(self.text, 0, wx.EXPAND)
+        layout = VLayout(border=5, spacing=5, items=[self.text])
         self._ids = {}
-        labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(minWidth, -1))
-        for i,item_group in enumerate(lists):
+        for item_group in lists:
             title = item_group[0] # also serves as key in self._ids dict
             item_tip = item_group[1]
             strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
             if len(strings) == 0: continue
-            subsizer = hsbSizer(self, title)
             if liststyle == 'check':
                 checksCtrl = listBox(self, choices=strings, isSingle=True,
                                      isHScroll=True, kind='checklist')
@@ -3017,19 +3151,15 @@ class ListBoxes(Dialog):
                         checksCtrl.AppendItem(child,subitem.s)
             self._ids[title] = checksCtrl.GetId()
             checksCtrl.SetToolTip(tooltip(item_tip))
-            subsizer.Add(checksCtrl,1,wx.EXPAND|wx.ALL,2)
-            sizer.Add(subsizer,0,wx.EXPAND|wx.ALL,5)
-            sizer.AddGrowableRow(i + 1)
-        okButton = OkButton(self, label=labels[wx.ID_OK], default=True)
-        buttonSizer = hSizer(hspacer,
-                             (okButton,0,wx.ALIGN_RIGHT),
-                             )
-        if canCancel:
-            buttonSizer.Add(CancelButton(self, label=labels[wx.ID_CANCEL]),0,wx.ALIGN_RIGHT|wx.LEFT,2)
-        sizer.Add(buttonSizer, 1, wx.EXPAND | wx.ALL ^ wx.TOP, 5)
-        sizer.AddGrowableCol(0)
-        sizer.SetSizeHints(self)
-        self.SetSizer(sizer)
+            layout.add((HBoxedLayout(self, default_fill=True,
+                                             title=title, default_weight=1,
+                                             items=[checksCtrl]),
+                        LayoutOptions(fill=True, weight=1)))
+        layout.add((HLayout(spacing=5, items=[
+                OkButton(self, label=bOk, default=True),
+                (CancelButton(self, label=bCancel) if canCancel else None)]
+                            ), LayoutOptions(h_align=RIGHT)))
+        layout.apply_to(self)
         #make sure that minimum size is at least the size of title
         if self.GetSize()[0] < minWidth:
             self.SetSize(wxSize(minWidth,-1))
