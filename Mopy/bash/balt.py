@@ -557,6 +557,18 @@ def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
                                   unicode(special, "utf-8") + u' given')
     return wx.StaticBitmap(parent, defId, bitmap)
 
+class ColorPicker(wx.ColourPickerCtrl):
+    """A button with a color that launches a color picker dialog."""
+    def __init__(self, parent, color=None):
+        super(ColorPicker, self).__init__(parent)
+        if color is not None:
+            self.set_color(color)
+
+    def get_color(self):
+        return self.GetColour()
+
+    def set_color(self, color):
+        self.SetColour(color)
 
 # Layouts ---------------------------------------------------------------------
 CENTER, LEFT, RIGHT, TOP, BOTTOM = 'center', 'left', 'right', 'top', 'bottom'
@@ -3266,6 +3278,9 @@ class INIListCtrl(wx.ListCtrl):
             self._contents.ScrollLines(scroll)
         event.Skip()
 
+    def fit_column_to_header(self, column):
+        self.SetColumnWidth(column, wx.LIST_AUTOSIZE_USEHEADER)
+
     def _get_selected_line(self, index): raise AbstractError
 
 # Status bar ------------------------------------------------------------------
@@ -3420,6 +3435,17 @@ class Splitter(wx.SplitterWindow):
     def __init__(self, *args, **kwargs):
         kwargs['style'] = kwargs.pop('style', splitterStyle)
         super(Splitter, self).__init__(*args, **kwargs)
+        self._panes = None
+
+    def make_vertical_panes(self):
+        self._panes = [wx.Panel(self), wx.Panel(self)]
+        self.SplitVertically(*self._panes)
+        return self._panes[0], self._panes[1]
+
+    def make_horizontal_panes(self):
+        self._panes = [wx.Panel(self), wx.Panel(self)]
+        self.SplitHorizontally(*self._panes)
+        return self._panes[0], self._panes[1]
 
 #------------------------------------------------------------------------------
 class NotebookPanel(wx.Panel):

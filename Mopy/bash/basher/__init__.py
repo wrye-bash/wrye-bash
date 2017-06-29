@@ -172,12 +172,10 @@ class SashPanel(NotebookPanel):
     def __init__(self, parent, isVertical=True):
         super(SashPanel, self).__init__(parent)
         self.splitter = splitter = balt.Splitter(self)
-        self.left = wx.Panel(splitter)
-        self.right = wx.Panel(splitter)
         if isVertical:
-            splitter.SplitVertically(self.left, self.right)
+            self.left, self.right = splitter.make_vertical_panes()
         else:
-            splitter.SplitHorizontally(self.left, self.right)
+            self.left, self.right = splitter.make_horizontal_panes()
         self.isVertical = isVertical
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
@@ -708,7 +706,7 @@ class INITweakLineCtrl(INIListCtrl):
             if self.iniContents.GetItemBackgroundColour(i) != background_color:
                 self.iniContents.SetItemBackgroundColour(i, background_color)
         #--Refresh column width
-        self.SetColumnWidth(0,wx.LIST_AUTOSIZE_USEHEADER)
+        self.fit_column_to_header(0)
 
 #------------------------------------------------------------------------------
 class TargetINILineCtrl(INIListCtrl):
@@ -741,7 +739,7 @@ class TargetINILineCtrl(INIListCtrl):
         except IOError:
             if bush.game.iniFiles[0] == bosh.iniInfos.ini.abs_path.stail:
                 Link.Frame.oblivionIniMissing = True
-        self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
+        self.fit_column_to_header(0)
 
 #------------------------------------------------------------------------------
 class ModList(_ModsUIList):
@@ -1630,8 +1628,8 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self._ini_detail = None
         left,right = self.left, self.right
         #--Remove from list button
-        self.button = balt.Button(right, _(u'Remove'),
-                                  onButClick=self._OnRemove)
+        self.removeButton = balt.Button(right, _(u'Remove'),
+                                        onButClick=self._OnRemove)
         #--Edit button
         self.editButton = balt.Button(right, _(u'Edit...'), onButClick=lambda:
                                       self.current_ini_path.start())
@@ -1652,7 +1650,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         VLayout(default_fill=True, spacing=4, items=[
             HLayout(spacing=4, items=[
                 (self.comboBox, LayoutOptions(fill=True, weight=1)),
-                self.button, self.editButton]),
+                self.removeButton, self.editButton]),
             (self.iniContents, LayoutOptions(weight=1))
         ]).apply_to(right)
         VLayout(default_fill=True, items=[
@@ -1688,7 +1686,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
 
     def _enable_buttons(self):
         isGameIni = bosh.iniInfos.ini in bosh.gameInis
-        self.button.Enable(not isGameIni)
+        self.removeButton.Enable(not isGameIni)
         self.editButton.Enable(not isGameIni or self.current_ini_path.isfile())
 
     def _OnRemove(self):
@@ -2588,8 +2586,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             self.infoPages.append([gPage,False])
         self.gNotebook.SetSelection(settings['bash.installers.page'])
         self.gNotebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,self.OnShowInfoPage)
+        subPackagesPanel, espmsPanel = self.checkListSplitter.make_vertical_panes()
         #--Sub-Installers
-        subPackagesPanel = wx.Panel(self.checkListSplitter)
         subPackagesLabel = StaticText(subPackagesPanel, _(u'Sub-Packages'))
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
                                      kind='checklist',
@@ -2597,7 +2595,6 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         set_event_hook(self.gSubList, Events.MOUSE_RIGHT_UP,
                        self.SubsSelectionMenu)
         #--Espms
-        espmsPanel = wx.Panel(self.checkListSplitter)
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
                                       kind='checklist',
@@ -2612,7 +2609,6 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                                   autotooltip=False)
         #--Splitter settings
         self.checkListSplitter.SetMinimumPaneSize(50)
-        self.checkListSplitter.SplitVertically(subPackagesPanel, espmsPanel)
         self.checkListSplitter.SetSashGravity(0.5)
         subSplitter.SetMinimumPaneSize(50)
         subSplitter.SplitHorizontally(self.gNotebook, self.checkListSplitter)
