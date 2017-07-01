@@ -31,13 +31,13 @@ import time
 from datetime import timedelta
 from . import BashFrame ##: drop this - decouple !
 from .. import bass, bosh, bolt, balt, env, load_order
-from ..balt import StaticText, Link, OkButton, SelectAllButton, CancelButton, \
-    SaveAsButton, OpenButton, RevertToSavedButton, RevertButton, Resources, \
-    VLayout, HLayout, LayoutOptions, Stretch, set_event_hook, Events, \
-    HorizontalLine
+from ..balt import Link, Resources, set_event_hook, Events, HorizontalLine
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError
+from ..gui import CancelButton, DeselectAllButton, HLayout, Label, \
+    LayoutOptions, OkButton, OpenButton, RevertButton, RevertToSavedButton, \
+    SaveAsButton, SelectAllButton, Stretch, VLayout
 from ..patcher import configIsCBash, exportConfig
 from ..patcher.patch_files import PatchFile, CBash_PatchFile
 from ..patcher.base import AListPatcher
@@ -89,33 +89,32 @@ class PatchDialog(balt.Dialog):
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
         self.gExecute = OkButton(self, label=_(u'Build Patch'),
-                                 onButClick=self.PatchExecute)
+                                 on_click=self.PatchExecute)
         # TODO(nycz): somehow move setUAC further into env?
         # Note: for this to work correctly, it needs to be run BEFORE
         # appending a menu item to a menu (and so, needs to be enabled/
         # disabled prior to that as well.
-        env.setUAC(self.gExecute.GetHandle(), True)
-        self.gSelectAll = SelectAllButton(self, label=_(u'Select All'),
-                                          onButClick=self.SelectAll)
-        self.gDeselectAll = SelectAllButton(self, label=_(u'Deselect All'),
-                                            onButClick=self.DeselectAll)
+        # TODO(nycz): DEWX - Button.GetHandle
+        env.setUAC(self.gExecute._native_widget.GetHandle(), True)
+        self.gSelectAll = SelectAllButton(self, on_click=self.SelectAll)
+        self.gDeselectAll = DeselectAllButton(self, on_click=self.DeselectAll)
         cancelButton = CancelButton(self)
         self.gPatchers = balt.listBox(self, choices=patcherNames,
                                       isSingle=True, kind='checklist',
                                       onSelect=self.OnSelect,
                                       onCheck=self.OnCheck)
         self.gExportConfig = SaveAsButton(self, label=_(u'Export'),
-                                          onButClick=self.ExportConfig)
+                                          on_click=self.ExportConfig)
         self.gImportConfig = OpenButton(self, label=_(u'Import'),
-                                        onButClick=self.ImportConfig)
-        self.gRevertConfig = RevertToSavedButton(
-            self, label=_(u'Revert To Saved'), onButClick=self.RevertConfig)
+                                        on_click=self.ImportConfig)
+        self.gRevertConfig = RevertToSavedButton(self,
+                                                 on_click=self.RevertConfig)
         self.gRevertToDefault = RevertButton(
-            self, label=_(u'Revert To Default'), onButClick=self.DefaultConfig)
+            self, label=_(u'Revert To Default'), on_click=self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
-        self.gTipText = StaticText(self,self.defaultTipText)
+        self.gTipText = Label(self,self.defaultTipText)
         #--Events
         set_event_hook(self, Events.RESIZE, self.OnSize) # save dialog size
         set_event_hook(self.gPatchers, Events.MOUSE_MOTION, self.OnMouse)
@@ -152,10 +151,7 @@ class PatchDialog(balt.Dialog):
     #--Core -------------------------------
     def SetOkEnable(self):
         """Sets enable state for Ok button."""
-        for patcher in self.patchers:
-            if patcher.isEnabled:
-                return self.gExecute.Enable(True)
-        self.gExecute.Enable(False)
+        self.gExecute.enabled = any(p.isEnabled for p in self.patchers)
 
     def ShowPatcher(self,patcher):
         """Show patcher panel."""
@@ -435,14 +431,14 @@ class PatchDialog(balt.Dialog):
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,True)
             patcher.mass_select()
-        self.gExecute.Enable(True)
+        self.gExecute.enabled = True
 
     def DeselectAll(self):
         """Deselect all patchers and entries in patchers with child entries."""
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,False)
             patcher.mass_select(select=False)
-        self.gExecute.Enable(False)
+        self.gExecute.enabled = False
 
     #--GUI --------------------------------
     def OnSize(self,event):
@@ -490,9 +486,9 @@ class PatchDialog(balt.Dialog):
             patcherClass = self.patchers[mouseItem].__class__
             tip = patcherClass.tip or re.sub(u'' r'\..*', u'.',
                             patcherClass.text.split(u'\n')[0], flags=re.U)
-            self.gTipText.SetLabel(tip)
+            self.gTipText.label_text = tip
         else:
-            self.gTipText.SetLabel(self.defaultTipText)
+            self.gTipText.label_text = self.defaultTipText
         event.Skip()
 
     def OnChar(self,event):

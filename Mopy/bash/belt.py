@@ -35,8 +35,9 @@ from ScriptParser import error
 import wx
 import wx.wizard as wiz     # wxPython wizard class
 import bosh, balt, bolt, bush
-from balt import VLayout, LayoutOptions, HBoxedLayout, Image, \
-    GridLayout, Stretch, set_event_hook, Events, HLayout
+from balt import Image, set_event_hook, Events
+from .gui import BOTTOM, CENTER, CheckBox, GridLayout, HBoxedLayout, HLayout, \
+    Label, LayoutOptions, RIGHT, Stretch, TextArea, VLayout
 from env import get_file_version
 
 #Translateable strings
@@ -203,9 +204,9 @@ class PageError(PageInstaller):
         self._enableForward(False)
         #Layout stuff
         VLayout(spacing=5, items=[
-            balt.StaticText(self, label=title),
-            (balt.RoTextCtrl(self, errorMsg, autotooltip=False),
-                        LayoutOptions(weight=1, fill=True))
+            Label(self, title),
+            (TextArea(self, editable=False, text=errorMsg, auto_tooltip=False),
+             LayoutOptions(weight=1, fill=True))
         ]).apply_to(self)
         self.Layout()
 
@@ -225,9 +226,9 @@ class PageSelect(PageInstaller):
         self.bMany = bMany
         self.bmp = wx.EmptyBitmap(1, 1)
         self.index = None
-        self.TitleDesc = balt.StaticText(self, desc)
-        self.TitleDesc.Wrap(parent.GetPageSize()[0]-10)
-        self.textItem = balt.RoTextCtrl(self, autotooltip=False)
+        self.TitleDesc = Label(self, desc)
+        self.TitleDesc.wrap(parent.GetPageSize()[0] - 10)
+        self.textItem = TextArea(self, editable=False, auto_tooltip=False)
         self.bmpItem = balt.Picture(self,0,0,background=None)
         list_box = partial(balt.listBox, self, choices=listItems,
                            isHScroll=True, onSelect=self.OnSelect)
@@ -245,11 +246,11 @@ class PageSelect(PageInstaller):
                     break
         VLayout(default_fill=True, spacing=5, items=[
             HBoxedLayout(self, items=[self.TitleDesc]),
-            balt.StaticText(self, _(u'Options:')),
+            Label(self, _(u'Options:')),
             (HLayout(default_fill=True, default_weight=1,
                      items=[self.listOptions, self.bmpItem]),
              LayoutOptions(weight=1)),
-            balt.StaticText(self, _(u'Description:')),
+            Label(self, _(u'Description:')),
             (self.textItem, LayoutOptions(weight=1))
         ]).apply_to(self)
         self.Layout()
@@ -275,7 +276,7 @@ class PageSelect(PageInstaller):
     def Selection(self, index):
         self._enableForward(True)
         self.index = index
-        self.textItem.SetValue(self.descs[index])
+        self.textItem.text_content = self.descs[index]
         # Don't want the bitmap to resize until we call self.Layout()
         self.bmpItem.Freeze()
         img = self.images[index]
@@ -361,10 +362,9 @@ class PageFinish(PageInstaller):
                                           if x in plugin_renames else u''))
         displayed_plugins = [x.replace(u'&',u'&&') for x in displayed_plugins]
         parent.parser.choiceIdex += 1
-        def _text(text): return balt.StaticText(self, text)
-        textTitle = _text(_(u'The installer script has finished, and will '
-                            u'apply the following settings:'))
-        textTitle.Wrap(parent.GetPageSize()[0]-10)
+        textTitle = Label(self, _(u'The installer script has finished, and '
+                                  u'will apply the following settings:'))
+        textTitle.wrap(parent.GetPageSize()[0] - 10)
         # Sub-packages
         self.listSubs = balt.listBox(self, choices=subs, kind='checklist',
                                      onCheck=self.OnSelectSubs)
@@ -387,32 +387,32 @@ class PageFinish(PageInstaller):
         self.listTweaks = balt.listBox(self)
         self.parent.ret.ini_edits = iniedits
         # Apply/install checkboxes
-        self.checkApply = balt.checkBox(self, _(u'Apply these selections'),
-                                        onCheck=self.OnCheckApply,
-                                        checked=bAuto)
+        self.checkApply = CheckBox(self, _(u'Apply these selections'),
+                                   on_toggle=self.OnCheckApply,
+                                   checked=bAuto)
         auto = bass.settings['bash.installers.autoWizard']
-        self.checkInstall = balt.checkBox(self, _(u'Install this package'),
-                                          onCheck=self.OnCheckInstall,
-                                          checked=auto)
+        self.checkInstall = CheckBox(self, _(u'Install this package'),
+                                     on_toggle=self.OnCheckInstall,
+                                     checked=auto)
         self.parent.ret.should_install = auto
         # Layout
         layout = VLayout(default_fill=True, spacing=4, items=[
             HBoxedLayout(self, items=[textTitle]),
             (HLayout(default_fill=True, default_weight=1, spacing=5, items=[
                 VLayout(default_fill=True,
-                        items=[_text(_(u'Sub-Packages')),
+                        items=[Label(self, _(u'Sub-Packages')),
                                (self.listSubs, LayoutOptions(weight=1))]),
                 VLayout(default_fill=True,
-                        items=[_text(_(u'Plugins')),
+                        items=[Label(self, _(u'Plugins')),
                                (self.plugin_selection,
                                 LayoutOptions(weight=1))]),
              ]), LayoutOptions(weight=1)),
-            _text(_(u'Ini Tweaks:')),
+            Label(self, _(u'Ini Tweaks:')),
             (HLayout(default_fill=True, default_weight=1, spacing=5,
                      items=[self.listInis, self.listTweaks]),
              LayoutOptions(weight=1)),
-            _text(_(u'Notes:')),
-            (balt.RoTextCtrl(self, u''.join(notes), autotooltip=False),
+            Label(self, _(u'Notes:')),
+            (TextArea(self, text=u''.join(notes), auto_tooltip=False),
              LayoutOptions(weight=1)),
             HLayout(items=[
                 Stretch(),
@@ -424,11 +424,11 @@ class PageFinish(PageInstaller):
         self.parent.finishing = True
         self.Layout()
 
-    def OnCheckApply(self):
-        self._enableForward(self.checkApply.IsChecked())
+    def OnCheckApply(self, is_checked):
+        self._enableForward(is_checked)
 
-    def OnCheckInstall(self):
-        self.parent.ret.should_install = self.checkInstall.IsChecked()
+    def OnCheckInstall(self, is_checked):
+        self.parent.ret.should_install = is_checked
 
     def GetNext(self): return None
 
@@ -460,11 +460,12 @@ class PageVersions(PageInstaller):
                    .GetBitmap(),
                Image(bass.dirs['images'].join(u'checkmark_24.png').s)
                    .GetBitmap()]
-        def _text(text): return balt.StaticText(self, text)
         versions_layout = GridLayout(h_spacing=5, v_spacing=5,
                                      stretch_cols=[0, 1, 2, 3])
-        versions_layout.append_row([None, _text(_(u'Need')),
-                                    _text(_(u'Have'))])
+        versions_layout.append_row([None, Label(self, _(u'Need')),
+                                    Label(self, _(u'Have'))])
+
+        # TODO(inf) de-wx! HyperlinkLabel? URLLabel?
         def _hyperlink(label, url): return wx.HyperlinkCtrl(self, balt.defId,
                                                        label=label, url=url)
         # Game
@@ -472,9 +473,10 @@ class PageVersions(PageInstaller):
             linkGame = _hyperlink(bush.game.displayName, bush.game.patchURL)
             linkGame.SetVisitedColour(linkGame.GetNormalColour())
         else:
-            linkGame = _text(bush.game.displayName)
+            linkGame = Label(self, bush.game.displayName)
         linkGame.SetToolTip(balt.tooltip(bush.game.patchTip))
-        versions_layout.append_row([linkGame, _text(gameNeed), _text(gameHave),
+        versions_layout.append_row([linkGame, Label(self, gameNeed),
+                                    Label(self, gameHave),
                                     balt.staticBitmap(self, bmp[bGameOk])])
         def _link_row(tool, tool_name, need, have, ok, title=None, url=None,
                       tooltip=None):
@@ -482,7 +484,8 @@ class PageVersions(PageInstaller):
                 link = _hyperlink(title or tool.long_name, url or tool.url)
                 link.SetVisitedColour(link.GetNormalColour())
                 link.SetToolTip(balt.tooltip(tooltip or tool.url_tip))
-                versions_layout.append_row([link, _text(need), _text(have),
+                versions_layout.append_row([link, Label(self, need),
+                                            Label(self, have),
                                             balt.staticBitmap(self, bmp[ok])])
         # Script Extender
         _link_row(bush.game.se, bush.game.se.se_abbrev, seNeed, seHave, bSEOk)
@@ -495,25 +498,26 @@ class PageVersions(PageInstaller):
         versions_box = HBoxedLayout(self, _(u'Version Requirements'),
                                     default_fill=True, default_weight=1,
                                     items=[versions_layout])
-        text_warning = _text(_(u'WARNING: The following version requirements '
-                               u'are not met for using this installer.'))
-        text_warning.Wrap(parent.GetPageSize()[0]-20)
-        self.checkOk = balt.checkBox(self, _(u'Install anyway.'),
-                                     onCheck=self.OnCheck)
+        text_warning = Label(self, _(u'WARNING: The following version '
+                                     u'requirements are not met for using '
+                                     u'this installer.'))
+        text_warning.wrap(parent.GetPageSize()[0] - 20)
+        self.checkOk = CheckBox(self, _(u'Install anyway.'),
+                                on_toggle=self.OnCheck)
         VLayout(items=[
             Stretch(1),
-            (text_warning, LayoutOptions(h_align=balt.CENTER)),
+            (text_warning, LayoutOptions(h_align=CENTER)),
             Stretch(1),
             (versions_box, LayoutOptions(fill=True, weight=1)),
             Stretch(2),
-            (self.checkOk, LayoutOptions(h_align=balt.RIGHT,
-                                         v_align=balt.BOTTOM, border=5))
+            (self.checkOk, LayoutOptions(h_align=RIGHT,
+                                         v_align=BOTTOM, border=5))
         ]).apply_to(self)
         self._enableForward(False)
         self.Layout()
 
-    def OnCheck(self):
-        self._enableForward(self.checkOk.IsChecked())
+    def OnCheck(self, is_checked):
+        self._enableForward(is_checked)
 
 class WryeParser(ScriptParser.Parser):
     """A derived class of Parser, for handling BAIN install wizards."""

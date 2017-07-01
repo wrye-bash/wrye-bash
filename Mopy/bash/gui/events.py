@@ -110,7 +110,7 @@ Return Values:
        execute. Only events that explicitly mention it in their documentation
        can be canceled, all others will raise a RuntimeError instead."""
 
-__author__ = 'Infernio'
+__author__ = u'Infernio'
 
 # no imports, everything else needs to be able to import this
 

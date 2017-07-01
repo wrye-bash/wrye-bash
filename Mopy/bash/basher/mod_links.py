@@ -36,10 +36,11 @@ from .constants import settingDefaults
 from .frames import DocBrowser
 from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, TextCtrl, StaticText, CheckLink, \
-    EnabledLink, AppendableLink, TransLink, RadioLink, SeparatorLink, \
-    ChoiceLink, OneItemLink, Image, ListBoxes, OkButton, VLayout, HLayout, \
-    CancelButton, LayoutOptions, Spacer, Stretch, checkBox
+from ..balt import ItemLink, Link, CheckLink, EnabledLink, AppendableLink,\
+    TransLink, RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, \
+    ListBoxes
+from ..gui import CancelButton, CheckBox, HLayout, Label, LayoutOptions, \
+    OkButton, RIGHT, Spacer, Stretch, TextField, VLayout
 from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
@@ -2039,34 +2040,35 @@ class Mod_Scripts_Export(_Mod_Export_Link):
         defaultPath = bass.dirs['patches'].join(fileName.s + u' Exported Scripts')
         def OnOk():
             dialog.EndModal(1)
-            bass.settings['bash.mods.export.deprefix'] = gdeprefix.GetValue().strip()
-            bass.settings['bash.mods.export.skip'] = gskip.GetValue().strip()
-            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.GetValue()
+            bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
+            bass.settings['bash.mods.export.skip'] = gskip.text_content.strip()
+            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.checked
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
-        gskip = TextCtrl(dialog)
-        gdeprefix = TextCtrl(dialog)
-        gskipcomments = checkBox(dialog, _(u'Filter Out Comments'),
-            checkbox_tip=_(u"If active doesn't export comments in the scripts"))
-        gskip.SetValue(bass.settings['bash.mods.export.skip'])
-        gdeprefix.SetValue(bass.settings['bash.mods.export.deprefix'])
-        gskipcomments.SetValue(bass.settings['bash.mods.export.skipcomments'])
+        gskip = TextField(dialog)
+        gdeprefix = TextField(dialog)
+        gskipcomments = CheckBox(dialog, _(u'Filter Out Comments'),
+                tooltip=_(u"If active doesn't export comments in the scripts"))
+        gskip.text_content = bass.settings['bash.mods.export.skip']
+        gdeprefix.text_content = bass.settings['bash.mods.export.deprefix']
+        gskipcomments.checked = bass.settings['bash.mods.export.skipcomments']
+        msg = [_(u'Remove prefix from file names i.e. enter cob to save '
+                 u'script cobDenockInit'),
+               _(u'as DenockInit.ext rather than as cobDenockInit.ext'),
+               _(u'(Leave blank to not cut any prefix, non-case sensitive):')]
         VLayout(border=6, spacing=4, items=[
-            StaticText(dialog, _(u"Skip prefix (leave blank to not skip any), non-case sensitive):"),
-                       noAutoResize=True),
+            Label(dialog, _(u'Skip prefix (leave blank to not skip any), '
+                            u'non-case sensitive):')),
             (gskip, LayoutOptions(fill=True)),
             Spacer(10),
-            StaticText(dialog, (_(u'Remove prefix from file names i.e. enter cob to save script cobDenockInit')
-                                + u'\n' + _(u'as DenockInit.ext rather than as cobDenockInit.ext')
-                                + u'\n' + _(u'(Leave blank to not cut any prefix, non-case sensitive):')),
-                       noAutoResize=True),
+            Label(dialog, u'\n'.join(msg)),
             (gdeprefix, LayoutOptions(fill=True)),
             Spacer(10),
             gskipcomments,
             Stretch(),
             (HLayout(spacing=4, items=[
-                OkButton(dialog,onButClick=OnOk), CancelButton(dialog)]),
-             LayoutOptions(h_align=balt.RIGHT))
+                OkButton(dialog, on_click=OnOk), CancelButton(dialog)]),
+             LayoutOptions(h_align=RIGHT))
         ]).apply_to(dialog, fit=True)
         with dialog: questions = dialog.ShowModal()
         if questions != 1: return #because for some reason cancel/close dialogue is returning 5101!

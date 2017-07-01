@@ -27,11 +27,12 @@ import string
 from . import bEnableWizard, tabInfo, BashFrame
 from .constants import colorInfo, settingDefaults, installercons
 from .. import bass, balt, bosh, bolt, bush, env
-from ..balt import Button, Link, colors, RoTextCtrl, checkBox, StaticText, \
-    Image, bell, TextCtrl, tooltip, OkButton, CancelButton, ApplyButton, \
-    Resources, VLayout, HLayout, GridLayout, LayoutOptions, set_event_hook, \
-    Events, Stretch, ColorPicker
+from ..balt import Link, colors, Image, bell, Resources, set_event_hook, \
+    Events, ColorPicker
 from ..bosh import faces
+from ..gui import ApplyButton, BOTTOM, Button, CancelButton, CENTER, \
+    CheckBox, GridLayout, HLayout, Label, LayoutOptions, OkButton, RIGHT, \
+    Stretch, TextArea, TextField, VLayout
 
 class ColorDialog(balt.Dialog):
     """Color configuration dialog"""
@@ -62,7 +63,7 @@ class ColorDialog(balt.Dialog):
         self.picker = ColorPicker(self, colors[choiceKey])
         #--Description
         help_ = colorInfo[choiceKey][1]
-        self.textCtrl = RoTextCtrl(self, help_)
+        self.textCtrl = TextArea(self, text=help_, editable=False)
         #--Buttons
         self.default = Button(self, _(u'Default'),
                               onButClickEventful=self.OnDefault)
@@ -134,10 +135,10 @@ class ColorDialog(balt.Dialog):
             color = colors[color_key]
         default = bool(color == settingDefaults['bash.colors'][color_key])
         # Update the Buttons, ComboBox, and ColorPicker
-        self.apply.Enable(changed)
-        self.applyAll.Enable(anyChanged)
-        self.default.Enable(not default)
-        self.defaultAll.Enable(not allDefault)
+        self.apply.enabled = changed
+        self.applyAll.enabled = anyChanged
+        self.default.enabled = not default
+        self.defaultAll.enabled = not allDefault
         self.picker.set_color(color)
         self.comboBox.SetFocusFromKbd()
 
@@ -146,6 +147,7 @@ class ColorDialog(balt.Dialog):
         self.comboBox.Unbind(wx.EVT_SIZE)
 
     def OnDefault(self,event):
+        # TODO(nycz): un-event this ok
         event.Skip()
         color_key = self.GetColorKey()
         newColor = settingDefaults['bash.colors'][color_key]
@@ -249,8 +251,8 @@ class ColorDialog(balt.Dialog):
         event.Skip()
         self.UpdateUIButtons()
         color_key = self.GetColorKey()
-        help = colorInfo[color_key][1]
-        self.textCtrl.SetValue(help)
+        description = colorInfo[color_key][1]
+        self.textCtrl.text_content = description
 
     def OnColorPicker(self,event):
         event.Skip()
@@ -284,20 +286,20 @@ class ImportFaceDialog(balt.Dialog):
         #--Name,Race,Gender Checkboxes
         fi_flgs = bosh.faces.PCFaces.pcf_flags(
             bass.settings.get('bash.faceImport.flags', 0x4))
-        self.nameCheck = checkBox(self, _(u'Name'), checked=fi_flgs.name)
-        self.raceCheck = checkBox(self, _(u'Race'), checked=fi_flgs.race)
-        self.genderCheck = checkBox(self, _(u'Gender'), checked=fi_flgs.gender)
-        self.statsCheck = checkBox(self, _(u'Stats'), checked=fi_flgs.stats)
-        self.classCheck = checkBox(self, _(u'Class'), checked=fi_flgs.iclass)
+        self.nameCheck = CheckBox(self, _(u'Name'), checked=fi_flgs.name)
+        self.raceCheck = CheckBox(self, _(u'Race'), checked=fi_flgs.race)
+        self.genderCheck = CheckBox(self, _(u'Gender'), checked=fi_flgs.gender)
+        self.statsCheck = CheckBox(self, _(u'Stats'), checked=fi_flgs.stats)
+        self.classCheck = CheckBox(self, _(u'Class'), checked=fi_flgs.iclass)
         #--Name,Race,Gender Text
-        self.nameText  = StaticText(self,u'-----------------------------')
-        self.raceText  = StaticText(self,u'')
-        self.genderText  = StaticText(self,u'')
-        self.statsText  = StaticText(self,u'')
-        self.classText  = StaticText(self,u'')
+        self.nameText  = Label(self,u'-----------------------------')
+        self.raceText  = Label(self,u'')
+        self.genderText  = Label(self,u'')
+        self.statsText  = Label(self,u'')
+        self.classText  = Label(self,u'')
         #--Other
         importButton = Button(self, label=_(u'Import'),
-                              onButClick=self.DoImport, default=True)
+                              on_click=self.DoImport, default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
@@ -312,7 +314,7 @@ class ImportFaceDialog(balt.Dialog):
                  (self.statsCheck, self.statsText),
                  (self.classCheck, self.classText)]),
              (VLayout(spacing=4, items=[importButton, CancelButton(self)]),
-              LayoutOptions(h_align=balt.RIGHT, v_align=balt.BOTTOM)))
+              LayoutOptions(h_align=RIGHT, v_align=BOTTOM)))
         ]).apply_to(self)
 
     def EvtListBox(self,event):
@@ -320,10 +322,10 @@ class ImportFaceDialog(balt.Dialog):
         itemDex = event.GetSelection()
         item = self.list_items[itemDex]
         face = self.data[item]
-        self.nameText.SetLabel(face.pcName)
-        self.raceText.SetLabel(face.getRaceName())
-        self.genderText.SetLabel(face.getGenderName())
-        self.statsText.SetLabel(_(u'Health ')+unicode(face.health))
+        self.nameText.label_text = face.pcName
+        self.raceText.label_text = face.getRaceName()
+        self.genderText.label_text = face.getGenderName()
+        self.statsText.label_text = _(u'Health ') + unicode(face.health)
         itemImagePath = bass.dirs['mods'].join(u'Docs', u'Images', '%s.jpg' % item)
         # TODO(ut): any way to get the picture ? see mod_links.Mod_Face_Import
         bitmap = itemImagePath.exists() and Image(
@@ -342,11 +344,11 @@ class ImportFaceDialog(balt.Dialog):
         #--Do import
         pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
         pc_flags.hair = pc_flags.eye = True
-        pc_flags.name = self.nameCheck.GetValue()
-        pc_flags.race = self.raceCheck.GetValue()
-        pc_flags.gender = self.genderCheck.GetValue()
-        pc_flags.stats = self.statsCheck.GetValue()
-        pc_flags.iclass = self.classCheck.GetValue()
+        pc_flags.name = self.nameCheck.checked
+        pc_flags.race = self.raceCheck.checked
+        pc_flags.gender = self.genderCheck.checked
+        pc_flags.stats = self.statsCheck.checked
+        pc_flags.iclass = self.classCheck.checked
         #deprint(flags.getTrueAttrs())
         bass.settings['bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],pc_flags)
@@ -363,32 +365,32 @@ class CreateNewProject(balt.Dialog):
         self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).isdir()]
 
         #--Attributes
-        self.textName = TextCtrl(self, _(u'New Project Name-#####'),
-                                 onText=self.OnCheckProjectsColorTextCtrl)
-        self.checkEsp = checkBox(self, _(u'Blank.esp'),
-                                 onCheck=self.OnCheckBoxChange, checked=True)
-        self.checkEspMasterless = checkBox(self, _(u'Blank Masterless.esp'),
-                                   onCheck=self.OnCheckBoxChange, checked=False)
-        self.checkWizard = checkBox(self, _(u'Blank wizard.txt'),
-                                    onCheck=self.OnCheckBoxChange)
-        self.checkWizardImages = checkBox(self, _(u'Wizard Images Directory'))
+        self.textName = TextField(self, _(u'New Project Name-#####'),
+                                  on_text_change=self.OnCheckProjectsColorTextCtrl)
+        self.checkEsp = CheckBox(self, _(u'Blank.esp'),
+                                 on_toggle=self.OnCheckBoxChange, checked=True)
+        self.checkEspMasterless = CheckBox(self, _(u'Blank Masterless.esp'),
+                                   on_toggle=self.OnCheckBoxChange, checked=False)
+        self.checkWizard = CheckBox(self, _(u'Blank wizard.txt'),
+                                    on_toggle=self.OnCheckBoxChange)
+        self.checkWizardImages = CheckBox(self, _(u'Wizard Images Directory'))
         if not bEnableWizard:
             # pywin32 not installed
-            self.checkWizard.Disable()
-            self.checkWizardImages.Disable()
-        self.checkDocs = checkBox(self,_(u'Docs Directory'))
+            self.checkWizard.enabled = False
+            self.checkWizardImages.enabled = False
+        self.checkDocs = CheckBox(self, _(u'Docs Directory'))
         # Panel Layout
         VLayout(border=5, spacing=5, items=[
-            StaticText(self, _(u'What do you want to name the New Project?')),
+            Label(self, _(u'What do you want to name the New Project?')),
             (self.textName, LayoutOptions(fill=True)),
-            StaticText(self,_(u'What do you want to add to the New Project?')),
+            Label(self,_(u'What do you want to add to the New Project?')),
             self.checkEsp, self.checkEspMasterless, self.checkWizard,
             self.checkWizardImages, self.checkDocs,
             Stretch(),
             (HLayout(spacing=5, items=[
                 OkButton(self, onButClickEventful=self.OnClose),
                 CancelButton(self, onButClickEventful=self.OnCancel)]),
-             LayoutOptions(h_align=balt.CENTER))
+             LayoutOptions(h_align=CENTER))
         ]).apply_to(self)
         self.SetInitialSize()
         # Event Handlers
@@ -399,21 +401,20 @@ class CreateNewProject(balt.Dialog):
         self.OnCheckBoxChange()
 
     def OnCheckProjectsColorTextCtrl(self,event):
-        projectName = bolt.GPath(self.textName.GetValue())
+        projectName = bolt.GPath(self.textName.text_content)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
-            self.textName.SetBackgroundColour('#FF0000')
-            self.textName.SetToolTip(tooltip(_(u'There is already a project with that name!')))
+            self.textName.background_color = '#FF0000'
+            self.textName.tooltip = _(u'There is already a project with that name!')
         else:
-            self.textName.SetBackgroundColour('#FFFFFF')
-            self.textName.SetToolTip(None)
-        self.textName.Refresh()
+            self.textName.background_color = '#FFFFFF'
+            self.textName.tooltip = None
         event.Skip()
 
-    def OnCheckBoxChange(self):
+    def OnCheckBoxChange(self, is_checked=None):
         """ Change the Dialog Icon to represent what the project status will
         be when created. """
-        if self.checkEsp.IsChecked():
-            if self.checkWizard.IsChecked():
+        if self.checkEsp.checked:
+            if self.checkWizard.checked:
                 self.SetIcon(
                     installercons.get_image('off.white.dir.wiz').GetIcon())
             else:
@@ -427,7 +428,7 @@ class CreateNewProject(balt.Dialog):
 
     def OnClose(self, event):
         """ Create the New Project and add user specified extras. """
-        projectName = bolt.GPath(self.textName.GetValue().strip())
+        projectName = bolt.GPath(self.textName.text_content.strip())
         projectDir = bass.dirs['installers'].join(projectName)
 
         if projectDir.exists():
@@ -441,22 +442,22 @@ class CreateNewProject(balt.Dialog):
         # Shell commands (UAC workaround)
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
-        if self.checkEsp.IsChecked():
+        if self.checkEsp.checked:
             fileName = u'Blank, %s.esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject)
-        if self.checkEspMasterless.IsChecked():
+        if self.checkEspMasterless.checked:
             fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject,
                                          masterless=True)
-        if self.checkWizard.IsChecked():
+        if self.checkWizard.checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
             with wizardPath.open('w',encoding='utf-8') as out:
                 out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
-        if self.checkWizardImages.IsChecked():
+        if self.checkWizardImages.checked:
             # Create 'Wizard Images' directory
             tempProject.join(u'Wizard Images').makedirs()
-        if self.checkDocs.IsChecked():
+        if self.checkDocs.checked:
             #Create the 'Docs' Directory
             tempProject.join(u'Docs').makedirs()
         # if self.checkScreenshot.IsChecked():

@@ -48,6 +48,9 @@ from wx.lib.mixins.listctrl import ListCtrlAutoWidthMixin
 from wx.lib.embeddedimage import PyEmbeddedImage
 import wx.lib.newevent
 import wx.wizard as wiz
+#--gui
+from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
+    Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout
 #--wx webview, may not be present on all systems
 try:
     # raise ImportError
@@ -355,61 +358,6 @@ def HorizontalLine(parent):
     """Returns a simple horizontal graphical line."""
     return wx.StaticLine(parent)
 
-class TextCtrl(wx.TextCtrl):
-    """wx.TextCtrl with automatic tooltip if text goes past the width of the
-    control."""
-
-    def __init__(self, parent, value=u'', size=defSize, style=0,
-                 multiline=False, autotooltip=True, name=wx.TextCtrlNameStr,
-                 maxChars=None, onKillFocus=None, onText=None):
-        if multiline: style |= wx.TE_MULTILINE ##: would it harm to have them all multiline ?
-        wx.TextCtrl.__init__(self, parent, defId, value, size=size, style=style,
-                             name=name)
-        if maxChars: self.SetMaxLength(maxChars)
-        if autotooltip:
-            self.Bind(wx.EVT_TEXT, self.OnTextChange)
-            self.Bind(wx.EVT_SIZE, self.OnSizeChange)
-        # event handlers must call event.Skip()
-        if onKillFocus:
-            # Wrapper to hide event, but still call Skip()
-            def handle_focus_lost(event):
-                onKillFocus()
-                event.Skip()
-            self.Bind(wx.EVT_KILL_FOCUS, handle_focus_lost)
-        if onText: self.Bind(wx.EVT_TEXT, onText)
-
-    def UpdateToolTip(self, text):
-        if self.GetClientSize()[0] < self.GetTextExtent(text)[0]:
-            self.SetToolTip(tooltip(text))
-        else:
-            self.SetToolTip(tooltip(u''))
-
-    def OnTextChange(self,event):
-        self.UpdateToolTip(event.GetString())
-        event.Skip()
-    def OnSizeChange(self, event):
-        self.UpdateToolTip(self.GetValue())
-        event.Skip()
-
-class RoTextCtrl(TextCtrl):
-    """Set some styles to a read only textCtrl.
-
-    Name intentionally ugly - tmp class to accommodate current code - do not
-    use - do not imitate my fishing in kwargs."""
-    def __init__(self, *args, **kwargs):
-        """"To accommodate for common text boxes in Bash code - borderline"""
-        # set some styles
-        style = kwargs.get('style', 0)
-        style |= wx.TE_READONLY
-        special = kwargs.pop('special', False) # used in places
-        if special: style |= wx.TE_RICH2 | wx.BORDER_SUNKEN
-        if kwargs.pop('noborder', False): style |= wx.NO_BORDER
-        if kwargs.pop('hscroll', False): style |= wx.HSCROLL
-        kwargs['style'] = style
-        # override default 'multiline' parameter value, 'False', with 'True'
-        kwargs['multiline'] = kwargs.pop('multiline', True)
-        super(RoTextCtrl, self).__init__(*args, **kwargs)
-
 class ComboBox(wx.ComboBox):
     """wx.ComboBox with automatic tooltip if text is wider than width of control."""
     def __init__(self, *args, **kwdargs):
@@ -438,85 +386,9 @@ def bitmapButton(parent, bitmap, button_tip=None, pos=defPos, size=defSize,
     if button_tip: gButton.SetToolTip(tooltip(button_tip))
     return gButton
 
-class Button(wx.Button):
-    _id = defId
-    label = u''
-
-    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onButClick=None,
-                 onButClickEventful=None, button_tip=None, default=False):
-        """Create a button and bind its click function.
-        :param onButClick: a no args function to execute on button click
-        :param onButClickEventful: a function accepting as parameter the
-        EVT_BUTTON - messing with events outside balt is discouraged
-        """
-        if  not label and self.__class__.label: label = self.__class__.label
-        wx.Button.__init__(self, parent, self.__class__._id,
-                           label, pos, size, style, val, name)
-        if onButClick and onButClickEventful:
-            raise BoltError('Both onButClick and onButClickEventful specified')
-        if onButClick: self.Bind(wx.EVT_BUTTON, lambda __event: onButClick())
-        if onButClickEventful: self.Bind(wx.EVT_BUTTON, onButClickEventful)
-        if button_tip: self.SetToolTip(tooltip(button_tip))
-        if default: self.SetDefault()
-
-class OkButton(Button): _id = wx.ID_OK
-class CancelButton(Button):
-    _id = wx.ID_CANCEL
-    label = _(u'Cancel')
-
 def ok_and_cancel_group(parent, on_ok=None):
-    return HLayout(spacing=4, items=[OkButton(parent, onButClick=on_ok),
+    return HLayout(spacing=4, items=[OkButton(parent, on_click=on_ok),
                                      CancelButton(parent)])
-
-class SaveButton(Button):
-    _id = wx.ID_SAVE
-    label = _(u'Save')
-
-class SaveAsButton(Button): _id = wx.ID_SAVEAS
-class RevertButton(Button): _id = wx.ID_SAVE
-class RevertToSavedButton(Button): _id = wx.ID_REVERT_TO_SAVED
-class OpenButton(Button): _id = wx.ID_OPEN
-class SelectAllButton(Button): _id = wx.ID_SELECTALL
-class ApplyButton(Button): _id = wx.ID_APPLY
-
-def toggleButton(parent, label=u'', pos=defPos, size=defSize, style=0,
-                 val=defVal, name='button', onClickToggle=None,
-                 toggle_tip=None):
-    """Creates a toggle button, binds toggle function, then returns bound
-    button."""
-    gButton = wx.ToggleButton(parent, defId, label, pos, size, style, val,
-                              name)
-    if onClickToggle: gButton.Bind(wx.EVT_TOGGLEBUTTON,
-                                   lambda __event: onClickToggle())
-    if toggle_tip: gButton.SetToolTip(tooltip(toggle_tip))
-    return gButton
-
-def checkBox(parent, label=u'', pos=defPos, size=defSize, style=0, val=defVal,
-             name='checkBox', onCheck=None, checkbox_tip=None, checked=False):
-    """Creates a checkBox, binds check function, then returns bound button."""
-    gCheckBox = wx.CheckBox(parent, defId, label, pos, size, style, val, name)
-    if onCheck: gCheckBox.Bind(wx.EVT_CHECKBOX, lambda __event: onCheck())
-    if checkbox_tip: gCheckBox.SetToolTip(tooltip(checkbox_tip))
-    gCheckBox.SetValue(checked)
-    return gCheckBox
-
-class StaticText(wx.StaticText):
-    """Static text element."""
-
-    def __init__(self, parent, label=u'', pos=defPos, size=defSize, style=0,
-                 noAutoResize=False, name=u"staticText"):
-        if noAutoResize: style |= wx.ST_NO_AUTORESIZE
-        wx.StaticText.__init__(self, parent, defId, label, pos, size, style,
-                               name)
-        self._label = label # save the unwrapped text
-        self.Rewrap()
-
-    def Rewrap(self, width=None):
-        self.Freeze()
-        self.SetLabel(self._label)
-        self.Wrap(width or self.GetSize().width)
-        self.Thaw()
 
 def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
              style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
@@ -569,272 +441,6 @@ class ColorPicker(wx.ColourPickerCtrl):
 
     def set_color(self, color):
         self.SetColour(color)
-
-# Layouts ---------------------------------------------------------------------
-CENTER, LEFT, RIGHT, TOP, BOTTOM = 'center', 'left', 'right', 'top', 'bottom'
-_H_ALIGNS = {None: wx.ALIGN_LEFT,
-             CENTER: wx.ALIGN_CENTER_HORIZONTAL,
-             LEFT: wx.ALIGN_LEFT,
-             RIGHT: wx.ALIGN_RIGHT}
-_V_ALIGNS = {None: wx.ALIGN_CENTER_VERTICAL,
-             CENTER: wx.ALIGN_CENTER_VERTICAL,
-             TOP: wx.ALIGN_TOP,
-             BOTTOM: wx.ALIGN_BOTTOM}
-
-class Spacer(object):
-    """A fixed-size space in a layout."""
-    def __init__(self, size=0):
-        self.size = size
-
-class Stretch(object):
-    """A space that will take up as much space as possible in a layout."""
-    def __init__(self, weight=1):
-        self.weight = weight
-
-class LayoutOptions(object):
-    """Container for all layouts' options. Note that some options may only
-    work with certain kinds of layouts (eg. col_span and row_span).
-
-    border (int)
-        The width (in pixels) of the empty space around an item.
-    fill (bool)
-        Whether the items should fill the entire space the layout has
-        allocated for it or not.
-    weight (int)
-        The relative amount an item will grow beyond the space the
-        layout has allocated for it. If in one layout there is only one item
-        with weight > 0, it will take up all remaining space. If multiple
-        items all have equal weight > 0, they will share the space equally.
-        If one item has twice the weight of another, it will take up twice
-        the space, etc.
-    h_align (LEFT/CENTER/RIGHT), v_align (TOP/CENTER/BOTTOM)
-        The horizontal and vertical alignment for an item
-        within the space the layout has allocated for it, specified with the
-        enums LEFT/CENTER/RIGHT for h_align and TOP/CENTER/BOTTOM for v_align.
-        Note that these options do nothing if fill is true, since the item
-        then takes up all of the space and has no room to move.
-    col_span, row_span (int)
-        The number of columns or rows this items should take up.
-    """
-    def __init__(self, border=None, fill=None, weight=None,
-                 h_align=None, v_align=None, col_span=None, row_span=None):
-        self.border = border
-        self.fill = fill
-        self.weight = weight
-        self.h_align = h_align
-        self.v_align = v_align
-        self.col_span = col_span
-        self.row_span = row_span
-
-class _Layout(object):
-    """Base class for all layouts, do not use directly!"""
-    def __init__(self, sizer, border=0, default_border=0, default_fill=False,
-                 default_h_align=None, default_v_align=None):
-        self._sizer = sizer
-        if border > 0:
-            self._border_wrapper = wx.BoxSizer(wx.VERTICAL)
-            self._border_wrapper.AddSizer(self._sizer, proportion=1,
-                                          flag=wx.ALL|wx.EXPAND,
-                                          border=border)
-        else:
-            self._border_wrapper = None
-        self.default_border = default_border
-        self.default_fill = default_fill
-        self.default_h_align = default_h_align
-        self.default_v_align = default_v_align
-        self._parent = None
-
-    def apply_to(self, parent, fit=False):
-        """Apply this layout to to the parent."""
-        self._parent = parent
-        sizer = self._border_wrapper or self._sizer
-        if fit:
-            parent.SetSizerAndFit(sizer)
-        else:
-            parent.SetSizer(sizer)
-
-    def _get_item_options(self, item):
-        """Internal helper function to get possible options from the item."""
-        options = None
-        if isinstance(item, tuple):
-            item, options = item
-        if isinstance(item, _Layout):
-            item = item._sizer
-        border = self.default_border
-        fill_ = self.default_fill
-        h_align = self.default_h_align
-        v_align = self.default_v_align
-        if options:
-            if options.border is not None: border = options.border
-            if options.fill is not None: fill_ = options.fill
-            if options.h_align is not None: h_align = options.h_align
-            if options.v_align is not None: v_align = options.v_align
-        flags = wx.ALL | _H_ALIGNS[h_align] | _V_ALIGNS[v_align]
-        if fill_: flags |= wx.EXPAND
-        return item, options, border, flags
-
-class LineLayout(_Layout):
-    """A one-dimensional base layout. Do not instance this directly!"""
-    def __init__(self, sizer, border=0, spacing=0,
-                 default_border=0, default_fill=False, default_weight=0,
-                 default_h_align=None, default_v_align=None, items=()):
-        """Initiate the layout.
-        The default_* arguments are for when those options are not provided
-        when adding an item. See LayoutOptions for more information.
-        :param sizer: The sizer this layout will wrap around.
-        :param border: Size in pixels of an empty border around the layout.
-                       NOTE: this is around the layout, not individual items.
-        :param spacing: Size in pixels of spacing between each item.
-        :param items: Items or (item, options) pairs to add directly.
-        """
-        self.spacing = spacing
-        self.default_weight = default_weight
-        super(LineLayout, self).__init__(sizer, border=border,
-                                         default_border=default_border,
-                                         default_fill=default_fill,
-                                         default_h_align=default_h_align,
-                                         default_v_align=default_v_align)
-        if items: self.add_many(items)
-
-    def add(self, item):
-        """Add one item to the layout.
-        The argument may be a (item, options) pair."""
-        item, options, border, flags = super(LineLayout, self)._get_item_options(item)
-        if item is None: return
-        weight = (options.weight if options and options.weight is not None
-                  else self.default_weight)
-        if self.spacing > 0 and not self._sizer.IsEmpty():
-            self._sizer.AddSpacer(self.spacing)
-        self._sizer.Add(item, proportion=weight, flag=flags, border=border)
-
-    def add_many(self, items):
-        """Add multiple items to the layout.
-        The items may be (item, options) pairs, Stretch- or Spacer objects."""
-        for item in items:
-            if isinstance(item, Stretch):
-                self.add_stretch(item.weight)
-            elif isinstance(item, Spacer):
-                self.add_spacer(item.size)
-            else:
-                self.add(item)
-
-    def add_spacer(self, length=4):
-        """Add a fixed space to the layout."""
-        self._sizer.AddSpacer(length)
-
-    def add_stretch(self, weight=1):
-        """Add a growing space to the layout."""
-        self._sizer.AddStretchSpacer(prop=weight)
-
-class HBoxedLayout(LineLayout):
-    """A horizontal layout with a border around it and an optional title."""
-    def __init__(self, parent, title=u'', **kwargs):
-        sizer = wx.StaticBoxSizer(wx.StaticBox(parent, label=title),
-                                  wx.HORIZONTAL)
-        super(HBoxedLayout, self).__init__(sizer, **kwargs)
-
-class HLayout(LineLayout):
-    """A simple horizontal layout."""
-    def __init__(self, *args, **kwargs):
-        super(HLayout, self).__init__(wx.BoxSizer(wx.HORIZONTAL),
-                                      *args, **kwargs)
-
-class VLayout(LineLayout):
-    """A simple vertical layout."""
-    def __init__(self, *args, **kwargs):
-        super(VLayout, self).__init__(wx.BoxSizer(wx.VERTICAL),
-                                      *args, **kwargs)
-
-class GridLayout(_Layout):
-    """A flexible grid layout.
-    It has no fixed or set number of rows or columns, but will instead grow to
-    fit its content. The weight of items are handled on a per-row and -col
-    basis, specified with stretch_cols/stretch_rows or set_stretch()."""
-    def __init__(self, border=0, h_spacing=0, v_spacing=0,
-                 stretch_cols=(), stretch_rows=(),
-                 default_fill=False, default_border=0,
-                 default_h_align=None, default_v_align=None, items=()):
-        """
-        Initiate the grid layout.
-
-        :param h_spacing: the width (in pixels) of space between columns
-        :param v_spacing: the height (in pixels) of space between rows
-        :param stretch_cols: the columns (as a list of ints) that should
-            grow and fill available space
-        :param stretch_rows: the rows (as a list of ints) that should
-            grow and fill available space
-        :param items: Items or (item, options) pairs to add directly.
-        """
-        super(GridLayout, self).__init__(wx.GridBagSizer(hgap=h_spacing,
-                                                         vgap=v_spacing),
-                                         border=border,
-                                         default_border=default_border,
-                                         default_fill=default_fill,
-                                         default_h_align=default_h_align,
-                                         default_v_align=default_v_align)
-        if items:
-            self.append_rows(items)
-        for col in stretch_cols:
-            self.set_stretch(col=col)
-        for row in stretch_rows:
-            self.set_stretch(row=row)
-
-    def add(self, col, row, item):
-        """Add an item to the specified place in the layout.
-        If there is an item there already, it will be replaced.
-        If item is None, nothing will be added."""
-        item, options, border, flags = super(GridLayout, self)._get_item_options(item)
-        if item is None: return
-        col_span, row_span = 1, 1
-        if options:
-            if options.col_span is not None: col_span = options.col_span
-            if options.row_span is not None: row_span = options.row_span
-        self._sizer.Add(item, (row, col), span=(row_span, col_span),
-                        flag=flags, border=border)
-
-    def append_row(self, items):
-        """Add a row of items to the bottom of the layout."""
-        row = self._sizer.GetRows()
-        for col, item in enumerate(items):
-            if item is not None:
-                self.add(col, row, item)
-
-    def append_rows(self, item_rows):
-        """Add multiple rows of items to the bottom of the layout."""
-        row_num = self._sizer.GetRows()
-        for row, items in enumerate(item_rows, row_num):
-            for col, item in enumerate(items):
-                if item is not None:
-                    self.add(col, row, item)
-
-    def col_count(self):
-        """Return the number of columns in the layout."""
-        return self._sizer.GetCols()
-
-    def row_count(self):
-        """Return the number of rows in the layout."""
-        return self._sizer.GetRows()
-
-    def set_stretch(self, col=None, row=None, weight=0):
-        """Set the relative weight of a column or a row."""
-        # The sizer blows up if you try to set a column or row to grow if
-        # there isn't something in it, so we add a space if that happens
-        if row is not None:
-            if self._sizer.IsRowGrowable(row): # can't set growable...
-                self._sizer.RemoveGrowableRow(row) # ...if it's already set
-            try:
-                self._sizer.AddGrowableRow(row, proportion=weight)
-            except wx.PyAssertionError: # the sizer blows up
-                self._sizer.Add((0, 0), (row, 0)) # add space to the first col
-                self._sizer.AddGrowableRow(row, proportion=weight)
-        if col is not None:
-            if self._sizer.IsColGrowable(col):
-                self._sizer.RemoveGrowableCol(col)
-            try:
-                self._sizer.AddGrowableCol(col, proportion=weight)
-            except wx.PyAssertionError:
-                self._sizer.Add((0, 0), (0, col))
-                self._sizer.AddGrowableCol(col, proportion=weight)
 
 # Modal Dialogs ---------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -901,20 +507,19 @@ def askContinueShortTerm(parent, message, title=_(u'Warning')):
 
 def _continueDialog(parent, message, title, checkBoxText):
     with Dialog(parent, title, size=(350, -1)) as dialog:
-        gCheckBox = checkBox(dialog, checkBoxText)
+        gCheckBox = CheckBox(dialog, checkBoxText)
         #--Layout
         VLayout(border=6, spacing=6, default_fill=True, items=[
             (HLayout(spacing=6, items=[
                 (staticBitmap(dialog), LayoutOptions(border=6, v_align=TOP)),
-                (StaticText(dialog, message, noAutoResize=True),
-                 LayoutOptions(fill=True, weight=1))]),
+                (Label(dialog, message), LayoutOptions(fill=True, weight=1))]),
              LayoutOptions(weight=1)),
             gCheckBox,
             ok_and_cancel_group(dialog)
         ]).apply_to(dialog)
         #--Get continue key setting and return
         result = dialog.ShowModal()
-        check = gCheckBox.GetValue()
+        check = gCheckBox.checked
         return result, check
 
 #------------------------------------------------------------------------------
@@ -1074,7 +679,7 @@ class HtmlCtrl(object):
     def __init__(self, parent):
         ctrl = self.web_viewer = wx.Window(parent)
         # init the fallback/plaintext widget
-        self._text_ctrl = RoTextCtrl(ctrl, autotooltip=False)
+        self._text_ctrl = TextArea(ctrl, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
         def _make_button(bitmap_id, callback):
             return bitmapButton(parent, wx.ArtProvider_GetBitmap(
@@ -1090,7 +695,7 @@ class HtmlCtrl(object):
                 _wx_html2.EVT_WEBVIEW_NEWWINDOW,
                 lambda event: self._open_in_external(event.GetURL()))
             items.append(self._html_ctrl)
-            self._text_ctrl.Disable()
+            self._text_ctrl.enabled = False
         VLayout(default_weight=4, default_fill=True,
                 items=items).apply_to(ctrl)
         self.switch_to_text() # default to text
@@ -1105,8 +710,8 @@ class HtmlCtrl(object):
         if _wx_html2:
             self._html_ctrl.Enable(enable_html)
             self._html_ctrl.Show(enable_html)
-        self._text_ctrl.Enable(not enable_html)
-        self._text_ctrl.Show(not enable_html)
+        self._text_ctrl.enabled = not enable_html
+        self._text_ctrl.visible = not enable_html
         self._prev_button.Enable(enable_html and self._html_ctrl.CanGoBack())
         self._next_button.Enable(enable_html and
                                  self._html_ctrl.CanGoForward())
@@ -1125,26 +730,26 @@ class HtmlCtrl(object):
 
     @property
     def fallback_text(self):
-        return self._text_ctrl.GetValue()
+        return self._text_ctrl.text_content
 
     @fallback_text.setter
     def fallback_text(self, text_):
-        self._text_ctrl.SetValue(text_)
+        self._text_ctrl.text_content = text_
 
     def load_text(self, text_):
-        self._text_ctrl.SetValue(text_)
-        self._text_ctrl.SetModified(False)
+        self._text_ctrl.text_content = text_
+        self._text_ctrl.modified = False
         self.switch_to_text()
 
     def is_text_modified(self):
-        return self._text_ctrl.IsModified()
+        return self._text_ctrl.modified
 
     def set_text_modified(self, modified):
-        self._text_ctrl.SetModified(modified)
+        self._text_ctrl.modified = modified
 
     def set_text_editable(self, editable):
         # type: (bool) -> None
-        self._text_ctrl.SetEditable(editable)
+        self._text_ctrl.editable = editable
 
     def switch_to_html(self):
         if not _wx_html2: return
@@ -1213,19 +818,20 @@ class Log(_Log):
                                   log_icons)
         self.window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
         #--Text
-        txtCtrl = RoTextCtrl(self.window, logText, special=True, autotooltip=False)
-        txtCtrl.SetValue(logText)
+        txtCtrl = TextArea(self.window, text=logText, auto_tooltip=False)
+                          # special=True) SUNKEN_BORDER and TE_RICH2
+        # TODO(nycz): GUI fixed width font
         if fixedFont:
             fixedFont = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT)
             fixedFont.SetPointSize(8)
             fixedStyle = wx.TextAttr()
             #fixedStyle.SetFlags(0x4|0x80)
             fixedStyle.SetFont(fixedFont)
-            txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
+            # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
         VLayout(border=2, items=[
             (txtCtrl, LayoutOptions(fill=True, weight=1, border=2)),
-            (OkButton(self.window, onButClick=self.window.Close, default=True),
+            (OkButton(self.window, on_click=self.window.Close, default=True),
              LayoutOptions(h_align=RIGHT, border=2))
         ]).apply_to(self.window)
         self.ShowLog()
@@ -1249,9 +855,9 @@ class WryeLog(_Log):
         self._html_ctrl = HtmlCtrl(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
-        gOkButton = OkButton(self.window, onButClick=self.window.Close, default=True)
+        gOkButton = OkButton(self.window, on_click=self.window.Close, default=True)
         if not asDialog:
-            self.window.SetBackgroundColour(gOkButton.GetBackgroundColour())
+            self.window.SetBackgroundColour(gOkButton.background_color)
         #--Layout
         VLayout(border=2, default_fill=True, items=[
             (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
@@ -1372,23 +978,20 @@ class ListEditor(Dialog):
         # overrides Dialog.sizesKey
         self.sizesKey = self._listEditorData.__class__.__name__
         #--Caption
+        captionText = None # type: Label
         if data.caption:
-            captionText = StaticText(self,data.caption)
-        else:
-            captionText = None
+            captionText = Label(self,data.caption)
         #--List Box
         self.listBox = listBox(self, choices=self._list_items)
         self.listBox.SetSizeHints(125,150)
         #--Infobox
+        self.gInfoBox = None # type: TextArea
         if data.showInfo:
-            self.gInfoBox = TextCtrl(self,size=(130,-1),
-                style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
-                      wx.TE_MULTILINE | wx.BORDER_SUNKEN)
-            if not self._listEditorData.infoReadOnly:
-                self.gInfoBox.Bind(wx.EVT_TEXT,
-                                   lambda __event: self.OnInfoEdit())
-        else:
-            self.gInfoBox = None
+            editable = not self._listEditorData.infoReadOnly
+            callback = self.OnInfoEdit if editable else None
+            self.gInfoBox = TextArea(self, editable=editable,
+                                         on_text_change=callback)
+            # TODO(nycz): GUI size=(130, -1), SUNKEN_BORDER
         #--Buttons
         buttonSet = [
             (data.showAdd,    _(u'Add'),    self.DoAdd),
@@ -1402,7 +1005,7 @@ class ListEditor(Dialog):
         if sum(bool(x[0]) for x in buttonSet):
             buttons = VLayout(spacing=4, items=[
                 Button(self, (flag == True and defLabel) or flag,
-                       onButClick=func)
+                           on_click=func)
                 for flag, defLabel, func in buttonSet if flag])
         else:
             buttons = None
@@ -1467,8 +1070,8 @@ class ListEditor(Dialog):
         del self._list_items[itemDex]
         self.listBox.Delete(itemDex)
         if self.gInfoBox:
-            self.gInfoBox.DiscardEdits()
-            self.gInfoBox.SetValue(u'')
+            self.gInfoBox.modified = False
+            self.gInfoBox.text_content = u''
 
     #--Show Info
     def OnInfoEdit(self):
@@ -1476,8 +1079,8 @@ class ListEditor(Dialog):
         selections = self.listBox.GetSelections()
         if not selections: return bell()
         item = self._list_items[selections[0]]
-        if self.gInfoBox.IsModified():
-            self._listEditorData.setInfo(item,self.gInfoBox.GetValue())
+        if self.gInfoBox.modified:
+            self._listEditorData.setInfo(item, self.gInfoBox.text_content)
 
     #--Save/Cancel
     def DoSave(self):
@@ -1508,6 +1111,7 @@ class TabDragMixin(object):
         self.__dragX = 0
         self.__dragging = wx.NOT_FOUND
         self.__justSwapped = wx.NOT_FOUND
+        # TODO(inf) Test in wx3
         if wx.Platform == '__WXMSW__': # CaptureMouse() works badly in wxGTK
             self.Bind(wx.EVT_LEFT_DOWN, self.__OnDragStart)
             self.Bind(wx.EVT_LEFT_UP, self.__OnDragEnd)
@@ -3131,8 +2735,8 @@ class ListBoxes(Dialog):
         self.itemMenu.append(_CheckList_SelectAll(False))
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
-        self.text = StaticText(self, message)
-        self.text.Rewrap(minWidth) # otherwise self.text expands to max width
+        self.text = Label(self, message)
+        self.text.wrap(minWidth) # otherwise self.text expands to max width
         layout = VLayout(border=5, spacing=5, items=[self.text])
         self._ids = {}
         self.SetSize(wxSize(minWidth, -1))
@@ -3175,13 +2779,13 @@ class ListBoxes(Dialog):
         #make sure that minimum size is at least the size of title
         if self.GetSize()[0] < minWidth:
             self.SetSize(wxSize(minWidth,-1))
-        self.text.Rewrap(self.GetSize().width)
+        self.text.wrap(self.GetSize().width)
         self.Bind(wx.EVT_SIZE, self.OnSize)
 
     def OnMotion(self, event): return
 
     def OnSize(self, event):
-        self.text.Rewrap(self.GetSize().width)
+        self.text.wrap(self.GetSize().width)
         event.Skip()
 
     def OnKeyUp(self,event):
@@ -3308,6 +2912,7 @@ class DnDStatusBar(wx.StatusBar):
         gButton = link.GetBitmapButton(self, style=wx.NO_BORDER)
         if gButton:
             self.buttons.append(gButton)
+            # TODO(inf) Test in wx3
             # DnD events (only on windows, CaptureMouse works badly in wxGTK)
             if wx.Platform == '__WXMSW__':
                 gButton.Bind(wx.EVT_LEFT_DOWN, self.OnDragStart)
@@ -3524,6 +3129,7 @@ class Events(object):
     # also the names here... ugh. needless to say its very wip
     COMBOBOX_CHOICE = 'combobox_choice'
     COLORPICKER_CHANGED = 'colorpicker_changed'
+    FOCUS_LOST = 'focus_lost'
 
 _WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
               Events.ACTIVATE:              wx.EVT_ACTIVATE,
@@ -3545,6 +3151,7 @@ _WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
               Events.WIZARD_PAGE_CHANGING:  wiz.EVT_WIZARD_PAGE_CHANGING,
               Events.COMBOBOX_CHOICE:       wx.EVT_COMBOBOX,
               Events.COLORPICKER_CHANGED:   wx.EVT_COLOURPICKER_CHANGED,
+              Events.FOCUS_LOST:            wx.EVT_KILL_FOCUS,
 }
 
 def set_event_hook(obj, event, callback):

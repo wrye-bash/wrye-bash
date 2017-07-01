@@ -22,6 +22,7 @@
         File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
                         /x "basher" \
                         /x "bosh" \
+                        /x "gui" \
                         /x "game" \
                         /x "patcher" \
                         "${WB_CLEAN_MOPY}\*.*"

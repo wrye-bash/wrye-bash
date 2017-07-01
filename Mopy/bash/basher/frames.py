@@ -28,12 +28,12 @@ from collections import OrderedDict
 
 import wx
 from .. import bass, balt, bosh, bolt, load_order
-from ..balt import TextCtrl, StaticText, Button, \
-    RoTextCtrl, bell, Link, toggleButton, SaveButton, CancelButton, \
-    BaltFrame, Resources, HtmlCtrl, HLayout, VLayout, GridLayout, checkBox, \
-    LayoutOptions, Stretch, set_event_hook, Spacer
+from ..balt import bell, Link, BaltFrame, Resources, HtmlCtrl, set_event_hook
 from ..bolt import GPath
 from ..bosh import omods
+from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
+    HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
+    TextField, ToggleButton, VLayout
 
 class DocBrowser(BaltFrame):
     """Doc Browser frame."""
@@ -59,24 +59,24 @@ class DocBrowser(BaltFrame):
         mod_list_window = wx.Panel(root_window)
         main_window = wx.Panel(root_window)
         # Mod Name
-        self._mod_name_box = RoTextCtrl(mod_list_window, multiline=False)
+        self._mod_name_box = TextField(mod_list_window, editable=False)
         self._mod_list = balt.listBox(mod_list_window,
                                       choices=sorted(x.s for x in self._db_doc_paths.keys()),
                                       isSort=True,
                                       onSelect=self._do_select_mod)
         # Buttons
         self._set_btn = Button(main_window, _(u'Set Doc...'),
-                               onButClick=self._do_set)
+                               on_click=self._do_set)
         self._forget_btn = Button(main_window, _(u'Forget Doc...'),
-                                  onButClick=self._do_forget)
+                                  on_click=self._do_forget)
         self._rename_btn = Button(main_window, _(u'Rename Doc...'),
-                                  onButClick=self._do_rename)
-        self._edit_btn = toggleButton(main_window, label=_(u'Edit Doc...'),
-                                      onClickToggle=self._do_edit)
+                                  on_click=self._do_rename)
+        self._edit_btn = ToggleButton(main_window, label=_(u'Edit Doc...'),
+                                      on_toggle=self._do_edit)
         self._open_btn = Button(main_window, _(u'Open Doc...'),
-                                onButClick=self._do_open,
-                                button_tip=_(u'Open doc in external editor.'))
-        self._doc_name_box = RoTextCtrl(main_window, multiline=False)
+                                on_click=self._do_open,
+                                tooltip=_(u'Open doc in external editor.'))
+        self._doc_name_box = TextField(main_window, editable=False)
         self._doc_ctrl = HtmlCtrl(main_window)
         self._prev_btn, self._next_btn = self._doc_ctrl.get_buttons()
         self._buttons = [self._set_btn, self._forget_btn, self._rename_btn,
@@ -96,7 +96,11 @@ class DocBrowser(BaltFrame):
         VLayout(default_fill=1, default_border=4, default_weight=1,
                 items=[root_window])
         for btn in self._buttons:
-            btn.Disable()
+            # TODO(inf) de-wx! Wrap bitmapButton and drop this check
+            if isinstance(btn, Button) or isinstance(btn, ToggleButton):
+                btn.enabled = False
+            else:
+                btn.Disable()
 
     @staticmethod
     def _resources(): return Resources.bashDocBrowser
@@ -126,14 +130,13 @@ class DocBrowser(BaltFrame):
         else:
             doc_path.start()
 
-    def _do_edit(self):
+    def _do_edit(self, is_editing):
         """Handle "Edit Doc" button click."""
         self.DoSave()
-        editing = self._edit_btn.GetValue()
-        self._db_is_editing[self._mod_name] = editing
-        self._doc_ctrl.set_text_editable(editing)
+        self._db_is_editing[self._mod_name] = is_editing
+        self._doc_ctrl.set_text_editable(is_editing)
         self._load_data(path=self._db_doc_paths.get(self._mod_name),
-                        editing=editing)
+                        editing=is_editing)
 
     def _do_forget(self):
         """Handle "Forget Doc" button click.
@@ -147,8 +150,8 @@ class DocBrowser(BaltFrame):
         self.DoSave()
         for btn in (self._edit_btn, self._forget_btn, self._rename_btn,
                     self._open_btn):
-            btn.Disable()
-        self._doc_name_box.Clear()
+            btn.enabled = False
+        self._doc_name_box.text_content = u''
         self._load_data(data=u'')
 
     def _do_select_mod(self, event):
@@ -190,7 +193,7 @@ class DocBrowser(BaltFrame):
             else: new_html.remove()
         #--Remember change
         self._db_doc_paths[self._mod_name] = dest_path
-        self._doc_name_box.SetValue(dest_path.stail)
+        self._doc_name_box.text_content = dest_path.stail
 
     def DoSave(self):
         """Saves doc, if necessary."""
@@ -224,24 +227,24 @@ class DocBrowser(BaltFrame):
         """Sets the mod to show docs for."""
         self.DoSave()
         # defaults
-        self._edit_btn.SetValue(False)
+        self._edit_btn.toggled = False
         self._doc_ctrl.set_text_editable(False)
         mod_name = GPath(mod_name)
         self._mod_name = mod_name
-        self._mod_name_box.SetValue(mod_name.s)
+        self._mod_name_box.text_content = mod_name.s
         if not mod_name:
             self._load_data(data=u'')
             for btn in self._buttons:
-                btn.Disable()
+                btn.enabled = False
             return
-        self._set_btn.Enable()
+        self._set_btn.enabled = True
         self._mod_list.SetSelection(self._mod_list.FindString(mod_name.s))
         # Doc path
         doc_path = self._db_doc_paths.get(mod_name, GPath(u''))
-        self._doc_name_box.SetValue(doc_path.stail)
+        self._doc_name_box.text_content = doc_path.stail
         for btn in (self._forget_btn, self._rename_btn, self._edit_btn,
                     self._open_btn):
-            btn.Enable(bool(doc_path))
+            btn.enabled = bool(doc_path)
         # Set empty and uneditable if there's no doc path:
         if not doc_path:
             self._load_data(data=u'')
@@ -259,7 +262,7 @@ class DocBrowser(BaltFrame):
             self._load_data(data=string.Template(template)
                                             .substitute(modName=mod_name.s))
             # Start edit mode
-            self._edit_btn.SetValue(True)
+            self._edit_btn.toggled = True
             self._doc_ctrl.set_text_editable(True)
             self._doc_ctrl.set_text_modified(True)
             # Save the new file
@@ -267,7 +270,7 @@ class DocBrowser(BaltFrame):
         else:  # Otherwise it exists
             editing = self._db_is_editing.get(mod_name, False)
             if editing:
-                self._edit_btn.SetValue(True)
+                self._edit_btn.toggled = True
                 self._doc_ctrl.set_text_editable(True)
             else:
                 is_wtxt = self._get_is_wtxt(doc_path)
@@ -319,14 +322,18 @@ class ModChecker(BaltFrame):
         def _f(key, type_, caption, setting_key=None, setting_value=None,
                callback=self.CheckMods):
             if type_ == 'toggle':
-                btn = toggleButton(self, caption, onClickToggle=callback)
+                btn = ToggleButton(self, caption, on_toggle=callback)
             elif type_ == 'check':
-                btn = checkBox(self, caption, onCheck=callback)
+                btn = CheckBox(self, caption, on_toggle=callback)
             else: # type_ == 'click':
-                btn = Button(self, caption, onButClick=callback)
+                btn = Button(self, caption, on_click=callback)
             if setting_key is not None:
-                btn.SetValue(bass.settings.get(
-                    'bash.modChecker.show{}'.format(setting_key), setting_value))
+                new_value = bass.settings.get(
+                    'bash.modChecker.show{}'.format(setting_key), setting_value)
+                if type_ == 'toggle':
+                    btn.toggled = new_value
+                elif type_ == 'check':
+                    btn.checked = new_value
                 self._setting_names[key] = setting_key
             self._buttons[key] = btn
         _f(_MOD_LIST,   'toggle', _(u'Mod List'), 'ModList', False)
@@ -365,11 +372,11 @@ class ModChecker(BaltFrame):
         text_ = re.sub(u'<[^>]+>', u'', text_, re.U)
         balt.copyToClipboard(text_)
 
-    def CheckMods(self):
+    def CheckMods(self, _new_value=None):
         """Do mod check."""
         for btn_id in [_MOD_LIST, _RULE_SETS]:
             _set_mod_checker_setting(self._setting_names[btn_id],
-                                     self._buttons[btn_id].GetValue())
+                                     self._buttons[btn_id].checked)
         # Enable or disable the children of ModList and RuleSets buttons
         for parent, btn_ids in [(_MOD_LIST, (_CRC, _VERSION)),
                                 (_RULE_SETS, (_NOTES, _CONFIG, _SUGGEST))]:
@@ -379,7 +386,7 @@ class ModChecker(BaltFrame):
         # Set settings from all the buttons' values
         for btn_id in [_NOTES, _CONFIG, _SUGGEST, _CRC, _VERSION]:
             _set_mod_checker_setting(self._setting_names[btn_id],
-                                     self._buttons[btn_id].GetValue())
+                                     self._buttons[btn_id].checked)
         #--Cache info from modinfos to support auto-update.
         self.orderedActive = load_order.cached_active_tuple()
         self.__merged = bosh.modInfos.merged.copy()
@@ -389,7 +396,7 @@ class ModChecker(BaltFrame):
             *[_get_mod_checker_setting(self._setting_names[key])
               for key in [_MOD_LIST, _RULE_SETS, _NOTES, _CONFIG, _SUGGEST,
                           _CRC, _VERSION]],
-            mod_checker=(None, self)[self._buttons[_SCAN_DIRTY].GetValue()])
+            mod_checker=(None, self)[self._buttons[_SCAN_DIRTY].checked])
         if HtmlCtrl.html_lib_available():
             log_path = bass.dirs['saveBase'].join(u'ModChecker.html')
             balt.convert_wtext_to_html(log_path, self.check_mods_text)
@@ -428,19 +435,19 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
             style=wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |
                   wx.TAB_TRAVERSAL)
         #--Fields
-        self.gName = TextCtrl(self, config.name, maxChars=100)
-        self.gVersion = TextCtrl(self, u'%d.%02d' % (
-            config.vMajor, config.vMinor), maxChars=32)
-        self.gWebsite = TextCtrl(self, config.website, maxChars=512)
-        self.gAuthor = TextCtrl(self, config.author, maxChars=512)
-        self.gEmail = TextCtrl(self, config.email, maxChars=512)
-        self.gAbstract = TextCtrl(self, config.abstract, multiline=True,
-                                  maxChars=4 * 1024)
+        self.gName = TextField(self, text=config.name, max_length=100)
+        self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
+            config.vMajor, config.vMinor), max_length=32)
+        self.gWebsite = TextField(self, config.website, max_length=512)
+        self.gAuthor = TextField(self, config.author, max_length=512)
+        self.gEmail = TextField(self, text=config.email, max_length=512)
+        self.gAbstract = TextArea(self, text=config.abstract)
+                                  # maxChars=4 * 1024)
         #--Layout
         def _no_fill_text(txt):
-            return StaticText(self, txt), LayoutOptions(fill=False)
+            return Label(self, txt), LayoutOptions(fill=False)
         VLayout(default_fill=True, spacing=4, border=4, items=[
-            GridLayout(h_spacing=4, v_spacing=4, default_v_align=balt.CENTER,
+            GridLayout(h_spacing=4, v_spacing=4, default_v_align=CENTER,
                        stretch_cols=[1], default_fill=True, items=[
                 (_no_fill_text(_(u'Name:')), self.gName),
                 (_no_fill_text(_(u'Version:')), self.gVersion),
@@ -451,8 +458,8 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
             _no_fill_text(_(u'Abstract')),
             (self.gAbstract, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[
-                SaveButton(self, onButClick=self.DoSave, default=True),
-                CancelButton(self, onButClick=self.OnCloseWindow)])
+                SaveButton(self, on_click=self.DoSave, default=True),
+                CancelButton(self, on_click=self.OnCloseWindow)])
         ]).apply_to(self)
         self.SetSize((350,400))
 
@@ -460,14 +467,14 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         """Handle save button."""
         config = self.config
         #--Text fields
-        config.name = self.gName.GetValue().strip()
-        config.website = self.gWebsite.GetValue().strip()
-        config.author = self.gAuthor.GetValue().strip()
-        config.email = self.gEmail.GetValue().strip()
-        config.abstract = self.gAbstract.GetValue().strip()
+        config.name = self.gName.text_content.strip()
+        config.website = self.gWebsite.text_content.strip()
+        config.author = self.gAuthor.text_content.strip()
+        config.email = self.gEmail.text_content.strip()
+        config.abstract = self.gAbstract.text_content.strip()
         #--Version
         maVersion = re.match(u'' r'(\d+)\.(\d+)',
-                             self.gVersion.GetValue().strip(), flags=re.U)
+                             self.gVersion.text_content.strip(), flags=re.U)
         if maVersion:
             config.vMajor,config.vMinor = map(int,maVersion.groups())
         else:
