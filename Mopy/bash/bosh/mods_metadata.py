@@ -1009,7 +1009,7 @@ class ModCleaner:
                             continue
                     else:
                         raise
-                cleaner.modInfo.setmtime()
+                cleaner.modInfo.setmtime(crc_changed=True) # cleaned mod
             else:
                 path.temp.remove()
 
@@ -1069,7 +1069,7 @@ class NvidiaFogFixer:
         if fixedCells:
             self.modInfo.makeBackup()
             path.untemp()
-            self.modInfo.setmtime()
+            self.modInfo.setmtime(crc_changed=True) # fog fixes
         else:
             path.temp.remove()
 

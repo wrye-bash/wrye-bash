@@ -141,11 +141,9 @@ class Installer(object):
             crc = 0L
             try:
                 with open(asFile, 'rb') as ins:
-                    insRead = ins.read
                     insTell = ins.tell
-                    while insTell() < size:
-                        crc = crc32(insRead(2097152),
-                                    crc) # 2MB at a time, probably ok
+                    for block in iter(partial(ins.read, 2097152), ''):
+                        crc = crc32(block, crc) # 2MB at a time, probably ok
                         sub(insTell())
             except IOError:
                 deprint(_(u'Failed to calculate crc for %s - please report '
@@ -1448,18 +1446,6 @@ class InstallerProject(Installer):
             outFile.moveTo(realOutFile)
 
     @staticmethod
-    def createFromData(projectPath,files,progress=None):
-        if not files: return
-        progress = progress if progress else bolt.Progress()
-        projectPath = GPath(projectPath)
-        progress.setFull(len(files))
-        srcJoin = bass.dirs['mods'].join
-        dstJoin = projectPath.join
-        for i,file in enumerate(files):
-            progress(i,file.s)
-            srcJoin(file).copyTo(dstJoin(file))
-
-    @staticmethod
     def _list_package(apath, log):
         def walkPath(folder, depth):
             for entry in os.listdir(folder):
@@ -1526,7 +1512,6 @@ class InstallersData(DataStore):
         self.dictFile = bolt.PickleDict(self.bash_dir.join(u'Installers.dat'))
         self.data = {}
         self.data_sizeCrcDate = {}
-        self.crc_installer = {}
         from . import converters
         self.converters_data = converters.ConvertersData(bass.dirs['bainData'],
             bass.dirs['converters'], bass.dirs['dupeBCFs'],
@@ -1590,7 +1575,6 @@ class InstallersData(DataStore):
         data = self.dictFile.data
         self.data = data.get('installers', {})
         self.data_sizeCrcDate = data.get('sizeCrcDate', {})
-        self.crc_installer = data.get('crc_installer', {})
         # fixup: all markers had their archive attribute set to u'===='
         for key, value in self.iteritems():
             if isinstance(value, InstallerMarker):
@@ -1603,7 +1587,7 @@ class InstallersData(DataStore):
         if self.hasChanged:
             self.dictFile.data['installers'] = self.data
             self.dictFile.data['sizeCrcDate'] = self.data_sizeCrcDate
-            self.dictFile.data['crc_installer'] = self.crc_installer
+            self.dictFile.data['crc_installer'] = self.crc_installer()
             self.dictFile.vdata['version'] = 1
             self.dictFile.save()
             self.converters_data.save()
@@ -1676,8 +1660,7 @@ class InstallersData(DataStore):
         Note that if any of those are not None "changed" will be always
         True, triggering the rest of the refreshes in irefresh. Once
         refresh_info is calculated, deleted are removed, refreshBasic is
-        called on added/updated files and crc_installer updated. If you
-        don't need that last step you may directly call refreshBasic.
+        called on added/updated files.
         :type progress: bolt.Progress | None
         :type fullRefresh: bool
         :type refresh_info: InstallersData._RefreshInfo | None
@@ -1687,7 +1670,6 @@ class InstallersData(DataStore):
         """
         # TODO(ut):we need to return the refresh_info for more granular control
         # in irefresh and also add extra processing for deleted files
-        from . import InstallerArchive, InstallerProject # use the bosh types
         progress = progress or bolt.Progress()
         #--Current archives
         if refresh_info is deleted is pending is None:
@@ -1700,21 +1682,38 @@ class InstallersData(DataStore):
             self.pop(deleted)
         pending, projects = refresh_info.pending, refresh_info.projects
         #--New/update crcs?
-        for subPending, iClass in zip((pending - projects, pending & projects),
-                                      (InstallerArchive, InstallerProject)):
+        for subPending, is_project in zip(
+                (pending - projects, pending & projects), (False, True)):
             if not subPending: continue
             progress(0,_(u"Scanning Packages..."))
             progress.setFull(len(subPending))
             for index,package in enumerate(sorted(subPending)):
                 progress(index,_(u'Scanning Packages...')+u'\n'+package.s)
-                installer = self.get(package, None)
-                if not installer:
-                    installer = self.setdefault(package, iClass(package))
-                installer.refreshBasic(SubProgress(progress, index, index + 1),
-                                       recalculate_project_crc=fullRefresh)
-        if changed: self.crc_installer = dict((x.crc, x) for x in
-                        self.itervalues() if isinstance(x, InstallerArchive))
+                self.refresh_installer(package, is_project, progress,
+                                       _index=index, _fullRefresh=fullRefresh)
         return changed
+
+    def crc_installer(self):
+        return dict((x.crc, x) for x in self.itervalues() if
+                    isinstance(x, InstallerArchive))
+
+    def refresh_installer(self, package, is_project, progress,
+                          install_order=None, do_refresh=False, _index=None,
+                          _fullRefresh=False, __types=[]):
+        if not __types: # use the bosh types
+            from . import InstallerArchive, InstallerProject
+            __types = [InstallerArchive, InstallerProject]
+        installer = self.get(package, None)
+        if not installer:
+            installer = self[package] = __types[is_project](package)
+            if install_order is not None:
+                self.moveArchives([package], install_order)
+        if _index is not None:
+            progress = SubProgress(progress, _index, _index + 1)
+        installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
+        if do_refresh:
+            self.irefresh(what='NS')
+        return installer
 
     def applyEmbeddedBCFs(self, installers=None, destArchives=None,
                           progress=bolt.Progress()):
@@ -1745,7 +1744,8 @@ class InstallersData(DataStore):
                     u'An error occurred while applying an Embedded BCF.')
                 self.apply_converter(converter, destArchive,
                                      SubProgress(progress, i + 0.5, i + 1.0),
-                                     msg, installer, pending)
+                                     msg, installer, pending,
+                                     crc_installer=self.crc_installer())
             except StateError:
                 # maybe short circuit further attempts to extract
                 # installer.hasBCF = False
@@ -1756,9 +1756,10 @@ class InstallersData(DataStore):
 
     def apply_converter(self, converter, destArchive, progress, msg,
                         installer=None, pending=None, show_warning=None,
-                        position=-1):
+                        position=-1, crc_installer=None):
+        crc_installer = crc_installer or self.crc_installer()
         try:
-            converter.apply(destArchive, self.crc_installer,
+            converter.apply(destArchive, crc_installer,
                             bolt.SubProgress(progress, 0.0, 0.99),
                             embedded=installer.crc if installer else 0L)
             #--Add the new archive to Bash
@@ -1924,6 +1925,7 @@ class InstallersData(DataStore):
 
         :param dirDirsFiles: list of tuples in the format of the output of walk
         """
+        from . import modInfos # to get the crcs for espms
         progress.setFull(1 + len(dirDirsFiles))
         pending, pending_size = {}, 0
         new_sizeCrcDate = {}
@@ -1951,10 +1953,18 @@ class InstallersData(DataStore):
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 try:
+                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
+                    if top_level_espm: # modInfos MUST BE UPDATED
+                        try:
+                            modInfo = modInfos[rpFile]
+                            new_sizeCrcDate[rpFile] = (modInfo.size,
+                               modInfo.cached_mod_crc(), modInfo.mtime, asFile)
+                            continue
+                        except KeyError:
+                            pass # corrupted/missing, let os.lstat decide
                     lstat = os.lstat(asFile)
                     size, date = lstat.st_size, int(lstat.st_mtime)
-                    oSize, oCrc, oDate = oldGet(rpFile, (0, 0, 0))
-                    if top_level_espm or size != oSize or date != oDate:
+                    if size != oSize or date != oDate:
                         pending[rpFile] = (size, oCrc, date, asFile)
                         pending_size += size
                     else:
@@ -2633,3 +2643,17 @@ class InstallersData(DataStore):
         def _package(x):
             return isinstance(self[x], (InstallerArchive, InstallerProject))
         return filter(_package, installerKeys)
+
+    def createFromData(self, projectPath, ci_files, progress):
+        if not ci_files: return
+        norm_ghost = Installer.getGhosted()
+        subprogress = SubProgress(progress, 0, 0.8, full=len(ci_files))
+        srcJoin = bass.dirs['mods'].join
+        dstJoin = self.store_dir.join(projectPath).join
+        for i,filename in enumerate(ci_files):
+            subprogress(i, u'%s' % filename)
+            srcJoin(norm_ghost.get(filename, filename)).copyTo(
+                dstJoin(filename))
+        # Refresh, so we can manipulate the InstallerProject item
+        self.refresh_installer(projectPath, True, progress, do_refresh=True,
+                               install_order=len(self)) # install last

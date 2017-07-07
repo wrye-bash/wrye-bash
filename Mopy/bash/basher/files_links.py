@@ -238,7 +238,8 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
             destPath = self._selected_info.getPath()
             current_mtime = destPath.mtime
             snapPath.copyTo(destPath)
-            self._selected_info.setmtime(current_mtime) # keep load order
+            # keep load order but recalculate the crc
+            self._selected_info.setmtime(current_mtime, crc_changed=True)
             try:
                 self.window.data_store.refreshFile(fileName)
             except bolt.FileError: # FIXME(ut) - we just lost the correct file

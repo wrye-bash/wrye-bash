@@ -75,20 +75,6 @@ class _InstallerLink(Installers_Link, EnabledLink):
         else: return isinstance(next(self.iselected_infos()),
                                 bosh.InstallerArchive)
 
-    def _get_refreshed(self, installer, src_installer, is_project=True,
-                       progress=None, do_refresh=True):
-        new = installer not in self.idata
-        clazz = bosh.InstallerProject if is_project else bosh.InstallerArchive
-        if new:
-            self.idata[installer] = clazz(installer)
-            self.idata.moveArchives([installer], src_installer.order + 1)
-        installer_info = self.idata[installer]
-        if is_project: # no need to call irefresh(what='I')
-            installer_info.refreshBasic(progress=progress)
-        if do_refresh:
-            self.idata.irefresh(what='NS')
-        return installer_info
-
     ##: Methods below should be in an "archives.py"
     def _promptSolidBlockSize(self, title, value=0):
         return self._askNumber(
@@ -116,11 +102,10 @@ class _InstallerLink(Installers_Link, EnabledLink):
                                     SubProgress(progress, 0, 0.8),
                                     release=release)
             #--Add the new archive to Bash
-            iArchive = self._get_refreshed(archive_path, installer,
-                                           is_project=False, do_refresh=False)
+            iArchive = self.idata.refresh_installer(archive_path,
+                is_project=False, progress=progress,
+                install_order=installer.order + 1, do_refresh=True)
             iArchive.blockSize = blockSize
-            #--Refresh
-            self.idata.irefresh(what='I', pending=[archive_path])
         self.window.RefreshUI(detail_item=archive_path)
 
     def _askFilename(self, message, filename):
@@ -768,7 +753,9 @@ class Installer_CopyConflicts(_SingleInstallable):
                 g_path = GPath(u"%03d - %s" % (
                     order if order < src_order else order + 1, package.s))
                 curFile = _copy_conflicts(curFile)
-        self._get_refreshed(destDir, self._selected_info)
+        self.idata.refresh_installer(destDir, is_project=True, progress=None,
+                                     install_order=src_order + 1,
+                                     do_refresh=True)
         self.window.RefreshUI(detail_item=destDir)
 
 #------------------------------------------------------------------------------
@@ -954,7 +941,9 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
                         _(u"%s already exists. Overwrite it?") % project.s,
                         default=False): continue
                 installer.unpackToProject(project,SubProgress(progress,0,0.8))
-                self._get_refreshed(project, installer, progress=SubProgress(progress, 0.8, 0.99), do_refresh=False)
+                self.idata.refresh_installer(project, is_project=True,
+                    progress=SubProgress(progress, 0.8, 0.99),
+                    install_order=installer.order + 1, do_refresh=False)
                 projects.append(project)
             if not projects: return
             self.idata.irefresh(what='NS')
@@ -1046,8 +1035,9 @@ class InstallerConverter_Apply(_InstallerLink):
         defaultFilename = self.converter.fullPath.sbody[:-4] + archives\
             .defaultExt
         #--List source archives
+        crc_installer = self.idata.crc_installer()
         message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
-            u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in
+            u'(%08X) - %s' % (x, crc_installer[x].archive) for x in
             self.converter.srcCRCs)) + u'\n'
         #--Ask for an output filename
         destArchive = self._askFilename(message, filename=defaultFilename)
@@ -1138,6 +1128,7 @@ class InstallerConverter_Create(_InstallerLink):
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self.dialogTitle, value=destInstaller.blockSize or 0)
+        crc_installer = self.idata.crc_installer()
         with balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60) as progress:
             #--Create the converter
             converter = bosh.converters.InstallerConverter(self.selected,
@@ -1154,7 +1145,7 @@ class InstallerConverter_Create(_InstallerLink):
             log(u'. '+_(u'Size')+u': %s'% round_size(converter.fullPath.size))
             log(u'. '+_(u'Remapped')+u': %s'%formatInteger(len(converter.convertedFiles))+(_(u'file'),_(u'files'))[len(converter.convertedFiles) > 1])
             log.setHeader(u'. '+_(u'Requires')+u': %s'%formatInteger(len(converter.srcCRCs))+(_(u'file'),_(u'files'))[len(converter.srcCRCs) > 1])
-            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, self.idata.crc_installer[x].archive) for x in converter.srcCRCs if x in self.idata.crc_installer)))
+            log(u'  * '+u'\n  * '.join(sorted(u'(%08X) - %s' % (x, crc_installer[x].archive) for x in converter.srcCRCs if x in crc_installer)))
             log.setHeader(u'. '+_(u'Options:'))
             log(u'  * '+_(u'Skip Voices')+u'   = %s'%bool(converter.skipVoices))
             log(u'  * '+_(u'Solid Archive')+u' = %s'%bool(converter.isSolid))
@@ -1199,7 +1190,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         selected = self.selected
         idata = self.window.data_store # InstallersData singleton
         selectedCRCs = set(idata[archive].crc for archive in selected)
-        crcInstallers = set(idata.crc_installer)
+        crcInstallers = set(idata.crc_installer())
         srcCRCs = set(idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
