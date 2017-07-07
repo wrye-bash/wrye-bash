@@ -207,93 +207,93 @@ if _CBash:
         return
 
     try:
-        _CGetVersionMajor = _CBash.GetVersionMajor
-        _CGetVersionMinor = _CBash.GetVersionMinor
-        _CGetVersionRevision = _CBash.GetVersionRevision
+        _CGetVersionMajor = _CBash.cb_GetVersionMajor
+        _CGetVersionMinor = _CBash.cb_GetVersionMinor
+        _CGetVersionRevision = _CBash.cb_GetVersionRevision
     except AttributeError: #Functions were renamed in v0.5.0
-        _CGetVersionMajor = _CBash.GetMajor
-        _CGetVersionMinor = _CBash.GetMinor
-        _CGetVersionRevision = _CBash.GetRevision
+        _CGetVersionMajor = _CBash.cb_GetMajor
+        _CGetVersionMinor = _CBash.cb_GetMinor
+        _CGetVersionRevision = _CBash.cb_GetRevision
     _CGetVersionMajor.restype = c_ulong
     _CGetVersionMinor.restype = c_ulong
     _CGetVersionRevision.restype = c_ulong
     if (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision()) < _CBashRequiredVersion:
         raise ImportError(_("cint.py requires CBash v%d.%d.%d or higher! (found v%d.%d.%d)") % (_CBashRequiredVersion + (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision())))
-    _CCreateCollection = _CBash.CreateCollection
+    _CCreateCollection = _CBash.cb_CreateCollection
     _CCreateCollection.errcheck = ZeroIsErrorCheck
-    _CDeleteCollection = _CBash.DeleteCollection
+    _CDeleteCollection = _CBash.cb_DeleteCollection
     _CDeleteCollection.errcheck = NegativeIsErrorCheck
-    _CLoadCollection = _CBash.LoadCollection
+    _CLoadCollection = _CBash.cb_LoadCollection
     _CLoadCollection.errcheck = NegativeIsErrorCheck
-    _CUnloadCollection = _CBash.UnloadCollection
+    _CUnloadCollection = _CBash.cb_UnloadCollection
     _CUnloadCollection.errcheck = NegativeIsErrorCheck
-    _CGetCollectionType = _CBash.GetCollectionType
+    _CGetCollectionType = _CBash.cb_GetCollectionType
     _CGetCollectionType.errcheck = NegativeIsErrorCheck
-    _CUnloadAllCollections = _CBash.UnloadAllCollections
+    _CUnloadAllCollections = _CBash.cb_UnloadAllCollections
     _CUnloadAllCollections.errcheck = NegativeIsErrorCheck
-    _CDeleteAllCollections = _CBash.DeleteAllCollections
+    _CDeleteAllCollections = _CBash.cb_DeleteAllCollections
     _CDeleteAllCollections.errcheck = NegativeIsErrorCheck
-    _CAddMod = _CBash.AddMod
+    _CAddMod = _CBash.cb_AddMod
     _CAddMod.errcheck = ZeroIsErrorCheck
-    _CLoadMod = _CBash.LoadMod
+    _CLoadMod = _CBash.cb_LoadMod
     _CLoadMod.errcheck = NegativeIsErrorCheck
-    _CUnloadMod = _CBash.UnloadMod
+    _CUnloadMod = _CBash.cb_UnloadMod
     _CUnloadMod.errcheck = NegativeIsErrorCheck
-    _CCleanModMasters = _CBash.CleanModMasters
+    _CCleanModMasters = _CBash.cb_CleanModMasters
     _CCleanModMasters.errcheck = NegativeIsErrorCheck
-    _CSaveMod = _CBash.SaveMod
+    _CSaveMod = _CBash.cb_SaveMod
     _CSaveMod.errcheck = NegativeIsErrorCheck
-    _CGetAllNumMods = _CBash.GetAllNumMods
-    _CGetAllModIDs = _CBash.GetAllModIDs
-    _CGetLoadOrderNumMods = _CBash.GetLoadOrderNumMods
-    _CGetLoadOrderModIDs = _CBash.GetLoadOrderModIDs
-    _CGetFileNameByID = _CBash.GetFileNameByID
-    _CGetFileNameByLoadOrder = _CBash.GetFileNameByLoadOrder
-    _CGetModNameByID = _CBash.GetModNameByID
-    _CGetModNameByLoadOrder = _CBash.GetModNameByLoadOrder
-    _CGetModIDByName = _CBash.GetModIDByName
-    _CGetModIDByLoadOrder = _CBash.GetModIDByLoadOrder
-    _CGetModLoadOrderByName = _CBash.GetModLoadOrderByName
-    _CGetModLoadOrderByID = _CBash.GetModLoadOrderByID
-    _CGetModIDByRecordID = _CBash.GetModIDByRecordID
-    _CGetCollectionIDByRecordID = _CBash.GetCollectionIDByRecordID
-    _CGetCollectionIDByModID = _CBash.GetCollectionIDByModID
-    _CIsModEmpty = _CBash.IsModEmpty
-    _CGetModNumTypes = _CBash.GetModNumTypes
+    _CGetAllNumMods = _CBash.cb_GetAllNumMods
+    _CGetAllModIDs = _CBash.cb_GetAllModIDs
+    _CGetLoadOrderNumMods = _CBash.cb_GetLoadOrderNumMods
+    _CGetLoadOrderModIDs = _CBash.cb_GetLoadOrderModIDs
+    _CGetFileNameByID = _CBash.cb_GetFileNameByID
+    _CGetFileNameByLoadOrder = _CBash.cb_GetFileNameByLoadOrder
+    _CGetModNameByID = _CBash.cb_GetModNameByID
+    _CGetModNameByLoadOrder = _CBash.cb_GetModNameByLoadOrder
+    _CGetModIDByName = _CBash.cb_GetModIDByName
+    _CGetModIDByLoadOrder = _CBash.cb_GetModIDByLoadOrder
+    _CGetModLoadOrderByName = _CBash.cb_GetModLoadOrderByName
+    _CGetModLoadOrderByID = _CBash.cb_GetModLoadOrderByID
+    _CGetModIDByRecordID = _CBash.cb_GetModIDByRecordID
+    _CGetCollectionIDByRecordID = _CBash.cb_GetCollectionIDByRecordID
+    _CGetCollectionIDByModID = _CBash.cb_GetCollectionIDByModID
+    _CIsModEmpty = _CBash.cb_IsModEmpty
+    _CGetModNumTypes = _CBash.cb_GetModNumTypes
     _CGetModNumTypes.errcheck = NegativeIsErrorCheck
-    _CGetModTypes = _CBash.GetModTypes
+    _CGetModTypes = _CBash.cb_GetModTypes
     _CGetModTypes.errcheck = NegativeIsErrorCheck
-    _CGetModNumEmptyGRUPs = _CBash.GetModNumEmptyGRUPs
+    _CGetModNumEmptyGRUPs = _CBash.cb_GetModNumEmptyGRUPs
     _CGetModNumEmptyGRUPs.errcheck = NegativeIsErrorCheck
-    _CGetModNumOrphans = _CBash.GetModNumOrphans
+    _CGetModNumOrphans = _CBash.cb_GetModNumOrphans
     _CGetModNumOrphans.errcheck = NegativeIsErrorCheck
-    _CGetModOrphansFormIDs = _CBash.GetModOrphansFormIDs
+    _CGetModOrphansFormIDs = _CBash.cb_GetModOrphansFormIDs
     _CGetModOrphansFormIDs.errcheck = NegativeIsErrorCheck
 
-    _CGetLongIDName = _CBash.GetLongIDName
-    _CMakeShortFormID = _CBash.MakeShortFormID
-    _CCreateRecord = _CBash.CreateRecord
-    _CCopyRecord = _CBash.CopyRecord
-    _CUnloadRecord = _CBash.UnloadRecord
-    _CResetRecord = _CBash.ResetRecord
-    _CDeleteRecord = _CBash.DeleteRecord
-    _CGetRecordID = _CBash.GetRecordID
-    _CGetNumRecords = _CBash.GetNumRecords
-    _CGetRecordIDs = _CBash.GetRecordIDs
-    _CIsRecordWinning = _CBash.IsRecordWinning
-    _CGetNumRecordConflicts = _CBash.GetNumRecordConflicts
-    _CGetRecordConflicts = _CBash.GetRecordConflicts
-    _CGetRecordHistory = _CBash.GetRecordHistory
-    _CGetNumIdenticalToMasterRecords = _CBash.GetNumIdenticalToMasterRecords
-    _CGetIdenticalToMasterRecords = _CBash.GetIdenticalToMasterRecords
-    _CIsRecordFormIDsInvalid = _CBash.IsRecordFormIDsInvalid
-    _CUpdateReferences = _CBash.UpdateReferences
-    _CGetRecordUpdatedReferences = _CBash.GetRecordUpdatedReferences
-    _CSetIDFields = _CBash.SetIDFields
-    _CSetField = _CBash.SetField
-    _CDeleteField = _CBash.DeleteField
-    _CGetFieldAttribute = _CBash.GetFieldAttribute
-    _CGetField = _CBash.GetField
+    _CGetLongIDName = _CBash.cb_GetLongIDName
+    _CMakeShortFormID = _CBash.cb_MakeShortFormID
+    _CCreateRecord = _CBash.cb_CreateRecord
+    _CCopyRecord = _CBash.cb_CopyRecord
+    _CUnloadRecord = _CBash.cb_UnloadRecord
+    _CResetRecord = _CBash.cb_ResetRecord
+    _CDeleteRecord = _CBash.cb_DeleteRecord
+    _CGetRecordID = _CBash.cb_GetRecordID
+    _CGetNumRecords = _CBash.cb_GetNumRecords
+    _CGetRecordIDs = _CBash.cb_GetRecordIDs
+    _CIsRecordWinning = _CBash.cb_IsRecordWinning
+    _CGetNumRecordConflicts = _CBash.cb_GetNumRecordConflicts
+    _CGetRecordConflicts = _CBash.cb_GetRecordConflicts
+    _CGetRecordHistory = _CBash.cb_GetRecordHistory
+    _CGetNumIdenticalToMasterRecords = _CBash.cb_GetNumIdenticalToMasterRecords
+    _CGetIdenticalToMasterRecords = _CBash.cb_GetIdenticalToMasterRecords
+    _CIsRecordFormIDsInvalid = _CBash.cb_IsRecordFormIDsInvalid
+    _CUpdateReferences = _CBash.cb_UpdateReferences
+    _CGetRecordUpdatedReferences = _CBash.cb_GetRecordUpdatedReferences
+    _CSetIDFields = _CBash.cb_SetIDFields
+    _CSetField = _CBash.cb_SetField
+    _CDeleteField = _CBash.cb_DeleteField
+    _CGetFieldAttribute = _CBash.cb_GetFieldAttribute
+    _CGetField = _CBash.cb_GetField
 
     _CCreateCollection.restype = c_ulong
     _CDeleteCollection.restype = c_long
@@ -351,8 +351,8 @@ if _CBash:
     _CGetFieldAttribute.restype = c_ulong
     LoggingCallback = CFUNCTYPE(c_long, c_char_p)(LoggingCB)
     RaiseCallback = CFUNCTYPE(None, c_char_p)(RaiseCB)
-    _CBash.RedirectMessages(LoggingCallback)
-    _CBash.AllowRaising(RaiseCallback)
+    _CBash.cb_RedirectMessages(LoggingCallback)
+    _CBash.cb_AllowRaising(RaiseCallback)
 
 class CBashApi (object):
     Enabled = _CBash is not None
@@ -15425,7 +15425,11 @@ class ObCollection(object):
         return self.addMod(FileName, Flags=0x00001084)
 
     def load(self):
-        _CLoadCollection(self._CollectionID)
+        def _callback(current, last, modName):
+            return True
+
+        cb = CFUNCTYPE(c_bool, c_uint32, c_uint32, c_char_p)(_callback)
+        _CLoadCollection(self._CollectionID, cb)
 
         _NumModsIDs = _CGetLoadOrderNumMods(self._CollectionID)
         if _NumModsIDs > 0:
