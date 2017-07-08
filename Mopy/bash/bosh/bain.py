@@ -1767,6 +1767,7 @@ class InstallersData(DataStore):
         except StateError:
             deprint(msg, traceback=True)
             if show_warning: show_warning(msg)
+            raise # UI expects that
 
     def scan_installers_dir(self, installers_paths=(), fullRefresh=False):
         """March through the Bash Installers dir scanning for new and modified
