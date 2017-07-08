@@ -1572,7 +1572,10 @@ class InstallersData(DataStore):
             self.dictFile.data['installers'] = self.data
             self.dictFile.data['sizeCrcDate'] = dict( # FIXME: backwards compat
                 (GPath(x), y) for x, y in self.data_sizeCrcDate.iteritems())
-            self.dictFile.data['crc_installer'] = self.crc_installer()
+            # for backwards compatibility, drop
+            self.dictFile.data['crc_installer'] = dict(
+                (x.crc, x) for x in self.itervalues() if
+                isinstance(x, InstallerArchive))
             self.dictFile.vdata['version'] = 1
             self.dictFile.save()
             self.converters_data.save()
@@ -1678,10 +1681,6 @@ class InstallersData(DataStore):
                                        _index=index, _fullRefresh=fullRefresh)
         return changed
 
-    def crc_installer(self):
-        return dict((x.crc, x) for x in self.itervalues() if
-                    isinstance(x, InstallerArchive))
-
     def refresh_installer(self, package, is_project, progress,
                           install_order=None, do_refresh=False, _index=None,
                           _fullRefresh=False, __types=[]):
@@ -1705,7 +1704,7 @@ class InstallersData(DataStore):
         if installers is None:
             installers = [x for x in self.itervalues() if
                           isinstance(x, InstallerArchive) and x.hasBCF]
-        if not installers: return False
+        if not installers: return [], []
         if not destArchives:
             destArchives = [GPath(u'[Auto applied BCF] %s' % x.archive) for x
                             in installers]
@@ -1715,7 +1714,6 @@ class InstallersData(DataStore):
                         destArchives)): # no izip - we may modify installers
             progress(i, installer.archive)
             #--Extract the embedded BCF and move it to the Converters folder
-            bass.rmTempDir()
             unpack_dir = installer.unpackToTemp([installer.hasBCF],
                 SubProgress(progress, i, i + 0.5))
             srcBcfFile = unpack_dir.join(installer.hasBCF)
@@ -1730,7 +1728,7 @@ class InstallersData(DataStore):
                 self.apply_converter(converter, destArchive,
                                      SubProgress(progress, i + 0.5, i + 1.0),
                                      msg, installer, pending,
-                                     crc_installer=self.crc_installer())
+                                     crc_installer={installer.crc: installer})
             except StateError:
                 # maybe short circuit further attempts to extract
                 # installer.hasBCF = False
@@ -1742,7 +1740,6 @@ class InstallersData(DataStore):
     def apply_converter(self, converter, destArchive, progress, msg,
                         installer=None, pending=None, show_warning=None,
                         position=-1, crc_installer=None):
-        crc_installer = crc_installer or self.crc_installer()
         try:
             converter.apply(destArchive, crc_installer,
                             bolt.SubProgress(progress, 0.0, 0.99),

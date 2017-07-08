@@ -214,7 +214,8 @@ class InstallerConverter(object):
     """Object representing a BAIN conversion archive, and its configuration"""
 
     def __init__(self, srcArchives=None, idata=None, destArchive=None,
-                 BCFArchive=None, blockSize=None, progress=None):
+                 BCFArchive=None, blockSize=None, progress=None,
+                 crc_installer=None):
         #--Persistent variables are saved in the data tank for normal
         # operations.
         #--persistBCF is read one time from BCF.dat, and then saved in
@@ -255,7 +256,7 @@ class InstallerConverter(object):
             #--Build a BCF from scratch
             self.fullPath = converters_dir.join(BCFArchive)
             self.build(srcArchives, idata, destArchive, BCFArchive, blockSize,
-                       progress)
+                       progress, crc_installer)
             self.crc = self.fullPath.crc
         elif isinstance(srcArchives, bolt.Path):
             #--Load a BCF from file
@@ -338,7 +339,7 @@ class InstallerConverter(object):
         if embedded:
             if len(self.srcCRCs) != 1:
                 raise StateError(
-                    u'Embedded BCF require multiple source archives!')
+                    u'Embedded BCF requires multiple source archives!')
             realCRCs = self.srcCRCs
             srcCRCs = [embedded]
         else:
@@ -420,11 +421,11 @@ class InstallerConverter(object):
             else:
                 progress(index, _(u'Moving file...') + u'\n' + destFile.stail)
                 srcFile.moveTo(destFile)
-        #--Done with unpacked directory directory
+        #--Done with unpacked directory
         tmpDir.rmtree(safety=tmpDir.s)
 
     def build(self, srcArchives, idata, destArchive, BCFArchive, blockSize,
-              progress=None):
+              progress=None, crc_installer=None):
         """Builds and packages a BCF"""
         progress = progress if progress else bolt.Progress()
         #--Initialization
@@ -440,7 +441,6 @@ class InstallerConverter(object):
         destFileAppend = destFiles.append
         missingFileAppend = self.bcf_missing_files.append
         dupeGet = self.dupeCount.get
-        srcGet = srcFiles.get
         subGet = subArchives.get
         lastStep = 0
         #--Get settings
@@ -464,7 +464,6 @@ class InstallerConverter(object):
             #--Extract any subArchives
             #--It would be faster to read them with 7z l -slt
             #--But it is easier to use the existing recursive extraction
-            crc_installer = idata.crc_installer()
             for index, (installerCRC) in enumerate(subArchives):
                 installer = crc_installer[installerCRC]
                 self._unpack(installer, subArchives[installerCRC],
@@ -515,7 +514,7 @@ class InstallerConverter(object):
         sProgress.setFull(1 + len(destFiles))
         #--Map the files
         for index, (fileCRC, fileName) in enumerate(destFiles):
-            convertedFileAppend((fileCRC, srcGet(fileCRC), fileName))
+            convertedFileAppend((fileCRC, srcFiles.get(fileCRC), fileName))
             sProgress(index, BCFArchive.s + u'\n' + _(
                     u'Mapping files...') + u'\n' + fileName)
         #--Build the BCF
@@ -593,4 +592,4 @@ class InstallerConverter(object):
             bolt.clearReadOnly(subTempDir) ##: do this once
         #--Recursively unpack subArchives
         for archive in map(subTempDir.join, subArchives):
-            self._unpack(archive, [u'*'])
+            self._unpack(archive, [u'*']) # it will also unpack the embedded BCF if any...

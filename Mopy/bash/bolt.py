@@ -996,6 +996,8 @@ class Path(object):
                     self.backup.remove()
                     shutil.move(self._s, self.backup._s)
                 else:
+                    # this will fail with Access Denied (!) if self._s is
+                    # (unexpectedly) a directory
                     os.remove(self._s)
             shutil.move(self.temp._s, self._s)
     def editable(self):

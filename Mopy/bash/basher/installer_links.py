@@ -35,6 +35,8 @@ import StringIO
 import copy
 import re
 import webbrowser
+from collections import defaultdict
+
 from . import settingDefaults, Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
 from .. import bass, bolt, bosh, bush, balt, archives
@@ -1018,24 +1020,53 @@ class InstallerProject_ReleasePack(InstallerProject_Pack):
     release = True
 
 #------------------------------------------------------------------------------
-class InstallerConverter_Apply(_InstallerLink):
+class _InstallerConverter_Link(_InstallerLink):
+
+    @balt.conversation
+    def _check_identical_content(self, message):
+        # check that no installers with identical content are selected, this
+        # leads to undefined behavior
+        crcs_dict = defaultdict(set)
+        for inst in self.iselected_infos():
+            crcs_dict[inst.crc].add(inst)
+        duplicates = []
+        for crc_, installers in crcs_dict.iteritems():
+            if len(installers) > 1:
+                duplicates.append((crc_, u'  \n* ' + u'  \n* '.join(
+                    sorted(x.archive for x in installers))))
+        if duplicates:
+            msg = _(u'Installers with identical content selected:') + u'\n'
+            msg += u'\n'.join(
+                sorted(u'CRC: %08X%s' % (k, v) for k, v in duplicates))
+            if message: msg += u'\n' + message
+            self._showError(msg, _(u'Identical installers content'))
+            return True
+        return False
+
+class InstallerConverter_Apply(_InstallerConverter_Link):
     """Apply a Bain Conversion File."""
     dialogTitle = _(u'Apply BCF...') # title used in dialog
 
-    def __init__(self,converter,numAsterisks):
+    def __init__(self,converter,selected):
         super(InstallerConverter_Apply, self).__init__()
         self.converter = converter
         #--Add asterisks to indicate the number of unselected archives that the BCF uses
-        self.dispName = u''.join((self.converter.fullPath.sbody,u'*' * numAsterisks))
+        self.dispName = self.converter.fullPath.sbody
         self._text = self.dispName
+        self._selected = selected
 
     @balt.conversation
     def Execute(self):
+        if self._check_identical_content(
+                _(u'Please only select the installers this converter was made '
+                  u'for.')):
+            return
+        # all installers that this converter needs are present and unique
+        crc_installer = dict((x.crc, x) for x in self.iselected_infos())
         #--Generate default filename from BCF filename
         defaultFilename = self.converter.fullPath.sbody[:-4] + archives\
             .defaultExt
         #--List source archives
-        crc_installer = self.idata.crc_installer()
         message = _(u'Using:') + u'\n* ' + u'\n* '.join(sorted(
             u'(%08X) - %s' % (x, crc_installer[x].archive) for x in
             self.converter.srcCRCs)) + u'\n'
@@ -1046,11 +1077,12 @@ class InstallerConverter_Apply(_InstallerLink):
             #--Perform the conversion
             msg = u'%s: ' % destArchive.s + _(
                 u'An error occurred while applying an Auto-BCF.')
+            msg += _(u'Maybe the BCF was packed for another installer ?')
             new_archive_order = self.idata[self.selected[-1]].order + 1
             try:
                 self.idata.apply_converter(self.converter, destArchive,
                     progress, msg, show_warning=self._showWarning,
-                    position=new_archive_order)
+                    position=new_archive_order, crc_installer=crc_installer)
             except StateError:
                 return
         self.window.RefreshUI(detail_item=destArchive)
@@ -1072,12 +1104,17 @@ class InstallerConverter_ApplyEmbedded(_InstallerLink):
             if not destinations: return # destinations == [dest] if all was ok
         self.window.RefreshUI(detail_item=dest)
 
-class InstallerConverter_Create(_InstallerLink):
+class InstallerConverter_Create(_InstallerConverter_Link):
     """Create BAIN conversion file."""
     dialogTitle = _(u'Create BCF...') # title used in dialog
     _text = _(u'Create...')
 
     def Execute(self):
+        if self._check_identical_content(
+                _(u'Please only select installers that are needed.')):
+            return
+        # all installers that this converter needs are unique
+        crc_installer = dict((x.crc, x) for x in self.iselected_infos())
         #--Generate allowable targets
         readTypes = u'*%s' % u';*'.join(archives.readExts)
         #--Select target archive
@@ -1128,7 +1165,6 @@ class InstallerConverter_Create(_InstallerLink):
         if destInstaller.isSolid:
             blockSize = self._promptSolidBlockSize(
                 title=self.dialogTitle, value=destInstaller.blockSize or 0)
-        crc_installer = self.idata.crc_installer()
         with balt.Progress(_(u'Creating %s...') % BCFArchive.s,u'\n'+u' '*60) as progress:
             #--Create the converter
             converter = bosh.converters.InstallerConverter(self.selected,
@@ -1180,7 +1216,7 @@ class InstallerOpenAt_MainMenu(balt.MenuLink):
 class InstallerConverter_ConvertMenu(balt.MenuLink):
     """Apply BCF SubMenu."""
     _text = _(u"Apply")
-    def _enable(self): # TODO(ut) untested for multiple selections
+    def _enable(self):
         """Return False to disable the converter menu, otherwise populate its
         links attribute and return True."""
         linkSet = set()
@@ -1190,21 +1226,18 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         selected = self.selected
         idata = self.window.data_store # InstallersData singleton
         selectedCRCs = set(idata[archive].crc for archive in selected)
-        crcInstallers = set(idata.crc_installer())
         srcCRCs = set(idata.converters_data.srcCRC_converters)
         #--There is no point in testing each converter unless
         #--every selected archive has an associated converter
         if selectedCRCs <= srcCRCs:
             #--Test every converter for every selected archive
-            #--Only add a link to the converter if it uses all selected archives,
-            #--and all of its required archives are available (but not necessarily selected)
-            linkSet = set( #--List comprehension is faster than unrolling the for loops, but readability suffers
-                [converter for installerCRC in selectedCRCs for converter in
-                 idata.converters_data.srcCRC_converters[installerCRC] if
-                 selectedCRCs <= converter.srcCRCs <= crcInstallers])
-##            for installerCRC in selectedCRCs:
-##                for converter in window.data.srcCRC_converters[installerCRC]:
-##                    if selectedCRCs <= converter.srcCRCs <= set(window.data.crc_installer): linkSet.add(converter)
+            # Only add a link to the converter if all of its required archives
+            # are selected
+            linkSet = set()
+            for installerCRC in selectedCRCs:
+               for converter in idata.converters_data.srcCRC_converters[installerCRC]:
+                   if converter.srcCRCs <= selectedCRCs:
+                       linkSet.add(converter)
         #--If the archive is a single archive with an embedded BCF, add that
         if len(selected) == 1 and idata[selected[0]].hasBCF:
             self.links.append(InstallerConverter_ApplyEmbedded())
@@ -1214,9 +1247,8 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
         #--Otherwise add each link in alphabetical order, and
         #--indicate the number of additional, unselected archives
         #--that the converter requires
-        for converter in sorted(linkSet,key=lambda x: x.fullPath.stail.lower()):
-            numAsterisks = len(converter.srcCRCs - selectedCRCs)
-            self.links.append(InstallerConverter_Apply(converter, numAsterisks))
+        for converter in sorted(linkSet,key=lambda x:x.fullPath.stail.lower()):
+            self.links.append(InstallerConverter_Apply(converter, selected))
         return True
 
 class InstallerConverter_MainMenu(balt.MenuLink):
