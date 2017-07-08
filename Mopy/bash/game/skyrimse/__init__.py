@@ -126,6 +126,7 @@ dataDirsPlus = {
     u'ini',
     u'asi',
     u'skyproc patchers',
+    u'calientetools', # bodyslide
 }
 
 #--Tags supported by this game

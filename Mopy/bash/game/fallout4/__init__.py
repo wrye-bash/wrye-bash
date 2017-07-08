@@ -212,6 +212,7 @@ dataDirs = {
 dataDirsPlus = {
     u'f4se',
     u'ini',
+    u'tools', # bodyslide
 }
 
 # Installer -------------------------------------------------------------------
