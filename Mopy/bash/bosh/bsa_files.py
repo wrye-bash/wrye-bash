@@ -365,9 +365,6 @@ class ABsa(AFile):
     def load_bsa_light(self): raise NotImplementedError
 
     # API
-    def has_asset(self, asset_path):
-        return (u'%s' % asset_path).lower() in self.assets
-
     def has_assets(self, asset_paths):
         return set((u'%s' % a).lower() for a in asset_paths) & self.assets
 

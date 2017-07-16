@@ -997,6 +997,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             tags = bosh.modInfos[mod].getBashTags()
             if u'Filter' in tags: unfiltered.append(mod)
             elif mod in bosh.modInfos.mergeable:
+                if u'MustBeActiveIfImported' in tags:
+                    continue
                 if u'NoMerge' in tags: noMerge.append(mod)
                 else: merge.append(mod)
             elif u'Deactivate' in tags: deactivate.append(mod)

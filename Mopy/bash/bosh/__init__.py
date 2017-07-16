@@ -823,13 +823,23 @@ class ModInfo(FileInfo):
             exGroup = maExGroup.group(1)
             return len(modInfos.exGroup_mods[exGroup]) > 1
 
-    def getBsaPath(self):
-        """Returns path to plugin's BSA, if it were to exists."""
-        return self.getPath().root.root + u'.' + bush.game.bsa_extension
+    @property
+    def _modname(self):
+        return bass.reModExt.sub(u'', self.name.s)
+
+    def _mods_bsa(self):
+        """Return bsas from bsaInfos, that match plugin's name."""
+        if bush.game.fsName == u'Skyrim':
+            pattern = self._modname
+        else :
+            pattern = self._modname + u'.*'
+        reg = re.compile(pattern, re.I | re.U)
+        # bsaInfos must be updated and contain all existing bsas
+        return [inf for bsa, inf in bsaInfos.iteritems() if reg.match(bsa.s)]
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
-        return self.getBsaPath().exists()
+        return bool(self._mods_bsa())
 
     def getIniPath(self):
         """Returns path to plugin's INI, if it were to exists."""
@@ -857,15 +867,13 @@ class ModInfo(FileInfo):
                 paths.add(loose)
         #--If there were some missing Loose Files
         if extract:
-            bsaPaths = self._extra_bsas()
             bsa_assets = OrderedDict()
-            for path in bsaPaths:
+            for bsa_info in self._extra_bsas():
                 try:
-                    bsa_info = bsaInfos[path.tail] # type: BSAInfo
                     found_assets = bsa_info.has_assets(extract)
-                except (KeyError, BSAError, OverflowError) as e: # not existing or corrupted
-                    if isinstance(e, (BSAError, OverflowError)):
-                        deprint(u'Failed to parse %s' % path, traceback=True)
+                except (BSAError, OverflowError):
+                    deprint(u'Failed to parse %s' % bsa_info.name,
+                            traceback=True)
                     continue
                 bsa_assets[bsa_info] = found_assets
                 #extract contains Paths that compare equal to lowercase strings
@@ -885,28 +893,28 @@ class ModInfo(FileInfo):
         return paths
 
     def _extra_bsas(self):
-        """Return a list of (existing) bsa paths to get assets from.
-        :rtype: list[bolt.Path]
+        """Return a list of bsas to get assets from.
+        :rtype: list[BSAInfo]
         """
         if self.name.cs in bush.game.vanilla_string_bsas: # lowercase !
-            bsaPaths = map(dirs['mods'].join, bush.game.vanilla_string_bsas[
-                self.name.cs])
+            bsa_infos = [bsaInfos[b] for b in map(GPath,
+                bush.game.vanilla_string_bsas[self.name.cs]) if b in bsaInfos]
         else:
-            bsaPaths = [self.getBsaPath()] # first check bsa with same name
+            bsa_infos = self._mods_bsa() # first check bsa with same name
             for iniFile in modInfos.ini_files():
                 for key in bush.game.resource_archives_keys:
-                    extraBsa = iniFile.getSetting(u'Archive', key, u'').split(u',')
-                    extraBsa = (x.strip() for x in extraBsa)
-                    extraBsa = [dirs['mods'].join(x) for x in extraBsa if x]
-                    bsaPaths.extend(extraBsa)
-        return bsaPaths
+                    extraBsas = map(GPath, (x.strip() for x in (
+                        iniFile.getSetting(u'Archive', key, u'').split(u','))))
+                    bsa_infos.extend(
+                        bsaInfos[bsa] for bsa in extraBsas if bsa in bsaInfos)
+        return bsa_infos
 
     def isMissingStrings(self, __debug=0):
         """True if the mod says it has .STRINGS files, but the files are
         missing."""
         if not self.header.flags1.hasStrings: return False
         lang = oblivionIni.get_ini_language()
-        bsaPaths = self._extra_bsas()
+        bsa_infos = self._extra_bsas()
         for assetPath in self._string_files_paths(lang):
             # Check loose files first
             if self.dir.join(assetPath).exists():
@@ -915,19 +923,16 @@ class ModInfo(FileInfo):
             if __debug == 1:
                 deprint(u'Scanning BSAs for string files for %s' % self.name)
                 __debug = 2
-            for path in bsaPaths:
+            for bsa_info in bsa_infos:
                 try:
-                    bsa_info = bsaInfos[path.tail] # type: BSAInfo
-                    if bsa_info.has_asset(assetPath):
+                    if bsa_info.has_assets({assetPath}):
                         break # found
-                except (KeyError, BSAError, OverflowError) as e: # not existing or corrupted
-                    if isinstance(e, (BSAError, OverflowError)):
-                        print u'Failed to parse %s:\n%s' % (
-                            path, traceback.format_exc())
-                    elif __debug == 2: deprint(u'%s is not present' % path)
+                except (BSAError, OverflowError):
+                    print u'Failed to parse %s:\n%s' % (
+                        bsa_info.name, traceback.format_exc())
                     continue
                 if __debug == 2:
-                    deprint(u'Asset %s not in %s' % (assetPath, path))
+                    deprint(u'Asset %s not in %s' % (assetPath, bsa_info.name))
             else: # not found
                 return True
         return False

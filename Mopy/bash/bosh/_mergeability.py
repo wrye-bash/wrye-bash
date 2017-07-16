@@ -47,7 +47,8 @@ def _is_mergeable_no_load(modInfo, verbose):
             reasons.append(u'\n.    '+_(u'Has BSA archive.'))
         if hasVoices:
             reasons.append(u'\n.    '+_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
-    #-- Check to make sure NoMerge tag not in tags - if in tags don't show up as mergeable.
+    # Client must make sure NoMerge tag not in tags - if in tags
+    # don't show up as mergeable.
     if reasons: return reasons
     return True
 
