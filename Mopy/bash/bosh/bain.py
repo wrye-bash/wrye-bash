@@ -454,7 +454,9 @@ class Installer(object):
         Installer._attributes_process[u'.txt'] = _process_txt
         def _remap_espms(self, fileLower, full, fileExt, file_relative, sub):
             rootLower = file_relative.split(os_sep, 1)
-            if len(rootLower) > 1: return file_relative ##: maybe skip ??
+            if len(rootLower) > 1:
+                self.skipDirFiles.add(full)
+                return None # we dont want to install those files
             file_relative = self.remaps.get(file_relative, file_relative)
             if file_relative not in self.espmMap[sub]: self.espmMap[
                 sub].append(file_relative)
@@ -992,7 +994,7 @@ class Installer(object):
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
             destFull = bass.dirs['mods'].join(norm_ghostGet(dest, dest))
-            if bass.reModExt.search(srcFull.s):
+            if srcFull.tail in self.espms:
                 mods.add(srcFull.tail)
             elif InstallersData._is_ini_tweak(dest):
                 inis.add(srcFull.tail)
