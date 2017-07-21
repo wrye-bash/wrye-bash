@@ -617,6 +617,7 @@ class ModInfo(FileInfo):
             recalculate = cached_crc is None \
                           or self._file_mod_time != cached_mtime \
                           or self._file_size != cached_size
+        path_crc = cached_crc
         if recalculate:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
@@ -624,6 +625,7 @@ class ModInfo(FileInfo):
                 modInfos.table.setItem(self.name,'ignoreDirty',False)
             modInfos.table.setItem(self.name, 'crc_mtime', self._file_mod_time)
             modInfos.table.setItem(self.name, 'crc_size', self._file_size)
+        return path_crc, cached_crc
 
     def cached_mod_crc(self): # be sure it's valid before using it!
         return modInfos.table.getItem(self.name, 'crc')
@@ -2105,8 +2107,11 @@ class ModInfos(FileInfos):
 
     def refresh_crcs(self, mods=None): #TODO(ut) progress !
         if mods is None: mods = self.keys()
+        pairs = {}
         for mod in mods:
-            self[mod].calculate_crc(recalculate=True)
+            inf = self[mod]
+            pairs[inf.name] = inf.calculate_crc(recalculate=True)
+        return pairs
 
     #--Refresh File
     def refreshFile(self, fileName, _in_refresh=False):

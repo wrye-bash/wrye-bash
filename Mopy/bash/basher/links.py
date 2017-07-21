@@ -410,6 +410,8 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_AutoGhost())
     ModList.mainMenu.append(Mods_LockLoadOrder())
     ModList.mainMenu.append(Mods_ScanDirty())
+    ModList.mainMenu.append(SeparatorLink())
+    ModList.mainMenu.append(Mods_CrcRefresh())
     #--ModList: Item Links
     if bass.inisettings['ShowDevTools']:
         ModList.itemMenu.append(Mod_FullLoad())

@@ -2438,6 +2438,7 @@ class Link(object):
     def _showWryeLog(self, logText, title=u'', asDialog=True,
                      icons=_default_icons):
         if icons is self._default_icons: icons = Resources.bashBlue
+        if not title: title = self._text
         WryeLog(self.window, logText, title, asDialog, log_icons=icons)
 
     def _askNumber(self, message, prompt=u'', title=u'', value=0, min=0,

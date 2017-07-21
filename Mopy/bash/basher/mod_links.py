@@ -1347,7 +1347,7 @@ class Mod_FogFixer(ItemLink):
                         u'* %4d %s' % (len(fog_fixer.fixedCells), fileName.s))
         if fixed:
             message = u'==='+_(u'Cells Fixed')+u':\n'+u'\n'.join(fixed)
-            self._showWryeLog(message, title=_(u'Nvidia Fog Fix'))
+            self._showWryeLog(message)
         else:
             message = _(u'No changes required.')
             self._showOk(message)
@@ -1390,7 +1390,7 @@ class Mod_UndeleteRefs(EnabledLink):
             message = log.out.getvalue()
         else:
             message = _(u"No changes required.")
-        self._showWryeLog(message, title=self._text)
+        self._showWryeLog(message)
         log.out.close()
 
 # Rest of menu Links ----------------------------------------------------------

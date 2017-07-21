@@ -36,7 +36,7 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
            'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
-           'Mods_ScanDirty']
+           'Mods_ScanDirty', 'Mods_CrcRefresh']
 
 # "Load" submenu --------------------------------------------------------------
 def _getLoadListsDict():
@@ -315,3 +315,21 @@ class Mods_LockLoadOrder(CheckLink):
     def _check(self): return load_order.locked
 
     def Execute(self): load_order.toggle_lock_load_order()
+
+class Mods_CrcRefresh(ItemLink):
+    """Recalculate crcs for all mods"""
+    _text = _(u'Recalculate CRCs')
+    help = _(u'Clean stale CRCs from cache')
+
+    @balt.conversation
+    def Execute(self):
+        message = u'== %s' % _(u'Mismatched CRCs') + u'\n\n'
+        with balt.BusyCursor(): pairs = bosh.modInfos.refresh_crcs()
+        mismatched = dict((k, v) for k, v in pairs.iteritems() if v[0] != v[1])
+        if mismatched:
+            message += u'  * ' + u'\n  * '.join(
+                [u'%s: cached %08X real %08X' % (k.s, v[1], v[0]) for k, v in
+                 mismatched.iteritems()])
+            self.window.RefreshUI(redraw=mismatched.keys(), refreshSaves=False)
+        else: message += _(u'No stale cached CRC values detected')
+        self._showWryeLog(message)
