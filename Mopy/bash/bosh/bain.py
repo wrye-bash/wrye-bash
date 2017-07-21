@@ -1546,7 +1546,7 @@ class InstallersData(DataStore):
                  refresh_info=None, deleted=None, pending=None, projects=None):
         progress = progress or bolt.Progress()
         #--Archive invalidation
-        from . import oblivionIni, InstallerMarker
+        from . import oblivionIni, InstallerMarker, modInfos
         if bass.settings.get('bash.bsaRedirection') and oblivionIni.abs_path.exists():
             oblivionIni.setBsaRedirection(True)
         #--Load Installers.dat if not loaded - will set changed to True
@@ -1554,6 +1554,8 @@ class InstallersData(DataStore):
         #--Last marker
         if self.lastKey not in self.data:
             self.data[self.lastKey] = InstallerMarker(self.lastKey)
+        if fullRefresh: # BAIN uses modInfos crc cache
+            with balt.BusyCursor(): modInfos.refresh_crcs()
         #--Refresh Other - FIXME(ut): docs
         if 'D' in what:
             changed |= self._refresh_from_data_dir(progress, fullRefresh)

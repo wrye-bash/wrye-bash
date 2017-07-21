@@ -610,12 +610,14 @@ class ModInfo(FileInfo):
         self.setmtime(crc_changed=True)
 
     def calculate_crc(self, recalculate=False):
-        cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
-        cached_size = modInfos.table.getItem(self.name, 'crc_size')
         cached_crc = modInfos.table.getItem(self.name, 'crc')
-        if recalculate or cached_crc is None \
-                or self._file_mod_time != cached_mtime or \
-                        self._file_size != cached_size:
+        if not recalculate:
+            cached_mtime = modInfos.table.getItem(self.name, 'crc_mtime')
+            cached_size = modInfos.table.getItem(self.name, 'crc_size')
+            recalculate = cached_crc is None \
+                          or self._file_mod_time != cached_mtime \
+                          or self._file_size != cached_size
+        if recalculate:
             path_crc = self.abs_path.crc
             if path_crc != cached_crc:
                 modInfos.table.setItem(self.name,'crc',path_crc)
@@ -646,7 +648,8 @@ class ModInfo(FileInfo):
         self.isGhost, old_ghost = not self._abs_path.exists() and (
             self._abs_path + u'.ghost').exists(), self.isGhost
         # mark updated if ghost state changed but only reread header if needed
-        super(ModInfo, self).needs_update() or self.isGhost != old_ghost
+        changed = super(ModInfo, self).do_update()
+        return changed or self.isGhost != old_ghost
 
     @FileInfo.abs_path.getter
     def abs_path(self):
@@ -2099,6 +2102,11 @@ class ModInfos(FileInfos):
                 self.table.setItem(modName, 'autoBashTags', False)
             if autoTag:
                 mod.reloadBashTags()
+
+    def refresh_crcs(self, mods=None): #TODO(ut) progress !
+        if mods is None: mods = self.keys()
+        for mod in mods:
+            self[mod].calculate_crc(recalculate=True)
 
     #--Refresh File
     def refreshFile(self, fileName, _in_refresh=False):
