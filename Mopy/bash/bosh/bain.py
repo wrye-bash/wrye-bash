@@ -58,7 +58,7 @@ class Installer(object):
         'dirty_sizeCrc', 'comments', 'extras_dict', 'packageDoc', 'packagePic',
         'src_sizeCrcDate', 'hasExtraData', 'skipVoices', 'espmNots', 'isSolid',
         'blockSize', 'overrideSkips', 'remaps', 'skipRefresh', 'fileRootIdex')
-    volatile = ('data_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
+    volatile = ('ci_dest_sizeCrc', 'skipExtFiles', 'skipDirFiles', 'status',
         'missingFiles', 'mismatchedFiles', 'project_refreshed',
         'mismatchedEspms', 'unSize', 'espms', 'underrides', 'hasWizard',
         'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files')
@@ -195,12 +195,14 @@ class Installer(object):
         self.project_refreshed = False
         self._dir_dirs_files = None
         #--Volatile: set by refreshDataSizeCrc
+        # LowerDict mapping destinations (relative to Data/ directory) of files
+        # in this installer to their size and crc - built in refreshDataSizeCrc
+        self.ci_dest_sizeCrc = bolt.LowerDict()
         self.hasWizard = False
         self.hasBCF = False
         self.espmMap = collections.defaultdict(list)
         self.hasReadme = False
         self.hasBethFiles = False
-        self.data_sizeCrc = bolt.LowerDict()
         self.skipExtFiles = set()
         self.skipDirFiles = set()
         self.espms = set()
@@ -551,10 +553,10 @@ class Installer(object):
         return message
 
     def refreshDataSizeCrc(self, checkOBSE=False, splitExt=os.path.splitext):
-        """Update self.data_sizeCrc and related variables and return
-        dest_src map for install operation. data_sizeCrc is a dict from paths
-        to size and crc tuples that maps paths _relative to the Data dir_ - so
-        the locations the files will end up to if installed.
+        """Update self.ci_dest_sizeCrc and related variables and return
+        dest_src map for install operation. ci_dest_sizeCrc is a dict that maps
+        CIstr paths _relative to the Data dir_ (the locations the files will
+        end up to if installed) to (size, crc) tuples.
 
         WIP rewrite
         Used:
@@ -620,23 +622,23 @@ class Installer(object):
         for full,size,crc in self.fileSizeCrcs:
             if rootIdex: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
-            file = full[rootIdex:]
-            fileLower = file.lower()
+            file_relative = full[rootIdex:]
+            fileLower = file_relative.lower()
             if fileLower.startswith( # skip top level '--', 'fomod' etc
                     Installer._silentSkipsStart) or fileLower.endswith(
                     Installer._silentSkipsEnd): continue
             sub = u''
             if type_ == 2: #--Complex archive
-                split = file.split(os_sep, 1)
+                split = file_relative.split(os_sep, 1)
                 if len(split) > 1:
                     # redefine file, excluding the subpackage directory
-                    sub,file = split
-                    fileLower = file.lower()
+                    sub,file_relative = split
+                    fileLower = file_relative.lower()
                     if fileLower.startswith(Installer._silentSkipsStart):
                         continue # skip subpackage level '--', 'fomod' etc
                 if sub not in activeSubs:
                     if sub == u'':
-                        skipDirFilesAdd(file)
+                        skipDirFilesAdd(file_relative)
                     # Run a modified version of the normal checks, just
                     # looking for esp's for the wizard espmMap, wizard.txt
                     # and readme's
@@ -648,29 +650,29 @@ class Installer(object):
                     sub_esps = espmMap[sub] # add sub key to the espmMap
                     if fileLower == u'wizard.txt':
                         self.hasWizard = full
-                        skipDirFilesDiscard(file)
+                        skipDirFilesDiscard(file_relative)
                         continue
                     elif fileExt in defaultExt and (fileLower[-7:-3] == u'-bcf' or u'-bcf-' in fileLower):
                         self.hasBCF = full
-                        skipDirFilesDiscard(file)
+                        skipDirFilesDiscard(file_relative)
                         continue
                     elif fileExt in docExts and sub == u'':
                         if not self.hasReadme:
-                            if reReadMeMatch(file):
+                            if reReadMeMatch(file_relative):
                                 self.hasReadme = full
-                                skipDirFilesDiscard(file)
+                                skipDirFilesDiscard(file_relative)
                                 skip = False
                     elif fileLower in bethFiles:
                         self.hasBethFiles = True
-                        skipDirFilesDiscard(file)
-                        skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + file)
+                        skipDirFilesDiscard(file_relative)
+                        skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + file_relative)
                         continue
                     elif not rootLower and reModExtMatch(fileExt):
                         #--Remap espms as defined by the user
-                        if file in self.remaps:
-                            file = self.remaps[file]
+                        if file_relative in self.remaps:
+                            file_relative = self.remaps[file_relative]
                             # fileLower = file.lower() # not needed will skip
-                        if file not in sub_esps: sub_esps.append(file)
+                        if file_relative not in sub_esps: sub_esps.append(file_relative)
                     if skip:
                         continue
             sub_esps = espmMap[sub] # add sub key to the espmMap
@@ -678,7 +680,6 @@ class Installer(object):
             rootLower = rootLower.split(os_sep, 1)
             if len(rootLower) == 1: rootLower = u''
             else: rootLower = rootLower[0]
-            fileStartsWith = fileLower.startswith
             #--Skips
             for lam in skips:
                 if lam(fileLower):
@@ -691,7 +692,7 @@ class Installer(object):
             # (if not skipped globally)
             if fileExt in Installer._extensions_to_process:
                 dest = Installer._attributes_process[fileExt](
-                    self, fileLower, full, fileExt, file, sub)
+                    self, fileLower, full, fileExt, file_relative, sub)
                 if dest is None: continue
             if fileExt in global_skip_ext: continue # docs treated above
             elif fileExt in Installer._executables_process: # and handle execs
@@ -705,7 +706,7 @@ class Installer(object):
                     skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + full)
                     if sub_esps and sub_esps[-1].lower() == fileLower:
                         del sub_esps[-1] # added in extensions processing
-                        self.espms.discard(GPath(file)) #dont show in espm list
+                        self.espms.discard(GPath(file_relative)) #dont show in espm list
                     continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                 skipDirFilesAdd(full)
@@ -717,20 +718,20 @@ class Installer(object):
                 skipExtFilesAdd(full)
                 continue
             #--Remap docs, strings
-            if dest is None: dest = file
+            if dest is None: dest = file_relative
             if rootLower in docDirs:
-                dest = os_sep.join((u'Docs', file[len(rootLower) + 1:]))
-            elif (renameStrings and fileStartsWith(u'strings' + os_sep) and
-                  fileExt in {u'.strings',u'.dlstrings',u'.ilstrings'}):
+                dest = os_sep.join((u'Docs', file_relative[len(rootLower) + 1:]))
+            elif (renameStrings and fileLower.startswith(u'strings' + os_sep)
+                  and fileExt in {u'.strings',u'.dlstrings',u'.ilstrings'}):
                 langSep = fileLower.rfind(u'_')
                 extSep = fileLower.rfind(u'.')
                 lang = fileLower[langSep+1:extSep]
                 if lang != languageLower:
-                    dest = u''.join((file[:langSep],u'_',lang,file[extSep:]))
+                    dest = u''.join((file_relative[:langSep],u'_',lang,file_relative[extSep:]))
                     # Check to ensure not overriding an already provided
                     # language file for that language
                     if dest in data_sizeCrc:
-                        dest = file
+                        dest = file_relative
             elif rootLower in dataDirsPlus:
                 pass
             elif not rootLower:
@@ -738,7 +739,7 @@ class Installer(object):
                     dest = self.packagePic = u''.join(
                         (u'Docs' + os_sep, archiveRoot, u'.package.jpg'))
                 elif fileExt in imageExts:
-                    dest = os_sep.join((u'Docs', file))
+                    dest = os_sep.join((u'Docs', file_relative))
             if fileExt in commonlyEditedExts: ##: will track all the txt files in Docs/
                 InstallersData.track(bass.dirs['mods'].join(dest))
             #--Save
@@ -746,7 +747,7 @@ class Installer(object):
             dest_src[dest] = full
             unSize += size
         self.unSize = unSize
-        (self.data_sizeCrc,old_sizeCrc) = (data_sizeCrc,self.data_sizeCrc)
+        (self.ci_dest_sizeCrc, old_sizeCrc) = (data_sizeCrc, self.ci_dest_sizeCrc)
         #--Update dirty?
         if self.isActive and data_sizeCrc != old_sizeCrc:
             dirty_sizeCrc = self.dirty_sizeCrc
@@ -879,7 +880,7 @@ class Installer(object):
         -10: missing files (red)
         -20: bad type (grey)
         """
-        data_sizeCrc = self.data_sizeCrc
+        data_sizeCrc = self.ci_dest_sizeCrc
         data_sizeCrcDate = installersData.data_sizeCrcDate
         ci_underrides_sizeCrc = installersData.ci_underrides_sizeCrc
         missing = self.missingFiles
@@ -987,7 +988,7 @@ class Installer(object):
         norm_ghost = Installer.getGhosted() # some.espm -> some.espm.ghost
         norm_ghostGet = norm_ghost.get
         data_sizeCrcDate_update = bolt.LowerDict()
-        data_sizeCrc = self.data_sizeCrc
+        data_sizeCrc = self.ci_dest_sizeCrc
         mods, inis = set(), set()
         srcs, dests = [], []
         for dest, src in dest_src.iteritems():
@@ -1265,7 +1266,7 @@ class InstallerProject(Installer):
         """Update src_sizeCrcDate cache from project directory. Used by
         _refreshSource() to populate the project's src_sizeCrcDate with
         _all_ files present in the project dir. src_sizeCrcDate is then used
-        to populate fileSizeCrcs, used to populate data_sizeCrc in
+        to populate fileSizeCrcs, used to populate ci_dest_sizeCrc in
         refreshDataSizeCrc. Compare to InstallersData._refresh_from_data_dir.
         :return: max modification time for files/folders in project directory
         :rtype: int"""
@@ -1838,7 +1839,7 @@ class InstallersData(DataStore):
         #--dict mapping all should-be-installed files to their attributes
         norm_sizeCrc = bolt.LowerDict()
         for package in active_sorted:
-            norm_sizeCrc.update(package.data_sizeCrc)
+            norm_sizeCrc.update(package.ci_dest_sizeCrc)
         #--Abnorm
         ci_underrides_sizeCrc = bolt.LowerDict()
         dataGet = self.data_sizeCrcDate.get
@@ -2120,7 +2121,7 @@ class InstallersData(DataStore):
                 and os.path.split(x)[0].lower() != u'ini tweaks')
         for relPath in dest_files:
             oldCrc = self.data_sizeCrcDate.get(relPath, (None, None, None))[1]
-            newCrc = installer.data_sizeCrc.get(relPath, (None, None))[1]
+            newCrc = installer.ci_dest_sizeCrc.get(relPath, (None, None))[1]
             if oldCrc is None or newCrc is None or newCrc == oldCrc: continue
             iniAbsDataPath = bass.dirs['mods'].join(relPath)
             # Create a copy of the old one
@@ -2197,7 +2198,7 @@ class InstallersData(DataStore):
         for installer in self.sorted_values(reverse=True):
             if installer in to_install:
                 progress(index,installer.archive)
-                destFiles = set(installer.data_sizeCrc) - mask
+                destFiles = set(installer.ci_dest_sizeCrc) - mask
                 if not override:
                     destFiles &= installer.missingFiles
                 if destFiles:
@@ -2209,7 +2210,7 @@ class InstallersData(DataStore):
                 if installer.order == min_order:
                     break # we are done
             #prevent lower packages from installing any files of this installer
-            if installer.isActive: mask |= set(installer.data_sizeCrc)
+            if installer.isActive: mask |= set(installer.ci_dest_sizeCrc)
         if tweaksCreated:
             self._editTweaks(tweaksCreated)
             refresh_ui[1] |= bool(tweaksCreated)
@@ -2361,12 +2362,12 @@ class InstallersData(DataStore):
         Returns all of the files this installer would install. Used by
         'bain_uninstall' and 'bain_anneal'."""
         # get all destination files for this installer
-        files = set(installer.data_sizeCrc)
+        files = set(installer.ci_dest_sizeCrc)
         # keep those to be removed while not restored by a higher order package
         to_keep = (removes & files) - set(restores)
         if to_keep: g_path = GPath(installer.archive)
         for dest_file in to_keep:
-            if installer.data_sizeCrc[dest_file] != \
+            if installer.ci_dest_sizeCrc[dest_file] != \
                     self.data_sizeCrcDate.get(dest_file,(0, 0, 0))[:2]:
                 # restore it from this installer
                 restores[dest_file] = g_path
@@ -2394,7 +2395,7 @@ class InstallersData(DataStore):
         for installer in self.sorted_values(reverse=True):
             #--Uninstall archive?
             if installer in unArchives:
-                for data_sizeCrc in (installer.data_sizeCrc,installer.dirty_sizeCrc):
+                for data_sizeCrc in (installer.ci_dest_sizeCrc,installer.dirty_sizeCrc):
                     for cistr_file,sizeCrc in data_sizeCrc.iteritems():
                         sizeCrcDate = data_sizeCrcDate.get(cistr_file)
                         if cistr_file not in masked and sizeCrcDate and sizeCrcDate[:2] == sizeCrc:
@@ -2475,7 +2476,7 @@ class InstallersData(DataStore):
         for installer in sorted(self.values(), key=getArchiveOrder,
                                 reverse=True):
             if installer.isActive:
-                keepFiles.update(installer.data_sizeCrc)
+                keepFiles.update(installer.ci_dest_sizeCrc)
         keepFiles.update((bolt.CIstr(f) for f in bush.game.allBethFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
@@ -2525,14 +2526,14 @@ class InstallersData(DataStore):
         conflictsMode = (mode == 'OVER')
         if conflictsMode:
             #mismatched = srcInstaller.mismatchedFiles | srcInstaller.missingFiles
-            mismatched = set(srcInstaller.data_sizeCrc)
+            mismatched = set(srcInstaller.ci_dest_sizeCrc)
         else:
             mismatched = srcInstaller.underrides
         if not mismatched: return u''
         showInactive = conflictsMode and bass.settings['bash.installers.conflictsReport.showInactive']
         showLower = conflictsMode and bass.settings['bash.installers.conflictsReport.showLower']
         showBSA = bass.settings['bash.installers.conflictsReport.showBSAConflicts']
-        src_sizeCrc = srcInstaller.data_sizeCrc
+        src_sizeCrc = srcInstaller.ci_dest_sizeCrc
         packConflicts = []
         bsaConflicts = []
         # Calculate bsa conflicts
@@ -2544,7 +2545,7 @@ class InstallersData(DataStore):
             # Map srcInstaller's active bsas' assets to those bsas, assigning
             # the assets to the highest loading bsa - 99% we have just one bsa
             src_bsa_to_assets, src_assets = collections.OrderedDict(), set()
-            for b in sorted(_get_active_bsas(srcInstaller.data_sizeCrc),
+            for b in sorted(_get_active_bsas(srcInstaller.ci_dest_sizeCrc),
                             key=BSAInfo.active_bsa_index, reverse=True):
                 try:
                     b_assets = b.assets - src_assets
@@ -2560,7 +2561,7 @@ class InstallersData(DataStore):
                 if installer.order == srcOrder or (
                             not showInactive and not installer.isActive):
                     continue # check active installers different than src
-                for bsa_info in _get_active_bsas(installer.data_sizeCrc):
+                for bsa_info in _get_active_bsas(installer.ci_dest_sizeCrc):
                     try:
                         curAssets = bsa_info.assets
                     except BSAError:
@@ -2578,7 +2579,7 @@ class InstallersData(DataStore):
                     not showInactive and not installer.isActive): continue
             if not showLower and installer.order < srcOrder: continue
             curConflicts = bolt.sortFiles(
-                [x for x, y in installer.data_sizeCrc.iteritems()
+                [x for x, y in installer.ci_dest_sizeCrc.iteritems()
                 if x in mismatched and y != src_sizeCrc[x]])
             if curConflicts:
                 packConflicts.append((installer, package.s, curConflicts))
