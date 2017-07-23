@@ -406,7 +406,11 @@ class Installer(object):
     def init_attributes_process():
         """Populate _attributes_process with functions which decide if the
         file is to be skipped while at the same time update self hasReadme,
-        hasWizard, hasBCF attributes."""
+        hasWizard, hasBCF attributes. The functions return None to indicate
+        that the file should be skipped, else the destination of the file
+        relative to the Data/ dir. This invariably is the relative path of
+        the file relative to the root of the package except for espms which
+        support renaming (beta) and docs (also beta)."""
         reReadMeMatch = Installer.reReadMe.match
         docs_ = u'Docs' + os_sep
         def _process_docs(self, fileLower, full, fileExt, file_relative, sub):
@@ -459,6 +463,13 @@ class Installer(object):
             if len(rootLower) > 1:
                 self.skipDirFiles.add(full)
                 return None # we dont want to install those files
+            if fileLower in bush.game.bethDataFiles:
+                self.hasBethFiles = True
+                if not self.overrideSkips and not bass.settings[
+                    'bash.installers.autoRefreshBethsoft']:
+                    self.skipDirFiles.add(_(u'[Bethesda Content]') + u' ' +
+                                          full)
+                    return None # FIXME - after renames ?
             file_relative = self.remaps.get(file_relative, file_relative)
             if file_relative not in self.espmMap[sub]: self.espmMap[
                 sub].append(file_relative)
@@ -675,7 +686,7 @@ class Installer(object):
                         if file_relative not in sub_esps: sub_esps.append(file_relative)
                     if skip:
                         continue
-            sub_esps = espmMap[sub] # add sub key to the espmMap
+            sub_esps = espmMap[sub] #add sub key to the espmMap, needed in belt
             rootLower,fileExt = splitExt(fileLower)
             rootLower = rootLower.split(os_sep, 1)
             if len(rootLower) == 1: rootLower = u''
@@ -704,9 +715,6 @@ class Installer(object):
                 self.hasBethFiles = True
                 if bethFilesSkip:
                     skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + full)
-                    if sub_esps and sub_esps[-1].lower() == fileLower:
-                        del sub_esps[-1] # added in extensions processing
-                        self.espms.discard(GPath(file_relative)) #dont show in espm list
                     continue
             elif not hasExtraData and rootLower and rootLower not in dataDirsPlus:
                 skipDirFilesAdd(full)
