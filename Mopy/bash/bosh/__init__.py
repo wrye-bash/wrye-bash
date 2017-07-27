@@ -307,12 +307,13 @@ class AFile(object):
     @abs_path.setter
     def abs_path(self, val): self._abs_path = val
 
-    def needs_update(self):
+    def do_update(self):
+        """Check cache, reset it if needed. Return True if reset else False."""
         try:
             stat_tuple = self._stat_tuple()
         except OSError:
             self._reset_cache(self._null_stat, load_cache=False)
-            return False # we should not call needs_update on deleted files
+            return False # we should not call do_update on deleted files
         if self._file_changed(stat_tuple):
             self._reset_cache(stat_tuple, load_cache=True)
             return True
@@ -641,7 +642,7 @@ class ModInfo(FileInfo):
             self.calculate_crc(recalculate=True)
 
     # Ghosting and ghosting related overrides ---------------------------------
-    def needs_update(self):
+    def do_update(self):
         self.isGhost, old_ghost = not self._abs_path.exists() and (
             self._abs_path + u'.ghost').exists(), self.isGhost
         # mark updated if ghost state changed but only reread header if needed
@@ -673,7 +674,7 @@ class ModInfo(FileInfo):
             if isGhost: normal.moveTo(ghost)
             else: ghost.moveTo(normal)
             self.isGhost = isGhost
-            # reset cache info as un/ghosting should not make needs_update True
+            # reset cache info as un/ghosting should not make do_update return True
             self.mark_unchanged()
         except:
             deprint(u'Failed to %sghost file %s' % ((u'un', u'')[isGhost],
@@ -1169,8 +1170,8 @@ class BSAInfo(FileInfo, _bsa_type):
 
     def getFileInfos(self): return bsaInfos
 
-    def needs_update(self):
-        changed = super(BSAInfo, self).needs_update()
+    def do_update(self):
+        changed = super(BSAInfo, self).do_update()
         self._reset_bsa_mtime()
         return changed
 
@@ -1387,7 +1388,7 @@ class FileInfos(TableFileInfos):
             oldInfo = self.get(name) # None if name was in corrupted or new one
             try:
                 if oldInfo is not None:
-                    if oldInfo.needs_update(): # will reread the header
+                    if oldInfo.do_update(): # will reread the header
                         _updated.add(name)
                 else: # added or known corrupted, get a new info
                     self.refreshFile(name, _in_refresh=True)
@@ -1595,7 +1596,7 @@ class INIInfos(TableFileInfos):
         for name in newNames:
             oldInfo = self.get(name) # None if name was added
             if oldInfo is not None and not oldInfo.is_default_tweak:
-                if oldInfo.needs_update(): _updated.add(name)
+                if oldInfo.do_update(): _updated.add(name)
             else: # added
                 oldInfo = self.factory(self.store_dir, name)
                 _added.add(name)
@@ -1620,7 +1621,7 @@ class INIInfos(TableFileInfos):
         if refresh_infos:
             _added, _deleted, _updated = self._refresh_infos()
         changed = refresh_target and (
-            self.ini.updated or self.ini.needs_update())
+            self.ini.updated or self.ini.do_update())
         if changed: # reset the status of all infos and let RefreshUI set it
             self.ini.updated = False
             for ini_info in self.itervalues(): ini_info.reset_status()
@@ -1948,7 +1949,7 @@ class ModInfos(FileInfos):
         # update cache with new or modified files
         for iniPath in iniPaths:
             if iniPath not in self._plugin_inis or self._plugin_inis[
-                iniPath].needs_update():
+                iniPath].do_update():
                 self._plugin_inis[iniPath] = IniFile(iniPath)
         self._plugin_inis = OrderedDict(
             [(k, self._plugin_inis[k]) for k in iniPaths])

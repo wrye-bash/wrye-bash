@@ -2072,7 +2072,7 @@ class InstallersData(DataStore):
             if not abspath.exists(): # untrack - runs on first run !!
                 InstallersData._miscTrackedFiles.pop(abspath, None)
                 changed.add(abspath)
-            elif tracked.needs_update():
+            elif tracked.do_update():
                 changed.add(abspath)
         return changed
 

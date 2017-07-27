@@ -77,14 +77,14 @@ class IniFile(AFile):
         do a copy first !"""
         if not self.abs_path.isfile():
             return ({}, {}) if with_deleted else {}
-        if self._settings_cache_linenum is self.__empty or self.needs_update():
+        if self._settings_cache_linenum is self.__empty or self.do_update():
             self._settings_cache_linenum, self._deleted_cache, \
                 self.isCorrupted = self._get_settings(self.abs_path)
         if with_deleted:
             return self._settings_cache_linenum, self._deleted_cache
         return self._settings_cache_linenum
 
-    def needs_update(self):
+    def do_update(self):
         try:
             stat_tuple = self._stat_tuple()
             if self._deleted:
@@ -356,7 +356,7 @@ class DefaultIniFile(IniFile):
     def read_ini_lines(self): return self.lines
 
     # YAK! track uses!
-    def needs_update(self): raise AbstractError
+    def do_update(self): raise AbstractError
     @classmethod
     def _get_settings(cls, tweakPath): raise AbstractError
     def applyTweakFile(self, tweak_lines): raise AbstractError
