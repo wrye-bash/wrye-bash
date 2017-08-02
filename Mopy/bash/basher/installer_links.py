@@ -333,7 +333,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         if not isinstance(pos, tuple) or len(pos) != 2:
             deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), '
                       u'reverting to default position.') % (pos, type(pos)))
-            pos = balt.defPos
+            pos = tuple(balt.defPos)
         if not isinstance(saved, tuple) or len(saved) != 2:
             deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), '
                       u'reverting to default size.') % (saved, type(saved)))
