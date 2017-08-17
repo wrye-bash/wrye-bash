@@ -277,7 +277,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             else: # suppose that the target ini file is in the Data/ dir
                 target_path = bass.dirs['mods'].join(iniFile)
                 new_targets[target_path.stail] = target_path
-                if not (iniFile in installer.data_sizeCrc and ret.Install):
+                if not (iniFile.s in installer.data_sizeCrc and ret.Install):
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto
                     # install after the wizard, we'll show a message telling
@@ -696,7 +696,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         installers to a project."""
         srcConflicts = set()
         packConflicts = []
-        src_sizeCrc = self._selected_info.data_sizeCrc # dictionary Path -> (int, int)
+        src_sizeCrc = self._selected_info.data_sizeCrc # CIstr -> (int, int)
         def _ok(msg): self._showOk(msg % self._selected_item)
         if not src_sizeCrc:
             return _ok(_(u'No files to install for %s'))

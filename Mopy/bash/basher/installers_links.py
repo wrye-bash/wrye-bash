@@ -25,13 +25,11 @@
 """Menu items for the _main_ menu of the installer tab - their window attribute
 points to the InstallersList singleton."""
 
-import copy
 from . import Installers_Link
 from .dialogs import CreateNewProject
 from .. import bass, bosh, balt, bush, load_order
 from ..balt import BoolLink, AppendableLink, ItemLink, ListBoxes, \
     EnabledLink
-from ..bolt import GPath
 
 __all__ = ['Installers_SortActive', 'Installers_SortProjects',
            'Installers_Refresh', 'Installers_AddMarker',
@@ -79,7 +77,7 @@ class Installers_MonitorInstall(Installers_Link):
         # Refresh Data
         self.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
         # Backup CRC data
-        data_sizeCrcDate = copy.copy(self.idata.data_sizeCrcDate)
+        data_sizeCrcDate = self.idata.data_sizeCrcDate.copy()
         # Install and wait
         self._showOk(_(u'You may now install your mod.  When installation is '
                        u'complete, press Ok.'), _(u'External Installation'))
@@ -107,7 +105,7 @@ class Installers_MonitorInstall(Installers_Link):
             self._showOk(_(u'No changes were detected in the Data directory.'),
                          _(u'External Installation'))
             return
-        newFiles = sorted(newFiles)
+        newFiles = sorted(newFiles) # sorts case insensitive as those are CIStr
         changedFiles = sorted(changedFiles)
         touchedFiles = sorted(touchedFiles)
         # Show results, select which files to include
@@ -330,8 +328,8 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
             # Refresh Data - only if we are now including Bethsoft files
             with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
                                message=u'\n' + u' ' * 60) as progress:
-                beth_files = set(GPath(x) for x in bush.game.bethDataFiles)
-                self.idata.update_data_SizeCrcDate(beth_files, progress)
+                self.idata.update_data_SizeCrcDate(bush.game.bethDataFiles,
+                                                   progress)
         # Refresh Installers
         toRefresh = set(name for name, installer in self.idata.iteritems() if
                         installer.hasBethFiles)
