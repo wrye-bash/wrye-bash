@@ -70,10 +70,12 @@ class Installer(object):
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
     try:
-        reDataFile = re.compile(ur'(\.(esp|esm|' + bush.game.bsa_extension +
-                                ur'|ini))$', re.I | re.U)
+        reDataFile = ur'(\.(' + u'|'.join(
+            {x[1:] for x in bush.game.espm_extensions} | {
+            bush.game.bsa_extension} | {u'ini'}) + ur'))$'
     except AttributeError: # YAK
-        reDataFile = re.compile(ur'(\.(esp|esm|bsa|ini))$', re.I | re.U)
+        reDataFile = ur'(\.(esp|esm|bsa|ini))$'
+    reDataFile = re.compile(reDataFile, re.I | re.U)
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
@@ -478,8 +480,8 @@ class Installer(object):
             self.espms.add(pFile)
             if pFile in self.espmNots: return None # skip
             return file_relative
-        Installer._attributes_process[u'.esm'] = \
-        Installer._attributes_process[u'.esp'] = _remap_espms
+        for extension in bush.game.espm_extensions:
+            Installer._attributes_process[extension] = _remap_espms
         Installer._extensions_to_process = set(Installer._attributes_process)
 
     def _init_skips(self):
@@ -1945,7 +1947,7 @@ class InstallersData(DataStore):
                     ext = rpFile[rpFile.rfind(u'.'):]
                     if ext.lower() in skipExts: continue
                     if rpFile in bethFiles: continue
-                    top_level_espm = ext in {u'.esp', u'.esm'}
+                    top_level_espm = ext in bush.game.espm_extensions
                 else: rpFile = os.path.join(rsDir, sFile)
                 asFile = os.path.join(asDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"

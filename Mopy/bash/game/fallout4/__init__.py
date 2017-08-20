@@ -78,6 +78,9 @@ resource_archives_keys = (
     u'sResourceArchiveListBeta'
 )
 
+# plugin extensions
+espm_extensions = {u'.esp', u'.esm', u'.esl'}
+
 # Load order info
 using_txt_file = True
 

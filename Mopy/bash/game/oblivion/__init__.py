@@ -71,6 +71,9 @@ supports_mod_inis = False
 vanilla_string_bsas = {}
 resource_archives_keys = ()
 
+# plugin extensions
+espm_extensions = {u'.esp', u'.esm'}
+
 # Load order info
 using_txt_file = False
 

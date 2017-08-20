@@ -1773,7 +1773,11 @@ def _lo_cache(lord_func):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
-    file_pattern = re.compile(ur'\.es[mp](.ghost)?$', re.I | re.U)
+    try:
+        file_pattern = re.compile(ur'(' + '|'.join(map(re.escape, bush.game.espm_extensions)) +
+                                  ur')(.ghost)?$', re.I | re.U)
+    except AttributeError:
+        pass
 
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'], ModInfo)
@@ -2468,6 +2472,12 @@ class ModInfos(FileInfos):
                                     masterless=True, bashed_patch=True)
                 return modName
         return None
+
+    @staticmethod
+    def plugin_wildcard(file_str=_(u'Mod Files')):
+        join_star = u';*'.join(bush.game.espm_extensions)
+        return bush.game.displayName + u' ' + file_str + u' (*' + join_star \
+               + u')|*' + join_star
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):

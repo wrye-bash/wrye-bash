@@ -979,8 +979,7 @@ class ModList(_ModsUIList):
 
     @staticmethod
     def _unhide_wildcard():
-        return bush.game.displayName + u' ' + _(
-            u'Mod Files') + u' (*.esp;*.esm)|*.esp;*.esm'
+        return bosh.modInfos.plugin_wildcard()
 
     #--Helpers ---------------------------------------------
     @balt.conversation

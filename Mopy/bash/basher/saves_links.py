@@ -224,8 +224,10 @@ class Save_ImportFace(OneItemLink):
     def Execute(self):
         #--Select source face file
         srcDir = self._selected_info.dir
+        exts = u';*'.join(bush.game.espm_extensions | {
+            bush.game.ess.ext, bush.game.ess.ext[-1] + u'r'})
         wildcard = _(u'%s Files') % bush.game.displayName + \
-                   u' (*.esp;*.esm;*.ess;*.esr)|*.esp;*.esm;*.ess;*.esr'
+                   u' (*' + exts + u')|*' + exts
         #--File dialog
         srcPath = self._askOpen(title=_(u'Face Source:'), defaultDir=srcDir,
                                 wildcard=wildcard, mustExist=True)

@@ -325,7 +325,7 @@ class _ListPatcherPanel(_PatcherPanel):
     def OnAdd(self):
         """Add button clicked."""
         srcDir = bosh.modInfos.store_dir
-        wildcard = bush.game.displayName+_(u' Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
+        wildcard = bosh.modInfos.plugin_wildcard()
         #--File dialog
         title = _(u'Get ')+self.__class__.listLabel
         srcPaths = balt.askOpenMulti(self.gConfigPanel,title,srcDir, u'', wildcard)

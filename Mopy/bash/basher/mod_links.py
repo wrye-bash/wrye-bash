@@ -168,7 +168,9 @@ class Mod_OrderByName(EnabledLink):
                                  _(u'Sort Mods')): return
         #--Do it
         self.selected.sort()
-        self.selected.sort(key=attrgetter('cext')) # sort esm first
+        def _not_esml(m):
+            return not (bosh.modInfos[m].isEsm() or m.cext == u'.esl')
+        self.selected.sort(key=_not_esml) # sort esmls first
         if not load_order.using_txt_file():
             #--Get first time from first selected file.
             newTime = min(x.mtime for x in self.iselected_infos())
@@ -1409,8 +1411,7 @@ class Mod_AddMaster(OneItemLink):
                     u"splitting mods into esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Master')): return
-        wildcard = _(u'%s Masters') % bush.game.displayName + \
-                   u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = bosh.modInfos.plugin_wildcard(_(u'Masters'))
         masterPaths = self._askOpenMulti(title=_(u'Add master:'),
                                          defaultDir=self._selected_info.dir,
                                          wildcard=wildcard)
@@ -2126,7 +2127,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
                      u"replace existing prices and is not reversible!")
     continueKey = 'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
-    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
+    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
 
     def _parser(self):
         return CBash_ItemPrices() if CBashApi.Enabled else ItemPrices()
@@ -2372,7 +2373,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     continueKey = 'bash.fullNames.import.continue'
     _text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
-    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
+    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
 
     def _parser(self):
         return CBash_FullNames() if CBashApi.Enabled else FullNames()
@@ -2527,7 +2528,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Masters')): return
         modInfo = self.window.fileInfo
-        wildcard = bush.game.displayName+u' '+_(u'Masters')+u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = bosh.modInfos.plugin_wildcard(_(u'Masters'))
         masterPaths = self._askOpenMulti(
                             title=_(u'Add masters:'), defaultDir=modInfo.dir,
                             wildcard=wildcard)

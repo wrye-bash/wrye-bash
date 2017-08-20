@@ -1319,6 +1319,8 @@ class MreRecord(object):
         # {Sky}, {FNV} 0x00000200 REFR: MotionBlurCastsShadows
         # HiddenFromLocalMap StartsDead MotionBlur CastsShadows
         ( 9,'castsShadows'), # {0x00000200}
+        # New Flag for FO4 and SSE used in .esl files
+        ( 9, 'eslFile'), # {0x00000200}
         # {Sky}, {FNV} 0x00000400 LSCR: Displays in Main Menu
         # PersistentReference QuestItem DisplaysInMainMenu
         (10,'questItem'), # {0x00000400}
