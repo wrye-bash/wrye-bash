@@ -389,16 +389,22 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
     _text = _(u'Show Inactive Conflicts')
+    help = _(u'In the conflicts tab also display conflicts with inactive (not '
+             u'installed) installers')
     key = 'bash.installers.conflictsReport.showInactive'
 
 class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
     _text = _(u'Show Lower Conflicts')
+    help = _(u'In the conflicts tab also display conflicts with lower order '
+             u'installers (or lower loading active bsas)')
     key = 'bash.installers.conflictsReport.showLower'
 
 class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
-    _text = _(u'Show BSA Conflicts')
+    _text = _(u'Show Active BSA Conflicts')
+    help = _(u'In the conflicts tab also display same-name resources inside '
+             u'installed *and* active bsas')
     key = 'bash.installers.conflictsReport.showBSAConflicts'
 
 class Installers_AvoidOnStart(BoolLink):

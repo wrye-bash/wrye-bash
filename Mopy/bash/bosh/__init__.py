@@ -810,18 +810,19 @@ class ModInfo(FileInfo):
     def _modname(self):
         return modInfos.file_pattern.sub(u'', self.name.s)
 
-    def _mods_bsa(self):
+    def mod_bsas(self, bsa_infos=None):
         """Return bsas from bsaInfos, that match plugin's name."""
         pattern = re.escape(self._modname)
         # games other than skyrim accept more general bsa names
         if bush.game.fsName != u'Skyrim': pattern +=  u'.*'
         reg = re.compile(pattern, re.I | re.U)
         # bsaInfos must be updated and contain all existing bsas
-        return [inf for bsa, inf in bsaInfos.iteritems() if reg.match(bsa.s)]
+        if bsa_infos is None: bsa_infos = bsaInfos
+        return [inf for bsa, inf in bsa_infos.iteritems() if reg.match(bsa.s)]
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
-        return bool(self._mods_bsa())
+        return bool(self.mod_bsas())
 
     def getIniPath(self):
         """Returns path to plugin's INI, if it were to exists."""
@@ -883,7 +884,7 @@ class ModInfo(FileInfo):
             bsa_infos = [bsaInfos[b] for b in map(GPath,
                 bush.game.vanilla_string_bsas[self.name.cs]) if b in bsaInfos]
         else:
-            bsa_infos = self._mods_bsa() # first check bsa with same name
+            bsa_infos = self.mod_bsas() # first check bsa with same name
             for iniFile in modInfos.ini_files():
                 for key in bush.game.resource_archives_keys:
                     extraBsas = map(GPath, (x.strip() for x in (
@@ -1194,20 +1195,6 @@ class BSAInfo(FileInfo, _bsa_type):
             'ResetBSATimestamps']:
             if self._file_mod_time != self._default_mtime:
                 self.setmtime(self._default_mtime)
-
-    def is_bsa_active(self):
-        """Return True if corresponding mod is active."""
-        is_act = load_order.cached_is_active
-        return is_act(self.name.root + '.esm') or is_act(self.name.root + '.esp')
-
-    def active_bsa_index(self):
-        """Return the index of the active bsa (the corresponding mod's
-        index) or raise ValueError if the bsa is not active."""
-        active_index = load_order.cached_active_tuple().index
-        try:
-            return active_index(self.name.root + '.esm')
-        except ValueError:
-            return active_index(self.name.root + '.esp')
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -2472,6 +2459,20 @@ class ModInfos(FileInfos):
                                     masterless=True, bashed_patch=True)
                 return modName
         return None
+
+    def get_active_bsas(self):
+        """Return active bsas and the order of their activator mods. If a mod
+        activates more than one bsa, their relative order is undefined."""
+        # TODO(ut): get those activated by inis
+        active_bsas = OrderedDict()
+        # bsaInfos must be updated
+        bsas = dict(bsaInfos.iteritems())
+        for j, mod in enumerate(load_order.cached_active_tuple()):
+            mod_bsas = self[mod].mod_bsas(bsas)
+            for b in mod_bsas:
+                active_bsas[b] = j
+                del bsas[b.name]
+        return active_bsas
 
     @staticmethod
     def plugin_wildcard(file_str=_(u'Mod Files')):

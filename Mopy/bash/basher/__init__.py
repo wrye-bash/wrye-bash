@@ -65,8 +65,7 @@ from types import ClassType
 #--wxPython
 import wx
 
-#--Localization
-#..Handled by bosh, so import that.
+#--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bolt import GPath, SubProgress, deprint, formatInteger, formatDate, \
     round_size
@@ -2718,9 +2717,11 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         elif pageName == 'gMismatched':
             gPage.SetValue(dumpFiles(installer.mismatchedFiles))
         elif pageName == 'gConflicts':
-            gPage.SetValue(self._idata.getConflictReport(installer, 'OVER'))
+            gPage.SetValue(self._idata.getConflictReport(installer, 'OVER',
+                                                         bosh.modInfos))
         elif pageName == 'gUnderrides':
-            gPage.SetValue(self._idata.getConflictReport(installer, 'UNDER'))
+            gPage.SetValue(self._idata.getConflictReport(installer, 'UNDER',
+                                                         bosh.modInfos))
         elif pageName == 'gDirty':
             gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
         elif pageName == 'gSkipped':
