@@ -49,7 +49,7 @@ from .mods_metadata import ConfigHelpers
 from .. import bass, bolt, balt, bush, env, load_order, archives
 from .. import patcher # for configIsCBash()
 from ..archives import readExts
-from ..bass import dirs, inisettings, tooldirs, reModExt
+from ..bass import dirs, inisettings, tooldirs
 from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode
 from ..brec import MreRecord, ModReader
 from ..cint import CBashApi
@@ -99,7 +99,6 @@ reVersion = re.compile(
 #--Mod Extensions
 reExGroup = re.compile(u'(.*?),',re.U)
 _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
-reEspExt  = re.compile(ur'\.esp(.ghost)?$',re.I|re.U)
 __exts = ur'((\.(' + ur'|'.join(ext[1:] for ext in readExts) + ur'))|)$'
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
     ur'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
@@ -442,7 +441,7 @@ class FileInfo(AFile):
     #--File type tests ##: Belong to ModInfo!
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
-        return reModExt.search(self.name.s)
+        return ModInfos.rightFileType(self.name)
     def isEsm(self):
         if not self.isMod(): return False
         if self.header:
@@ -825,7 +824,7 @@ class ModInfo(FileInfo):
 
     @property
     def _modname(self):
-        return bass.reModExt.sub(u'', self.name.s)
+        return modInfos.file_pattern.sub(u'', self.name.s)
 
     def _mods_bsa(self):
         """Return bsas from bsaInfos, that match plugin's name."""
@@ -1773,7 +1772,7 @@ def _lo_cache(lord_func):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
-    file_pattern = reModExt
+    file_pattern = re.compile(ur'\.es[mp](.ghost)?$', re.I | re.U)
 
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'], ModInfo)

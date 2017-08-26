@@ -29,21 +29,22 @@ import StringIO
 import collections
 import copy
 import os
+import re
 import time
 from operator import attrgetter
+# Local
+from .constants import settingDefaults
+from .frames import DocBrowser
+from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, \
-    StaticText, hspacer, CheckLink, EnabledLink, AppendableLink, TransLink, \
-    RadioLink, SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, \
-    OkButton
+from ..balt import ItemLink, Link, TextCtrl, toggleButton, vSizer, hspacer, \
+    StaticText, CheckLink, EnabledLink, AppendableLink, TransLink, RadioLink, \
+    SeparatorLink, ChoiceLink, OneItemLink, Image, ListBoxes, OkButton
 from ..bolt import GPath, SubProgress, formatDate
 from ..bosh import faces
-from ..patcher import configIsCBash, exportConfig, patch_files
-from .frames import DocBrowser
-from .constants import settingDefaults
 from ..cint import CBashApi, FormID
 from ..exception import AbstractError, BoltError, CancelError
-from .patcher_dialog import PatchDialog, CBash_gui_patchers, PBash_gui_patchers
+from ..patcher import configIsCBash, exportConfig, patch_files
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_Groups', 'Mod_Ratings', 'Mod_Details', 'Mod_ShowReadme',
@@ -392,7 +393,7 @@ class _ModGroups:
         mod_group = self.mod_group
         with bolt.CsvReader(textPath) as ins:
             for fields in ins:
-                if len(fields) >= 2 and bass.reModExt.search(fields[0]):
+                if len(fields) >= 2 and bosh.ModInfos.rightFileType(fields[0]):
                     mod,group = fields[:2]
                     mod_group[GPath(mod)] = group
 
@@ -1599,13 +1600,14 @@ class Mod_FlipMasters(OneItemLink, _Esm_Flip):
     help = _(
         u"Flip esp/esm bit of esp masters to convert them to/from esm state")
 
-    def _initData(self, window, selection):
+    def _initData(self, window, selection,
+                  __reEspExt=re.compile(ur'\.esp(.ghost)?$', re.I | re.U)):
         super(Mod_FlipMasters, self)._initData(window, selection)
         self._text = _(u'Esmify Masters')
         masters = self._selected_info.header.masters
         enable = len(selection) == 1 and len(masters) > 1
         self.espMasters = [master for master in masters
-            if bosh.reEspExt.search(master.s)] if enable else []
+            if __reEspExt.search(master.s)] if enable else []
         self.enable = enable and bool(self.espMasters)
         if not self.enable: return
         for masterName in self.espMasters:

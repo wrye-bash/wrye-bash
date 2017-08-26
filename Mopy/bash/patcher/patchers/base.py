@@ -57,7 +57,7 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
             return [item for item in self.configItems if
                     self.configChecks[item] and (
                         item in self.patchFile.allSet or
-                        not bass.reModExt.match(item.s))]
+                        not bosh.ModInfos.rightFileType(item.s))]
 
 class MultiTweakItem(AMultiTweakItem):
     # Notice the differences from Patcher in scanModFile and buildPatch
@@ -359,7 +359,7 @@ class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
         fidReplacer = CBash_FidReplacer(aliases=self.patchFile.aliases)
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
-            if not bass.reModExt.search(srcFile.s):
+            if not bosh.ModInfos.rightFileType(srcFile):
                 if srcFile not in self.patches_set: continue
                 if getPatchesPath(srcFile).isfile():
                     fidReplacer.readFromText(getPatchesPath(srcFile))
@@ -494,7 +494,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         progress.setFull(len(self.srcs))
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            if bass.reModExt.search(srcPath.s):
+            if bosh.ModInfos.rightFileType(srcPath):
                 if srcPath not in bosh.modInfos: continue
                 srcInfo = bosh.modInfos[srcPath]
                 fullNames.readFromMod(srcInfo)
@@ -539,7 +539,7 @@ class CBash_ImportPatcher(AImportPatcher, CBash_ListPatcher, SpecialPatcher):
         progress.setFull(len(self.srcs)) ##: make sure self.srcs are paths, drop GPath call below
         for srcFile in self.srcs:
             srcPath = GPath(srcFile)
-            if not bass.reModExt.search(srcFile.s):
+            if not bosh.ModInfos.rightFileType(srcFile):
                 if srcPath not in self.patches_set: continue
                 actorFactions.readFromText(getPatchesPath(srcFile))
             progress.plus()

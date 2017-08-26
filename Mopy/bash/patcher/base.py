@@ -32,7 +32,7 @@ from this module outside of the patcher package."""
 # instance Patcher.buildPatch() apparently is NOT always overridden
 
 from . import getPatchesList
-from .. import load_order, bass, bolt
+from .. import load_order, bosh, bolt
 
 #------------------------------------------------------------------------------
 # _Abstract_Patcher and subclasses---------------------------------------------
@@ -126,8 +126,8 @@ class CBash_Patcher(_Abstract_Patcher):
         for type_ in self.getTypes():
             group_patchers.setdefault(type_,[]).append(self)
         if self.allowUnloaded:
-            loadMods = set([mod for mod in self.srcs if bass.reModExt.search(
-                mod.s) and mod not in self.patchFile.allMods])
+            loadMods = set([mod for mod in self.srcs if bosh.ModInfos.rightFileType(
+                mod) and mod not in self.patchFile.allMods])
             self.patchFile.scanSet |= loadMods
 
     def buildPatchLog(self,log):

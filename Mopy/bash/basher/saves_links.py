@@ -233,7 +233,7 @@ class Save_ImportFace(OneItemLink):
         if not srcPath: return
         if bosh.SaveInfos.rightFileType(srcPath):
             self.FromSave(self._selected_info, srcPath)
-        elif bass.reModExt.search(srcPath.s):
+        elif bosh.ModInfos.rightFileType(srcPath):
             self.FromMod(self._selected_info, srcPath)
 
     def FromSave(self,fileInfo,srcPath):
