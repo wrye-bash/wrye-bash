@@ -256,7 +256,7 @@ mergeClasses = (
     MreMust, MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb, MreRfct,
     MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr,
     MreSopm, MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst,
-    MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens,
+    MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr, MreVoli,
     ####### for debug
     MreQust,
 )

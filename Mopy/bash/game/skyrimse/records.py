@@ -601,25 +601,34 @@ class MreVoli(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
+class MelLensfadeDistance(MelStruct):
+    """LENS has two DNAM records. Wrye bash can't handle duplicate signatures.
+    Because of that LENS can't be merged or patched at this time."""
+
+    def __init__(self):
+        MelStruct.__init__(self, 'DNAM', 'f', 'fadeDistanceRadiusScale')
+
+
 class MreLens(MelRecord):
     """Lens Flare"""
     classType = 'LENS'
 
-    LensFlareFlags = Flags(0L,Flags.getNames(
-            (0, 'rotates'),
-            (1, 'shrinksWhenOccluded'),
-        ))
+    LensFlareFlags = Flags(0L, Flags.getNames(
+        (0, 'rotates'),
+        (1, 'shrinksWhenOccluded'),
+    ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
-        MelStruct('CNAM','f','colorInfluence'),
-        MelStruct('DNAM','f','fadeDistanceRadiusScale'),
-        MelStruct('LFSP','I','count'),
+        MelString('EDID', 'eid'),
+        MelStruct('CNAM', 'f', 'colorInfluence'),
+        MelLensfadeDistance(),
+        MelStruct('LFSP', 'I', 'count'),
         MelGroups('lensFlareSprites',
-            MelString('DNAM','spriteID'),
-            MelString('FNAM','texture'),
-            MelStruct('LFSD','f','tint','width','height','position',
-                      'angularFade','opacity',(LensFlareFlags,'flags',0L),),
-            )
-        )
+            MelString('DNAM', 'spriteID'),
+            MelString('FNAM', 'texture'),
+            MelStruct('LFSD', 'f8I', 'tintRed', 'tintGreen', 'tintBlue',
+                'width', 'height', 'position', 'angularFade', 'opacity',
+                (LensFlareFlags, 'lensFlags', 0L), ),
+        ),
+    )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
