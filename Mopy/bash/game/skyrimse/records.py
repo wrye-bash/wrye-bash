@@ -618,8 +618,9 @@ class MreLens(MelRecord):
         MelGroups('lensFlareSprites',
             MelString('DNAM','spriteID'),
             MelString('FNAM','texture'),
-            MelStruct('LFSD','f','tint','width','height','position',
-                      'angularFade','opacity',(LensFlareFlags,'flags',0L),),
+            MelStruct('LFSD', 'f8I', 'tintRed', 'tintGreen', 'tintBlue',
+                'width', 'height', 'position', 'angularFade', 'opacity',
+                (LensFlareFlags, 'lensFlags', 0L), ),
             )
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
