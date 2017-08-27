@@ -39,6 +39,8 @@ import traceback
 #---------------------------------------------------
 
 #Translateable strings
+from bosh import OBSEIniFile
+
 EXTRA_ARGS =   _(u"Extra arguments to '%s'.")
 MISSING_ARGS = _(u"Missing arguments to '%s'.")
 UNEXPECTED =   _(u"Unexpected '%s'.")
@@ -1132,16 +1134,8 @@ class WryeParser(ScriptParser.Parser):
     def fnEditINI(self, iniName, section, setting, value, comment=None):
         iniPath = bolt.GPath(iniName)
         #--Section
-        if section.strip().lower() == u'set':
-            realSection = bolt.LString(u']set[')
-        elif section.strip().lower() == u'setgs':
-            realSection = bolt.LString(u']setgs[')
-        elif section.strip().lower() == u'setnumericgamesetting':
-            realSection = bolt.LString(u']SetNumericGameSetting[')
-        else:
-            realSection = bolt.LString(section.strip())
-        #--Setting
-        realSetting = bolt.LString(setting.strip())
+        section = section.strip()
+        realSection = OBSEIniFile.ci_pseudosections.get(section, section)
         #--Comment
         if comment:
             if comment.strip().startswith(u';'):
@@ -1149,29 +1143,21 @@ class WryeParser(ScriptParser.Parser):
             else:
                 comment = u';'+comment
         else: comment = u''
-        self.iniedits.setdefault(iniPath,{}).setdefault(realSection,[section,{}])
+        self.iniedits.setdefault(iniPath, bolt.LowerDict()).setdefault(realSection, [section, bolt.LowerDict()])
         self.iniedits[iniPath][realSection][0] = section
-        self.iniedits[iniPath][realSection][1][realSetting] = (setting,value,comment,False)
+        self.iniedits[iniPath][realSection][1][setting.strip()] = (
+            setting, value, comment, False)
 
     def fnDisableINILine(self, iniName, section, setting):
         iniPath = bolt.GPath(iniName)
         #--Section:
         section = section.strip()
-        realSection = section.lower()
-        if realSection == u'set':
-            realSection = bolt.LString(u']set[')
-        elif realSection == u'setgs':
-            realSection = bolt.LString(u']setgs[')
-        elif section.strip().lower() == u'setnumericgamesetting':
-            realSection = bolt.LString(u']SetNumericGameSetting[')
-        else:
-            realSection = bolt.LString(section)
+        realSection = OBSEIniFile.ci_pseudosections.get(section, section)
         #--Setting
         setting = setting.strip()
-        realSetting = bolt.LString(setting)
-        self.iniedits.setdefault(iniPath,{}).setdefault(realSection,[section,{}])
+        self.iniedits.setdefault(iniPath, bolt.LowerDict()).setdefault(realSection,[section,bolt.LowerDict()])
         self.iniedits[iniPath][realSection][0] = section
-        self.iniedits[iniPath][realSection][1][realSetting] = (setting,u'',u'',True)
+        self.iniedits[iniPath][realSection][1][setting] = (setting,u'',u'',True)
 
     def fnExec(self, strLines):
         lines = strLines.split(u'\n')

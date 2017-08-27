@@ -27,6 +27,7 @@
 import StringIO
 import cPickle
 import codecs
+import collections
 import copy
 import csv
 import datetime
@@ -368,46 +369,6 @@ initTranslator(bass.language)
 CBash = 0
 
 # LowStrings ------------------------------------------------------------------
-class LString(object):
-    """Strings that compare as lower case strings."""
-    __slots__ = ('_s','_cs')
-
-    def __init__(self,s):
-        if isinstance(s,LString):
-            self._s = s._s
-            self._cs = s._cs
-        else:
-            self._s = s
-            self._cs = s.lower()
-
-    def __getstate__(self):
-        """Used by pickler. _cs is redundant,so don't include."""
-        return self._s
-
-    def __setstate__(self,s):
-        """Used by unpickler. Reconstruct _cs."""
-        self._s = s
-        self._cs = s.lower()
-
-    def __len__(self):
-        return len(self._s)
-
-    def __str__(self):
-        return self._s
-
-    def __repr__(self):
-        return u'bolt.LString('+repr(self._s)+u')'
-
-    def __add__(self,other):
-        return LString(self._s + other)
-
-    #--Hash/Compare
-    def __hash__(self):
-        return hash(self._cs)
-    def __cmp__(self, other):
-        if isinstance(other,LString): return cmp(self._cs, other._cs)
-        else: return cmp(self._cs, other.lower())
-
 class CIstr(unicode):
     """See: http://stackoverflow.com/q/43122096/281545"""
     __slots__ = ()
@@ -503,6 +464,22 @@ class LowerDict(dict):
     def __repr__(self):
         return '{0}({1})'.format(type(self).__name__,
                                  super(LowerDict, self).__repr__())
+
+class DefaultLowerDict(LowerDict, collections.defaultdict):
+    """LowerDict that inherits from defaultdict."""
+    __slots__ = () # no __dict__ - that would be redundant
+
+    def __init__(self, default_factory=None, mapping=(), **kwargs):
+        # note we can't use LowerDict __init__ directly
+        super(LowerDict, self).__init__(default_factory,
+                                        self._process_args(mapping, **kwargs))
+
+    def copy(self):
+        return type(self)(self.default_factory, self)
+
+    def __repr__(self):
+        return '{0}({1},{2})'.format(type(self).__name__, self.default_factory,
+            super(collections.defaultdict, self).__repr__())
 
 # sio - StringIO wrapper so it uses the 'with' statement, so they can be used
 #  in the same functions that accept files as input/output as well.  Really,

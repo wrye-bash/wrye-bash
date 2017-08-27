@@ -32,7 +32,6 @@ provided by separate modules: bish for CLI and bash/basher for GUI."""
 #--Python
 import cPickle
 import collections
-import copy
 import errno
 import os
 import re
@@ -992,7 +991,7 @@ class INIInfo(IniFile):
         Also caches the value in self._status"""
         infos = iniInfos
         target_ini = target_ini or infos.ini
-        tweak_settings = self.getSettings()
+        tweak_settings = self.get_ci_settings()
         def _status(s):
             self._status = s
             return s
@@ -1000,7 +999,7 @@ class INIInfo(IniFile):
             return _status(-20)
         match = False
         mismatch = 0
-        ini_settings = target_ini.getSettings()
+        ini_settings = target_ini.get_ci_settings()
         self_installer = infos.table.getItem(self.abs_path.tail, 'installer')
         for section_key in tweak_settings:
             if section_key not in ini_settings:
@@ -1053,8 +1052,8 @@ class INIInfo(IniFile):
                 text.append(u'  ' + _(u'Target format: Batch Script') +
                             u'\n  ' + _(u'Tweak format: INI'))
         else:
-            tweak_settings = self.getSettings()
-            ini_settings = ini_infos_ini.getSettings()
+            tweak_settings = self.get_ci_settings()
+            ini_settings = ini_infos_ini.get_ci_settings()
             if len(tweak_settings) == 0:
                 if not isinstance(self, OBSEIniFile):
                     text.append(_(u' No valid INI format lines.'))
@@ -1656,7 +1655,6 @@ class INIInfos(TableFileInfos):
         info = self[tweak] # type: INIInfo
         if info.is_default_tweak:
             self._copy_to_new_tweak(info, tweak)
-            self[tweak] = self.factory(self.store_dir, tweak)
             return True # refresh
         else:
             info.abs_path.start()
@@ -1666,17 +1664,17 @@ class INIInfos(TableFileInfos):
         with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
             # writelines does not do what you'd expect, would concatenate lines
             ini_file.write('\n'.join(info.read_ini_lines()))
+        self.refreshFile(new_tweak.tail)
+        return self[new_tweak.tail]
 
     def duplicate_ini(self, tweak, new_tweak):
         """Duplicate tweak into new_tweak, copying current target settings"""
         if not new_tweak: return False
         # new_tweak is an abs path, join works ok relative to self.store_dir
-        self._copy_to_new_tweak(self[tweak], new_tweak)
-        new_info = self[new_tweak.tail] = self.factory(self.store_dir,
-                                                       new_tweak)
+        new_info = self._copy_to_new_tweak(self[tweak], new_tweak)
         # Now edit it with the values from the target INI
-        new_tweak_settings = copy.copy(new_info.getSettings())
-        target_settings = self.ini.getSettings()
+        new_tweak_settings = bolt.LowerDict(new_info.get_ci_settings())
+        target_settings = self.ini.get_ci_settings()
         for section in new_tweak_settings:
             if section in target_settings:
                 for setting in new_tweak_settings[section]:
@@ -1684,7 +1682,7 @@ class INIInfos(TableFileInfos):
                         new_tweak_settings[section][setting] = \
                             target_settings[section][setting]
         for k,v in new_tweak_settings.items(): # drop line numbers
-            new_tweak_settings[k] = dict(
+            new_tweak_settings[k] = dict( # saveSettings converts to LowerDict
                 (sett, val[0]) for sett, val in v.iteritems())
         new_info.saveSettings(new_tweak_settings)
         return True
