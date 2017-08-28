@@ -2101,19 +2101,6 @@ class InstallersData(DataStore):
             installer.order = newPos + len(new_ordered) + index
         self.setChanged()
 
-    @staticmethod
-    def _update_tables(destFiles, value, mods, inis):
-        """Set the 'installer' column in mod and ini tables"""
-        from . import modInfos, iniInfos
-        for ci_dest in destFiles:
-            i = GPath(ci_dest)
-            if bass.reModExt.match(i.cext):
-                mods.add(i)
-                modInfos.table.setItem(i, 'installer', value)
-            elif InstallersData._is_ini_tweak(ci_dest):
-                inis.add(i)
-                iniInfos.table.setItem(i.tail, 'installer', value)
-
     #--Install
     def _createTweaks(self, destFiles, installer, tweaksCreated):
         """Generate INI Tweaks when a CRC mismatch is detected while
@@ -2235,8 +2222,7 @@ class InstallersData(DataStore):
         from . import modInfos, iniInfos
         for mod in set(mods):
             try:
-                modInfos.add_info(mod)
-                modInfos.table.setItem(mod, 'installer', installer.archive)
+                modInfos.add_info(mod, owner=installer.archive)
             except FileError:
                 mods.discard(mod)
         modInfos.cached_lo_append_if_missing(mods)
@@ -2249,8 +2235,7 @@ class InstallersData(DataStore):
             s, c, (d != -1 and d) or bass.dirs['mods'].join(dest).mtime)) for
             dest, (s, c, d) in data_sizeCrcDate_update.iteritems())
         for ini in inis:
-            iniInfos.add_info(ini)
-            iniInfos.table.setItem(ini, 'installer', installer.archive)
+            iniInfos.add_info(ini, owner=installer.archive)
 
     def sorted_pairs(self, package_keys=None, reverse=False):
         """Return pairs of key, installer for package_keys in self, sorted by
@@ -2428,11 +2413,18 @@ class InstallersData(DataStore):
             #--Restore files
             if anneal:
                 self._restoreFiles(restores, refresh_ui, progress)
-            mods, inis = set(), set()
-            for k, v in cede_ownership.iteritems():
-                self._update_tables(v, k, mods, inis)
-            refresh_ui[0] |= bool(mods)
-            refresh_ui[1] |= bool(inis)
+            # Set the 'installer' column in mod and ini tables
+            from . import modInfos, iniInfos
+            for installer, owned_files in cede_ownership.iteritems():
+                for ci_dest in owned_files:
+                    if modInfos.rightFileType(ci_dest):
+                        refresh_ui[0] = True
+                        modInfos.table.setItem(GPath(ci_dest), 'installer',
+                                               installer)
+                    elif InstallersData._is_ini_tweak(ci_dest):
+                        refresh_ui[1] = True
+                        iniInfos.table.setItem(GPath(ci_dest).tail,
+                                               'installer', installer)
         finally:
             self.irefresh(what='NS')
 

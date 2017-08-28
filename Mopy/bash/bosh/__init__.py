@@ -1309,9 +1309,12 @@ class TableFileInfos(DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def add_info(self, fileName, load_cache=True, _in_refresh=False):
+    def add_info(self, fileName, load_cache=True, _in_refresh=False,
+                 owner=None):
         info = self[fileName] = self.factory(self.store_dir, fileName,
                                              load_cache=load_cache)
+        if owner is not None:
+            self.table.setItem(fileName, 'installer', owner)
         return info
 
     def refreshFile(self, fileName, load_cache=True, _in_refresh=False): # YAK - tmp _in_refresh
@@ -1389,10 +1392,11 @@ class FileInfos(TableFileInfos):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
-    def add_info(self, fileName, load_cache=True, _in_refresh=False):
+    def add_info(self, fileName, load_cache=True, _in_refresh=False,
+                 owner=None):
         try:
             fileInfo = super(FileInfos, self).add_info(
-                fileName, load_cache=load_cache)
+                fileName, load_cache=load_cache, owner=owner)
             self.corrupted.pop(fileName, None)
             return fileInfo
         except FileError as error:
@@ -1659,8 +1663,11 @@ class INIInfos(TableFileInfos):
         if not change: return change
         return _added, _updated, _deleted, changed
 
-    def add_info(self, fileName, load_cache=True, _in_refresh=False):
+    def add_info(self, fileName, load_cache=True, _in_refresh=False,
+                 owner=None):
         info = self[fileName] = self.factory(self.store_dir, fileName)
+        if owner is not None:
+            self.table.setItem(fileName, 'installer', owner)
         return info
 
     @property
