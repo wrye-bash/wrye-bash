@@ -417,6 +417,11 @@ class FileInfo(AFile):
         self.extras = {}
         super(FileInfo, self).__init__(self.dir.join(name), load_cache)
 
+    def _reset_masters(self):
+        #--Master Names/Order
+        self.masterNames = tuple(self.header.masters)
+        self.masterOrder = tuple() #--Reset to empty for now
+
     def _file_changed(self, stat_tuple):
         return (self._file_size, self._file_mod_time, self.ctime) != stat_tuple
 
@@ -459,6 +464,10 @@ class FileInfo(AFile):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         pass
+
+    def copy_header(self, original_info):
+        self.header = original_info.header
+        self._reset_masters()
 
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
@@ -740,9 +749,7 @@ class ModInfo(FileInfo):
                 self.header = bush.game.MreHeader(recHeader,ins,True)
             except struct.error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
-        #--Master Names/Order
-        self.masterNames = tuple(self.header.masters)
-        self.masterOrder = tuple() #--Reset to empty for now
+        self._reset_masters()
 
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
@@ -1104,11 +1111,9 @@ class SaveInfo(FileInfo):
         """Read header from file and set self.header attribute."""
         try:
             self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
-            #--Master Names/Order
-            self.masterNames = tuple(self.header.masters)
-            self.masterOrder = tuple() #--Reset to empty for now
         except SaveHeaderError as e:
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
+        self._reset_masters()
 
     def write_masters(self):
         """Rewrites masters of existing save file."""
@@ -1176,6 +1181,8 @@ class BSAInfo(FileInfo, _bsa_type):
 
     def readHeader(self): # just reset the cache
         self._assets = self.__class__._assets
+
+    def copy_header(self, original_info): pass
 
     def _reset_bsa_mtime(self):
         if bush.game.allow_reset_bsa_timestamps and inisettings[
@@ -1302,7 +1309,7 @@ class TableFileInfos(DataStore):
                                              load_cache=load_cache)
         return info
 
-    def refreshFile(self, fileName, load_cache=False, _in_refresh=False): # YAK - tmp _in_refresh
+    def refreshFile(self, fileName, load_cache=True, _in_refresh=False): # YAK - tmp _in_refresh
         info = self.add_info(fileName, load_cache, _in_refresh)
         self._notify_bain(changed={info.abs_path})
         return info
@@ -1489,7 +1496,8 @@ class FileInfos(TableFileInfos):
             destPath = destDir.join(destName)
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
         if destDir == self.store_dir:
-            self.refreshFile(destName) # use refreshFile so BAIN is notified
+            # TODO(ut) : pass the info in and load_cache=False
+            self.refreshFile(destName, load_cache=True)
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
                 if set_mtime == '+1':
@@ -2720,7 +2728,7 @@ class SaveInfos(FileInfos):
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated pluggy file."""
-        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
+        super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
         CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
 
     def move_infos(self, sources, destinations, window):

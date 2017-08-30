@@ -1190,9 +1190,11 @@ class _EditableMixinOnFileInfos(_EditableMixin):
             self.SetEdited()
         event.Skip()
 
-    def _refresh_detail_info(self):
+    @balt.conversation
+    def _refresh_detail_info(self, load_cache):
         try: # use self.file_info.name, as name may have been updated
-            self.panel_uilist.data_store.refreshFile(self.file_info.name)
+            self.panel_uilist.data_store.refreshFile(self.file_info.name,
+                                                     load_cache=load_cache)
             return self.file_info.name
         except FileError as e:
             deprint(u'Failed to edit details for %s' % self.displayed_item,
@@ -1464,12 +1466,13 @@ class ModDetails(_SashDetailsPanel):
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
         if changeDate or changeHedr or changeMasters:
-            detail_item = self._refresh_detail_info()
+            detail_item = self._refresh_detail_info(
+                load_cache=True) ##: changeHedr or changeMasters but blows on modInfos refresh
         else: detail_item = self.file_info.name
         #--Done
         with load_order.Unlock():
             bosh.modInfos.refresh(refresh_infos=False, _modTimesChange=changeDate)
-        refreshSaves = changeName or (
+        refreshSaves = detail_item is None or changeName or (
             changeDate and not load_order.using_txt_file())
         self.panel_uilist.RefreshUI(refreshSaves=refreshSaves,
                                     detail_item=detail_item)
@@ -1987,10 +1990,14 @@ class SaveDetails(_SashDetailsPanel):
             saveInfo.header.masters = self.uilist.GetNewMasters()
             saveInfo.write_masters()
             saveInfo.setmtime(prevMTime)
-            detail_item = self._refresh_detail_info()
+            detail_item = self._refresh_detail_info(load_cache=True)
         else: detail_item = self.file_info.name
-        self.panel_uilist.RefreshUI(redraw=[self.file_info.name],
-                                    to_del=to_del, detail_item=detail_item)
+        kwargs = dict(to_del=to_del, detail_item=detail_item)
+        if detail_item is None:
+            kwargs['to_del'] = to_del + [self.file_info.name]
+        else:
+            kwargs['redraw'] = [detail_item]
+        self.panel_uilist.RefreshUI(**kwargs)
 
     def RefreshUIColors(self):
         self.picture.SetBackground(colors['screens.bkgd.image'])
