@@ -986,24 +986,19 @@ class Installer(object):
         data_sizeCrcDate_update = bolt.LowerDict()
         data_sizeCrc = self.data_sizeCrc
         mods, inis = set(), set()
-        created_dirs = set()
         srcs, dests = [], []
         for dest, src in dest_src.iteritems():
             size,crc = data_sizeCrc[dest]
             srcFull = srcDirJoin(src)
-            if srcFull.exists(): ## drop this syscall !
-                stageFull = bass.dirs['mods'].join(norm_ghostGet(dest, dest))
-                if stageFull.head not in created_dirs: ## FIXME(ut): needed ? In both env shell and non shell paths?
-                    stageFull.head.makedirs()
-                    created_dirs.add(stageFull.head)
-                if bass.reModExt.search(srcFull.s):
-                    mods.add(srcFull.tail)
-                elif InstallersData._is_ini_tweak(dest):
-                    inis.add(srcFull.tail)
-                data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
-                srcs.append(srcFull)
-                dests.append(stageFull)
-                subprogressPlus()
+            destFull = bass.dirs['mods'].join(norm_ghostGet(dest, dest))
+            if bass.reModExt.search(srcFull.s):
+                mods.add(srcFull.tail)
+            elif InstallersData._is_ini_tweak(dest):
+                inis.add(srcFull.tail)
+            data_sizeCrcDate_update[dest] = (size, crc, -1) ##: HACK we must try avoid stat'ing the mtime
+            srcs.append(srcFull)
+            dests.append(destFull)
+            subprogressPlus()
         #--Now Move
         try:
             if data_sizeCrcDate_update:

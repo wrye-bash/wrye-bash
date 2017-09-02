@@ -24,11 +24,13 @@
 
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
+import errno
 import os as _os
 import re as _re
+import shutil as _shutil
 import stat
 import struct
-import shutil as _shutil
+
 from bolt import GPath, deprint, Path, decode
 from exception import BoltError, CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, InvalidPathsError, FileOperationError, \
@@ -434,15 +436,24 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
                 if not dest_dir.isdir():
                     raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
+                srcs, dests = [], []
                 for content in _os.listdir(fileFrom.s):
-                    __copyOrMove(operation, [fileFrom.join(content)],
-                                 [dest_dir], renameOnCollision, parent)
+                    srcs.append(fileFrom.join(content))
+                    dests.append(dest_dir)
+                __copyOrMove(operation, srcs, dests, renameOnCollision, parent)
             else:  # dir doesn't exist at the target, copy it
                 doIt(fileFrom.s, fileTo.s)
         # copy the file, overwrite as needed
         elif fileFrom.isfile():  # or os.path.islink(file):
-            # move may not work if the target exists, copy instead...
-            _shutil.copy2(fileFrom.s, fileTo.s) # ...and overwrite as needed
+            # move may not work if the target exists, copy instead and
+            # overwrite as needed
+            try:
+                _shutil.copy2(fileFrom.s, fileTo.s)
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
+                # probably directory path does not exist, create it.
+                fileTo.head.makedirs()
+                _shutil.copy2(fileFrom.s, fileTo.s)
             if operation == FO_MOVE: fileFrom.remove() # then remove original
     return {} ##: the renames map ?
 
