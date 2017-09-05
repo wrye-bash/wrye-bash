@@ -4,10 +4,9 @@
 !include "macros.nsh"
 
 ;---------------------------- Install Locations Page
-    Function PAGE_INSTALLLOCATIONS
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_TITLE) $(PAGE_INSTALLLOCATIONS_SUBTITLE)
+    Function PAGE_INSTALLLOCATIONS_ES
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_TITLE) $(PAGE_INSTALLLOCATIONS_ES_SUBTITLE)
         GetFunctionAddress $Function_Browse OnClick_Browse
-        GetFunctionAddress $Function_Extra OnClick_Extra
 
         nsDialogs::Create 1018
             Pop $Dialog
@@ -16,7 +15,7 @@
             Abort
         ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 24u "Select which Game(s)/Extra location(s) which you would like to install Wrye Bash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version)."
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Elder Scrolls Game(s) you would like to install Wrye Bash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version).$\nFallout Install Locations are on the next page."
             Pop $Label
             IntOp $0 0 + 25
 
@@ -80,6 +79,155 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_SkyrimSE != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for SkyrimSE"
+                Pop $Check_SkyrimSE
+                ${NSD_SetState} $Check_SkyrimSE $CheckState_SkyrimSE
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+                Pop $Check_SkyrimSE_Exe
+                ${NSD_AddStyle} $Check_SkyrimSE_Exe ${WS_GROUP}
+                ${NSD_SetState} $Check_SkyrimSE_Exe $CheckState_SkyrimSE_Exe
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_SkyrimSE_Py
+;                ${NSD_SetState} $Check_SkyrimSE_Py $CheckState_SkyrimSE_Py
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimSE"
+                Pop $PathDialogue_SkyrimSE
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_SkyrimSE
+                nsDialogs::OnClick $Browse_SkyrimSE $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
+        nsDialogs::Show
+    FunctionEnd
+
+    Function PAGE_INSTALLLOCATIONS_ES_Leave
+        # in case the user goes back to this page and changes selections
+        StrCpy $PythonVersionInstall $Empty
+        StrCpy $ExeVersionInstall $Empty
+
+        ; Game paths
+        ${NSD_GetText} $PathDialogue_OB $Path_OB
+        ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
+        ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
+        ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
+
+        ; Game states
+        ${NSD_GetState} $Check_OB $CheckState_OB
+        ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
+        ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
+        ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+
+        ; Python states
+        ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
+        ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
+        ${NSD_GetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
+        ${NSD_GetState} $Check_SkyrimSE_Py $CheckState_SkyrimSE_Py
+
+        ${If} $CheckState_OB_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_OB == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_SkyrimSE == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${EndIf}
+
+        ; Standalone states
+        ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
+        ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
+        ${NSD_GetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
+        ${NSD_GetState} $Check_SkyrimSE_Exe $CheckState_SkyrimSE_Exe
+
+        ${If} $CheckState_OB_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_OB == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_SkyrimSE == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+
+    FunctionEnd
+
+    Function PAGE_INSTALLLOCATIONS_FALLOUT
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(PAGE_INSTALLLOCATIONS_FALLOUT_SUBTITLE)
+        GetFunctionAddress $Function_Browse OnClick_Browse
+
+        nsDialogs::Create 1018
+            Pop $Dialog
+
+        ${If} $Dialog == error
+            Abort
+        ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Fallout Game(s) you would like to install Wrye Flash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version).$\nExtra Install Location are on the next page."
+            Pop $Label
+            IntOp $0 0 + 25
+
+        ${If} $Path_Fallout3 != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Fallout3"
+                Pop $Check_Fallout3
+                ${NSD_SetState} $Check_Fallout3 $CheckState_Fallout3
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+                Pop $Check_Fallout3_Exe
+                ${NSD_AddStyle} $Check_Fallout3_Exe ${WS_GROUP}
+                ${NSD_SetState} $Check_Fallout3_Exe $CheckState_Fallout3_Exe
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_Fallout3_Py
+;                ${NSD_SetState} $Check_Fallout3_Py $CheckState_Fallout3_Py
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout3"
+                Pop $PathDialogue_Fallout3
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Fallout3
+                nsDialogs::OnClick $Browse_Fallout3 $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
+        ${If} $Path_FalloutNV != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for FalloutNV"
+                Pop $Check_FalloutNV
+                ${NSD_SetState} $Check_FalloutNV $CheckState_FalloutNV
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+                Pop $Check_FalloutNV_Exe
+                ${NSD_AddStyle} $Check_FalloutNV_Exe ${WS_GROUP}
+                ${NSD_SetState} $Check_FalloutNV_Exe $CheckState_FalloutNV_Exe
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_FalloutNV_Py
+;                ${NSD_SetState} $Check_FalloutNV_Py $CheckState_FalloutNV_Py
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_FalloutNV"
+                Pop $PathDialogue_FalloutNV
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_FalloutNV
+                nsDialogs::OnClick $Browse_FalloutNV $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         ${If} $Path_Fallout4 != $Empty
             ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Fallout4"
                 Pop $Check_Fallout4
@@ -100,25 +248,81 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
-        ${If} $Path_SkyrimSE != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for SkyrimSE"
-                Pop $Check_SkyrimSE
-                ${NSD_SetState} $Check_SkyrimSE $CheckState_SkyrimSE
-            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
-                Pop $Check_SkyrimSE_Exe
-                ${NSD_AddStyle} $Check_SkyrimSE_Exe ${WS_GROUP}
-                ${NSD_SetState} $Check_SkyrimSE_Exe $CheckState_SkyrimSE_Exe
-            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
-                Pop $Check_SkyrimSE_Py
-;                ${NSD_SetState} $Check_SkyrimSE_Py $CheckState_SkyrimSE_Py
-            IntOp $0 $0 + 13
-            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimSE"
-                Pop $PathDialogue_SkyrimSE
-            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
-                Pop $Browse_SkyrimSE
-                nsDialogs::OnClick $Browse_SkyrimSE $Function_Browse
-            IntOp $0 $0 + 13
+        nsDialogs::Show
+    FunctionEnd
+
+    Function PAGE_INSTALLLOCATIONS_FALLOUT_Leave
+        # in case the user goes back to this page and changes selections
+        StrCpy $PythonVersionInstall $Empty
+        StrCpy $ExeVersionInstall $Empty
+
+        ; Game paths
+        ${NSD_GetText} $PathDialogue_Fallout3 $Path_Fallout3
+        ${NSD_GetText} $PathDialogue_FalloutNV $Path_FalloutNV
+        ${NSD_GetText} $PathDialogue_Fallout4 $Path_Fallout4
+
+        ; Game states
+        ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
+        ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
+        ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
+        ${NSD_GetState} $Check_Extra $CheckState_Extra
+
+        ; Python states
+        ${NSD_GetState} $Check_Fallout3_Py $CheckState_Fallout3_Py
+        ${NSD_GetState} $Check_FalloutNV_Py $CheckState_FalloutNV_Py
+        ${NSD_GetState} $Check_Fallout4_Py $CheckState_Fallout4_Py
+
+        ${If} $CheckState_Fallout3_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Fallout3 == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
         ${EndIf}
+
+        ${If} $CheckState_FalloutNV_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_FalloutNV == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_Fallout4_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Fallout4 == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${EndIf}
+
+        ; Standalone states
+        ${NSD_GetState} $Check_Fallout3_Exe $CheckState_Fallout3_Exe
+        ${NSD_GetState} $Check_FalloutNV_Exe $CheckState_FalloutNV_Exe
+        ${NSD_GetState} $Check_Fallout4_Exe $CheckState_Fallout4_Exe
+
+        ${If} $CheckState_Fallout3_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Fallout3 == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_FalloutNV_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_FalloutNV == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_Fallout4_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Fallout4 == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+    FunctionEnd
+
+    Function PAGE_INSTALLLOCATIONS_EXTRA
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(PAGE_INSTALLLOCATIONS_FALLOUT_SUBTITLE)
+        GetFunctionAddress $Function_Browse OnClick_Browse
+        GetFunctionAddress $Function_Extra OnClick_Extra
+
+        nsDialogs::Create 1018
+            Pop $Dialog
+
+        ${If} $Dialog == error
+            Abort
+        ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 24u "Select which Extra location(s) you would like to install Wrye Bash/Flash for.$\nAlso select which version(s) to install (Standalone exe (default) and/or Python version)."
+            Pop $Label
+            IntOp $0 0 + 25
 
         ${NSD_CreateCheckBox} 0 $0u 100% 13u "Install to extra locations"
             Pop $Check_Extra
@@ -175,63 +379,23 @@
         nsDialogs::Show
     FunctionEnd
 
-    Function PAGE_INSTALLLOCATIONS_Leave
+    Function PAGE_INSTALLLOCATIONS_EXTRA_Leave
         # in case the user goes back to this page and changes selections
         StrCpy $PythonVersionInstall $Empty
         StrCpy $ExeVersionInstall $Empty
 
         ; Game paths
-        ${NSD_GetText} $PathDialogue_OB $Path_OB
-        ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
-        ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
-        ${NSD_GetText} $PathDialogue_Fallout4 $Path_Fallout4
-        ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
         ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
         ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
 
         ; Game states
-        ${NSD_GetState} $Check_OB $CheckState_OB
-        ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
-        ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
-        ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
-        ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
         ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
 
         ; Python states
-        ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
-        ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
-        ${NSD_GetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
-        ${NSD_GetState} $Check_Fallout4_Py $CheckState_Fallout4_Py
-        ${NSD_GetState} $Check_SkyrimSE_Py $CheckState_SkyrimSE_Py
         ${NSD_GetState} $Check_Ex1_Py $CheckState_Ex1_Py
         ${NSD_GetState} $Check_Ex2_Py $CheckState_Ex2_Py
-
-        ${If} $CheckState_OB_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_OB == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Nehrim_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Skyrim_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Fallout4_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_Fallout4 == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_SkyrimSE_Py == ${BST_CHECKED}
-        ${AndIf} $CheckState_SkyrimSE == ${BST_CHECKED}
-            StrCpy $PythonVersionInstall $True
-        ${EndIf}
 
         ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
         ${AndIf} $CheckState_Extra == ${BST_CHECKED}
@@ -246,37 +410,8 @@
         ${EndIf}
 
         ; Standalone states
-        ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
-        ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
-        ${NSD_GetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
-        ${NSD_GetState} $Check_Fallout4_Exe $CheckState_Fallout4_Exe
-        ${NSD_GetState} $Check_SkyrimSE_Exe $CheckState_SkyrimSE_Exe
         ${NSD_GetState} $Check_Ex1_Exe $CheckState_Ex1_Exe
         ${NSD_GetState} $Check_Ex2_Exe $CheckState_Ex2_Exe
-        ${If} $CheckState_OB_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_OB == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Nehrim_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Nehrim == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Skyrim_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Skyrim == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_Fallout4_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_Fallout4 == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
-
-        ${If} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
-        ${AndIf} $CheckState_SkyrimSE == ${BST_CHECKED}
-            StrCpy $ExeVersionInstall $True
-        ${EndIf}
 
         ${If} $CheckState_Ex1_Exe == ${BST_CHECKED}
         ${AndIf} $CheckState_Extra == ${BST_CHECKED}
@@ -304,6 +439,7 @@
                 StrCpy $1 $True
             ${EndIf}
         ${EndIf}
+
         ${If} $CheckState_Nehrim == ${BST_CHECKED}
             ${StrLoc} $0 $Path_Nehrim "$PROGRAMFILES\" ">"
             ${If} "0" == $0
@@ -327,6 +463,20 @@
 
         ${If} $CheckState_SkyrimSE == ${BST_CHECKED}
             ${StrLoc} $0 $Path_SkyrimSE "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_Fallout3 == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_Fallout3 "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_FalloutNV == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_FalloutNV "$PROGRAMFILES\" ">"
             ${If} "0" == $0
                 StrCpy $1 $True
             ${EndIf}
@@ -407,15 +557,27 @@
             IntOp $0 $0 + 9
         ${EndIf}
 
-        ${If} $Path_Fallout4 != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Fallout4"
-                Pop $Check_Fallout4
-            IntOp $0 $0 + 9
-        ${EndIf}
-
         ${If} $Path_SkyrimSE != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 8u "SkyrimSE"
                 Pop $Check_SkyrimSE
+            IntOp $0 $0 + 9
+        ${EndIf}
+
+        ${If} $Path_Fallout3 != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Fallout3"
+                Pop $Check_Fallout3
+            IntOp $0 $0 + 9
+        ${EndIf}
+
+        ${If} $Path_FalloutNV != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "FalloutNV"
+                Pop $Check_FalloutNV
+            IntOp $0 $0 + 9
+        ${EndIf}
+
+        ${If} $Path_Fallout4 != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Fallout4"
+                Pop $Check_Fallout4
             IntOp $0 $0 + 9
         ${EndIf}
 
@@ -453,6 +615,8 @@
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+        ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
+        ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
 
@@ -501,6 +665,24 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Fallout3 == ${BST_CHECKED}
+            SetOutPath "$Path_Fallout3\Mopy"
+            ${If} $CheckState_Fallout3_Py == ${BST_CHECKED}
+                ExecShell "open" '"$Path_Fallout3\Mopy\Wrye Bash Launcher.pyw"'
+            ${ElseIf} $CheckState_Fallout3_Exe == ${BST_CHECKED}
+                ExecShell "open" "$Path_Fallout3\Mopy\Wrye Bash.exe"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_FalloutNV == ${BST_CHECKED}
+            SetOutPath "$Path_FalloutNV\Mopy"
+            ${If} $CheckState_FalloutNV_Py == ${BST_CHECKED}
+                ExecShell "open" '"$Path_FalloutNV\Mopy\Wrye Bash Launcher.pyw"'
+            ${ElseIf} $CheckState_FalloutNV_Exe == ${BST_CHECKED}
+                ExecShell "open" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             SetOutPath "$Path_Ex1\Mopy"
             ${If} $CheckState_Ex1_Py == ${BST_CHECKED}
@@ -532,6 +714,10 @@
                 ExecShell "open" "$Path_Fallout4\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_SkyrimSE != $Empty
                 ExecShell "open" "$Path_SkyrimSE\Mopy\Docs\Wrye Bash General Readme.html"
+            ${ElseIf} $Path_Fallout3 != $Empty
+                ExecShell "open" "$Path_Fallout3\Mopy\Docs\Wrye Bash General Readme.html"
+            ${ElseIf} $Path_FalloutNV != $Empty
+                ExecShell "open" "$Path_FalloutNV\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_Ex1 != $Empty
                 ExecShell "open" "$Path_Ex1\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_Ex2 != $Empty
@@ -557,6 +743,12 @@
             ${If} $Path_SkyrimSE != $Empty
                 !insertmacro RemoveOldFiles "$Path_SkyrimSE"
             ${EndIf}
+            ${If} $Path_Fallout3 != $Empty
+                !insertmacro RemoveOldFiles "$Path_Fallout3"
+            ${EndIf}
+            ${If} $Path_FalloutNV != $Empty
+                !insertmacro RemoveOldFiles "$Path_FalloutNV"
+            ${EndIf}
             ${If} $Path_Ex1 != $Empty
                 !insertmacro RemoveOldFiles "$Path_Ex1"
             ${EndIf}
@@ -568,20 +760,21 @@
 
 
 ;----------------------------- Custom Uninstallation Pages and their Functions:
-    Function un.PAGE_SELECT_GAMES
-        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
+    Function un.PAGE_SELECT_GAMES_ES
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_ES_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
         GetFunctionAddress $unFunction_Browse un.OnClick_Browse
 
         nsDialogs::Create 1018
             Pop $Dialog
+
         ${If} $Dialog == error
             Abort
-            ${EndIf}
+        ${EndIf}
 
-        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s)/extra location(s) and version(s) to uninstall Wrye Bash from:"
-        Pop $Label
+        ${NSD_CreateLabel} 0 0 100% 8u "Please select which game(s) and version(s) to uninstall Wrye Bash from:"
+            Pop $Label
+            IntOp $0 0 + 9
 
-        IntOp $0 0 + 9
         ${If} $Path_OB != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Oblivion"
                 Pop $Check_OB
@@ -591,7 +784,7 @@
                 Pop $PathDialogue_OB
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
                 Pop $Browse_OB
-                nsDialogs::OnClick $Browse_OB $Function_Browse
+                nsDialogs::OnClick $Browse_OB $unFunction_Browse
             IntOp $0 $0 + 13
         ${EndIf}
 
@@ -604,7 +797,7 @@
                 Pop $PathDialogue_Nehrim
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
                 Pop $Browse_Nehrim
-                nsDialogs::OnClick $Browse_Nehrim $Function_Browse
+                nsDialogs::OnClick $Browse_Nehrim $unFunction_Browse
             IntOp $0 $0 + 13
         ${EndIf}
 
@@ -615,22 +808,9 @@
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Skyrim"
                 Pop $PathDialogue_Skyrim
-            ${NSD_CreateBrowseButton} -10% %0u 5% 13u "..."
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
                 Pop $Browse_Skyrim
-                nsDialogs::OnClick $Browse_Skyrim $Function_Browse
-            IntOp $0 $0 + 13
-        ${EndIf}
-
-        ${If} $Path_Fallout4 != $Empty
-            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Fallout4"
-                Pop $Check_Fallout4
-                ${NSD_SetState} $Check_Fallout4 $CheckState_Fallout4
-            IntOp $0 $0 + 13
-            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout4"
-                Pop $PathDialogue_Fallout4
-            ${NSD_CreateBrowseButton} -10% %0u 5% 13u "..."
-                Pop $Browse_Fallout4
-                nsDialogs::OnClick $Browse_Fallout4 $Function_Browse
+                nsDialogs::OnClick $Browse_Skyrim $unFunction_Browse
             IntOp $0 $0 + 13
         ${EndIf}
 
@@ -641,11 +821,110 @@
             IntOp $0 $0 + 13
             ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_SkyrimSE"
                 Pop $PathDialogue_SkyrimSE
-            ${NSD_CreateBrowseButton} -10% %0u 5% 13u "..."
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
                 Pop $Browse_SkyrimSE
-                nsDialogs::OnClick $Browse_SkyrimSE $Function_Browse
+                nsDialogs::OnClick $Browse_SkyrimSE $unFunction_Browse
             IntOp $0 $0 + 13
         ${EndIf}
+
+        ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
+        ;    Pop $Check_RemoveUserFiles
+        ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
+        nsDialogs::Show
+    FunctionEnd
+
+    Function un.PAGE_SELECT_GAMES_ES_Leave
+        ${NSD_GetText} $PathDialogue_OB $Path_OB
+        ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
+        ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
+        ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
+        ${NSD_GetState} $Check_OB $CheckState_OB
+        ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
+        ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
+        ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+    FunctionEnd
+
+    Function un.PAGE_SELECT_GAMES_FALLOUT
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_FALLOUT_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
+        GetFunctionAddress $unFunction_Browse un.OnClick_Browse
+
+        nsDialogs::Create 1018
+            Pop $Dialog
+        ${If} $Dialog == error
+            Abort
+            ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 16u "Please select which game(s) and version(s) to uninstall Wrye Flash from:"
+            Pop $Label
+            IntOp $0 0 + 17
+
+        ${If} $Path_Fallout3 != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Fallout3"
+                Pop $Check_Fallout3
+                ${NSD_SetState} $Check_Fallout3 $CheckState_Fallout3
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout3"
+                Pop $PathDialogue_Fallout3
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Fallout3
+                nsDialogs::OnClick $Browse_Fallout3 $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
+        ${If} $Path_FalloutNV != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&FalloutNV"
+                Pop $Check_FalloutNV
+                ${NSD_SetState} $Check_FalloutNV $CheckState_FalloutNV
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_FalloutNV"
+                Pop $PathDialogue_FalloutNV
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_FalloutNV
+                nsDialogs::OnClick $Browse_FalloutNV $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
+        ${If} $Path_Fallout4 != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Fallout4"
+                Pop $Check_Fallout4
+                ${NSD_SetState} $Check_Fallout4 $CheckState_Fallout4
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Fallout4"
+                Pop $PathDialogue_Fallout4
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Fallout4
+                nsDialogs::OnClick $Browse_Fallout4 $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
+        ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
+        ;    Pop $Check_RemoveUserFiles
+        ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
+        nsDialogs::Show
+    FunctionEnd
+
+    Function un.PAGE_SELECT_GAMES_FALLOUT_Leave
+        ${NSD_GetText} $PathDialogue_Fallout3 $Path_Fallout3
+        ${NSD_GetText} $PathDialogue_FalloutNV $Path_FalloutNV
+        ${NSD_GetText} $PathDialogue_Fallout4 $Path_Fallout4
+        ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
+        ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
+        ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
+    FunctionEnd
+
+    Function un.PAGE_SELECT_GAMES_EXTRA
+        !insertmacro MUI_HEADER_TEXT $(PAGE_INSTALLLOCATIONS_EXTRA_TITLE) $(unPAGE_SELECT_GAMES_SUBTITLE)
+        GetFunctionAddress $unFunction_Browse un.OnClick_Browse
+
+        nsDialogs::Create 1018
+            Pop $Dialog
+        ${If} $Dialog == error
+            Abort
+            ${EndIf}
+
+        ${NSD_CreateLabel} 0 0 100% 16u "Please select which extra location(s) and version(s) to uninstall Wrye Bash/Flash from:"
+            Pop $Label
+            IntOp $0 0 + 17
 
         ${If} $Path_Ex1 != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 13u "Extra Location 1"
@@ -656,7 +935,7 @@
                 Pop $PathDialogue_Ex1
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
                 Pop $Browse_Ex1
-                nsDialogs::OnClick $Browse_Ex1 $Function_Browse
+                nsDialogs::OnClick $Browse_Ex1 $unFunction_Browse
             IntOp $0 $0 + 13
         ${EndIf}
 
@@ -669,29 +948,20 @@
                 Pop $PathDialogue_Ex2
             ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
                 Pop $Browse_Ex2
-                nsDialogs::OnClick $Browse_Ex2 $Function_Browse
+                nsDialogs::OnClick $Browse_Ex2 $unFunction_Browse
             IntOp $0 $0 + 13
         ${EndIf}
+
         ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
         ;    Pop $Check_RemoveUserFiles
         ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
         nsDialogs::Show
     FunctionEnd
 
-    Function un.PAGE_SELECT_GAMES_Leave
-        ${NSD_GetText} $PathDialogue_OB $Path_OB
-        ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
-        ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
-        ${NSD_GetText} $PathDialogue_Fallout4 $Path_Fallout4
-        ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
+    Function un.PAGE_SELECT_GAMES_EXTRA_Leave
+        ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetText} $PathDialogue_Ex1 $Path_Ex1
         ${NSD_GetText} $PathDialogue_Ex2 $Path_Ex2
-        ${NSD_GetState} $Check_OB $CheckState_OB
-        ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
-        ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
-        ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
-        ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
-        ${NSD_GetState} $Check_Extra $CheckState_Extra
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
         ${NSD_GetState} $Check_Ex2 $CheckState_Ex2
     FunctionEnd
