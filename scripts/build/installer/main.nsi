@@ -47,6 +47,8 @@ Unicode true
     Var Path_Skyrim
     Var Path_Fallout4
     Var Path_SkyrimSE
+    Var Path_Fallout3
+    Var Path_FalloutNV
     Var Path_Ex1
     Var Path_Ex2
     Var MSVC_Sub_Key
@@ -62,6 +64,8 @@ Unicode true
     Var Check_Fallout4
     Var Check_SkyrimSE
     Var Check_Extra
+    Var Check_Fallout3
+    Var Check_FalloutNV
     Var Check_Ex1
     Var Check_Ex2
     Var CheckState_OB
@@ -70,6 +74,8 @@ Unicode true
     Var CheckState_Fallout4
     Var CheckState_SkyrimSE
     Var CheckState_Extra
+    Var CheckState_Fallout3
+    Var CheckState_FalloutNV
     Var CheckState_Ex1
     Var CheckState_Ex2
     Var Check_OB_Py
@@ -77,6 +83,8 @@ Unicode true
     Var Check_Skyrim_Py
     Var Check_Fallout4_Py
     Var Check_SkyrimSE_Py
+    Var Check_Fallout3_Py
+    Var Check_FalloutNV_Py
     Var Check_Ex1_Py
     Var Check_Ex2_Py
     Var CheckState_OB_Py
@@ -84,6 +92,8 @@ Unicode true
     Var CheckState_Skyrim_Py
     Var CheckState_Fallout4_Py
     Var CheckState_SkyrimSE_Py
+    Var CheckState_Fallout3_Py
+    Var CheckState_FalloutNV_Py
     Var CheckState_Ex1_Py
     Var CheckState_Ex2_Py
     Var Check_OB_Exe
@@ -91,6 +101,8 @@ Unicode true
     Var Check_Skyrim_Exe
     Var Check_Fallout4_Exe
     Var Check_SkyrimSE_Exe
+    Var Check_Fallout3_Exe
+    Var Check_FalloutNV_Exe
     Var Check_Ex1_Exe
     Var Check_Ex2_Exe
     Var CheckState_OB_Exe
@@ -98,6 +110,8 @@ Unicode true
     Var CheckState_Skyrim_Exe
     Var CheckState_Fallout4_Exe
     Var CheckState_SkyrimSE_Exe
+    Var CheckState_Fallout3_Exe
+    Var CheckState_FalloutNV_Exe
     Var CheckState_Ex1_Exe
     Var CheckState_Ex2_Exe
     Var Reg_Value_OB_Py
@@ -105,6 +119,8 @@ Unicode true
     Var Reg_Value_Skyrim_Py
     Var Reg_Value_Fallout4_Py
     Var Reg_Value_SkyrimSE_Py
+    Var Reg_Value_Fallout3_Py
+    Var Reg_Value_FalloutNV_Py
     Var Reg_Value_Ex1_Py
     Var Reg_Value_Ex2_Py
     Var Reg_Value_OB_Exe
@@ -112,6 +128,8 @@ Unicode true
     Var Reg_Value_Skyrim_Exe
     Var Reg_Value_Fallout4_Exe
     Var Reg_Value_SkyrimSE_Exe
+    Var Reg_Value_Fallout3_Exe
+    Var Reg_Value_FalloutNV_Exe
     Var Reg_Value_Ex1_Exe
     Var Reg_Value_Ex2_Exe
     Var PathDialogue_OB
@@ -119,6 +137,8 @@ Unicode true
     Var PathDialogue_Skyrim
     Var PathDialogue_Fallout4
     Var PathDialogue_SkyrimSE
+    Var PathDialogue_Fallout3
+    Var PathDialogue_FalloutNV
     Var PathDialogue_Ex1
     Var PathDialogue_Ex2
     Var Browse_OB
@@ -126,6 +146,8 @@ Unicode true
     Var Browse_Skyrim
     Var Browse_Fallout4
     Var Browse_SkyrimSE
+    Var Browse_Fallout3
+    Var Browse_FalloutNV
     Var Browse_Ex1
     Var Browse_Ex2
     Var Check_Readme
@@ -152,14 +174,18 @@ Unicode true
     !define MUI_WELCOMEFINISHPAGE_BITMAP "${WB_CLEAN_MOPY}\bash\images\nsis\wrye_monkey_164x314.bmp"
     !define MUI_UNWELCOMEFINISHPAGE_BITMAP "${WB_CLEAN_MOPY}\bash\images\nsis\wrye_monkey_164x314.bmp"
     !insertmacro MUI_PAGE_WELCOME
-    Page custom PAGE_INSTALLLOCATIONS PAGE_INSTALLLOCATIONS_Leave
+    Page custom PAGE_INSTALLLOCATIONS_ES PAGE_INSTALLLOCATIONS_ES_Leave
+    Page custom PAGE_INSTALLLOCATIONS_FALLOUT PAGE_INSTALLLOCATIONS_FALLOUT_Leave
+    Page custom PAGE_INSTALLLOCATIONS_EXTRA PAGE_INSTALLLOCATIONS_EXTRA_Leave
     Page custom PAGE_CHECK_LOCATIONS PAGE_CHECK_LOCATIONS_Leave
     !insertmacro MUI_PAGE_COMPONENTS
     !insertmacro MUI_PAGE_INSTFILES
     Page custom PAGE_FINISH PAGE_FINISH_Leave
 
     !insertmacro MUI_UNPAGE_WELCOME
-    UninstPage custom un.PAGE_SELECT_GAMES un.PAGE_SELECT_GAMES_Leave
+    UninstPage custom un.PAGE_SELECT_GAMES_ES un.PAGE_SELECT_GAMES_ES_Leave
+    UninstPage custom un.PAGE_SELECT_GAMES_FALLOUT un.PAGE_SELECT_GAMES_FALLOUT_Leave
+    UninstPage custom un.PAGE_SELECT_GAMES_EXTRA un.PAGE_SELECT_GAMES_EXTRA_Leave
     !insertmacro MUI_UNPAGE_INSTFILES
 
 
@@ -231,6 +257,26 @@ Unicode true
             StrCpy $CheckState_SkyrimSE ${BST_CHECKED}
         ${EndIf}
 
+        ${If} $Path_Fallout3 == $Empty
+            ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\Bethesda Softworks\Fallout3" "Installed Path"
+            ${If} $Path_Fallout3 == $Empty
+                ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\WOW6432Node\Bethesda Softworks\Fallout3" "Installed Path"
+            ${EndIf}
+        ${EndIf}
+        ${If} $Path_Fallout3 != $Empty
+            StrCpy $CheckState_Fallout3 ${BST_CHECKED}
+        ${EndIf}
+
+        ${If} $Path_FalloutNV == $Empty
+            ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\Bethesda Softworks\FalloutNV" "Installed Path"
+            ${If} $Path_FalloutNV == $Empty
+                ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\WOW6432Node\Bethesda Softworks\FalloutNV" "Installed Path"
+            ${EndIf}
+        ${EndIf}
+        ${If} $Path_FalloutNV != $Empty
+            StrCpy $CheckState_FalloutNV ${BST_CHECKED}
+        ${EndIf}
+
         ${If} $Path_Ex1 != $Empty
             StrCpy $CheckState_Extra ${BST_CHECKED}
             StrCpy $CheckState_Ex1 ${BST_CHECKED}
@@ -281,14 +327,30 @@ Unicode true
             StrCpy $CheckState_SkyrimSE_Py ${BST_CHECKED}
         ${EndIf}
 
+        ${If} $Reg_Value_Fallout3_Exe == $True
+        ${OrIf} $Reg_Value_Fallout3_Py != $True
+            StrCpy $CheckState_Fallout3_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_Fallout3_Py == $True
+            StrCpy $CheckState_Fallout3_Py ${BST_CHECKED}
+        ${EndIf}
+
+        ${If} $Reg_Value_FalloutNV_Exe == $True
+        ${OrIf} $Reg_Value_FalloutNV_Py != $True
+            StrCpy $CheckState_FalloutNV_Exe ${BST_CHECKED}
+        ${EndIf}
+        ${If} $Reg_Value_FalloutNV_Py == $True
+            StrCpy $CheckState_FalloutNV_Py ${BST_CHECKED}
+        ${EndIf}
+
         ${If} $Reg_Value_Ex1_Exe == $True
         ${OrIf} $Reg_Value_Ex1_Py != $True
             StrCpy $CheckState_Ex1_Exe ${BST_CHECKED}
         ${EndIf}
-
         ${If} $Reg_Value_Ex1_Py == $True
             StrCpy $CheckState_Ex1_Py ${BST_CHECKED}
         ${EndIf}
+
         ${If} $Reg_Value_Ex2_Exe == $True
         ${OrIf} $Reg_Value_Ex2_Py != $True
             StrCpy $CheckState_Ex2_Exe ${BST_CHECKED}
@@ -312,6 +374,10 @@ Unicode true
             StrCpy $1 $PathDialogue_Fallout4
         ${ElseIf} $0 == $Browse_SkyrimSE
             StrCpy $1 $PathDialogue_SkyrimSE
+        ${ElseIf} $0 == $Browse_Fallout3
+            StrCpy $1 $PathDialogue_Fallout3
+        ${ElseIf} $0 == $Browse_FalloutNV
+            StrCpy $1 $PathDialogue_FalloutNV
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2
@@ -368,6 +434,10 @@ Unicode true
             StrCpy $1 $PathDialogue_Fallout4
         ${ElseIf} $0 == $Browse_SkyrimSE
             StrCpy $1 $PathDialogue_SkyrimSE
+        ${ElseIf} $0 == $Browse_Fallout3
+            StrCpy $1 $PathDialogue_Fallout3
+        ${ElseIf} $0 == $Browse_FalloutNV
+            StrCpy $1 $PathDialogue_FalloutNV
         ${ElseIf} $0 == $Browse_Ex1
             StrCpy $1 $PathDialogue_Ex1
         ${ElseIf} $0 == $Browse_Ex2
@@ -396,13 +466,23 @@ Unicode true
   LangString DESC_Main ${LANG_ENGLISH} "The main Wrye Bash files."
   LangString DESC_Shortcuts_SM ${LANG_ENGLISH} "Start Menu shortcuts for the uninstaller and each launcher."
   LangString DESC_Prereq ${LANG_ENGLISH} "The files that Wrye Bash requires to run."
-  LangString PAGE_INSTALLLOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location(s)"
-  LangString PAGE_INSTALLLOCATIONS_SUBTITLE ${LANG_ENGLISH} "Please select main installation path for Wrye Bash and, if desired, extra locations in which to install Wrye Bash."
+
+  LangString PAGE_INSTALLLOCATIONS_ES_TITLE ${LANG_ENGLISH} "Elder Scrolls Installation Location(s)"
+  LangString PAGE_INSTALLLOCATIONS_ES_SUBTITLE ${LANG_ENGLISH} "Please select installation path(s) for Wrye Bash."
+
+  LangString PAGE_INSTALLLOCATIONS_FALLOUT_TITLE ${LANG_ENGLISH} "Fallout Installation Location(s)"
+  LangString PAGE_INSTALLLOCATIONS_FALLOUT_SUBTITLE ${LANG_ENGLISH} "Please select installation path(s) for Wrye Flash."
+
+  LangString PAGE_INSTALLLOCATIONS_EXTRA_TITLE ${LANG_ENGLISH} "Extra Installation Location(s)"
+  LangString PAGE_INSTALLLOCATIONS_EXTRA_SUBTITLE ${LANG_ENGLISH} "Please select additional installation path(s) for Wrye Bash/Flash, if desired."
+
   LangString PAGE_CHECK_LOCATIONS_TITLE ${LANG_ENGLISH} "Installation Location Check"
   LangString PAGE_CHECK_LOCATIONS_SUBTITLE ${LANG_ENGLISH} "A risky installation location has been detected."
   LangString PAGE_REQUIREMENTS_TITLE ${LANG_ENGLISH} "Installation Prerequisites"
   LangString PAGE_REQUIREMENTS_SUBTITLE ${LANG_ENGLISH} "Checking for requirements"
-  LangString unPAGE_SELECT_GAMES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
+  LangString unPAGE_SELECT_GAMES_ES_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Bash from."
+  LangString unPAGE_SELECT_GAMES_FALLOUT_SUBTITLE ${LANG_ENGLISH} "Please select which locations you want to uninstall Wrye Flash from."
+  LangString unPAGE_SELECT_GAMES_EXTRA_SUBTITLE ${LANG_ENGLISH} "Please select which additional locations you want to uninstall Wrye Bash/Flash from."
   LangString PAGE_FINISH_TITLE ${LANG_ENGLISH} "Finished installing ${WB_NAME}"
   LangString PAGE_FINISH_SUBTITLE ${LANG_ENGLISH} "Please select post-install tasks."
 

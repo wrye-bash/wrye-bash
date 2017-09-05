@@ -706,6 +706,16 @@
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
         ${EndIf}
 
+        ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\Wrye Bash" "Fallout3 Path"
+        ${If} $Path_Fallout3 == $Empty
+            ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Path"
+        ${EndIf}
+
+        ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\Wrye Bash" "FalloutNV Path"
+        ${If} $Path_FalloutNV == $Empty
+            ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Path"
+        ${EndIf}
+
         ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
         ${If} $Path_Ex1 == $Empty
             ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
@@ -741,6 +751,16 @@
             ReadRegStr $Reg_Value_SkyrimSE_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Python Version"
         ${EndIf}
 
+        ReadRegStr $Reg_Value_Fallout3_Py HKLM "SOFTWARE\Wrye Bash" "Fallout3 Python Version"
+        ${If} $Reg_Value_Fallout3_Py == $Empty
+            ReadRegStr $Reg_Value_Fallout3_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Python Version"
+        ${EndIf}
+
+        ReadRegStr $Reg_Value_FalloutNV_Py HKLM "SOFTWARE\Wrye Bash" "FalloutNV Python Version"
+        ${If} $Reg_Value_FalloutNV_Py == $Empty
+            ReadRegStr $Reg_Value_FalloutNV_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Python Version"
+        ${EndIf}
+
         ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version"
         ${If} $Reg_Value_Ex1_Py == $Empty
             ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Python Version"
@@ -774,6 +794,16 @@
         ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Standalone Version"
         ${If} $Reg_Value_SkyrimSE_Exe == $Empty
             ReadRegStr $Reg_Value_SkyrimSE_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Standalone Version"
+        ${EndIf}
+
+        ReadRegStr $Reg_Value_Fallout3_Exe HKLM "SOFTWARE\Wrye Bash" "Fallout3 Standalone Version"
+        ${If} $Reg_Value_Fallout3_Exe == $Empty
+            ReadRegStr $Reg_Value_Fallout3_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Standalone Version"
+        ${EndIf}
+
+        ReadRegStr $Reg_Value_FalloutNV_Exe HKLM "SOFTWARE\Wrye Bash" "FalloutNV Standalone Version"
+        ${If} $Reg_Value_FalloutNV_Exe == $Empty
+            ReadRegStr $Reg_Value_FalloutNV_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Standalone Version"
         ${EndIf}
 
         ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version"
@@ -812,6 +842,16 @@
         ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\Wrye Bash" "SkyrimSE Path"
         ${If} $Path_SkyrimSE == $Empty
             ReadRegStr $Path_SkyrimSE HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "SkyrimSE Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Fallout3 HKLM "Software\Wrye Bash" "Fallout3 Path"
+        ${If} $Path_Fallout3 == $Empty
+            ReadRegStr $Path_Fallout3 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Fallout3 Path"
+        ${EndIf}
+
+        ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\Wrye Bash" "FalloutNV Path"
+        ${If} $Path_FalloutNV == $Empty
+            ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Path"
         ${EndIf}
 
         ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
