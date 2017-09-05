@@ -224,6 +224,20 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Fallout3 == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_Fallout3 != $Empty
+                !insertmacro InstallBashFiles "Fallout3" "Fallout3" "$Path_Fallout3" $Reg_Value_Fallout3_Py $Reg_Value_Fallout3_Exe "Fallout3 Path" $CheckState_Fallout3_Py $CheckState_Fallout3_Exe false
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_FalloutNV == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_FalloutNV != $Empty
+                !insertmacro InstallBashFiles "FalloutNV" "FalloutNV" "$Path_FalloutNV" $Reg_Value_FalloutNV_Py $Reg_Value_FalloutNV_Exe "FalloutNV Path" $CheckState_FalloutNV_Py $CheckState_FalloutNV_Exe false
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Ex1 != $Empty
@@ -338,6 +352,40 @@
                 ${ElseIf} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE.lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - SkyrimSE (Debug Log).lnk" "$Path_SkyrimSE\Mopy\Wrye Bash.exe" "-d"
+                ${EndIf}
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_Fallout3 == ${BST_CHECKED}
+            ${If} $Path_Fallout3 != $Empty
+                SetOutPath $Path_Fallout3\Mopy
+                ${If} $CheckState_Fallout3_Py == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout3.lnk" "$Path_Fallout3\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Fallout3\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout3 (Debug Log).lnk" "$Path_Fallout3\Mopy\Wrye Bash Debug.bat" "" "$Path_Fallout3\Mopy\bash\images\bash_32.ico" 0
+                    ${If} $CheckState_Fallout3_Exe == ${BST_CHECKED}
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Fallout3.lnk" "$Path_Fallout3\Mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Fallout3 (Debug Log).lnk" "$Path_Fallout3\Mopy\Wrye Bash.exe" "-d"
+                    ${EndIf}
+                ${ElseIf} $CheckState_Fallout3_Exe == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout3.lnk" "$Path_Fallout3\Mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Fallout3 (Debug Log).lnk" "$Path_Fallout3\Mopy\Wrye Bash.exe" "-d"
+                ${EndIf}
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_FalloutNV == ${BST_CHECKED}
+            ${If} $Path_FalloutNV != $Empty
+                SetOutPath $Path_FalloutNV\Mopy
+                ${If} $CheckState_FalloutNV_Py == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash Launcher.pyw" "" "$Path_FalloutNV\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash Debug.bat" "" "$Path_FalloutNV\Mopy\bash\images\bash_32.ico" 0
+                    ${If} $CheckState_Fallout4_Exe == ${BST_CHECKED}
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe" "-d"
+                    ${EndIf}
+                ${ElseIf} $CheckState_Fallout4_Exe == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe" "-d"
                 ${EndIf}
             ${EndIf}
         ${EndIf}
