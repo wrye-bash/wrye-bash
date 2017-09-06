@@ -331,7 +331,8 @@ class InstallerConverter(object):
                 u'Extracting files...'))
         with self.fullPath.unicodeSafe() as tempPath:
             command = extractCommand(tempPath, tmpDir)
-            archives.extract7z(command, tempPath, progress)
+            # don't pass progress in as we haven't got the count of BCF's files
+            archives.extract7z(command, tempPath, progress=None)
         #--Extract source archives
         lastStep = 0
         if embedded:

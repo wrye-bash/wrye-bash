@@ -138,7 +138,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         to_select = []
         for mod, info, previous in refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games
-            bosh.modInfos.refreshFile(mod)
+            bosh.modInfos.refreshFile(mod) # use refreshFile so BAIN is aware
             bosh.modInfos.cached_lo_insert_after(previous, mod)
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()

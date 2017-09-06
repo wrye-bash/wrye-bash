@@ -24,11 +24,13 @@
 
 """WIP module to encapsulate environment access - currently OS dependent stuff.
 """
+import errno
 import os as _os
 import re as _re
+import shutil as _shutil
 import stat
 import struct
-import shutil as _shutil
+
 from bolt import GPath, deprint, Path, decode
 from exception import BoltError, CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, InvalidPathsError, FileOperationError, \
@@ -427,18 +429,6 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
     # renameOnCollision - if True auto-rename on moving collision, else ask
     # TODO(241): renameOnCollision NOT IMPLEMENTED
     doIt = _shutil.copytree if operation == FO_COPY else _shutil.move
-    ##: HACK: due to hack in Installer._move we need to deglob
-    new_source = []
-    for i, path in enumerate(source):
-        # just care for the star we feed it in Installer._move
-        if path.s[-1] == u'*':
-            base_dir = GPath(source[i].s[:-1]) # chop off the star
-            for j, item in enumerate(_os.listdir(base_dir.s)):
-                new_source.append(base_dir.join(item))
-                target[i + j: i + j] = [target[i]] # copy the target along
-        else:
-            new_source.append(path)
-    source = new_source
     for fileFrom, fileTo in zip(source, target):
         if fileFrom.isdir():
             dest_dir = fileTo.join(fileFrom.tail)
@@ -446,15 +436,24 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
                 if not dest_dir.isdir():
                     raise DirectoryFileCollisionError(fileFrom, dest_dir)
                 # dir exists at target, copy contents individually/recursively
+                srcs, dests = [], []
                 for content in _os.listdir(fileFrom.s):
-                    __copyOrMove(operation, [fileFrom.join(content)],
-                                 [dest_dir], renameOnCollision, parent)
+                    srcs.append(fileFrom.join(content))
+                    dests.append(dest_dir)
+                __copyOrMove(operation, srcs, dests, renameOnCollision, parent)
             else:  # dir doesn't exist at the target, copy it
                 doIt(fileFrom.s, fileTo.s)
         # copy the file, overwrite as needed
         elif fileFrom.isfile():  # or os.path.islink(file):
-            # move may not work if the target exists, copy instead...
-            _shutil.copy2(fileFrom.s, fileTo.s) # ...and overwrite as needed
+            # move may not work if the target exists, copy instead and
+            # overwrite as needed
+            try:
+                _shutil.copy2(fileFrom.s, fileTo.s)
+            except IOError as e:
+                if e.errno != errno.ENOENT: raise
+                # probably directory path does not exist, create it.
+                fileTo.head.makedirs()
+                _shutil.copy2(fileFrom.s, fileTo.s)
             if operation == FO_MOVE: fileFrom.remove() # then remove original
     return {} ##: the renames map ?
 

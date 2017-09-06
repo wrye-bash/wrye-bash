@@ -330,8 +330,6 @@ def has_load_order_conflict_active(mod_name):
 def get_free_time(start_time, default_time='+1', end_time=None):
     return game_handle.get_free_time(start_time, default_time, end_time)
 
-def install_last(): return game_handle.install_last()
-
 # Lock load order -------------------------------------------------------------
 def toggle_lock_load_order():
     global locked

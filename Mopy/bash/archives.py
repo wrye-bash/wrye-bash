@@ -156,36 +156,6 @@ def extractCommand(archivePath, outDirPath):
         exe7z, archivePath.s, outDirPath.s)
     return command
 
-def countFilesInArchive(srcArch, listFilePath=None, recurse=False):
-    """Count all regular files in srcArch (or only the subset in
-    listFilePath)."""
-    # http://stackoverflow.com/q/31124670/281545
-    command = [exe7z, u'l', u'-scsUTF-8', u'-sccUTF-8', srcArch.s]
-    if listFilePath: command += [u'@%s' % listFilePath.s]
-    if recurse: command += [u'-r']
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE,
-                            stdin=subprocess.PIPE if listFilePath else None,
-                            startupinfo=startupinfo, bufsize=1)
-    errorLine = line = u''
-    with proc.stdout as out:
-        for line in iter(out.readline, b''): # consider io.TextIOWrapper
-            line = unicode(line, 'utf8')
-            if regErrMatch(line):
-                errorLine = line + u''.join(out)
-                break
-    returncode = proc.wait()
-    msg = u'%s: Listing failed\n' % srcArch.s
-    if returncode or errorLine:
-        msg += u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine
-    elif not line: # should not happen
-        msg += u'Empty output'
-    else: msg = u''
-    if msg: raise StateError(msg) # consider using CalledProcessError
-    # number of files is reported in the last line - example:
-    #                                3534900       325332  75 files, 29 folders
-    # in 7z 16 apparently the folders listing is omitted if 0
-    return int(re.search(ur'(\d+)\s+files(,\s+\d+\s+folders)?', line).group(1))
-
 def list_archive(archive, parse_archive_line, __reList=reListArchive):
     """Client is responsible for closing the file ! See uses for
     _parse_archive_line examples."""

@@ -76,8 +76,11 @@ def rmTempDir():
     global _tempDir
     if _tempDir is None:
         return
-    if _tempDir.exists():
+    try:
         _tempDir.rmtree(safety=_tempDir.stail)
+    except OSError:
+        from bolt import deprint
+        deprint(u'Failed to remove %s' % _tempDir, traceback=True)
     _tempDir = None
 
 def newTempDir():

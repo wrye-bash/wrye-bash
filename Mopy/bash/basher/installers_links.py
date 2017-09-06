@@ -334,7 +334,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
         toRefresh = set(name for name, installer in self.idata.iteritems() if
                         installer.hasBethFiles)
         self.window.rescanInstallers(toRefresh, abort=False,
-                                     update_from_data=False)
+                                     update_from_data=False, shallow=True)
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""
@@ -444,15 +444,9 @@ class _Installers_Skip(Installers_Link, BoolLink):
         self._refreshInstallers()
 
     def _refreshInstallers(self):
-        with balt.Progress(_(u'Refreshing Packages...'), u'\n' + u' ' * 60,
-                           abort=False) as progress:
-            progress.setFull(len(self.idata))
-            for index, (name, installer) in enumerate(self.idata.iteritems()):
-                progress(index, _(u'Refreshing Packages...') + u'\n' + name.s)
-                ##: maybe update data too when turning skips off ??
-                installer.refreshDataSizeCrc()
-        self.idata.irefresh(what='NS')
-        self.window.RefreshUI()
+        self.window.rescanInstallers(self.idata.keys(), abort=False,
+            update_from_data=False,##:update data too when turning skips off ??
+            shallow=True)
 
 class _Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""

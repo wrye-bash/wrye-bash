@@ -263,10 +263,10 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             with outFile.open('w') as out:
                 for line in generateTweakLines(wizardEdits, iniFile):
                     out.write(line + u'\n')
-            bosh.iniInfos.refreshFile(outFile.tail) # add it to the iniInfos
+            bosh.iniInfos.add_info(outFile.tail) # add it to the iniInfos
             bosh.iniInfos.table.setItem(outFile.tail, 'installer',
                                         installer.archive)
-            # trigger refresh UI and unnecessary bosh.iniInfos.refresh()
+            # trigger refresh UI
             ui_refresh[1] = True
             # We wont automatically apply tweaks to anything other than
             # Oblivion.ini or an ini from this installer
@@ -639,9 +639,8 @@ class Installer_Refresh(_InstallerLink):
         self.calculate_projects_crc = calculate_projects_crc
         if not calculate_projects_crc:
             self._text = _(u'Quick Refresh')
-            self.help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
-                u'Ignores skip refresh flag on projects') + u'.  ' + _(
-            u'Will not recalculate cached crcs of files in a project')
+            self.help = Installer_Refresh.help + u'.  ' + _(
+                u'Will not recalculate cached crcs of files in a project')
 
     def _enable(self): return bool(self.idata.filterPackages(self.selected))
 

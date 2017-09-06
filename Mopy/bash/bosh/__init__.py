@@ -417,6 +417,11 @@ class FileInfo(AFile):
         self.extras = {}
         super(FileInfo, self).__init__(self.dir.join(name), load_cache)
 
+    def _reset_masters(self):
+        #--Master Names/Order
+        self.masterNames = tuple(self.header.masters)
+        self.masterOrder = tuple() #--Reset to empty for now
+
     def _file_changed(self, stat_tuple):
         return (self._file_size, self._file_mod_time, self.ctime) != stat_tuple
 
@@ -459,6 +464,10 @@ class FileInfo(AFile):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         pass
+
+    def copy_header(self, original_info):
+        self.header = original_info.header
+        self._reset_masters()
 
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
@@ -740,9 +749,7 @@ class ModInfo(FileInfo):
                 self.header = bush.game.MreHeader(recHeader,ins,True)
             except struct.error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
-        #--Master Names/Order
-        self.masterNames = tuple(self.header.masters)
-        self.masterOrder = tuple() #--Reset to empty for now
+        self._reset_masters()
 
     def writeHeader(self):
         """Write Header. Actually have to rewrite entire file."""
@@ -1104,11 +1111,9 @@ class SaveInfo(FileInfo):
         """Read header from file and set self.header attribute."""
         try:
             self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
-            #--Master Names/Order
-            self.masterNames = tuple(self.header.masters)
-            self.masterOrder = tuple() #--Reset to empty for now
         except SaveHeaderError as e:
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
+        self._reset_masters()
 
     def write_masters(self):
         """Rewrites masters of existing save file."""
@@ -1176,6 +1181,8 @@ class BSAInfo(FileInfo, _bsa_type):
 
     def readHeader(self): # just reset the cache
         self._assets = self.__class__._assets
+
+    def copy_header(self, original_info): pass
 
     def _reset_bsa_mtime(self):
         if bush.game.allow_reset_bsa_timestamps and inisettings[
@@ -1280,7 +1287,7 @@ class DataStore(DataDict):
         return set(d.tail for d in destinations if d.exists())
 
 class TableFileInfos(DataStore):
-    _notify_bain_on_delete = True
+    _bain_notify = True # notify BAIN on deletions/updates ?
     file_pattern = None # subclasses must define this !
 
     def _initDB(self, dir_):
@@ -1297,8 +1304,15 @@ class TableFileInfos(DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def refreshFile(self,fileName):
-        self[fileName] = self.factory(self.store_dir, fileName)
+    def add_info(self, fileName, load_cache=True, _in_refresh=False):
+        info = self[fileName] = self.factory(self.store_dir, fileName,
+                                             load_cache=load_cache)
+        return info
+
+    def refreshFile(self, fileName, load_cache=True, _in_refresh=False): # YAK - tmp _in_refresh
+        info = self.add_info(fileName, load_cache, _in_refresh)
+        self._notify_bain(changed={info.abs_path})
+        return info
 
     def _names(self): # performance intensive
         return {x for x in self.store_dir.list() if
@@ -1343,11 +1357,16 @@ class TableFileInfos(DataStore):
             for filePath in paths_to_keys.keys():
                 if filePath.exists():
                     del paths_to_keys[filePath] # item was not deleted
-        if self.__class__._notify_bain_on_delete:
-            from .bain import InstallersData
-            for d in paths_to_keys: # we need absolute paths
-                InstallersData.track(d)
+        self._notify_bain(deleted=paths_to_keys)
         return paths_to_keys.values()
+
+    def _notify_bain(self, deleted=frozenset(), changed=frozenset()):
+        """We need absolute paths for deleted and changed!
+        :type deleted: set[bolt.Path]
+        :type changed: set[bolt.Path]"""
+        if self.__class__._bain_notify:
+            from .bain import InstallersData
+            InstallersData.notify_external(deleted=deleted, changed=changed)
 
     def _additional_deletes(self, fileInfo, toDelete): pass
 
@@ -1365,11 +1384,12 @@ class FileInfos(TableFileInfos):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
-    def refreshFile(self, fileName, _in_refresh=False): # YAK - tmp _in_refresh
+    def add_info(self, fileName, load_cache=True, _in_refresh=False):
         try:
-            fileInfo = self.factory(self.store_dir, fileName, load_cache=True)
-            self[fileName] = fileInfo
+            fileInfo = super(FileInfos, self).add_info(
+                fileName, load_cache=load_cache)
             self.corrupted.pop(fileName, None)
+            return fileInfo
         except FileError as error:
             if not _in_refresh: # if refresh just raise so we print the error
                 self.corrupted[fileName] = error.message
@@ -1390,7 +1410,8 @@ class FileInfos(TableFileInfos):
                     if oldInfo.do_update(): # will reread the header
                         _updated.add(name)
                 else: # added or known corrupted, get a new info
-                    self.refreshFile(name, _in_refresh=True)
+                    # TODO(ut): notify BAIN for added files but not on boot
+                    self.add_info(name, _in_refresh=True)
                     _added.add(name)
             except FileError as e: # old still corrupted, or new(ly) corrupted
                 if not name in self.corrupted \
@@ -1401,6 +1422,8 @@ class FileInfos(TableFileInfos):
         _deleted = oldNames - newNames
         self.delete_refresh(_deleted, None, check_existence=False,
                             _in_refresh=True)
+        if _updated:
+            self._notify_bain(changed={self[n].abs_path for n in _updated})
         change = bool(_added) or bool(_updated) or bool(_deleted)
         if not change: return change
         return _added, _updated, _deleted
@@ -1473,7 +1496,8 @@ class FileInfos(TableFileInfos):
             destPath = destDir.join(destName)
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
         if destDir == self.store_dir:
-            self.refreshFile(destName)
+            # TODO(ut) : pass the info in and load_cache=False
+            self.refreshFile(destName, load_cache=True)
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
                 if set_mtime == '+1':
@@ -1613,6 +1637,8 @@ class INIInfos(TableFileInfos):
                 if k in _deleted: # we restore default over copy
                     _updated.add(k)
                     default_info.reset_status()
+        if _updated:
+            self._notify_bain(changed={self[n].abs_path for n in _updated})
         return _added, _deleted, _updated
 
     def refresh(self, refresh_infos=True, refresh_target=True):
@@ -1627,6 +1653,10 @@ class INIInfos(TableFileInfos):
         change = bool(_added) or bool(_updated) or bool(_deleted) or changed
         if not change: return change
         return _added, _updated, _deleted, changed
+
+    def add_info(self, fileName, load_cache=True, _in_refresh=False):
+        info = self[fileName] = self.factory(self.store_dir, fileName)
+        return info
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
@@ -1850,6 +1880,19 @@ class ModInfos(FileInfos):
             if mod in mod_set: continue
             self._lo_wip.append(mod)
         self._lo_wip[first_dex:first_dex] = modlist
+
+    def cached_lo_append_if_missing(self, mods):
+        new = mods - set(self._lo_wip)
+        if not new: return
+        esms = set(x for x in new if self[x].isEsm())
+        if esms:
+            last = self.cached_lo_last_esm()
+            for esm in esms:
+                self.cached_lo_insert_after(last, esm)
+                last = esm
+            new -= esms
+        self._lo_wip.extend(new)
+        self.cached_lo_save_lo()
 
     @staticmethod
     def hexIndexString(mod):
@@ -2107,9 +2150,10 @@ class ModInfos(FileInfos):
         return pairs
 
     #--Refresh File
-    def refreshFile(self, fileName, _in_refresh=False):
+    def refreshFile(self, fileName, load_cache=True, _in_refresh=False):
         try:
-            FileInfos.refreshFile(self, fileName, _in_refresh)
+            super(ModInfos, self).refreshFile(fileName, load_cache=load_cache,
+                                              _in_refresh=_in_refresh)
         finally:
             self._refreshInfoLists() # not sure if needed here - track usages !
 
@@ -2647,7 +2691,7 @@ class ModInfos(FileInfos):
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
-    _notify_bain_on_delete = False
+    _bain_notify = False
     try:
         _ext = ur'\.' + bush.game.ess.ext[1:]
     except AttributeError: # 'NoneType' object has no attribute 'ess'
@@ -2697,7 +2741,7 @@ class SaveInfos(FileInfos):
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated pluggy file."""
-        FileInfos.copy_info(self, fileName, destDir, destName, set_mtime)
+        super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
         CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
 
     def move_infos(self, sources, destinations, window):
