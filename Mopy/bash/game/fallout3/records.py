@@ -155,7 +155,7 @@ class MelConditions(MelStructs):
             if form1234[1] == 'I':
                 result = function(target.param2)
                 if save: target.param2 = result
-            # runOn is intU32, never FID, and Enum in FO3Edit
+            # runOn is intU32, never FID, and Enum in FO3Edit/FNVEdit
             #0:Subject,1:Target,2:Reference,3:Combat Target,4:Linked Reference
             if len(form1234) > 3 and form1234[3] == 'I' and target.runOn == 2:
                 result = function(target.reference)
@@ -464,7 +464,7 @@ class MelOwnership(MelGroup):
         MelGroup.__init__(self,attr,
             MelFid('XOWN','owner'),
             MelOptStruct('XRNK','i',('rank',None)),
-            # Double check XGLB it's not used in FO3Edit
+            # Double check XGLB it's not used in FO3Edit/FNVEdit
             MelFid('XGLB','global'),
         )
 
@@ -866,7 +866,9 @@ class MreBptd(MelRecord):
                 targets = record.__getattribute__(self.attr)
                 if targets:
                     target = targets[-1]
-                elif type == 'BPNN': # for RadScorpionBodyPart
+                # Fallout 3 RadScorpionBodyPart
+                # Fallout NV NVVoidBodyPartData, NVraven02
+                elif type == 'BPNN':
                     target = self.getDefault()
                     record.__getattribute__(self.attr).append(target)
             slots = []
@@ -1507,10 +1509,11 @@ class MreEfsh(MelRecord):
                 unpacked = ins.unpack('B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI',size,readId)
             elif size == 244:
                 unpacked = ins.unpack('B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11f',size,readId)
+            # Size of Test Plugin and FormID 00000144 in FalloutNV.esm
             elif size == 224:
                 unpacked = ins.unpack('B3s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs6f',size,readId)
             else:
-                raise "Unexpected size encountered for EFSH subrecord: %s" % size
+                raise "Unexpected size encountered for EFSH:DATA subrecord: %s" % size
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1677,7 +1680,7 @@ class MreFlst(MelRecord):
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list
         #--Set of items deleted by list (Deflst mods) unused for Skyrim
-        self.deflsts = None
+        self.deflsts = None #--Set of items deleted by list (Deflst mods)
 
     def mergeFilter(self,modSet):
         """Filter out items that don't come from specified modSet."""
@@ -1692,6 +1695,7 @@ class MreFlst(MelRecord):
         #--Remove items based on other.removes
         if other.deflsts:
             removeItems = self.items & other.deflsts
+            #self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
             self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
             self.items = (self.items | other.deflsts)
         hasOldItems = bool(self.items)
@@ -1705,6 +1709,7 @@ class MreFlst(MelRecord):
                 newItemsAdd(fid)
         if newItems:
             self.items |= newItems
+            #self.fids.sort(key=attrgetter('level'))
             self.formIDInList.sort
         #--Is merged list different from other? (And thus written to patch.)
         if len(self.formIDInList) != len(other.formIDInList):
@@ -1825,8 +1830,8 @@ class MreIdle(MelRecord):
         MelModel(),
         MelConditions(),
         MelStruct('ANAM','II',(FID,'parent'),(FID,'prevId')),
-        MelIdleData('DATA','3BshBs','group','loopMin','loopMax','unknown1',
-                    'delay','flags','unknown2'),
+        MelIdleData('DATA','3BshBs','group','loopMin','loopMax',('unknown1',null1),
+                    'delay','flags',('unknown2',null1)),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
@@ -1930,7 +1935,7 @@ class MreImad(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreImgs(MelRecord):
-    """Imgs Item"""
+    """Image Space"""
     classType = 'IMGS'
 
     _flags = Flags(0L,Flags.getNames(
@@ -2581,6 +2586,7 @@ class MreNpc(MreActor):
         (12,'noBloodDecal'),
         (20,'noVATSMelee'),
         (22,'canBeAllRaces'),
+        (23,'autocalcService'), # FNV Only
         (26,'noKnockDown'),
         (27,'notPushable'),
         (30,'noRotatingHeadTrack'),))
@@ -2701,45 +2707,6 @@ class MreNpc(MreActor):
         MelStruct('NAM7','f',('weight',0L)),
         )
     __slots__ = MreActor.__slots__ + melSet.getSlotsUsed()
-
-    # NPCs do not have an FNAM subrecord or any equivalent
-    # def setRace(self,race):
-    #     """Set additional race info."""
-    #     self.race = race
-    #     #--Model
-    #     if not self.model:
-    #         self.model = self.getDefault('model')
-    #     if race in (0x23fe9,0x223c7): # Argonian, Khajiit
-    #         self.model.modPath = r"Characters\_Male\SkeletonBeast.NIF"
-    #     else:
-    #         self.model.modPath = r"Characters\_Male\skeleton.nif"
-    #     #--FNAM
-    #     # Needs Updating for Fallout 3
-    #     # American
-    #     fnams = {
-    #         0x00424a : 0xdf93 ,#--AfricanAmerican
-    #         0x0042be : 0x22fb ,#--AfricanAmerican Child
-    #         0x0042bf : 0x08ab ,#--AfricanAmerican Old
-    #         0x0987de : 0x3dbc ,#--AfricanAmerican Old Aged
-    #         0x04bf72 : 0x854f ,#--AfricanAmerican Raider
-    #         0x0038e6 : 0x8b1b ,#--Asian
-    #         0x0042c0 : 0x7277 ,#--Asian Child
-    #         0x0042c1 : 0x77e5 ,#--Asian Old
-    #         0x0987dd : 0x62ff ,#--Asian Old Aged
-    #         0x04bf71 : 0x83e0 ,#--Asian Raider
-    #         0x000019 : 0x8778 ,#--Caucasian
-    #         0x0042c2 : 0x2e79 ,#--Caucasian Child
-    #         0x0042c3 : 0x2381 ,#--Caucasian Old
-    #         0x0987df : 0x8295 ,#--Caucasian Old Aged
-    #         0x04bb8d : 0x383b ,#--Caucasian Raider
-    #         0x003b3e : 0xdb71 ,#--Ghoul
-    #         0x0038e5 : 0x010c ,#--Hispanic
-    #         0x0042c4 : 0x6c40 ,#--Hispanic Child
-    #         0x0042c5 : 0x99ad ,#--Hispanic Old
-    #         0x0987dc : 0xac2d ,#--Hispanic Old Aged
-    #         0x04bf70 : 0xba0f ,#--Hispanic Raider
-    #         }
-    #     self.fnam = fnams.get(race,0x8778)
 
 #------------------------------------------------------------------------------
 class MrePack(MelRecord):
@@ -3540,6 +3507,7 @@ class MreRads(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreRefr(MelRecord):
+    """Placed Object"""
     classType = 'REFR'
     _flags = Flags(0L,Flags.getNames('visible', 'canTravelTo','showAllHidden'))
     _parentFlags = Flags(0L,Flags.getNames('oppositeParent'))
