@@ -1076,8 +1076,15 @@ class INIInfo(IniFile):
 
 #------------------------------------------------------------------------------
 from .save_files import get_save_header_type
-from ._saves import PluggyFile, ObseFile
+from ._saves import PluggyFile
+from . import cosaves
+
 class SaveInfo(FileInfo):
+    try:
+        _cosave_type = cosaves.get_cosave_type(bush.game.fsName)
+    except AttributeError:
+        _cosave_type = cosaves.ACoSaveFile
+
     def getFileInfos(self): return saveInfos
 
     def getStatus(self):
@@ -1122,12 +1129,10 @@ class SaveInfo(FileInfo):
             pluggy.mapMasters(masterMap)
             pluggy.safeSave()
         #--OBSE/SKSE file?
-        obsePath = CoSaves.getPaths(self.abs_path)[1]
-        if masterMap and obsePath.exists():
-            obse = ObseFile(obsePath)
-            obse.load()
-            obse.mapMasters(masterMap)
-            obse.safeSave()
+        cosave = self.get_cosave()
+        if cosave is not None:
+            cosave.map_masters(masterMap)
+            cosave.write_cosave_safe()
 
     def coSaves(self):
         """Returns CoSaves instance corresponding to self."""
@@ -1137,6 +1142,18 @@ class SaveInfo(FileInfo):
         save_paths = super(SaveInfo, self).backup_paths(first)
         save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
         return save_paths
+
+    def get_cosave(self):
+        """:rtype: cosaves.ACoSaveFile"""
+        if self._cosave_type is None: return None
+        cosave_path = self.getPath().root + u'.' + bush.game.se.shortName.lower()
+        try:
+            return self._cosave_type(cosave_path) # type: cosaves.ACoSaveFile
+        except (OSError, FileError) as e:
+            if isinstance(e, FileError) or (
+                        isinstance(e, OSError) and e.errno != errno.ENOENT):
+                deprint(u'Failed to open %s' % cosave_path, traceback=True)
+            return None
 
 #------------------------------------------------------------------------------
 from . import bsa_files
