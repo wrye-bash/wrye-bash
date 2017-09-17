@@ -76,8 +76,11 @@ ECHO Launching Wrye Bash 307 in debug mode
 ECHO Launching Wrye Bash 307 in debug mode >>%OUTFILE%
 :: Line below won't do due to us redirecting stdout/err inside bash.py
 SET PYTHONIOENCODING=UTF8
-"%PYTHON%" "Wrye Bash Launcher.pyw" -d %1 %2 %3 %4 %5 %6 %7 %8 %9 >>%OUTFILE% 2>&1
-
+:: The following line checks if %OUTFILE% is writeable to determine if there is
+:: a second instance of wrye bash already running
+2>nul (
+   >>%OUTFILE% (call )
+) && (("%PYTHON%" "Wrye Bash Launcher.pyw" -d %1 %2 %3 %4 %5 %6 %7 %8 %9 >>%OUTFILE% 2>&1) || echo.) || (echo Cannot launch Wrye Bash because another instance is already running) && PAUSE
 
 :END
 ENDLOCAL && EXIT /B

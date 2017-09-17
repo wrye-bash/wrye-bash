@@ -2011,18 +2011,6 @@ class SubProgress(Progress):
         self.state = state
 
 #------------------------------------------------------------------------------
-class ProgressFile(Progress): # CRUFT
-    """Prints progress to file (stdout by default)."""
-    def __init__(self,full=1.0,out=None):
-        Progress.__init__(self,full)
-        self.out = out or sys.stdout
-
-    def _do_progress(self, progress, message):
-        msg = u'%0.2f %s\n' % (progress,message)
-        try: self.out.write(msg)
-        except UnicodeError: self.out.write(msg.encode('mbcs'))
-
-#------------------------------------------------------------------------------
 def readCString(ins, file_path):
     """Read null terminated string, dropping the final null byte."""
     byte_list = []

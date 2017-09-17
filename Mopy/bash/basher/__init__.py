@@ -2217,11 +2217,9 @@ class InstallersList(balt.UIList):
         self.data_store.irefresh(what='N')
         self.RefreshUI()
 
-    def _extractOmods(self, omodnames):
+    def _extractOmods(self, omodnames, progress):
         failed = []
         completed = []
-        progress = balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
-                                 abort=True)
         progress.setFull(len(omodnames))
         try:
             for i, omod in enumerate(omodnames):
@@ -2271,7 +2269,6 @@ class InstallersList(balt.UIList):
             progress(len(omodnames), _(u'Refreshing...'))
             self.data_store.irefresh(what='I')
             self.RefreshUI()
-            progress.Destroy()
 
     def _askCopyOrMove(self, filenames):
         action = settings['bash.installers.onDropFiles.action']
@@ -2320,7 +2317,10 @@ class InstallersList(balt.UIList):
                       bosh.converters.ConvertersData.validConverterName(x)]
         filenames = [x for x in filenames if x.isdir()
                      or x.cext in archives.readExts and x not in converters]
-        if len(omodnames) > 0: self._extractOmods(omodnames)
+        if len(omodnames) > 0:
+            with balt.Progress(_(u'Extracting OMODs...'), u'\n' + u' ' * 60,
+                                 abort=True) as prog:
+                self._extractOmods(omodnames, prog)
         if not filenames and not converters:
             return
         action = self._askCopyOrMove(filenames)
@@ -3974,28 +3974,26 @@ class BashApp(wx.App):
         #--OnStartup SplashScreen and/or Progress
         #   Progress gets hidden behind splash by default, since it's not very informative anyway
         splashScreen = None
-        progress = balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
-                                 elapsed=False)
-        # Is splash enabled in ini ?
-        if bass.inisettings['EnableSplashScreen']:
-            if bass.dirs['images'].join(u'wryesplash.png').exists():
-                try:
-                        splashScreen = balt.WryeBashSplashScreen()
-                        splashScreen.Show()
-                except:
-                        pass
-        #--Constants
-        self.InitResources()
-        #--Init Data
-        progress(0.2, _(u'Initializing Data'))
-        self.InitData(progress)
-        progress(0.7, _(u'Initializing Version'))
-        self.InitVersion()
-        #--MWFrame
-        progress(0.8, _(u'Initializing Windows'))
-        frame = BashFrame() # Link.Frame global set here
-        progress(1.0)
-        progress.Destroy()
+        with balt.Progress(u'Wrye Bash', _(u'Initializing') + u' ' * 10,
+                           elapsed=False) as progress:
+            # Is splash enabled in ini ?
+            if bass.inisettings['EnableSplashScreen']:
+                if bass.dirs['images'].join(u'wryesplash.png').exists():
+                    try:
+                            splashScreen = balt.WryeBashSplashScreen()
+                            splashScreen.Show()
+                    except:
+                            pass
+            #--Constants
+            self.InitResources()
+            #--Init Data
+            progress(0.2, _(u'Initializing Data'))
+            self.InitData(progress)
+            progress(0.7, _(u'Initializing Version'))
+            self.InitVersion()
+            #--MWFrame
+            progress(0.8, _(u'Initializing Windows'))
+            frame = BashFrame() # Link.Frame global set here
         if splashScreen:
             splashScreen.Destroy()
             splashScreen.Hide() # wont be hidden if warnTooManyModsBsas warns..

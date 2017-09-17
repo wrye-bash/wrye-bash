@@ -30,24 +30,45 @@ loop."""
 import atexit
 import codecs
 import os
-from time import time, sleep
-import sys
 import platform
+import sys
 import traceback
-
+# Local
 import bass
 import exception
-# NO LOCAL IMPORTS HERE !
-basher = balt = barb = None
+# NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
+basher = balt = barb = bolt = None
+_wx = None
 is_standalone = hasattr(sys, 'frozen')
 
-def _import_wx():
-    """:rtype: wx | None"""
+def _import_bolt(opts):
+    """Import bolt or show a tkinter error and exit if unsuccessful.
+
+    :param opts: command line arguments"""
+    global bolt
     try:
-        import wx
+        # First of all set the language, set on importing bolt
+        bass.language = opts.language
+        import bolt  # bass.language must be set
+    except Exception as e:
+        but_kwargs = {'text': u"QUIT", 'fg': 'red'}  # foreground button color
+        msg = u'\n'.join([dump_environment(), u'', u'Unable to load bolt:',
+                          traceback.format_exc(e), u'Exiting.'])
+        _tkinter_error_dial(msg, but_kwargs)
+        sys.exit(1)
+
+def _import_wx():
+    """Import wxpython or show a tkinter error and exit if unsuccessful."""
+    global _wx
+    try:
+        import wx as _wx
     except ImportError:
-        wx = None
-    return wx
+        but_kwargs = {'text': _(u"QUIT"),
+                      'fg': 'red'}  # foreground button color
+        msg = u'\n'.join([dump_environment(), u'',
+            _(u'Unable to locate wxpython installation. Exiting.')])
+        _tkinter_error_dial(msg, but_kwargs)
+        sys.exit(1)
 
 #------------------------------------------------------------------------------
 def SetHomePath(homePath):
@@ -103,67 +124,24 @@ def cmdRestore(opts):
     backup.Apply()
     return should_quit
 
-#------------------------------------------------------------------------------
-# adapted from: http://www.effbot.org/librarybook/msvcrt-example-3.py
-pidpath, lockfd = None, -1
-def oneInstanceChecker(_wx, bolt, opts):
-    global pidpath, lockfd
-    pidpath = bolt.Path.getcwd().root.join(u'pidfile.tmp')
-    lockfd = None
+def assure_single_instance(instance):
+    """Ascertain that only one instance of Wrye Bash is running.
 
-    if opts.restarting: # wait up to 10 seconds for previous instance to close
-        t = time()
-        while (time()-t < 10) and pidpath.exists(): sleep(1)
+    If this is the second instance running, then display an error message and
+    exit.
 
-    try:
-        # if a stale pidfile exists, remove it (this will fail if the file
-        # is currently locked)
-        if pidpath.exists(): os.remove(pidpath.s)
-        lockfd = os.open(pidpath.s, os.O_CREAT|os.O_EXCL|os.O_RDWR)
-        os.write(lockfd, "%d" % os.getpid())
-    except OSError as e:
-        # bolt.deprint('One instance checker error: %r' % e, traceback=True)
-        # lock file exists and is currently locked by another process
+    :type instance: wx.SingleInstanceChecker"""
+    if instance.IsAnotherRunning():
+        bolt.deprint(u'Only one instance of Wrye Bash can run. Exiting.')
         msg = _(u'Only one instance of Wrye Bash can run.')
-        try:
-            import balt
-            if balt.canVista:
-                balt.vistaDialog(None,
-                    message=msg,
-                    title=u'',
-                    icon='error',
-                    buttons=[(True,'ok')],
-                    )
-            else:
-                if _wx:
-                    _app = _wx.App(False)
-                    with _wx.MessageDialog(None, msg, _(u'Wrye Bash'),
-                                          _wx.ID_OK) as dialog:
-                        dialog.ShowModal()
-                else:
-                    print 'error: %r' % e
-                    but_kwargs = {'text': _(u"Ok")}
-                    _tkinter_error_dial(msg, but_kwargs)
-        except Exception as e:
-            print 'error: %r' % e
-            pass
-        try:
-            print msg
-        except UnicodeError:
-            print msg.encode(bolt.Path.sys_fs_enc)
-        return False
-
-    return True
+        _app = _wx.App(False)
+        with _wx.MessageDialog(None, msg, _(u'Wrye Bash'), _wx.OK) as dialog:
+            dialog.ShowModal()
+        sys.exit(1)
 
 def exit_cleanup():
-    try:
-        os.close(lockfd)
-        os.remove(pidpath.s)
-    except OSError as e:
-        print e
-
     # Cleanup temp installers directory
-    import tempfile, bolt
+    import tempfile
     tmpDir = bolt.GPath(tempfile.tempdir)
     for file_ in tmpDir.list():
         if file_.cs.startswith(u'wryebash_'):
@@ -238,36 +216,70 @@ def exit_cleanup():
                 print
                 raise
 
-def dump_environment(_wx, bolt):
+def dump_environment():
     import locale
-    print u"Wrye Bash starting"
-    print u"Using Wrye Bash Version %s%s" % (
-        bass.AppVersion, (u' ' + _(u'(Standalone)')) if is_standalone else u'')
-    print u"OS info:", platform.platform()
-    print u"Python version: %d.%d.%d" % (
-        sys.version_info[0],sys.version_info[1],sys.version_info[2])
-    if _wx is not None:
-        print u"wxPython version: %s" % _wx.version()
-    else:
-        print u"wxPython not found"
-    # Standalone: stdout will actually be pointing to stderr, which has no
-    # 'encoding' attribute
-    if bolt.scandir is not None: print 'Using scandir' , bolt.scandir.__version__
-    print u"input encoding: %s; output encoding: %s; locale: %s" % (
-        sys.stdin.encoding,getattr(sys.stdout,'encoding',None),
-        locale.getdefaultlocale())
     fse = sys.getfilesystemencoding()
-    print u"filesystem encoding: %s" % fse, (
-        (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u'')
+    msg = u'\n'.join([
+        u'Wrye Bash starting',
+        u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
+            (u' ' + _(u'(Standalone)')) if is_standalone else u''
+        ),
+        u'OS info: %s' % platform.platform(),
+        u'Python version: %d.%d.%d' % (
+            sys.version_info[0],sys.version_info[1],sys.version_info[2]
+        ),
+        u'wxPython version: %s' % _wx.version() if _wx is not None else \
+            u'wxPython not found',
+        # Standalone: stdout will actually be pointing to stderr, which has no
+        # 'encoding' attribute
+        u'input encoding: %s; output encoding: %s; locale: %s' % (
+            sys.stdin.encoding,getattr(sys.stdout,'encoding',None),
+            locale.getdefaultlocale()
+        ),
+        u'filesystem encoding: %s%s' % (fse,
+            (u' - using %s' % bolt.Path.sys_fs_enc) if bolt is not None
+                                                       and not fse else u'')
+    ])
+    if bolt.scandir is not None:
+        msg = u'\n'.join( [msg, 'Using scandir ' + bolt.scandir.__version__])
+    print msg
+    return msg
 
 # Main ------------------------------------------------------------------------
 def main(opts):
-    # First of all set the language, set on importing bolt
-    bass.language = opts.language
-    import bolt # bass.language must be set
+    """Run the Wrye Bash main loop.
+
+    :param opts: command line arguments
+    :type opts: Namespace"""
+    # First import bolt, needed for localization of error messages
+    _import_bolt(opts)
+    # Then import wx so we can style our error messages nicely
+    _import_wx()
+    try:
+        _main(opts)
+    except Exception as e:
+        msg = u'\n'.join([
+            _(u'Wrye Bash encountered an error.'),
+            _(u'Please post the information below to the official thread at:'),
+            _(u'https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games/& or '),
+            _(u'https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4/'),
+            u'',
+            traceback.format_exc(e)
+        ])
+        _close_dialog_windows()
+        _show_wx_error(msg)
+        sys.exit(1)
+
+def _main(opts):
+    """Run the Wrye Bash main loop.
+
+    This function is marked private because it should be inside a try-except
+    block. Call main() from the outside.
+
+    :param opts: command line arguments
+    """
     import env # env imports bolt (this needs fixing)
     bolt.deprintOn = opts.debug
-    wx = _import_wx()
     # useful for understanding context of bug reports
     if opts.debug or is_standalone:
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
@@ -281,11 +293,7 @@ def main(opts):
         old_stderr = errLog
 
     if opts.debug:
-        dump_environment(wx, bolt)
-    if wx is None: # not much use in continuing if wx is not present
-        _showErrorInGui(None, msg=_(u'Unable to locate wxpython installation'),
-                        bolt=bolt)
-        return
+        dump_environment()
 
     # ensure we are in the correct directory so relative paths will work
     # properly
@@ -298,6 +306,10 @@ def main(opts):
     if pathToProg:
         os.chdir(pathToProg)
     del pathToProg
+
+    # Check if there are other instances of Wrye Bash running
+    instance = _wx.SingleInstanceChecker('Wrye Bash')
+    assure_single_instance(instance)
 
     # Detect the game we're running for ---------------------------------------
     import bush
@@ -319,7 +331,7 @@ def main(opts):
             msgtext += _(
                 u'To prevent this message in the future, use the -o command '
                 u'line argument or the bash.ini to specify the game path')
-        retCode = _wxSelectGame(ret, msgtext, wx)
+        retCode = _wxSelectGame(ret, msgtext)
         if retCode is None:
             bolt.deprint(u"No games were found or Selected. Aborting.")
             return
@@ -358,10 +370,13 @@ def main(opts):
         barb.opts = opts
     except (exception.PermissionError,
             exception.BoltError, ImportError) as e:
-        _showErrorInGui(e, _wx=wx, bolt=bolt)
+        msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
+            u'Please ensure Wrye Bash is correctly installed.'), u'\n',
+                          traceback.format_exc(e)])
+        _close_dialog_windows()
+        _show_wx_error(msg)
         return
 
-    if not oneInstanceChecker(wx, bolt, opts): return
     atexit.register(exit_cleanup)
     basher.InitSettings()
     basher.InitLinks()
@@ -380,14 +395,13 @@ def main(opts):
         app = basher.BashApp()
 
     if not is_standalone and (
-        not _rightWxVersion(wx) or not _rightPythonVersion()): return
+        not _rightWxVersion() or not _rightPythonVersion()): return
 
     # process backup/restore options
     # quit if either is true, but only after calling both
     should_quit = cmdBackup(opts)
     should_quit = cmdRestore(opts) or should_quit
     if should_quit: return
-
     if env.isUAC:
         uacRestart = False
         if not opts.noUac and not opts.uac:
@@ -411,60 +425,58 @@ def main(opts):
     app.Init() # Link.Frame is set here !
     app.MainLoop()
 
-# Show error in gui -----------------------------------------------------------
-def _showErrorInGui(e, msg=None, _wx=None, bolt=None):
-    """Try really hard to be able to show the error in the GUI."""
-    if e:
-        with bolt.sio() as o:
-            traceback.print_exc(file=o)
-            msg = o.getvalue()
-    else:
-        msg = msg
-    if bolt.deprintOn: print msg
-    title = _(u'Error! Unable to start Wrye Bash.')
-    msg = _(
-        u'Please ensure Wrye Bash is correctly installed.') + u'\n\n\n%s' % msg
-    try: # try really hard to be able to show the error in any GUI
-        _showErrorInAnyGui(title + u'\n\n' + msg, _wx)
-    except StandardError:
-        print 'An error has occurred with Wrye Bash, and could not be ' \
-              'displayed.'
-        print 'The following is the error that occurred while trying to ' \
-              'display the first error:'
-        try:
-            traceback.print_exc()
-        except:
-            print '  An error occurred while trying to display the' \
-                  ' second error.'
-        print 'The following is the error that could not be displayed:'
-    if e: raise e, None, sys.exc_info()[2]
-
-def _showErrorInAnyGui(msg, _wx=None):
-    if _wx:
-        class ErrorMessage(_wx.Frame):
-            def __init__(self):
-                _wx.Frame.__init__(self, None, title=u'Wrye Bash')
-                self.panel = panel = _wx.Panel(self)
+def _show_wx_error(msg):
+    """Shows an error message in a wx window."""
+    try:
+        class MessageBox(_wx.Dialog):
+            def __init__(self, msg):
+                _wx.Dialog.__init__(self, None, -1, title=_('Wrye Bash Error'),
+                                    size=(400, 300),
+                                    style=_wx.DEFAULT_DIALOG_STYLE |
+                                          _wx.STAY_ON_TOP |
+                                          _wx.DIALOG_NO_PARENT |
+                                          _wx.RESIZE_BORDER)
                 sizer = _wx.BoxSizer(_wx.VERTICAL)
-                sizer.Add(_wx.TextCtrl(panel, value=msg,
-                                       style=_wx.TE_MULTILINE | _wx.TE_READONLY
-                                             | _wx.TE_BESTWRAP),
-                          1, _wx.GROW | _wx.ALL, 5)
-                button = _wx.Button(panel, _wx.ID_CANCEL, _(u'Quit'))
+                text = _wx.TextCtrl(self,
+                                    style=_wx.TE_MULTILINE | _wx.TE_BESTWRAP |
+                                          _wx.TE_READONLY | _wx.BORDER_NONE)
+                text.SetValue(msg)
+                text.SetBackgroundColour(_wx.SystemSettings.GetColour(4))
+                sizer.Add(text, proportion=1, flag=_wx.GROW | _wx.ALL,
+                          border=5)
+                button = _wx.Button(self, _wx.ID_CANCEL, _(u'Quit'))
                 button.SetDefault()
-                sizer.Add(button, 0, _wx.GROW | _wx.ALL ^ _wx.TOP, 5)
-                self.Bind(_wx.EVT_BUTTON, lambda __event: self.Close(True))
-                panel.SetSizer(sizer)
-        _app = _wx.App(False)
-        frame = ErrorMessage()
-        frame.Show()
-        frame.Center()
-        _app.MainLoop()
-        del _app
-    else:
-        but_kwargs = {'text' : _(u"QUIT"), 'fg':'red'} #foreground button color
-        # Python mode, use Tkinter
-        _tkinter_error_dial(msg, but_kwargs)
+                sizer.Add(button, proportion=0,
+                          flag=_wx.ALIGN_CENTER | _wx.ALL, border=5)
+                self.SetSizer(sizer)
+                # sizer.Fit(self)
+                self.ShowModal()
+                self.Destroy()
+
+        print(msg) # Print msg into error log.
+        app = _wx.GetApp() # wx.App is a singleton, get it if it exists.
+        if app:
+            MessageBox(msg)
+            app.Exit()
+        else:
+            app = _wx.App(False) # wx.App is not instantiated, do so now .
+            if app:
+                MessageBox(msg)
+                app.Exit()
+            else:
+                # Instantiating wx.App failed, fallback to tkinter.
+                but_kwargs = {'text': _(u"QUIT"),
+                              'fg': 'red'}  # foreground button color
+                _tkinter_error_dial(msg, but_kwargs)
+
+    except StandardError as e:
+        print u'Wrye Bash encountered an error but could not display it.'
+        print u'The following is the error that occurred when displaying the '\
+              u'first error:'
+        try:
+            print traceback.format_exc(e)
+        except Exception:
+            print u'   An error occurred while displaying the second error.'
 
 def _tkinter_error_dial(msg, but_kwargs):
     import Tkinter
@@ -480,12 +492,23 @@ def _tkinter_error_dial(msg, but_kwargs):
     w.pack()
     root_widget.mainloop()
 
+def _close_dialog_windows():
+    """Close any additional windows opened by wrye bash (e.g Splash, Dialogs).
+
+    This will not close the main bash window (BashFrame) because closing that
+    results in virtual function call exceptions."""
+    for window in _wx.GetTopLevelWindows():
+        if basher is None or not isinstance(window, basher.BashFrame):
+            if isinstance(window, _wx.Dialog):
+                window.Destroy()
+            window.Close()
+
 class _AppReturnCode(object):
     def __init__(self, default=None): self.value = default
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _wxSelectGame(ret, msgtext, _wx):
+def _wxSelectGame(ret, msgtext):
 
     class GameSelect(_wx.Frame):
         def __init__(self, gameNames, callback):
@@ -522,7 +545,7 @@ def _wxSelectGame(ret, msgtext, _wx):
     return retCode.get()
 
 # Version checks --------------------------------------------------------------
-def _rightWxVersion(_wx):
+def _rightWxVersion():
     wxver = _wx.version()
     wxver_tuple = _wx.VERSION
     if wxver != '2.8.12.1 (msw-unicode)' and wxver_tuple < (2,9):
