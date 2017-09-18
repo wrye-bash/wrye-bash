@@ -274,7 +274,7 @@ def init():
     # statement - in otherwords, nothing happens.  This means any lines that
     # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
-    brec.ModReader.recHeader = RecordHeader
+    # brec.ModReader.recHeader = RecordHeader
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (

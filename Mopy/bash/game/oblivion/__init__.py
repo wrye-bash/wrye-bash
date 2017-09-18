@@ -379,61 +379,6 @@ class esp:
         topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
 
 #--Mod I/O
-class RecordHeader(BaseRecordHeader):
-    size = 20
-
-    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
-        self.recType = recType
-        self.size = size
-        if recType == 'GRUP':
-            self.label = arg1
-            self.groupType = arg2
-            self.stamp = arg3
-        else:
-            self.flags1 = arg1
-            self.fid = arg2
-            self.flags2 = arg2
-        self.extra = extra
-
-    @staticmethod
-    def unpack(ins):
-        """Returns a RecordHeader object by reading the input stream."""
-        rec_type,size,uint0,uint1,uint2 = ins.unpack('=4s4I',20,'REC_HEADER')
-        #--Bad?
-        if rec_type not in esp.recordTypes:
-            raise ModError(ins.inName,u'Bad header type: '+repr(rec_type))
-        #--Record
-        if rec_type != 'GRUP':
-            pass
-        #--Top Group
-        elif uint1 == 0: # groupType == 0 (Top Group)
-            str0 = struct.pack('I',uint0)
-            if str0 in esp.topTypes:
-                uint0 = str0
-            elif str0 in esp.topIgTypes:
-                uint0 = esp.topIgTypes[str0]
-            else:
-                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
-        return RecordHeader(rec_type,size,uint0,uint1,uint2)
-
-    def pack(self):
-        """Returns the record header packed into a string for writing to
-        file."""
-        if self.recType == 'GRUP':
-            if isinstance(self.label, str):
-                return struct.pack('=4sI4sII', self.recType, self.size,
-                                   self.label, self.groupType, self.stamp)
-            elif isinstance(self.label, tuple):
-                return struct.pack('=4sIhhII', self.recType, self.size,
-                                   self.label[0], self.label[1],
-                                   self.groupType, self.stamp)
-            else:
-                return struct.pack('=4s4I', self.recType, self.size,
-                                   self.label, self.groupType, self.stamp)
-        else:
-            return struct.pack('=4s4I', self.recType, self.size, self.flags1,
-                               self.fid, self.flags2)
-
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
@@ -457,7 +402,6 @@ def init():
     # statement - in otherwords, nothing happens.  This means any lines that
     # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
-    brec.ModReader.recHeader = RecordHeader
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (

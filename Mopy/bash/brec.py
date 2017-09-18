@@ -106,24 +106,27 @@ class BaseRecordHeader(object):
     """Virtual base class that all game types must implement.
     The minimal implementations must have the following attributes:
 
-    recType
-    size
+    rec_type
+    rec_header_size
 
-    if recType == 'GRUP', the following additional attributes must exist
-     groupType
-     label (already decoded)
-     stamp
+    if rec_type == 'GRUP', the following additional attributes must exist
+     arg2 = groupType
+     arg3 = label (already decoded)
+     arg4 = stamp
+     arg5 = extra for 24 byte header, contains Form Version
 
-    if recType != 'GRUP', the following addition attributes must exist
-     flags1
-     fid
-     flags2
+    if rec_type != 'GRUP', the following addition attributes must exist
+     arg2 = flags1
+     arg3 = fid
+     arg4 = flags2
+     arg5 = extra for 24 byte header, contains Form Version
 
     All other data may be store in any manner, as they will not be
     accessed by the ModReader/ModWriter"""
 
-    def __init__(self,recType,arg1,arg2,arg3):
-        """args1-arg3 correspond to the attrs above, depending on recType"""
+    def __init__(self, rec_type, rec_header_size, arg2, arg3, arg4=None,
+        arg5=None):
+        """args2-arg5 correspond to the attrs above, depending on rec_type"""
         pass
 
     @staticmethod
@@ -136,6 +139,171 @@ class BaseRecordHeader(object):
         raise exception.AbstractError
 
 #------------------------------------------------------------------------------
+class RecordHeader(BaseRecordHeader):
+    """
+    TODO: add a method to return a tuple of the block coordinates. These
+    coordinates should not be packed and unpacked aside from a separate method
+    to avoid human error and reverse them making X and Y become Y and X by
+    mistake.
+
+    Pack or unpack the record's header.
+    """
+
+    # size = RecordHeader.get_magic_number()
+
+    pack_formats = {
+        'RECORD': ('=4s5I', '=4s4I'),
+        'GRUP0' : ('=4sI4s3I', '=4sI4s2I'),
+        'GRUP1' : ('=4s5I', '=4s4I'),
+        'GRUP2' : ('=4sIi3I', '=4sIi2I'),
+        'GRUP3' : ('=4sIi3I', '=4sIi2I'),
+        'GRUP4' : ('=4sI2h3I', '=4sI2h2I'),
+        'GRUP5' : ('=4sI2h3I', '=4sI2h2I'),
+        'GRUP6' : ('=4s5I', '=4s4I'),
+        'GRUP7' : ('=4s5I', '=4s4I'),
+        'GRUP8' : ('=4s5I', '=4s4I'),
+        'GRUP9' : ('=4s5I', '=4s4I'),
+        'GRUP10': ('=4s5I', '=4s4I'),
+    }  # use 1 through 10 for 'GRUP' + str(groupType)
+
+    @staticmethod
+    def is_top_group(rec_type):
+        """ Return true when the record type is a top group."""
+        return rec_type == 'GRUP'
+
+    @classmethod
+    def set_magic_number(cls, current_game):
+        """ Set default record rec_header_size is 24 unless Oblivion.
+        When Oblivion rec_header_size is 20. Assign 0 or 1 for list element
+        in dictionary."""
+        cls.oblivion = current_game == 'Oblivion'
+        if current_game == 'Oblivion':
+            cls.rec_header_size = 20
+        else:
+            cls.rec_header_size = 24
+
+    @classmethod
+    def get_magic_number(cls):
+        """ Return Record size, 20 for Oblivion or 24 for all other games.
+        This is used in unpack along with the format from the dictionary.
+        For example ins.unpack(format = '=4s5I', record_size = 24, 'REC_HEADER')
+        is now ins.unpack(
+        format = dictionary[ the_key ][ the_list_element ]
+        record_size = RecordHeader.get_magic_number()
+        """
+        return cls.rec_header_size
+
+    @classmethod
+    def is_oblivion(cls):
+        """Return a 0 or 1 for list element of the dictionary key.
+        example pack_formats['RECORD'][0] where 0 is now derived from this
+        class method."""
+        return cls.oblivion
+
+    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,extra=0):
+        """
+        :param recType: signature of record
+                      : For GRUP this is always GRUP
+                      : For Records this will be TES4, GMST, KYWD, etc
+        :param size : size of current record, not entire file
+        :param arg1 : For GRUP type of records to follow, GMST, KYWD, etc
+                    : For Records this is the record flags
+        :param arg2 : For GRUP Group Type 0 to 10 see UESP Wiki
+                    : Record FormID, TES4 records have FormID of 0
+        :param arg3 : For GRUP 2H = possible time stamp, unknown
+                    : Record possible version control in CK
+        :param extra: For GRUP 2H, form_version, unknown
+                    : For Records 2H, form_version, unknown
+        """
+        self.recType = recType
+        self.size = size
+        if self.is_top_group(recType):
+            self.label = arg1
+            self.groupType = arg2
+            self.stamp = arg3
+        else:
+            self.flags1 = arg1
+            self.fid = arg2
+            self.flags2 = arg3
+        self.extra = extra
+
+    @staticmethod
+    def get_unique_label(group_type_or_form, label_or_int):
+        """ Unpack current label_or_int and depending on the Group Type
+        pack label_or_int with the correct cast type. Such as 4 chars,
+        signed integer or two shorts.  Currently the two shorts are not used
+        because in other places of the code, it takes 4 bytes and unpacks it
+        to use as coordinates for the cells.
+        """
+        temp_var = label_or_int
+        if group_type_or_form == 0:
+            temp_var = struct.unpack('=4s', struct.pack('=I',label_or_int))[0]
+        if group_type_or_form in [2, 3]:
+            temp_var = struct.unpack('=i', struct.pack('=I',label_or_int))[0]
+        # if group_type_or_form in [4, 5]:
+        #     temp_var_1, temp_var_2 = struct.unpack('=2h', struct.pack('=I',label_or_int))
+        #     temp_var = (temp_var_1, temp_var_2,)
+        return temp_var
+
+    @staticmethod
+    def unpack(ins):
+        """Returns a RecordHeader object by reading the input stream.
+        Format must be either '=4s5I' 24 bytes for Skyrim or '=4s4I' 20 bytes
+        for Oblivion. There is no way to use methods because nothing has been
+        unpacked prior to this point.
+
+        Unfortunate side effect, Oblivion needs 5 elements and all others need
+        6 elements, so until I find a way to resolve it, an if statement is used.
+        """
+        if RecordHeader.is_oblivion():
+            rec_type, size, uint0, uint1, uint2 = ins.unpack(
+                RecordHeader.pack_formats['RECORD'][
+                    RecordHeader.is_oblivion()],
+                RecordHeader.get_magic_number(), 'REC_HEADER')
+        else:
+            rec_type, size, uint0, uint1, uint2, uint3 = ins.unpack(
+                RecordHeader.pack_formats['RECORD'][
+                    RecordHeader.is_oblivion()],
+                RecordHeader.get_magic_number(), 'REC_HEADER')
+        # Methods may be used now.
+        # --Bad type?
+        import bush
+        if rec_type not in bush.game.esp.recordTypes:
+            raise exception.ModError(ins.inName, u'Bad header type: ' + repr(rec_type))
+        if RecordHeader.is_top_group(rec_type):
+            uint0 = RecordHeader.get_unique_label(uint1, uint0)
+        args = [rec_type, size, uint0, uint1, uint2]
+        if not RecordHeader.is_oblivion(): args.append(uint3)
+        return RecordHeader(*args)
+
+    @staticmethod
+    def get_dict_key(group_type):
+        """Return dictionary key by concatenating 'GRUP' and the Group Type
+        for example GRUP0, GRUP1."""
+        return 'GRUP' + str(group_type)
+
+    def pack(self):
+        """Return the record header packed into a bitstream to be written to file."""
+        if self.is_top_group(self.recType):
+            if self.groupType in [4, 5]:
+                args = [self.pack_formats[self.get_dict_key(self.groupType)][
+                    self.is_oblivion()], self.recType, self.size, self.label[0],
+                    self.label[1], self.groupType, self.stamp]
+                if not self.is_oblivion(): args.append(self.extra)
+                return struct.pack(*args)
+            else:
+                args = [self.pack_formats[self.get_dict_key(self.groupType)][
+                    self.is_oblivion()], self.recType, self.size, self.label,
+                    self.groupType, self.stamp]
+                if not self.is_oblivion(): args.append(self.extra)
+                return struct.pack(*args)
+        else:
+            args = [self.pack_formats['RECORD'][self.is_oblivion()],
+                self.recType, self.size, self.flags1, self.fid, self.flags2]
+            if not self.is_oblivion(): args.append(self.extra)
+            return struct.pack(*args)
+
+#------------------------------------------------------------------------------
 class ModReader:
     """Wrapper around a TES4 file in read mode.
     Will throw a ModReaderror if read operation fails to return correct size.
@@ -143,7 +311,7 @@ class ModReader:
     **ModReader.recHeader must be set to the game's specific RecordHeader
       class type, for ModReader to use.**
     """
-    recHeader = BaseRecordHeader
+    recHeader = RecordHeader
 
     def __init__(self,inName,ins):
         """Initialize."""
