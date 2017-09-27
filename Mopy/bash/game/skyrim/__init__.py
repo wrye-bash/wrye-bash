@@ -223,6 +223,8 @@ dataDirsPlus = {
     u'asi',
     u'skyproc patchers',
     u'calientetools', # bodyslide
+    u'dyndolod',
+    u'tools',
 }
 
 # Installer -------------------------------------------------------------------

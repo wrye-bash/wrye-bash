@@ -334,7 +334,7 @@ class Installer(object):
         u'--', u'omod conversion data%s' % os_sep, u'fomod%s' % os_sep,
         u'wizard images%s' % os_sep)
     _silentSkipsEnd = (
-        u'%sthumbs.db' % os_sep, u'%sdesktop.ini' % os_sep, u'config')
+        u'%sthumbs.db' % os_sep, u'%sdesktop.ini' % os_sep, u'meta.ini', u'config')
 
     # global skips that can be overridden en masse by the installer
     _global_skips = []
@@ -1425,6 +1425,7 @@ class InstallerProject(Installer):
                 if release:
                     out.write(u'*thumbs.db\n')
                     out.write(u'*desktop.ini\n')
+                    out.write(u'*meta.ini\n')
                     out.write(u'--*\\')
             #--Compress
             command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (
