@@ -306,7 +306,7 @@ class MelScrxen(MelFids):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         isFid = (sub_type == 'SCRO')
-        if isFid: value = ins.unpackRef(readId)
+        if isFid: value = ins.unpackRef()
         else: value, = ins.unpack('I',4,readId)
         record.__getattribute__(self.attr).append((isFid,value))
 

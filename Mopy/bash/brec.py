@@ -249,7 +249,7 @@ class ModReader:
             raise exception.ModReadError(self.inName, recType, endPos, self.size)
         return struct.unpack(format,self.ins.read(size))
 
-    def unpackRef(self,recType='----'):
+    def unpackRef(self):
         """Read a ref (fid)."""
         return self.unpack('I',4)[0]
 
@@ -465,7 +465,7 @@ class MelFid(MelBase):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        record.__setattr__(self.attr,ins.unpackRef(readId))
+        record.__setattr__(self.attr,ins.unpackRef())
         if self._debug: print u'  %08X' % (record.__getattribute__(self.attr),)
 
     def dumpData(self,record,out):
@@ -501,7 +501,7 @@ class MelFids(MelBase):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        fid = ins.unpackRef(readId)
+        fid = ins.unpackRef()
         record.__getattribute__(self.attr).append(fid)
         if self._debug: print u' ',hex(fid)
 
@@ -759,7 +759,7 @@ class MelXpci(MelNull):
     """Handler for obsolete MelXpci record. Bascially just discards it."""
     def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        xpci = ins.unpackRef(readId)
+        xpci = ins.unpackRef()
         #--Read ahead and get associated full as well.
         pos = ins.tell()
         (sub_type_, size_) = ins.unpack('4sH', 6, readId + '.FULL')
