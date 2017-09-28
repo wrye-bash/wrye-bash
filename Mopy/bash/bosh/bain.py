@@ -2455,7 +2455,7 @@ class InstallersData(DataStore):
         * Correct underrides in anPackages.
         * Install missing files from active anPackages."""
         progress = progress if progress else bolt.Progress()
-        anPackages = (self[pack] for pack in (anPackages or self.keys()))
+        anPackages = (self[package] for package in (anPackages or self.keys()))
         #--Get remove/refresh files from anPackages
         removes = set()
         for installer in anPackages:

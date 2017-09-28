@@ -78,36 +78,36 @@ class SreNPC(object):
     def load(self,flags,data):
         """Loads variables from data."""
         with sio(data) as ins:
-            def unpack(format,size):
-                return struct.unpack(format,ins.read(size))
+            def _unpack(fmt, fmt_siz):
+                return struct.unpack(fmt, ins.read(fmt_siz))
             flags = SreNPC.flags(flags)
             if flags.form:
-                self.form, = unpack('I',4)
+                self.form, = _unpack('I',4)
             if flags.attributes:
-                self.attributes = list(unpack('8B',8))
+                self.attributes = list(_unpack('8B',8))
             if flags.acbs:
                 acbs = self.acbs = SreNPC.ACBS()
                 (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
-                 acbs.level, acbs.calcMin, acbs.calcMax) = unpack('=I3Hh2H',16)
+                 acbs.level, acbs.calcMin, acbs.calcMax) = _unpack('=I3Hh2H',16)
                 acbs.flags = bush.game.MreNpc._flags(acbs.flags)
             if flags.factions:
-                num, = unpack('H',2)
-                self.factions = list(starmap(unpack, repeat(('=Ib', 5), num)))
+                num, = _unpack('H',2)
+                self.factions = list(starmap(_unpack, repeat(('=Ib', 5), num)))
             if flags.spells:
-                num, = unpack('H',2)
-                self.spells = list(unpack('%dI' % num,4*num))
+                num, = _unpack('H',2)
+                self.spells = list(_unpack('%dI' % num,4*num))
             if flags.ai:
                 self.ai = ins.read(4)
             if flags.health:
-                self.health, self.unused2 = unpack('H2s',4)
+                self.health, self.unused2 = _unpack('H2s',4)
             if flags.modifiers:
-                num, = unpack('H',2)
-                self.modifiers = list(starmap(unpack, repeat(('=Bf', 5), num)))
+                num, = _unpack('H',2)
+                self.modifiers = list(starmap(_unpack, repeat(('=Bf', 5), num)))
             if flags.full:
-                size, = unpack('B',1)
+                size, = _unpack('B',1)
                 self.full = ins.read(size)
             if flags.skills:
-                self.skills = list(unpack('21B',21))
+                self.skills = list(_unpack('21B',21))
         #--Done
 
     def getFlags(self):
@@ -121,47 +121,47 @@ class SreNPC(object):
     def getData(self):
         """Returns self.data."""
         with sio() as out:
-            def pack(fmt, *args):
+            def _pack(fmt, *args):
                 out.write(struct.pack(fmt, *args))
             #--Form
             if self.form is not None:
-                pack('I',self.form)
+                _pack('I',self.form)
             #--Attributes
             if self.attributes is not None:
-                pack('8B',*self.attributes)
+                _pack('8B',*self.attributes)
             #--Acbs
             if self.acbs is not None:
                 acbs = self.acbs
-                pack('=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
+                _pack('=I3Hh2H',int(acbs.flags), acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
                     acbs.calcMin, acbs.calcMax)
             #--Factions
             if self.factions is not None:
-                pack('H',len(self.factions))
+                _pack('H',len(self.factions))
                 for faction in self.factions:
-                    pack('=Ib',*faction)
+                    _pack('=Ib',*faction)
             #--Spells
             if self.spells is not None:
                 num = len(self.spells)
-                pack('H',num)
-                pack('%dI' % num,*self.spells)
+                _pack('H',num)
+                _pack('%dI' % num,*self.spells)
             #--AI Data
             if self.ai is not None:
                 out.write(self.ai)
             #--Health
             if self.health is not None:
-                pack('H2s',self.health,self.unused2)
+                _pack('H2s',self.health,self.unused2)
             #--Modifiers
             if self.modifiers is not None:
-                pack('H',len(self.modifiers))
+                _pack('H',len(self.modifiers))
                 for modifier in self.modifiers:
-                    pack('=Bf',*modifier)
+                    _pack('=Bf',*modifier)
             #--Full
             if self.full is not None:
-                pack('B',len(self.full))
+                _pack('B',len(self.full))
                 out.write(self.full)
             #--Skills
             if self.skills is not None:
-                pack('21B',*self.skills)
+                _pack('21B',*self.skills)
             #--Done
             return out.getvalue()
 
@@ -248,24 +248,24 @@ class PluggyFile:
                                 crc32, crcNew))
         #--Header
         with sio(buff) as ins:
-            def unpack(format,size):
-                return struct.unpack(format,ins.read(size))
+            def _unpack(fmt, fmt_siz):
+                return struct.unpack(fmt, ins.read(fmt_siz))
             if ins.read(10) != 'PluggySave':
                 raise FileError(self.path.tail, u'File tag != "PluggySave"')
-            self.version, = unpack('I',4)
+            self.version, = _unpack('I',4)
             #--Reject versions earlier than 1.02
             if self.version < 0x01020000:
                 raise FileError(self.path.tail,
                                 u'Unsupported file version: %X' % self.version)
             #--Plugins
             self._plugins = []
-            type, = unpack('=B',1)
+            type, = _unpack('=B',1)
             if type != 0:
                 raise FileError(self.path.tail,
                                 u'Expected plugins record, but got %d.' % type)
-            count, = unpack('=I',4)
+            count, = _unpack('=I',4)
             for x in range(count):
-                espid,index,modLen = unpack('=2BI',6)
+                espid,index,modLen = _unpack('=2BI',6)
                 modName = GPath(decode(ins.read(modLen)))
                 self._plugins.append((espid, index, modName))
             #--Other
@@ -282,22 +282,22 @@ class PluggyFile:
         #--Buffer
         with sio() as buff:
             #--Save
-            def pack(format,*args):
-                buff.write(struct.pack(format,*args))
+            def _pack(fmt, *args):
+                buff.write(struct.pack(fmt, *args))
             buff.write('PluggySave')
-            pack('=I',self.version)
+            _pack('=I',self.version)
             #--Plugins
-            pack('=B',0)
-            pack('=I', len(self._plugins))
+            _pack('=B',0)
+            _pack('=I', len(self._plugins))
             for (espid,index,modName) in self._plugins:
                 modName = encode(modName.cs)
-                pack('=2BI',espid,index,len(modName))
+                _pack('=2BI',espid,index,len(modName))
                 buff.write(modName)
             #--Other
             buff.write(self.other)
             #--End control
             buff.seek(-4,1)
-            pack('=I',buff.tell())
+            _pack('=I',buff.tell())
             #--Save
             path = path or self.path
             mtime = mtime or path.exists() and path.mtime
@@ -555,8 +555,8 @@ class SaveFile:
         if not self.canSave: raise StateError(u"Insufficient data to write file.")
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open('wb') as out:
-            def pack(format,*data):
-                out.write(struct.pack(format,*data))
+            def _pack(fmt, *data):
+                out.write(struct.pack(fmt, *data))
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
@@ -565,33 +565,33 @@ class SaveFile:
             out.write(self.header)
             #--Save Header
             pcName = encode(self.pcName)
-            pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
+            _pack('=IIB',5+len(pcName)+1+len(self.postNameHeader),
                 self.saveNum, len(pcName)+1)
             out.write(pcName)
             out.write('\x00')
             out.write(self.postNameHeader)
             #--Masters
-            pack('B',len(self.masters))
+            _pack('B',len(self.masters))
             for master in self.masters:
                 name = encode(master.s)
-                pack('B',len(name))
+                _pack('B',len(name))
                 out.write(name)
             #--Fids Pointer, num records
             fidsPointerPos = out.tell()
-            pack('I',0) #--Temp. Will write real value later.
-            pack('I',len(self.records))
+            _pack('I',0) #--Temp. Will write real value later.
+            _pack('I',len(self.records))
             #--Pre-Globals
             out.write(self.preGlobals)
             #--Globals
-            pack('H',len(self.globals))
+            _pack('H',len(self.globals))
             for iref,value in self.globals:
-                pack('If',iref,value)
+                _pack('If',iref,value)
             #--Pre-Created
             out.write(self.preCreated)
             #--Created
             progress(0.1,_(u'Writing created.'))
             modWriter = ModWriter(out)
-            pack('I',len(self.created))
+            _pack('I',len(self.created))
             for record in self.created:
                 record.dump(modWriter)
             #--Pre-records
@@ -599,21 +599,21 @@ class SaveFile:
             #--Records, temp effects, fids, worldspaces
             progress(0.2,_(u'Writing records.'))
             for fid,recType,flags,version,data in self.records:
-                pack('=IBIBH',fid,recType,flags,version,len(data))
+                _pack('=IBIBH',fid,recType,flags,version,len(data))
                 out.write(data)
             #--Temp Effects, fids, worldids
-            pack('I',len(self.tempEffects))
+            _pack('I',len(self.tempEffects))
             out.write(self.tempEffects)
             #--Fids
             progress(0.9,_(u'Writing fids, worldids.'))
             fidsPos = out.tell()
             out.seek(fidsPointerPos)
-            pack('I',fidsPos)
+            _pack('I',fidsPos)
             out.seek(fidsPos)
-            pack('I',len(self.fids))
+            _pack('I',len(self.fids))
             self.fids.tofile(out)
             #--Worldspaces
-            pack('I',len(self.worldSpaces))
+            _pack('I',len(self.worldSpaces))
             self.worldSpaces.tofile(out)
             #--Done
             progress(1.0,_(u'Writing complete.'))

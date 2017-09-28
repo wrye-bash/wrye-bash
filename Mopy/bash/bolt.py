@@ -188,9 +188,9 @@ def unformatDate(date, formatStr):
 
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
-def round_size(siz):
+def round_size(kbytes):
     """Round non zero sizes to 1 KB."""
-    return formatInteger(0 if siz == 0 else max(siz, 1024) / 1024) + u' KB'
+    return formatInteger(0 if kbytes == 0 else max(kbytes, 1024) / 1024) + u' KB'
 
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):

@@ -137,13 +137,13 @@ class _HashedRecord(object):
     formats = [('Q', struct.calcsize('Q'))]
 
     def load_record(self, ins):
-        fmt, siz = _HashedRecord.formats[0]
-        self.hash, = struct.unpack(fmt, ins.read(siz))
+        fmt, fmt_siz = _HashedRecord.formats[0]
+        self.hash, = struct.unpack(fmt, ins.read(fmt_siz))
 
     def load_record_from_buffer(self, memview, start):
-        fmt, siz = _HashedRecord.formats[0]
+        fmt, fmt_siz = _HashedRecord.formats[0]
         self.hash, = struct.unpack_from(fmt, memview, start)
-        return start + siz
+        return start + fmt_siz
 
     @classmethod
     def total_record_size(cls):

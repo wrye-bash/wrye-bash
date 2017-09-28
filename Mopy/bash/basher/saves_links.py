@@ -380,8 +380,7 @@ class Save_Renumber(EnabledLink):
 #------------------------------------------------------------------------------
 class Save_EditCreatedData(balt.ListEditorData):
     """Data capsule for custom item editing dialog."""
-    def __init__(self,parent,saveFile,recordTypes):
-        """Initialize."""
+    def __init__(self, parent, saveFile, types_set):
         self.changed = False
         self.saveFile = saveFile
         name_nameRecords = self.name_nameRecords = {}
@@ -390,7 +389,7 @@ class Save_EditCreatedData(balt.ListEditorData):
         for index,record in enumerate(saveFile.created):
             if record.recType == 'ENCH':
                 self.enchantments[record.fid] = record.getTypeCopy()
-            elif record.recType in recordTypes:
+            elif record.recType in types_set:
                 record = record.getTypeCopy()
                 if not record.full: continue
                 record.getSize() #--Since type copy makes it changed.
@@ -482,8 +481,8 @@ class Save_EditCreated(OneItemLink):
                  'SPEL':_(u'Rename Spells...'),
                  'ALCH':_(u'Rename Potions...')
                  }
-    recordTypes = {'ENCH': ('ARMO', 'CLOT', 'WEAP'), 'SPEL': ('SPEL',),
-                   'ALCH': ('ALCH',)}
+    rec_types = {'ENCH': {'ARMO', 'CLOT', 'WEAP'}, 'SPEL': {'SPEL'},
+                 'ALCH': {'ALCH'}}
     help = _(u'Allow user to rename custom items (spells, enchantments, etc)')
 
     def __init__(self, save_rec_type):
@@ -499,13 +498,13 @@ class Save_EditCreated(OneItemLink):
             saveFile = bosh._saves.SaveFile(self._selected_info)
             saveFile.load(progress)
         #--No custom items?
-        recordTypes = Save_EditCreated.recordTypes[self.save_rec_type]
-        records = [record for record in saveFile.created if record.recType in recordTypes]
+        types_set = Save_EditCreated.rec_types[self.save_rec_type]
+        records = [rec for rec in saveFile.created if rec.recType in types_set]
         if not records:
             self._showOk(_(u'No items to edit.'))
             return
         #--Open editor dialog
-        data = Save_EditCreatedData(self.window,saveFile,recordTypes)
+        data = Save_EditCreatedData(self.window,saveFile,types_set)
         balt.ListEditor.Display(self.window, self._text, data)
 
 #------------------------------------------------------------------------------

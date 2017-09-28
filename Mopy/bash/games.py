@@ -529,9 +529,16 @@ class TimestampGame(Game):
         return default_time
 
     # Abstract overrides ------------------------------------------------------
+    def __calculate_mtime_order(self, mods=None): # excludes corrupt mods
+        if mods is None: mods = self.mod_infos.keys()
+        mods = sorted(mods) # sort case insensitive (for time conflicts)
+        mods.sort(key=lambda x: self.mod_infos[x].mtime)
+        mods.sort(key=lambda x: not self.mod_infos[x].isEsm())
+        return mods
+
     def _fetch_load_order(self, cached_load_order, cached_active):
         self._rebuild_mtimes_cache() ##: will need that tweaked for lock load order
-        return self.mod_infos.calculateLO()
+        return self.__calculate_mtime_order()
 
     def _fetch_active_plugins(self):
         active, _lo = self._parse_plugins_txt()
@@ -540,7 +547,7 @@ class TimestampGame(Game):
     def _persist_load_order(self, lord, active):
         assert set(self.mod_infos.keys()) == set(lord) # (lord must be valid)
         if len(lord) == 0: return
-        current = self.mod_infos.calculateLO()
+        current = self.__calculate_mtime_order()
         # break conflicts
         older = self.mod_infos[current[0]].mtime # initialize to game master
         for i, mod in enumerate(current[1:]):
@@ -584,7 +591,7 @@ class TimestampGame(Game):
             # should not occur, except if undoing
             bolt.deprint(u'Incomplete load order passed in to set_load_order. '
                 u'Missing: ' + u', '.join(x.s for x in fix_lo.lo_added))
-            lord[:] = self.mod_infos.calculateLO(mods=lord)
+            lord[:] = self.__calculate_mtime_order(mods=lord)
 
 class TextfileGame(Game):
 

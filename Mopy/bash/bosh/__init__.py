@@ -2446,13 +2446,6 @@ class ModInfos(FileInfos):
         iniFiles.append(oblivionIni)
         return iniFiles
 
-    def calculateLO(self, mods=None): # excludes corrupt mods
-        if mods is None: mods = self.keys()
-        mods = sorted(mods) # sort case insensitive (for time conflicts)
-        mods.sort(key=lambda x: self[x].mtime)
-        mods.sort(key=lambda x: not self[x].isEsm())
-        return mods
-
     def create_new_mod(self, newName, selected=(), masterless=False,
                        directory=u'', bashed_patch=False):
         directory = directory or self.store_dir

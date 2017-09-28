@@ -280,9 +280,9 @@ def test_permissions(path, permissions='rwcd'):
         for node in path.list():
             node = path.join(node)
             if not node.isfile(): continue
-            size = node.size
-            if smallsize == -1 or size < smallsize:
-                smallsize = size
+            node_size = node.size
+            if smallsize == -1 or node_size < smallsize:
+                smallsize = node_size
                 ret = node
         return ret
     #--Test read permissions

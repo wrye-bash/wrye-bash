@@ -128,9 +128,9 @@ class SaveFileHeader(object):
 
     def writeMasters(self, ins, out):
         """Rewrites masters of existing save file."""
-        def pack(fmt, *args): out.write(struct.pack(fmt, *args))
+        def _pack(fmt, *args): out.write(struct.pack(fmt, *args))
         out.write(ins.read(self._mastersStart))
-        oldMasters = self._write_masters(ins, out, pack)
+        oldMasters = self._write_masters(ins, out, _pack)
         #--Copy the rest
         for block in iter(partial(ins.read, 0x5000000), ''):
             out.write(block)

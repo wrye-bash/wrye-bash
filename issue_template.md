@@ -1,23 +1,20 @@
 Please see [here](https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug)
-for guidelines on reporting issues. In particular, you must provide the info below:
+for guidelines on reporting issues. In particular, you must provide the info/steps below:
 
 ### Link to the forum thread you reported the issue
 
-**IMPORTANT**: Before posting an issue, be sure to ask at the official threads (linked
-under [Questions & Feedback](https://github.com/wrye-bash/wrye-bash#questions--feedback-)
-on our front page readme). **POST AN ISSUE ON GITHUB _ONLY_ AFTER DOING SO**.
+**IMPORTANT**: Before posting an issue, be sure to ask at the official threads:
+[AFK mods](https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games/&do=getNewComment)
+(or [Bethesda](https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4/) )
+**POST AN ISSUE ON GITHUB _ONLY_ AFTER DOING SO**.
+
 Add the link to your post here:
 
+### Try the latest nightly build:
+
+Download from the [second post in AFK mods thread](https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games/&do=findComment&comment=166863)
+
 ### Info on your installation
-
-* **Your operating system!** If on Windows Vista or later and the game is in
-the default directory (ex: *C:\Program Files (x86)\Bethesda Softworks\Oblivion*),
-please install it somewhere else (like *C:\Games\Oblivion*). This can cause
-lots of problems, due to UAC (User Account Control).
-
-* **Wrye Bash version!** _Also_ specify if you are using Python Wrye Bash, or
-Standalone Wrye Bash exe ( WBSA ). If you're using a development version, be
-sure to include the *commit SHA*.
 
 * You must produce a bashbugdump.log and include its contents in the codebox below
 
@@ -28,7 +25,18 @@ sure to include the *commit SHA*.
     See [here](https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug#the-bashbugdumplog)
 for generating the bugdump
 
-* Are you using a **bash.ini** ? If so, include its contents in the codebox below or if too big attach it to this issue
+* **Your operating system!** If on Windows Vista or later and the game is in
+the default directory (ex: *C:\Program Files (x86)\Bethesda Softworks\Oblivion*),
+please install it somewhere else (like *C:\Games\Oblivion*). This can cause
+lots of problems, due to UAC (User Account Control).
+
+* **Wrye Bash version!** _Also_ specify if you are using Python Wrye Bash, or
+Standalone Wrye Bash exe ( WBSA ). If you're using a development version, be
+sure to include the *commit SHA*.
+
+#### Are you using a **bash.ini** ?
+
+* If so, include its contents in the codebox below, or if too big attach it to this issue
 
     ```
     Contents of the bash.ini
@@ -47,9 +55,9 @@ for generating the bugdump
 of any `stdout/stderr` window that pops up with errors (python tracebacks).
 
 * Is the problem related to the **Bashed Patch** ? If so include the following:
-  * Your Load Order (in spoiler tags). Right click on a column header in the Mods tab > 'List Mods...'.
-  * Your Bashed Tags (in spoiler tags). Right click on a column header in the Mods tab > 'List Bash Tags...'.
-  * Your Bashed Patch config (in spoiler tags). Right click on the Bashed patch in the Mods tab > 'List Patch Config...'.
+  * Your Load Order (attach a txt). Right click on a column header in the Mods tab > 'List Mods...'.
+  * Your Bashed Tags (attach a txt). Right click on a column header in the Mods tab > 'List Bash Tags...'.
+  * Your Bashed Patch config (attach a txt). Right click on the Bashed patch in the Mods tab > 'List Patch Config...'.
 
   Be sure to supply the **minimal load order and patch options that reproduce
   your bug.** That is, deselect all batch patch options and deactivate all the

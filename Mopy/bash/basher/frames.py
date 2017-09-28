@@ -22,7 +22,6 @@
 #
 # =============================================================================
 
-import StringIO
 import re
 import string
 import wx
