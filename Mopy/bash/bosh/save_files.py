@@ -37,19 +37,9 @@ import sys
 from collections import OrderedDict
 from functools import partial
 from .. import bolt
-from ..bolt import decode, cstrip
+from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
+    unpack_short, unpack_float, unpack_str16, unpack_byte
 from ..exception import SaveHeaderError
-
-# Structure wrappers ----------------------------------------------------------
-def unpack_str8(ins): return ins.read(struct.unpack('B', ins.read(1))[0])
-def unpack_str16(ins): return ins.read(struct.unpack('H', ins.read(2))[0])
-def unpack_int(ins): return struct.unpack('I', ins.read(4))[0]
-def unpack_short(ins): return struct.unpack('H', ins.read(2))[0]
-def unpack_float(ins): return struct.unpack('f', ins.read(4))[0]
-def unpack_byte(ins): return struct.unpack('B', ins.read(1))[0]
-
-def unpack_(ins, fmt):
-    return struct.unpack(fmt, ins.read(struct.calcsize(fmt)))[0]
 
 class SaveFileHeader(object):
     save_magic = 'OVERRIDE'
@@ -72,7 +62,7 @@ class SaveFileHeader(object):
             raise SaveHeaderError, e.message, sys.exc_info()[2]
 
     def load_header(self, ins):
-        save_magic = unpack_(ins, '%ds' % len(self.__class__.save_magic))
+        save_magic = unpack_string(ins, len(self.__class__.save_magic))
         if save_magic != self.__class__.save_magic:
             raise SaveHeaderError(u'Magic wrong: %r (expected %r)' % (
                 save_magic, self.__class__.save_magic))
@@ -171,7 +161,7 @@ class OblivionSaveHeader(SaveFileHeader):
         ('pcLocation',  (00, unpack_str8)),
         ('gameDays',    (00, unpack_float)),
         ('gameTicks',   (00, unpack_int)),
-        ('gameTime',    (00, lambda ins: unpack_(ins, '16s'))),
+        ('gameTime',    (00, lambda ins: unpack_string(ins, 16))),
         ('ssSize',      (00, unpack_int)),
         ('ssWidth',     (00, unpack_int)),
         ('ssHeight',    (00, unpack_int)),

@@ -44,7 +44,6 @@ import sys
 import tempfile
 import time
 import traceback
-import types
 from binascii import crc32
 from functools import partial
 from itertools import chain
@@ -1615,6 +1614,24 @@ class Settings(DataDict):
         self.deleted.add(key)
         return self.data.pop(key,default)
 
+# Structure wrappers ----------------------------------------------------------
+def unpack_str8(ins): return ins.read(struct.unpack('B', ins.read(1))[0])
+def unpack_str16(ins): return ins.read(struct.unpack('H', ins.read(2))[0])
+def unpack_str32(ins): return ins.read(struct.unpack('I', ins.read(4))[0])
+def unpack_int(ins): return struct.unpack('I', ins.read(4))[0]
+def unpack_short(ins): return struct.unpack('H', ins.read(2))[0]
+def unpack_float(ins): return struct.unpack('f', ins.read(4))[0]
+def unpack_byte(ins): return struct.unpack('B', ins.read(1))[0]
+def unpack_int_signed(ins): return struct.unpack('i', ins.read(4))[0]
+def unpack_int64_signed(ins): return struct.unpack('q', ins.read(8))[0]
+def unpack_4s(ins): return struct.unpack('4s', ins.read(4))[0]
+
+def unpack_string(ins, string_len):
+    return struct.unpack('%ds' % string_len, ins.read(string_len))[0]
+
+def unpack_many(ins, fmt):
+    return struct.unpack(fmt, ins.read(struct.calcsize(fmt)))
+
 #------------------------------------------------------------------------------
 class StructFile(file):
     """File reader/writer with extra functions for handling structured data."""
@@ -1625,77 +1642,6 @@ class StructFile(file):
     def pack(self,format,*data):
         """Packs data according to format."""
         self.write(struct.pack(format,*data))
-
-    def readNetString(self):
-        """Read a .net string. THIS CODE IS DUBIOUS!"""
-        pos = self.tell()
-        strLen, = self.unpack('B',1)
-        if strLen >= 128:
-            self.seek(pos)
-            strLen, = self.unpack('H',2)
-            strLen = strLen & 0x7f | (strLen >> 1) & 0xff80
-            if strLen > 0x7FFF:
-                raise NotImplementedError(u'String too long to convert.')
-        return self.read(strLen)
-
-    def writeNetString(self,str):
-        """Write string as a .net string. THIS CODE IS DUBIOUS!"""
-        strLen = len(str)
-        if strLen < 128:
-            self.pack('b',strLen)
-        elif strLen > 0x7FFF: #--Actually probably fails earlier.
-            raise NotImplementedError(u'String too long to convert.')
-        else:
-            strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
-            self.pack('H',strLen)
-        self.write(str)
-
-#------------------------------------------------------------------------------
-class BinaryFile(StructFile):
-    """File reader/writer easier to read specific number of bytes."""
-    def __init__(self,*args,**kwdargs):
-        # Ensure we're reading/writing in binary mode
-        if len(args) < 2:
-            mode = kwdargs.get('mode',None)
-            if mode =='r': mode = 'rb'
-            elif mode == 'w': mode = 'wb'
-            elif mode == 'rb' or mode == 'wb':
-                pass
-            else: mode = 'rb'
-            kwdargs['mode'] = mode
-        else:
-            new_args = list(args)
-            if args[1] == 'r': new_args[1] = 'rb'
-            elif args[1] == 'w': new_args[1] = 'wb'
-            elif args[1] == 'rb' or args[1] == 'wb':
-                pass
-            else: new_args[1] = 'rb'
-            args = tuple(new_args)
-        types.FileType.__init__(self,*args,**kwdargs)
-
-    def readPascalString(self): return self.read(self.readByte())
-    def readCString(self):
-        pos = self.tell()
-        while self.readByte() != 0:
-            pass
-        end = self.tell()
-        self.seek(pos)
-        return self.read(end-pos+1)
-    # readNetString defined in StructFile
-    def readByte(self): return struct.unpack('B',self.read(1))[0]
-    def readBytes(self, numBytes): return list(struct.unpack('b'*numBytes,self.read(numBytes)))
-    def readInt16(self): return struct.unpack('h',self.read(2))[0]
-    def readInt32(self): return struct.unpack('i',self.read(4))[0]
-    def readInt64(self): return struct.unpack('q',self.read(8))[0]
-
-    def writeString(self, text):
-        self.writeByte(len(text))
-        self.write(text)
-    def writeByte(self, byte): self.write(struct.pack('B',byte))
-    def writeBytes(self, bytes): self.write(struct.pack('b'*len(bytes),*bytes))
-    def writeInt16(self, int16): self.write(struct.pack('h',int16))
-    def writeInt32(self, int32): self.write(struct.pack('i',int32))
-    def writeInt64(self, int64): self.write(struct.pack('q',int64))
 
 #------------------------------------------------------------------------------
 class TableColumn:
@@ -1852,7 +1798,7 @@ def copyattrs(source,dest,attrs):
     for attr in attrs:
         setattr(dest,attr,getattr(source,attr))
 
-def cstrip(inString):
+def cstrip(inString): # TODO(ut): hunt down and deprecate - it's O(n)+
     """Convert c-string (null-terminated string) to python string."""
     zeroDex = inString.find('\x00')
     if zeroDex == -1:
@@ -2076,6 +2022,17 @@ class ProgressFile(Progress): # CRUFT
         except UnicodeError: self.out.write(msg.encode('mbcs'))
 
 #------------------------------------------------------------------------------
+def readCString(ins, file_path):
+    """Read null terminated string, dropping the final null byte."""
+    byte_list = []
+    for b in iter(partial(ins.read, 1), ''):
+        if b == '\0': break
+        byte_list.append(b)
+    else:
+        raise exception.FileError(file_path,
+                                  u'Reached end of file while expecting null')
+    return ''.join(byte_list)
+
 class StringTable(dict):
     """For reading .STRINGS, .DLSTRINGS, .ILSTRINGS files."""
     encodings = {
@@ -2101,12 +2058,9 @@ class StringTable(dict):
         formatted = path.cext != u'.strings'
         backupEncoding = self.encodings.get(lang.lower(), 'cp1252')
         try:
-            with BinaryFile(path.s) as ins:
+            with open(path.s, 'rb') as ins:
                 insSeek = ins.seek
                 insTell = ins.tell
-                insUnpack = ins.unpack
-                insReadCString = ins.readCString
-                insRead = ins.read
 
                 insSeek(0,os.SEEK_END)
                 eof = insTell()
@@ -2118,7 +2072,7 @@ class StringTable(dict):
                             u"Strings file is empty." % (path, eof))
                     return
 
-                numIds,dataSize = insUnpack('=2I',8)
+                numIds,dataSize = unpack_many(ins, '=2I')
                 progress.setFull(max(numIds,1))
                 stringsStart = 8 + (numIds*8)
                 if stringsStart != eof-dataSize:
@@ -2132,15 +2086,15 @@ class StringTable(dict):
                 for x in xrange(numIds):
                     try:
                         progress(x)
-                        id_,offset = insUnpack('=2I',8)
+                        id_,offset = unpack_many(ins, '=2I')
                         pos = insTell()
                         insSeek(stringsStart+offset)
                         if formatted:
-                            strLen, = insUnpack('I',4)
-                            value = insRead(strLen)
+                            value = unpack_str32(ins) # TODO(ut): unpack_str32_null
+                            # seems needed, strings are null terminated
+                            value = cstrip(value)
                         else:
-                            value = insReadCString()
-                        value = cstrip(value)
+                            value = readCString(ins, path) #drops the null byte
                         try:
                             value = unicode(value,'utf-8')
                         except UnicodeDecodeError:
