@@ -408,12 +408,12 @@ class Game(object):
         lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
-        lord.sort(key=lambda m: not self.mod_infos[m].isEsm())
+        lord.sort(key=lambda m: not self.mod_infos[m].is_esml())
         fix_lo.lo_reordered |= ol != lord
         # Append new plugins to load order
         index_first_esp = self._index_of_first_esp(lord)
         for mod in fix_lo.lo_added:
-            if self.mod_infos[mod].isEsm():
+            if self.mod_infos[mod].is_esml():
                 if not mod == master_name:
                     lord.insert(index_first_esp, mod)
                 else:
@@ -484,7 +484,7 @@ class Game(object):
     def _index_of_first_esp(self, lord):
         index_of_first_esp = 0
         while index_of_first_esp < len(lord) and self.mod_infos[
-            lord[index_of_first_esp]].isEsm():
+            lord[index_of_first_esp]].is_esml():
             index_of_first_esp += 1
         return index_of_first_esp
 
@@ -538,7 +538,7 @@ class TimestampGame(Game):
         if mods is None: mods = self.mod_infos.keys()
         mods = sorted(mods) # sort case insensitive (for time conflicts)
         mods.sort(key=lambda x: self.mod_infos[x].mtime)
-        mods.sort(key=lambda x: not self.mod_infos[x].isEsm())
+        mods.sort(key=lambda x: not self.mod_infos[x].isEsm()) # no esls here
         return mods
 
     def _fetch_load_order(self, cached_load_order, cached_active):

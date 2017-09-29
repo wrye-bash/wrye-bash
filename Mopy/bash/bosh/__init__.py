@@ -98,7 +98,6 @@ reVersion = re.compile(
   re.M | re.I | re.U)
 
 #--Mod Extensions
-_reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 __exts = ur'((\.(' + ur'|'.join(ext[1:] for ext in readExts) + ur'))|)$'
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
     ur'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
@@ -359,7 +358,13 @@ class MasterInfo:
         if self.modInfo:
             return self.modInfo.isEsm()
         else:
-            return _reEsmExt.search(self.name.s)
+            return self.name.cext == u'.esm'
+
+    def is_esml(self):
+        if self.modInfo:
+            return self.modInfo.is_esml()
+        else:
+            return self.name.cext == u'.esm' or self.name.cext == u'.esl'
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -435,16 +440,6 @@ class FileInfo(AFile):
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
         return ModInfos.rightFileType(self.name)
-    def isEsm(self):
-        if not self.isMod(): return False
-        if self.header:
-            return int(self.header.flags1) & 1 == 1
-        else:
-            return bool(_reEsmExt.search(self.name.s)) and False
-    def isInvertedMod(self):
-        """Extension indicates esp/esm, but byte setting indicates opposite."""
-        return (self.isMod() and self.header and
-                self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
     def setmtime(self, set_time=0, crc_changed=False):
         """Sets mtime. Defaults to current value (i.e. reset)."""
@@ -574,7 +569,7 @@ class FileInfo(AFile):
 reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
 class ModInfo(FileInfo):
-    """An esp/m file."""
+    """An esp/m/l file."""
 
     def __init__(self, parent_dir, name, load_cache=False):
         self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
@@ -592,10 +587,31 @@ class ModInfo(FileInfo):
 
     def getFileInfos(self): return modInfos
 
+    def isEsm(self):
+        """Check if the mod info is a master file based on master flag -
+        header must be set"""
+        return int(self.header.flags1) & 1 == 1
+
+    def is_esl(self):
+        # game seems not to care about the flag, at least for load order
+        return self.name.cext == u'.esl'
+
+    def is_esml(self):
+        return self.is_esl() or self.isEsm()
+
+    def isInvertedMod(self):
+        """Extension indicates esp/esm, but byte setting indicates opposite."""
+        if self.name.cext not in (u'.esm', u'.esp'): # don't use for esls
+            raise ArgumentError(
+                u'isInvertedMod: %s - only esm/esp allowed' % self.name.ext)
+        return (self.header and
+            self.name.cext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
+
     def setType(self, esm_or_esp):
         """Sets the file's internal type."""
-        if esm_or_esp not in (u'esm', u'esp'):
-            raise ArgumentError
+        if esm_or_esp not in (u'esm', u'esp'): # don't use for esls
+            raise ArgumentError(
+                u'setType: %s - only esm/esp allowed' % esm_or_esp)
         with self.getPath().open('r+b') as modFile:
             modFile.seek(8)
             flags1 = MreRecord.flags1_(struct_unpack('I', modFile.read(4))[0])
@@ -1868,7 +1884,7 @@ class ModInfos(FileInfos):
     def cached_lo_last_esm(self):
         last_esm = self.masterName
         for mod in self._lo_wip[1:]:
-            if not self[mod].isEsm(): return last_esm
+            if not self[mod].is_esml(): return last_esm
             last_esm = mod
         return last_esm
 
@@ -1886,7 +1902,7 @@ class ModInfos(FileInfos):
     def cached_lo_append_if_missing(self, mods):
         new = mods - set(self._lo_wip)
         if not new: return
-        esms = set(x for x in new if self[x].isEsm())
+        esms = set(x for x in new if self[x].is_esml())
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
@@ -2073,7 +2089,7 @@ class ModInfos(FileInfos):
                                      reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
             # if esm bit was flipped size won't change, so check this first
-            if modInfo.isEsm():
+            if modInfo.isEsm(): # modInfo must have its header set
                 name_mergeInfo[mpath] = (modInfo.size, False)
                 self.mergeable.discard(mpath)
             elif size == modInfo.size:
@@ -2299,7 +2315,8 @@ class ModInfos(FileInfos):
         """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
-            if fileName.cext != u'.esl': # don't check limit if activating an esl
+            minfo = self[fileName]
+            if not minfo.is_esl(): # don't check limit if activating an esl
                 acti_filtered_espm = [x for x in self._active_wip if
                                       x.cext != u'.esl']
                 if len(acti_filtered_espm) == load_order.max_espms:
@@ -2314,7 +2331,7 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
             ##    return
-            for master in self[fileName].header.masters:
+            for master in minfo.header.masters:
                 if master in _modSet: self.lo_activate(master, False, _modSet,
                                                        _children, _activated)
             #--Select in plugins

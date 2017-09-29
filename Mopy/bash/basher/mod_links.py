@@ -168,9 +168,8 @@ class Mod_OrderByName(EnabledLink):
                                  _(u'Sort Mods')): return
         #--Do it
         self.selected.sort()
-        def _not_esml(m):
-            return not (bosh.modInfos[m].isEsm() or m.cext == u'.esl')
-        self.selected.sort(key=_not_esml) # sort esmls first
+        self.selected.sort(
+            key=lambda m: not bosh.modInfos[m].is_esml()) # sort esmls first
         if not load_order.using_txt_file():
             #--Get first time from first selected file.
             newTime = min(x.mtime for x in self.iselected_infos())
@@ -1450,7 +1449,8 @@ class Mod_CopyToEsmp(EnabledLink):
     def _enable(self):
         """Disable if selected are mixed esm/p's or inverted mods."""
         for minfo in self.iselected_infos():
-            if minfo.isInvertedMod() or minfo.isEsm() != self._is_esm:
+            if minfo.is_esl() or minfo.isInvertedMod() or minfo.isEsm() != \
+                    self._is_esm:
                 return False
         return True
 
@@ -1574,8 +1574,9 @@ class Mod_FlipSelf(_Esm_Flip):
         self._text = _(u'Espify Self') if self._is_esm else _(u'Esmify Self')
 
     def _enable(self):
-        for item, minfo in self.iselected_pairs():
-            if minfo.isEsm() != self._is_esm or not item.cext[-1] == u'p':
+        for m, minfo in self.iselected_pairs():
+            if minfo.is_esl() or \
+                    minfo.isEsm() != self._is_esm or not m.cext[-1] == u'p':
                 return False
         return True
 

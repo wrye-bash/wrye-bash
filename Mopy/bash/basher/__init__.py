@@ -276,7 +276,7 @@ class _ModsUIList(balt.UIList):
 
     def _sortEsmsFirst(self, items):
         if self.esmsFirst:
-            items.sort(key=lambda a: not self.data_store[a].isEsm())
+            items.sort(key=lambda a: not self.data_store[a].is_esml())
 
     def _activeModsFirst(self, items):
         if self.selectedFirst: items.sort(key=lambda x: x not in
