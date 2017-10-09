@@ -22,7 +22,19 @@
 #
 # =============================================================================
 
-"""Rollback library."""
+"""Rollback library.
+
+Re: bass.AppVersion, bass.settings['bash.version']
+
+The latter is read from the settings - so on upgrading Bash it's the version of
+the previous Bash install, whereupon is based the backup-on-upgrade routine.
+Later on, in basher.BashApp#InitVersion, bass.settings['bash.version'] is
+set to bass.AppVersion. We save both in the settings we backup:
+- bass.settings['bash.version'] is saved first and corresponds to the version
+the settings were created with
+- bass.AppVersion, saved second, is the version of Bash currently executing
+the backup
+"""
 
 import cPickle
 from os.path import join as jo
@@ -36,7 +48,7 @@ import bush
 from . import images_list
 from bolt import GPath, deprint
 from balt import askSave, askOpen, askWarning, showError, showWarning, \
-    showInfo, Link, BusyCursor
+    showInfo, Link, BusyCursor, askYes
 from exception import AbstractError, BackupCancelled
 
 opts = None # command line arguments used when launching Bash, set on bash
@@ -95,7 +107,6 @@ class BaseBackupSettings:
             self._dir = path.head
             self.archive = path.tail
         self.parent = parent
-        self.verDat = bass.settings['bash.version']
         self.files = {}
 
     def Apply(self):
@@ -104,8 +115,18 @@ class BaseBackupSettings:
     def PromptFile(self):
         raise AbstractError
 
-def SameAppVersion():
-    return not cmp(bass.AppVersion, bass.settings['bash.version'])
+def new_bash_version_prompt_backup():
+    # return False if old version == 0 (as in not previously installed)
+    if bass.settings['bash.version'] == 0: return False
+    # return True if not same app version and user opts to backup settings
+    return not SameAppVersion() and askYes(Link.Frame, u'\n'.join([
+        _(u'A different version of Wrye Bash was previously installed.'),
+        _(u'Previous Version: ') + (u'%s' % bass.settings['bash.version']),
+        _(u'Current Version: ') + (u'%s' % bass.AppVersion),
+        _(u'Do you want to create a backup of your Bash settings before '
+          u'they are overwritten?')]))
+
+def SameAppVersion(): return bass.AppVersion == bass.settings['bash.version']
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
@@ -172,11 +193,11 @@ class BackupSettings(BaseBackupSettings):
                 fpath.copyTo(temp_dir.join(tpath))
             # dump the version info and file listing
             with temp_dir.join(u'backup.dat').open('wb') as out:
-                # data version, if this doesn't match the installed data
-                # version, do not allow restore
-                cPickle.dump(self.verDat, out, -1)
-                # app version, if this doesn't match the installer app version,
-                # warn the user on restore
+                # Bash version the settings were saved with, if this is newer
+                # than the installed settings version, do not allow restore
+                cPickle.dump(bass.settings['bash.version'], out, -1)
+                # app version, if this doesn't match the installed settings
+                # version, warn the user on restore
                 cPickle.dump(bass.AppVersion, out, -1)
             # create the backup archive in 7z format WITH solid compression
             # may raise StateError
@@ -193,7 +214,7 @@ class BackupSettings(BaseBackupSettings):
         """Prompt for backup filename - return False if user cancels."""
         if self.archive is None or self._dir.join(self.archive).exists():
             filename = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-                bush.game.fsName, bolt.timestamp(), self.verDat,
+                bush.game.fsName, bolt.timestamp(), bass.settings['bash.version'],
                 bass.AppVersion)
             if not self.quit:
                 path = askSave(self.parent, title=_(u'Backup Bash Settings'),
@@ -232,12 +253,29 @@ class RestoreSettings(BaseBackupSettings):
         command = archives.extractCommand(self._dir.join(self.archive), temp_dir)
         archives.extract7z(command, self._dir.join(self.archive))
         with temp_dir.join(u'backup.dat').open('rb') as ins:
-            self.verDat = cPickle.load(ins)
-            self.verApp = cPickle.load(ins)
-        if self.ErrorConflict():
+            # version of Bash that created the backed up settings
+            saved_settings_version = cPickle.load(ins)
+            # version of Bash that created the backup
+            settings_saved_with = cPickle.load(ins)
+        if saved_settings_version > bass.settings['bash.version']:
+            # Disallow restoring settings saved on a newer version of bash # TODO(ut) drop?
+            showError(self.parent, u'\n'.join([
+                _(u'The data format of the selected backup file is newer than '
+                u'the current Bash version!'),
+                _(u'Backup v%s is not compatible with v%s') % (
+                    saved_settings_version, bass.settings['bash.version']),u'',
+                _(u'You cannot use this backup with this version of Bash.')]),
+                      _(u'Error: Settings are from newer Bash version'))
             self.WarnFailed()
             return
-        elif not self.PromptMismatch():
+        elif settings_saved_with != bass.settings['bash.version'] and \
+             askWarning(self.parent, u'\n'.join([
+                 _(u'The version of Bash used to create the selected backup '
+                   u'file does not match the current Bash version!'),
+                 _(u'Backup v%s does not match v%s') % (
+                     settings_saved_with, bass.settings['bash.version']), u'',
+                 _(u'Do you want to restore this backup anyway?')]),
+                                           _(u'Warning: Version Mismatch!')):
             raise BackupCancelled()
 
         deprint(u'')
@@ -293,27 +331,6 @@ class RestoreSettings(BaseBackupSettings):
             self._dir = path.head
             self.archive = path.tail
         return True
-
-    def PromptMismatch(self):
-        # return True if same app version or user confirms
-        return SameAppVersion() or askWarning(self.parent,
-              _(u'The version of Bash used to create the selected backup file does not match the current Bash version!')+u'\n' +
-              _(u'Backup v%s does not match v%s') % (self.verApp, bass.settings['bash.version']) + u'\n' +
-              u'\n' +
-              _(u'Do you want to restore this backup anyway?'),
-              _(u'Warning: Version Mismatch!'))
-
-    def ErrorConflict(self):
-        # returns positive if the settings are from a newer Bash version
-        if cmp(self.verDat, bass.settings['bash.version']) > 0:
-            showError(self.parent,
-                  _(u'The data format of the selected backup file is newer than the current Bash version!')+u'\n' +
-                  _(u'Backup v%s is not compatible with v%s') % (self.verApp, bass.settings['bash.version']) + u'\n' +
-                  u'\n' +
-                  _(u'You cannot use this backup with this version of Bash.'),
-                  _(u'Error: Version Conflict!'))
-            return True
-        return False
 
     def WarnFailed(self):
         showWarning(self.parent,

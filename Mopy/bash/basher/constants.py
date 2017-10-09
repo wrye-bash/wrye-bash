@@ -148,7 +148,6 @@ colorInfo = {
 settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     #--Basics
     'bash.version': 0,
-    'bash.readme': (0,u'0'),
     'bash.CBashEnabled': True,
     'bash.backupPath': None,
     'bash.frameMax': False, # True if maximized

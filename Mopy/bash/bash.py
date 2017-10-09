@@ -67,24 +67,13 @@ def SetUserPath(iniPath=None, uArg=None):
             SetHomePath(bashIni.get(u'General', u'sUserPath'))
 
 # Backup/Restore --------------------------------------------------------------
-def _new_bash_version_prompt_backup():
-    # return False if old version == 0 (as in not previously installed)
-    if bass.settings['bash.version'] == 0: return False
-    # return True if not same app version and user opts to backup settings
-    return not barb.SameAppVersion() and balt.askYes(balt.Link.Frame, _(
-        u'A different version of Wrye Bash was previously installed.') + u'\n'+
-        _(u'Previous Version: ') + (u'%s\n' % bass.settings['bash.version']) +
-        _(u'Current Version: ') + (u'%s\n' % bass.AppVersion) + _(
-        u'Do you want to create a backup of your Bash settings before they '
-        u'are overwritten?'))
-
 def cmdBackup(opts):
     # backup settings if app version has changed or on user request
     global basher, balt, barb
     if not basher: import basher, balt, barb
     path = (opts.backup and opts.filename) or None
     should_quit = opts.backup and opts.quietquit
-    if _new_bash_version_prompt_backup() or opts.backup:
+    if barb.new_bash_version_prompt_backup() or opts.backup:
         frame = balt.Link.Frame
         backup = barb.BackupSettings(frame, path, should_quit,
                                      opts.backup_images)

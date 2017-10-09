@@ -3716,8 +3716,7 @@ class BashFrame(BaltFrame):
             title = bush.game.altName + u' %s%s'
         else:
             title = u'Wrye Bash %s%s '+_(u'for')+u' '+bush.game.displayName
-        title %= (settings['bash.version'],
-                  (u' ' + _(u'(Standalone)')) if settings[
+        title %= (bass.AppVersion, (u' ' + _(u'(Standalone)')) if settings[
                       'bash.standalone'] else u'')
         if CBashApi.Enabled:
             title += u', CBash %s: ' % (CBashApi.VersionText,)
@@ -3970,20 +3969,6 @@ class BashFrame(BaltFrame):
             BashFrame.bsaList.RefreshUI(focus_list=focus_list)
 
 #------------------------------------------------------------------------------
-def GetBashVersion():
-    return bass.AppVersion
-
-    #--Version from readme
-    #readme = bass.dirs['mopy'].join(u'Wrye Bash.txt')
-    #if readme.exists() and readme.mtime != settings['bash.readme'][0]:
-    #    reVersion = re.compile(ur'^=== (\d+(\.(dev|beta)?\d*)?) \[', re.I|re.U)
-    #    for line in readme.open(encoding='utf-8-sig'):
-    #        maVersion = reVersion.match(line)
-    #        if maVersion:
-    #            return (readme.mtime,maVersion.group(1))
-    #return settings['bash.readme'] #readme file not found or not changed
-
-#------------------------------------------------------------------------------
 class BashApp(wx.App):
     """Bash Application class."""
     def Init(self): # not OnInit(), we need to initialize _after_ the app has been instantiated
@@ -4086,8 +4071,8 @@ class BashApp(wx.App):
                     balt.sizes[key.__name__] = value
                     del balt.sizes[key]
         #--Current Version
-        if settings['bash.version'] != GetBashVersion():
-            settings['bash.version'] = GetBashVersion()
+        if settings['bash.version'] != bass.AppVersion:
+            settings['bash.version'] = bass.AppVersion
             # rescan mergeability on version upgrade to detect new mergeable
             bosh.modInfos.rescanMergeable(bosh.modInfos.data, bolt.Progress())
         settings['bash.CBashEnabled'] = CBashApi.Enabled
