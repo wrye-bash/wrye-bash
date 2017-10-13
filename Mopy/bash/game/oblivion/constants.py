@@ -29,8 +29,6 @@ bethDataFiles = {
     u'oblivion.esm',
     u'oblivion_1.1.esm',
     u'oblivion_si.esm',
-    u'oblivion_1.1.esm.ghost',
-    u'oblivion_si.esm.ghost',
     u'oblivion - meshes.bsa',
     u'oblivion - misc.bsa',
     u'oblivion - sounds.bsa',

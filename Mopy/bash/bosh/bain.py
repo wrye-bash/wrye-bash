@@ -40,8 +40,8 @@ from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extractCommand, extract7z, compressionSettings
-from ..bolt import Path, deprint, formatInteger, round_size, GPath, \
-    sio, SubProgress
+from ..bolt import Path, deprint, formatInteger, round_size, GPath, sio, \
+    SubProgress, CIstr, LowerDict
 from ..exception import AbstractError, ArgumentError, BSAError, \
     CancelError, InstallerArchiveError, SkipError, StateError, FileError
 
@@ -1926,8 +1926,11 @@ class InstallersData(DataStore):
         oldGet = self.data_sizeCrcDate.get
         ghost_norm = bolt.LowerDict(
             (y, x) for x, y in Installer.getGhosted().iteritems())
-        bethFiles = set() if bass.settings[
-            'bash.installers.autoRefreshBethsoft'] else bush.game.bethDataFiles
+        if bass.settings['bash.installers.autoRefreshBethsoft']:
+            bethFiles = set()
+        else:
+            bethFiles = LowerDict.fromkeys(set(
+                map(CIstr, bush.game.bethDataFiles)) - self.overridden_skips)
         skipExts = Installer.skipExts
         relPos = len(bass.dirs['mods'].s) + 1
         for index, (asDir, __sDirs, sFiles) in enumerate(dirDirsFiles):
@@ -1939,7 +1942,7 @@ class InstallersData(DataStore):
                     rpFile = ghost_norm.get(sFile, sFile)
                     ext = rpFile[rpFile.rfind(u'.'):]
                     if ext.lower() in skipExts: continue
-                    if rpFile.lower() in bethFiles: continue
+                    if rpFile in bethFiles: continue
                     top_level_espm = ext in {u'.esp', u'.esm'}
                 else: rpFile = os.path.join(rsDir, sFile)
                 asFile = os.path.join(asDir, sFile)
@@ -2044,7 +2047,7 @@ class InstallersData(DataStore):
         if dont_skip is not None:
             dont_skip.difference_update(self.data_sizeCrcDate)
             self.overridden_skips |= dont_skip
-        elif self.__clean_overridden_after_load:
+        elif self.__clean_overridden_after_load: # needed on first load
             self.overridden_skips.difference_update(self.data_sizeCrcDate)
             self.__clean_overridden_after_load = False
         new_skips_overrides = self.overridden_skips - set(self.data_sizeCrcDate)
