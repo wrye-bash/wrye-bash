@@ -37,6 +37,9 @@ lo/active from inside Bash.
 - modInfos singleton must be up to date when calling the API methods that
 delegate to the game_handle.
 """
+
+__author__ = 'Utumno'
+
 import sys
 import math
 import collections
@@ -49,7 +52,7 @@ import bush
 import exception
 # Game instance providing load order operations API
 import games
-game_handle = None # type: games.Game
+_game_handle = None # type: games.Game
 _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 # Load order locking
 locked = False
@@ -70,9 +73,10 @@ def initialize_load_order_files():
     _lord_pickle_path = bass.dirs['saveBase'].join(u'BashLoadOrders.dat')
 
 def initialize_load_order_handle(mod_infos):
-    global game_handle
-    game_handle = games.game_factory(bush.game.fsName, mod_infos,
-                                     _plugins_txt_path, _loadorder_txt_path)
+    global _game_handle
+    _game_handle = games.game_factory(bush.game.fsName, mod_infos,
+                                      _plugins_txt_path, _loadorder_txt_path)
+    _game_handle.parse_ccc_file()
 
 class LoadOrder(object):
     """Immutable class representing a load order."""
@@ -127,6 +131,10 @@ class LoadOrder(object):
             (a, i) for i, a in enumerate(self._loadOrder))
         self.__mod_actIndex = dict(
             (a, i) for i, a in enumerate(self._activeOrdered))
+
+    def __unicode__(self):
+        return u', '.join([((u'*%s' if x in self._active else u'%s') % x)
+                           for x in self.loadOrder])
 
 # Module level cache
 __empty = LoadOrder()
@@ -206,7 +214,7 @@ def get_ordered(mod_names):
     return mod_names
 
 def filter_pinned(imods):
-    return filter(game_handle.pinned_mods.__contains__, imods)
+    return filter(_game_handle.pinned_mods.__contains__, imods)
 
 # Get and set API -------------------------------------------------------------
 def save_lo(lord, acti=None, __index_move=0, quiet=False):
@@ -218,10 +226,10 @@ def save_lo(lord, acti=None, __index_move=0, quiet=False):
     acti_list = list(acti) if acti is not None else None
     load_list = list(lord) if lord is not None else None
     fix_lo = games.FixInfo() if not quiet else None
-    lord, acti = game_handle.set_load_order(load_list, acti_list,
-                                            list(cached_lord.loadOrder),
-                                            list(cached_lord.activeOrdered),
-                                            fix_lo=fix_lo)
+    lord, acti = _game_handle.set_load_order(load_list, acti_list,
+                                             list(cached_lord.loadOrder),
+                                             list(cached_lord.activeOrdered),
+                                             fix_lo=fix_lo)
     if fix_lo: fix_lo.lo_deprint()
     _update_cache(lord=lord, acti_sorted=acti, __index_move=__index_move)
     return cached_lord
@@ -234,8 +242,8 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
     global cached_lord
     try:
         fix_lo = games.FixInfo()
-        lord, acti_sorted = game_handle.get_load_order(lord, acti_sorted,
-                                                       fix_lo)
+        lord, acti_sorted = _game_handle.get_load_order(lord, acti_sorted,
+                                                        fix_lo)
         fix_lo.lo_deprint()
         cached_lord = LoadOrder(lord, acti_sorted)
     except Exception:
@@ -264,15 +272,19 @@ def get_lo(cached=False, cached_active=True):
     if _lords_pickle is None: __load_pickled_load_orders() # once only
     if locked and _saved_load_orders:
         saved = _saved_load_orders[_current_list_index].lord # type: LoadOrder
-        lord, acti = game_handle.set_load_order( # make sure saved lo is valid
+        lord, acti = _game_handle.set_load_order( # make sure saved lo is valid
             list(saved.loadOrder), list(saved.activeOrdered), dry_run=True)
-        saved = LoadOrder(lord, acti)
+        fixed = LoadOrder(lord, acti)
+        if fixed != saved:
+            bolt.deprint(u'Saved load order is no longer valid: %s'
+                         u'\nCorrected to %s' % (saved, fixed))
+        saved = fixed
     else: saved = None
     if cached_lord is not __empty:
         lo = cached_lord.loadOrder if (
-            cached and not game_handle.load_order_changed()) else None
+            cached and not _game_handle.load_order_changed()) else None
         active = cached_lord.activeOrdered if (
-            cached_active and not game_handle.active_changed()) else None
+            cached_active and not _game_handle.active_changed()) else None
     else: active = lo = None
     _update_cache(lo, active)
     if locked and saved is not None:
@@ -300,9 +312,9 @@ def __restore(index_move):
     if index < 0 or index > len(_saved_load_orders) - 1: return cached_lord
     previous = _saved_load_orders[index].lord
     # fix previous
-    lord, acti = game_handle.set_load_order(list(previous.loadOrder),
-                                            list(previous.activeOrdered),
-                                            dry_run=True)
+    lord, acti = _game_handle.set_load_order(list(previous.loadOrder),
+                                             list(previous.activeOrdered),
+                                             dry_run=True)
     previous = LoadOrder(lord, acti) # possibly fixed
     if previous == cached_lord:
         index_move += int(math.copysign(1, index_move)) # increase or decrease by 1
@@ -311,26 +323,26 @@ def __restore(index_move):
                    __index_move=index_move, quiet=True)
 
 # API helpers
-def swap(old_path, new_path): game_handle.swap(old_path, new_path)
+def swap(old_path, new_path): _game_handle.swap(old_path, new_path)
 
 def must_be_active_if_present():
-    return set(game_handle.must_be_active_if_present) | (
-        set() if game_handle.allow_deactivate_master else {
-            game_handle.master_path})
+    return set(_game_handle.must_be_active_if_present) | (
+        set() if _game_handle.allow_deactivate_master else {
+            _game_handle.master_path})
 
 def using_txt_file(): return bush.game.using_txt_file
 
 # Timestamp games helpers
 def has_load_order_conflict(mod_name):
-    return game_handle.has_load_order_conflict(mod_name)
+    return _game_handle.has_load_order_conflict(mod_name)
 
 def has_load_order_conflict_active(mod_name):
     if not cached_is_active(mod_name): return False
-    return game_handle.has_load_order_conflict_active(mod_name,
-                                                      cached_lord.active)
+    return _game_handle.has_load_order_conflict_active(mod_name,
+                                                       cached_lord.active)
 
 def get_free_time(start_time, default_time='+1', end_time=None):
-    return game_handle.get_free_time(start_time, default_time, end_time)
+    return _game_handle.get_free_time(start_time, default_time, end_time)
 
 # Lock load order -------------------------------------------------------------
 def toggle_lock_load_order():

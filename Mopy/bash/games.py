@@ -28,13 +28,15 @@ load_order.py."""
 
 __author__ = 'Utumno'
 
+import errno
 import re
 import time
 from collections import defaultdict
 # Local
+import bass
 import bolt
-import exception
 import env
+import exception
 
 max_espms = 255
 
@@ -501,6 +503,10 @@ class Game(object):
                 mods.add(mod)
         return duplicates
 
+    # INITIALIZATION ----------------------------------------------------------
+    @classmethod
+    def parse_ccc_file(cls): pass
+
 class TimestampGame(Game):
     """Oblivion and other games where load order is set using modification
     times.
@@ -724,7 +730,10 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
-    remove_from_plugins_txt = set()
+    _ccc_filename = u''
+
+    @property
+    def remove_from_plugins_txt(self): return set()
 
     @property
     def pinned_mods(self): return self.remove_from_plugins_txt
@@ -821,6 +830,17 @@ class AsteriskGame(Game):
             x for x in self.must_be_active_if_present if x in self.mod_infos)
         return add
 
+    @classmethod
+    def parse_ccc_file(cls):
+        _ccc_path = bass.dirs['app'].join(cls._ccc_filename)
+        try:
+            with open(_ccc_path.s, 'r') as ins:
+                lines = map(bolt.GPath, map(str.strip, ins.readlines()))
+                cls.must_be_active_if_present += tuple(lines)
+        except (OSError, IOError) as e:
+            if e.errno != errno.ENOENT:
+                bolt.deprint(u'Failed to open %s' % _ccc_path, traceback=True)
+
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
 
@@ -831,9 +851,12 @@ class Fallout4(AsteriskGame):
                                  bolt.GPath(u'DLCWorkshop03.esm'),
                                  bolt.GPath(u'DLCNukaWorld.esm'),
                                  bolt.GPath(u'DLCUltraHighResolution.esm'),)
+    _ccc_filename = u'Fallout4.ccc'
 
-    remove_from_plugins_txt = {bolt.GPath(u'Fallout4.esm')} | set(
-        must_be_active_if_present)
+    @property
+    def remove_from_plugins_txt(self):
+        return {bolt.GPath(u'Fallout4.esm')} | set(
+            self.must_be_active_if_present)
 
 class SkyrimSE(AsteriskGame):
 
@@ -841,8 +864,12 @@ class SkyrimSE(AsteriskGame):
                                  bolt.GPath(u'Dawnguard.esm'),
                                  bolt.GPath(u'Hearthfires.esm'),
                                  bolt.GPath(u'Dragonborn.esm'),)
-    remove_from_plugins_txt = {bolt.GPath(u'Skyrim.esm')} | set(
-        must_be_active_if_present)
+    _ccc_filename = u'Skyrim.ccc'
+
+    @property
+    def remove_from_plugins_txt(self):
+        return {bolt.GPath(u'Skyrim.esm')} | set(
+            self.must_be_active_if_present)
 
     __dlc_spacing = 60 # in seconds
     def _fixed_order_plugins(self):
