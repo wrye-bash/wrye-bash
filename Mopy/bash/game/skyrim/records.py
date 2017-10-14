@@ -6360,20 +6360,20 @@ class MreSpel(MelRecord,MreHasEffects):
 
 # Verified for 305
 #------------------------------------------------------------------------------
-    # DATA has wbEnum in TES5Edit
-    # Assinged as 'type' in MelSpgdData
-    # 'Rain',
-    # 'Snow',
 class MelSpgdData(MelStruct):
-    def __init__(self, subType='DATA'):
-        MelStruct.__init__(self, subType, '=7f4If',
-                           'gravityVelocity','rotationVelocity','particleSizeX',
-                           'particleSizeY','centerOffsetMin','centerOffsetMax',
-                           'initialRotationRange','numSubtexturesX',
-                           'numSubtexturesY','type', ('boxSize',0),
-                           ('particleDensity',0),
-                           )
+    SpgdDataFlags = Flags(0L, Flags.getNames(
+        (0, 'rain'),
+        (1, 'snow'),
+    ))
 
+    def __init__(self, subType='DATA'):
+        MelStruct.__init__(self, subType, '=7f4If', 'gravityVelocity',
+            'rotationVelocity', 'particleSizeX', 'particleSizeY',
+            'centerOffsetMin', 'centerOffsetMax', 'initialRotationRange',
+            'numSubtexturesX', 'numSubtexturesY',
+            (MelSpgdData.SpgdDataFlags, 'typeFlags', 0L), ('boxSize', 0),
+            ('particleDensity', 0),
+        )
 
     def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
@@ -6406,7 +6406,7 @@ class MreSpgd(MelRecord):
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
-# Verified for 305
+
 #------------------------------------------------------------------------------
 class MreStat(MelRecord):
     """Static model record."""

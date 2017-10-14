@@ -163,58 +163,6 @@ class MreMovt(MelRecord):
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-    # DATA has wbEnum in TES5Edit
-    # Assinged as 'type' in MelSpgdData
-    # 'Rain',
-    # 'Snow',
-class MelSpgdData(MelStruct):
-    def __init__(self, subType='DATA'):
-        MelStruct.__init__(self, subType, '=7f4If',
-                           'gravityVelocity','rotationVelocity','particleSizeX',
-                           'particleSizeY','centerOffsetMin','centerOffsetMax',
-                           'initialRotationRange','numSubtexturesX',
-                           'numSubtexturesY','type', ('boxSize',0),
-                           ('particleDensity',0),
-                           )
-
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
-        if size_ == 40:
-            # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48 bytes
-            # fffffffIIIIf
-            # Type is an Enum 0 = Rain; 1 = Snow
-            unpacked = ins.unpack('=7f3I', size_, readId) + (0, 0,)
-            setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
-                if action: value = action(value)
-                setter(attr,value)
-            if self._debug:
-                print u' ',zip(self.attrs,unpacked)
-                if len(unpacked) != len(self.attrs):
-                    print u' ',unpacked
-        elif size_ != 48:
-            raise ModSizeError(record.inName, readId, 48, size_, True)
-        else:
-            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-
-class MreSpgd(MelRecord):
-    """Spgd Item"""
-    classType = 'SPGD'
-
-    SpgdDataFlags = Flags(0L,Flags.getNames(
-            (0, 'rain'),
-            (1, 'snow'),
-        ))
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBase('DATA', 'data_p'), # Form version 44 broken for now
-        MelString('ICON','icon'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreStat(MelRecord):
     """Static model record."""
     classType = 'STAT'
