@@ -28,6 +28,53 @@ from ..skyrim.records import *
 #------------------------------------------------------------------------------
 # Updated for SSE -------------------------------------------------------------
 #------------------------------------------------------------------------------
+class MreAmmo(MelRecord):
+    """Ammo record (arrows)"""
+    classType = 'AMMO'
+
+    AmmoTypeFlags = Flags(0L,Flags.getNames(
+        (0, 'notNormalWeapon'),
+        (1, 'nonPlayable'),
+        (2, 'nonBolt'),
+    ))
+
+    class MelAmmoData(MelStruct):
+        """Handle older truncated DATA for AMMO subrecord."""
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 20:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+                return
+            elif size_ == 16:
+                unpacked = ins.unpack('IIfI', size_, readId)
+            else:
+                raise ModSizeError(record.inName, readId, 20, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked
+
+    melSet = MelSet(
+        MelString('EDID','eid'),
+        MelBounds(),
+        MelLString('FULL','full'),
+        MelModel(),
+        MelString('ICON','iconPath'),
+        MelString('MICO','smallIconPath'),
+        MelDestructible(),
+        MelFid('YNAM','pickupSound'),
+        MelFid('ZNAM','dropSound'),
+        MelLString('DESC','description'),
+        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelAmmoData('DATA', 'IIfIf', (FID, 'projectile'),
+            (AmmoTypeFlags, 'flags', 0L), ('damage', 1.0), ('value', 0),
+            ('weight', 0.1)),
+        MelString('ONAM','onam_n'),
+        )
+    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreLtex(MelRecord):
     """Landscape Texture."""
     classType = 'LTEX'
