@@ -67,27 +67,17 @@ def SetUserPath(iniPath=None, uArg=None):
             SetHomePath(bashIni.get(u'General', u'sUserPath'))
 
 # Backup/Restore --------------------------------------------------------------
-def _new_bash_version_prompt_backup():
-    # return False if old version == 0 (as in not previously installed)
-    if bass.settings['bash.version'] == 0: return False
-    # return True if not same app version and user opts to backup settings
-    return not barb.SameAppVersion() and balt.askYes(balt.Link.Frame, _(
-        u'A different version of Wrye Bash was previously installed.') + u'\n'+
-        _(u'Previous Version: ') + (u'%s\n' % bass.settings['bash.version']) +
-        _(u'Current Version: ') + (u'%s\n' % bass.AppVersion) + _(
-        u'Do you want to create a backup of your Bash settings before they '
-        u'are overwritten?'))
-
 def cmdBackup(opts):
     # backup settings if app version has changed or on user request
     global basher, balt, barb
     if not basher: import basher, balt, barb
     path = (opts.backup and opts.filename) or None
     should_quit = opts.backup and opts.quietquit
-    if _new_bash_version_prompt_backup() or opts.backup:
+    if barb.new_bash_version_prompt_backup() or opts.backup:
         frame = balt.Link.Frame
-        backup = barb.BackupSettings(frame, path, should_quit,
-                                     opts.backup_images)
+        backup = barb.BackupSettings.get_backup_instance(frame, path,
+            should_quit, opts.backup_images)
+        if not backup: return
         try:
             backup.Apply()
         except exception.StateError:
@@ -98,29 +88,19 @@ def cmdBackup(opts):
             _(u'If you continue, your current settings may be overwritten.'),
             _(u'Do you want to quit Wrye Bash now?')]),
                              title=_(u'Unable to create backup!')):
-                return False # Quit
-        except exception.BackupCancelled:
-            if not barb.SameAppVersion() and balt.askYes(frame, u'\n'.join([
-            _(u'You did not create a backup of the Bash settings.'),
-            _(u'If you continue, your current settings may be overwritten.'),
-            _(u'Do you want to quit Wrye Bash now?')]),
-                            title=_(u'No backup created!')):
-                return False # Quit
+                return True # Quit
     return should_quit
 
 def cmdRestore(opts):
     # restore settings on user request
+    if not opts.restore: return False
     global basher, balt, barb
     if not basher: import basher, balt, barb
-    path = (opts.restore and opts.filename) or None
-    should_quit = opts.restore and opts.quietquit
-    if opts.restore:
-        try:
-            backup = barb.RestoreSettings(balt.Link.Frame, path, should_quit,
-                                          opts.backup_images)
-            backup.Apply()
-        except exception.BackupCancelled:
-            pass
+    should_quit = opts.quietquit
+    backup = barb.RestoreSettings.get_backup_instance(balt.Link.Frame,
+        opts.filename or None, should_quit, opts.backup_images)
+    if not backup : return False
+    backup.Apply()
     return should_quit
 
 #------------------------------------------------------------------------------
@@ -374,6 +354,7 @@ def main(opts):
         import basher
         import barb
         import balt
+        barb.opts = opts
     except (exception.PermissionError,
             exception.BoltError, ImportError) as e:
         _showErrorInGui(e, _wx=wx, bolt=bolt)

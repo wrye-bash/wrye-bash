@@ -54,11 +54,6 @@ class SkipError(CancelError):
     def __init__(self):
         super(SkipError, self).__init__(u'Action skipped by user.')
 
-class BackupCancelled(BoltError):
-    # user cancelled operation
-    def __init__(self, message=u'Cancelled'):
-        super(BackupCancelled, self).__init__(message)
-
 # File exceptions -------------------------------------------------------------
 class FileError(BoltError):
     """TES4/Tes4SaveFile Error: File is corrupted."""

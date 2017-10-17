@@ -76,15 +76,14 @@ class Settings_BackupSettings(ItemLink):
             )
         dialog.SetSizer(sizer)
         with dialog: images = dialog.ShowModal()
-        with balt.BusyCursor():
-            backup = barb.BackupSettings(Link.Frame,backup_images=images)
-        try: # no BusyCursor() here, the prompt in Apply will invalidate it
-            backup.Apply()
+        backup = barb.BackupSettings.get_backup_instance(
+            Link.Frame, settings_file=None, handle_images=images)
+        if not backup: return
+        try:
+            with balt.BusyCursor(): backup.Apply()
         except exception.StateError:
             deprint(u'Backup settings failed', traceback=True)
             backup.WarnFailed()
-        except exception.BackupCancelled:
-            pass
 
 #------------------------------------------------------------------------------
 class Settings_RestoreSettings(ItemLink):
@@ -100,18 +99,17 @@ class Settings_RestoreSettings(ItemLink):
                            u'settings are restored.')
         if not balt.askYes(Link.Frame, msg, _(u'Restore Bash Settings?')):
             return
-        backup = None # barb.RestoreSettings may raise....
+        backup = barb.RestoreSettings.get_backup_instance(
+            Link.Frame, settings_file=None) # prompt for backup filename
+        if not backup: return
         try:
-            backup = barb.RestoreSettings(Link.Frame)
             backup.restore_images = balt.askYes(Link.Frame,
                 _(u'Do you want to restore saved images as well as settings?'),
                 _(u'Restore Settings'))
             with balt.BusyCursor(): backup.Apply()
         except exception.StateError:
             deprint(u'Restore settings failed:', traceback=True)
-            if backup: backup.WarnFailed()
-        except exception.BackupCancelled:
-            pass
+            backup.WarnFailed()
 
 #------------------------------------------------------------------------------
 class Settings_SaveSettings(ItemLink):
