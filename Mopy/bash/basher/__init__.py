@@ -2682,7 +2682,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             info = u'== '+_(u'Overview')+u'\n'
             info += _(u'Type: ') + installer.type_string + u'\n'
             info += installer.structure_string() + u'\n'
-            nConfigured = len(installer.data_sizeCrc)
+            nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
             if isinstance(installer,bosh.InstallerProject):
@@ -2720,10 +2720,10 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 nMismatched, marker_string=u'N/A'))
             info += '\n'
             #--Infoboxes
-            gPage.SetValue(info + dumpFiles(installer.data_sizeCrc,
+            gPage.SetValue(info + dumpFiles(installer.ci_dest_sizeCrc,
                                             u'== ' + _(u'Configured Files')))
         elif pageName == 'gMatched':
-            gPage.SetValue(dumpFiles(set(installer.data_sizeCrc) -
+            gPage.SetValue(dumpFiles(set(installer.ci_dest_sizeCrc) -
                         installer.missingFiles - installer.mismatchedFiles))
         elif pageName == 'gMissing':
             gPage.SetValue(dumpFiles(installer.missingFiles))

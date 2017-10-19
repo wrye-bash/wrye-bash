@@ -778,8 +778,8 @@ class WryeParser(ScriptParser.Parser):
 
             self.choices = []
             self.choiceIdex = -1
-            self.sublist = {}
-            self.espmlist = {}
+            self.sublist = bolt.LowerDict()
+            self.espmlist = bolt.LowerDict()
             for k, v in installer.espmMap.iteritems():
                 for j in v:
                     if j not in self.espmlist:
@@ -976,35 +976,19 @@ class WryeParser(ScriptParser.Parser):
         return self.Continue()
 
     def EspmIsInPackage(self, espm, package):
-        package = package.lower()
+        if package not in self.installer.espmMap: return False
         espm = espm.lower()
-        for k, v in self.installer.espmMap.iteritems():
-            if package == k.lower():
-                for j in v:
-                    if espm == j.lower():
-                        return True
+        v = self.installer.espmMap[package]
+        for j in v:
+            if espm == j.lower():
+                return True
         return False
-    def EspmList(self, package):
-        pack = self.GetPackage(package)
-        return self.installer.espmMap[pack] # returns [] if pack not in espmMap
-    def PackageList(self, espm):
-        ret = []
-        for i in self.sublist:
-            if self.EspmIsInPackage(espm, i):
-                ret.append(i)
-        return ret
     def EspmHasActivePackage(self, espm):
         for i in self.sublist:
             if self.EspmIsInPackage(espm, i):
                 if self.sublist[i]:
                     return True
         return False
-    def GetPackage(self, package):
-        package = package.lower()
-        for i in self.sublist:
-            if package == i.lower():
-                return i
-        return None
     def GetEspm(self, espm):
         espm = espm.lower()
         for i in self.espmlist:
@@ -1357,10 +1341,7 @@ class WryeParser(ScriptParser.Parser):
                 List = sorted(self.sublist.keys())
             else:
                 name = self.ExecuteTokens(args[2:])
-                try:
-                    subpackage = self.GetPackage(name)
-                except:
-                    error(_(u"Subpackage '%s' does not exist.") % name)
+                subpackage = name if name in self.sublist else None
                 if subpackage is None:
                     error(_(u"SubPackage '%s' does not exist.") % name)
                 List = []
@@ -1515,10 +1496,10 @@ class WryeParser(ScriptParser.Parser):
     def kwdSelectSubPackage(self, subpackage): self._SelectSubPackage(True, subpackage)
     def kwdDeSelectSubPackage(self, subpackage): self._SelectSubPackage(False, subpackage)
     def _SelectSubPackage(self, bSelect, subpackage):
-        package = self.GetPackage(subpackage)
+        package = subpackage if subpackage in self.sublist else None
         if package:
             self.sublist[package] = bSelect
-            for i in self.EspmList(package):
+            for i in self.installer.espmMap[package]:
                 if bSelect:
                     self._SelectEspm(True, i)
                 else:

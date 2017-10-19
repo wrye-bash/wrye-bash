@@ -265,9 +265,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             with outFile.open('w') as out:
                 for line in generateTweakLines(wizardEdits, iniFile):
                     out.write(line + u'\n')
-            bosh.iniInfos.add_info(outFile.tail) # add it to the iniInfos
-            bosh.iniInfos.table.setItem(outFile.tail, 'installer',
-                                        installer.archive)
+            bosh.iniInfos.add_info(outFile.tail, owner=installer.archive)
             # trigger refresh UI
             ui_refresh[1] = True
             # We wont automatically apply tweaks to anything other than
@@ -279,7 +277,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             else: # suppose that the target ini file is in the Data/ dir
                 target_path = bass.dirs['mods'].join(iniFile)
                 new_targets[target_path.stail] = target_path
-                if not (iniFile.s in installer.data_sizeCrc and ret.Install):
+                if not (iniFile.s in installer.ci_dest_sizeCrc and ret.Install):
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto
                     # install after the wizard, we'll show a message telling
@@ -333,7 +331,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         if not isinstance(pos, tuple) or len(pos) != 2:
             deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), '
                       u'reverting to default position.') % (pos, type(pos)))
-            pos = balt.defPos
+            pos = tuple(balt.defPos)
         if not isinstance(saved, tuple) or len(saved) != 2:
             deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), '
                       u'reverting to default size.') % (saved, type(saved)))
@@ -697,7 +695,7 @@ class Installer_CopyConflicts(_SingleInstallable):
         installers to a project."""
         srcConflicts = set()
         packConflicts = []
-        src_sizeCrc = self._selected_info.data_sizeCrc # CIstr -> (int, int)
+        src_sizeCrc = self._selected_info.ci_dest_sizeCrc # CIstr -> (int, int)
         def _ok(msg): self._showOk(msg % self._selected_item)
         if not src_sizeCrc:
             return _ok(_(u'No files to install for %s'))
@@ -711,7 +709,7 @@ class Installer_CopyConflicts(_SingleInstallable):
                 curConflicts = set()
                 progress(i, _(u"Scanning Packages...") + u'\n' + package.s)
                 for z, y in installer.refreshDataSizeCrc().iteritems():
-                    if z in src_sizeCrc and installer.data_sizeCrc[z] != \
+                    if z in src_sizeCrc and installer.ci_dest_sizeCrc[z] != \
                             src_sizeCrc[z]:
                         curConflicts.add(y)
                         srcConflicts.add(src_sizeCrc[z])

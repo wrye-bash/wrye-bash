@@ -297,7 +297,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.commentsSplitterSashPos':0,
     #--Wrye Bash: Wizards
     'bash.wizard.size': (600,500),
-    'bash.wizard.pos': defPos,
+    'bash.wizard.pos': tuple(defPos),
     #--Wrye Bash: INI Tweaks
     'bash.ini.cols': ['File','Installer'],
     'bash.ini.sort': 'File',
