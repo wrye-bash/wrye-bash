@@ -65,7 +65,6 @@
     </ol>
     <li><a href="#mods">Mods Tab</a>
     <ol>
-        <li><a href="#mods-exclusion">Exclusion Groups</a>
         <li><a href="#mods-details">The Plugin Details Panel</a>
         <li><a href="#mod-masters-symbols">Color scheme for Plugin Masters (MI &amp; Current LO)</a>
         <li><a href="#mods-csv">CSV Files</a>
@@ -622,11 +621,6 @@ tab. The directories skipped are:
 
 
 <h2 id="mods">Mods Tab</h2>
-<h3 id="mods-exclusion">Exclusion Groups</h3>
-<p>Exclusion groups can be used to help flag plugins that are incompatible. Incompatible plugins can be placed into exclusion groups, and when more than one plugin in a group is present, the plugins will be highlighted in orange.
-<p>An exclusion group may be defined or added to by renaming a plugin, putting the exclusion group name first, then a comma, then the plugin's original name. Eg. <code>Group, My plugin.esp</code>. If plugins share the same exclusion group name, they will be members of the same exclusion group.
-<p><b>Note:</b> The usage of exclusion groups is not recommended. Renaming plugins will cause them to become unrecognised by features such as BAIN or utilities such as BOSS that expect plugins to have the names they are distributed with. Renaming plugins will also break any plugins that are dependent on them.
-
 <h3 id="mods-details">The Plugin Details Panel</h3>
 <figure>
 <img src="../bash/images/readme/mods-plugin-details-panel.png" alt="plugin details panel"/>
@@ -779,7 +773,11 @@ tab. The directories skipped are:
             <tr><td>Refresh: pick up assigned groups and add them to the existing ones. Use it after importing groups from a file to update available groups.
             <tr><td>Sync: sync the list of available groups to the assigned ones - in other words delete unassigned groups.
             <tr><td>Default: reset the list of available groups to the default ones. This won't delete non default assigned groups. It's a feature. Use Refresh to pick up your groups and add them to the defaults.
-            <tr><td>Groups Menu<td>Set a group for the selected plugin(s) (do not confuse with an <a href="#mods-exclusion">Exclusion Group</a>). Groups that are assigned to the selected plugins appear checked. They provide no functionality other than to place hidden plugins in group folders provided those folders already exist. Use them to group plugins together so you can disable or enable them at once, etc. Note to old timers:  <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking balo groups for the ride - those of you who remember them shed a tear goodbye.
+            <tr><td>Groups Menu<td>Set a group for the selected plugin(s). Groups that are assigned to the selected plugins appear checked.
+            They provide no automatic functionality, other than to place hidden plugins in group folders provided those folders already
+            exist. Use them to group plugins together so you can disable or enable them at once, etc. Note to old timers:
+            <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking balo groups for the ride - those of you who remember
+            them, shed a tear goodbye.
         <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
         <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
         <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.

@@ -429,8 +429,6 @@ class MasterList(_ModsUIList):
                 item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif masterInfo.hasActiveTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.load'
-        elif masterInfo.isExOverLoaded():
-            item_format.back_key = 'mods.bkgd.exOverload'
         elif masterInfo.hasTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
         elif masterInfo.isGhost:
@@ -880,9 +878,6 @@ class ModList(_ModsUIList):
         elif u'Deactivate' in fileBashTags and checkMark == 1:
             item_format.back_key = 'mods.bkgd.deactivate'
             mouseText += _(u"Mod should be imported and deactivated.  ")
-        elif mod_info.isExOverLoaded():
-            item_format.back_key = 'mods.bkgd.exOverload'
-            mouseText += _(u"WARNING: Exclusion group is overloaded.  ")
         elif mod_info.hasTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
             mouseText += _(u"Has same time as another (unloaded) mod.  ")

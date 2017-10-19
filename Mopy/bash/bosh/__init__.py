@@ -97,7 +97,6 @@ reVersion = re.compile(
   re.M | re.I | re.U)
 
 #--Mod Extensions
-reExGroup = re.compile(u'(.*?),',re.U)
 _reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 __exts = ur'((\.(' + ur'|'.join(ext[1:] for ext in readExts) + ur'))|)$'
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
@@ -372,13 +371,6 @@ class MasterInfo:
         """True if has an active mtime conflict with another mod."""
         if self.modInfo:
             return self.modInfo.hasActiveTimeConflict()
-        else:
-            return False
-
-    def isExOverLoaded(self):
-        """True if belongs to an exclusion group that is overloaded."""
-        if self.modInfo:
-            return self.modInfo.isExOverLoaded()
         else:
             return False
 
@@ -812,15 +804,6 @@ class ModInfo(FileInfo):
             return False
         except UnicodeEncodeError:
             return True
-
-    def isExOverLoaded(self):
-        """True if belongs to an exclusion group that is overloaded."""
-        maExGroup = reExGroup.match(self.name.s)
-        if not (load_order.cached_is_active(self.name) and maExGroup):
-            return False
-        else:
-            exGroup = maExGroup.group(1)
-            return len(modInfos.exGroup_mods[exGroup]) > 1
 
     @property
     def _modname(self):
@@ -1792,7 +1775,6 @@ class ModInfos(FileInfos):
                 msg += u' or ' + bush.game.masterFiles[-1]
                 deprint(_(u'Missing master file; Neither %s exists in an unghosted state in %s.  Presuming that %s is the correct masterfile.') % (msg, dirs['mods'].s, bush.game.masterFiles[0]))
             self.masterName = GPath(bush.game.masterFiles[0])
-        self.exGroup_mods = collections.defaultdict(list)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
@@ -2058,22 +2040,14 @@ class ModInfos(FileInfos):
         return changed
 
     def _refreshInfoLists(self):
-        """Refreshes various mod info lists (exGroup_mods, imported,
-        exported) - call after refreshing from Data AND having latest load
-        order."""
+        """Refreshes mod info lists (bashed_patches, imported, exported).
+        Call after refreshing from Data AND having latest load order."""
         #--Bashed patches
         self.bashed_patches.clear()
         for modName, modInfo in self.iteritems():
             if modInfo.isBP(): self.bashed_patches.add(modName)
-        #--Refresh overLoaded
-        self.exGroup_mods.clear()
-        active_set = set(load_order.cached_active_tuple())
-        for modName in active_set:
-            maExGroup = reExGroup.match(modName.s)
-            if maExGroup:
-                exGroup = maExGroup.group(1)
-                self.exGroup_mods[exGroup].append(modName)
         #--Refresh merged/imported lists.
+        active_set = set(load_order.cached_active_tuple())
         self.merged, self.imported = self.getSemiActive(active_set)
 
     def _refreshMergeable(self):
@@ -2376,7 +2350,7 @@ class ModInfos(FileInfos):
                     toActivate.add(m)
             mods = load_order.get_ordered(self.keys())
             # first select the bashed patch(es) and their masters
-            for mod in mods: ##: usually results in exclusion group violation
+            for mod in mods:
                 if self[mod].isBP(): _add_to_activate(mod)
             # then activate mods not tagged NoMerge or Deactivate or Filter
             def _activatable(modName):

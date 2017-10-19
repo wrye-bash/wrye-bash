@@ -71,17 +71,6 @@ colorInfo = {
         _(u"This is the background color used for an active plugin that is "
           u"tagged 'Deactivate'."),
     ),
-    'mods.bkgd.exOverload': (_(u'Exclusion Group Overloaded'),
-        _(u'Tabs: Mods') + u'\n\n' +
-        _(u'This is the background color used for an active plugin in an '
-          u'overloaded Exclusion Group.  This means that two or more plugins '
-          u'in an Exclusion Group are active, where an Exclusion Group is any '
-          u'group of mods that start with the same name, followed by a comma.')
-        + u'\n\n' + _(u'An example exclusion group:') + u'\n' +
-        _(u'Bashed Patch, 0.esp') + u'\n' + _(u'Bashed Patch, 1.esp') + u'\n\n'
-        + _(u'Both of the above plugins belong to the "Bashed Patch," '
-            u'Exclusion Group.'),
-    ),
     'mods.bkgd.ghosted': (_(u'Ghosted Plugin'),
         _(u'Tabs: Mods') + u'\n\n' +
         _(u'This is the background color used for a ghosted plugin.'),
@@ -166,7 +155,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'mods.bkgd.doubleTime.exists':  (0xFF, 0xDC, 0xDC),
         'mods.bkgd.doubleTime.load':    (0xFF, 0x64, 0x64),
         'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
-        'mods.bkgd.exOverload':         (0xFF, 0x99, 0x00),
         'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
         'mods.text.bashedPatch':        (30, 157, 251),
         #--INI Edits Tab
