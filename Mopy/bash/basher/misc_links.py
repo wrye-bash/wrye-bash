@@ -43,7 +43,9 @@ class Screens_NextScreenShot(EnabledLink):
     _text = _(u'Next Shot...')
     rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
 
-    def _enable(self): return bosh.oblivionIni.abs_path.exists()
+    def _enable(self):
+        return not bosh.oblivionIni.isCorrupted \
+               and bosh.oblivionIni.abs_path.exists()
 
     def _initData(self, window, selection):
         super(Screens_NextScreenShot, self)._initData(window, selection)

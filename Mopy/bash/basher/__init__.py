@@ -53,6 +53,7 @@ has its own data store)."""
 # Imports ---------------------------------------------------------------------
 #--Python
 import StringIO
+import collections
 import os
 import re
 import sys
@@ -62,7 +63,6 @@ from functools import partial
 from operator import itemgetter
 from types import ClassType
 #--wxPython
-import collections
 import wx
 
 #--Localization
@@ -79,7 +79,7 @@ startupinfo = bolt.startupinfo
 
 #--Balt
 from .. import balt
-from ..balt import fill, CheckLink, EnabledLink, SeparatorLink, Link, \
+from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
     SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel, \
     BaltFrame
@@ -712,6 +712,7 @@ class TargetINILineCtrl(INIListCtrl):
         return -1
 
     def RefreshIniContents(self, new_target=False):
+        if bosh.iniInfos.ini.isCorrupted: return
         if new_target:
             self.DeleteAllItems()
         num = self.GetItemCount()
@@ -3863,10 +3864,9 @@ class BashFrame(BaltFrame):
         if self.oblivionIniCorrupted != bosh.oblivionIni.isCorrupted:
             self.oblivionIniCorrupted = bosh.oblivionIni.isCorrupted
             if self.oblivionIniCorrupted:
-                msg = _(u'Your %s should begin with a section header '
-                        u'(e.g. "[General]"), but does not. You should edit '
-                        u'the file to correct this.') % bush.game.iniFiles[0]
-                balt.showWarning(self, fill(msg), _(u'Corrupted game Ini'))
+                msg = u'\n'.join([self.oblivionIniCorrupted, u'', _(u'Please '
+                    u'replace the ini with a default copy and restart Bash.')])
+                balt.showWarning(self, msg, _(u'Corrupted game Ini'))
         elif self.oblivionIniMissing:
             self.oblivionIniMissing = False
             balt.showWarning(self, self._ini_missing % {

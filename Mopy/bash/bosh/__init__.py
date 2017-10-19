@@ -3053,20 +3053,15 @@ def initDirs(bashIni, personal, localAppData):
     global oblivionIni
     gameInis = tuple(OblivionIni(x) for x in bush.game.iniFiles)
     oblivionIni = gameInis[0]
-    try:
-        if oblivionIni.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
-            # Set the save game folder to the Oblivion directory
-            dirs['saveBase'] = dirs['app']
-            # Set the data folder to sLocalMasterPath
-            dirs['mods'] = dirs['app'].join(oblivionIni.getSetting(u'General', u'SLocalMasterPath', u'Data\\'))
-            # these are relative to the mods path so they must be updated too
-            dirs['patches'] = dirs['mods'].join(u'Bash Patches')
-            dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
-    except:
-        # Error accessing folders for Oblivion.ini
-        # We'll show an error later
-        pass
-
+    if oblivionIni.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
+        # Set the save game folder to the Oblivion directory
+        dirs['saveBase'] = dirs['app']
+        # Set the data folder to sLocalMasterPath
+        dirs['mods'] = dirs['app'].join(
+            oblivionIni.getSetting(u'General', u'SLocalMasterPath', u'Data'))
+        # these are relative to the mods path so they must be updated too
+        dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+        dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni)
     dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni)

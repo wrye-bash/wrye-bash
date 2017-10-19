@@ -48,7 +48,7 @@ class IniFile(AFile):
 
     def __init__(self, abs_path):
         super(IniFile, self).__init__(abs_path)
-        self.isCorrupted = False
+        self.isCorrupted = u''
         #--Settings cache
         self._ci_settings_cache_linenum = self.__empty
         self._deleted_cache = self.__empty
@@ -81,8 +81,13 @@ class IniFile(AFile):
             return ({}, {}) if with_deleted else {}
         if self._ci_settings_cache_linenum is self.__empty \
                 or self.do_update():
-            self._ci_settings_cache_linenum, self._deleted_cache, \
-                self.isCorrupted = self._get_ci_settings(self.abs_path)
+            try:
+                self._ci_settings_cache_linenum, self._deleted_cache, \
+                    self.isCorrupted = self._get_ci_settings(self.abs_path)
+            except UnicodeDecodeError as e:
+                self.isCorrupted = (_(u'Your %s seems to have unencodable '
+                    u'characters:') + u'\n\n%s') % (self.abs_path, e)
+                return ({}, {}) if with_deleted else {}
         if with_deleted:
             return self._ci_settings_cache_linenum, self._deleted_cache
         return self._ci_settings_cache_linenum
@@ -119,7 +124,7 @@ class IniFile(AFile):
         ci_deleted_settings = DefaultLowerDict(LowerDict)
         default_section = cls.defaultSection
         encoding = cls.encoding
-        isCorrupted = False
+        isCorrupted = u''
         reComment = cls.reComment
         reSection = cls.reSection
         reDeleted = cls.reDeletedSetting
@@ -143,7 +148,9 @@ class IniFile(AFile):
                 elif maSetting:
                     if sectionSettings is None:
                         sectionSettings = ci_settings[default_section]
-                        isCorrupted = True
+                        isCorrupted = _(
+                            u'Your %s should begin with a section header ('
+                            u'e.g. "[General]"), but does not.') % tweakPath
                     sectionSettings[maSetting.group(1)] = maSetting.group(
                         2).strip(), i
                 elif maDeleted:
