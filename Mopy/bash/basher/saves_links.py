@@ -28,13 +28,12 @@ attribute points to BashFrame.saveList singleton."""
 import StringIO
 import re
 import shutil
-import struct
 from . import BashFrame
 from .dialogs import ImportFaceDialog
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
-from ..bolt import GPath, SubProgress, formatInteger
+from ..bolt import GPath, SubProgress, formatInteger, struct_pack, struct_unpack
 from ..bosh import faces
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 
@@ -660,7 +659,7 @@ class Save_RepairAbomb(OneItemLink):
         saveFile.load()
         (tcSize,abombCounter,abombFloat) = saveFile.getAbomb()
         #--Continue?
-        progress = 100*abombFloat/struct.unpack('f',struct.pack('I',0x49000000))[0]
+        progress = 100*abombFloat/struct_unpack('f', struct_pack('I',0x49000000))[0]
         newCounter = 0x41000000
         if abombCounter <= newCounter:
             self._showOk(_(u'Abomb counter is too low to reset.'))

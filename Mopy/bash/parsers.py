@@ -30,7 +30,6 @@ from _ctypes import POINTER
 from ctypes import cast, c_ulong
 from operator import attrgetter, itemgetter
 import re
-import struct
 # Internal
 import bolt
 import bush # for game and actorValues
@@ -38,7 +37,8 @@ import bosh # for modInfos
 import env
 import load_order
 from balt import Progress
-from bolt import GPath, decode, deprint, CsvReader, csvFormat, SubProgress
+from bolt import GPath, decode, deprint, CsvReader, csvFormat, SubProgress, \
+    struct_pack, struct_unpack
 from bass import dirs, inisettings
 from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter
 from cint import ObCollection, FormID, aggregateTypes, validTypes, \
@@ -1050,7 +1050,6 @@ class FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with CsvReader(textPath) as ins:
-            # pack,unpack = struct.pack,struct.unpack   # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -1130,7 +1129,6 @@ class CBash_FidReplacer:
         old_new,old_eid,new_eid = self.old_new,self.old_eid,self.new_eid
         aliases = self.aliases
         with CsvReader(textPath) as ins:
-            # pack,unpack = struct.pack,struct.unpack  # BOTH unused - bug ?
             for fields in ins:
                 if len(fields) < 7 or fields[2][:2] != u'0x'\
                         or fields[6][:2] != u'0x': continue
@@ -2570,8 +2568,7 @@ class CompleteItemData(_UsesEffectsMixin): #Needs work
                 'MISC','SGST','SLGM','WEAP')]
         aliases = self.aliases
         with CsvReader(textPath) as ins:
-            pack,unpack = struct.pack,struct.unpack
-            sfloat = lambda a:unpack('f',pack('f',float(a)))[
+            sfloat = lambda a:struct_unpack('f',struct_pack('f',float(a)))[
                 0] #--Force standard precision
             for fields in ins:
                 if len(fields) < 3 or fields[2][:2] != '0x': continue

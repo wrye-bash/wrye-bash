@@ -30,11 +30,10 @@ import struct
 import copy
 import cPickle
 from operator import attrgetter
-
 import bass
 import bolt
 import exception
-from bolt import decode, encode, sio, GPath
+from bolt import decode, encode, sio, GPath, struct_pack, struct_unpack
 from bass import null1
 
 # Util Functions --------------------------------------------------------------
@@ -42,9 +41,8 @@ from bass import null1
 def _coerce(value, newtype, base=None, AllowNone=False):
     try:
         if newtype is float:
-            pack,unpack = struct.pack,struct.unpack
             #--Force standard precision
-            return round(unpack('f',pack('f',float(value)))[0], 6)
+            return round(struct_unpack('f', struct_pack('f', float(value)))[0], 6)
         elif newtype is bool:
             if isinstance(value,basestring):
                 retValue = value.strip().lower()
@@ -63,18 +61,6 @@ def _coerce(value, newtype, base=None, AllowNone=False):
     except (ValueError,TypeError):
         if newtype is int: return 0
         return None
-
-#--.NET Strings
-def netString(x):
-    """Encode a string into a .net string."""
-    lenx = len(x)
-    if lenx < 128:
-        return struct.pack('b',lenx)+x
-    elif lenx > 0x7FFF: #--Actually, probably fails earlier.
-        raise NotImplementedError
-    else:
-        lenx = 0x80 | lenx & 0x7F | (lenx & 0xFF80) << 1
-        return struct.pack('H',lenx)+x
 
 #--Reference (fid)
 def strFid(fid):
@@ -247,7 +233,7 @@ class ModReader:
         endPos = self.ins.tell() + size
         if endPos > self.size:
             raise exception.ModReadError(self.inName, recType, endPos, self.size)
-        return struct.unpack(format,self.ins.read(size))
+        return struct_unpack(format, self.ins.read(size))
 
     def unpackRef(self):
         """Read a ref (fid)."""
@@ -310,7 +296,7 @@ class ModWriter:
 
     #--Additional functions -------------------------------
     def pack(self,format,*data):
-        self.out.write(struct.pack(format,*data))
+        self.out.write(struct_pack(format, *data))
 
     def packSub(self,type,data,*values):
         """Write subrecord header and data to output stream.
@@ -319,7 +305,7 @@ class ModWriter:
         with size > 0xFFFF."""
         try:
             if data is None: return
-            structPack = struct.pack
+            structPack = struct_pack
             if values: data = structPack(data,*values)
             outWrite = self.out.write
             lenData = len(data)
@@ -342,7 +328,7 @@ class ModWriter:
             data = encode(data,firstEncoding=bolt.pluginEncoding)
         lenData = len(data) + 1
         outWrite = self.out.write
-        structPack = struct.pack
+        structPack = struct_pack
         if lenData < 0xFFFF:
             outWrite(structPack('=4sH',type,lenData))
         else:
@@ -353,7 +339,7 @@ class ModWriter:
 
     def packRef(self,type,fid):
         """Write subrecord header and fid reference."""
-        if fid is not None: self.out.write(struct.pack('=4sHI',type,4,fid))
+        if fid is not None: self.out.write(struct_pack('=4sHI', type, 4, fid))
 
     def writeGroup(self,size,label,groupType,stamp):
         if type(label) is str:
@@ -1034,7 +1020,7 @@ class MelStructA(MelStructs):
             attrs = self.attrs
             format = self.format
             for x in record.__getattribute__(self.attr):
-                data += struct.pack(format, *[getattr(x,item) for item in attrs])
+                data += struct_pack(format, *[getattr(x, item) for item in attrs])
             out.packSub(self.subType,data)
 
     def mapFids(self,record,function,save=False):
@@ -1461,7 +1447,7 @@ class MreRecord(object):
     def getDecompressed(self):
         """Return self.data, first decompressing it if necessary."""
         if not self.flags1.compressed: return self.data
-        size, = struct.unpack('I',self.data[:4])
+        size, = struct_unpack('I', self.data[:4])
         decomp = zlib.decompress(self.data[4:])
         if len(decomp) != size:
             raise exception.ModError(self.inName,
@@ -1549,7 +1535,7 @@ class MreRecord(object):
         if self.flags1.compressed:
             dataLen = len(self.data)
             comp = zlib.compress(self.data,6)
-            self.data = struct.pack('=I',dataLen) + comp
+            self.data = struct_pack('=I', dataLen) + comp
         self.size = len(self.data)
         self.setChanged(False)
         return self.size

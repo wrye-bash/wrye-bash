@@ -25,10 +25,9 @@
 """Classes that group records."""
 # Python imports
 from operator import itemgetter
-import struct
 # Wrye Bash imports
 from brec import ModReader
-from bolt import sio
+from bolt import sio, struct_pack, struct_unpack
 import bush # for groupTypes
 import bosh # for modInfos
 from exception import AbstractError, ArgumentError, ModError
@@ -817,8 +816,8 @@ class MobWorld(MobCells):
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
         cellBlocksAppend = cellBlocks.append
-        structUnpack = struct.unpack
-        structPack = struct.pack
+        structUnpack = struct_unpack
+        structPack = struct_pack
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
             if curPos >= endBlockPos:

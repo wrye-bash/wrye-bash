@@ -32,7 +32,7 @@ from operator import attrgetter
 from .. import bolt, bush
 from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
     SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
-    unpack_short
+    unpack_short, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices
 from ..exception import FileError, ModError, StateError
@@ -80,7 +80,7 @@ class SreNPC(object):
         """Loads variables from data."""
         with sio(data) as ins:
             def _unpack(fmt, fmt_siz):
-                return struct.unpack(fmt, ins.read(fmt_siz))
+                return struct_unpack(fmt, ins.read(fmt_siz))
             flags = SreNPC.flags(flags)
             if flags.form:
                 self.form, = _unpack('I',4)
@@ -123,7 +123,7 @@ class SreNPC(object):
         """Returns self.data."""
         with sio() as out:
             def _pack(fmt, *args):
-                out.write(struct.pack(fmt, *args))
+                out.write(struct_pack(fmt, *args))
             #--Form
             if self.form is not None:
                 _pack('I',self.form)
@@ -241,7 +241,7 @@ class PluggyFile:
         size = self.path.size
         with self.path.open('rb') as ins:
             buff = ins.read(size-4)
-            crc32, = struct.unpack('=i',ins.read(4))
+            crc32, = struct_unpack('=i', ins.read(4))
         crcNew = binascii.crc32(buff)
         if crc32 != crcNew:
             raise FileError(self.path.tail,
@@ -250,7 +250,7 @@ class PluggyFile:
         #--Header
         with sio(buff) as ins:
             def _unpack(fmt, fmt_siz):
-                return struct.unpack(fmt, ins.read(fmt_siz))
+                return struct_unpack(fmt, ins.read(fmt_siz))
             if ins.read(10) != 'PluggySave':
                 raise FileError(self.path.tail, u'File tag != "PluggySave"')
             self.version, = _unpack('I',4)
@@ -271,7 +271,7 @@ class PluggyFile:
                 self._plugins.append((espid, index, modName))
             #--Other
             self.other = ins.getvalue()[ins.tell():]
-        deprint(struct.unpack('I',self.other[-4:]),self.path.size-8)
+        deprint(struct_unpack('I', self.other[-4:]), self.path.size-8)
         #--Done
         self.valid = True
 
@@ -284,7 +284,7 @@ class PluggyFile:
         with sio() as buff:
             #--Save
             def _pack(fmt, *args):
-                buff.write(struct.pack(fmt, *args))
+                buff.write(struct_pack(fmt, *args))
             buff.write('PluggySave')
             _pack('=I',self.version)
             #--Plugins
@@ -305,7 +305,7 @@ class PluggyFile:
             text = buff.getvalue()
             with path.open('wb') as out:
                 out.write(text)
-                out.write(struct.pack('i',binascii.crc32(text)))
+                out.write(struct_pack('i', binascii.crc32(text)))
         path.mtime = mtime
 
     def safeSave(self):
@@ -556,7 +556,7 @@ class SaveFile:
         outPath = outPath or self.fileInfo.getPath()
         with outPath.open('wb') as out:
             def _pack(fmt, *data):
-                out.write(struct.pack(fmt, *data))
+                out.write(struct_pack(fmt, *data))
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
@@ -727,7 +727,7 @@ class SaveFile:
         log(_(u'  Float:\t%.2f') % abombFloat)
         #--FBomb
         log.setHeader(_(u'Fbomb Counter'))
-        log(_(u'  Next in-game object: %08X') % struct.unpack('I',self.preGlobals[:4]))
+        log(_(u'  Next in-game object: %08X') % struct_unpack('I', self.preGlobals[:4]))
         #--Array Sizes
         log.setHeader(u'Array Sizes')
         log(u'  %d\t%s' % (len(self.created),_(u'Created Items')))
@@ -782,7 +782,7 @@ class SaveFile:
                     knownTypes.add(type)
             #--Obj ref parents
             if type == 49 and mod == 255 and (flags & 2):
-                iref, = struct.unpack('I',data[4:8])
+                iref, = struct_unpack('I', data[4:8])
                 count,cumSize = objRefBases.get(iref,(0,0))
                 count += 1
                 cumSize += len(data) + 12
@@ -1085,7 +1085,7 @@ class SaveFile:
         for record in self.records:
             fid,recType,flags,version,data = record
             if recType == 49 and fid >> 24 == 0xFF and (flags & 2):
-                iref, = struct.unpack('I',data[4:8])
+                iref, = struct_unpack('I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
             progress.plus()
@@ -1122,7 +1122,7 @@ class SaveFile:
             if fid in uncreated:
                 numUnCreChanged += 1
             elif removeNullRefs and recType == 49 and fid >> 24 == 0xFF and (flags & 2):
-                iref, = struct.unpack('I',data[4:8])
+                iref, = struct_unpack('I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     numUnNulled += 1
                 else:
@@ -1144,21 +1144,21 @@ class SaveFile:
     def getAbomb(self):
         """Gets animation slowing counter(?) value."""
         data = self.preCreated
-        tesClassSize, = struct.unpack('H',data[:2])
+        tesClassSize, = struct_unpack('H', data[:2])
         abombBytes = data[2+tesClassSize-4:2+tesClassSize]
-        abombCounter, = struct.unpack('I',abombBytes)
-        abombFloat, = struct.unpack('f',abombBytes)
+        abombCounter, = struct_unpack('I', abombBytes)
+        abombFloat, = struct_unpack('f', abombBytes)
         return tesClassSize,abombCounter,abombFloat
 
     def setAbomb(self,value=0x41000000):
         """Resets abomb counter to specified value."""
         data = self.preCreated
-        tesClassSize, = struct.unpack('H',data[:2])
+        tesClassSize, = struct_unpack('H', data[:2])
         if tesClassSize < 4: return
         with sio() as buff:
             buff.write(data)
             buff.seek(2+tesClassSize-4)
-            buff.write(struct.pack('I',value))
+            buff.write(struct_pack('I', value))
             self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------

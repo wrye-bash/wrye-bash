@@ -51,7 +51,7 @@ from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
 from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode, \
-    unpack_many, unpack_byte
+    unpack_many, unpack_byte, struct_pack, struct_unpack
 from ..brec import MreRecord, ModReader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -277,7 +277,7 @@ class BsaFile:
                     if hash != trueHash:
                         #print ' ',fileName,'\t',hex(hash-trueHash),hex(hash),hex(trueHash)
                         ios.seek(filePos)
-                        ios.write(struct.pack('Q',trueHash))
+                        ios.write(struct_pack('Q',trueHash))
                         resetCount += 1
         #--Done
         self.resetOblivionBSAMTimes()
@@ -598,10 +598,10 @@ class ModInfo(FileInfo):
             raise ArgumentError
         with self.getPath().open('r+b') as modFile:
             modFile.seek(8)
-            flags1 = MreRecord.flags1_(struct.unpack('I', modFile.read(4))[0])
+            flags1 = MreRecord.flags1_(struct_unpack('I', modFile.read(4))[0])
             flags1.esm = (esm_or_esp == u'esm')
             modFile.seek(8)
-            modFile.write(struct.pack('=I',int(flags1)))
+            modFile.write(struct_pack('=I', int(flags1)))
         self.header.flags1 = flags1
         self.setmtime(crc_changed=True)
 

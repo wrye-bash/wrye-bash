@@ -24,11 +24,10 @@
 import collections
 import re
 import subprocess
-from struct import pack as struct_pack
 from subprocess import PIPE
 from .. import env, bolt, bass, archives
 from ..bolt import decode, encode, Path, startupinfo, unpack_int_signed, \
-    unpack_byte, unpack_short, unpack_int64_signed
+    unpack_byte, unpack_short, unpack_int64_signed, struct_pack
 
 def _readNetString(open_file):
     """Read a .net string. THIS CODE IS DUBIOUS!"""

@@ -38,7 +38,8 @@ from collections import OrderedDict
 from functools import partial
 from .. import bolt
 from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
-    unpack_short, unpack_float, unpack_str16, unpack_byte
+    unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
+    struct_unpack
 from ..exception import SaveHeaderError
 
 class SaveFileHeader(object):
@@ -118,7 +119,7 @@ class SaveFileHeader(object):
 
     def writeMasters(self, ins, out):
         """Rewrites masters of existing save file."""
-        def _pack(fmt, *args): out.write(struct.pack(fmt, *args))
+        def _pack(fmt, *args): out.write(struct_pack(fmt, *args))
         out.write(ins.read(self._mastersStart))
         oldMasters = self._write_masters(ins, out, _pack)
         #--Copy the rest
@@ -274,7 +275,7 @@ class SkyrimSaveHeader(SaveFileHeader):
                 start_pos += offset
             # The masters table's size is found in bytes 1-5
             if masters_size is None and len(uncompressed) >= 5:
-                masters_size = struct.unpack('I', uncompressed[1:5])[0]
+                masters_size = struct_unpack('I', uncompressed[1:5])[0]
             # Stop when we have the whole masters table
             if masters_size is not None:
                 if len(uncompressed) >= masters_size + 5:

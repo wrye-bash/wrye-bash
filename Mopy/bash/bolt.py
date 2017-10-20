@@ -52,6 +52,10 @@ import bass
 import chardet
 import exception
 
+# structure aliases, mainly introduced to reduce uses of 'pack' and 'unpack'
+struct_pack = struct.pack
+struct_unpack = struct.unpack
+
 close_fds = True
 #-- To make commands executed with Popen hidden
 startupinfo = None
@@ -1615,22 +1619,22 @@ class Settings(DataDict):
         return self.data.pop(key,default)
 
 # Structure wrappers ----------------------------------------------------------
-def unpack_str8(ins): return ins.read(struct.unpack('B', ins.read(1))[0])
-def unpack_str16(ins): return ins.read(struct.unpack('H', ins.read(2))[0])
-def unpack_str32(ins): return ins.read(struct.unpack('I', ins.read(4))[0])
-def unpack_int(ins): return struct.unpack('I', ins.read(4))[0]
-def unpack_short(ins): return struct.unpack('H', ins.read(2))[0]
-def unpack_float(ins): return struct.unpack('f', ins.read(4))[0]
-def unpack_byte(ins): return struct.unpack('B', ins.read(1))[0]
-def unpack_int_signed(ins): return struct.unpack('i', ins.read(4))[0]
-def unpack_int64_signed(ins): return struct.unpack('q', ins.read(8))[0]
-def unpack_4s(ins): return struct.unpack('4s', ins.read(4))[0]
+def unpack_str8(ins): return ins.read(struct_unpack('B', ins.read(1))[0])
+def unpack_str16(ins): return ins.read(struct_unpack('H', ins.read(2))[0])
+def unpack_str32(ins): return ins.read(struct_unpack('I', ins.read(4))[0])
+def unpack_int(ins): return struct_unpack('I', ins.read(4))[0]
+def unpack_short(ins): return struct_unpack('H', ins.read(2))[0]
+def unpack_float(ins): return struct_unpack('f', ins.read(4))[0]
+def unpack_byte(ins): return struct_unpack('B', ins.read(1))[0]
+def unpack_int_signed(ins): return struct_unpack('i', ins.read(4))[0]
+def unpack_int64_signed(ins): return struct_unpack('q', ins.read(8))[0]
+def unpack_4s(ins): return struct_unpack('4s', ins.read(4))[0]
 
 def unpack_string(ins, string_len):
-    return struct.unpack('%ds' % string_len, ins.read(string_len))[0]
+    return struct_unpack('%ds' % string_len, ins.read(string_len))[0]
 
 def unpack_many(ins, fmt):
-    return struct.unpack(fmt, ins.read(struct.calcsize(fmt)))
+    return struct_unpack(fmt, ins.read(struct.calcsize(fmt)))
 
 #------------------------------------------------------------------------------
 class TableColumn:
