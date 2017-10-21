@@ -828,10 +828,9 @@ class ModInfo(FileInfo):
 
     def _mods_bsa(self):
         """Return bsas from bsaInfos, that match plugin's name."""
-        if bush.game.fsName == u'Skyrim':
-            pattern = self._modname
-        else :
-            pattern = self._modname + u'.*'
+        pattern = re.escape(self._modname)
+        # games other than skyrim accept more general bsa names
+        if bush.game.fsName != u'Skyrim': pattern +=  u'.*'
         reg = re.compile(pattern, re.I | re.U)
         # bsaInfos must be updated and contain all existing bsas
         return [inf for bsa, inf in bsaInfos.iteritems() if reg.match(bsa.s)]
