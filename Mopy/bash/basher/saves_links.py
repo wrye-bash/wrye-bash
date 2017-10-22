@@ -35,7 +35,7 @@ from .. import bass, bosh, bolt, balt, bush, parsers, load_order
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
 from ..bolt import GPath, SubProgress, formatInteger
-from ..bosh import faces, _saves
+from ..bosh import faces
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
@@ -607,6 +607,18 @@ class Save_Move(ChoiceLink):
         if destDir == bosh.saveInfos.store_dir:
             self._showError(_(u"You can't move saves to the current profile!"))
             return
+        try:
+            count = self._move_saves(destDir, profile)
+        finally:
+            if not self.copyMode: # files moved to other profile, refresh
+                moved = bosh.saveInfos.delete_refresh(self.selected, None,
+                                                      check_existence=True)
+                self.window.RefreshUI(to_del=moved)
+        msg = (_(u'%d files copied to %s.') if self.copyMode else _(
+            u'%d files moved to %s.')) % (count, profile)
+        self._showInfo(msg, title=_(u'Copy File'))
+
+    def _move_saves(self, destDir, profile):
         savesTable = bosh.saveInfos.table
         #--bashDir
         destTable = bolt.Table(bolt.PickleDict(destDir.join('Bash','Table.dat')))
@@ -629,15 +641,9 @@ class Save_Move(ChoiceLink):
                 bosh.saveInfos.move_info(fileName, destDir)
                 if fileName in savesTable:
                     destTable[fileName] = savesTable.pop(fileName)
-                count += 1
+            count += 1
         destTable.save()
-        if self.copyMode:
-            self._showInfo(_(u'%d files copied to %s.') % (count, profile),
-                           title=_(u'Copy File'))
-        elif count: # files moved to other profile, refresh ##: finally ?
-            moved = bosh.saveInfos.delete_refresh(self.selected, None,
-                                                  check_existence=True)
-            self.window.RefreshUI(to_del=moved)
+        return count
 
 #------------------------------------------------------------------------------
 class Save_RepairAbomb(OneItemLink):
