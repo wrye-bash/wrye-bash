@@ -319,7 +319,7 @@ class OmodConfig:
         config = OmodConfig(name)
         configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         if configPath.exists():
-            with bolt.StructFile(configPath.s,'rb') as ins:
+            with open(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
                 config.name = decode(_readNetString(ins), encoding='utf-8')
@@ -337,7 +337,7 @@ class OmodConfig:
         """Write obmm config file for project."""
         configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
-        with bolt.StructFile(configPath.temp.s,'wb') as out:
+        with open(configPath.temp.s,'wb') as out:
             out.write(struct_pack('B', 4))
             _writeNetString(out, config.name.encode('utf8'))
             out.write(struct_pack('i', config.vMajor))

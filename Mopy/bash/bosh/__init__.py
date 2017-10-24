@@ -50,7 +50,8 @@ from .. import bass, bolt, balt, bush, env, load_order, archives
 from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
-from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode
+from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode, \
+    unpack_many, unpack_byte
 from ..brec import MreRecord, ModReader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -197,23 +198,23 @@ class BsaFile:
 
     def scan(self):
         """Reports on contents."""
-        with bolt.StructFile(self.path.s,'rb') as ins:
+        with open(self.path.s,'rb') as ins:
             #--Header
             ins.seek(4*4)
-            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
+            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = unpack_many(ins, '5I')
             #--FolderInfos (Initial)
             folderInfos = self.folderInfos = []
             for index in range(self.folderCount):
-                hash,subFileCount,offset = ins.unpack('Q2I',16)
+                hash,subFileCount,offset = unpack_many(ins, 'Q2I')
                 folderInfos.append([hash,subFileCount,offset])
             #--Update folderInfos
             for index,folderInfo in enumerate(folderInfos):
                 fileInfos = []
-                folderName = cstrip(ins.read(ins.unpack('B',1)[0]))
+                folderName = cstrip(ins.read(unpack_byte(ins)))
                 folderInfos[index].extend((folderName,fileInfos))
                 for index in range(folderInfo[1]):
                     filePos = ins.tell()
-                    hash,size,offset = ins.unpack('Q2I',16)
+                    hash,size,offset = unpack_many(ins, 'Q2I')
                     fileInfos.append([hash,size,offset,u'',filePos])
             #--File Names
             fileNames = [decode(x) for x in ins.read(lenFileNames).split('\x00')[:-1]]
@@ -262,9 +263,9 @@ class BsaFile:
         for bsaFile,mtime in bsaTimes:
             dirs['mods'].join(bsaFile).mtime = mtime
 
-    def reset(self,progress=None):
+    def reset(self):
         """Resets BSA archive hashes to correct values."""
-        with bolt.StructFile(self.path.s,'r+b') as ios:
+        with open(self.path.s,'r+b') as ios:
             #--Rehash
             resetCount = 0
             folderInfos = self.folderInfos
@@ -276,7 +277,7 @@ class BsaFile:
                     if hash != trueHash:
                         #print ' ',fileName,'\t',hex(hash-trueHash),hex(hash),hex(trueHash)
                         ios.seek(filePos)
-                        ios.pack('Q',trueHash)
+                        ios.write(struct.pack('Q',trueHash))
                         resetCount += 1
         #--Done
         self.resetOblivionBSAMTimes()

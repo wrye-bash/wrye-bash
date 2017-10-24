@@ -30,8 +30,9 @@ from itertools import starmap, repeat
 from operator import attrgetter
 
 from .. import bolt, bush
-from ..bolt import Flags, sio, GPath, decode, deprint, encode, \
-    cstrip, SubProgress
+from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
+    SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
+    unpack_short
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices
 from ..exception import FileError, ModError, StateError
@@ -470,7 +471,7 @@ class SaveFile:
         # TODO: This is Oblivion only code.  Needs to be refactored
         import array
         path = self.fileInfo.getPath()
-        with bolt.StructFile(path.s,'rb') as ins:
+        with open(path.s,'rb') as ins:
             #--Progress
             progress = progress or bolt.Progress()
             progress.setFull(self.fileInfo.size)
@@ -479,17 +480,16 @@ class SaveFile:
             self.header = ins.read(34)
 
             #--Save Header, pcName
-            gameHeaderSize, = ins.unpack('I',4)
-            self.saveNum,pcNameSize, = ins.unpack('=IB',5)
+            gameHeaderSize = unpack_int(ins)
+            self.saveNum,pcNameSize = unpack_many(ins, '=IB')
             self.pcName = decode(cstrip(ins.read(pcNameSize)))
             self.postNameHeader = ins.read(gameHeaderSize-5-pcNameSize)
 
             #--Masters
             del self.masters[:]
-            numMasters, = ins.unpack('B',1)
+            numMasters = unpack_byte(ins)
             for count in range(numMasters):
-                size, = ins.unpack('B',1)
-                self.masters.append(GPath(decode(ins.read(size))))
+                self.masters.append(GPath(decode(unpack_str8(ins))))
 
             #--Pre-Records copy buffer
             def insCopy(buff,size,backSize=0):
@@ -497,53 +497,53 @@ class SaveFile:
                 buff.write(ins.read(size+backSize))
 
             #--"Globals" block
-            fidsPointer,recordsNum = ins.unpack('2I',8)
+            fidsPointer,recordsNum = unpack_many(ins, '2I')
             #--Pre-globals
             self.preGlobals = ins.read(8*4)
             #--Globals
-            globalsNum, = ins.unpack('H',2)
-            self.globals = [ins.unpack('If',8) for num in xrange(globalsNum)]
+            globalsNum = unpack_short(ins)
+            self.globals = [unpack_many(ins, 'If') for num in xrange(globalsNum)]
             #--Pre-Created (Class, processes, spectator, sky)
             with sio() as buff:
                 for count in range(4):
-                    size, = ins.unpack('H',2)
-                    insCopy(buff,size,2)
+                    siz = unpack_short(ins)
+                    insCopy(buff, siz, 2)
                 insCopy(buff,4) #--Supposedly part of created info, but sticking it here since I don't decode it.
                 self.preCreated = buff.getvalue()
             #--Created (ALCH,SPEL,ENCH,WEAP,CLOTH,ARMO, etc.?)
             modReader = ModReader(self.fileInfo.name,ins)
-            createdNum, = ins.unpack('I',4)
+            createdNum = unpack_int(ins)
             for count in xrange(createdNum):
                 progress(ins.tell(),_(u'Reading created...'))
-                header = ins.unpack('4s4I',20)
+                header = unpack_many(ins, '4s4I')
                 self.created.append(MreRecord(ModReader.recHeader(*header),modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
             with sio() as buff:
                 for count in range(4):
-                    size, = ins.unpack('H',2)
-                    insCopy(buff,size,2)
+                    siz = unpack_short(ins)
+                    insCopy(buff, siz, 2)
                 self.preRecords = buff.getvalue()
 
             #--Records
             for count in xrange(recordsNum):
                 progress(ins.tell(),_(u'Reading records...'))
-                (fid,recType,flags,version,size) = ins.unpack('=IBIBH',12)
-                data = ins.read(size)
+                (fid, recType, flags, version, siz) = unpack_many(ins,'=IBIBH')
+                data = ins.read(siz)
                 self.records.append((fid,recType,flags,version,data))
 
             #--Temp Effects, fids, worldids
             progress(ins.tell(),_(u'Reading fids, worldids...'))
-            size, = ins.unpack('I',4)
-            self.tempEffects = ins.read(size)
+            tmp_effects_size = unpack_int(ins)
+            self.tempEffects = ins.read(tmp_effects_size)
             #--Fids
-            num, = ins.unpack('I',4)
+            num = unpack_int(ins)
             self.fids = array.array('I')
             self.fids.fromfile(ins,num)
             for iref,fid in enumerate(self.fids):
                 self.irefs[fid] = iref
 
             #--WorldSpaces
-            num, = ins.unpack('I',4)
+            num = unpack_int(ins)
             self.worldSpaces = array.array('I')
             self.worldSpaces.fromfile(ins,num)
         #--Done

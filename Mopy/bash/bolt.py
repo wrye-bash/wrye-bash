@@ -1633,17 +1633,6 @@ def unpack_many(ins, fmt):
     return struct.unpack(fmt, ins.read(struct.calcsize(fmt)))
 
 #------------------------------------------------------------------------------
-class StructFile(file):
-    """File reader/writer with extra functions for handling structured data."""
-    def unpack(self,format,size):
-        """Reads and unpacks according to format."""
-        return struct.unpack(format,self.read(size))
-
-    def pack(self,format,*data):
-        """Packs data according to format."""
-        self.write(struct.pack(format,*data))
-
-#------------------------------------------------------------------------------
 class TableColumn:
     """Table accessor that presents table column as a dictionary."""
     def __init__(self,table,column):
