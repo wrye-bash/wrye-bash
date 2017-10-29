@@ -735,7 +735,7 @@ def getIds(fileName=None):
             if str0 in ('CELL','WRLD'):
                 # header[1]-24,1 20 for Oblivion, 24 for others.
                 # There needs to be a global for this.
-                # ins.seek(size-header.__class__.size,1)
+                # ins.seek(size-header.__class__.rec_header_size,1)
                 # ModReader.recHeader.size
                 ins.seek(size-20,1)
         elif type != 'GRUP':
@@ -749,7 +749,7 @@ def getIds(fileName=None):
                     break
                 # header[1]-24,1 20 for Oblivion, 24 for others.
                 # There needs to be a global for this.
-                # ins.seek(size-header.__class__.size,1)
+                # ins.seek(size-header.__class__.rec_header_size,1)
                 # ModReader.recHeader.size
                 ins.seek(size,1)
             records.append((fid,eid))

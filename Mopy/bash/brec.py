@@ -88,38 +88,113 @@ def getFormIndices(fid):
 
 # Mod I/O ---------------------------------------------------------------------
 #------------------------------------------------------------------------------
-class BaseRecordHeader(object):
-    """Virtual base class that all game types must implement.
-    The minimal implementations must have the following attributes:
+class RecordHeader(object):
+    """Pack or unpack the record's header."""
+    rec_header_size = 24 # Record header size, 20 (Oblivion), 24 (other games)
+    rec_pack_format = '=4s5I'
+    # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
+    pack_formats = {0: '=4sI4s3I'} # Top Type
+    pack_formats.update({x: '=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
+    pack_formats.update({x: '=4sIi3I' for x in {2, 3}})  # Interior Cell Blocks
+    pack_formats.update({x: '=4sIhh3I' for x in {4, 5}}) # Exterior Cell Blocks
 
-    recType
-    size
+    #--Top types in order of the main ESM
+    topTypes = []
+    #--Dict mapping 'ignored' top types to un-ignored top types
+    topIgTypes = dict()
+    #--Record Types: all recognized record types (not just the top types)
+    recordTypes = set()
+    #--Plugin form version, we must pack this in the TES4 header
+    plugin_form_version = 0
 
-    if recType == 'GRUP', the following additional attributes must exist
-     groupType
-     label (already decoded)
-     stamp
-
-    if recType != 'GRUP', the following addition attributes must exist
-     flags1
-     fid
-     flags2
-
-    All other data may be store in any manner, as they will not be
-    accessed by the ModReader/ModWriter"""
-
-    def __init__(self,recType,arg1,arg2,arg3):
-        """args1-arg3 correspond to the attrs above, depending on recType"""
-        pass
+    def __init__(self, recType='TES4', size=0, arg1=0, arg2=0, arg3=0, arg4=0):
+        """RecordHeader defining different sets of attributes based on recType
+        is a huge smell and must be fixed. The fact that Oblivion has different
+        unpack formats than other games adds to complexity - we need a proper
+        class or better add __slots__ and iterate over them in pack. Both
+        issues should be fixed at once.
+        :param recType: signature of record
+                      : For GRUP this is always GRUP
+                      : For Records this will be TES4, GMST, KYWD, etc
+        :param size : size of current record, not entire file
+        :param arg1 : For GRUP type of records to follow, GMST, KYWD, etc
+                    : For Records this is the record flags
+        :param arg2 : For GRUP Group Type 0 to 10 see UESP Wiki
+                    : Record FormID, TES4 records have FormID of 0
+        :param arg3 : For GRUP 2h, possible time stamp, unknown
+                    : Record possible version control in CK
+        :param arg4 : For GRUP 0 for known mods (2h, form_version, unknown ?)
+                    : For Records 2h, form_version, unknown
+        """
+        self.recType = recType
+        self.size = size
+        if self.recType == 'GRUP':
+            self.label = arg1
+            self.groupType = arg2
+            self.stamp = arg3
+        else:
+            self.flags1 = arg1
+            self.fid = arg2
+            self.flags2 = arg3
+        self.extra = arg4
 
     @staticmethod
     def unpack(ins):
-        """Return a RecordHeader object by reading the input stream."""
-        raise exception.AbstractError
+        """Return a RecordHeader object by reading the input stream.
+        Format must be either '=4s4I' 20 bytes for Oblivion or '=4s5I' 24
+        bytes for rest of games."""
+        # args = rec_type, size, uint0, uint1, uint2[, uint3]
+        args = ins.unpack(RecordHeader.rec_pack_format,
+                          RecordHeader.rec_header_size, 'REC_HEADER')
+        #--Bad type?
+        rec_type = args[0]
+        if rec_type not in RecordHeader.recordTypes:
+            raise exception.ModError(ins.inName,
+                                     u'Bad header type: ' + repr(rec_type))
+        #--Record
+        if rec_type != 'GRUP':
+            pass
+        #--Top Group
+        elif args[3] == 0: #groupType == 0 (Top Type)
+            args = list(args)
+            str0 = struct_pack('I', args[2])
+            if str0 in RecordHeader.topTypes:
+                args[2] = str0
+            elif str0 in RecordHeader.topIgTypes:
+                args[2] = RecordHeader.topIgTypes[str0]
+            else:
+                raise exception.ModError(ins.inName,
+                                         u'Bad Top GRUP type: ' + repr(str0))
+        return RecordHeader(*args)
 
     def pack(self):
-        """Return the record header packed into a string to be written to file"""
-        raise exception.AbstractError
+        """Return the record header packed into a bitstream to be written to
+        file. We decide what kind of GRUP we have based on the type of
+        label, hacky but to redo this we must revisit records code."""
+        if self.recType == 'GRUP':
+            if isinstance(self.label, str):
+                pack_args = [RecordHeader.pack_formats[0], self.recType,
+                             self.size, self.label, self.groupType, self.stamp]
+            elif isinstance(self.label, tuple):
+                pack_args = [RecordHeader.pack_formats[4], self.recType,
+                             self.size, self.label[0], self.label[1],
+                             self.groupType, self.stamp]
+            else:
+                pack_args = [RecordHeader.pack_formats[1], self.recType,
+                             self.size, self.label, self.groupType, self.stamp]
+            if RecordHeader.plugin_form_version:
+                pack_args.append(self.extra)
+        else:
+            pack_args = [RecordHeader.rec_pack_format, self.recType, self.size,
+                         self.flags1, self.fid, self.flags2]
+            if RecordHeader.plugin_form_version:
+                extra1, extra2 = struct_unpack('=2h',
+                                               struct_pack('=I', self.extra))
+                extra1 = RecordHeader.plugin_form_version
+                self.extra = \
+                    struct_unpack('=I', struct_pack('=2h', extra1, extra2))[0]
+                pack_args.append(self.extra)
+        return struct_pack(*pack_args)
 
 #------------------------------------------------------------------------------
 class ModReader:
@@ -129,7 +204,7 @@ class ModReader:
     **ModReader.recHeader must be set to the game's specific RecordHeader
       class type, for ModReader to use.**
     """
-    recHeader = BaseRecordHeader
+    recHeader = RecordHeader
 
     def __init__(self,inName,ins):
         """Initialize."""

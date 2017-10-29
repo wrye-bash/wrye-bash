@@ -207,40 +207,6 @@ class esp:
     ## Example: 'MreTes4'
     tes4ClassName = ''
 
-    #--Information about the basic record header
-    class header:
-        format = ''         # Format passed to struct.unpack to unpack the header
-        size = 0            # Size of the record header
-        attrs = tuple()     # List of attributes to set = the return of struct.unpack
-        defaults = tuple()  # Default values for each of the above attributes
-
-    #--Top types in order of the main ESM
-    topTypes = []
-
-    #--Dict mapping 'ignored' top types to un-ignored top types
-    topIgTopTYpes = dict()
-
-    #--Record Types: all recognized record types (not just the top types)
-    recordTypes = set(topTypes + 'GRUP,TES4'.split(','))
-
-class RecordHeader(brec.BaseRecordHeader):
-    size = 20 # Size in bytes of a record header
-
-    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
-        self.recType = recType
-        self.size = size
-        # Do some conditional stuff, commonly different variable names
-		# if this is a GRUP header or an actual record
-
-    @staticmethod
-    def unpack(ins):
-        """Returns a RecordHeader object by reading the input stream."""
-        pass
-
-    def pack(self):
-        """Returns the record header packed into a string for writing to file."""
-        pass
-
 #--The pickle file for this game.  Holds encoded GMST IDs from the big list below
 pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
 
@@ -268,7 +234,13 @@ def init():
     # statement - in other words, nothing happens.  This means any lines that
     # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
-    brec.ModReader.recHeader = RecordHeader
+
+    #--Top types in order of the main ESM
+    brec.RecordHeader.topTypes = []
+    #--Dict mapping 'ignored' top types to un-ignored top types
+    brec.RecordHeader.topIgTopTypes = dict()
+    brec.RecordHeader.recordTypes = set(
+        brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in  (

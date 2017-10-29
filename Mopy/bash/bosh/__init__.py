@@ -735,15 +735,19 @@ class ModInfo(FileInfo):
         self.setBashTags(tags)
 
     #--Header Editing ---------------------------------------------------------
+    def _read_tes4_header(self, ins):
+        tes4_rec_header = ins.unpackRecHeader()
+        if tes4_rec_header.recType != bush.game.MreHeader.classType:
+            raise ModError(self.name, u'Expected %s, but got %s' % (
+                bush.game.MreHeader.classType, tes4_rec_header.recType))
+        return tes4_rec_header
+
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         with ModReader(self.name,self.getPath().open('rb')) as ins:
             try:
-                recHeader = ins.unpackRecHeader()
-                if recHeader.recType != bush.game.MreHeader.classType:
-                    raise ModError(self.name,u'Expected %s, but got %s'
-                                   % (bush.game.MreHeader.classType,recHeader.recType))
-                self.header = bush.game.MreHeader(recHeader,ins,True)
+                tes4_rec_header = self._read_tes4_header(ins)
+                self.header = bush.game.MreHeader(tes4_rec_header,ins,True)
             except struct.error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
         self._reset_masters()
@@ -756,11 +760,8 @@ class ModInfo(FileInfo):
                 try:
                     #--Open original and skip over header
                     reader = ModReader(self.name,ins)
-                    recHeader = reader.unpackRecHeader()
-                    if recHeader.recType != bush.game.MreHeader.classType:
-                        raise ModError(self.name,u'Expected %s, but got %s'
-                                       % (bush.game.MreHeader.classType,recHeader.recType))
-                    reader.seek(recHeader.size,1)
+                    tes4_rec_header = self._read_tes4_header(reader)
+                    reader.seek(tes4_rec_header.size,1)
                     #--Write new header
                     self.header.getSize()
                     self.header.dump(out)

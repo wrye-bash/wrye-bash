@@ -25,20 +25,19 @@
 """This modules defines static data for use by bush, when
    TES IV: Oblivion is set at the active game."""
 
-import struct
 from .constants import *
 from .default_tweaks import default_tweaks
-from ... import brec
 from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, \
     MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, \
     MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGras, MreHair, MreIngr, \
     MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, \
     MreNpc, MrePack, MreQust, MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, \
     MreSpel, MreStat, MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, \
-    MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, \
-    MreCell, MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
-from ...brec import MreGlob, BaseRecordHeader
-from ...exception import ModError
+    MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
+    MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
+from ... import brec
+from ...bolt import struct_pack, struct_unpack
+from ...brec import MreGlob
 
 #--Name of the game to use in UI.
 displayName = u'Oblivion'
@@ -363,79 +362,6 @@ class esp:
 
     stringsFiles = []
 
-    #--Top types in Oblivion order.
-    topTypes = ['GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN',
-                'SKIL', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI',
-                'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH',
-                'MISC', 'STAT', 'GRAS', 'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO',
-                'NPC_', 'CREA', 'LVLC', 'SLGM', 'KEYM', 'ALCH', 'SBSP', 'SGST',
-                'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL', 'WRLD', 'DIAL', 'QUST',
-                'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH']
-
-    #--Dict mapping 'ignored' top types to un-ignored top types.
-    topIgTypes = dict(
-        [(struct.pack('I', (struct.unpack('I', type)[0]) | 0x1000), type) for
-         type in topTypes])
-
-    recordTypes = set(
-        topTypes + 'GRUP,TES4,ROAD,REFR,ACHR,ACRE,PGRD,LAND,INFO'.split(','))
-
-#--Mod I/O
-class RecordHeader(BaseRecordHeader):
-    size = 20
-
-    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,*extra):
-        self.recType = recType
-        self.size = size
-        if recType == 'GRUP':
-            self.label = arg1
-            self.groupType = arg2
-            self.stamp = arg3
-        else:
-            self.flags1 = arg1
-            self.fid = arg2
-            self.flags2 = arg2
-        self.extra = extra
-
-    @staticmethod
-    def unpack(ins):
-        """Returns a RecordHeader object by reading the input stream."""
-        rec_type,size,uint0,uint1,uint2 = ins.unpack('=4s4I',20,'REC_HEADER')
-        #--Bad?
-        if rec_type not in esp.recordTypes:
-            raise ModError(ins.inName,u'Bad header type: '+repr(rec_type))
-        #--Record
-        if rec_type != 'GRUP':
-            pass
-        #--Top Group
-        elif uint1 == 0: # groupType == 0 (Top Group)
-            str0 = struct.pack('I',uint0)
-            if str0 in esp.topTypes:
-                uint0 = str0
-            elif str0 in esp.topIgTypes:
-                uint0 = esp.topIgTypes[str0]
-            else:
-                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
-        return RecordHeader(rec_type,size,uint0,uint1,uint2)
-
-    def pack(self):
-        """Returns the record header packed into a string for writing to
-        file."""
-        if self.recType == 'GRUP':
-            if isinstance(self.label, str):
-                return struct.pack('=4sI4sII', self.recType, self.size,
-                                   self.label, self.groupType, self.stamp)
-            elif isinstance(self.label, tuple):
-                return struct.pack('=4sIhhII', self.recType, self.size,
-                                   self.label[0], self.label[1],
-                                   self.groupType, self.stamp)
-            else:
-                return struct.pack('=4s4I', self.recType, self.size,
-                                   self.label, self.groupType, self.stamp)
-        else:
-            return struct.pack('=4s4I', self.recType, self.size, self.flags1,
-                               self.fid, self.flags2)
-
 #------------------------------------------------------------------------------
 #--Mergeable record types
 mergeClasses = (
@@ -459,7 +385,32 @@ def init():
     # statement - in otherwords, nothing happens.  This means any lines that
     # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
-    brec.ModReader.recHeader = RecordHeader
+    __rec_type = brec.RecordHeader
+    __rec_type.rec_header_size = 20
+    __rec_type.rec_pack_format = '=4s4I'
+    __rec_type.pack_formats = {0: '=4sI4s2I'}
+    __rec_type.pack_formats.update({x: '=4s4I' for x in {1, 6, 7, 8, 9, 10}})
+    __rec_type.pack_formats.update({x: '=4sIi2I' for x in {2, 3}})
+    __rec_type.pack_formats.update({x: '=4sIhh2I' for x in {4, 5}})
+
+    #--Top types in Oblivion order.
+    __rec_type.topTypes = [
+        'GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',
+        'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI', 'APPA', 'ARMO',
+        'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC', 'STAT', 'GRAS',
+        'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'SLGM',
+        'KEYM', 'ALCH', 'SBSP', 'SGST', 'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL',
+        'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO',
+        'WATR', 'EFSH']
+
+    #--Dict mapping 'ignored' top types to un-ignored top types.
+    __rec_type.topIgTypes = dict(
+        [(struct_pack('I', (struct_unpack('I', top)[0]) | 0x1000), top) for
+         top in __rec_type.topTypes])
+
+    __rec_type.recordTypes = set(
+        __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR', 'ACRE',
+                               'PGRD', 'LAND', 'INFO'])
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (

@@ -767,7 +767,7 @@ class ModCleaner:
                         insUnpackSubHeader = ins.unpackSubHeader
                         insRead = ins.read
                         insUnpack = ins.unpack
-                        headerSize = ins.recHeader.size
+                        headerSize = ins.recHeader.rec_header_size
                         while not insAtEnd():
                             subprogress(insTell())
                             header = insUnpackRecHeader()
@@ -965,7 +965,7 @@ class ModCleaner:
                             if header.groupType != 0:
                                 pass
                             elif header.label not in ('CELL','WRLD'):
-                                copy(size-header.__class__.size)
+                                copy(size-header.__class__.rec_header_size)
                         else:
                             if doUDR and header.flags1 & 0x20 and type in {
                                 'ACRE',               #--Oblivion only
@@ -973,7 +973,7 @@ class ModCleaner:
                                 'NAVM','PGRE','PHZD', #--Skyrim only
                                 }:
                                 header.flags1 = (header.flags1 & ~0x20) | 0x1000
-                                out.seek(-header.__class__.size,1)
+                                out.seek(-header.__class__.rec_header_size,1)
                                 out.write(header.pack())
                                 changed = True
                             if doFog and type == 'CELL':
@@ -1045,12 +1045,12 @@ class NvidiaFogFixer:
                     header = ins.unpackRecHeader()
                     type,size = header.recType,header.size
                     #(type,size,str0,fid,uint2) = ins.unpackRecHeader()
-                    copyPrev(header.__class__.size)
+                    copyPrev(header.__class__.rec_header_size)
                     if type == 'GRUP':
                         if header.groupType != 0: #--Ignore sub-groups
                             pass
                         elif header.label not in ('CELL','WRLD'):
-                            copy(size-header.__class__.size)
+                            copy(size-header.__class__.rec_header_size)
                     #--Handle cells
                     elif type == 'CELL':
                         nextRecord = ins.tell() + size
@@ -1107,13 +1107,13 @@ class ModDetails:
                 if recType == 'GRUP':
                     # FIXME(ut): monkey patch for fallout QUST GRUP
                     if bush.game.fsName == u'Fallout4' and header.groupType == 10:
-                        ins.seek(rec_siz - header.__class__.size, 1)
+                        ins.seek(rec_siz - header.__class__.rec_header_size, 1)
                         continue
                     label = header.label
                     progress(1.0*ins.tell()/modInfo.size,_(u"Scanning: ")+label)
                     records = group_records.setdefault(label,[])
                     if label in ('CELL', 'WRLD', 'DIAL'): # skip these groups
-                        ins.seek(rec_siz - header.__class__.size, 1)
+                        ins.seek(rec_siz - header.__class__.rec_header_size, 1)
                 elif recType != 'GRUP':
                     eid = u''
                     nextRecord = ins.tell() + rec_siz

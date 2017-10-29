@@ -40,7 +40,8 @@ from balt import Progress
 from bolt import GPath, decode, deprint, CsvReader, csvFormat, SubProgress, \
     struct_pack, struct_unpack
 from bass import dirs, inisettings
-from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter
+from brec import MreRecord, MelObject, _coerce, genFid, ModReader, ModWriter, \
+    RecordHeader
 from cint import ObCollection, FormID, aggregateTypes, validTypes, \
     MGEFCode, ActorValue, ValidateList, pickupables, ExtractExportList, \
     ValidateDict, IUNICODE, getattr_deep, setattr_deep
@@ -3907,7 +3908,7 @@ class ModFile(object):
         """Returns top block of specified topType, creating it, if necessary."""
         if topType in self.tops:
             return self.tops[topType]
-        elif topType in bush.game.esp.topTypes:
+        elif topType in RecordHeader.topTypes:
             topClass = self.loadFactory.getTopClass(topType)
             self.tops[topType] = topClass(ModReader.recHeader('GRUP',0,topType,0,0),self.loadFactory)
             self.tops[topType].setChanged()
@@ -3960,7 +3961,7 @@ class ModFile(object):
                         self.tops[label].load(ins, unpack and (topClass != MobBase))
                     else:
                         self.topsSkipped.add(label)
-                        insSeek(size-header.__class__.size,1,type + '.' + label)
+                        insSeek(size-header.__class__.rec_header_size,1,type + '.' + label)
                 except:
                     print u'Error in',self.fileInfo.name.s
                     deprint(u' ',traceback=True)
@@ -3972,9 +3973,9 @@ class ModFile(object):
         """Unpacks blocks."""
         factoryTops = self.loadFactory.topTypes
         selfTops = self.tops
-        for type in bush.game.esp.topTypes:
-            if type in selfTops and type in factoryTops:
-                selfTops[type].load(None,True)
+        for rec_type in RecordHeader.topTypes:
+            if rec_type in selfTops and rec_type in factoryTops:
+                selfTops[rec_type].load(None,True)
 
     def load_UI(self):
         """Convenience function. Loads, then unpacks, then indexes."""
@@ -4018,9 +4019,9 @@ class ModFile(object):
             self.tes4.dump(out)
             #--Blocks
             selfTops = self.tops
-            for type in bush.game.esp.topTypes:
-                if type in selfTops:
-                    selfTops[type].dump(out)
+            for rec_type in RecordHeader.topTypes:
+                if rec_type in selfTops:
+                    selfTops[rec_type].dump(out)
 
     def getLongMapper(self):
         """Returns a mapping function to map short fids to long fids."""

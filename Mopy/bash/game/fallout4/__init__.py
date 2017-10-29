@@ -25,13 +25,11 @@
 """This modules defines static data for use by bush, when Fallout 4 is set as
    the active game."""
 
-import struct
 from .constants import *
 from .default_tweaks import default_tweaks
 from .records import MreHeader, MreLvli, MreLvln
 from ... import brec
-from ...brec import BaseRecordHeader
-from ...exception import ModError
+from ...bolt import struct_pack, struct_unpack
 
 #--Name of the game to use in UI.
 displayName = u'Fallout 4'
@@ -294,96 +292,6 @@ class esp:
         ((u'Strings',), u'%(body)s_%(language)s.ILSTRINGS'),
     ]
 
-    #--Top types in Skyrim order.
-    topTypes = ['GMST', 'KYWD', 'LCRT', 'AACT', 'TRNS', 'CMPO', 'TXST',
-                'GLOB', 'DMGT', 'CLAS', 'FACT', 'HDPT', 'RACE', 'SOUN',
-                'ASPC', 'MGEF', 'LTEX', 'ENCH', 'SPEL', 'ACTI', 'TACT',
-                'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC',
-                'STAT', 'SCOL', 'MSTT', 'GRAS', 'TREE', 'FLOR', 'FURN',
-                'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM',
-                'NOTE', 'PROJ', 'HAZD', 'BNDS', 'TERM', 'GRAS', 'TREE',
-                'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH',
-                'IDLM', 'NOTE', 'PROJ', 'HAZD', 'BNDS', 'LVLI', 'WTHR',
-                'CLMT', 'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD',
-                'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'ANIO', 'WATR',
-                'EFSH', 'EXPL', 'DEBR', 'IMGS', 'IMAD', 'FLST', 'PERK',
-                'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH', 'VTYP', 'MATT',
-                'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'DOBJ',
-                'DFOB', 'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN',
-                'SMEN', 'MUST', 'DLVW', 'EQUP', 'RELA', 'ASTP', 'OTFT',
-                'ARTO', 'MATO', 'MOVT', 'SNDR', 'SNCT', 'SOPM', 'COLL',
-                'CLFM', 'REVB', 'PKIN', 'RFGP', 'AMDL', 'LAYR', 'COBJ',
-                'OMOD', 'MSWP', 'ZOOM', 'INNR', 'KSSM', 'AECH', 'SCCO',
-                'AORU', 'SCSN', 'STAG', 'NOCM', 'LENS', 'GDRY', 'OVIS',]
-
-    #--Dict mapping 'ignored' top types to un-ignored top types.
-    topIgTypes = dict([
-            (struct.pack('I',(struct.unpack('I',type)[0]) | 0x1000),type)
-            for type in topTypes
-        ])
-
-    #--Record types that don't appear at the top level (sub-GRUPs)
-    recordTypes = (set(topTypes) |
-                   {'GRUP','TES4','REFR','NAVM','PGRE','PHZD','LAND',
-                       'PMIS','DLBR','DIAL','INFO','SCEN'})
-
-#--Mod I/O
-class RecordHeader(BaseRecordHeader):
-    size = 24
-
-    def __init__(self,recType='TES4',size=0,arg1=0,arg2=0,arg3=0,extra=0):
-        self.recType = recType
-        self.size = size
-        if recType == 'GRUP':
-            self.label = arg1
-            self.groupType = arg2
-            self.stamp = arg3
-        else:
-            self.flags1 = arg1
-            self.fid = arg2
-            self.flags2 = arg3
-        self.extra = extra
-
-    @staticmethod
-    def unpack(ins):
-        """Returns a RecordHeader object by reading the input stream."""
-        rec_type,size,uint0,uint1,uint2,uint3 = ins.unpack('=4s5I',24,'REC_HEADER')
-        #--Bad type?
-        if rec_type not in esp.recordTypes:
-            raise ModError(ins.inName,u'Bad header type: '+repr(rec_type))
-        #--Record
-        if rec_type != 'GRUP':
-            pass
-        #--Top Group
-        elif uint1 == 0: #groupType == 0 (Top Type)
-            str0 = struct.pack('I',uint0)
-            if str0 in esp.topTypes:
-                uint0 = str0
-            elif str0 in esp.topIgTypes:
-                uint0 = esp.topIgTypes[str0]
-            else:
-                raise ModError(ins.inName,u'Bad Top GRUP type: '+repr(str0))
-        #--Other groups
-        return RecordHeader(rec_type,size,uint0,uint1,uint2,uint3)
-
-    def pack(self):
-        """Return the record header packed into a bitstream to be written to file."""
-        if self.recType == 'GRUP':
-            if isinstance(self.label,str):
-                return struct.pack('=4sI4sIII',self.recType,self.size,
-                                   self.label,self.groupType,self.stamp,
-                                   self.extra)
-            elif isinstance(self.label,tuple):
-                return struct.pack('=4sIhhIII',self.recType,self.size,
-                                   self.label[0],self.label[1],self.groupType,
-                                   self.stamp,self.extra)
-            else:
-                return struct.pack('=4s5I',self.recType,self.size,self.label,
-                                   self.groupType,self.stamp,self.extra)
-        else:
-            return struct.pack('=4s5I',self.recType,self.size,self.flags1,
-                               self.fid,self.flags2,self.extra)
-
 #------------------------------------------------------------------------------
 # These Are normally not mergable but added to brec.MreRecord.type_class
 #
@@ -411,7 +319,36 @@ def init():
     # statement - in otherwords, nothing happens.  This means any lines that
     # affect outside modules must do so within this function, which will be
     # called instead of 'reload'
-    brec.ModReader.recHeader = RecordHeader
+
+    #--Top types in Skyrim order.
+    brec.RecordHeader.topTypes = [
+        'GMST', 'KYWD', 'LCRT', 'AACT', 'TRNS', 'CMPO', 'TXST', 'GLOB', 'DMGT',
+        'CLAS', 'FACT', 'HDPT', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'LTEX', 'ENCH',
+        'SPEL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH',
+        'MISC', 'STAT', 'SCOL', 'MSTT', 'GRAS', 'TREE', 'FLOR', 'FURN', 'WEAP',
+        'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM', 'NOTE', 'PROJ', 'HAZD',
+        'BNDS', 'TERM', 'GRAS', 'TREE', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN',
+        'KEYM', 'ALCH', 'IDLM', 'NOTE', 'PROJ', 'HAZD', 'BNDS', 'LVLI', 'WTHR',
+        'CLMT', 'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD', 'QUST', 'IDLE',
+        'PACK', 'CSTY', 'LSCR', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS',
+        'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH', 'VTYP',
+        'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'DOBJ', 'DFOB',
+        'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN', 'SMEN', 'MUST', 'DLVW',
+        'EQUP', 'RELA', 'ASTP', 'OTFT', 'ARTO', 'MATO', 'MOVT', 'SNDR', 'SNCT',
+        'SOPM', 'COLL', 'CLFM', 'REVB', 'PKIN', 'RFGP', 'AMDL', 'LAYR', 'COBJ',
+        'OMOD', 'MSWP', 'ZOOM', 'INNR', 'KSSM', 'AECH', 'SCCO', 'AORU', 'SCSN',
+        'STAG', 'NOCM', 'LENS', 'GDRY', 'OVIS']
+
+    #--Dict mapping 'ignored' top types to un-ignored top types.
+    brec.RecordHeader.topIgTypes = dict(
+        [(struct_pack('I', (struct_unpack('I', top)[0]) | 0x1000), top) for
+         top in brec.RecordHeader.topTypes])
+
+    #--Record types that don't appear at the top level (sub-GRUPs)
+    brec.RecordHeader.recordTypes = (set(brec.RecordHeader.topTypes) |
+                   {'GRUP','TES4','REFR','NAVM','PGRE','PHZD','LAND',
+                       'PMIS','DLBR','DIAL','INFO','SCEN'})
+    brec.RecordHeader.plugin_form_version = 131
 
     #--Record Types
     brec.MreRecord.type_class = dict((x.classType,x) for x in (
