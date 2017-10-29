@@ -293,7 +293,7 @@ class AFile(object):
 
     def __init__(self, abs_path, load_cache=False):
         self._abs_path = GPath(abs_path)
-        #--Settings cache
+        #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
         except OSError:
@@ -2383,7 +2383,7 @@ class ModInfos(FileInfos):
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
         listToSelect = load_order.get_ordered(toSelect)
-        extra = listToSelect[255:]
+        skipped = listToSelect[255:]
         #--Save
         final_selection = listToSelect[:255]
         self.cached_lo_save_active(active=final_selection)
@@ -2392,10 +2392,10 @@ class ModInfos(FileInfos):
         if missingSet:
             message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
             message += u'\n* '.join(x.s for x in missingSet)
-        if extra:
+        if skipped:
             if missingSet: message += u'\n'
             message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-            message += u'\n* '.join(x.s for x in extra)
+            message += u'\n* '.join(x.s for x in skipped)
         return message
 
     #--Helpers ----------------------------------------------------------------

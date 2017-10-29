@@ -318,8 +318,8 @@ class Save_DiffMasters(EnabledLink):
             newInfo = self.window.data_store[newName]
             newMasters = set(newInfo.masterNames)
         missing = oldMasters - newMasters
-        extra = newMasters - oldMasters
-        if not missing and not extra:
+        added = newMasters - oldMasters
+        if not missing and not added:
             message = _(u'Masters are the same.')
             self._showInfo(message, title=_(u'Diff Masters'))
         else:
@@ -327,10 +327,10 @@ class Save_DiffMasters(EnabledLink):
             if missing:
                 message += u'=== '+_(u'Removed Masters')+u' (%s):\n* ' % oldName.s
                 message += u'\n* '.join(x.s for x in load_order.get_ordered(missing))
-                if extra: message += u'\n\n'
-            if extra:
+                if added: message += u'\n\n'
+            if added:
                 message += u'=== '+_(u'Added Masters')+u' (%s):\n* ' % newName.s
-                message += u'\n* '.join(x.s for x in load_order.get_ordered(extra))
+                message += u'\n* '.join(x.s for x in load_order.get_ordered(added))
             self._showWryeLog(message, title=_(u'Diff Masters'))
 
 #------------------------------------------------------------------------------

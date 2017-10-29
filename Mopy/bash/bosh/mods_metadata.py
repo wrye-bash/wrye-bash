@@ -161,14 +161,14 @@ class ModRuleSet:
                     maBlock = reBlock.match(line)
                     #--Block changers
                     if maBlock:
-                        newBlock,extra = stripped(maBlock.groups())
+                        newBlock,more = stripped(maBlock.groups())
                         self.newBlock(newBlock)
                         if newBlock == u'HEADER':
-                            self.ruleSet.header = (extra or u'')+u'\n'
+                            self.ruleSet.header = (more or u'')+u'\n'
                         elif newBlock in (u'ASSUME',u'IF'):
-                            maModVersion = reModVersion.match(extra or u'')
-                            if extra and reModVersion.match(extra):
-                                self.mods = [[GPath(reModVersion.match(extra).group(1))]]
+                            maModVersion = more and reModVersion.match(more)
+                            if maModVersion:
+                                self.mods = [[GPath(maModVersion.group(1))]]
                                 self.modNots = [False]
                             else:
                                 self.mods = []
@@ -767,13 +767,13 @@ class ModCleaner:
                         while not insAtEnd():
                             subprogress(insTell())
                             header = insUnpackRecHeader()
-                            type,size = header.recType,header.size
+                            rtype,hsize = header.recType,header.size
                             #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                            if type == 'GRUP':
+                            if rtype == 'GRUP':
                                 groupType = header.groupType
                                 if groupType == 0 and header.label not in {'CELL','WRLD'}:
                                     # Skip Tops except for WRLD and CELL groups
-                                    insRead(size-headerSize)
+                                    insRead(hsize-headerSize)
                                 elif detailed:
                                     if groupType == 1:
                                         # World Children
@@ -791,7 +791,7 @@ class ModCleaner:
                                     else: # 3,4,5,7 - Topic Children
                                         pass
                             else:
-                                if doUDR and header.flags1 & 0x20 and type in (
+                                if doUDR and header.flags1 & 0x20 and rtype in (
                                     'ACRE',               #--Oblivion only
                                     'ACHR','REFR',        #--Both
                                     'NAVM','PHZD','PGRE', #--Skyrim only
@@ -800,14 +800,14 @@ class ModCleaner:
                                         udr[header.fid] = ModCleaner.UdrInfo(header.fid)
                                     else:
                                         fid = header.fid
-                                        udr[fid] = ModCleaner.UdrInfo(fid,type,parentFid,u'',parentType,parentParentFid,u'',None)
+                                        udr[fid] = ModCleaner.UdrInfo(fid,rtype,parentFid,u'',parentType,parentParentFid,u'',None)
                                         parents_to_scan.setdefault(parentFid,set())
                                         parents_to_scan[parentFid].add(fid)
                                         if parentParentFid:
                                             parents_to_scan.setdefault(parentParentFid,set())
                                             parents_to_scan[parentParentFid].add(fid)
-                                if doFog and type == 'CELL':
-                                    nextRecord = insTell() + size
+                                if doFog and rtype == 'CELL':
+                                    nextRecord = insTell() + hsize
                                     while insTell() < nextRecord:
                                         (nextType,nextSize) = insUnpackSubHeader()
                                         if nextType != 'XCLL':
@@ -817,7 +817,7 @@ class ModCleaner:
                                             if not (near or far or clip):
                                                 fog.add(header.fid)
                                 else:
-                                    insRead(size)
+                                    insRead(hsize)
                         if parents_to_scan:
                             # Detailed info - need to re-scan for CELL and WRLD infomation
                             ins.seek(0)
@@ -825,10 +825,10 @@ class ModCleaner:
                             while not insAtEnd():
                                 subprogress(baseSize+insTell())
                                 header = insUnpackRecHeader()
-                                type,size = header.recType,header.size
-                                if type == 'GRUP':
+                                rtype,hsize = header.recType,header.size
+                                if rtype == 'GRUP':
                                     if header.groupType == 0 and header.label not in {'CELL','WRLD'}:
-                                        insRead(size-headerSize)
+                                        insRead(hsize-headerSize)
                                 else:
                                     fid = header.fid
                                     if fid in parents_to_scan:
@@ -842,15 +842,15 @@ class ModCleaner:
                                                 pos = struct_unpack(
                                                     '=2i', subrec.data[:8])
                                         for udrFid in parents_to_scan[fid]:
-                                            if type == 'CELL':
+                                            if rtype == 'CELL':
                                                 udr[udrFid].parentEid = eid
                                                 if udr[udrFid].parentType == 1:
                                                     # Exterior Cell, calculate position
                                                     udr[udrFid].pos = pos
-                                            elif type == 'WRLD':
+                                            elif rtype == 'WRLD':
                                                 udr[udrFid].parentParentEid = eid
                                     else:
-                                        insRead(size)
+                                        insRead(hsize)
                     except CancelError:
                         raise
                     except:

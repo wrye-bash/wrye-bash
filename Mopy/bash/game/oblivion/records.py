@@ -25,7 +25,7 @@
 """This module contains the oblivion record classes. Ripped from oblivion.py"""
 import re
 import struct
-from ...bolt import Flags, sio, DataDict
+from ...bolt import Flags, sio, DataDict, struct_pack
 from ...brec import MelRecord, MelStructs, \
     MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
@@ -1827,7 +1827,7 @@ class MreRefr(MelRecord):
                 record.hasXmrk = True
             if record.hasXmrk:
                 try:
-                    out.write(struct.pack('=4sH','XMRK',0))
+                    out.write(struct_pack('=4sH','XMRK',0))
                     out.packSub('FNAM','B',record.flags.dump())
                     value = record.full
                     if value is not None:

@@ -816,8 +816,6 @@ class MobWorld(MobCells):
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
         cellBlocksAppend = cellBlocks.append
-        structUnpack = struct_unpack
-        structPack = struct_pack
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
             if curPos >= endBlockPos:
@@ -854,7 +852,7 @@ class MobWorld(MobCells):
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
-                    block = structUnpack('2h',structPack('I',groupFid))
+                    block = struct_unpack('2h', struct_pack('I', groupFid))
                     block = (block[1],block[0])
                     endBlockPos = insTell() + delta
                 elif groupType == 5: # Exterior Cell Sub-Block

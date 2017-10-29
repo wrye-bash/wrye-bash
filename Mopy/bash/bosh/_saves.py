@@ -238,9 +238,9 @@ class PluggyFile:
     def load(self):
         """Read file."""
         import binascii
-        size = self.path.size
+        path_size = self.path.size
         with self.path.open('rb') as ins:
-            buff = ins.read(size-4)
+            buff = ins.read(path_size-4)
             crc32, = struct_unpack('=i', ins.read(4))
         crcNew = binascii.crc32(buff)
         if crc32 != crcNew:

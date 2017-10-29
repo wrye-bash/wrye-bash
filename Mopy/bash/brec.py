@@ -305,16 +305,15 @@ class ModWriter:
         with size > 0xFFFF."""
         try:
             if data is None: return
-            structPack = struct_pack
-            if values: data = structPack(data,*values)
+            if values: data = struct_pack(data, *values)
             outWrite = self.out.write
             lenData = len(data)
             if lenData <= 0xFFFF:
-                outWrite(structPack('=4sH',type,lenData))
+                outWrite(struct_pack('=4sH', type, lenData))
                 outWrite(data)
             else:
-                outWrite(structPack('=4sHI','XXXX',4,lenData))
-                outWrite(structPack('=4sH',type,0))
+                outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
+                outWrite(struct_pack('=4sH', type, 0))
                 outWrite(data)
         except Exception as e:
             print e
@@ -328,12 +327,11 @@ class ModWriter:
             data = encode(data,firstEncoding=bolt.pluginEncoding)
         lenData = len(data) + 1
         outWrite = self.out.write
-        structPack = struct_pack
         if lenData < 0xFFFF:
-            outWrite(structPack('=4sH',type,lenData))
+            outWrite(struct_pack('=4sH', type, lenData))
         else:
-            outWrite(structPack('=4sHI','XXXX',4,lenData))
-            outWrite(structPack('=4sH',type,0))
+            outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
+            outWrite(struct_pack('=4sH', type, 0))
         outWrite(data)
         outWrite('\x00')
 

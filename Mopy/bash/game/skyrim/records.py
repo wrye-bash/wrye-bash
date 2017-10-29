@@ -27,7 +27,7 @@ import re
 import struct
 import itertools
 from ...bolt import Flags, sio, DataDict, winNewLines, \
-    encode
+    encode, struct_pack, struct_unpack
 from ...brec import MelRecord, MelStructs, \
     MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
@@ -475,13 +475,12 @@ class MelMODS(MelBase):
         """Dumps data from record to outstream."""
         data = record.__getattribute__(self.attr)
         if data is not None:
-            structPack = struct.pack
             data = record.__getattribute__(self.attr)
-            outData = structPack('I',len(data))
+            outData = struct_pack('I', len(data))
             for (string,fid,index) in data:
-                outData += structPack('I',len(string))
+                outData += struct_pack('I', len(string))
                 outData += encode(string)
-                outData += structPack('=2I',fid,index)
+                outData += struct_pack('=2I', fid, index)
             out.packSub(self.subType,outData)
 
     def mapFids(self,record,function,save=False):
@@ -603,7 +602,7 @@ class MelString16(MelString):
                     value = test
             else:
                 value = encode(value)
-            value = struct.pack('H',len(value))+value
+            value = struct_pack('H',len(value))+value
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
@@ -638,7 +637,7 @@ class MelString32(MelString):
                     value = test
             else:
                 value = encode(value)
-            value = struct.pack('I',len(value))+value
+            value = struct_pack('I',len(value))+value
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
@@ -679,19 +678,20 @@ class MelVmad(MelBase):
             return count
 
         def dumpData(self,Type,count):
-            structPack = struct.pack
             fileName = encode(self.fileName)
             if Type == 'INFO':
                 raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
             elif Type == 'PACK':
                 # TODO: check if this is right!
                 count = int(count*'1',2)
-                data = structPack('=bBH',self.unk,count,len(fileName)) + fileName
+                data = struct_pack('=bBH', self.unk, count,
+                                   len(fileName)) + fileName
             elif Type == 'PERK':
-                data = structPack('=bH',self.unk,len(fileName)) + fileName
-                data += structPack('=H',count)
+                data = struct_pack('=bH', self.unk, len(fileName)) + fileName
+                data += struct_pack('=H', count)
             elif Type == 'QUST':
-                data = structPack('=bHH',self.unk,count,len(fileName)) + fileName
+                data = struct_pack('=bHH', self.unk, count,
+                                   len(fileName)) + fileName
             elif Type == 'SCEN':
                 raise Exception(u"Fragment Scripts for 'SCEN' records are not implemented.")
             else:
@@ -714,11 +714,10 @@ class MelVmad(MelBase):
             self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
-            structPack = struct.pack
             scriptName = encode(self.scriptName)
             fragmentName = encode(self.fragmentName)
-            data = structPack('=bH',self.unk,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
+            data = struct_pack('=bH', self.unk, len(scriptName)) + scriptName
+            data += struct_pack('=H', len(fragmentName)) + fragmentName
             return data
 
     class PERKFragment(object):
@@ -736,11 +735,11 @@ class MelVmad(MelBase):
             self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
-            structPack = struct.pack
             scriptName = encode(self.scriptName)
             fragmentName = encode(self.fragmentName)
-            data = structPack('=HhbH',self.index,self.unk1,self.unk2,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
+            data = struct_pack('=HhbH', self.index, self.unk1, self.unk2,
+                               len(scriptName)) + scriptName
+            data += struct_pack('=H', len(fragmentName)) + fragmentName
             return data
 
     class QUSTFragment(object):
@@ -759,11 +758,11 @@ class MelVmad(MelBase):
             self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
-            structPack = struct.pack
             scriptName = encode(self.scriptName)
             fragmentName = encode(self.fragmentName)
-            data = structPack('=HhibH',self.index,self.unk1,self.logentry,self.unk2,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
+            data = struct_pack('=HhibH', self.index, self.unk1, self.logentry,
+                               self.unk2, len(scriptName)) + scriptName
+            data += struct_pack('=H', len(fragmentName)) + fragmentName
             return data
 
     class SCENFragment(object):
@@ -841,11 +840,10 @@ class MelVmad(MelBase):
                 raise Exception(u'Unrecognized VM Data property type: %i' % Type)
 
         def dumpData(self):
-            structPack = struct.pack
             ## Property Entry
             # Property Name
             name = encode(self.name)
-            data = structPack('=H',len(name))+name
+            data = struct_pack('=H', len(name)) + name
             # Property Type
             value = self.value
             # Type 1 - Object Reference
@@ -853,26 +851,27 @@ class MelVmad(MelBase):
                 # Object Format 1 - (Fid, Aid, NULL)
                 #data += structPack('=BBIHH',1,self.status,value[0],value[1],0)
                 # Object Format 2 - (NULL, Aid, Fid)
-                data += structPack('=BBHHI',1,self.status,0,value[1],value[0])
+                data += struct_pack('=BBHHI', 1, self.status, 0, value[1],
+                                    value[0])
             # Type 2 - String
             elif isinstance(value,basestring):
                 value = encode(value)
-                data += structPack('=BBH',2,self.status,len(value))+value
+                data += struct_pack('=BBH', 2, self.status, len(value)) + value
             # Type 3 - Int
             elif isinstance(value,(int,long)) and not isinstance(value,bool):
-                data += structPack('=BBi',3,self.status,value)
+                data += struct_pack('=BBi', 3, self.status, value)
             # Type 4 - Float
             elif isinstance(value,float):
-                data += structPack('=BBf',4,self.status,value)
+                data += struct_pack('=BBf', 4, self.status, value)
             # Type 5 - Bool
             elif isinstance(value,bool):
-                data += structPack('=BBb',5,self.status,value)
+                data += struct_pack('=BBb', 5, self.status, value)
             # Type 11 -> 15 - lists, Only supported if vmad version >= 5
             elif isinstance(value,list):
                 # Empty list, fail to object refereneces?
                 count = len(value)
                 if not count:
-                    data += structPack('=BBI',11,self.status,count)
+                    data += struct_pack('=BBI', 11, self.status, count)
                 else:
                     Type = value[0]
                     # Type 11 - Object References
@@ -882,22 +881,27 @@ class MelVmad(MelBase):
                         #data += structPack('=BBI'+count*'IHH',11,self.status,count,*value)
                         # Object Format 2 - value = [NULL,aid,fid, NULL,aid,fid, ...]
                         value = list(from_iterable([(0,aid,fid) for fid,aid in value]))
-                        data += structPack('=BBI'+count*'HHI',11,self.status,count,*value)
+                        data += struct_pack('=BBI' + count * 'HHI', 11,
+                                            self.status, count, *value)
                     # Type 12 - Strings
                     elif isinstance(Type,basestring):
-                        data += structPack('=BBI',12,self.status,count)
+                        data += struct_pack('=BBI', 12, self.status, count)
                         for string in value:
                             string = encode(string)
-                            data += structPack('=H',len(string))+string
+                            data += struct_pack('=H', len(string)) + string
                     # Type 13 - Ints
-                    elif isinstance(Type,(int,long)) and not isinstance(Type,bool):
-                        data += structPack('=BBI'+`count`+'i',13,self.status,count,*value)
+                    elif isinstance(Type,(int,long)) and not isinstance(
+                            Type,bool):
+                        data += struct_pack('=BBI' + `count` + 'i', 13,
+                                            self.status, count, *value)
                     # Type 14 - Floats
                     elif isinstance(Type,float):
-                        data += structPack('=BBI'+`count`+'f',14,self.status,count,*value)
+                        data += struct_pack('=BBI' + `count` + 'f', 14,
+                                            self.status, count, *value)
                     # Type 15 - Bools
                     elif isinstance(Type,bool):
-                        data += structPack('=BBI'+`count`+'b',15,self.status,count,*value)
+                        data += struct_pack('=BBI' + `count` + 'b', 15,
+                                            self.status, count, *value)
                     else:
                         raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
             else:
@@ -929,13 +933,12 @@ class MelVmad(MelBase):
                 propAppend(prop)
 
         def dumpData(self):
-            structPack = struct.pack
             ## Script Entry
             # scriptName
             name = encode(self.name)
-            data = structPack('=H',len(name))+name
+            data = struct_pack('=H', len(name)) + name
             # status, property count
-            data += structPack('=BH',self.status,len(self.properties))
+            data += struct_pack('=BH', self.status, len(self.properties))
             # properties
             for prop in self.properties:
                 data += prop.dumpData()
@@ -980,11 +983,10 @@ class MelVmad(MelBase):
                 scriptAppend(script)
 
         def dumpData(self):
-            structPack = struct.pack
             # Object Format 2 - (NULL, Aid, Fid)
-            data = structPack('=HHI',0,self.aid,self.fid)
+            data = struct_pack('=HHI', 0, self.aid, self.fid)
             # vmad version, object format, script count
-            data += structPack('=3H',5,2,len(self.scripts))
+            data += struct_pack('=3H', 5, 2, len(self.scripts))
             # Primary Scripts
             for script in self.scripts:
                 data += script.dumpData()
@@ -1048,10 +1050,9 @@ class MelVmad(MelBase):
                 self.aliases = None
 
         def dumpData(self,record):
-            structPack = struct.pack
             # Header
             #data = structPack('=3H',4,1,len(self.scripts)) # vmad version, object format, script count
-            data = structPack('=3H',5,2,len(self.scripts)) # vmad version, object format, script count
+            data = struct_pack('=3H', 5, 2, len(self.scripts)) # vmad version, object format, script count
             # Primary Scripts
             for script in self.scripts:
                 data += script.dumpData()
@@ -1064,7 +1065,7 @@ class MelVmad(MelBase):
                 if Type == 'QUST':
                     # Alias Scripts
                     aliases = self.aliases
-                    data += structPack('=H',len(aliases))
+                    data += struct_pack('=H', len(aliases))
                     for alias in aliases:
                         data += alias.dumpData()
             return data
@@ -2213,18 +2214,18 @@ class MreDebr(MelRecord):
         def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
             data = ins.read(size_, readId)
-            (record.percentage,) = struct.unpack('B',data[0:1])
+            (record.percentage,) = struct_unpack('B',data[0:1])
             record.modPath = data[1:-2]
             if data[-2] != null1:
                 raise ModError(ins.inName,_('Unexpected subrecord: ')+readId)
-            (record.flags,) = struct.unpack('B',data[-1])
+            (record.flags,) = struct_unpack('B',data[-1])
         def dumpData(self,record,out):
             """Dumps data from record to outstream."""
             data = ''
-            data += struct.pack('B',record.percentage)
+            data += struct_pack('B',record.percentage)
             data += record.modPath
             data += null1
-            data += struct.pack('B',record.flags)
+            data += struct_pack('B',record.flags)
             out.packSub('DATA',data)
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -5456,7 +5457,7 @@ class MreRefr(MelRecord):
                 record.hasXmrk = True
             if record.hasXmrk:
                 try:
-                    out.write(struct.pack('=4sH','XMRK',0))
+                    out.write(struct_pack('=4sH','XMRK',0))
                     out.packSub('FNAM','B',record.flags.dump())
                     value = record.full
                     if value is not None:
