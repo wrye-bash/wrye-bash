@@ -26,7 +26,32 @@ import re
 import subprocess
 from subprocess import PIPE
 from .. import env, bolt, bass, archives
-from ..bolt import decode, encode, Path, startupinfo
+from ..bolt import decode, encode, Path, startupinfo, unpack_int_signed, \
+    unpack_byte, unpack_short, unpack_int64_signed, struct_pack
+
+def _readNetString(open_file):
+    """Read a .net string. THIS CODE IS DUBIOUS!"""
+    pos = open_file.tell()
+    strLen = unpack_byte(open_file)
+    if strLen >= 128:
+        open_file.seek(pos)
+        strLen = unpack_short(open_file)
+        strLen = strLen & 0x7f | (strLen >> 1) & 0xff80
+        if strLen > 0x7FFF:
+            raise NotImplementedError(u'String too long to convert.')
+    return open_file.read(strLen)
+
+def _writeNetString(open_file, string):
+    """Write string as a .net string. THIS CODE IS DUBIOUS!"""
+    strLen = len(string)
+    if strLen < 128:
+        open_file.write(struct_pack('b', strLen))
+    elif strLen > 0x7FFF: #--Actually probably fails earlier.
+        raise NotImplementedError(u'String too long to convert.')
+    else:
+        strLen =  0x80 | strLen & 0x7f | (strLen & 0xff80) << 1
+        open_file.write(struct_pack('b', strLen))
+    open_file.write(string)
 
 failedOmods = set()
 
@@ -44,22 +69,23 @@ class OmodFile:
 
     def readConfig(self, conf_path):
         """Read info about the omod from the 'config' file"""
-        with bolt.BinaryFile(conf_path.s) as omod_config:
-            self.version = omod_config.readByte() # OMOD version
-            self.modName = decode(omod_config.readNetString()) # Mod name
-            self.major = omod_config.readInt32() # Mod major version - getting weird numbers here though
-            self.minor = omod_config.readInt32() # Mod minor version
-            self.author = decode(omod_config.readNetString()) # author
-            self.email = decode(omod_config.readNetString()) # email
-            self.website = decode(omod_config.readNetString()) # website
-            self.desc = decode(omod_config.readNetString()) # description
+        with open(conf_path.s, 'rb') as omod_config:
+            self.version = unpack_byte(omod_config) # OMOD version
+            self.modName = decode(_readNetString(omod_config)) # Mod name
+            # TODO(ut) original code unpacked signed int, maybe that's why "weird numbers" ?
+            self.major = unpack_int_signed(omod_config) # Mod major version - getting weird numbers here though
+            self.minor = unpack_int_signed(omod_config) # Mod minor version
+            self.author = decode(_readNetString(omod_config)) # author
+            self.email = decode(_readNetString(omod_config)) # email
+            self.website = decode(_readNetString(omod_config)) # website
+            self.desc = decode(_readNetString(omod_config)) # description
             if self.version >= 2:
-                self.ftime = omod_config.readInt64() # creation time
+                self.ftime = unpack_int64_signed(omod_config) # creation time
             else:
-                self.ftime = decode(omod_config.readNetString())
-            self.compType = omod_config.readByte() # Compression type. 0 = lzma, 1 = zip
+                self.ftime = decode(_readNetString(omod_config))
+            self.compType = unpack_byte(omod_config) # Compression type. 0 = lzma, 1 = zip
             if self.version >= 1:
-                self.build = omod_config.readInt32()
+                self.build = unpack_int_signed(omod_config)
             else:
                 self.build = -1
 
@@ -143,14 +169,14 @@ class OmodFile:
             self.writeInfo(ocdDir.join(u'info.txt'), self.omod_path.stail, extractDir.join(u'readme').exists(), extractDir.join(u'script').exists())
             progress(0.47, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscript')
             if extractDir.join(u'script').exists():
-                with bolt.BinaryFile(extractDir.join(u'script').s) as input:
+                with open(extractDir.join(u'script').s, 'rb') as ins:
                     with ocdDir.join(u'script.txt').open('w') as output:
-                        output.write(input.readNetString())
+                        output.write(_readNetString(ins))
             progress(0.48, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nreadme.rtf')
             if extractDir.join(u'readme').exists():
-                with bolt.BinaryFile(extractDir.join(u'readme').s) as input:
+                with open(extractDir.join(u'readme').s, 'rb') as ins:
                     with ocdDir.join(u'readme.rtf').open('w') as output:
-                        output.write(input.readNetString())
+                        output.write(_readNetString(ins))
             progress(0.49, self.omod_path.stail + u'\n' + _(u'Creating omod conversion data') + u'\nscreenshot')
             if extractDir.join(u'image').exists():
                 extractDir.join(u'image').moveTo(ocdDir.join(u'screenshot'))
@@ -225,24 +251,24 @@ class OmodFile:
         # Extract data stream to an uncompressed stream
         subprogress = bolt.SubProgress(progress,0,0.3,full=dataPath.size)
         subprogress(0, self.omod_path.stail + u'\n' + _(u'Unpacking %s') % dataPath.stail)
-        with dataPath.open('rb') as file:
+        with dataPath.open('rb') as ins:
             done = 0
-            with bolt.BinaryFile(outPath.join(dataPath.sbody+u'.tmp').s,'wb') as output:
+            with open(outPath.join(dataPath.sbody+u'.tmp').s, 'wb') as output:
                 # Decoder properties
-                output.write(file.read(5))
+                output.write(ins.read(5))
                 done += 5
                 subprogress(5)
 
                 # Next 8 bytes are the size of the data stream
                 for i in range(8):
                     out = totalSize >> (i*8)
-                    output.writeByte(out & 0xFF)
+                    output.write(struct_pack('B', out & 0xFF))
                     done += 1
                     subprogress(done)
 
                 # Now copy the data stream
-                while file.tell() < dataPath.size:
-                    output.write(file.read(512))
+                while ins.tell() < dataPath.size:
+                    output.write(ins.read(512))
                     done += 512
                     subprogress(done)
 
@@ -267,11 +293,11 @@ class OmodFile:
         fileNames = list()
         crcs = list()
         sizes = list()
-        with bolt.BinaryFile(crc_file_path.s) as crc_file:
+        with open(crc_file_path.s, 'rb') as crc_file:
             while crc_file.tell() < crc_file_path.size:
-                fileNames.append(crc_file.readNetString())
-                crcs.append(crc_file.readInt32())
-                sizes.append(crc_file.readInt64())
+                fileNames.append(_readNetString(crc_file))
+                crcs.append(unpack_int_signed(crc_file))
+                sizes.append(unpack_int64_signed(crc_file))
         return fileNames,crcs,sizes
 
 class OmodConfig:
@@ -292,14 +318,14 @@ class OmodConfig:
         config = OmodConfig(name)
         configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         if configPath.exists():
-            with bolt.StructFile(configPath.s,'rb') as ins:
+            with open(configPath.s,'rb') as ins:
                 ins.read(1) #--Skip first four bytes
                 # OBMM can support UTF-8, so try that first, then fail back to
-                config.name = decode(ins.readNetString(),encoding='utf-8')
-                config.vMajor, = ins.unpack('i',4)
-                config.vMinor, = ins.unpack('i',4)
+                config.name = decode(_readNetString(ins), encoding='utf-8')
+                config.vMajor = unpack_int_signed(ins)
+                config.vMinor = unpack_int_signed(ins)
                 for attr in ('author','email','website','abstract'):
-                    setattr(config,attr,decode(ins.readNetString(),encoding='utf-8'))
+                    setattr(config, attr, decode(_readNetString(ins), encoding='utf-8'))
                 ins.read(8) #--Skip date-time
                 ins.read(1) #--Skip zip-compression
                 #config['vBuild'], = ins.unpack('I',4)
@@ -310,15 +336,15 @@ class OmodConfig:
         """Write obmm config file for project."""
         configPath = bass.dirs['installers'].join(name,u'omod conversion data',u'config')
         configPath.head.makedirs()
-        with bolt.StructFile(configPath.temp.s,'wb') as out:
-            out.pack('B',4)
-            out.writeNetString(config.name.encode('utf8'))
-            out.pack('i',config.vMajor)
-            out.pack('i',config.vMinor)
+        with open(configPath.temp.s,'wb') as out:
+            out.write(struct_pack('B', 4))
+            _writeNetString(out, config.name.encode('utf8'))
+            out.write(struct_pack('i', config.vMajor))
+            out.write(struct_pack('i', config.vMinor))
             for attr in ('author','email','website','abstract'):
                 # OBMM reads it fine if in UTF-8, so we'll do that.
-                out.writeNetString(getattr(config,attr).encode('utf-8'))
+                _writeNetString(out, getattr(config, attr).encode('utf-8'))
             out.write('\x74\x1a\x74\x67\xf2\x7a\xca\x88') #--Random date time
-            out.pack('b',0) #--zip compression (will be ignored)
+            out.write(struct_pack('b', 0)) #--zip compression (will be ignored)
             out.write('\xFF\xFF\xFF\xFF')
         configPath.untemp()

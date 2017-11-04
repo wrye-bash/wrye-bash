@@ -29,9 +29,8 @@ import os as _os
 import re as _re
 import shutil as _shutil
 import stat
-import struct
 
-from bolt import GPath, deprint, Path, decode
+from bolt import GPath, deprint, Path, decode, struct_unpack
 from exception import BoltError, CancelError, SkipError, AccessDeniedError, \
     DirectoryFileCollisionError, InvalidPathsError, FileOperationError, \
     NonExistentDriveError
@@ -352,7 +351,7 @@ def _linux_get_file_version_info(filename):
     def _read(fmt, file_obj, offset=0, count=1, absolute=False):
         """Read one or more chunks from the file, either a word or dword."""
         file_obj.seek(offset, not absolute)
-        result = [struct.unpack('<' + fmt[0], file_obj.read(fmt[1]))[0]
+        result = [struct_unpack('<' + fmt[0], file_obj.read(fmt[1]))[0]
                   for _ in xrange(count)]
         return result[0] if count == 1 else result
     def _find_version(file_obj, pos, offset):

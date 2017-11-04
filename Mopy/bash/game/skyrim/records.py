@@ -27,7 +27,7 @@ import re
 import struct
 import itertools
 from ...bolt import Flags, sio, DataDict, winNewLines, \
-    encode
+    encode, struct_pack, struct_unpack
 from ...brec import MelRecord, MelStructs, \
     MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
     MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
@@ -117,17 +117,17 @@ class MelBipedObjectData(MelStruct):
         loaders['BOD2'] = self
         loaders['BODT'] = self
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         if sub_type == 'BODT':
             # Old record type, use alternate loading routine
-            if size == 8:
+            if size_ == 8:
                 # Version 20 of this subrecord is only 8 bytes (armorType omitted)
-                bipedFlags,legacyData = ins.unpack('=2I',size,readId)
+                bipedFlags,legacyData = ins.unpack('=2I', size_, readId)
                 armorFlags = 0
-            elif size != 12:
-                raise ModSizeError(ins.inName,readId,12,size,True)
+            elif size_ != 12:
+                raise ModSizeError(ins.inName, readId, 12, size_, True)
             else:
-                bipedFlags,legacyData,armorFlags = ins.unpack('=3I',size,readId)
+                bipedFlags,legacyData,armorFlags = ins.unpack('=3I', size_, readId)
             # legacyData is discarded except for non-playable status
             setter = record.__setattr__
             setter('bipedFlags',MelBipedObjectData.BipedFlags(bipedFlags))
@@ -136,7 +136,7 @@ class MelBipedObjectData(MelStruct):
             setter('armorFlags',MelBipedObjectData.ArmorTypeFlags(armorFlags))
         else:
             # BOD2 - new style, MelStruct can handle it
-            MelStruct.loadData(self, record, ins, sub_type, size, readId)
+            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
 
 #------------------------------------------------------------------------------
 class MelBounds(MelStruct):
@@ -189,11 +189,11 @@ class MelCTDAHandler(MelStructs):
         """Include self if has fids."""
         formElements.add(self)
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         if sub_type == 'CTDA':
-            if size != 32 and size != 28 and size != 24 and size != 20:
-                raise ModSizeError(ins.inName,readId,32,size,False)
+            if size_ != 32 and size_ != 28 and size_ != 24 and size_ != 20:
+                raise ModSizeError(ins.inName, readId, 32, size_, False)
         else:
             raise ModError(ins.inName,_(u'Unexpected subrecord: ')+readId)
         target = MelObject()
@@ -214,22 +214,22 @@ class MelCTDAHandler(MelStructs):
         form4 = 'I'
         # Form5 is Param3
         form5 = 'I' if ifunc in fid5Conditions else 'i'
-        if size == 32:
+        if size_ == 32:
             form12345 = form1+form2+form3+form4+form5
             unpacked2 = ins.unpack(form12345,20,readId)
             (target.param1,target.param2,target.runOn,target.reference,target.param3) = unpacked2
-        elif size == 28:
+        elif size_ == 28:
             form12345 = form1+form2+form3+form4
             unpacked2 = ins.unpack(form12345,16,readId)
             (target.param1,target.param2,target.runOn,target.reference) = unpacked2
             target.param3 = null4
-        elif size == 24:
+        elif size_ == 24:
             form12345 = form1+form2+form3
             unpacked2 = ins.unpack(form12345,12,readId)
             (target.param1,target.param2,target.runOn) = unpacked2
             target.reference = null4
             target.param3 = null4
-        elif size == 20:
+        elif size_ == 20:
             form12345 = form1+form2
             unpacked2 = ins.unpack(form12345,8,readId)
             (target.param1,target.param2) = unpacked2
@@ -241,7 +241,7 @@ class MelCTDAHandler(MelStructs):
         # (target.param1,target.param2) = unpacked2
         # target.unused3,target.reference,target.unused4 = ins.unpack('=4s2I',12,readId)
         else:
-            raise ModSizeError(ins.inName,readId,32,size,False)
+            raise ModSizeError(ins.inName, readId, 32, size_, False)
         (target.ifunc,target.form12345) = (ifunc,form12345)
         if self._debug:
             unpacked = unpacked1+unpacked2
@@ -458,7 +458,7 @@ class MelMODS(MelBase):
         """Sets default value for record instance."""
         record.__setattr__(self.attr,None)
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         insUnpack = ins.unpack
         count, = insUnpack('I',4,readId)
@@ -466,7 +466,7 @@ class MelMODS(MelBase):
         dataAppend = data.append
         for x in xrange(count):
             string = ins.readString32(readId)
-            fid = ins.unpackRef(readId)
+            fid = ins.unpackRef()
             index, = ins.unpack('I',4,readId)
             dataAppend((string,fid,index))
         record.__setattr__(self.attr,data)
@@ -475,13 +475,12 @@ class MelMODS(MelBase):
         """Dumps data from record to outstream."""
         data = record.__getattribute__(self.attr)
         if data is not None:
-            structPack = struct.pack
             data = record.__getattribute__(self.attr)
-            outData = structPack('I',len(data))
+            outData = struct_pack('I', len(data))
             for (string,fid,index) in data:
-                outData += structPack('I',len(string))
+                outData += struct_pack('I', len(string))
                 outData += encode(string)
-                outData += structPack('=2I',fid,index)
+                outData += struct_pack('=2I', fid, index)
             out.packSub(self.subType,outData)
 
     def mapFids(self,record,function,save=False):
@@ -552,9 +551,9 @@ class MelScrxen(MelFids):
         loaders['SCRV'] = self
         loaders['SCRO'] = self
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         isFid = (sub_type == 'SCRO')
-        if isFid: value = ins.unpackRef(readId)
+        if isFid: value = ins.unpackRef()
         else: value, = ins.unpack('I',4,readId)
         record.__getattribute__(self.attr).append((isFid,value))
 
@@ -574,7 +573,7 @@ class MelScrxen(MelFids):
 #------------------------------------------------------------------------------
 class MelString16(MelString):
     """Represents a mod record string element."""
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         strLen, = ins.unpack('H',2,readId)
         value = ins.readString(strLen,readId)
@@ -603,13 +602,13 @@ class MelString16(MelString):
                     value = test
             else:
                 value = encode(value)
-            value = struct.pack('H',len(value))+value
+            value = struct_pack('H',len(value))+value
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
 class MelString32(MelString):
     """Represents a mod record string element."""
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         strLen, = ins.unpack('I',4,readId)
         value = ins.readString(strLen,readId)
@@ -638,7 +637,7 @@ class MelString32(MelString):
                     value = test
             else:
                 value = encode(value)
-            value = struct.pack('I',len(value))+value
+            value = struct_pack('I',len(value))+value
             out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
@@ -679,19 +678,20 @@ class MelVmad(MelBase):
             return count
 
         def dumpData(self,Type,count):
-            structPack = struct.pack
             fileName = encode(self.fileName)
             if Type == 'INFO':
                 raise Exception(u"Fragment Scripts for 'INFO' records are not implemented.")
             elif Type == 'PACK':
                 # TODO: check if this is right!
                 count = int(count*'1',2)
-                data = structPack('=bBH',self.unk,count,len(fileName)) + fileName
+                data = struct_pack('=bBH', self.unk, count,
+                                   len(fileName)) + fileName
             elif Type == 'PERK':
-                data = structPack('=bH',self.unk,len(fileName)) + fileName
-                data += structPack('=H',count)
+                data = struct_pack('=bH', self.unk, len(fileName)) + fileName
+                data += struct_pack('=H', count)
             elif Type == 'QUST':
-                data = structPack('=bHH',self.unk,count,len(fileName)) + fileName
+                data = struct_pack('=bHH', self.unk, count,
+                                   len(fileName)) + fileName
             elif Type == 'SCEN':
                 raise Exception(u"Fragment Scripts for 'SCEN' records are not implemented.")
             else:
@@ -714,11 +714,10 @@ class MelVmad(MelBase):
             self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
-            structPack = struct.pack
             scriptName = encode(self.scriptName)
             fragmentName = encode(self.fragmentName)
-            data = structPack('=bH',self.unk,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
+            data = struct_pack('=bH', self.unk, len(scriptName)) + scriptName
+            data += struct_pack('=H', len(fragmentName)) + fragmentName
             return data
 
     class PERKFragment(object):
@@ -736,11 +735,11 @@ class MelVmad(MelBase):
             self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
-            structPack = struct.pack
             scriptName = encode(self.scriptName)
             fragmentName = encode(self.fragmentName)
-            data = structPack('=HhbH',self.index,self.unk1,self.unk2,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
+            data = struct_pack('=HhbH', self.index, self.unk1, self.unk2,
+                               len(scriptName)) + scriptName
+            data += struct_pack('=H', len(fragmentName)) + fragmentName
             return data
 
     class QUSTFragment(object):
@@ -759,11 +758,11 @@ class MelVmad(MelBase):
             self.fragmentName = ins.readString16(readId)
 
         def dumpData(self):
-            structPack = struct.pack
             scriptName = encode(self.scriptName)
             fragmentName = encode(self.fragmentName)
-            data = structPack('=HhibH',self.index,self.unk1,self.logentry,self.unk2,len(scriptName)) + scriptName
-            data += structPack('=H',len(fragmentName)) + fragmentName
+            data = struct_pack('=HhibH', self.index, self.unk1, self.logentry,
+                               self.unk2, len(scriptName)) + scriptName
+            data += struct_pack('=H', len(fragmentName)) + fragmentName
             return data
 
     class SCENFragment(object):
@@ -841,11 +840,10 @@ class MelVmad(MelBase):
                 raise Exception(u'Unrecognized VM Data property type: %i' % Type)
 
         def dumpData(self):
-            structPack = struct.pack
             ## Property Entry
             # Property Name
             name = encode(self.name)
-            data = structPack('=H',len(name))+name
+            data = struct_pack('=H', len(name)) + name
             # Property Type
             value = self.value
             # Type 1 - Object Reference
@@ -853,26 +851,27 @@ class MelVmad(MelBase):
                 # Object Format 1 - (Fid, Aid, NULL)
                 #data += structPack('=BBIHH',1,self.status,value[0],value[1],0)
                 # Object Format 2 - (NULL, Aid, Fid)
-                data += structPack('=BBHHI',1,self.status,0,value[1],value[0])
+                data += struct_pack('=BBHHI', 1, self.status, 0, value[1],
+                                    value[0])
             # Type 2 - String
             elif isinstance(value,basestring):
                 value = encode(value)
-                data += structPack('=BBH',2,self.status,len(value))+value
+                data += struct_pack('=BBH', 2, self.status, len(value)) + value
             # Type 3 - Int
             elif isinstance(value,(int,long)) and not isinstance(value,bool):
-                data += structPack('=BBi',3,self.status,value)
+                data += struct_pack('=BBi', 3, self.status, value)
             # Type 4 - Float
             elif isinstance(value,float):
-                data += structPack('=BBf',4,self.status,value)
+                data += struct_pack('=BBf', 4, self.status, value)
             # Type 5 - Bool
             elif isinstance(value,bool):
-                data += structPack('=BBb',5,self.status,value)
+                data += struct_pack('=BBb', 5, self.status, value)
             # Type 11 -> 15 - lists, Only supported if vmad version >= 5
             elif isinstance(value,list):
                 # Empty list, fail to object refereneces?
                 count = len(value)
                 if not count:
-                    data += structPack('=BBI',11,self.status,count)
+                    data += struct_pack('=BBI', 11, self.status, count)
                 else:
                     Type = value[0]
                     # Type 11 - Object References
@@ -882,22 +881,27 @@ class MelVmad(MelBase):
                         #data += structPack('=BBI'+count*'IHH',11,self.status,count,*value)
                         # Object Format 2 - value = [NULL,aid,fid, NULL,aid,fid, ...]
                         value = list(from_iterable([(0,aid,fid) for fid,aid in value]))
-                        data += structPack('=BBI'+count*'HHI',11,self.status,count,*value)
+                        data += struct_pack('=BBI' + count * 'HHI', 11,
+                                            self.status, count, *value)
                     # Type 12 - Strings
                     elif isinstance(Type,basestring):
-                        data += structPack('=BBI',12,self.status,count)
+                        data += struct_pack('=BBI', 12, self.status, count)
                         for string in value:
                             string = encode(string)
-                            data += structPack('=H',len(string))+string
+                            data += struct_pack('=H', len(string)) + string
                     # Type 13 - Ints
-                    elif isinstance(Type,(int,long)) and not isinstance(Type,bool):
-                        data += structPack('=BBI'+`count`+'i',13,self.status,count,*value)
+                    elif isinstance(Type,(int,long)) and not isinstance(
+                            Type,bool):
+                        data += struct_pack('=BBI' + `count` + 'i', 13,
+                                            self.status, count, *value)
                     # Type 14 - Floats
                     elif isinstance(Type,float):
-                        data += structPack('=BBI'+`count`+'f',14,self.status,count,*value)
+                        data += struct_pack('=BBI' + `count` + 'f', 14,
+                                            self.status, count, *value)
                     # Type 15 - Bools
                     elif isinstance(Type,bool):
-                        data += structPack('=BBI'+`count`+'b',15,self.status,count,*value)
+                        data += struct_pack('=BBI' + `count` + 'b', 15,
+                                            self.status, count, *value)
                     else:
                         raise Exception(u'Unrecognized VMAD property type: %s' % type(Type))
             else:
@@ -929,13 +933,12 @@ class MelVmad(MelBase):
                 propAppend(prop)
 
         def dumpData(self):
-            structPack = struct.pack
             ## Script Entry
             # scriptName
             name = encode(self.name)
-            data = structPack('=H',len(name))+name
+            data = struct_pack('=H', len(name)) + name
             # status, property count
-            data += structPack('=BH',self.status,len(self.properties))
+            data += struct_pack('=BH', self.status, len(self.properties))
             # properties
             for prop in self.properties:
                 data += prop.dumpData()
@@ -980,11 +983,10 @@ class MelVmad(MelBase):
                 scriptAppend(script)
 
         def dumpData(self):
-            structPack = struct.pack
             # Object Format 2 - (NULL, Aid, Fid)
-            data = structPack('=HHI',0,self.aid,self.fid)
+            data = struct_pack('=HHI', 0, self.aid, self.fid)
             # vmad version, object format, script count
-            data += structPack('=3H',5,2,len(self.scripts))
+            data += struct_pack('=3H', 5, 2, len(self.scripts))
             # Primary Scripts
             for script in self.scripts:
                 data += script.dumpData()
@@ -1048,10 +1050,9 @@ class MelVmad(MelBase):
                 self.aliases = None
 
         def dumpData(self,record):
-            structPack = struct.pack
             # Header
             #data = structPack('=3H',4,1,len(self.scripts)) # vmad version, object format, script count
-            data = structPack('=3H',5,2,len(self.scripts)) # vmad version, object format, script count
+            data = struct_pack('=3H', 5, 2, len(self.scripts)) # vmad version, object format, script count
             # Primary Scripts
             for script in self.scripts:
                 data += script.dumpData()
@@ -1064,7 +1065,7 @@ class MelVmad(MelBase):
                 if Type == 'QUST':
                     # Alias Scripts
                     aliases = self.aliases
-                    data += structPack('=H',len(aliases))
+                    data += struct_pack('=H', len(aliases))
                     for alias in aliases:
                         data += alias.dumpData()
             return data
@@ -1091,9 +1092,9 @@ class MelVmad(MelBase):
         target = MelObject()
         return self.setDefault(target)
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         vmad = MelVmad.Vmad()
-        vmad.loadData(record,ins,size,readId)
+        vmad.loadData(record, ins, size_, readId)
         record.__setattr__(self.attr,vmad)
 
     def dumpData(self,record,out):
@@ -1687,7 +1688,7 @@ class MreBptd(MelRecord):
     _flags = Flags(0L,Flags.getNames('severable','ikData','ikBipedData',
         'explodable','ikIsHead','ikHeadtracking','toHitChanceAbsolute'))
     class MelBptdGroups(MelGroups):
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
             if sub_type == self.type0:
                 target = self.getDefault()
@@ -1701,7 +1702,8 @@ class MreBptd(MelRecord):
                     record.__getattribute__(self.attr).append(target)
             target.__slots__ = [s for element in self.elements for s in
                                 element.getSlotsUsed()]
-            self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
+            self.loaders[sub_type].loadData(target, ins, sub_type, size_,
+                                            readId)
     melSet = MelSet(
         MelString('EDID','eid'),
         MelModel(),
@@ -1765,14 +1767,14 @@ class MreCams(MelRecord):
 
     class MelCamsData(MelStruct):
         """Handle older truncated DATA for CAMS subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 44:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 44:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 40:
-                unpacked = ins.unpack('4I6f',size,readId)
+            elif size_ == 40:
+                unpacked = ins.unpack('4I6f', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,44,size,True)
+                raise ModSizeError(record.inName, readId, 44, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1856,16 +1858,16 @@ class MreCell(MelRecord):
 
     class MelCellXcll(MelOptStruct):
         """Handle older truncated XCLL for CELL subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 92:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 92:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 64:
-                unpacked = ins.unpack('BBBsBBBsBBBsffiifffBBBsBBBsBBBsBBBsBBBsBBBs',size,readId)
-            elif size == 24:
-                unpacked = ins.unpack('BBBsBBBsBBBsffi',size,readId)
+            elif size_ == 64:
+                unpacked = ins.unpack('BBBsBBBsBBBsffiifffBBBsBBBsBBBsBBBsBBBsBBBs', size_, readId)
+            elif size_ == 24:
+                unpacked = ins.unpack('BBBsBBBsBBBsffi', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,92,size,True)
+                raise ModSizeError(record.inName, readId, 92, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1875,14 +1877,14 @@ class MreCell(MelRecord):
 
     class MelCellData(MelStruct):
         """Handle older truncated DATA for CELL subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 2:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 2:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 1:
-                unpacked = ins.unpack('B',size,readId)
+            elif size_ == 1:
+                unpacked = ins.unpack('B', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,2,size,True)
+                raise ModSizeError(record.inName, readId, 2, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -1894,10 +1896,9 @@ class MreCell(MelRecord):
         default_heights = {4294953216.0, -2147483648.0,
             -3.4028234663852886e+38, 3.4028234663852886e+38} # unused, see #302
 
-        def loadData(self, record, ins, sub_type, size, readId,
-                     __default_heights=default_heights):
+        def loadData(self, record, ins, sub_type, size_, readId):
             # from brec.MelStruct#loadData - formatLen is 0 for MelWaterHeight
-            waterHeight = ins.unpack(self.format, size, readId)
+            waterHeight = ins.unpack(self.format, size_, readId)
             # print u' ', zip(self.attrs, waterHeight)
             # if len(waterHeight) != len(self.attrs):
             #     print u' ', waterHeight
@@ -2210,21 +2211,21 @@ class MreDebr(MelRecord):
             """Initialize."""
             self.attrs,self.defaults,self.actions,self.formAttrs = MelBase.parseElements(*self._elements)
             self._debug = False
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
-            data = ins.read(size,readId)
-            (record.percentage,) = struct.unpack('B',data[0:1])
+            data = ins.read(size_, readId)
+            (record.percentage,) = struct_unpack('B',data[0:1])
             record.modPath = data[1:-2]
             if data[-2] != null1:
                 raise ModError(ins.inName,_('Unexpected subrecord: ')+readId)
-            (record.flags,) = struct.unpack('B',data[-1])
+            (record.flags,) = struct_unpack('B',data[-1])
         def dumpData(self,record,out):
             """Dumps data from record to outstream."""
             data = ''
-            data += struct.pack('B',record.percentage)
+            data += struct_pack('B',record.percentage)
             data += record.modPath
             data += null1
-            data += struct.pack('B',record.flags)
+            data += struct_pack('B',record.flags)
             out.packSub('DATA',data)
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -2435,14 +2436,14 @@ class MreEczn(MelRecord):
 
     class MelEcznData(MelStruct):
         """Handle older truncated DATA for ECZN subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 12:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 12:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 8:
-                unpacked = ins.unpack('II',size,readId)
+            elif size_ == 8:
+                unpacked = ins.unpack('II', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,12,size,True)
+                raise ModSizeError(record.inName, readId, 12, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2494,20 +2495,20 @@ class MreEfsh(MelRecord):
 
     class MelEfshData(MelStruct):
         """Handle older truncated DATA for EFSH subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 400:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 400:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 396:
-                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2f',size,readId)
-            elif size == 344:
-                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs6f',size,readId)
-            elif size == 312:
-                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI',size,readId)
-            elif size == 308:
-                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f',size,readId)
+            elif size_ == 396:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs9f8I2f', size_, readId)
+            elif size_ == 344:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI3Bs3Bs6f', size_, readId)
+            elif size_ == 312:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6fI', size_, readId)
+            elif size_ == 308:
+                unpacked = ins.unpack('4s3I3Bs9f3Bs8f5I19f3Bs3Bs3Bs11fI5f3Bsf2I6f', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,400,size,True)
+                raise ModSizeError(record.inName, readId, 400, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2579,14 +2580,14 @@ class MreEnch(MelRecord,MreHasEffects):
 
     class MelEnchEnit(MelStruct):
         """Handle older truncated ENIT for ENCH subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 36:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 36:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 32:
-                unpacked = ins.unpack('i2Ii2IfI',size,readId)
+            elif size_ == 32:
+                unpacked = ins.unpack('i2Ii2IfI', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,36,size,True)
+                raise ModSizeError(record.inName, readId, 36, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2648,18 +2649,18 @@ class MreExpl(MelRecord):
 
     class MelExplData(MelStruct):
         """Handle older truncated DATA for EXPL subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 52:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 52:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 48:
-                unpacked = ins.unpack('6I5fI',size,readId)
-            elif size == 44:
-                unpacked = ins.unpack('6I5f',size,readId)
-            elif size == 40:
-                unpacked = ins.unpack('6I4f',size,readId)
+            elif size_ == 48:
+                unpacked = ins.unpack('6I5fI', size_, readId)
+            elif size_ == 44:
+                unpacked = ins.unpack('6I5f', size_, readId)
+            elif size_ == 40:
+                unpacked = ins.unpack('6I4f', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,52,size,True)
+                raise ModSizeError(record.inName, readId, 52, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -2778,16 +2779,16 @@ class MreFact(MelRecord):
 
     class MelFactCrva(MelStruct):
         """Handle older truncated CRVA for FACT subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 20:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 20:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 16:
-                unpacked = ins.unpack('2B5Hf',size,readId)
-            elif size == 12:
-                unpacked = ins.unpack('2B5H',size,readId)
+            elif size_ == 16:
+                unpacked = ins.unpack('2B5Hf', size_, readId)
+            elif size_ == 12:
+                unpacked = ins.unpack('2B5H', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,20,size,True)
+                raise ModSizeError(record.inName, readId, 20, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3609,15 +3610,15 @@ class MreIpctData(MelStruct):
                   'angleThreshold','placementRadius','soundLevel',
                            (MreIpctData.IpctTypeFlags,'ipctFlags',0L),'impactResult',('unkIpct1',null1),),
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Handle older truncated DATA for IPCT subrecord."""
-        if size == 24:
-            MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        if size_ == 24:
+            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
             return
-        elif size == 16:
-            unpacked = ins.unpack('=fI2f',size,readId) #  + (0,0,0,0,)
+        elif size_ == 16:
+            unpacked = ins.unpack('=fI2f', size_, readId) #  + (0,0,0,0,)
         else:
-            raise ModSizeError(record.inName,readId,24,size,True)
+            raise ModSizeError(record.inName, readId, 24, size_, True)
         unpacked += self.defaults[len(unpacked):]
         setter = record.__setattr__
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -3794,14 +3795,14 @@ class MreLgtm(MelRecord):
 
     class MelLgtmDalc(MelStruct):
         """Handle older truncated DALC for LGTM subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 32:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 32:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 24:
-                unpacked = ins.unpack('=4B4B4B4B4B4B',size,readId)
+            elif size_ == 24:
+                unpacked = ins.unpack('=4B4B4B4B4B4B', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,32,size,True)
+                raise ModSizeError(record.inName, readId, 32, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4011,14 +4012,14 @@ class MreMato(MelRecord):
 
     class MelMatoData(MelStruct):
         """Handle older truncated DATA for MATO subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 48:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 48:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 28:
-                unpacked = ins.unpack('fffffff',size,readId)
+            elif size_ == 28:
+                unpacked = ins.unpack('fffffff', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,48,size,True)
+                raise ModSizeError(record.inName, readId, 48, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4198,14 +4199,14 @@ class MreMovt(MelRecord):
     classType = 'MOVT'
     class MelMovtSped(MelStruct):
         """Handle older truncated SPED for MOVT subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 44:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 44:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 40:
-                unpacked = ins.unpack('10f',size,readId)
+            elif size_ == 40:
+                unpacked = ins.unpack('10f', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,44,size,True)
+                raise ModSizeError(record.inName, readId, 44, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4749,18 +4750,18 @@ class MrePack(MelRecord):
     class MelPackLT(MelOptStruct):
         """For PLDT and PTDT. Second element of both may be either an FID or a long,
         depending on value of first element."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if ((self.subType == 'PLDT' and size == 12) or
-                (self.subType == 'PLD2' and size == 12) or
-                (self.subType == 'PTDT' and size == 16) or
-                (self.subType == 'PTD2' and size == 16)):
-                MelOptStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if ((self.subType == 'PLDT' and size_ == 12) or
+                (self.subType == 'PLD2' and size_ == 12) or
+                (self.subType == 'PTDT' and size_ == 16) or
+                (self.subType == 'PTD2' and size_ == 16)):
+                MelOptStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif ((self.subType == 'PTDT' and size == 12) or
-                  (self.subType == 'PTD2' and size == 12)):
-                unpacked = ins.unpack('iIi',size,readId)
+            elif ((self.subType == 'PTDT' and size_ == 12) or
+                  (self.subType == 'PTD2' and size_ == 12)):
+                unpacked = ins.unpack('iIi', size_, readId)
             else:
-                raise "Unexpected size encountered for PACK:%s subrecord: %s" % (self.subType, size)
+                raise "Unexpected size encountered for PACK:%s subrecord: %s" % (self.subType, size_)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4807,7 +4808,7 @@ class MrePack(MelRecord):
             for element in melSet.elements:
                 attr = element.__dict__.get('attr',None)
                 if attr: self.loaders[attr] = element
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             if sub_type == 'POBA':
                 element = self.loaders['onBegin']
             elif sub_type == 'POEA':
@@ -4818,7 +4819,7 @@ class MrePack(MelRecord):
             # All older Script records chould be discarded if found
             for subtype in ('INAM','TNAM'):
                 self.melSet.loaders[subtype] = element
-            element.loadData(record, ins, sub_type, size, readId)
+            element.loadData(self, record, ins, sub_type, size_, readId)
 
     #--MelSet
     melSet = MelSet(
@@ -4923,14 +4924,14 @@ class MrePerk(MelRecord):
 
     class MelPerkData(MelStruct):
         """Handle older truncated DATA for PERK subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 5:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 5:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 4:
-                unpacked = ins.unpack('BBBB',size,readId)
+            elif size_ == 4:
+                unpacked = ins.unpack('BBBB', size_, readId)
             else:
-                raise "Unexpected size encountered for DATA subrecord: %s" % size
+                raise "Unexpected size encountered for DATA subrecord: %s" % size_
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -4941,7 +4942,7 @@ class MrePerk(MelRecord):
     class MelPerkEffectData(MelBase):
         def hasFids(self,formElements):
             formElements.add(self)
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             target = MelObject()
             record.__setattr__(self.attr,target)
             if record.type == 0:
@@ -4952,7 +4953,7 @@ class MrePerk(MelRecord):
                 format,attrs = ('HB',('entrypoint','function'))
             else:
                 raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
-            unpacked = ins.unpack(format,size,readId)
+            unpacked = ins.unpack(format, size_, readId)
             setter = target.__setattr__
             for attr,value in zip(attrs,unpacked):
                 setter(attr,value)
@@ -4999,7 +5000,7 @@ class MrePerk(MelRecord):
             for element in melSet.elements:
                 attr = element.__dict__.get('attr',None)
                 if attr: self.attrLoaders[attr] = element
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             if sub_type == 'DATA' or sub_type == 'CTDA':
                 effects = record.__getattribute__(self.attr)
                 if not effects:
@@ -5007,12 +5008,12 @@ class MrePerk(MelRecord):
                         element = self.attrLoaders['_data']
                     elif sub_type == 'CTDA':
                         element = self.attrLoaders['conditions']
-                    element.loadData(record, ins, sub_type, size, readId)
+                    element.loadData(record, ins, sub_type, size_, readId)
                     return
-            MelGroups.loadData(self, record, ins, sub_type, size, readId)
+            MelGroups.loadData(self, record, ins, sub_type, size_, readId)
 
     class MelPerkEffectParams(MelGroups):
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             if sub_type in ('EPFT', 'EPF2', 'EPF3', 'EPFD'):
                 target = self.getDefault()
                 record.__getattribute__(self.attr).append(target)
@@ -5023,7 +5024,7 @@ class MrePerk(MelRecord):
             slots.extend(element.getSlotsUsed())
             target.__slots__ = slots
             target.recordType = sub_type
-            element.loadData(target, ins, sub_type, size, readId)
+            element.loadData(target, ins, sub_type, size_, readId)
         def dumpData(self,record,out):
             for target in record.__getattribute__(self.attr):
                 element = self.loaders[target.recordType]
@@ -5102,16 +5103,16 @@ class MreProj(MelRecord):
 
     class MelProjData(MelStruct):
         """Handle older truncated DATA for PROJ subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 92:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 92:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 88:
-                unpacked = ins.unpack('2H3f2I3f2I3f3I4fI',size,readId)
-            elif size == 84:
-                unpacked = ins.unpack('2H3f2I3f2I3f3I4f',size,readId)
+            elif size_ == 88:
+                unpacked = ins.unpack('2H3f2I3f2I3f3I4fI', size_, readId)
+            elif size_ == 84:
+                unpacked = ins.unpack('2H3f2I3f2I3f3I4f', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,92,size,True)
+                raise ModSizeError(record.inName, readId, 92, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -5258,7 +5259,7 @@ class MreQust(MelRecord):
             return self.data[key]
 
     class MelAliasGroups(MelGroups):
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
             if sub_type in ('ALST', 'ALLS'):
                 target = self.getDefault()
@@ -5267,7 +5268,8 @@ class MreQust(MelRecord):
                 target = record.__getattribute__(self.attr)[-1]
             target.__slots__ = [s for element in self.elements for s in
                                 element.getSlotsUsed()]
-            self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
+            self.loaders[sub_type].loadData(target, ins, sub_type, size_,
+                                            readId)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -5401,16 +5403,16 @@ class MreRefr(MelRecord):
 
     class MelRefrXloc(MelOptStruct):
         """Handle older truncated XLOC for REFR subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 20:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 20:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 16:
-                unpacked = ins.unpack('B3sIB3s4s',size,readId)
-            elif size == 12:
-                unpacked = ins.unpack('B3sIB3s',size,readId)
+            elif size_ == 16:
+                unpacked = ins.unpack('B3sIB3s4s', size_, readId)
+            elif size_ == 12:
+                unpacked = ins.unpack('B3sIB3s', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,20,size,True)
+                raise ModSizeError(record.inName, readId, 20, size_, True)
             #     print ins.unpack(('%dB' % size),size)
             #     raise ModError(ins.inName,_('Unexpected size encountered for REFR:XLOC subrecord: ')+str(size))
             # unpacked = unpacked[:-2] + self.defaults[len(unpacked)-2:-2] + unpacked[-2:]
@@ -5428,26 +5430,26 @@ class MreRefr(MelRecord):
 
     class MelRefrXmrk(MelStruct):
         """Handler for xmrk record. Conditionally loads next items."""
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
-            junk = ins.read(size,readId)
+            junk = ins.read(size_, readId)
             record.hasXmrk = True
             insTell = ins.tell
             insUnpack = ins.unpack
             pos = insTell()
-            (sub_type_, size) = insUnpack('4sH', 6, readId + '.FULL')
+            (sub_type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
             while sub_type_ in ['FNAM', 'FULL', 'TNAM', ]: # 'WMI1'
                 if sub_type_ == 'FNAM':
-                    value = insUnpack('B',size,readId)
+                    value = insUnpack('B', size_, readId)
                     record.flags = MreRefr._flags(*value)
                 elif sub_type_ == 'FULL':
-                    record.full = ins.readString(size,readId)
+                    record.full = ins.readString(size_, readId)
                 elif sub_type_ == 'TNAM':
-                    record.markerType, record.unused5 = insUnpack('Bs',size,readId)
+                    record.markerType, record.unused5 = insUnpack('Bs', size_, readId)
                 # elif type == 'WMI1':
                 #     record.reputation = insUnpack('I',size,readId)
                 pos = insTell()
-                (sub_type_, size) = insUnpack('4sH', 6, readId + '.FULL')
+                (sub_type_, size_) = insUnpack('4sH', 6, readId + '.FULL')
             ins.seek(pos)
             if self._debug: print ' ',record.flags,record.full,record.markerType
         def dumpData(self,record,out):
@@ -5455,7 +5457,7 @@ class MreRefr(MelRecord):
                 record.hasXmrk = True
             if record.hasXmrk:
                 try:
-                    out.write(struct.pack('=4sH','XMRK',0))
+                    out.write(struct_pack('=4sH','XMRK',0))
                     out.packSub('FNAM','B',record.flags.dump())
                     value = record.full
                     if value is not None:
@@ -5617,15 +5619,15 @@ class MreRegn(MelRecord):
     ####Lazy hacks to correctly read/write regn data
     class MelRegnStructA(MelStructA):
         """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             if record.entryType == 2 and self.subType == 'RDOT':
-                MelStructA.loadData(self, record, ins, sub_type, size, readId)
+                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
             elif record.entryType == 3 and self.subType == 'RDWT':
-                MelStructA.loadData(self, record, ins, sub_type, size, readId)
+                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
             elif record.entryType == 6 and self.subType == 'RDGS':
-                MelStructA.loadData(self, record, ins, sub_type, size, readId)
+                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
             elif record.entryType == 7 and self.subType == 'RDSA':
-                MelStructA.loadData(self, record, ins, sub_type, size, readId)
+                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
 
         def dumpData(self,record,out):
             """Conditionally dumps data."""
@@ -5640,9 +5642,9 @@ class MreRegn(MelRecord):
 
     class MelRegnString(MelString):
         """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             if record.entryType == 4 and self.subType == 'RDMP':
-                MelString.loadData(self, record, ins, sub_type, size, readId)
+                MelString.loadData(self, record, ins, sub_type, size_, readId)
             # elif record.entryType == 5 and self.subType == 'ICON':
             #     MelString.loadData(self,record,ins,type,size,readId)
 
@@ -5654,7 +5656,7 @@ class MreRegn(MelRecord):
             #     MelString.dumpData(self,record,out)
 
     class MelRegnGroups(MelGroups):
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             """Reads data from ins into record attribute."""
             if sub_type == self.type0:
                 target = self.getDefault()
@@ -5670,7 +5672,8 @@ class MreRegn(MelRecord):
                     record.__getattribute__(self.attr).append(target)
             target.__slots__ = [s for element in self.elements for s in
                                 element.getSlotsUsed()]
-            self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
+            self.loaders[sub_type].loadData(target, ins, sub_type, size_,
+                                            readId)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -6372,13 +6375,13 @@ class MelSpgdData(MelStruct):
                            )
 
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        if size == 40:
+        if size_ == 40:
             # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48 bytes
             # fffffffIIIIf
             # Type is an Enum 0 = Rain; 1 = Snow
-            unpacked = ins.unpack('=7f3I',size,readId) + (0,0,)
+            unpacked = ins.unpack('=7f3I', size_, readId) + (0, 0,)
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
                 if action: value = action(value)
@@ -6387,10 +6390,10 @@ class MelSpgdData(MelStruct):
                 print u' ',zip(self.attrs,unpacked)
                 if len(unpacked) != len(self.attrs):
                     print u' ',unpacked
-        elif size != 48:
-            raise ModSizeError(record.inName,readId,48,size,True)
+        elif size_ != 48:
+            raise ModSizeError(record.inName, readId, 48, size_, True)
         else:
-            MelStruct.loadData(self, record, ins, sub_type, size, readId)
+            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
 
 class MreSpgd(MelRecord):
     """Spgd Item"""
@@ -6755,16 +6758,16 @@ class MreWrld(MelRecord):
 
     class MelWrldMnam(MelOptStruct):
         """Handle older truncated MNAM for WRLD subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 28:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 28:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 24:
-                unpacked = ins.unpack('2i4h2f',size,readId)
-            elif size == 16:
-                unpacked = ins.unpack('2i4h',size,readId)
+            elif size_ == 24:
+                unpacked = ins.unpack('2i4h2f', size_, readId)
+            elif size_ == 16:
+                unpacked = ins.unpack('2i4h', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,28,size,True)
+                raise ModSizeError(record.inName, readId, 28, size_, True)
             unpacked += self.defaults[len(unpacked):]
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -6876,14 +6879,14 @@ class MreWthr(MelRecord):
 
     class MelWthrDalc(MelStructs):
         """Handle older truncated DALC for WTHR subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 32:
-                MelStructs.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 32:
+                MelStructs.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 24:
-                unpacked = ins.unpack('=4B4B4B4B4B4B',size,readId)
+            elif size_ == 24:
+                unpacked = ins.unpack('=4B4B4B4B4B4B', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,32,size,True)
+                raise ModSizeError(record.inName, readId, 32, size_, True)
             unpacked += self.defaults[len(unpacked):]
             target = MelObject()
             record.__getattribute__(self.attr).append(target)

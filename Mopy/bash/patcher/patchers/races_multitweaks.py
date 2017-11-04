@@ -79,7 +79,7 @@ class RaceTweaker_BiggerOrcsAndNords(ARaceTweaker_BiggerOrcsAndNords,
             record = record.getTypeCopy(mapper)
             patchRecords.setRecord(record)
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
         keep = patchFile.getKeeper()
@@ -164,7 +164,7 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
             if not record.full: continue
             patchRecords.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
         #process hair lists
@@ -174,29 +174,29 @@ class RaceTweaker_MergeSimilarRaceHairs(ARaceTweaker_MergeSimilarRaceHairs,
                    'orc', 'redguard', 'wood elf']
         if self.choiceValues[self.chosen][0] == 1:  # merge hairs only from
             # vanilla races to custom hairs.
-            for race in extra:
+            for race in extra_:
                 for r in vanilla:
                     if r in race:
-                        if extra[r]['hairs'] != extra[race]['hairs']:
+                        if extra_[r]['hairs'] != extra_[race]['hairs']:
                             changedHairs[race] = list(set(
-                                extra[r]['hairs'] + extra[race][
+                                extra_[r]['hairs'] + extra_[race][
                                     'hairs']))  # yuach nasty but quickly
                                     # and easily removes duplicates.
         else: # full back and forth merge!
-            for race in extra:
+            for race in extra_:
                 #nasty processing slog
                 rs = race.split('(')
                 rs = rs[0].split()
                 if len(rs) > 1 and rs[1] in ['elf','seducer']:
                     rs[0] = rs[0]+' '+rs[1]
                     del(rs[1])
-                for r in extra:
+                for r in extra_:
                     if r == race: continue
                     for s in rs:
                         if s in r:
-                            if extra[r]['hairs'] != extra[race]['hairs']:
+                            if extra_[r]['hairs'] != extra_[race]['hairs']:
                                 changedHairs[race] = list(set(
-                                    extra[r]['hairs'] + extra[race]['hairs']))
+                                    extra_[r]['hairs'] + extra_[race]['hairs']))
                                 # list(set([]) disgusting thing again
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
@@ -291,7 +291,7 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
             if not record.full: continue
             patchRecords.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
         #process hair lists
@@ -301,30 +301,30 @@ class RaceTweaker_MergeSimilarRaceEyes(ARaceTweaker_MergeSimilarRaceEyes,
                    'orc', 'redguard', 'wood elf']
         if self.choiceValues[self.chosen][0] == 1:  # merge eyes only from
             # vanilla races to custom eyes.
-            for race in extra:
+            for race in extra_:
                 for r in vanilla:
                     if r in race:
-                        if extra[r]['eyes'] != extra[race]['eyes']:
+                        if extra_[r]['eyes'] != extra_[race]['eyes']:
                             changedEyes[race] = list(set(
-                                extra[r]['eyes'] + extra[race][
+                                extra_[r]['eyes'] + extra_[race][
                                     'eyes']))  # yuach nasty but quickly and
                                     #  easily removes duplicates.
         else: # full back and forth merge!
-            for race in extra:
+            for race in extra_:
                 #nasty processing slog
                 rs = race.split('(')
                 rs = rs[0].split()
                 if len(rs) > 1 and rs[1] in ['elf','seducer']:
                     rs[0] = rs[0]+' '+rs[1]
                     del(rs[1])
-                for r in extra:
+                for r in extra_:
                     if r == race: continue
                     for s in rs:
                         if s in r:
-                            if extra[r]['eyes'] != extra[race]['eyes']:
+                            if extra_[r]['eyes'] != extra_[race]['eyes']:
                                 changedEyes[race] = list(set(
                                     changedEyes.setdefault(race, []) +
-                                    extra[r]['eyes'] + extra[race]['eyes']))
+                                    extra_[r]['eyes'] + extra_[race]['eyes']))
                                 # list(set([]) disgusting thing again
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
@@ -416,10 +416,10 @@ class RaceTweaker_AllHairs(ARaceTweaker_AllHairs,MultiTweakItem):
         for record in modFile.RACE.getActiveRecords():
             patchRecords.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
-        hairs = extra['HAIR']
+        hairs = extra_['HAIR']
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
             if record.hairs == hairs: continue
@@ -465,10 +465,10 @@ class RaceTweaker_AllEyes(ARaceTweaker_AllEyes,MultiTweakItem):
         for record in modFile.RACE.getActiveRecords():
             patchRecords.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
-        eyes = extra['EYES']
+        eyes = extra_['EYES']
         keep = patchFile.getKeeper()
         for record in patchFile.RACE.records:
             if record.eyes == eyes: continue
@@ -521,7 +521,7 @@ class RaceTweaker_PlayableEyes(ARaceTweaker_PlayableEyes,MultiTweakItem):
             if record.flags.playable: continue
             patchRecords.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
         keep = patchFile.getKeeper()
@@ -572,7 +572,7 @@ class RaceTweaker_PlayableHairs(ARaceTweaker_PlayableHairs,MultiTweakItem):
             if record.flags.playable: continue
             patchRecords.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
         keep = patchFile.getKeeper()
@@ -623,7 +623,7 @@ class RaceTweaker_SexlessHairs(ARaceTweaker_SexlessHairs,MultiTweakItem):
             if record.flags.notMale or record.flags.notFemale:
                 patchRecords.setRecord(record.getTypeCopy(mapper))
 
-    def buildPatch(self,progress,patchFile,extra):
+    def buildPatch(self, progress, patchFile, extra_):
         """Edits patch file as desired."""
         count = self.count = {}
         keep = patchFile.getKeeper()
@@ -871,7 +871,7 @@ class RacePatcher(_ARacePatcher, ListPatcher):
     def buildPatch(self,log,progress):
         """Updates races as needed."""
         debug = False
-        extra = self.races_data
+        extra_ = self.races_data
         if not self.isActive: return
         patchFile = self.patchFile
         keep = patchFile.getKeeper()
@@ -1050,11 +1050,11 @@ class RacePatcher(_ARacePatcher, ListPatcher):
                 racesFiltered.append(race.eid)
                 keep(race.fid)
             if race.full:
-                extra[race.full.lower()] = {'hairs': race.hairs,
+                extra_[race.full.lower()] = {'hairs': race.hairs,
                                             'eyes': race.eyes,
                                             'relations': race.relations}
         for tweak in self.enabledTweaks:
-            tweak.buildPatch(progress,self.patchFile,extra)
+            tweak.buildPatch(progress,self.patchFile,extra_)
         #--Sort Eyes/Hair
         defaultEyes = {}
         defaultMaleHair = {}

@@ -25,10 +25,9 @@
 """Classes that group records."""
 # Python imports
 from operator import itemgetter
-import struct
 # Wrye Bash imports
 from brec import ModReader
-from bolt import sio
+from bolt import sio, struct_pack, struct_unpack
 import bush # for groupTypes
 import bosh # for modInfos
 from exception import AbstractError, ArgumentError, ModError
@@ -817,8 +816,6 @@ class MobWorld(MobCells):
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
         cellBlocksAppend = cellBlocks.append
-        structUnpack = struct.unpack
-        structPack = struct.pack
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
             if curPos >= endBlockPos:
@@ -855,7 +852,7 @@ class MobWorld(MobCells):
             elif recType == 'GRUP':
                 groupFid,groupType = header.label,header.groupType
                 if groupType == 4: # Exterior Cell Block
-                    block = structUnpack('2h',structPack('I',groupFid))
+                    block = struct_unpack('2h', struct_pack('I', groupFid))
                     block = (block[1],block[0])
                     endBlockPos = insTell() + delta
                 elif groupType == 5: # Exterior Cell Sub-Block

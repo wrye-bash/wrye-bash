@@ -30,11 +30,10 @@ import struct
 import copy
 import cPickle
 from operator import attrgetter
-
 import bass
 import bolt
 import exception
-from bolt import decode, encode, sio, GPath
+from bolt import decode, encode, sio, GPath, struct_pack, struct_unpack
 from bass import null1
 
 # Util Functions --------------------------------------------------------------
@@ -42,9 +41,8 @@ from bass import null1
 def _coerce(value, newtype, base=None, AllowNone=False):
     try:
         if newtype is float:
-            pack,unpack = struct.pack,struct.unpack
             #--Force standard precision
-            return round(unpack('f',pack('f',float(value)))[0], 6)
+            return round(struct_unpack('f', struct_pack('f', float(value)))[0], 6)
         elif newtype is bool:
             if isinstance(value,basestring):
                 retValue = value.strip().lower()
@@ -63,18 +61,6 @@ def _coerce(value, newtype, base=None, AllowNone=False):
     except (ValueError,TypeError):
         if newtype is int: return 0
         return None
-
-#--.NET Strings
-def netString(x):
-    """Encode a string into a .net string."""
-    lenx = len(x)
-    if lenx < 128:
-        return struct.pack('b',lenx)+x
-    elif lenx > 0x7FFF: #--Actually, probably fails earlier.
-        raise NotImplementedError
-    else:
-        lenx = 0x80 | lenx & 0x7F | (lenx & 0xFF80) << 1
-        return struct.pack('H',lenx)+x
 
 #--Reference (fid)
 def strFid(fid):
@@ -247,9 +233,9 @@ class ModReader:
         endPos = self.ins.tell() + size
         if endPos > self.size:
             raise exception.ModReadError(self.inName, recType, endPos, self.size)
-        return struct.unpack(format,self.ins.read(size))
+        return struct_unpack(format, self.ins.read(size))
 
-    def unpackRef(self,recType='----'):
+    def unpackRef(self):
         """Read a ref (fid)."""
         return self.unpack('I',4)[0]
 
@@ -310,7 +296,7 @@ class ModWriter:
 
     #--Additional functions -------------------------------
     def pack(self,format,*data):
-        self.out.write(struct.pack(format,*data))
+        self.out.write(struct_pack(format, *data))
 
     def packSub(self,type,data,*values):
         """Write subrecord header and data to output stream.
@@ -319,16 +305,15 @@ class ModWriter:
         with size > 0xFFFF."""
         try:
             if data is None: return
-            structPack = struct.pack
-            if values: data = structPack(data,*values)
+            if values: data = struct_pack(data, *values)
             outWrite = self.out.write
             lenData = len(data)
             if lenData <= 0xFFFF:
-                outWrite(structPack('=4sH',type,lenData))
+                outWrite(struct_pack('=4sH', type, lenData))
                 outWrite(data)
             else:
-                outWrite(structPack('=4sHI','XXXX',4,lenData))
-                outWrite(structPack('=4sH',type,0))
+                outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
+                outWrite(struct_pack('=4sH', type, 0))
                 outWrite(data)
         except Exception as e:
             print e
@@ -342,18 +327,17 @@ class ModWriter:
             data = encode(data,firstEncoding=bolt.pluginEncoding)
         lenData = len(data) + 1
         outWrite = self.out.write
-        structPack = struct.pack
         if lenData < 0xFFFF:
-            outWrite(structPack('=4sH',type,lenData))
+            outWrite(struct_pack('=4sH', type, lenData))
         else:
-            outWrite(structPack('=4sHI','XXXX',4,lenData))
-            outWrite(structPack('=4sH',type,0))
+            outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
+            outWrite(struct_pack('=4sH', type, 0))
         outWrite(data)
         outWrite('\x00')
 
     def packRef(self,type,fid):
         """Write subrecord header and fid reference."""
-        if fid is not None: self.out.write(struct.pack('=4sHI',type,4,fid))
+        if fid is not None: self.out.write(struct_pack('=4sHI', type, 4, fid))
 
     def writeGroup(self,size,label,groupType,stamp):
         if type(label) is str:
@@ -440,9 +424,9 @@ class MelBase:
         """Sets default value for record instance."""
         record.__setattr__(self.attr,self.default)
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        record.__setattr__(self.attr,ins.read(size,readId))
+        record.__setattr__(self.attr, ins.read(size_, readId))
         if self._debug: print u'%s' % record.__getattribute__(self.attr)
 
     def dumpData(self,record,out):
@@ -463,9 +447,9 @@ class MelFid(MelBase):
         """Include self if has fids."""
         formElements.add(self)
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        record.__setattr__(self.attr,ins.unpackRef(readId))
+        record.__setattr__(self.attr,ins.unpackRef())
         if self._debug: print u'  %08X' % (record.__getattribute__(self.attr),)
 
     def dumpData(self,record,out):
@@ -499,9 +483,9 @@ class MelFids(MelBase):
         """Sets default value for record instance."""
         record.__setattr__(self.attr,[])
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        fid = ins.unpackRef(readId)
+        fid = ins.unpackRef()
         record.__getattribute__(self.attr).append(fid)
         if self._debug: print u' ',hex(fid)
 
@@ -537,9 +521,9 @@ class MelNull(MelBase):
         """Sets default value for record instance."""
         pass
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        junk = ins.read(size,readId)
+        junk = ins.read(size_, readId)
         if self._debug: print u' ',record.fid,unicode(junk)
 
     def dumpData(self,record,out):
@@ -582,10 +566,10 @@ class MelFidList(MelFids):
     MelFids is how the data is stored. For MelFidList, the data is stored
     as a single subrecord rather than as separate subrecords."""
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        if not size: return
-        fids = ins.unpack(`size/4`+'I',size,readId)
+        if not size_: return
+        fids = ins.unpack(`size_ / 4` + 'I', size_, readId)
         record.__setattr__(self.attr,list(fids))
         if self._debug:
             for fid in fids:
@@ -690,7 +674,7 @@ class MelGroup(MelBase):
             element.setDefault(target)
         return target
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         target = record.__getattribute__(self.attr)
         if target is None:
@@ -698,7 +682,7 @@ class MelGroup(MelBase):
             record.__setattr__(self.attr,target)
         target.__slots__ = [s for element in self.elements for s in
                             element.getSlotsUsed()]
-        self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
+        self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -728,7 +712,7 @@ class MelGroups(MelGroup):
         """Sets default value for record instance."""
         record.__setattr__(self.attr,[])
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         if sub_type == self.type0:
             target = self.getDefault()
@@ -737,7 +721,7 @@ class MelGroups(MelGroup):
             target = record.__getattribute__(self.attr)[-1]
         target.__slots__ = [s for element in self.elements for s in
                             element.getSlotsUsed()]
-        self.loaders[sub_type].loadData(target, ins, sub_type, size, readId)
+        self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -757,14 +741,14 @@ class MelGroups(MelGroup):
 #------------------------------------------------------------------------------
 class MelXpci(MelNull):
     """Handler for obsolete MelXpci record. Bascially just discards it."""
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        xpci = ins.unpackRef(readId)
+        xpci = ins.unpackRef()
         #--Read ahead and get associated full as well.
         pos = ins.tell()
-        (sub_type_, size) = ins.unpack('4sH', 6, readId + '.FULL')
+        (sub_type_, size_) = ins.unpack('4sH', 6, readId + '.FULL')
         if sub_type_ == 'FULL':
-            full = ins.read(size,readId)
+            full = ins.read(size_, readId)
         else:
             full = None
             ins.seek(pos)
@@ -779,9 +763,9 @@ class MelString(MelBase):
         MelBase.__init__(self, subType, attr, default)
         self.maxSize = maxSize
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        value = ins.readString(size,readId)
+        value = ins.readString(size_, readId)
         record.__setattr__(self.attr,value)
         if self._debug: print u' ',record.__getattribute__(self.attr)
 
@@ -819,10 +803,10 @@ class MelUnicode(MelString):
         MelString.__init__(self, subType, attr, default, maxSize)
         self.encoding = encoding # None == automatic detection
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute"""
         value = u'\n'.join(decode(x,self.encoding,avoidEncodings=('utf8','utf-8'))
-                           for x in bolt.cstrip(ins.read(size,readId)).split('\n'))
+                           for x in bolt.cstrip(ins.read(size_, readId)).split('\n'))
         record.__setattr__(self.attr,value)
 
     def dumpData(self,record,out):
@@ -852,8 +836,8 @@ class MelUnicode(MelString):
 #------------------------------------------------------------------------------
 class MelLString(MelString):
     """Represents a mod record localized string."""
-    def loadData(self, record, ins, sub_type, size, readId):
-        value = ins.readLString(size,readId)
+    def loadData(self, record, ins, sub_type, size_, readId):
+        value = ins.readLString(size_, readId)
         record.__setattr__(self.attr,value)
         if self._debug: print u' ',record.__getattribute__(self.attr)
 
@@ -869,9 +853,9 @@ class MelStrings(MelString):
         """Returns a default copy of object."""
         return []
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        value = ins.readStrings(size,readId)
+        value = ins.readStrings(size_, readId)
         record.__setattr__(self.attr,value)
         if self._debug: print u' ',value
 
@@ -913,9 +897,9 @@ class MelStruct(MelBase):
             if action: value = action(value)
             setter(attr,value)
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        readsize = self.formatLen if self.formatLen >= 0 else size
+        readsize = self.formatLen if self.formatLen >= 0 else size_
         unpacked = ins.unpack(self.format,readsize,readId)
         setter = record.__setattr__
         for attr,value,action in zip(self.attrs,unpacked,self.actions):
@@ -923,7 +907,7 @@ class MelStruct(MelBase):
             setter(attr, value)
         if self.formatLen >= 0:
             # Dump remaining subrecord data into an attribute
-            setter(self.attrs[-1], ins.read(size-self.formatLen))
+            setter(self.attrs[-1], ins.read(size_ - self.formatLen))
         if self._debug:
             print u' ',zip(self.attrs,unpacked)
             if len(unpacked) != len(self.attrs):
@@ -987,12 +971,12 @@ class MelStructs(MelStruct):
             setter(attr,value)
         return target
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
         target = MelObject()
         record.__getattribute__(self.attr).append(target)
         target.__slots__ = self.attrs
-        MelStruct.loadData(self, target, ins, sub_type, size, readId)
+        MelStruct.loadData(self, target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
@@ -1011,9 +995,9 @@ class MelStructs(MelStruct):
 #------------------------------------------------------------------------------
 class MelStructA(MelStructs):
     """Represents a record with an array of fixed size repeating structured elements."""
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        if size == 0:
+        if size_ == 0:
             setattr(record, self.attr, None)
             return
         selfDefault = self.getDefault
@@ -1022,7 +1006,7 @@ class MelStructA(MelStructs):
         selfAttrs = self.attrs
         itemSize = struct.calcsize(self.format)
         melLoadData = MelStruct.loadData
-        for x in xrange(size/itemSize):
+        for x in xrange(size_/itemSize):
             target = selfDefault()
             recordAppend(target)
             target.__slots__ = selfAttrs
@@ -1034,7 +1018,7 @@ class MelStructA(MelStructs):
             attrs = self.attrs
             format = self.format
             for x in record.__getattribute__(self.attr):
-                data += struct.pack(format, *[getattr(x,item) for item in attrs])
+                data += struct_pack(format, *[getattr(x, item) for item in attrs])
             out.packSub(self.subType,data)
 
     def mapFids(self,record,function,save=False):
@@ -1059,9 +1043,9 @@ class MelTuple(MelBase):
         """Sets default value for record instance."""
         record.__setattr__(self.attr,self.defaults[:])
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        unpacked = ins.unpack(self.format,size,readId)
+        unpacked = ins.unpack(self.format, size_, readId)
         record.__setattr__(self.attr,list(unpacked))
         if self._debug: print record.__getattribute__(self.attr)
 
@@ -1196,9 +1180,9 @@ class MelSet:
                     raise exception.ModError(ins.inName, u'Unexpected subrecord: ' + repr(readId))
                 #--Hack to handle the fact that there can be two types of FULL in spell/ench/ingr records.
                 elif doFullTest and Type == 'FULL':
-                    self.full0.loadData(record,ins,Type,size,readId)
+                    self.full0.loadData(record, ins, Type, size, readId)
                 else:
-                    loaders[Type].loadData(record,ins,Type,size,readId)
+                    loaders[Type].loadData(record, ins, Type, size, readId)
                 doFullTest = doFullTest and (Type != 'EFID')
             except Exception as error:
                 print error
@@ -1461,7 +1445,7 @@ class MreRecord(object):
     def getDecompressed(self):
         """Return self.data, first decompressing it if necessary."""
         if not self.flags1.compressed: return self.data
-        size, = struct.unpack('I',self.data[:4])
+        size, = struct_unpack('I', self.data[:4])
         decomp = zlib.decompress(self.data[4:])
         if len(decomp) != size:
             raise exception.ModError(self.inName,
@@ -1549,7 +1533,7 @@ class MreRecord(object):
         if self.flags1.compressed:
             dataLen = len(self.data)
             comp = zlib.compress(self.data,6)
-            self.data = struct.pack('=I',dataLen) + comp
+            self.data = struct_pack('=I', dataLen) + comp
         self.size = len(self.data)
         self.setChanged(False)
         return self.size
@@ -1631,7 +1615,7 @@ class MelRecord(MreRecord):
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
-        self.__class__.melSet.loadData(self,ins,endPos)
+        self.__class__.melSet.loadData(self, ins, endPos)
 
     def dumpData(self,out):
         """Dumps state into out. Called by getSize()."""
@@ -1659,11 +1643,11 @@ class MreHeaderBase(MelRecord):
     #--Masters array element
     class MelMasterName(MelBase):
         def setDefault(self,record): record.masters = []
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             # Don't use ins.readString, becuase it will try to use bolt.pluginEncoding
             # for the filename.  This is one case where we want to use Automatic
             # encoding detection
-            name = decode(bolt.cstrip(ins.read(size,readId)),avoidEncodings=('utf8','utf-8'))
+            name = decode(bolt.cstrip(ins.read(size_, readId)), avoidEncodings=('utf8', 'utf-8'))
             name = GPath(name)
             record.masters.append(name)
         def dumpData(self,record,out):
@@ -1703,14 +1687,14 @@ class MreGmstBase(MelRecord):
     Ids = None
     classType = 'GMST'
     class MelGmstValue(MelBase):
-        def loadData(self, record, ins, sub_type, size, readId):
+        def loadData(self, record, ins, sub_type, size_, readId):
             format = encode(record.eid[0]) #-- s|i|f|b
             if format == u's':
-                record.value = ins.readLString(size,readId)
+                record.value = ins.readLString(size_, readId)
                 return
             elif format == u'b':
                 format = u'I'
-            record.value, = ins.unpack(format,size,readId)
+            record.value, = ins.unpack(format, size_, readId)
         def dumpData(self,record,out):
             format = encode(record.eid[0]) #-- s|i|f
             if format == u's':

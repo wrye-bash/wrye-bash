@@ -40,7 +40,7 @@ from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
-from ..bolt import deprint
+from ..bolt import deprint, struct_unpack
 from ..exception import BSAError, BSADecodingError, BSAFlagError, \
     BSANotImplemented
 
@@ -65,7 +65,7 @@ class _Header(object):
 
     def load_header(self, ins):
         for fmt, attr in zip(_Header.formats, _Header.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if self.file_id != self.__class__.bsa_magic:
             raise BSAError(u'Magic wrong: %r' % self.file_id)
@@ -82,7 +82,7 @@ class BsaHeader(_Header):
     def load_header(self, ins):
         super(BsaHeader, self).load_header(ins)
         for fmt, attr in zip(BsaHeader.formats, BsaHeader.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if self.folder_records_offset != self.__class__.header_size:
             raise BSAError(u'Header size wrong: %r. Should be %r' % (
@@ -112,7 +112,7 @@ class Ba2Header(_Header):
     def load_header(self, ins):
         super(Ba2Header, self).load_header(ins)
         for fmt, attr in zip(Ba2Header.formats, Ba2Header.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if not self.b2a_files_type in self.file_types:
             raise BSAError(u'Unrecognised file types: %r. Should be %s' % (
@@ -138,11 +138,11 @@ class _HashedRecord(object):
 
     def load_record(self, ins):
         fmt, fmt_siz = _HashedRecord.formats[0]
-        self.hash, = struct.unpack(fmt, ins.read(fmt_siz))
+        self.hash, = struct_unpack(fmt, ins.read(fmt_siz))
 
     def load_record_from_buffer(self, memview, start):
         fmt, fmt_siz = _HashedRecord.formats[0]
-        self.hash, = struct.unpack_from(fmt, memview, start)
+        self.hash, = struct_unpack_from(fmt, memview, start)
         return start + fmt_siz
 
     @classmethod
@@ -172,7 +172,7 @@ class _BsaHashedRecord(_HashedRecord):
     def load_record(self, ins):
         super(_BsaHashedRecord, self).load_record(ins)
         for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
         start = super(_BsaHashedRecord, self).load_record_from_buffer(memview,
@@ -217,10 +217,10 @@ class _B2aFileRecordCommon(_HashedRecord):
     formats = list((f, struct.calcsize(f)) for f in formats)
 
     def load_record(self, ins):
-        self.hash, = struct.unpack('I', ins.read(4)) # hash is I not Q !
+        self.hash, = struct_unpack('I', ins.read(4)) # hash is I not Q !
         for fmt, attr in zip(_B2aFileRecordCommon.formats,
                              _B2aFileRecordCommon.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
     def load_record_from_buffer(self, memview, start):
         start = super(_B2aFileRecordCommon, self).load_record_from_buffer(
@@ -247,7 +247,7 @@ class B2aFileRecordGeneral(_B2aFileRecordCommon):
         super(B2aFileRecordGeneral, self).load_record(ins)
         for fmt, attr in zip(B2aFileRecordGeneral.formats,
                              B2aFileRecordGeneral.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
 class B2aFileRecordTexture(_B2aFileRecordCommon):
     __slots__ = ('unk0C', 'num_of_chunks', 'chunk_header_size', 'height',
@@ -259,7 +259,7 @@ class B2aFileRecordTexture(_B2aFileRecordCommon):
         super(B2aFileRecordTexture, self).load_record(ins)
         for fmt, attr in zip(B2aFileRecordGeneral.formats,
                              B2aFileRecordGeneral.__slots__):
-            self.__setattr__(attr, struct.unpack(fmt[0], ins.read(fmt[1]))[0])
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
 # Bsa content abstraction -----------------------------------------------------
 class BSAFolder(object):
@@ -339,7 +339,7 @@ class ABsa(AFile):
                     data_size = record.raw_data_size()
                     bsa_file.seek(record.raw_file_data_offset)
                     if self.bsa_header.embed_filenames(): # use len(filename) ?
-                        filename_len, = struct.unpack('B', bsa_file.read(1))
+                        filename_len, = struct_unpack('B', bsa_file.read(1))
                         bsa_file.read(filename_len) # discard filename
                         data_size -= filename_len + 1
                     # get the data!
@@ -442,9 +442,9 @@ class BSA(ABsa):
             for folder_record in folder_records:
                 folder_path = u'?%d' % folder_record.hash # hack - untested
                 if self.bsa_header.has_names_for_folders():
-                    name_size = struct.unpack('B', bsa_file.read(1))[0]
+                    name_size = struct_unpack('B', bsa_file.read(1))[0]
                     folder_path = _decode_path(
-                        struct.unpack('%ds' % (name_size - 1),
+                        struct_unpack('%ds' % (name_size - 1),
                                       bsa_file.read(name_size - 1))[0])
                     total_names_length += name_size
                     bsa_file.read(1) # discard null terminator

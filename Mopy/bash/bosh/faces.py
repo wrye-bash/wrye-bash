@@ -22,9 +22,8 @@
 #
 # =============================================================================
 import re
-import struct
 from .. import bass, bush, bolt
-from ..bolt import Flags, encode, sio, Path
+from ..bolt import Flags, encode, sio, Path, struct_pack, struct_unpack
 from ..exception import SaveFileError, StateError
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
@@ -62,12 +61,12 @@ class PCFaces:
             """Converts face from one race to another while preserving structure, etc."""
             for attr,num in (('fggs_p',50),('fgga_p',30),('fgts_p',50)):
                 format = unicode(num)+u'f'
-                sValues = list(struct.unpack(format,getattr(self,attr)))
-                fValues = list(struct.unpack(format,getattr(fromRace,attr)))
-                tValues = list(struct.unpack(format,getattr(toRace,attr)))
+                sValues = list(struct_unpack(format,getattr(self, attr)))
+                fValues = list(struct_unpack(format,getattr(fromRace, attr)))
+                tValues = list(struct_unpack(format,getattr(toRace, attr)))
                 for index,(sValue,fValue,tValue) in enumerate(zip(sValues,fValues,tValues)):
                     sValues[index] = sValue + fValue - tValue
-                setattr(self,attr,struct.pack(format,*sValues))
+                setattr(self,attr,struct_pack(format, *sValues))
 
     # SAVES -------------------------------------------------------------------
     @staticmethod
@@ -175,10 +174,10 @@ class PCFaces:
         data = record[-1]
         namePos = PCFaces.save_getNamePos(saveFile.fileInfo.name,data,encode(saveFile.pcName))
         (face.fggs_p, face.fgga_p, face.fgts_p, face.race, face.hair, face.eye,
-            face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct.unpack(
+            face.hairLength, face.hairRed, face.hairBlue, face.hairGreen, face.unused3, face.gender) = struct_unpack(
             '=200s120s200s3If3BsB',data[namePos-542:namePos-1])
         classPos = namePos+len(saveFile.pcName)+1
-        face.iclass, = struct.unpack('I',data[classPos:classPos+4])
+        face.iclass, = struct_unpack('I', data[classPos:classPos+4])
         #--Iref >> fid
         getFid = saveFile.getFid
         face.race = getFid(face.race)
@@ -284,12 +283,12 @@ class PCFaces:
         #--Buffer for modified record data
         buff = sio()
         def buffPack(format,*args):
-            buff.write(struct.pack(format,*args))
+            buff.write(struct_pack(format, *args))
         def buffPackRef(oldFid,doPack=True):
             newFid = oldFid and masterMap(oldFid,None)
             if newFid and doPack:
                 newRef = saveFile.getIref(newFid)
-                buff.write(struct.pack('I',newRef))
+                buff.write(struct_pack('I', newRef))
             else:
                 buff.seek(4,1)
         oldRecord = saveFile.getRecord(0x14)
@@ -328,7 +327,7 @@ class PCFaces:
         if flags.iclass and face.iclass:
             pos = buff.tell()
             newClass = masterMap(face.iclass)
-            oldClass = saveFile.fids[struct.unpack('I',buff.read(4))[0]]
+            oldClass = saveFile.fids[struct_unpack('I', buff.read(4))[0]]
             customClass = saveFile.getIref(0x22843)
             if customClass not in (newClass,oldClass):
                 buff.seek(pos)
@@ -374,16 +373,16 @@ class PCFaces:
         record = saveFile.getRecord(0x14)
         data = record[-1]
         namePos = PCFaces.save_getNamePos(saveInfo.name,data,encode(saveFile.pcName))
-        raceRef,hairRef = struct.unpack('2I',data[namePos-22:namePos-14])
+        raceRef,hairRef = struct_unpack('2I', data[namePos-22:namePos-14])
         if hairRef != 0: return False
         raceForm = raceRef and saveFile.fids[raceRef]
-        gender, = struct.unpack('B',data[namePos-2])
+        gender, = struct_unpack('B', data[namePos-2])
         if gender:
             hairForm = bush.game.raceHairFemale.get(raceForm,0x1da83)
         else:
             hairForm = bush.game.raceHairMale.get(raceForm,0x90475)
         hairRef = saveFile.getIref(hairForm)
-        data = data[:namePos-18]+struct.pack('I',hairRef)+data[namePos-14:]
+        data = data[:namePos-18]+struct_pack('I', hairRef)+data[namePos-14:]
         saveFile.setRecord(record[:-1]+(data,))
         saveFile.safeSave()
         return True

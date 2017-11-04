@@ -62,15 +62,15 @@ class MreMato(MelRecord):
 
     class MelMatoData(MelStruct):
         """Handle older truncated DATA for MATO subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 52:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 52:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 48: # old skyrim record
-                raise ModSizeError(record.inName, readId, 52, size, True,
+            elif size_ == 48: # old skyrim record
+                raise ModSizeError(record.inName, readId, 52, size_, True,
                                    old_skyrim=True)
             else:
-                raise ModSizeError(record.inName,readId,52,size,True)
+                raise ModSizeError(record.inName, readId, 52, size_, True)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -94,15 +94,15 @@ class MreMovt(MelRecord):
     classType = 'MOVT'
     class MelMovtSped(MelStruct):
         """Handle older truncated SPED for MOVT subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 44:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 44:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 40:
-                raise ModSizeError(record.inName, readId, 44, size, True,
+            elif size_ == 40:
+                raise ModSizeError(record.inName, readId, 44, size_, True,
                                    old_skyrim=True)
             else:
-                raise ModSizeError(record.inName,readId,44,size,True)
+                raise ModSizeError(record.inName, readId, 44, size_, True)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -131,13 +131,13 @@ class MelSpgdData(MelStruct):
                            )
 
 
-    def loadData(self, record, ins, sub_type, size, readId):
+    def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        if size == 40:
+        if size_ == 40:
             # 40 Bytes for legacy data post Skyrim 1.5 DATA is always 48 bytes
             # fffffffIIIIf
             # Type is an Enum 0 = Rain; 1 = Snow
-            unpacked = ins.unpack('=7f3I',size,readId) + (0,0,)
+            unpacked = ins.unpack('=7f3I', size_, readId) + (0, 0,)
             setter = record.__setattr__
             for attr,value,action in zip(self.attrs,unpacked,self.actions):
                 if action: value = action(value)
@@ -146,10 +146,10 @@ class MelSpgdData(MelStruct):
                 print u' ',zip(self.attrs,unpacked)
                 if len(unpacked) != len(self.attrs):
                     print u' ',unpacked
-        elif size != 48:
-            raise ModSizeError(record.inName,readId,48,size,True)
+        elif size_ != 48:
+            raise ModSizeError(record.inName, readId, 48, size_, True)
         else:
-            MelStruct.loadData(self, record, ins, sub_type, size, readId)
+            MelStruct.loadData(self, record, ins, sub_type, size_, readId)
 
 class MreSpgd(MelRecord):
     """Spgd Item"""
@@ -178,15 +178,15 @@ class MreStat(MelRecord):
 
     class MelStatDnam(MelStruct):
         """Handle older truncated DNAM for STAT subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 12:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 12:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 8: # old skyrim record
-                raise ModSizeError(record.inName, readId, 12, size, True,
+            elif size_ == 8: # old skyrim record
+                raise ModSizeError(record.inName, readId, 12, size_, True,
                                    old_skyrim=True)
             else:
-                raise ModSizeError(record.inName,readId,12,size,True)
+                raise ModSizeError(record.inName, readId, 12, size_, True)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -211,15 +211,15 @@ class MreWatr(MelRecord):
 
     class MelWatrDnam(MelStruct):
         """Handle older truncated DNAM for WATR subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 232:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 232:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 228: # old skyrim record
-                raise ModSizeError(record.inName, readId, 232, size, True,
+            elif size_ == 228: # old skyrim record
+                raise ModSizeError(record.inName, readId, 232, size_, True,
                                    old_skyrim=True)
             else:
-                raise ModSizeError(record.inName,readId,232,size,True)
+                raise ModSizeError(record.inName, readId, 232, size_, True)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -354,15 +354,15 @@ class MreWeap(MelRecord):
 
     class MelWeapCrdt(MelStruct):
         """Handle older truncated CRDT for WEAP subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 24:
-                MelStruct.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 24:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 16: # old skyrim record
-                raise ModSizeError(record.inName, readId, 24, size, True,
+            elif size_ == 16: # old skyrim record
+                raise ModSizeError(record.inName, readId, 24, size_, True,
                                    old_skyrim=True)
             else:
-                raise ModSizeError(record.inName,readId,24,size,True)
+                raise ModSizeError(record.inName, readId, 24, size_, True)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -470,14 +470,14 @@ class MreWthr(MelRecord):
 
     class MelWthrDalc(MelStructs):
         """Handle older truncated DALC for WTHR subrecord."""
-        def loadData(self, record, ins, sub_type, size, readId):
-            if size == 32:
-                MelStructs.loadData(self, record, ins, sub_type, size, readId)
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 32:
+                MelStructs.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size == 24:
-                unpacked = ins.unpack('=4B4B4B4B4B4B',size,readId)
+            elif size_ == 24:
+                unpacked = ins.unpack('=4B4B4B4B4B4B', size_, readId)
             else:
-                raise ModSizeError(record.inName,readId,32,size,True)
+                raise ModSizeError(record.inName, readId, 32, size_, True)
             unpacked += self.defaults[len(unpacked):]
             target = MelObject()
             record.__getattribute__(self.attr).append(target)

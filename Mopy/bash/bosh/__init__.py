@@ -50,7 +50,8 @@ from .. import bass, bolt, balt, bush, env, load_order, archives
 from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
-from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode
+from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode, \
+    unpack_many, unpack_byte, struct_pack, struct_unpack
 from ..brec import MreRecord, ModReader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -197,23 +198,23 @@ class BsaFile:
 
     def scan(self):
         """Reports on contents."""
-        with bolt.StructFile(self.path.s,'rb') as ins:
+        with open(self.path.s,'rb') as ins:
             #--Header
             ins.seek(4*4)
-            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = ins.unpack('5I',20)
+            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = unpack_many(ins, '5I')
             #--FolderInfos (Initial)
             folderInfos = self.folderInfos = []
             for index in range(self.folderCount):
-                hash,subFileCount,offset = ins.unpack('Q2I',16)
+                hash,subFileCount,offset = unpack_many(ins, 'Q2I')
                 folderInfos.append([hash,subFileCount,offset])
             #--Update folderInfos
             for index,folderInfo in enumerate(folderInfos):
                 fileInfos = []
-                folderName = cstrip(ins.read(ins.unpack('B',1)[0]))
+                folderName = cstrip(ins.read(unpack_byte(ins)))
                 folderInfos[index].extend((folderName,fileInfos))
                 for index in range(folderInfo[1]):
                     filePos = ins.tell()
-                    hash,size,offset = ins.unpack('Q2I',16)
+                    hash,size,offset = unpack_many(ins, 'Q2I')
                     fileInfos.append([hash,size,offset,u'',filePos])
             #--File Names
             fileNames = [decode(x) for x in ins.read(lenFileNames).split('\x00')[:-1]]
@@ -262,9 +263,9 @@ class BsaFile:
         for bsaFile,mtime in bsaTimes:
             dirs['mods'].join(bsaFile).mtime = mtime
 
-    def reset(self,progress=None):
+    def reset(self):
         """Resets BSA archive hashes to correct values."""
-        with bolt.StructFile(self.path.s,'r+b') as ios:
+        with open(self.path.s,'r+b') as ios:
             #--Rehash
             resetCount = 0
             folderInfos = self.folderInfos
@@ -276,7 +277,7 @@ class BsaFile:
                     if hash != trueHash:
                         #print ' ',fileName,'\t',hex(hash-trueHash),hex(hash),hex(trueHash)
                         ios.seek(filePos)
-                        ios.pack('Q',trueHash)
+                        ios.write(struct_pack('Q',trueHash))
                         resetCount += 1
         #--Done
         self.resetOblivionBSAMTimes()
@@ -292,7 +293,7 @@ class AFile(object):
 
     def __init__(self, abs_path, load_cache=False):
         self._abs_path = GPath(abs_path)
-        #--Settings cache
+        #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
         except OSError:
@@ -597,10 +598,10 @@ class ModInfo(FileInfo):
             raise ArgumentError
         with self.getPath().open('r+b') as modFile:
             modFile.seek(8)
-            flags1 = MreRecord.flags1_(struct.unpack('I', modFile.read(4))[0])
+            flags1 = MreRecord.flags1_(struct_unpack('I', modFile.read(4))[0])
             flags1.esm = (esm_or_esp == u'esm')
             modFile.seek(8)
-            modFile.write(struct.pack('=I',int(flags1)))
+            modFile.write(struct_pack('=I', int(flags1)))
         self.header.flags1 = flags1
         self.setmtime(crc_changed=True)
 
@@ -2382,7 +2383,7 @@ class ModInfos(FileInfos):
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
         listToSelect = load_order.get_ordered(toSelect)
-        extra = listToSelect[255:]
+        skipped = listToSelect[255:]
         #--Save
         final_selection = listToSelect[:255]
         self.cached_lo_save_active(active=final_selection)
@@ -2391,10 +2392,10 @@ class ModInfos(FileInfos):
         if missingSet:
             message += _(u'Some mods were unavailable and were skipped:')+u'\n* '
             message += u'\n* '.join(x.s for x in missingSet)
-        if extra:
+        if skipped:
             if missingSet: message += u'\n'
             message += _(u'Mod list is full, so some mods were skipped:')+u'\n'
-            message += u'\n* '.join(x.s for x in extra)
+            message += u'\n* '.join(x.s for x in skipped)
         return message
 
     #--Helpers ----------------------------------------------------------------
