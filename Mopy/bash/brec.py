@@ -100,8 +100,6 @@ class RecordHeader(object):
 
     #--Top types in order of the main ESM
     topTypes = []
-    #--Dict mapping 'ignored' top types to un-ignored top types
-    topIgTypes = dict()
     #--Record Types: all recognized record types (not just the top types)
     recordTypes = set()
     #--Plugin form version, we must pack this in the TES4 header
@@ -160,8 +158,6 @@ class RecordHeader(object):
             str0 = struct_pack('I', args[2])
             if str0 in RecordHeader.topTypes:
                 args[2] = str0
-            elif str0 in RecordHeader.topIgTypes:
-                args[2] = RecordHeader.topIgTypes[str0]
             else:
                 raise exception.ModError(ins.inName,
                                          u'Bad Top GRUP type: ' + repr(str0))

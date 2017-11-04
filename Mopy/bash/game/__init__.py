@@ -237,8 +237,6 @@ def init():
 
     #--Top types in order of the main ESM
     brec.RecordHeader.topTypes = []
-    #--Dict mapping 'ignored' top types to un-ignored top types
-    brec.RecordHeader.topIgTopTypes = dict()
     brec.RecordHeader.recordTypes = set(
         brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
 

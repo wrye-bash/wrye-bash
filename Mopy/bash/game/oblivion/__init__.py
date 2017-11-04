@@ -403,11 +403,6 @@ def init():
         'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO',
         'WATR', 'EFSH']
 
-    #--Dict mapping 'ignored' top types to un-ignored top types.
-    __rec_type.topIgTypes = dict(
-        [(struct_pack('I', (struct_unpack('I', top)[0]) | 0x1000), top) for
-         top in __rec_type.topTypes])
-
     __rec_type.recordTypes = set(
         __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR', 'ACRE',
                                'PGRD', 'LAND', 'INFO'])

@@ -211,11 +211,6 @@ def init():
         'MATO', 'MOVT', 'SNDR', 'DUAL', 'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB',
         'LENS', 'VOLI']
 
-    #--Dict mapping 'ignored' top types to un-ignored top types.
-    brec.RecordHeader.topIgTypes = dict(
-        [(struct_pack('I', (struct_unpack('I', top)[0]) | 0x1000), top) for
-         top in brec.RecordHeader.topTypes])
-
     #-> this needs updating for Skyrim
     brec.RecordHeader.recordTypes = set(
         brec.RecordHeader.topTypes + ['GRUP', 'TES4', 'REFR', 'ACHR', 'ACRE',

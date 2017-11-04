@@ -339,11 +339,6 @@ def init():
         'OMOD', 'MSWP', 'ZOOM', 'INNR', 'KSSM', 'AECH', 'SCCO', 'AORU', 'SCSN',
         'STAG', 'NOCM', 'LENS', 'GDRY', 'OVIS']
 
-    #--Dict mapping 'ignored' top types to un-ignored top types.
-    brec.RecordHeader.topIgTypes = dict(
-        [(struct_pack('I', (struct_unpack('I', top)[0]) | 0x1000), top) for
-         top in brec.RecordHeader.topTypes])
-
     #--Record types that don't appear at the top level (sub-GRUPs)
     brec.RecordHeader.recordTypes = (set(brec.RecordHeader.topTypes) |
                    {'GRUP','TES4','REFR','NAVM','PGRE','PHZD','LAND',
