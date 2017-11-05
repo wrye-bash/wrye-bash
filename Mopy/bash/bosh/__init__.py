@@ -151,17 +151,6 @@ class CoSaves:
     def get_new_paths(old_path, new_path):
         return zip(CoSaves.getPaths(old_path), CoSaves.getPaths(new_path))
 
-    def getTags(self):
-        """Returns tags expressing whether cosaves exist and are correct."""
-        cPluggy,cObse = (u'',u'')
-        save = self.savePath
-        pluggy,obse = self.paths
-        if pluggy.exists():
-            cPluggy = u'XP'[abs(pluggy.mtime - save.mtime) < 10]
-        if obse.exists():
-            cObse = u'XO'[abs(obse.mtime - save.mtime) < 10]
-        return cObse,cPluggy
-
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class BsaFile:
@@ -1154,9 +1143,16 @@ class SaveInfo(FileInfo):
             cosave.map_masters(masterMap)
             cosave.write_cosave_safe()
 
-    def coSaves(self):
-        """Returns CoSaves instance corresponding to self."""
-        return CoSaves(self.getPath())
+    def get_cosave_tags(self):
+        """Return strings expressing whether cosaves exist and are correct."""
+        cPluggy, cObse = (u'', u'')
+        pluggy = self.name.root + u'.pluggy'
+        obse = self._get_se_cosave_path()
+        if pluggy.exists():
+            cPluggy = u'XP'[abs(pluggy.mtime - self.mtime) < 10]
+        if obse and obse.exists():
+            cObse = u'XO'[abs(obse.mtime - self.mtime) < 10]
+        return cObse, cPluggy
 
     def backup_paths(self, first=False):
         save_paths = super(SaveInfo, self).backup_paths(first)
@@ -1165,8 +1161,8 @@ class SaveInfo(FileInfo):
 
     def get_cosave(self):
         """:rtype: cosaves.ACoSaveFile"""
-        if self._cosave_type is None: return None
-        cosave_path = self.getPath().root + u'.' + bush.game.se.shortName.lower()
+        cosave_path = self._get_se_cosave_path()
+        if cosave_path is None: return None
         try:
             return self._cosave_type(cosave_path) # type: cosaves.ACoSaveFile
         except (OSError, IOError, FileError) as e:
@@ -1174,6 +1170,10 @@ class SaveInfo(FileInfo):
                 isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
                 deprint(u'Failed to open %s' % cosave_path, traceback=True)
             return None
+
+    def _get_se_cosave_path(self):
+        if self._cosave_type is None: return None
+        return self.getPath().root + u'.' + self._cosave_type.signature.lower()
 
 #------------------------------------------------------------------------------
 from . import bsa_files
@@ -2772,7 +2772,7 @@ class SaveInfos(FileInfos):
         return renames
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
-        """Copies savefile and associated pluggy file."""
+        """Copies savefile and associated cosaves file(s)."""
         super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
         CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
 
