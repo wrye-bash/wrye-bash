@@ -52,6 +52,7 @@ class SaveFileHeader(object):
     # map slots to (seek position, unpacker) - seek position negative means
     # seek relative to ins.tell(), otherwise to the beginning of the file
     unpackers = OrderedDict()
+    canEditMasters = True
 
     def __init__(self, save_path):
         try:
@@ -207,6 +208,9 @@ class SkyrimSaveHeader(SaveFileHeader):
         ('ssHeight',    (00, unpack_int)),
     ])
 
+    @property
+    def canEditMasters(self): return not self.__is_sse()
+
     def __is_sse(self): return self.version == 12
 
     def _esl_block(self): return self.__is_sse() and self._formVersion >= 78
@@ -322,6 +326,9 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
     save_magic = 'FO4_SAVEGAME'
 
     __slots__ = ()
+
+    @property
+    def canEditMasters(self): return True
 
     def _esl_block(self): return self.version == 15 and self._formVersion >= 68
 

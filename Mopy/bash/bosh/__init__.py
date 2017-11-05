@@ -1093,15 +1093,17 @@ class INIInfo(IniFile):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-from .save_files import get_save_header_type
+from .save_headers import get_save_header_type, SaveFileHeader
 from ._saves import PluggyFile
 from . import cosaves
 
 class SaveInfo(FileInfo):
     try:
         _cosave_type = cosaves.get_cosave_type(bush.game.fsName)
+        save_header_type = get_save_header_type(bush.game.fsName)
     except AttributeError:
         _cosave_type = cosaves.ACoSaveFile
+        save_header_type = SaveFileHeader
 
     def getFileInfos(self): return saveInfos
 
@@ -1122,7 +1124,7 @@ class SaveInfo(FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
+            self.header = self.save_header_type(self.abs_path)
         except SaveHeaderError as e:
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
         self._reset_masters()

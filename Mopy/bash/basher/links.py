@@ -596,7 +596,8 @@ def InitSaveLinks():
     SaveList.itemMenu.append(Save_DiffMasters())
     if bush.game.ess.canEditMore:
         SaveList.itemMenu.append(Save_Stats())
-        SaveList.itemMenu.append(Save_StatObse())
+    SaveList.itemMenu.append(Save_StatObse())
+    if bush.game.ess.canEditMore:
         #--------------------------------------------
         SaveList.itemMenu.append(SeparatorLink())
         SaveList.itemMenu.append(Save_EditPCSpells())

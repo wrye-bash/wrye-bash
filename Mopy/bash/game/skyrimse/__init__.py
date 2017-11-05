@@ -89,7 +89,6 @@ espm_extensions = {u'.esp', u'.esm', u'.esl'}
 class ess:
     # Save file capabilities
     canReadBasic = True         # All the basic stuff needed for the Saves Tab
-    canEditMasters = False      # Adjusting save file masters
     canEditMore = False         # No advanced editing
     ext = u'.ess'               # Save file extension
 
