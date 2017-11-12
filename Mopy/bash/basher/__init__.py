@@ -325,11 +325,6 @@ class MasterList(_ModsUIList):
     message = _(u"Edit/update the masters list? Note that the update process "
                 u"may automatically rename some files. Be sure to review the "
                 u"changes before saving.")
-    seName = bush.game.se.shortName
-    saves192warn = u'\n\n' + _(u"Note that %(scrExtender)s cosaves are NOT "
-            u"supported, meaning that if you have a save that has a cosave "
-            u"the masters in the cosave WON'T be updated leading to "
-            u"crashes/lost information and whatnot." % {'scrExtender': seName})
 
     def __init__(self, parent, listData=None, keyPrefix=keyPrefix, panel=None,
                  detailsPanel=None):
@@ -339,8 +334,6 @@ class MasterList(_ModsUIList):
         self.fileInfo = None
         self.loadOrderNames = [] # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + '.allowEdit'
-        if isinstance(detailsPanel, SaveDetails): # yak ! fix #192
-            self.message += self.saves192warn
         #--Parent init
         super(MasterList, self).__init__(parent,
                       listData=listData if listData is not None else {},

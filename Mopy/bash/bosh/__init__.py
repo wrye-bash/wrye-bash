@@ -857,6 +857,7 @@ class ModInfo(FileInfo):
                     deprint(u'Failed to parse %s' % bsa_info.name,
                             traceback=True)
                     continue
+                if not found_assets: continue
                 bsa_assets[bsa_info] = found_assets
                 #extract contains Paths that compare equal to lowercase strings
                 extract -= set(imap(unicode.lower, found_assets))
@@ -1149,9 +1150,9 @@ class SaveInfo(FileInfo):
         cosave_path = self.getPath().root + u'.' + bush.game.se.shortName.lower()
         try:
             return self._cosave_type(cosave_path) # type: cosaves.ACoSaveFile
-        except (OSError, FileError) as e:
+        except (OSError, IOError, FileError) as e:
             if isinstance(e, FileError) or (
-                        isinstance(e, OSError) and e.errno != errno.ENOENT):
+                isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
                 deprint(u'Failed to open %s' % cosave_path, traceback=True)
             return None
 

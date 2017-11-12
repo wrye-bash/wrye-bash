@@ -40,7 +40,8 @@ from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
-from ..bolt import deprint, struct_unpack
+from ..bolt import deprint, struct_unpack, unpack_byte, unpack_string, \
+    unpack_int
 from ..exception import BSAError, BSADecodingError, BSAFlagError, \
     BSANotImplemented
 
@@ -142,7 +143,7 @@ class _HashedRecord(object):
 
     def load_record_from_buffer(self, memview, start):
         fmt, fmt_siz = _HashedRecord.formats[0]
-        self.hash, = struct_unpack_from(fmt, memview, start)
+        self.hash, = struct.unpack_from(fmt, memview, start)
         return start + fmt_siz
 
     @classmethod
@@ -217,7 +218,7 @@ class _B2aFileRecordCommon(_HashedRecord):
     formats = list((f, struct.calcsize(f)) for f in formats)
 
     def load_record(self, ins):
-        self.hash, = struct_unpack('I', ins.read(4)) # hash is I not Q !
+        self.hash = unpack_int(ins) # hash is I not Q !
         for fmt, attr in zip(_B2aFileRecordCommon.formats,
                              _B2aFileRecordCommon.__slots__):
             self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
@@ -257,8 +258,8 @@ class B2aFileRecordTexture(_B2aFileRecordCommon):
 
     def load_record(self, ins):
         super(B2aFileRecordTexture, self).load_record(ins)
-        for fmt, attr in zip(B2aFileRecordGeneral.formats,
-                             B2aFileRecordGeneral.__slots__):
+        for fmt, attr in zip(B2aFileRecordTexture.formats,
+                             B2aFileRecordTexture.__slots__):
             self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
 
 # Bsa content abstraction -----------------------------------------------------
@@ -275,6 +276,13 @@ class Ba2Folder(object):
         self.folder_assets = collections.OrderedDict() # keep files order
 
 # Files -----------------------------------------------------------------------
+def _makedirs_exists_ok(target_dir):
+    try:
+        os.makedirs(target_dir)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+
 class ABsa(AFile):
     """:type bsa_folders: collections.OrderedDict[unicode, BSAFolder]"""
     header_type = BsaHeader
@@ -293,7 +301,7 @@ class ABsa(AFile):
             if not names_only:
                 self._load_bsa()
             else:
-                self.load_bsa_light()
+                self._load_bsa_light()
         except struct.error as e:
             raise BSAError, e.message, sys.exc_info()[2]
 
@@ -326,11 +334,7 @@ class ABsa(AFile):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             for folder, file_records in folder_to_assets.iteritems():
                 target_dir = os.path.join(dest_folder, folder)
-                try:
-                    os.makedirs(target_dir)
-                except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        raise
+                _makedirs_exists_ok(target_dir)
                 for filename, record in file_records:
                     if global_compression ^ record.compression_toggle():
                         raise BSANotImplemented(
@@ -339,7 +343,7 @@ class ABsa(AFile):
                     data_size = record.raw_data_size()
                     bsa_file.seek(record.raw_file_data_offset)
                     if self.bsa_header.embed_filenames(): # use len(filename) ?
-                        filename_len, = struct_unpack('B', bsa_file.read(1))
+                        filename_len = unpack_byte(bsa_file)
                         bsa_file.read(filename_len) # discard filename
                         data_size -= filename_len + 1
                     # get the data!
@@ -362,9 +366,9 @@ class ABsa(AFile):
 
     # Abstract
     def _load_bsa(self): raise NotImplementedError
-    def load_bsa_light(self): raise NotImplementedError
+    def _load_bsa_light(self): raise NotImplementedError
 
-    # API
+    # API - delegates to abstract methods above
     def has_assets(self, asset_paths):
         return set((u'%s' % a).lower() for a in asset_paths) & self.assets
 
@@ -413,7 +417,7 @@ class BSA(ABsa):
             rec.load_record(bsa_file)
             file_records.append(rec)
 
-    def load_bsa_light(self):
+    def _load_bsa_light(self):
         folder_records = [] # we need those to parse the folder names
         _filenames = []
         path_folder_record = collections.OrderedDict()
@@ -442,10 +446,9 @@ class BSA(ABsa):
             for folder_record in folder_records:
                 folder_path = u'?%d' % folder_record.hash # hack - untested
                 if self.bsa_header.has_names_for_folders():
-                    name_size = struct_unpack('B', bsa_file.read(1))[0]
+                    name_size = unpack_byte(bsa_file)
                     folder_path = _decode_path(
-                        struct_unpack('%ds' % (name_size - 1),
-                                      bsa_file.read(name_size - 1))[0])
+                        unpack_string(bsa_file, name_size - 1))
                     total_names_length += name_size
                     bsa_file.read(1) # discard null terminator
                 read_file_records(bsa_file, folder_path, folder_record)
@@ -485,11 +488,7 @@ class BA2(ABsa):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             for folder, file_records in folder_to_assets.iteritems():
                 target_dir = os.path.join(dest_folder, folder)
-                try:
-                    os.makedirs(target_dir)
-                except OSError as e:
-                    if e.errno != errno.EEXIST:
-                        raise
+                _makedirs_exists_ok(target_dir)
                 for filename, record in file_records:
                     if record.packed_size: # seems to signify compression
                         raise BSANotImplemented(
@@ -538,7 +537,7 @@ class BA2(ABsa):
             current_folder.folder_assets[filename[folder_dex + 1:]] = \
                 file_records[index]
 
-    def load_bsa_light(self):
+    def _load_bsa_light(self):
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             # load the header from input stream
             self.bsa_header.load_header(bsa_file)
