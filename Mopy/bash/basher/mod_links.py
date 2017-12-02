@@ -1771,8 +1771,9 @@ class _Mod_Import_Link(OneItemLink):
     @property
     def _wildcard(self):
         if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
-        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + \
-               u';*.esp;*.esm;*.ghost'
+        espml = u';*'.join(bush.game.espm_extensions)
+        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + u';*' \
+               + espml + u';*.ghost'
 
     def _import(self, ext, textDir, textName, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
@@ -1819,9 +1820,10 @@ class _Mod_Import_Link(OneItemLink):
         #--Extension error check
         ext = textName.cext
         if ext not in supportedExts:
+            espml = u"or ".join(bush.game.espm_extensions)
             self._showError(_(u'Source file must be a {0} file{1}.'.format(
-                self.__class__.csvFile, (len(supportedExts) > 1 and
-                    u" or mod (.esp or .esm or .ghost)") or u"")))
+                self.__class__.csvFile, (len(supportedExts) > 1 and (
+                        u" or mod (%s or .ghost)" % espml)) or u"")))
             return
         #--Import
         changed = self._import(ext, textDir, textName, textPath)
