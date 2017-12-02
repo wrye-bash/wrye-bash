@@ -215,6 +215,7 @@ dataDirsPlus = {
     u'f4se',
     u'ini',
     u'tools', # bodyslide
+    u'mcm',   # FO4 MCM
 }
 
 # Installer -------------------------------------------------------------------
