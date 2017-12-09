@@ -153,7 +153,7 @@
     <li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>,
     this will display <q>for Oblivion</q>, <q>for Skyrim</q> or <q>for Fallout 4</q> depending on the game it is being run for.
     <li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
-    <li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profile">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
+    <li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profiles">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
     <li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
 </ul>
 
@@ -353,7 +353,7 @@ tab. The directories skipped are:
     <li>The <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> option found in the Installers tab column header context menu is disabled.
 </ul>
 <p>When attempting to install a specific Script Extender plugin for the first time, Wrye Bash will display a warning dialogue and ask you to confirm or deny the plugin's installation. Thereafter you can uninstall and install the plugin as you like without seeing the warning. These additional requirements are due to the significant (though currently theoretical) dangers of installing executable files.
-<p>The list of allowed and disallowed Script Extender plugins can be imported and exported using the <a href="#settingsImportList">Import list of allowed/disallowed OBSE plugin dlls</a> and <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a> options in Wrye Bash's <a href="#settings">Settings</a> menu.
+<p>The list of allowed and disallowed Script Extender plugins can be imported and exported using the <a href="#settingsImportList">Import list of allowed/disallowed OBSE plugin dlls</a> and <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a> options in Wrye Bash's <a href="#tools-settings">Settings</a> menu.
 
 
 <h3 id="bain-omod">OMOD Conversion Data</h3>
@@ -1418,7 +1418,7 @@ and masterlist relative priority and role see the LOOT docs.
 </table>
 
 
-<h3 id="#patch-filter">Merge Filtering</h3>
+<h3 id="patch-filter">Merge Filtering</h3>
 <p>Merge filtering is an advanced option that allows records in a merged mod to be selectively filtered according to the current load order. For example, a patch mod could be created to rebalance weapons from several different weapon-adding mods. This feature would allow the patch to be used even if you didn't use all the mods, and the Bashed Patch would just apply the bits for the mods you do use. This saves the need for a separate patch plugin for each mod.
 <p>Merge filtering has requisite conditions that must be fulfilled for a plugin to take advantage of it, and some limitations. These conditions and limitations are:
 <ul>
@@ -1430,7 +1430,7 @@ and masterlist relative priority and role see the LOOT docs.
 </ul>
 
 
-<h3 id="#patch-iim">Item Interchange Mode</h3>
+<h3 id="patch-iim">Item Interchange Mode</h3>
 <p>Item Interchange Mode is a 'hack' (a horribly inelegant and inconsistent implementation of a feature that nonetheless works) to support Vacuity's Item Interchange mod.
 <p>Activation of the mode for a plugin relies on the following conditions:
 <ul>
@@ -1656,7 +1656,7 @@ and masterlist relative priority and role see the LOOT docs.
 </table>
 
 
-<h3 id="#patch-csv">Default CSV Files</h3>
+<h3 id="patch-csv">Default CSV Files</h3>
 <p>The following CSV files are supplied with Wrye Bash and are can be used when building your Bashed Patch.
 <table>
     <thead>
