@@ -65,8 +65,7 @@ from types import ClassType
 #--wxPython
 import wx
 
-#--Localization
-#..Handled by bosh, so import that.
+#--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
 from ..bolt import GPath, SubProgress, deprint, formatInteger, formatDate, \
     round_size
@@ -277,7 +276,7 @@ class _ModsUIList(balt.UIList):
 
     def _sortEsmsFirst(self, items):
         if self.esmsFirst:
-            items.sort(key=lambda a: not self.data_store[a].isEsm())
+            items.sort(key=lambda a: not self.data_store[a].is_esml())
 
     def _activeModsFirst(self, items):
         if self.selectedFirst: items.sort(key=lambda x: x not in
@@ -979,8 +978,7 @@ class ModList(_ModsUIList):
 
     @staticmethod
     def _unhide_wildcard():
-        return bush.game.displayName + u' ' + _(
-            u'Mod Files') + u' (*.esp;*.esm)|*.esp;*.esm'
+        return bosh.modInfos.plugin_wildcard()
 
     #--Helpers ---------------------------------------------
     @balt.conversation
@@ -2719,9 +2717,11 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         elif pageName == 'gMismatched':
             gPage.SetValue(dumpFiles(installer.mismatchedFiles))
         elif pageName == 'gConflicts':
-            gPage.SetValue(self._idata.getConflictReport(installer, 'OVER'))
+            gPage.SetValue(self._idata.getConflictReport(installer, 'OVER',
+                                                         bosh.modInfos))
         elif pageName == 'gUnderrides':
-            gPage.SetValue(self._idata.getConflictReport(installer, 'UNDER'))
+            gPage.SetValue(self._idata.getConflictReport(installer, 'UNDER',
+                                                         bosh.modInfos))
         elif pageName == 'gDirty':
             gPage.SetValue(dumpFiles(installer.dirty_sizeCrc))
         elif pageName == 'gSkipped':

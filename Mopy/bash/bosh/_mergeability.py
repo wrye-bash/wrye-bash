@@ -113,10 +113,6 @@ def isPBashMergeable(modInfo, minfos, verbose):
     if reasons: return reasons
     return True
 
-def cbash_mergeable_no_load(modInfo, verbose):
-    """Check if mod is mergeable without taking into account the rest of mods"""
-    return _is_mergeable_no_load(modInfo, verbose)
-
 def _modIsMergeableLoad(modInfo, minfos, verbose):
     """Check if mod is mergeable, loading it and taking into account the
     rest of mods."""
@@ -176,7 +172,7 @@ def isCBashMergeable(modInfo, minfos, verbose):
         if verbose: return u'\n.    ' + _(
             u'Marked non-mergeable at request of mod author.')
         return False
-    canmerge = cbash_mergeable_no_load(modInfo, verbose)
+    canmerge = _is_mergeable_no_load(modInfo, verbose)
     if verbose:
         loadreasons = _modIsMergeableLoad(modInfo, minfos, verbose)
         reasons = []

@@ -23,19 +23,22 @@
 #
 # =============================================================================
 
-"""Game class initially introduced to encapsulate load order handling and
-eventually to wrap the bush.game module to a class API to be used in the rest
-of Bash."""
+"""Game class implementing load order handling - **only** imported in
+load_order.py."""
 
 __author__ = 'Utumno'
 
+import errno
 import re
 import time
 from collections import defaultdict
 # Local
+import bass
 import bolt
-import exception
 import env
+import exception
+
+max_espms = 255
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:
@@ -170,7 +173,7 @@ class FixInfo(object):
                     u'folder' % path) + u'\n'
         msg += self.act_order_differs_from_load_order
         if self.selectedExtra:
-            msg += u'Active list contains more than 255 plugins' \
+            msg += u'Active list contains more than 255 espms' \
                    u' - the following plugins will be deactivated: '
             msg += _pl(self.selectedExtra)
         if self.act_duplicates:
@@ -407,12 +410,12 @@ class Game(object):
         lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
-        lord.sort(key=lambda m: not self.mod_infos[m].isEsm())
+        lord.sort(key=lambda m: not self.mod_infos[m].is_esml())
         fix_lo.lo_reordered |= ol != lord
         # Append new plugins to load order
         index_first_esp = self._index_of_first_esp(lord)
         for mod in fix_lo.lo_added:
-            if self.mod_infos[mod].isEsm():
+            if self.mod_infos[mod].is_esml():
                 if not mod == master_name:
                     lord.insert(index_first_esp, mod)
                 else:
@@ -451,12 +454,10 @@ class Game(object):
         # Check for duplicates
         fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # check if we have more than 256 active mods
-        if len(acti_filtered) > 255:
-            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
-                acti_filtered[255:]
-        acti[:] = acti_filtered[:255] # chop off extra, update acti in place
+        self._check_active_limit(acti, acti_filtered, fix_active)
+        before_reorder = acti # with overflowed plugins removed
         if self._order_fixed(acti):
-            fix_active.act_reordered = (acti_filtered[:255], acti)
+            fix_active.act_reordered = (before_reorder, acti)
         if fix_active.act_changed():
             if on_disc: # used when getting active and found invalid, fix 'em!
                 # Notify user - ##: maybe backup previous plugin txt ?
@@ -466,6 +467,12 @@ class Game(object):
                 fix_active.act_header = u'Invalid active plugins list corrected:\n'
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
+
+    def _check_active_limit(self, acti, acti_filtered, fix_active):
+        if len(acti_filtered) > max_espms:
+            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
+                acti_filtered[max_espms:]
+        acti[:] = acti_filtered[:max_espms] # chop off extra, update acti in place
 
     def _order_fixed(self, lord): return False
 
@@ -479,7 +486,7 @@ class Game(object):
     def _index_of_first_esp(self, lord):
         index_of_first_esp = 0
         while index_of_first_esp < len(lord) and self.mod_infos[
-            lord[index_of_first_esp]].isEsm():
+            lord[index_of_first_esp]].is_esml():
             index_of_first_esp += 1
         return index_of_first_esp
 
@@ -495,6 +502,10 @@ class Game(object):
             else:
                 mods.add(mod)
         return duplicates
+
+    # INITIALIZATION ----------------------------------------------------------
+    @classmethod
+    def parse_ccc_file(cls): pass
 
 class TimestampGame(Game):
     """Oblivion and other games where load order is set using modification
@@ -533,7 +544,7 @@ class TimestampGame(Game):
         if mods is None: mods = self.mod_infos.keys()
         mods = sorted(mods) # sort case insensitive (for time conflicts)
         mods.sort(key=lambda x: self.mod_infos[x].mtime)
-        mods.sort(key=lambda x: not self.mod_infos[x].isEsm())
+        mods.sort(key=lambda x: not self.mod_infos[x].isEsm()) # no esls here
         return mods
 
     def _fetch_load_order(self, cached_load_order, cached_active):
@@ -719,7 +730,10 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
-    remove_from_plugins_txt = set()
+    _ccc_filename = u''
+
+    @property
+    def remove_from_plugins_txt(self): return set()
 
     @property
     def pinned_mods(self): return self.remove_from_plugins_txt
@@ -790,6 +804,16 @@ class AsteriskGame(Game):
             return True
         return False
 
+    # esls
+    def _check_active_limit(self, acti, acti_filtered, fix_active):
+        acti_filtered_espm = [x for x in acti_filtered if x.cext != u'.esl']
+        if len(acti_filtered_espm) > max_espms:
+            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
+                acti_filtered_espm[max_espms:]
+        disable = set(acti_filtered_espm[max_espms:])
+        # chop off extra, update acti in place
+        acti[:] = [x for x in acti_filtered if x not in disable]
+
     # Asterisk game specific: plugins with fixed load order -------------------
     def _readd_in_lists(self, lo, active):
         # add the plugins that should not be in plugins.txt in the lists,
@@ -806,6 +830,17 @@ class AsteriskGame(Game):
             x for x in self.must_be_active_if_present if x in self.mod_infos)
         return add
 
+    @classmethod
+    def parse_ccc_file(cls):
+        _ccc_path = bass.dirs['app'].join(cls._ccc_filename)
+        try:
+            with open(_ccc_path.s, 'r') as ins:
+                lines = map(bolt.GPath, map(str.strip, ins.readlines()))
+                cls.must_be_active_if_present += tuple(lines)
+        except (OSError, IOError) as e:
+            if e.errno != errno.ENOENT:
+                bolt.deprint(u'Failed to open %s' % _ccc_path, traceback=True)
+
 # AsteriskGame overrides
 class Fallout4(AsteriskGame):
 
@@ -816,9 +851,12 @@ class Fallout4(AsteriskGame):
                                  bolt.GPath(u'DLCWorkshop03.esm'),
                                  bolt.GPath(u'DLCNukaWorld.esm'),
                                  bolt.GPath(u'DLCUltraHighResolution.esm'),)
+    _ccc_filename = u'Fallout4.ccc'
 
-    remove_from_plugins_txt = {bolt.GPath(u'Fallout4.esm')} | set(
-        must_be_active_if_present)
+    @property
+    def remove_from_plugins_txt(self):
+        return {bolt.GPath(u'Fallout4.esm')} | set(
+            self.must_be_active_if_present)
 
 class SkyrimSE(AsteriskGame):
 
@@ -826,8 +864,12 @@ class SkyrimSE(AsteriskGame):
                                  bolt.GPath(u'Dawnguard.esm'),
                                  bolt.GPath(u'Hearthfires.esm'),
                                  bolt.GPath(u'Dragonborn.esm'),)
-    remove_from_plugins_txt = {bolt.GPath(u'Skyrim.esm')} | set(
-        must_be_active_if_present)
+    _ccc_filename = u'Skyrim.ccc'
+
+    @property
+    def remove_from_plugins_txt(self):
+        return {bolt.GPath(u'Skyrim.esm')} | set(
+            self.must_be_active_if_present)
 
     __dlc_spacing = 60 # in seconds
     def _fixed_order_plugins(self):

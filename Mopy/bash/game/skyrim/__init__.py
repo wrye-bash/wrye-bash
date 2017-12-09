@@ -83,6 +83,9 @@ vanilla_string_bsas = {
 }
 resource_archives_keys = (u'sResourceArchiveList', u'sResourceArchiveList2')
 
+# plugin extensions
+espm_extensions = {u'.esp', u'.esm'}
+
 # Load order info
 using_txt_file = True
 

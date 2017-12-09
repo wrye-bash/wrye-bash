@@ -63,6 +63,9 @@ supports_mod_inis = True # this game supports mod ini files aka ini fragments
 vanilla_string_bsas = {}
 resource_archives_keys = ()
 
+# plugin extensions
+espm_extensions = {u'.esp', u'.esm'}
+
 # Load order info
 using_txt_file = True
 

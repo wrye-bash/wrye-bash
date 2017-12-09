@@ -168,7 +168,8 @@ class Mod_OrderByName(EnabledLink):
                                  _(u'Sort Mods')): return
         #--Do it
         self.selected.sort()
-        self.selected.sort(key=attrgetter('cext')) # sort esm first
+        self.selected.sort(
+            key=lambda m: not bosh.modInfos[m].is_esml()) # sort esmls first
         if not load_order.using_txt_file():
             #--Get first time from first selected file.
             newTime = min(x.mtime for x in self.iselected_infos())
@@ -943,8 +944,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             title = _(u'Import %s config ?') % old_mode
             if not self._askYes(msg, title=title): importConfig = False
         patch_files.executing_patch = self._selected_item
-        mods_prior_to_patch = load_order.cached_lower_loading(
-            self._selected_item)
+        mods_prior_to_patch = load_order.cached_lower_loading_espms(
+            self._selected_item, bosh.modInfos)
         if self.doCBash or bass.settings['bash.CBashEnabled']:
             # if doing a python patch but CBash is enabled, it's very likely
             # that the merge info currently is from a CBash mode scan, rescan
@@ -1409,8 +1410,7 @@ class Mod_AddMaster(OneItemLink):
                     u"splitting mods into esm/esp pairs.")
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Master')): return
-        wildcard = _(u'%s Masters') % bush.game.displayName + \
-                   u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = bosh.modInfos.plugin_wildcard(_(u'Masters'))
         masterPaths = self._askOpenMulti(title=_(u'Add master:'),
                                          defaultDir=self._selected_info.dir,
                                          wildcard=wildcard)
@@ -1449,7 +1449,8 @@ class Mod_CopyToEsmp(EnabledLink):
     def _enable(self):
         """Disable if selected are mixed esm/p's or inverted mods."""
         for minfo in self.iselected_infos():
-            if minfo.isInvertedMod() or minfo.isEsm() != self._is_esm:
+            if minfo.is_esl() or minfo.isInvertedMod() or minfo.isEsm() != \
+                    self._is_esm:
                 return False
         return True
 
@@ -1573,8 +1574,9 @@ class Mod_FlipSelf(_Esm_Flip):
         self._text = _(u'Espify Self') if self._is_esm else _(u'Esmify Self')
 
     def _enable(self):
-        for item, minfo in self.iselected_pairs():
-            if minfo.isEsm() != self._is_esm or not item.cext[-1] == u'p':
+        for m, minfo in self.iselected_pairs():
+            if minfo.is_esl() or \
+                    minfo.isEsm() != self._is_esm or not m.cext[-1] == u'p':
                 return False
         return True
 
@@ -1770,8 +1772,9 @@ class _Mod_Import_Link(OneItemLink):
     @property
     def _wildcard(self):
         if len(self.supportedExts) == 1: return u'*' + self.__class__.csvFile
-        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + \
-               u';*.esp;*.esm;*.ghost'
+        espml = u';*'.join(bush.game.espm_extensions)
+        return _(u'Mod/Text File') + u'|*' + self.__class__.csvFile + u';*' \
+               + espml + u';*.ghost'
 
     def _import(self, ext, textDir, textName, textPath):
         with balt.Progress(self.__class__.progressTitle) as progress:
@@ -1818,9 +1821,10 @@ class _Mod_Import_Link(OneItemLink):
         #--Extension error check
         ext = textName.cext
         if ext not in supportedExts:
+            espml = u"or ".join(bush.game.espm_extensions)
             self._showError(_(u'Source file must be a {0} file{1}.'.format(
-                self.__class__.csvFile, (len(supportedExts) > 1 and
-                    u" or mod (.esp or .esm or .ghost)") or u"")))
+                self.__class__.csvFile, (len(supportedExts) > 1 and (
+                        u" or mod (%s or .ghost)" % espml)) or u"")))
             return
         #--Import
         changed = self._import(ext, textDir, textName, textPath)
@@ -2126,7 +2130,7 @@ class Mod_Prices_Import(_Mod_Import_Link):
                      u"replace existing prices and is not reversible!")
     continueKey = 'bash.prices.import.continue'
     noChange = _(u'No relevant prices to import.')
-    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
+    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
 
     def _parser(self):
         return CBash_ItemPrices() if CBashApi.Enabled else ItemPrices()
@@ -2372,7 +2376,7 @@ class Mod_FullNames_Import(_Mod_Import_Link):
     continueKey = 'bash.fullNames.import.continue'
     _text = _(u'Names...')
     help = _(u'Import full names from text file or other mod')
-    supportedExts = {u'.csv', u'.ghost', u'.esm', u'.esp'}
+    supportedExts = {u'.csv', u'.ghost'} | bush.game.espm_extensions
 
     def _parser(self):
         return CBash_FullNames() if CBashApi.Enabled else FullNames()
@@ -2527,7 +2531,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
         if not self._askContinue(message, 'bash.addMaster.continue',
                                  _(u'Add Masters')): return
         modInfo = self.window.fileInfo
-        wildcard = bush.game.displayName+u' '+_(u'Masters')+u' (*.esm;*.esp)|*.esm;*.esp'
+        wildcard = bosh.modInfos.plugin_wildcard(_(u'Masters'))
         masterPaths = self._askOpenMulti(
                             title=_(u'Add masters:'), defaultDir=modInfo.dir,
                             wildcard=wildcard)

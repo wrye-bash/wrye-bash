@@ -265,8 +265,7 @@ class Master_ChangeTo(_Master_EditList):
         masterInfo = self._selected_info
         master_name = masterInfo.name
         #--File Dialog
-        wildcard = _(u'%s Mod Files') % bush.game.displayName \
-                   + u' (*.esp;*.esm)|*.esp;*.esm'
+        wildcard = bosh.modInfos.plugin_wildcard()
         newPath = self._askOpen(title=_(u'Change master name to:'),
                                 defaultDir=bosh.modInfos.store_dir,
                                 defaultFile=master_name, wildcard=wildcard,

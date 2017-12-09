@@ -809,7 +809,7 @@ def createTagList(inPath='masterlist.txt',outPath='taglist.txt'):
     tags, lootDirtyMods = {}, {}
     reFcomSwitch = re.compile('^[<>]')
     reComment = re.compile(r'^\\.*')
-    reMod = re.compile(r'(^[_[(\w!].*?\.es[pm]$)',re.I)
+    reMod = re.compile(r'(^[_[(\w!].*?\.es[pml]$)',re.I)
     reBashTags = re.compile(r'(%\s+{{BASH:|TAG\s+{{BASH:)([^}]+)(}})(.*remove \[)?([^\]]+)?(\])?')
     reDirty = re.compile(r'.*?IF\s*\(\s*([a-fA-F0-9]*)\s*\|\s*[\"\'](.*?)[\'\"]\s*\).*?DIRTY:\s*(.*?)\s*$')
     ins = GPath(inPath).open('r')

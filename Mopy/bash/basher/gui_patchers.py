@@ -325,7 +325,7 @@ class _ListPatcherPanel(_PatcherPanel):
     def OnAdd(self):
         """Add button clicked."""
         srcDir = bosh.modInfos.store_dir
-        wildcard = bush.game.displayName+_(u' Mod Files')+u' (*.esp;*.esm)|*.esp;*.esm'
+        wildcard = bosh.modInfos.plugin_wildcard()
         #--File dialog
         title = _(u'Get ')+self.__class__.listLabel
         srcPaths = balt.askOpenMulti(self.gConfigPanel,title,srcDir, u'', wildcard)
@@ -426,8 +426,8 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def _get_auto_mods(self):
         autoRe = self.__class__.autoRe
-        mods_prior_to_patch = load_order.cached_lower_loading(
-            patch_files.executing_patch)
+        mods_prior_to_patch = load_order.cached_lower_loading_espms(
+            patch_files.executing_patch, bosh.modInfos)
         return [mod for mod in mods_prior_to_patch if autoRe.match(mod.s) or (
             self.__class__.autoKey & bosh.modInfos[mod].getBashTags())]
 
@@ -883,8 +883,8 @@ class _MergerPanel(_ListPatcherPanel):
 
     def getAutoItems(self):
         """Returns list of items to be used for automatic configuration."""
-        mods_prior_to_patch = load_order.cached_lower_loading(
-            patch_files.executing_patch)
+        mods_prior_to_patch = load_order.cached_lower_loading_espms(
+            patch_files.executing_patch, bosh.modInfos)
         return [mod for mod in mods_prior_to_patch if (
             mod in bosh.modInfos.mergeable and u'NoMerge' not in bosh.modInfos[
                 mod].getBashTags())]

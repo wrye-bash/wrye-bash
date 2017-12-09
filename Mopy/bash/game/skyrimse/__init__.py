@@ -82,6 +82,9 @@ vanilla_string_bsas = {
     u'dragonborn.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
 }
 
+# plugin extensions
+espm_extensions = {u'.esp', u'.esm', u'.esl'}
+
 #--Save Game format stuff
 class ess:
     # Save file capabilities

@@ -98,7 +98,6 @@ reVersion = re.compile(
   re.M | re.I | re.U)
 
 #--Mod Extensions
-_reEsmExt  = re.compile(ur'\.esm(.ghost)?$', re.I | re.U)
 __exts = ur'((\.(' + ur'|'.join(ext[1:] for ext in readExts) + ur'))|)$'
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
     ur'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
@@ -359,7 +358,13 @@ class MasterInfo:
         if self.modInfo:
             return self.modInfo.isEsm()
         else:
-            return _reEsmExt.search(self.name.s)
+            return self.name.cext == u'.esm'
+
+    def is_esml(self):
+        if self.modInfo:
+            return self.modInfo.is_esml()
+        else:
+            return self.name.cext == u'.esm' or self.name.cext == u'.esl'
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -435,16 +440,6 @@ class FileInfo(AFile):
     #--Note that these tests only test extension, not the file data.
     def isMod(self):
         return ModInfos.rightFileType(self.name)
-    def isEsm(self):
-        if not self.isMod(): return False
-        if self.header:
-            return int(self.header.flags1) & 1 == 1
-        else:
-            return bool(_reEsmExt.search(self.name.s)) and False
-    def isInvertedMod(self):
-        """Extension indicates esp/esm, but byte setting indicates opposite."""
-        return (self.isMod() and self.header and
-                self.name.cext != (u'.esp',u'.esm')[int(self.header.flags1) & 1])
 
     def setmtime(self, set_time=0, crc_changed=False):
         """Sets mtime. Defaults to current value (i.e. reset)."""
@@ -574,7 +569,7 @@ class FileInfo(AFile):
 reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
 class ModInfo(FileInfo):
-    """An esp/m file."""
+    """An esp/m/l file."""
 
     def __init__(self, parent_dir, name, load_cache=False):
         self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
@@ -592,10 +587,31 @@ class ModInfo(FileInfo):
 
     def getFileInfos(self): return modInfos
 
+    def isEsm(self):
+        """Check if the mod info is a master file based on master flag -
+        header must be set"""
+        return int(self.header.flags1) & 1 == 1
+
+    def is_esl(self):
+        # game seems not to care about the flag, at least for load order
+        return self.name.cext == u'.esl'
+
+    def is_esml(self):
+        return self.is_esl() or self.isEsm()
+
+    def isInvertedMod(self):
+        """Extension indicates esp/esm, but byte setting indicates opposite."""
+        if self.name.cext not in (u'.esm', u'.esp'): # don't use for esls
+            raise ArgumentError(
+                u'isInvertedMod: %s - only esm/esp allowed' % self.name.ext)
+        return (self.header and
+            self.name.cext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
+
     def setType(self, esm_or_esp):
         """Sets the file's internal type."""
-        if esm_or_esp not in (u'esm', u'esp'):
-            raise ArgumentError
+        if esm_or_esp not in (u'esm', u'esp'): # don't use for esls
+            raise ArgumentError(
+                u'setType: %s - only esm/esp allowed' % esm_or_esp)
         with self.getPath().open('r+b') as modFile:
             modFile.seek(8)
             flags1 = MreRecord.flags1_(struct_unpack('I', modFile.read(4))[0])
@@ -810,18 +826,19 @@ class ModInfo(FileInfo):
     def _modname(self):
         return modInfos.file_pattern.sub(u'', self.name.s)
 
-    def _mods_bsa(self):
+    def mod_bsas(self, bsa_infos=None):
         """Return bsas from bsaInfos, that match plugin's name."""
         pattern = re.escape(self._modname)
         # games other than skyrim accept more general bsa names
         if bush.game.fsName != u'Skyrim': pattern +=  u'.*'
         reg = re.compile(pattern, re.I | re.U)
         # bsaInfos must be updated and contain all existing bsas
-        return [inf for bsa, inf in bsaInfos.iteritems() if reg.match(bsa.s)]
+        if bsa_infos is None: bsa_infos = bsaInfos
+        return [inf for bsa, inf in bsa_infos.iteritems() if reg.match(bsa.s)]
 
     def hasBsa(self):
         """Returns True if plugin has an associated BSA."""
-        return bool(self._mods_bsa())
+        return bool(self.mod_bsas())
 
     def getIniPath(self):
         """Returns path to plugin's INI, if it were to exists."""
@@ -883,7 +900,7 @@ class ModInfo(FileInfo):
             bsa_infos = [bsaInfos[b] for b in map(GPath,
                 bush.game.vanilla_string_bsas[self.name.cs]) if b in bsaInfos]
         else:
-            bsa_infos = self._mods_bsa() # first check bsa with same name
+            bsa_infos = self.mod_bsas() # first check bsa with same name
             for iniFile in modInfos.ini_files():
                 for key in bush.game.resource_archives_keys:
                     extraBsas = map(GPath, (x.strip() for x in (
@@ -1194,20 +1211,6 @@ class BSAInfo(FileInfo, _bsa_type):
             'ResetBSATimestamps']:
             if self._file_mod_time != self._default_mtime:
                 self.setmtime(self._default_mtime)
-
-    def is_bsa_active(self):
-        """Return True if corresponding mod is active."""
-        is_act = load_order.cached_is_active
-        return is_act(self.name.root + '.esm') or is_act(self.name.root + '.esp')
-
-    def active_bsa_index(self):
-        """Return the index of the active bsa (the corresponding mod's
-        index) or raise ValueError if the bsa is not active."""
-        active_index = load_order.cached_active_tuple().index
-        try:
-            return active_index(self.name.root + '.esm')
-        except ValueError:
-            return active_index(self.name.root + '.esp')
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -1773,7 +1776,11 @@ def _lo_cache(lord_func):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
-    file_pattern = re.compile(ur'\.es[mp](.ghost)?$', re.I | re.U)
+    try:
+        file_pattern = re.compile(ur'(' + '|'.join(map(re.escape, bush.game.espm_extensions)) +
+                                  ur')(.ghost)?$', re.I | re.U)
+    except AttributeError:
+        pass
 
     def __init__(self):
         FileInfos.__init__(self, dirs['mods'], ModInfo)
@@ -1877,7 +1884,7 @@ class ModInfos(FileInfos):
     def cached_lo_last_esm(self):
         last_esm = self.masterName
         for mod in self._lo_wip[1:]:
-            if not self[mod].isEsm(): return last_esm
+            if not self[mod].is_esml(): return last_esm
             last_esm = mod
         return last_esm
 
@@ -1895,7 +1902,7 @@ class ModInfos(FileInfos):
     def cached_lo_append_if_missing(self, mods):
         new = mods - set(self._lo_wip)
         if not new: return
-        esms = set(x for x in new if self[x].isEsm())
+        esms = set(x for x in new if self[x].is_esml())
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
@@ -2082,7 +2089,7 @@ class ModInfos(FileInfos):
                                      reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
             # if esm bit was flipped size won't change, so check this first
-            if modInfo.isEsm():
+            if modInfo.isEsm(): # modInfo must have its header set
                 name_mergeInfo[mpath] = (modInfo.size, False)
                 self.mergeable.discard(mpath)
             elif size == modInfo.size:
@@ -2308,8 +2315,13 @@ class ModInfos(FileInfos):
         """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
-            if len(self._active_wip) == 255:
-                raise PluginsFullError(u'%s: Trying to activate more than 255 mods' % fileName)
+            minfo = self[fileName]
+            if not minfo.is_esl(): # don't check limit if activating an esl
+                acti_filtered_espm = [x for x in self._active_wip if
+                                      x.cext != u'.esl']
+                if len(acti_filtered_espm) == load_order.max_espms:
+                    raise PluginsFullError(u'%s: Trying to activate more than '
+                        u'%d espms' % (fileName,load_order.max_espms))
             _children = (_children or tuple()) + (fileName,)
             if fileName in _children[:-1]:
                 raise BoltError(u'Circular Masters: ' +u' >> '.join(x.s for x in _children))
@@ -2319,7 +2331,7 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
             ##    return
-            for master in self[fileName].header.masters:
+            for master in minfo.header.masters:
                 if master in _modSet: self.lo_activate(master, False, _modSet,
                                                        _children, _activated)
             #--Select in plugins
@@ -2401,10 +2413,12 @@ class ModInfos(FileInfos):
         missingSet = modsSet - allMods
         toSelect = modsSet - missingSet
         listToSelect = load_order.get_ordered(toSelect)
-        skipped = listToSelect[255:]
+        acti_filtered_espm = [x for x in listToSelect if x.cext != u'.esl']
+        skipped = acti_filtered_espm[load_order.max_espms:]
         #--Save
-        final_selection = listToSelect[:255]
-        self.cached_lo_save_active(active=final_selection)
+        if skipped:
+            listToSelect = [x for x in listToSelect if x not in set(skipped)]
+        self.cached_lo_save_active(active=listToSelect)
         #--Done/Error Message
         message = u''
         if missingSet:
@@ -2468,6 +2482,26 @@ class ModInfos(FileInfos):
                                     masterless=True, bashed_patch=True)
                 return modName
         return None
+
+    def get_active_bsas(self):
+        """Return active bsas and the order of their activator mods. If a mod
+        activates more than one bsa, their relative order is undefined."""
+        # TODO(ut): get those activated by inis
+        active_bsas = OrderedDict()
+        # bsaInfos must be updated
+        bsas = dict(bsaInfos.iteritems())
+        for j, mod in enumerate(load_order.cached_active_tuple()):
+            mod_bsas = self[mod].mod_bsas(bsas)
+            for b in mod_bsas:
+                active_bsas[b] = j
+                del bsas[b.name]
+        return active_bsas
+
+    @staticmethod
+    def plugin_wildcard(file_str=_(u'Mod Files')):
+        join_star = u';*'.join(bush.game.espm_extensions)
+        return bush.game.displayName + u' ' + file_str + u' (*' + join_star \
+               + u')|*' + join_star
 
     #--Mod move/delete/rename -------------------------------------------------
     def _lo_caches_remove_mods(self, to_remove):
