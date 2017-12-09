@@ -1,7 +1,211 @@
 plugins:
+  - name: 'AllSetsExtended.esp'
+    dirty:
+      - crc: 0x30c3276a
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 42
+  - name: 'ArmorKeywords.esm'
+    dirty:
+      - crc: 0x30156c76
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 1
+  - name: 'Armorsmith Extended.esp'
+    dirty:
+      - crc: 0x232590b7
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 5
+  - name: 'CC''s Unique Vault Suit Boxes - Far Harbor Patch.esp'
+    dirty:
+      - crc: 0xb02466b0
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        udr: 2
+  - name: 'CC''s Unique Vault Suit Boxes.esp'
+    dirty:
+      - crc: 0x8a219a39
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 2
+  - name: 'CombatZoneRestored.esp'
+    dirty:
+      - crc: 0x86419c03
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 20
+        udr: 20
+        nav: 1
+  - name: 'Companion_ShutUp.esp'
+    dirty:
+      - crc: 0x498d961c
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 6
+  - name: 'DiamondLighting.esp'
+    dirty:
+      - crc: 0x306fdd54
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 1
+        udr: 4
+  - name: 'Diverse Cats.esp'
+    dirty:
+      - crc: 0xea3b193f
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 6
+  - name: 'DLCCoast.esm'
+    dirty:
+      - crc: 0xf1f28026
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 75
+        udr: 86
+  - name: 'DLCNukaWorld.esm'
+    dirty:
+      - crc: 0x43d25c56
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 193
+        udr: 418
+        nav: 7
+  - name: 'DLCRobot.esm'
+    dirty:
+      - crc: 0xd69027ea
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 45
+        udr: 38
+        nav: 1
+  - name: 'DLCworkshop01.esm'
+    dirty:
+      - crc: 0x47bae27e
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 6
+  - name: 'DLCworkshop02.esm'
+    dirty:
+      - crc: 0x83abc821
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 2
+  - name: 'DLCworkshop03.esm'
+    dirty:
+      - crc: 0xe0089fbb
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 18
+        udr: 10
   - name: 'FO4Merged.esp'
     tag:
       - NoMerge
+  - name: 'Hot Sosig.esp'
+    dirty:
+      - crc: 0x967e4d12
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 1
+  - name: 'MAGS.esp'
+    dirty:
+      - crc: 0xa9913693
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 12
+        udr: 9
+  - name: 'NukaRadBans.esp'
+    dirty:
+      - crc: 0x174f8132
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        udr: 1
+      - crc: 0x717e7f08
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        udr: 1
+  - name: 'nvvault1080.esp'
+    dirty:
+      - crc: 0xd6acc264
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 5
+  - name: 'RailroadPerksCut.esp'
+    dirty:
+      - crc: 0x98ccfb8b
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 4
+  - name: 'Sanctuary Terminals.esp'
+    dirty:
+      - crc: 0x6cfbe10e
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 4
+  - name: 'SettlementAttacksBeyondFH.esp'
+    dirty:
+      - crc: 0xe0fb33f8
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 1
+  - name: 'slevins_chemVFX-Light.esp'
+    dirty:
+      - crc: 0xf46cb5c0
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 2
   - name: 'Smashed Patch.esp'
     tag:
       - NoMerge
+  - name: 'Some Assembly Required (Legendary Patch).esp'
+    dirty:
+      - crc: 0x1e1ce4d4
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        udr: 3
+  - name: 'Some Assembly Required.esp'
+    dirty:
+      - crc: 0xae45ec68
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 15
+  - name: 'StarlightLOD.esp'
+    dirty:
+      - crc: 0x31827654
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 4
+  - name: 'starlightwingfix_v3.esp'
+    dirty:
+      - crc: 0xd8d7f936
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 10
+        udr: 1
+        nav: 1
+  - name: 'tsuki no hana.esp'
+    dirty:
+      - crc: 0x1284f3e5
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 5
+        udr: 2
+  - name: 'UniqueUniques.esp'
+    dirty:
+      - crc: 0x1ac3385e
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 8
+  - name: 'Vault Girl.esp'
+    dirty:
+      - crc: 0xe5ad59a1
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 1
+  - name: 'Vault-Tec Historical Preservation Initiative.esp'
+    dirty:
+      - crc: 0xc8545353
+        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 3
+        udr: 9

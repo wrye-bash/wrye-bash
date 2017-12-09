@@ -1,17 +1,58 @@
 plugins:
-  - name: 'Update.esm'
+  - name: '3DNPC.esp'
     tag:
-      - Delev
-    dirty:
-      - crc: 0x8a234131
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 235
-        udr: 91
+      - Actors.ACBS
+      - Actors.AIPackages
+      - C.Acoustic
+      - C.Climate
+      - C.Encounter
+      - C.Light
+      - C.Location
+      - C.Music
+      - C.Owner
+      - C.RecordFlags
+      - C.Regions
+      - C.Water
+      - Invent
   - name: '3rdEraWeapMoS-lvlList.esp'
     tag:
       - Delev
       - Relev
+  - name: 'Alternate Start - Live Another Life.esp'
+    tag:
+      - C.Location
+  - name: 'AyleidCitadel.esp'
+    tag:
+      - C.Regions
+  - name: 'Beasts of Tamriel.esp'
+    tag:
+      - Actors.ACBS
+      - C.Encounter
+      - C.Location
+      - C.RecordFlags
+      - C.Regions
+      - C.Water
+      - Invent
+      - Relev
+  - name: 'Better_Male_Presets.esp'
+    tag:
+      - NoMerge
+  - name: 'BetterQuestObjectives.esp'
+    tag:
+      - NoMerge
+  - name: 'CraftingSupplies_AIO_ALL.esp'
+    tag:
+      - Invent
+  - name: 'Cutting Room Floor.esp'
+    tag:
+      - C.Location
+      - C.Owner
+      - C.RecordFlags
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Stats
   - name: 'Dawnguard.esm'
     tag:
       - Delev
@@ -24,64 +65,232 @@ plugins:
         itm: 628
         udr: 82
         nav: 57
+      - crc: 0x9ff5624
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 6
+        nav: 57
       - crc: 0xd2cf128
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 6
+        nav: 57
+      - crc: 0xd694ec0
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 621
+        udr: 82
         nav: 57
       - crc: 0x1b95f26b
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 6
         nav: 57
-  - name: 'Hearthfires.esm'
-    tag:
-      - Invent
-    dirty:
-      - crc: 0xfbd3fb4c
+      - crc: 0xbfba5a40
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 178
-        udr: 11
-        nav: 5
+        itm: 621
+        udr: 82
+        nav: 57
+  - name: 'DBM_CRF_Patch.esp'
+    tag:
+      - Factions
+      - Names
+  - name: 'DBM_HelgenReborn_Patch.esp'
+    tag:
+      - Factions
+  - name: 'DBM_SkyrimUnderground_Patch.esp'
+    tag:
+      - Invent
+  - name: 'Deadly Wenches.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Definitive Hearthfire Supllies.esp'
+    tag:
+      - Invent
+  - name: 'DLCIntegration.esp'
+    tag:
+      - Delev
+      - Invent
   - name: 'Dragonborn.esm'
     tag:
       - Invent
       - Relev
     dirty:
+      - crc: 0x1ad3b6f1
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 69
+        udr: 8
+        nav: 1
+      - crc: 0x32e19c49
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 67
+        udr: 8
+        nav: 1
       - crc: 0xc7e30215
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 69
         udr: 8
         nav: 1
-  - name: 'Cutting Room Floor.esp'
+  - name: 'HarvestOverhaul_Redone.esp'
     tag:
-      - C.Location
-      - C.Owner
-      - C.RecordFlags
       - Delev
-      - Graphics
       - Invent
-      - Names
-      - Stats
+      - Relev
+  - name: 'Hearthfires.esm'
+    tag:
+      - Invent
+    dirty:
+      - crc: 0xeb21f448
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 178
+        udr: 11
+        nav: 5
+      - crc: 0xed949396
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 178
+        udr: 11
+        nav: 5
+      - crc: 0xfbd3fb4c
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 178
+        udr: 11
+        nav: 5
+  - name: 'High Level Enemies - Dawnguard.esp'
+    tag:
+      - Relev
+  - name: 'High Level Enemies - Dragonborn.esp'
+    tag:
+      - Relev
+  - name: 'High Level Enemies.esp'
+    tag:
+      - Relev
+  - name: 'Hothtrooper44_ArmorCompilation.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Immersive Jewelry.esp'
+    tag:
+      - Invent
+      - Relev
   - name: 'Imperious - Races of Skyrim.esp'
     tag:
       - R.Description
       - R.Skills
-  - name: 'SSEMerged.esp'
+  - name: 'JK''s SkyHaven Forge.esp'
+    tag:
+      - C.Regions
+  - name: 'JKs Whiterun.esp'
+    tag:
+      - C.Location
+      - C.Water
+  - name: 'JS Armored Circlets SE.esp'
+    tag:
+      - Relev
+  - name: 'Kayla_CharPreset.esp'
     tag:
       - NoMerge
-  - name: 'BetterQuestObjectives.esp'
+  - name: 'LADX_SSE.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+  - name: 'Lagertha_CharPreset.esp'
     tag:
       - NoMerge
+  - name: 'Lydia Face Preset 64bit.esp'
+    tag:
+      - NoMerge
+  - name: 'MLU - Immersive Armors.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Morrowloot.esp'
+    tag:
+      - Delev
+      - Relev
   - name: 'Open Cities Skyrim.esp'
     tag:
       - C.Location
-  - name: 'Alternate Start - Live Another Life.esp'
+  - name: 'RealisticWaterTwo.esp'
     tag:
       - C.Location
-  - name: 'Morrowloot.esp'
+      - C.Regions
+      - C.Water
+      - Graphics
+  - name: 'Rebalanced Leveled Lists.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+  - name: 'RichMerchantsSkyrim_x\d+.esp'
+    tag:
+      - Relev
+  - name: 'Severa_CharPreset.esp'
+    tag:
+      - NoMerge
+  - name: 'SexLab-AmorousAdventures.esp'
+    tag:
+      - C.Climate
+      - C.Water
+  - name: 'Skyrim Alchemy Fixed - Ordinator.esp'
+    tag:
+      - Delev
+  - name: 'Skyrim Alchemy Fixed.esp'
+    tag:
+      - Delev
+  - name: 'Solitude Expansion.esp'
+    tag:
+      - C.Location
+      - C.Regions
+  - name: 'SSEMerged.esp'
+    tag:
+      - NoMerge
+  - name: 'TrueStormsSE.esp'
+    tag:
+      - Sound
+  - name: 'ULALPatch.esp'
+    dirty:
+      - crc: 0xdde49e20
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 4
+        udr: 1
+  - name: 'ULRiverwoodForestJKPatch.esp'
+    tag:
+      - C.Water
+  - name: 'Unique Loot Compatibility Patch.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+  - name: 'Update.esm'
+    tag:
+      - Delev
+    dirty:
+      - crc: 0x3f56d693
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 230
+        udr: 91
+      - crc: 0x4a01fea5
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 234
+        udr: 91
+      - crc: 0x8a234131
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 235
+        udr: 91
+  - name: 'WarmongerArmory_LeveledList.esp'
     tag:
       - Delev
       - Relev
