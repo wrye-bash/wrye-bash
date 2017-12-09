@@ -137,7 +137,7 @@ class AccessDeniedError(FileOperationError):
 class InvalidPathsError(FileOperationError):
     def __init__(self, source, target): # type: (unicode, unicode) -> None
         super(InvalidPathsError, self).__init__(
-            124, u'Invalid paths:\nsource: {}\ntarget: {}'.format(source, target))
+            124, u'Invalid paths:\nsource: %s\ntarget: %s' % (source, target))
 
 class DirectoryFileCollisionError(FileOperationError):
     def __init__(self, source, dest):  ## type: (Path, Path) -> None

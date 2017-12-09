@@ -116,6 +116,7 @@ def _getbestencoding(bitstream):
     return encoding_,confidence
 
 def decode(byte_str, encoding=None, avoidEncodings=()):
+    """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
     if encoding:
@@ -134,6 +135,7 @@ def decode(byte_str, encoding=None, avoidEncodings=()):
 
 def encode(text_str, encodings=encodingOrder, firstEncoding=None,
            returnEncoding=False):
+    """Encode unicode string to byte string, using heuristics on encoding."""
     if isinstance(text_str, str) or text_str is None:
         if returnEncoding: return text_str, None
         else: return text_str

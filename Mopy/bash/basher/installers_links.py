@@ -484,7 +484,7 @@ class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
 class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
     """Toggle skipTESVBsl setting and update."""
     _text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
-    def _append(self, window): return bush.game.fsName == 'Skyrim'
+    def _append(self, window): return u'Skyrim' in bush.game.fsName
 
 class Installers_GlobalSkips(balt.MenuLink):
     """Global Skips submenu."""

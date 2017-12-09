@@ -161,6 +161,7 @@ def list_archive(archive, parse_archive_line, __reList=reListArchive):
     _parse_archive_line examples."""
     command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, archive.s)
     ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
                                 stdin=subprocess.PIPE,
                                 startupinfo=startupinfo).communicate()
     for line in ins.splitlines(True): # keepends=True

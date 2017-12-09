@@ -460,7 +460,7 @@ def __copyOrMove(operation, source, target, renameOnCollision, parent):
 
 def _fileOperation(operation, source, target=None, allowUndo=True,
                    confirm=True, renameOnCollision=False, silent=False,
-                   parent=None):
+                   parent=None, __shell=True):
     """Docs WIP
     :param operation: one of FO_MOVE, FO_COPY, FO_DELETE, FO_RENAME
     :param source: a Path, basestring or an iterable of those (yak,
@@ -490,7 +490,8 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         target = [abspath(u'%s' % target)]
     else:
         target = [abspath(u'%s' % x) for x in target]
-    if shell is not None:
+    _source = source; _target = target
+    if __shell and shell is not None:
         # flags
         flags = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
         flags |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
@@ -518,8 +519,12 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
             return dict(mapping)
         else:
             if result == 124:
-                raise InvalidPathsError(source.replace(u'\x00', u'\n'),
-                                         target.replace(u'\x00', u'\n'))
+                deprint(u'Invalid paths:\nsource: %s\ntarget: %s\nRetrying' % (
+                    source.replace(u'\x00', u'\n'),
+                    target.replace(u'\x00', u'\n')))
+                return _fileOperation(operation, _source, _target, allowUndo,
+                                      confirm, renameOnCollision, silent,
+                                      parent, __shell=False)
             raise FileOperationErrorMap.get(result, FileOperationError(result))
     else: # Use custom dialogs and such
         import balt # TODO(ut): local import, env should be above balt...
