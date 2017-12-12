@@ -587,6 +587,7 @@ class OblivionIni(IniFile):
     #--BSA Redirection --------------------------------------------------------
     def setBsaRedirection(self,doRedirect=True):
         """Activate or deactivate BSA redirection - game ini must exist!"""
+        if self.isCorrupted: return
         section,key = bush.game.ini.bsaRedirection
         if not section or not key: return
         aiBsa = dirs['mods'].join(u'ArchiveInvalidationInvalidated!.bsa')
