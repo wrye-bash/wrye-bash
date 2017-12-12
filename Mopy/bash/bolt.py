@@ -56,7 +56,6 @@ import exception
 struct_pack = struct.pack
 struct_unpack = struct.unpack
 
-close_fds = True
 #-- To make commands executed with Popen hidden
 startupinfo = None
 if os.name == u'nt':
@@ -935,9 +934,9 @@ class Path(object):
         """Starts file as if it had been doubleclicked in file explorer."""
         if self.cext == u'.exe':
             if not exeArgs:
-                subprocess.Popen([self.s], close_fds=close_fds)
+                subprocess.Popen([self.s], close_fds=True)
             else:
-                subprocess.Popen(exeArgs, executable=self.s, close_fds=close_fds)
+                subprocess.Popen(exeArgs, executable=self.s, close_fds=True)
         else:
             os.startfile(self._s)
     def copyTo(self,destName):

@@ -58,6 +58,22 @@ tooldirs = {}
 # settings dictionary - belongs to a dedicated settings module below bolt - WIP !
 settings = None # bolt.Settings !
 
+# restarting info
+is_restarting = False # set to true so Bash is restarted via the exit hook
+sys_argv = [] # set to the sys.argv used to start bash - modify when restarting
+
+def update_sys_argv(arg):
+    """Replace existing option with new one, option must be in *long* format"""
+    if len(arg) == 2:
+        try:
+            option_index = sys_argv.index(arg[0])
+            sys_argv[option_index + 1] = arg[1]
+        except ValueError:
+            sys_argv.extend(arg)
+    else: # boolean switches like '--uac'
+        if not arg[0] in sys_argv:
+            sys_argv.append(arg[0])
+
 #--Temp Files/Dirs - originally in Installer, probably belong to a new module
 ################################## DO NOT USE #################################
 _tempDir = None # type: bolt.Path | None

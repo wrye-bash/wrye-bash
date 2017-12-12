@@ -236,8 +236,7 @@ class App_Button(StatusBar_Button):
             try:
                 subprocess.Popen(
                     (self.java.stail, u'-jar', self.jar.stail, self.appArgs),
-                    #close_fds is needed for the one instance checker
-                    executable=self.java.s, close_fds=bolt.close_fds)
+                     executable=self.java.s, close_fds=True)
             except UnicodeError:
                 self._showUnicodeError()
             except Exception as error:
@@ -273,8 +272,7 @@ class App_Button(StatusBar_Button):
             else:
                 exePath.head.setcwd()
             try:
-                #close_fds is needed for the one instance checker
-                popen = subprocess.Popen(args, close_fds=bolt.close_fds)
+                popen = subprocess.Popen(args, close_fds=True)
                 if self.wait:
                     popen.wait()
             except UnicodeError:

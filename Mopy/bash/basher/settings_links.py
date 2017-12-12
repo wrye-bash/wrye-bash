@@ -318,7 +318,7 @@ class Settings_Language(RadioLink):
         if balt.askYes(Link.Frame,
                 _(u'Wrye Bash needs to restart to change languages.  Do you '
                   u'want to restart?'), _(u'Restart Wrye Bash')):
-            Link.Frame.Restart(('--Language',self._lang))
+            Link.Frame.Restart(['--Language', self._lang])
 
 #------------------------------------------------------------------------------
 class Settings_PluginEncodings(MenuLink):
@@ -374,7 +374,7 @@ class _Settings_Game(RadioLink):
 
     def Execute(self):
         if self._check(): return
-        Link.Frame.Restart(('-o', bush.game_path(self._text).s))
+        Link.Frame.Restart(['--oblivionPath', bush.game_path(self._text).s])
 
 #------------------------------------------------------------------------------
 class Settings_UnHideButtons(TransLink):
@@ -442,7 +442,7 @@ class Settings_UAC(AppendableLink, ItemLink):
         if balt.askYes(Link.Frame,
                 _(u'Restart Wrye Bash with administrator privileges?'),
                 _(u'Administrator Mode'), ):
-            Link.Frame.Restart(True,True)
+            Link.Frame.Restart(['--uac'])
 
 class Settings_Deprint(CheckLink):
     """Turn on deprint/delist."""
