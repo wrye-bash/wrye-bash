@@ -30,7 +30,7 @@ import os as _os
 
 language = None
 AppVersion = u"307" # must represent a valid float
-bashIni = None
+__bashIni = None
 
 #--Null strings (for default empty byte arrays)
 null1 = '\x00'
@@ -40,12 +40,12 @@ null4 = null1*4
 
 def GetBashIni(iniPath=None, reload_=False): ##: needs work
     iniPath = iniPath or u'bash.ini'
-    global bashIni
-    if reload_ or bashIni is None:
+    global __bashIni
+    if reload_ or __bashIni is None:
         if _os.path.exists(iniPath):
-            bashIni = _cp.ConfigParser()
-            bashIni.read(iniPath)
-    return bashIni
+            __bashIni = _cp.ConfigParser()
+            __bashIni.read(iniPath)
+    return __bashIni
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()
