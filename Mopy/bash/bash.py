@@ -284,47 +284,21 @@ def _main(opts):
     #--Bash installation directories, set on boot, not likely to change
     _init_dirs_mopy()
 
-    # Detect the game we're running for ---------------------------------------
-    import bush
-    bolt.deprint (u'Searching for game to manage:')
-    # set the Bash ini global in bass
+    # Read the bash.ini file and set the bashIni global in bass TODO: restore from backup !
     bashIni = bass.GetBashIni()
-    ret = bush.detect_and_set_game(opts.oblivionPath, bashIni)
-    if ret is not None: # None == success
-        if len(ret) == 0:
-            msgtext = _(
-                u"Wrye Bash could not find a game to manage. Please use "
-                u"-o command line argument to specify the game path")
-        else:
-            msgtext = _(
-                u"Wrye Bash could not determine which game to manage.  "
-                u"The following games have been detected, please select "
-                u"one to manage.")
-            msgtext += u'\n\n'
-            msgtext += _(
-                u'To prevent this message in the future, use the -o command '
-                u'line argument or the bash.ini to specify the game path')
-        retCode = _wxSelectGame(ret, msgtext)
-        if retCode is None:
-            bolt.deprint(u"No games were found or Selected. Aborting.")
-            return
-        # Add the game to the command line, so we use it if we restart
-        bass.update_sys_argv(['--oblivionPath', bush.game_path(retCode).s])
-        bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
 
+    # Detect the game we're running for ---------------------------------------
+    bush_game, game_path = _import_bush_and_set_game(opts, bashIni)
+    if not bush_game: return
     # from now on bush.game is set
 
     #--Initialize Directories and some settings
     #  required before the rest has imported
     SetUserPath(uArg=opts.userPath)
-
-    # Force Python mode if CBash can't work with this game
-    bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
     try:
         import bosh # this imports balt (DUH) which imports wx
-        env.isUAC = env.testUAC(bush.gamePath.join(u'Data'))
+        env.isUAC = env.testUAC(game_path.join(u'Data'))
         bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
-
         # if HTML file generation was requested, just do it and quit
         if opts.genHtml is not None:
             msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
@@ -384,7 +358,7 @@ def _main(opts):
                 u"to the %(gameName)s directory.  If you do not start Wrye "
                 u"Bash with elevated privileges, you will be prompted at "
                 u"each operation that requires elevated privileges.") % {
-                          'gameName': bush.game.displayName}
+                          'gameName': bush_game.displayName}
             uacRestart = balt.ask_uac_restart(message,
                                               title=_(u'UAC Protection'),
                                               mopy=bass.dirs['mopy'])
@@ -395,6 +369,35 @@ def _main(opts):
 
     app.Init() # Link.Frame is set here !
     app.MainLoop()
+
+def _import_bush_and_set_game(opts, bashIni):
+    import bush
+    bolt.deprint(u'Searching for game to manage:')
+    ret = bush.detect_and_set_game(opts.oblivionPath, bashIni)
+    if ret is not None:  # None == success
+        if len(ret) == 0:
+            msgtext = _(
+                u"Wrye Bash could not find a game to manage. Please use "
+                u"-o command line argument to specify the game path")
+        else:
+            msgtext = _(
+                u"Wrye Bash could not determine which game to manage.  "
+                u"The following games have been detected, please select "
+                u"one to manage.")
+            msgtext += u'\n\n'
+            msgtext += _(
+                u'To prevent this message in the future, use the -o command '
+                u'line argument or the bash.ini to specify the game path')
+        retCode = _wxSelectGame(ret, msgtext)
+        if retCode is None:
+            bolt.deprint(u"No games were found or Selected. Aborting.")
+            return None, None
+        # Add the game to the command line, so we use it if we restart
+        bass.update_sys_argv(['--oblivionPath', bush.game_path(retCode).s])
+        bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
+    # Force Python mode if CBash can't work with this game
+    bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
+    return bush.game, bush.gamePath
 
 def _init_dirs_mopy():
     dirs = bass.dirs
