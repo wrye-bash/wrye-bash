@@ -1653,12 +1653,55 @@ class CBash_ItemStats:
                     write(out, attrs, map(attr_value.get, attrs))
 
 #------------------------------------------------------------------------------
-class ScriptText:
+class _ScriptText(object):
     """import & export functions for script text."""
 
     def __init__(self,types=None,aliases=None):
         self.eid_data = {}
         self.aliases = aliases or {} #--For aliasing mod names
+
+    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
+        """Writes stats to specified text file."""
+        eid_data = self.eid_data
+        x = len(skip)
+        exportedScripts = []
+        y = len(eid_data)
+        z = 0
+        num = 0
+        r = len(deprefix)
+        with Progress(_(u"Export Scripts")) as progress:
+            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
+                text, longid = eid_data[eid]
+                text = decode(text) # TODO(ut) was only present in PBash version - needed ?
+                if skipcomments:
+                    tmp = u''
+                    for line in text.split(u'\n'):
+                        pos = line.find(u';')
+                        if pos == -1:
+                            tmp += line + u'\n'
+                        elif pos == 0:
+                            continue
+                        else:
+                            if line[:pos].isspace(): continue
+                            tmp += line[:pos] + u'\n'
+                    text = tmp
+                z += 1
+                progress((0.5 + 0.5 / y * z),_(u"Exporting script %s.") % eid)
+                if x == 0 or skip.lower() != eid[:x].lower():
+                    fileName = eid
+                    if r >= 1 and deprefix == fileName[:r]:
+                        fileName = fileName[r:]
+                    num += 1
+                    outpath = dirs['patches'].join(folder).join(
+                        fileName + inisettings['ScriptFileExt'])
+                    with outpath.open('wb',encoding='utf-8-sig') as out:
+                        formid = u'0x%06X' % longid[1]
+                        out.write(u';' + longid[0].s + u'\r\n;' + formid + u'\r\n;' + eid + u'\r\n' + text)
+                    exportedScripts.append(eid)
+        return (_(u'Exported %d scripts from %s:') + u'\n') % (
+            num,esp) + u'\n'.join(exportedScripts)
+
+class ScriptText(_ScriptText):
 
     def readFromMod(self, modInfo, file_):
         """Reads stats from specified mod."""
@@ -1741,54 +1784,7 @@ class ScriptText:
         if eid_data: return True
         return False
 
-    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
-        """Writes stats to specified text file."""
-        eid_data = self.eid_data
-        x = len(skip)
-        exportedScripts = []
-        y = len(eid_data)
-        z = 0
-        num = 0
-        r = len(deprefix)
-        with Progress(_(u"Export Scripts")) as progress:
-            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
-                text, longid = eid_data[eid]
-                if skipcomments:
-                    tmp = u''
-                    for line in text.split(u'\n'):
-                        pos = line.find(u';')
-                        if pos == -1:
-                            tmp += line + u'\n'
-                        elif pos == 0:
-                            continue
-                        else:
-                            if line[:pos].isspace(): continue
-                            tmp += line[:pos] + u'\n'
-                    text = tmp
-                z += 1
-                progress((0.5+0.5/y*z),_(u"Exporting script %s.") % eid)
-                if x == 0 or skip.lower() != eid[:x].lower():
-                    fileName = eid
-                    if r >= 1 and deprefix == fileName[:r]:
-                        fileName = fileName[r:]
-                    num += 1
-                    outpath = dirs['patches'].join(folder).join(
-                        fileName + inisettings['ScriptFileExt'])
-                    with outpath.open('wb',encoding='utf-8-sig') as out:
-                        formid = u'0x%06X' % longid[1]
-                        out.write(u';' + longid[
-                            0].s + u'\r\n;' + formid + u'\r\n;' + eid +
-                                  u'\r\n' + text)
-                    exportedScripts.append(eid)
-        return (_(u'Exported %d scripts from %s:') + u'\n') % (
-            num,esp) + u'\n'.join(exportedScripts)
-
-class CBash_ScriptText:
-    """import & export functions for script text."""
-
-    def __init__(self,types=None,aliases=None):
-        self.eid_data = {}
-        self.aliases = aliases or {} #--For aliasing mod names
+class CBash_ScriptText(_ScriptText):
 
     def readFromMod(self, modInfo, file_):
         """Reads stats from specified mod."""
@@ -1861,48 +1857,6 @@ class CBash_ScriptText:
                     # insensitive
         if eid_data: return True
         return False
-
-    def writeToText(self,textPath,skip,folder,deprefix,esp,skipcomments):
-        """Writes stats to specified text file."""
-        eid_data = self.eid_data
-        x = len(skip)
-        exportedScripts = []
-        y = len(eid_data)
-        z = 0
-        num = 0
-        r = len(deprefix)
-        with Progress(_(u"Export Scripts")) as progress:
-            for eid in sorted(eid_data, key=lambda b: (b, eid_data[b][1])):
-                text, longid = eid_data[eid]
-                text = decode(text)
-                if skipcomments:
-                    tmp = u''
-                    for line in text.split(u'\n'):
-                        pos = line.find(u';')
-                        if pos == -1:
-                            tmp += line + u'\n'
-                        elif pos == 0:
-                            continue
-                        else:
-                            if line[:pos].isspace(): continue
-                            tmp += line[:pos] + u'\n'
-                    text = tmp
-                z += 1
-                progress((0.5 + 0.5 / y * z),_(u"Exporting script %s.") % eid)
-                if x == 0 or skip.lower() != eid[:x].lower():
-                    fileName = eid
-                    if r >= 1 and deprefix == fileName[:r]:
-                        fileName = fileName[r:]
-                    num += 1
-                    outpath = dirs['patches'].join(folder).join(
-                        fileName + inisettings['ScriptFileExt'])
-                    with outpath.open('wb',encoding='utf-8-sig') as out:
-                        formid = u'0x%06X' % longid[1]
-                        out.write(u';' + longid[0].s + u'\r\n;' + formid +
-                                  u'\r\n;' + eid + u'\r\n' + text)
-                    exportedScripts.append(eid)
-        return (_(u'Exported %d scripts from %s:') + u'\n') % (
-            num,esp) + u'\n'.join(exportedScripts)
 
 #------------------------------------------------------------------------------
 class _UsesEffectsMixin(object):

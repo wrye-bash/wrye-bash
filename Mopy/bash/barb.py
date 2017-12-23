@@ -248,9 +248,8 @@ class RestoreSettings(BaseBackupSettings):
             if temp_settings_restore_dir:
                 temp_settings_restore_dir.rmtree(safety=u'WryeBash_')
 
-    def _Apply(self, temp_dir):
-        command = archives.extractCommand(self._settings_file, temp_dir)
-        archives.extract7z(command, self._settings_file)
+    def incompatible_backup(self, temp_dir):
+        # TODO add game check, bash.ini check
         with temp_dir.join(u'backup.dat').open('rb') as ins:
             # version of Bash that created the backed up settings
             saved_settings_version = cPickle.load(ins)
@@ -266,8 +265,8 @@ class RestoreSettings(BaseBackupSettings):
                 _(u'You cannot use this backup with this version of Bash.')]),
                       _(u'Error: Settings are from newer Bash version'))
             self.WarnFailed()
-            return
-        elif settings_saved_with != bass.settings['bash.version'] and \
+            return True
+        elif settings_saved_with != bass.settings['bash.version'] and not \
              askWarning(self.parent, u'\n'.join([
                  _(u'The version of Bash used to create the selected backup '
                    u'file does not match the current Bash version!'),
@@ -275,7 +274,13 @@ class RestoreSettings(BaseBackupSettings):
                      settings_saved_with, bass.settings['bash.version']), u'',
                  _(u'Do you want to restore this backup anyway?')]),
                                            _(u'Warning: Version Mismatch!')):
-            return
+            return True
+        return False
+
+    def _Apply(self, temp_dir):
+        command = archives.extractCommand(self._settings_file, temp_dir)
+        archives.extract7z(command, self._settings_file)
+        if self.incompatible_backup(temp_dir): return
 
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)

@@ -83,7 +83,7 @@ class Files_Unhide(ItemLink):
         if not srcFiles:
             return
         moved = self.window.data_store.move_infos(srcFiles, destFiles,
-                                                  self.window)
+                                                  self.window, balt.Link.Frame)
         if moved:
             self.window.RefreshUI( # pick one at random to show details for
                 detail_item=next(iter(moved)), refreshSaves=True)
@@ -117,9 +117,12 @@ class File_Duplicate(ItemLink):
         u' which will not be attached to the duplicate mod.')
 
     def _askResourcesOk(self, fileInfo):
-        return bosh.modInfos.askResourcesOk(fileInfo, parent=self.window,
-          title=_(u'Duplicate '), bsaAndVoice=self._bsaAndVoice, bsa=self._bsa,
-          voice=self._voice)
+        msg = bosh.modInfos.askResourcesOk(fileInfo,
+                                           bsaAndVoice=self._bsaAndVoice,
+                                           bsa=self._bsa, voice=self._voice)
+        if not msg: return True  # resources ok
+        return balt.askWarning(self.window, msg,
+                               _(u'Duplicate ') + fileInfo.name.s)
 
     @balt.conversation
     def Execute(self):

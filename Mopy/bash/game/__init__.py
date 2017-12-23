@@ -149,7 +149,6 @@ class ini:
 class ess:
     # Save file capabilities
     canReadBasic = False    # Can read the info needed for the Save Tab display
-    canEditMasters = False  # Can adjust save file masters
     canEditMore = False     # Advanced editing
     ext = u'.ess'           # Save file extension
 

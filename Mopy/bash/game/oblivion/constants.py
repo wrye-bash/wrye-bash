@@ -1529,8 +1529,8 @@ statsHeaders = (
 # SoundPatcher
 #------------------------------------------------------------------------------
 # Needs longs in SoundPatcher
-soundsLongsTypes = {'MGEF', 'ACTI', 'LIGH', 'WTHR', 'CONT', 'DOOR',
-                    'SOUN', 'WEAP'} # those 2 were not included before
+soundsLongsTypes = {'ACTI', 'CONT', 'CREA', 'DOOR', 'LIGH', 'MGEF', 'SOUN',
+                    'WATR', 'WTHR'}
 soundsTypes = {
     "ACTI": ('sound',),
     "CONT": ('soundOpen','soundClose',),

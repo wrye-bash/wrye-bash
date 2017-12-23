@@ -392,7 +392,7 @@ for value, attr in enumerate(API_FIELDS.__slots__):
     setattr(API_FIELDS, attr, value)
 
 class ICASEMixin:
-    """Case insesnsitive string/unicode class mixin.  Performs like str/unicode,
+    """Case insensitive string/unicode class mixin.  Performs like str/unicode,
        except comparisons are case insensitive."""
     def __eq__(self, other):
         try: return self.lower() == other.lower()

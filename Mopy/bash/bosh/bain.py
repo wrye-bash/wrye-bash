@@ -1637,9 +1637,9 @@ class InstallersData(DataStore):
         # hasty method to use in UIList.hide(), see FileInfos.move_info()
         self.store_dir.join(filename).moveTo(destDir.join(filename))
 
-    def move_infos(self, sources, destinations, window):
+    def move_infos(self, sources, destinations, window, bash_frame):
         moved = super(InstallersData, self).move_infos(sources, destinations,
-                                                       window)
+                                                       window, bash_frame)
         self.irefresh(what='I', pending=moved)
         return moved
 

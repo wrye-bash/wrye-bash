@@ -29,10 +29,10 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import collections
 import struct
-from env import get_game_path
-from bolt import GPath, Path, deprint
-from exception import BoltError
 import game as game_init
+from bolt import GPath, Path, deprint
+from env import get_game_path
+from exception import BoltError
 
 # Game detection --------------------------------------------------------------
 game = None         # type: game_init
@@ -78,7 +78,7 @@ def _supportedGames(useCache=True):
         deprint(u' %s:' % foundName, _registryGames[foundName])
     return _registryGames.copy()
 
-def _detectGames(cli_path=u'',bashIni=None):
+def _detectGames(cli_path=u'', bash_ini_=None):
     """Detect which supported games are installed.
 
     - If Bash supports no games raise.
@@ -112,9 +112,9 @@ def _detectGames(cli_path=u'',bashIni=None):
             _(u'No known game in the path specified via -o argument: ' +
               u'%(path)s'))
     #--Second: check if sOblivionPath is specified in the ini
-    if bashIni and bashIni.has_option(u'General', u'sOblivionPath') \
-               and not bashIni.get(u'General', u'sOblivionPath') == u'.':
-        test_path = GPath(bashIni.get(u'General', u'sOblivionPath').strip())
+    if bash_ini_ and bash_ini_.has_option(u'General', u'sOblivionPath') \
+               and not bash_ini_.get(u'General', u'sOblivionPath') == u'.':
+        test_path = GPath(bash_ini_.get(u'General', u'sOblivionPath').strip())
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
         installPaths['ini'] = (test_path,
@@ -159,9 +159,9 @@ def __setGame(name, msg):
         if i != name: del _allGames[i]
     game.init()
 
-def detect_and_set_game(cli_game_dir=u'', bashIni=None, name=None):
+def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
     if name is None: # detect available games
-        foundGames_, name = _detectGames(cli_game_dir, bashIni)
+        foundGames_, name = _detectGames(cli_game_dir, bash_ini_)
         foundGames.update(foundGames_) # set the global name -> game path dict
     else:
         name = _display_fsName[name] # we are passed a display name in

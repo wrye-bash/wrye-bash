@@ -151,17 +151,6 @@ class CoSaves:
     def get_new_paths(old_path, new_path):
         return zip(CoSaves.getPaths(old_path), CoSaves.getPaths(new_path))
 
-    def getTags(self):
-        """Returns tags expressing whether cosaves exist and are correct."""
-        cPluggy,cObse = (u'',u'')
-        save = self.savePath
-        pluggy,obse = self.paths
-        if pluggy.exists():
-            cPluggy = u'XP'[abs(pluggy.mtime - save.mtime) < 10]
-        if obse.exists():
-            cObse = u'XO'[abs(obse.mtime - save.mtime) < 10]
-        return cObse,cPluggy
-
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class BsaFile:
@@ -1093,15 +1082,17 @@ class INIInfo(IniFile):
             return bolt.winNewLines(log.out.getvalue())
 
 #------------------------------------------------------------------------------
-from .save_files import get_save_header_type
+from .save_headers import get_save_header_type, SaveFileHeader
 from ._saves import PluggyFile
 from . import cosaves
 
 class SaveInfo(FileInfo):
     try:
         _cosave_type = cosaves.get_cosave_type(bush.game.fsName)
+        save_header_type = get_save_header_type(bush.game.fsName)
     except AttributeError:
         _cosave_type = cosaves.ACoSaveFile
+        save_header_type = SaveFileHeader
 
     def getFileInfos(self): return saveInfos
 
@@ -1122,7 +1113,7 @@ class SaveInfo(FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
+            self.header = self.save_header_type(self.abs_path)
         except SaveHeaderError as e:
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
         self._reset_masters()
@@ -1152,9 +1143,16 @@ class SaveInfo(FileInfo):
             cosave.map_masters(masterMap)
             cosave.write_cosave_safe()
 
-    def coSaves(self):
-        """Returns CoSaves instance corresponding to self."""
-        return CoSaves(self.getPath())
+    def get_cosave_tags(self):
+        """Return strings expressing whether cosaves exist and are correct."""
+        cPluggy, cObse = (u'', u'')
+        pluggy = self.name.root + u'.pluggy'
+        obse = self._get_se_cosave_path()
+        if pluggy.exists():
+            cPluggy = u'XP'[abs(pluggy.mtime - self.mtime) < 10]
+        if obse and obse.exists():
+            cObse = u'XO'[abs(obse.mtime - self.mtime) < 10]
+        return cObse, cPluggy
 
     def backup_paths(self, first=False):
         save_paths = super(SaveInfo, self).backup_paths(first)
@@ -1163,8 +1161,8 @@ class SaveInfo(FileInfo):
 
     def get_cosave(self):
         """:rtype: cosaves.ACoSaveFile"""
-        if self._cosave_type is None: return None
-        cosave_path = self.getPath().root + u'.' + bush.game.se.shortName.lower()
+        cosave_path = self._get_se_cosave_path()
+        if cosave_path is None: return None
         try:
             return self._cosave_type(cosave_path) # type: cosaves.ACoSaveFile
         except (OSError, IOError, FileError) as e:
@@ -1172,6 +1170,10 @@ class SaveInfo(FileInfo):
                 isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
                 deprint(u'Failed to open %s' % cosave_path, traceback=True)
             return None
+
+    def _get_se_cosave_path(self):
+        if self._cosave_type is None: return None
+        return self.getPath().root + u'.' + self._cosave_type.signature.lower()
 
 #------------------------------------------------------------------------------
 from . import bsa_files
@@ -1286,7 +1288,7 @@ class DataStore(DataDict):
 
     def get_hide_dir(self, name): return self.hidden_dir
 
-    def move_infos(self, sources, destinations, window):
+    def move_infos(self, sources, destinations, window, bash_frame):
         # hasty hack for Files_Unhide, must absorb move_info
         try:
             env.shellMove(sources, destinations, parent=window)
@@ -2299,15 +2301,17 @@ class ModInfos(FileInfos):
         return tagList
 
     @staticmethod
-    def askResourcesOk(fileInfo, parent, title, bsaAndVoice, bsa, voice):
-        if not fileInfo.isMod(): return True
+    def askResourcesOk(fileInfo, bsaAndVoice, bsa, voice):
+        if not fileInfo.isMod():
+            return u''
         hasBsa, hasVoices = fileInfo.hasResources()
-        if (hasBsa, hasVoices) == (False,False): return True
+        if (hasBsa, hasVoices) == (False,False):
+            return u''
         mPath, name = fileInfo.name, fileInfo.name.s
         if hasBsa and hasVoices: msg = bsaAndVoice % (mPath.sroot, name, name)
         elif hasBsa: msg = bsa % (mPath.sroot, name)
         else: msg = voice % name # hasVoices
-        return balt.askWarning(parent, msg, title + name)
+        return msg
 
     #--Active mods management -------------------------------------------------
     def lo_activate(self, fileName, doSave=True, _modSet=None, _children=None,
@@ -2569,10 +2573,11 @@ class ModInfos(FileInfos):
         self.lo_deactivate(fileName, doSave=False)
         FileInfos.move_info(self, fileName, destDir)
 
-    def move_infos(self, sources, destinations, window):
-        moved = super(ModInfos, self).move_infos(sources, destinations, window)
+    def move_infos(self, sources, destinations, window, bash_frame):
+        moved = super(ModInfos, self).move_infos(sources, destinations, window,
+                                                 bash_frame)
         self.refresh() # yak, it should have an "added" parameter
-        balt.Link.Frame.warn_corrupted(warn_saves=False)
+        bash_frame.warn_corrupted(warn_saves=False)
         return moved
 
     def get_hide_dir(self, name):
@@ -2770,13 +2775,14 @@ class SaveInfos(FileInfos):
         return renames
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
-        """Copies savefile and associated pluggy file."""
+        """Copies savefile and associated cosaves file(s)."""
         super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
         CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
 
-    def move_infos(self, sources, destinations, window):
+    def move_infos(self, sources, destinations, window, bash_frame):
         # CoSaves sucks - operations should be atomic
-        moved = super(SaveInfos,self).move_infos(sources, destinations, window)
+        moved = super(SaveInfos, self).move_infos(sources, destinations,
+                                                  window, bash_frame)
         for s, d in zip(sources, destinations):
             if d.tail in moved: CoSaves(s).move(d)
         for d in moved:
@@ -2784,7 +2790,7 @@ class SaveInfos(FileInfos):
                 self.refreshFile(d)
             except FileError:
                 pass # will warn below
-        balt.Link.Frame.warn_corrupted(warn_mods=False, warn_strings=False)
+        bash_frame.warn_corrupted(warn_mods=False, warn_strings=False)
         return moved
 
     def move_info(self, fileName, destDir):
@@ -2992,15 +2998,15 @@ class InstallerProject(InstallerProject): pass
 # Initialization --------------------------------------------------------------
 from ..env import get_personal_path, get_local_app_data_path
 
-def getPersonalPath(bashIni, my_docs_path):
+def getPersonalPath(bash_ini_, my_docs_path):
     #--Determine User folders from Personal and Local Application Data directories
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if my_docs_path:
         my_docs_path = GPath(my_docs_path)
         sErrorInfo = _(u"Folder path specified on command line (-p)")
-    elif bashIni and bashIni.has_option(u'General', u'sPersonalPath') and \
-            not bashIni.get(u'General', u'sPersonalPath') == u'.':
-        my_docs_path = GPath(bashIni.get('General', 'sPersonalPath').strip())
+    elif bash_ini_ and bash_ini_.has_option(u'General', u'sPersonalPath') and \
+            not bash_ini_.get(u'General', u'sPersonalPath') == u'.':
+        my_docs_path = GPath(bash_ini_.get('General', 'sPersonalPath').strip())
         sErrorInfo = _(
             u"Folder path specified in bash.ini (%s)") % u'sPersonalPath'
     else:
@@ -3015,14 +3021,14 @@ def getPersonalPath(bashIni, my_docs_path):
                         % (my_docs_path.s, sErrorInfo))
     return my_docs_path
 
-def getLocalAppDataPath(bashIni, app_data_local_path):
+def getLocalAppDataPath(bash_ini_, app_data_local_path):
     #--Determine User folders from Personal and Local Application Data directories
     #  Attempt to pull from, in order: Command Line, Ini, win32com, Registry
     if app_data_local_path:
         app_data_local_path = GPath(app_data_local_path)
         sErrorInfo = _(u"Folder path specified on command line (-l)")
-    elif bashIni and bashIni.has_option(u'General', u'sLocalAppDataPath') and not bashIni.get(u'General', u'sLocalAppDataPath') == u'.':
-        app_data_local_path = GPath(bashIni.get(u'General', u'sLocalAppDataPath').strip())
+    elif bash_ini_ and bash_ini_.has_option(u'General', u'sLocalAppDataPath') and not bash_ini_.get(u'General', u'sLocalAppDataPath') == u'.':
+        app_data_local_path = GPath(bash_ini_.get(u'General', u'sLocalAppDataPath').strip())
         sErrorInfo = _(u"Folder path specified in bash.ini (%s)") % u'sLocalAppDataPath'
     else:
         app_data_local_path, sErrorInfo = get_local_app_data_path()
@@ -3035,9 +3041,9 @@ def getLocalAppDataPath(bashIni, app_data_local_path):
                         % (app_data_local_path.s, sErrorInfo))
     return app_data_local_path
 
-def getOblivionModsPath(bashIni):
-    if bashIni and bashIni.has_option(u'General',u'sOblivionMods'):
-        ob_mods_path = GPath(bashIni.get(u'General', u'sOblivionMods').strip())
+def getOblivionModsPath(bash_ini_):
+    if bash_ini_ and bash_ini_.has_option(u'General', u'sOblivionMods'):
+        ob_mods_path = GPath(bash_ini_.get(u'General', u'sOblivionMods').strip())
         src = [u'[General]', u'sOblivionMods']
     else:
         ob_mods_path = GPath(GPath(u'..').join(u'%s Mods' % bush.game.fsName))
@@ -3045,9 +3051,9 @@ def getOblivionModsPath(bashIni):
     if not ob_mods_path.isabs(): ob_mods_path = dirs['app'].join(ob_mods_path)
     return ob_mods_path, src
 
-def getBainDataPath(bashIni):
-    if bashIni and bashIni.has_option(u'General',u'sInstallersData'):
-        idata_path = GPath(bashIni.get(u'General', u'sInstallersData').strip())
+def getBainDataPath(bash_ini_):
+    if bash_ini_ and bash_ini_.has_option(u'General', u'sInstallersData'):
+        idata_path = GPath(bash_ini_.get(u'General', u'sInstallersData').strip())
         src = [u'[General]', u'sInstallersData']
         if not idata_path.isabs(): idata_path = dirs['app'].join(idata_path)
     else:
@@ -3055,14 +3061,14 @@ def getBainDataPath(bashIni):
         src = u'Relative Path'
     return idata_path, src
 
-def getBashModDataPath(bashIni):
-    if bashIni and bashIni.has_option(u'General',u'sBashModData'):
-        mod_data_path = GPath(bashIni.get(u'General', u'sBashModData').strip())
+def getBashModDataPath(bash_ini_):
+    if bash_ini_ and bash_ini_.has_option(u'General', u'sBashModData'):
+        mod_data_path = GPath(bash_ini_.get(u'General', u'sBashModData').strip())
         if not mod_data_path.isabs():
             mod_data_path = dirs['app'].join(mod_data_path)
         src = [u'[General]', u'sBashModData']
     else:
-        mod_data_path, src = getOblivionModsPath(bashIni)
+        mod_data_path, src = getOblivionModsPath(bash_ini_)
         mod_data_path = mod_data_path.join(u'Bash Mod Data')
     return mod_data_path, src
 
@@ -3076,7 +3082,7 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
         return oldPath, oldSrc
 
 from ..env import test_permissions # CURRENTLY DOES NOTHING !
-def initDirs(bashIni, personal, localAppData):
+def initDirs(bashIni_, personal, localAppData):
     #--Mopy directories
     dirs['mopy'] = bolt.Path.getcwd().root
     dirs['bash'] = dirs['mopy'].join(u'bash')
@@ -3094,11 +3100,11 @@ def initDirs(bashIni, personal, localAppData):
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
 
     #  Personal
-    personal = getPersonalPath(bashIni,personal)
+    personal = getPersonalPath(bashIni_, personal)
     dirs['saveBase'] = personal.join(u'My Games', bush.game.fsName)
 
     #  Local Application Data
-    localAppData = getLocalAppDataPath(bashIni,localAppData)
+    localAppData = getLocalAppDataPath(bashIni_, localAppData)
     dirs['userApp'] = localAppData.join(bush.game.fsName)
 
     # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
@@ -3116,8 +3122,8 @@ def initDirs(bashIni, personal, localAppData):
         dirs['patches'] = dirs['mods'].join(u'Bash Patches')
         dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
-    oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni)
-    dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni)
+    oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_)
+    dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni_)
     dirs['modsBash'], modsBashSrc = getLegacyPathWithSource(
         dirs['modsBash'], dirs['app'].join(u'Data', u'Bash'),
         modsBashSrc, u'Relative Path')
@@ -3126,7 +3132,7 @@ def initDirs(bashIni, personal, localAppData):
     dirs['installers'] = getLegacyPath(dirs['installers'],
                                        dirs['app'].join(u'Installers'))
 
-    dirs['bainData'], bainDataSrc = getBainDataPath(bashIni)
+    dirs['bainData'], bainDataSrc = getBainDataPath(bashIni_)
 
     dirs['bsaCache'] = dirs['bainData'].join(u'BSA Cache')
 

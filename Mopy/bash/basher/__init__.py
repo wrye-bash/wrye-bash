@@ -1393,9 +1393,11 @@ class ModDetails(_SashDetailsPanel):
         u' which will become detached when the mod is renamed.')
 
     def _askResourcesOk(self, fileInfo):
-        return bosh.modInfos.askResourcesOk(fileInfo, parent=self,
-            title=_(u'Rename '), bsaAndVoice=self.bsaAndVoice, bsa=self.bsa,
-            voice=self.voice)
+        msg = bosh.modInfos.askResourcesOk(fileInfo,
+                                           bsaAndVoice=self.bsaAndVoice,
+                                           bsa=self.bsa, voice=self.voice)
+        if not msg: return True # resources ok
+        return balt.askWarning(self, msg, _(u'Rename ') + fileInfo.name.s)
 
     def testChanges(self): # used by the master list when editing is disabled
         modInfo = self.modInfo
@@ -1853,7 +1855,7 @@ class SaveDetails(_SashDetailsPanel):
     @property
     def file_infos(self): return bosh.saveInfos
     @property
-    def allowDetailsEdit(self): return bush.game.ess.canEditMasters
+    def allowDetailsEdit(self): return self.file_info.header.canEditMasters
 
     def __init__(self,parent):
         super(SaveDetails, self).__init__(parent)
@@ -1913,7 +1915,7 @@ class SaveDetails(_SashDetailsPanel):
             self.gameDays = saveInfo.header.gameDays
             self.playMinutes = saveInfo.header.gameTicks/60000
             self.playerLevel = saveInfo.header.pcLevel
-            self.coSaves = u'%s\n%s' % saveInfo.coSaves().getTags()
+            self.coSaves = u'%s\n%s' % saveInfo.get_cosave_tags()
         #--Set Fields
         self.file.SetValue(self.fileStr)
         self._set_player_info_label()
