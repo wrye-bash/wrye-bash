@@ -750,6 +750,9 @@ class ModInfo(FileInfo):
                 self.header = bush.game.MreHeader(tes4_rec_header,ins,True)
             except struct.error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
+        if bush.game.fsName == u'Skyrim Special Edition':
+            if tes4_rec_header.form_version != ModReader.recHeader.plugin_form_version:
+                modInfos.sse_form43.add(self.name)
         self._reset_masters()
 
     def writeHeader(self):
@@ -1809,6 +1812,7 @@ class ModInfos(FileInfos):
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
         self.activeBad = set() #--Set of all mods with bad names that are active
+        self.sse_form43 = set()
         self.merged = set() #--For bash merged files
         self.imported = set() #--For bash imported files
         #--Oblivion version

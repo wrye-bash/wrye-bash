@@ -196,6 +196,11 @@ class RecordHeader(object):
                 pack_args.append(self.extra)
         return struct_pack(*pack_args)
 
+    @property
+    def form_version(self):
+        if self.plugin_form_version == 0 : return 0
+        return struct_unpack('=2h', struct_pack('=I', self.extra))[0]
+
 #------------------------------------------------------------------------------
 class ModReader:
     """Wrapper around a TES4 file in read mode.
