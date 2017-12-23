@@ -43,8 +43,8 @@ import archives
 import bash
 import bass
 import bolt
-import bosh
 import bush
+from bass import dirs
 from bolt import GPath, deprint
 from balt import askSave, askOpen, askWarning, showError, showWarning, \
     showInfo, Link, BusyCursor, askYes
@@ -52,37 +52,37 @@ from exception import AbstractError
 
 opts = None # command line arguments used when launching Bash, set on bash
 
-def init_settings_files():
+def _init_settings_files(fsName_):
     """Construct a dict mapping directory paths to setting files. Keys are
     tuples of absolute paths to directories, paired with the relative paths
     in the backup file. Values are sets of setting files in those paths,
     or empty, meaning we have to list those paths and backup everything."""
-    game, dirs = bush.game.fsName, bass.dirs
     settings_info = {
-        (dirs['mopy'], jo(game, u'Mopy')): {u'bash.ini', },
-        (dirs['mods'].join(u'Bash'), jo(game, u'Data', u'Bash')): {
+        (dirs['mopy'], jo(fsName_, u'Mopy')): {u'bash.ini', },
+        (dirs['mods'].join(u'Bash'), jo(fsName_, u'Data', u'Bash')): {
             u'Table.dat', },
-        (dirs['mods'].join(u'Docs'), jo(game, u'Data', u'Docs')): {
+        (dirs['mods'].join(u'Docs'), jo(fsName_, u'Data', u'Docs')): {
             u'Bash Readme Template.txt', u'Bash Readme Template.html',
             u'My Readme Template.txt', u'My Readme Template.html',
             u'wtxt_sand_small.css', u'wtxt_teal.css', },
-        (dirs['modsBash'], jo(game + u' Mods', u'Bash Mod Data')): {
+        (dirs['modsBash'], jo(fsName_ + u' Mods', u'Bash Mod Data')): {
             u'Table.dat', },
         (dirs['modsBash'].join(u'INI Data'),
-         jo(game + u' Mods', u'Bash Mod Data', u'INI Data')): {
+         jo(fsName_ + u' Mods', u'Bash Mod Data', u'INI Data')): {
            u'Table.dat', },
-        (dirs['bainData'], jo(game + u' Mods', u'Bash Installers', u'Bash')): {
+        (dirs['bainData'],
+         jo(fsName_ + u' Mods', u'Bash Installers', u'Bash')): {
            u'Converters.dat', u'Installers.dat', },
-        (dirs['saveBase'], jo(u'My Games', game)): {
+        (dirs['saveBase'], jo(u'My Games', fsName_)): {
             u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat',
             u'People.dat', },
         # backup all files in Mopy\bash\l10n, Data\Bash Patches\ and
         # Data\INI Tweaks\
-        (dirs['l10n'], jo(game, u'Mopy', u'bash', u'l10n')): {},
+        (dirs['l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
         (dirs['mods'].join(u'Bash Patches'),
-         jo(game, u'Data', u'Bash Patches')): {},
+         jo(fsName_, u'Data', u'Bash Patches')): {},
         (dirs['mods'].join(u'INI Tweaks'),
-         jo(game, u'Data', u'INI Tweaks')): {},
+         jo(fsName_, u'Data', u'INI Tweaks')): {},
     }
     for setting_files in settings_info.itervalues():
         for settings_file in set(setting_files):
@@ -132,9 +132,9 @@ def SameAppVersion(): return bass.AppVersion == bass.settings['bash.version']
 class BackupSettings(BaseBackupSettings):
     def __init__(self, parent=None, settings_file=None, do_quit=False):
         super(BackupSettings, self).__init__(parent, settings_file, do_quit)
-        game, dirs = bush.game.fsName, bass.dirs
+        game = bush.game.fsName
         for (bash_dir, tmpdir), setting_files in \
-                init_settings_files().iteritems():
+                _init_settings_files(game).iteritems():
             if not setting_files: # we have to backup everything in there
                 setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
@@ -143,8 +143,9 @@ class BackupSettings(BaseBackupSettings):
                 if fpath.exists():
                     self.files[tmp_dir.join(name)] = fpath
 
-        #backup save profile settings
+        # backup save profile settings
         savedir = GPath(u'My Games').join(game)
+        import bosh # FIXME(ut) - move this code out of init
         profiles = [u''] + bosh.SaveInfos.getLocalSaveDirs()
         for profile in profiles:
             pluginsTxt = (u'Saves', profile, u'plugins.txt')
@@ -265,33 +266,33 @@ class RestoreSettings(BaseBackupSettings):
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
 
         # reinitialize bass.dirs using the backup copy of bash.ini if it exists
-        game, dirs = bush.game.fsName, bass.dirs
+        game = bush.game.fsName
         tmpBash = temp_dir.join(game, u'Mopy', u'bash.ini')
 
         bash.SetUserPath(tmpBash.s,opts.userPath)
 
         bashIni = bass.GetBashIni(tmpBash.s, reload_=True)
+        import bosh
         bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
 
         # restore all the settings files
-        restore_paths = init_settings_files().keys()
+        restore_paths = _init_settings_files(game).keys()
         for dest_dir, back_path in restore_paths:
             full_back_path = temp_dir.join(back_path)
-            if full_back_path.exists():
-                for name in full_back_path.list():
-                    if full_back_path.join(name).isfile():
-                        deprint(GPath(back_path).join(name).s + u' --> '
-                                + dest_dir.join(name).s)
-                        full_back_path.join(name).copyTo(dest_dir.join(name))
+            for name in full_back_path.list():
+                if full_back_path.join(name).isfile():
+                    deprint(GPath(back_path).join(
+                        name).s + u' --> ' + dest_dir.join(name).s)
+                    full_back_path.join(name).copyTo(dest_dir.join(name))
 
-        #restore savegame profile settings
+        # restore savegame profile settings
         back_path = GPath(u'My Games').join(game, u'Saves')
         saves_dir = dirs['saveBase'].join(u'Saves')
         full_back_path = temp_dir.join(back_path)
         if full_back_path.exists():
-            for root_dir, folders, files in full_back_path.walk(True,None,True):
+            for root_dir, folders, files_ in full_back_path.walk(True,None,True):
                 root_dir = GPath(u'.'+root_dir.s)
-                for name in files:
+                for name in files_:
                     deprint(back_path.join(root_dir,name).s + u' --> '
                             + saves_dir.join(root_dir, name).s)
                     full_back_path.join(root_dir, name).copyTo(

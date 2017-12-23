@@ -281,6 +281,9 @@ def _main(opts):
         os.chdir(pathToProg)
     del pathToProg
 
+    #--Bash installation directories, set on boot, not likely to change
+    _init_dirs_mopy()
+
     # Detect the game we're running for ---------------------------------------
     import bush
     bolt.deprint (u'Searching for game to manage:')
@@ -392,6 +395,16 @@ def _main(opts):
 
     app.Init() # Link.Frame is set here !
     app.MainLoop()
+
+def _init_dirs_mopy():
+    dirs = bass.dirs
+    dirs['mopy'] = bolt.Path.getcwd().root
+    dirs['bash'] = dirs['mopy'].join(u'bash')
+    dirs['compiled'] = dirs['bash'].join(u'compiled')
+    dirs['l10n'] = dirs['bash'].join(u'l10n')
+    dirs['db'] = dirs['bash'].join(u'db')
+    dirs['templates'] = dirs['mopy'].join(u'templates')
+    dirs['images'] = dirs['bash'].join(u'images')
 
 def _show_wx_error(msg):
     """Shows an error message in a wx window."""

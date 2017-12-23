@@ -3078,15 +3078,6 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
 
 from ..env import test_permissions # CURRENTLY DOES NOTHING !
 def initDirs(bashIni_, personal, localAppData):
-    #--Mopy directories
-    dirs['mopy'] = bolt.Path.getcwd().root
-    dirs['bash'] = dirs['mopy'].join(u'bash')
-    dirs['compiled'] = dirs['bash'].join(u'compiled')
-    dirs['l10n'] = dirs['bash'].join(u'l10n')
-    dirs['db'] = dirs['bash'].join(u'db')
-    dirs['templates'] = dirs['mopy'].join(u'templates')
-    dirs['images'] = dirs['bash'].join(u'images')
-
     #--Oblivion (Application) Directories
     dirs['app'] = bush.gamePath
     dirs['mods'] = dirs['app'].join(u'Data')
