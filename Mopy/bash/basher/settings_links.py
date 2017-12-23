@@ -87,7 +87,7 @@ class Settings_BackupSettings(ItemLink):
 
 #------------------------------------------------------------------------------
 class Settings_RestoreSettings(ItemLink):
-    """Saves Bash's settings and user data.."""
+    """Restore Bash's settings and user data from backup."""
     _text = _(u'Restore Settings...')
     help = _(u"Restore all of Wrye Bash's settings/data from a backup archive "
              u"file.")
@@ -302,14 +302,13 @@ class Settings_Language(RadioLink):
 
     def _initData(self, window, selection):
         if self._lang == _bassLang():
-            self.help = _(
-                "Currently using %(languagename)s as the active language.") % (
-                            {'languagename': self._text})
+            self.help = _(u"Currently using %(languagename)s as the active "
+                          u"language.") % ({'languagename': self._text})
             self.check = True
         else:
             self.help = _(
-                "Restart Wrye Bash and use %(languagename)s as the active "
-                "language.") % ({'languagename': self._text})
+                u"Restart Wrye Bash and use %(languagename)s as the active "
+                u"language.") % ({'languagename': self._text})
             self.check = False
 
     def _check(self): return self.check

@@ -29,10 +29,10 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import collections
 import struct
-from env import get_game_path
-from bolt import GPath, Path, deprint
-from exception import BoltError
 import game as game_init
+from bolt import GPath, Path, deprint
+from env import get_game_path
+from exception import BoltError
 
 # Game detection --------------------------------------------------------------
 game = None         # type: game_init
