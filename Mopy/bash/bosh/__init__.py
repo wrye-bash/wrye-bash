@@ -1764,7 +1764,7 @@ def _lo_cache(lord_func):
             if active_changed:
                 self._refresh_mod_inis() # before _refreshMissingStrings !
                 self._refreshBadNames()
-                self._refreshInfoLists()
+                self._reset_info_sets()
                 self._refreshMissingStrings()
             #if lo changed (including additions/removals) let refresh handle it
             if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
@@ -1792,7 +1792,6 @@ class ModInfos(FileInfos):
         FileInfos.__init__(self, dirs['mods'], ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
-        self.bashed_patches = set()
         for fname in bush.game.masterFiles:
             if dirs['mods'].join(fname).exists():
                 self.masterName = GPath(fname)
@@ -1813,8 +1812,10 @@ class ModInfos(FileInfos):
         self.new_missing_strings = set() #--Set of new mods with missing .STRINGS files
         self.activeBad = set() #--Set of all mods with bad names that are active
         self.sse_form43 = set()
-        self.merged = set() #--For bash merged files
-        self.imported = set() #--For bash imported files
+        # sentinel for calculating info sets when needed in gui and patcher
+        # code, **after** self is refreshed
+        self.__calculate = object()
+        self._reset_info_sets()
         #--Oblivion version
         self.version_voSize = {
             u'1.1':        247388848, #--Standard
@@ -1834,6 +1835,29 @@ class ModInfos(FileInfos):
         # Load order caches to manipulate, then call our save methods - avoid !
         self._active_wip = []
         self._lo_wip = []
+
+    # merged, bashed_patches, imported caches
+    def _reset_info_sets(self):
+        self._merged = self._imported = self._bashed_patches = self.__calculate
+
+    @property
+    def imported(self):
+        if self._imported is self.__calculate:
+            self._merged, self._imported = self.getSemiActive()
+        return self._imported
+
+    @property
+    def merged(self):
+        if self._merged is self.__calculate:
+            self._merged, self._imported = self.getSemiActive()
+        return self._merged
+
+    @property
+    def bashed_patches(self):
+        if self._bashed_patches is self.__calculate:
+            self._bashed_patches = set(
+                mname for mname, minf in self.iteritems() if minf.isBP())
+        return self._bashed_patches
 
     # Load order API for the rest of Bash to use - if the load order or
     # active plugins changed, those methods run a refresh on modInfos data
@@ -1992,7 +2016,7 @@ class ModInfos(FileInfos):
             self._refresh_mod_inis()
         if lo_changed < 2 and hasChanged:
             self._refreshBadNames()
-            self._refreshInfoLists()
+            self._reset_info_sets()
         elif lo_changed < 2: # maybe string files were deleted...
             #we need a load order below: in skyrim we read inis in active order
             hasChanged += self._refreshMissingStrings()
@@ -2073,17 +2097,6 @@ class ModInfos(FileInfos):
                 if newGhost != oldGhost:
                     changed.append(mod)
         return changed
-
-    def _refreshInfoLists(self):
-        """Refreshes mod info lists (bashed_patches, imported, exported).
-        Call after refreshing from Data AND having latest load order."""
-        #--Bashed patches
-        self.bashed_patches.clear()
-        for modName, modInfo in self.iteritems():
-            if modInfo.isBP(): self.bashed_patches.add(modName)
-        #--Refresh merged/imported lists.
-        active_set = set(load_order.cached_active_tuple())
-        self.merged, self.imported = self.getSemiActive(active_set)
 
     def _refreshMergeable(self):
         """Refreshes set of mergeable mods."""
@@ -2169,20 +2182,21 @@ class ModInfos(FileInfos):
         return pairs
 
     #--Refresh File
-    def refreshFile(self, fileName, load_cache=True, _in_refresh=False):
-        try:
-            super(ModInfos, self).refreshFile(fileName, load_cache=load_cache,
-                                              _in_refresh=_in_refresh)
-        finally:
-            self._refreshInfoLists() # not sure if needed here - track usages !
+    def add_info(self, fileName, load_cache=True, _in_refresh=False,
+                 owner=None):
+        # we should refresh info sets if we manage to add the info, but also
+        # if we fail, which might mean that some info got corrupted
+        self._reset_info_sets()
+        super(ModInfos, self).add_info(fileName, load_cache, _in_refresh, owner)
 
     #--Mod selection ----------------------------------------------------------
-    def getSemiActive(self,masters):
+    def getSemiActive(self,masters=None):
         """Return (merged,imported) mods made semi-active by Bashed Patch.
 
         If no bashed patches are present in 'masters' then return empty sets.
         Else for each bashed patch use its config (if present) to find mods
         it merges or imports."""
+        if masters is None: masters = set(load_order.cached_active_tuple())
         merged_,imported_ = set(),set()
         patches = masters & self.bashed_patches
         for patch in patches:
@@ -2566,7 +2580,7 @@ class ModInfos(FileInfos):
         self._lo_caches_remove_mods(deleted)
         self.cached_lo_save_all()
         self._refreshBadNames()
-        self._refreshInfoLists()
+        self._reset_info_sets()
         self._refreshMissingStrings()
         self._refreshMergeable()
 
