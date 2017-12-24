@@ -399,8 +399,8 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
         recordId = record.fid
-        merged = recordId in self.id_list
-        if merged:
+        merged_ = recordId in self.id_list
+        if merged_:
             self.scan(modFile,record,bashTags)
             mergedList = self.id_list[recordId]
             mergedAttrs = self.id_attrs[recordId]
@@ -422,7 +422,7 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
         #They'll get deleted from the patch there as needed.
         override = record.CopyAsOverride(self.patchFile)
         if override:
-            if merged and (newAttrs != mergedAttrs or sorted(newList,
+            if merged_ and (newAttrs != mergedAttrs or sorted(newList,
                 key=itemgetter(1)) != sorted(mergedList, key=itemgetter(1))):
                 override.chanceNone, override.script, override.template, \
                 override.flags = mergedAttrs

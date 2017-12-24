@@ -696,7 +696,7 @@ class Mod_ListDependent(OneItemLink):
     def Execute(self):
         ##: HACK - refactor getModList
         modInfos = self.window.data_store
-        merged, imported = modInfos.merged, modInfos.imported
+        merged_, imported_ = modInfos.merged, modInfos.imported
         head, bul = u'=== ', u'* '
         with bolt.sio() as out:
             log = bolt.LogFile(out)
@@ -709,10 +709,10 @@ class Mod_ListDependent(OneItemLink):
                     hexIndex = modInfos.hexIndexString(mod)
                     if hexIndex:
                         prefix = bul + hexIndex
-                    elif mod in merged:
+                    elif mod in merged_:
                         prefix = bul + u'++'
                     else:
-                        prefix = bul + (u'**' if mod in imported else u'__')
+                        prefix = bul + (u'**' if mod in imported_ else u'__')
                     text = u'%s  %s' % (prefix, mod.s,)
                     log(text)
             if not text:  log(u'None')

@@ -364,9 +364,9 @@ class ConfigHelpers:
            mod_checker should be the instance of ModChecker, to scan."""
         from . import modInfos
         active = set(load_order.cached_active_tuple())
-        merged = modInfos.merged
-        imported = modInfos.imported
-        activeMerged = active | merged
+        merged_ = modInfos.merged
+        imported_ = modInfos.imported
+        activeMerged = active | merged_
         warning = u'=== <font color=red>'+_(u'WARNING:')+u'</font> '
         #--Header
         with sio() as out:
@@ -381,7 +381,7 @@ class ConfigHelpers:
                 if u'Deactivate' in tags: shouldDeactivateA.append(x)
                 if u'NoMerge' in tags and x in modInfos.mergeable:
                     shouldDeactivateB.append(x)
-            shouldActivateA = [x for x in imported if x not in active and
+            shouldActivateA = [x for x in imported_ if x not in active and
                         u'MustBeActiveIfImported' in modInfos[x].getBashTags()]
             #--Mods with invalid TES4 version
             invalidVersion = [(x,unicode(round(modInfos[x].header.version,6))) for x in active if round(modInfos[x].header.version,6) not in bush.game.esp.validHeaderVersions]
@@ -525,15 +525,15 @@ class ConfigHelpers:
                             for ruleType,ruleMod,comment in modGroup.config:
                                 if ruleType != u'o': continue
                                 if ruleMod in active: bullet = u'x'
-                                elif ruleMod in merged: bullet = u'+'
-                                elif ruleMod in imported: bullet = u'*'
+                                elif ruleMod in merged_: bullet = u'+'
+                                elif ruleMod in imported_: bullet = u'*'
                                 else: bullet = u'o'
                                 log(u'%s __%s__ -- %s' % (bullet,ruleMod.s,comment))
                         if showSuggest:
                             log.setHeader(u'=== '+_(u'SUGGESTIONS: ') + modsList)
                             for ruleType,ruleMod,comment in modGroup.suggest:
                                 if ((ruleType == u'x' and ruleMod not in activeMerged) or
-                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
+                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged_)) or
                                     (ruleType == u'-' and ruleMod in activeMerged) or
                                     (ruleType == u'-+' and ruleMod in active)
                                     ):
@@ -544,7 +544,7 @@ class ConfigHelpers:
                             log.setHeader(warning + modsList)
                             for ruleType,ruleMod,comment in modGroup.warn:
                                 if ((ruleType == u'x' and ruleMod not in activeMerged) or
-                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged)) or
+                                    (ruleType == u'+' and (ruleMod in active or ruleMod not in merged_)) or
                                     (ruleType == u'-' and ruleMod in activeMerged) or
                                     (ruleType == u'-+' and ruleMod in active)
                                     ):

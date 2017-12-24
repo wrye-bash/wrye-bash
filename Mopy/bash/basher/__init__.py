@@ -809,11 +809,9 @@ class ModList(_ModsUIList):
         mod_info = self.data_store[mod_name]
         #--Image
         status = mod_info.getStatus()
-        checkMark = (
-            1 if load_order.cached_is_active(mod_name)
-            else 2 if mod_name in bosh.modInfos.merged
-            else 3 if mod_name in bosh.modInfos.imported
-            else 0)
+        checkMark = (load_order.cached_is_active(mod_name) # 1
+            or (mod_name in bosh.modInfos.merged and 2)
+            or (mod_name in bosh.modInfos.imported and 3)) # or 0
         status_image_key = 20 if 20 <= status < 30 else status
         item_format.icon_key = status_image_key, checkMark
         #--Default message

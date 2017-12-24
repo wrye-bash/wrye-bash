@@ -1835,11 +1835,12 @@ class ModInfos(FileInfos):
         self._active_wip = []
         self._lo_wip = []
 
-    # Load order API for the rest of Bash to use - if load order or active
-    # changed methods run a refresh on modInfos data
+    # Load order API for the rest of Bash to use - if the load order or
+    # active plugins changed, those methods run a refresh on modInfos data
     @_lo_cache
     def refreshLoadOrder(self, forceRefresh=False, forceActive=False):
-        load_order.get_lo(cached=not forceRefresh, cached_active=not forceActive)
+        load_order.refresh_lo(cached=not forceRefresh,
+                              cached_active=not forceActive)
 
     @_lo_cache
     def cached_lo_save_active(self, active=None):
@@ -1966,9 +1967,10 @@ class ModInfos(FileInfos):
         """Update file data for additions, removals and date changes.
 
         See usages for how to use the refresh_infos and _modTimesChange params.
-        _modTimesChange is not strictly needed after the lo rewrite,
-        as get_lo will always recalculate it - kept to help track places in
-        the code where timestamp load order may change.
+        _modTimesChange is not strictly needed after the lo rewrite, as
+        games.Game#load_order_changed will always return True for timestamp
+        games - kept to help track places in the code where timestamp load
+        order may change.
          NB: if an operation we performed changed the load order we do not want
          lock load order to revert our own operation. So either call some of
          the set_load_order methods, or guard refresh (which only *gets* load
@@ -2181,7 +2183,7 @@ class ModInfos(FileInfos):
         If no bashed patches are present in 'masters' then return empty sets.
         Else for each bashed patch use its config (if present) to find mods
         it merges or imports."""
-        merged,imported = set(),set()
+        merged_,imported_ = set(),set()
         patches = masters & self.bashed_patches
         for patch in patches:
             patchConfigs = self.table.getItem(patch, 'bash.patch.configs')
@@ -2192,10 +2194,10 @@ class ModInfos(FileInfos):
                 config_checked = patchConfigs[patcherstr]['configChecks']
                 for modName in config_checked:
                     if config_checked[modName] and modName in self:
-                        merged.add(modName)
-            imported.update(filter(lambda x: x in self,
-                                   patchConfigs.get('ImportedMods', tuple())))
-        return merged,imported
+                        merged_.add(modName)
+            imported_.update(filter(lambda x: x in self,
+                                    patchConfigs.get('ImportedMods', tuple())))
+        return merged_,imported_
 
     def getModList(self,showCRC=False,showVersion=True,fileInfo=None,wtxt=False):
         """Returns mod list as text. If fileInfo is provided will show mod list

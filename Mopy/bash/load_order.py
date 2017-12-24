@@ -269,7 +269,14 @@ def _update_cache(lord=None, acti_sorted=None, __index_move=0):
                     _current_list_index = max (0, _current_list_index)
                     _new_entry()
 
-def get_lo(cached=False, cached_active=True):
+def refresh_lo(cached=False, cached_active=True):
+    """Refresh cached_lord, reverting if locked to the saved one. If any of
+    cached or cached_active are True, we will keep the cached values for
+    those except if _game_handle.***_changed() respective methods return
+    True. In the case of timestamp games, cached is effectively always False,
+    as load_order_changed returns True - that's not slow, as getting the load
+    order just involves getting mtime info from modInfos cache. This last one
+    **must be up to date** for correct load order/active validation."""
     if _lords_pickle is None: __load_pickled_load_orders() # once only
     if locked and _saved_load_orders:
         saved = _saved_load_orders[_current_list_index].lord # type: LoadOrder
@@ -293,7 +300,6 @@ def get_lo(cached=False, cached_active=True):
             save_lo(saved.loadOrder, saved.activeOrdered)
             global warn_locked
             warn_locked = True
-    return cached_lord
 
 def __load_pickled_load_orders():
     global _lords_pickle, _saved_load_orders, _current_list_index, locked

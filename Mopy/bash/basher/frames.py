@@ -347,8 +347,8 @@ class ModChecker(BaltFrame):
         super(ModChecker, self).__init__(Link.Frame, title=_(u'Mod Checker'))
         #--Data
         self.orderedActive = None
-        self.merged = None
-        self.imported = None
+        self.__merged = None
+        self.__imported = None
         #--Text
         self._html_ctrl = HtmlCtrl(self)
         self.gTextCtrl = self._html_ctrl.text_ctrl
@@ -438,8 +438,8 @@ class ModChecker(BaltFrame):
             'bash.modChecker.showVersion'] = self.gShowVersion.GetValue()
         #--Cache info from modinfos to support auto-update.
         self.orderedActive = load_order.cached_active_tuple()
-        self.merged = bosh.modInfos.merged.copy()
-        self.imported = bosh.modInfos.imported.copy()
+        self.__merged = bosh.modInfos.merged.copy()
+        self.__imported = bosh.modInfos.imported.copy()
         #--Do it
         self.check_mods_text = bosh.configHelpers.checkMods(
             bass.settings['bash.modChecker.showModList'],
@@ -461,9 +461,9 @@ class ModChecker(BaltFrame):
     def OnActivate(self,event):
         """Handle window activate/deactivate. Use for auto-updating list."""
         if (event.GetActive() and (
-            self.orderedActive != load_order.cached_active_tuple() or
-            self.merged != bosh.modInfos.merged or
-            self.imported != bosh.modInfos.imported)
+                self.orderedActive != load_order.cached_active_tuple() or
+                self.__merged != bosh.modInfos.merged or
+                self.__imported != bosh.modInfos.imported)
             ):
             self.CheckMods()
 
