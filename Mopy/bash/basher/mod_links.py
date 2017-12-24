@@ -109,7 +109,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         doCBash = bass.settings['bash.CBashEnabled'] # something odd's going on, can't rename temp names
         if doCBash:
             newFiles = []
-        refresh = []
+        to_refresh = []
         # creates esp files - so place them correctly after the last esm
         previous_master = bosh.modInfos.cached_lo_last_esm()
         for master in self._selected_info.header.masters:
@@ -117,7 +117,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 continue
             # Missing master, create a dummy plugin for it
             newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
-            refresh.append((master, newInfo, previous_master))
+            to_refresh.append((master, newInfo, previous_master))
             previous_master = master
             if doCBash:
                 # TODO: CBash doesn't handle unicode.  Make temp unicode safe
@@ -136,7 +136,7 @@ class Mod_CreateDummyMasters(OneItemLink):
                 for newFile in newFiles:
                     modFile.save(CloseCollection=False,DestinationName=newFile)
         to_select = []
-        for mod, info, previous in refresh:
+        for mod, info, previous in to_refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games
             bosh.modInfos.new_info(mod, notify_bain=True)
             bosh.modInfos.cached_lo_insert_after(previous, mod)

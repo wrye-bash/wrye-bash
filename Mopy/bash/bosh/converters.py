@@ -242,8 +242,8 @@ class InstallerConverter(object):
         # They're always read from BCF.dat
         #--Do NOT reorder settings,volatile,addedSettings or you will break
         # existing BCFs!
-        self.settings = ['comments', 'espmNots', 'hasExtraData', 'isSolid',
-                         'skipVoices', 'subActives']
+        self._converter_settings = ['comments', 'espmNots', 'hasExtraData',
+                                    'isSolid', 'skipVoices', 'subActives']
         self.volatile = ['convertedFiles', 'dupeCount']
         #--Any new saved variables, whether they're settings or volatile
         # must be appended to addedSettings.
@@ -301,7 +301,7 @@ class InstallerConverter(object):
                 translator = _Translator(stream)
                 map(self.__setattr__, self.persistBCF, cPickle.load(translator))
                 if fullLoad:
-                    map(self.__setattr__, self.settings + self.volatile + self.addedSettings, cPickle.load(translator))
+                    map(self.__setattr__, self._converter_settings + self.volatile + self.addedSettings, cPickle.load(translator))
         with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
             command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
@@ -316,7 +316,7 @@ class InstallerConverter(object):
         try:
             with bass.getTempDir().join(u'BCF.dat').open('wb') as f:
                 _dump(self.persistBCF, f)
-                _dump(self.settings + self.volatile + self.addedSettings, f)
+                _dump(self._converter_settings + self.volatile + self.addedSettings, f)
         except Exception as e:
             raise StateError, (u'Error creating BCF.dat:\nError: %s' % e), \
                 sys.exc_info()[2]
@@ -376,8 +376,8 @@ class InstallerConverter(object):
 
     def applySettings(self, destInstaller):
         """Applies the saved settings to an Installer"""
-        map(destInstaller.__setattr__, self.settings + self.addedSettings,
-            map(self.__getattribute__, self.settings + self.addedSettings))
+        map(destInstaller.__setattr__, self._converter_settings + self.addedSettings,
+            map(self.__getattribute__, self._converter_settings + self.addedSettings))
 
     def _arrangeFiles(self,progress):
         """Copy and/or move extracted files into their proper arrangement."""
@@ -444,7 +444,7 @@ class InstallerConverter(object):
         subGet = subArchives.get
         lastStep = 0
         #--Get settings
-        attrs = self.settings
+        attrs = self._converter_settings
         map(self.__setattr__, attrs, map(destInstaller.__getattribute__,attrs))
         #--Make list of source files
         for installer in [idata[x] for x in srcArchives]:

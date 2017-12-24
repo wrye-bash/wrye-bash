@@ -17,9 +17,9 @@ Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
 * Oblivion (patch 1.2.0416)
-* Skyrim (patch 1.9.32.0.8)
-* Fallout 4 (patch 1.8.7.0)
-* Skyrim Special Edition (patch 1.2.39.0.8)
+* Skyrim (patch 1.9.32.0)
+* Fallout 4 (patch 1.10.50.0)
+* Skyrim Special Edition (patch 1.5.23.0)
 
 ### Download
 

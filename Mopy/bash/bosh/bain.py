@@ -2080,7 +2080,7 @@ class InstallersData(DataStore):
                 deleted.add(abspath)
             elif tracked.do_update():
                 changed.add(abspath)
-        refresh = False
+        do_refresh = False
         for apath in changed | deleted:
             # the Game/Data dir - will give correct relative path for both
             # Ini tweaks and mods - those are keyed in data by rel path...
@@ -2089,10 +2089,10 @@ class InstallersData(DataStore):
             key = relpath.root.s if relpath.cs[-6:] == u'.ghost' else relpath.s
             if apath in changed:
                 self.data_sizeCrcDate[key] = (apath.size,apath.crc,apath.mtime)
-                refresh = True
+                do_refresh = True
             else:
-                refresh |= bool(self.data_sizeCrcDate.pop(key, None))
-        return refresh # Some tracked files changed, update installers status
+                do_refresh |= bool(self.data_sizeCrcDate.pop(key, None))
+        return do_refresh # Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
     def moveArchives(self,moveList,newPos):

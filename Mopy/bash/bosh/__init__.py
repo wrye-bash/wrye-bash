@@ -60,7 +60,6 @@ from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
 from ..parsers import ModFile
 
 #--Settings
-settings = None
 try:
     allTags = bush.game.allTags
     allTagsSet = set(allTags)
@@ -1554,8 +1553,8 @@ class INIInfos(TableFileInfos):
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
-        _target_inis = settings['bash.ini.choices'] # type: OrderedDict
-        choice = settings['bash.ini.choice'] # type: int
+        _target_inis = bass.settings['bash.ini.choices'] # type: OrderedDict
+        choice = bass.settings['bash.ini.choice'] # type: int
         if isinstance(_target_inis, OrderedDict):
             try:
                 previous_ini = _target_inis.keys()[choice]
@@ -1586,9 +1585,9 @@ class INIInfos(TableFileInfos):
         if previous_ini:
             choice = bass.settings['bash.ini.choices'].keys().index(
                 previous_ini)
-        settings['bash.ini.choice'] = choice if choice >= 0 else 0
+        bass.settings['bash.ini.choice'] = choice if choice >= 0 else 0
         self.ini = bass.settings['bash.ini.choices'].values()[
-            settings['bash.ini.choice']]
+            bass.settings['bash.ini.choice']]
 
     @property
     def ini(self):
@@ -2077,7 +2076,7 @@ class ModInfos(FileInfos):
         toggling bash.mods.autoGhost to False we forcibly unghost all mods
         """
         changed = []
-        toGhost = settings.get('bash.mods.autoGhost',False)
+        toGhost = bass.settings.get('bash.mods.autoGhost',False)
         if force or toGhost:
             allowGhosting = self.table.getColumn('allowGhosting')
             for mod, modInfo in self.iteritems():
@@ -3458,10 +3457,9 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         loaded = _load()
         if ignoreBackup: GPath(_bak.s + u'.ignore').moveTo(_bak.s)
         return loaded
-
-    global settings
+    #--Set bass.settings ------------------------------------------------------
     try:
-        settings = _load()
+        bass.settings = _load()
     except cPickle.UnpicklingError as err:
         msg = _(
             u"Error reading the Bash Settings database (the error is: '%s'). "
@@ -3471,7 +3469,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
         usebck = balt.askYes(None, msg % repr(err), _(u"Settings Load Error"))
         if usebck:
             try:
-                settings = _loadBakOrEmpty()
+                bass.settings = _loadBakOrEmpty()
             except cPickle.UnpicklingError as err:
                 msg = _(
                     u"Error reading the BackupBash Settings database (the "
@@ -3481,7 +3479,7 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                     u"settings?. (Otherwise Wrye Bash won't start up)")
                 delete = balt.askYes(None, msg % repr(err),
                                      _(u"Settings Load Error"))
-                if delete: settings = _loadBakOrEmpty(delBackup=True)
+                if delete: bass.settings = _loadBakOrEmpty(delBackup=True)
                 else:raise
         else:
             msg = _(
@@ -3490,8 +3488,5 @@ def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                 u"won't start up)")
             delete = balt.askYes(None, msg, _(u"Settings Load Error"))
             if delete: # ignore bak but don't delete
-                settings = _loadBakOrEmpty(ignoreBackup=True)
+                bass.settings = _loadBakOrEmpty(ignoreBackup=True)
             else: raise
-    # No longer pulling version out of the readme, but still need the old
-    # cached value for upgrade check! (!)
-    bass.settings = settings

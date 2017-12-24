@@ -4083,11 +4083,11 @@ class ModFile(object):
             block.updateMasters(masters)
         return masters.getOrdered()
 
-    def getMgefSchool(self,refresh=False):
+    def getMgefSchool(self, _reload=False): # _reload param never used
         """Return a dictionary mapping magic effect code to magic effect school.
         This is intended for use with the patch file when it records for all magic effects.
         If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_school and not refresh:
+        if self.mgef_school and not _reload:
             return self.mgef_school
         mgef_school = self.mgef_school = bush.mgef_school.copy()
         if 'MGEF' in self.tops:
@@ -4099,11 +4099,11 @@ class ModFile(object):
                         mgef_school[record.eid] = record.magicSkill
         return mgef_school
 
-    def getMgefHostiles(self,refresh=False):
+    def getMgefHostiles(self, _reload=False): # _reload param never used
         """Return a set of hostile magic effect codes.
         This is intended for use with the patch file when it records for all magic effects.
         If magic effects are not available, it will revert to bush.py version."""
-        if self.hostileEffects and not refresh:
+        if self.hostileEffects and not _reload:
             return self.hostileEffects
         hostileEffects = self.hostileEffects = bush.hostileEffects.copy()
         if 'MGEF' in self.tops:
@@ -4120,11 +4120,11 @@ class ModFile(object):
             hostileEffects = (hostileEffects - nonhostile) | hostile
         return hostileEffects
 
-    def getMgefName(self,refresh=False):
+    def getMgefName(self, _reload=False): # _reload param never used
         """Return a dictionary mapping magic effect code to magic effect name.
         This is intended for use with the patch file when it records for all magic effects.
         If magic effects are not available, it will revert to bush.py version."""
-        if self.mgef_name and not refresh:
+        if self.mgef_name and not _reload:
             return self.mgef_name
         mgef_name = self.mgef_name = bush.mgef_name.copy()
         if 'MGEF' in self.tops:

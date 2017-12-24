@@ -2879,8 +2879,8 @@ class InstallersPanel(BashTab):
                     self.frameActivated = False
                 except CancelError:
                     pass # User canceled the refresh
-        refresh = self.listData.refreshTracked()
-        refreshui |= refresh and self.listData.refreshInstallersStatus()
+        do_refresh = self.listData.refreshTracked()
+        refreshui |= do_refresh and self.listData.refreshInstallersStatus()
         if refreshui: self.uiList.RefreshUI(focus_list=False)
 
     def __extractOmods(self):

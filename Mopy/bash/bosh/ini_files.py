@@ -416,13 +416,13 @@ class OBSEIniFile(IniFile):
                 maDeleted = reDeleted.match(line)
                 if maDeleted:
                     line = maDeleted.group(1)
-                    settings = deleted_settings
+                    settings_dict = deleted_settings
                 else:
-                    settings = ini_settings
+                    settings_dict = ini_settings
                 stripped = reComment.sub(u'',line).strip()
                 match, section_key, _fmt = cls._parse_obse_line(stripped)
                 if match:
-                    settings[section_key][match.group(1)] = match.group(
+                    settings_dict[section_key][match.group(1)] = match.group(
                         2).strip(), i
         return ini_settings, deleted_settings, False
 

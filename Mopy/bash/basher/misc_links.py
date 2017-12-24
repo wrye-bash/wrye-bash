@@ -67,7 +67,7 @@ class Screens_NextScreenShot(EnabledLink):
         if not pattern: return
         maPattern = self.__class__.rePattern.match(pattern)
         newBase,newNext = maPattern.groups()
-        settings = {u'Display': {
+        settings_screens = {u'Display': {
             u'SScreenShotBaseName': newBase,
             u'iScreenShotIndex': (newNext or next_),
             u'bAllowScreenShot': u'1', }}
@@ -76,7 +76,7 @@ class Screens_NextScreenShot(EnabledLink):
             if not screensDir.isabs(): screensDir = bass.dirs['app'].join(
                 screensDir)
             screensDir.makedirs()
-        oblivionIni.saveSettings(settings)
+        oblivionIni.saveSettings(settings_screens)
         bosh.screensData.refresh()
         self.window.RefreshUI()
 

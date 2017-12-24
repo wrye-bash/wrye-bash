@@ -136,11 +136,12 @@ class BackupSettings(BaseBackupSettings):
                  handle_images=None):
         super(BackupSettings, self).__init__(parent, settings_file, do_quit)
         game, dirs = bush.game.fsName, bass.dirs
-        for (bash_dir, tmpdir), settings in init_settings_files().iteritems():
-            if not settings: # we have to backup everything in there
-                settings = bash_dir.list()
+        for (bash_dir, tmpdir), setting_files in \
+                init_settings_files().iteritems():
+            if not setting_files: # we have to backup everything in there
+                setting_files = bash_dir.list()
             tmp_dir = GPath(tmpdir)
-            for name in settings:
+            for name in setting_files:
                 fpath = bash_dir.join(name)
                 if fpath.exists():
                     self.files[tmp_dir.join(name)] = fpath
