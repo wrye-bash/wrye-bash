@@ -377,6 +377,8 @@ class Fallout4SaveHeader(SkyrimSaveHeader): # pretty similar to skyrim
 
     def calc_time(self):
         # gameDate format: Xd.Xh.Xm.X days.X hours.X minutes
+        # russian game format: '0д.0ч.9м.0 д.0 ч.9 мин'
+        self.gameDate = unicode(self.gameDate, encoding='utf-8')
         days, hours, minutes, _days, _hours, _minutes = self.gameDate.split(
             '.')
         days = int(days[:-1])
