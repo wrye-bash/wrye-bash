@@ -240,28 +240,26 @@ class Save_ImportFace(OneItemLink):
     def FromSave(self,fileInfo,srcPath):
         """Import from a save."""
         #--Get face
-        srcDir,srcName = GPath(srcPath).headTail
-        srcInfo = bosh.SaveInfo(srcDir,srcName)
-        with balt.Progress(srcName.s) as progress:
+        srcInfo = bosh.SaveInfo(srcPath)
+        with balt.Progress(srcPath.tail.s) as progress:
             saveFile = bosh._saves.SaveFile(srcInfo)
             saveFile.load(progress)
         srcFaces = bosh.faces.PCFaces.save_getFaces(saveFile)
         #--Dialog
-        ImportFaceDialog.Display(self.window,srcName.s,fileInfo,srcFaces)
+        ImportFaceDialog.Display(self.window,srcPath.tail.s,fileInfo,srcFaces)
 
     def FromMod(self,fileInfo,srcPath):
         """Import from a mod."""
         #--Get faces
-        srcDir,srcName = GPath(srcPath).headTail
-        srcInfo = bosh.ModInfo(srcDir,srcName)
+        srcInfo = bosh.ModInfo(srcPath)
         srcFaces = bosh.faces.PCFaces.mod_getFaces(srcInfo)
         #--No faces to import?
+        mod = srcPath.tail.s
         if not srcFaces:
-            self._showOk(_(u'No player (PC) faces found in %s.') % srcName.s,
-                         srcName.s)
+            self._showOk(_(u'No player (PC) faces found in %s.') % mod, mod)
             return
         #--Dialog
-        ImportFaceDialog.Display(self.window, srcName.s, fileInfo, srcFaces)
+        ImportFaceDialog.Display(self.window, mod, fileInfo, srcFaces)
 
 #------------------------------------------------------------------------------
 class Save_RenamePlayer(ItemLink):

@@ -392,16 +392,17 @@ class FileInfo(AFile):
 
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
-    def __init__(self, parent_dir, name, load_cache=False):
-        self.dir = GPath(parent_dir)
-        self.name = GPath(name) # ghost must be lopped off
+    def __init__(self, abs_path, load_cache=False):
+        g_path = GPath(abs_path)
+        self.dir = g_path.head
+        self.name = g_path.tail # ghost must be lopped off
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
         self.madeBackup = False
         #--Ancillary storage
         self.extras = {}
-        super(FileInfo, self).__init__(self.dir.join(name), load_cache)
+        super(FileInfo, self).__init__(g_path, load_cache)
 
     def _reset_masters(self):
         #--Master Names/Order
@@ -556,14 +557,13 @@ reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 class ModInfo(FileInfo):
     """An esp/m/l file."""
 
-    def __init__(self, parent_dir, name, load_cache=False):
-        self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
-        if endsInGhost: name = GPath(name.s[:-6])
+    def __init__(self, g_path, load_cache=False):
+        self.isGhost = endsInGhost = (g_path.cs[-6:] == u'.ghost')
+        if endsInGhost: g_path = GPath(g_path.s[:-6])
         else: # new_info() path
-            absPath = GPath(parent_dir).join(name)
             self.isGhost = \
-                not absPath.exists() and (absPath + u'.ghost').exists()
-        super(ModInfo, self).__init__(parent_dir, name, load_cache)
+                not g_path.exists() and (g_path + u'.ghost').exists()
+        super(ModInfo, self).__init__(g_path, load_cache)
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
@@ -1187,12 +1187,11 @@ class BSAInfo(FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
 
-    def __init__(self, parent_dir, bsa_name, load_cache=False):
+    def __init__(self, abs_path, load_cache=False):
         try: # Never load_cache for memory reasons - let it be loaded as needed
-            super(BSAInfo, self).__init__(parent_dir, bsa_name,
-                                          load_cache=False)
+            super(BSAInfo, self).__init__(abs_path, load_cache=False)
         except BSAError as e:
-            raise FileError, (GPath(bsa_name),
+            raise FileError, (GPath(abs_path).tail,
                 e.__class__.__name__ + u' ' + e.message), sys.exc_info()[2]
         self._reset_bsa_mtime()
 
@@ -1318,7 +1317,7 @@ class TableFileInfos(DataStore):
         By default it will try to read the file to cache its header
         etc, so use on existing files. WIP, in particular _in_refresh must go,
         but that needs rewriting corrupted handling."""
-        info = self[fileName] = self.factory(self.store_dir, fileName,
+        info = self[fileName] = self.factory(self.store_dir.join(fileName),
                                              load_cache=load_cache)
         if owner is not None:
             self.table.setItem(fileName, 'installer', owner)
@@ -1349,7 +1348,7 @@ class TableFileInfos(DataStore):
             try:
                 fileInfo = self[fileName]
             except KeyError: # corrupted
-                fileInfo = self.factory(self.store_dir, fileName)
+                fileInfo = self.factory(self.store_dir.join(fileName))
             #--File
             filePath = fileInfo.abs_path
             abs_delete_paths.append(filePath)
@@ -1526,9 +1525,12 @@ class DefaultIniInfo(DefaultIniFile, INIInfo):
     @property
     def is_default_tweak(self): return True
 
-def ini_info_factory(parent_dir, filename):
-    """:rtype: INIInfo"""
-    fullpath = GPath(parent_dir).join(filename)
+# noinspection PyUnusedLocal
+def ini_info_factory(fullpath, load_cache='Ignored'):
+    """INIInfos factory
+    :param fullpath: fullpath to the ini file to wrap
+    :param load_cache: dummy param used in INIInfos#new_info factory call
+    :rtype: INIInfo"""
     INICount = IniFile.formatMatch(fullpath)
     OBSECount = OBSEIniFile.formatMatch(fullpath)
     if INICount >= OBSECount:
@@ -1634,7 +1636,7 @@ class INIInfos(TableFileInfos):
             if oldInfo is not None and not oldInfo.is_default_tweak:
                 if oldInfo.do_update(): _updated.add(name)
             else: # added
-                oldInfo = self.factory(self.store_dir, name)
+                oldInfo = self.factory(self.store_dir.join(name))
                 _added.add(name)
             self[name] = oldInfo
         _deleted = oldNames - newNames
@@ -1666,15 +1668,6 @@ class INIInfos(TableFileInfos):
         change = bool(_added) or bool(_updated) or bool(_deleted) or changed
         if not change: return change
         return _added, _updated, _deleted, changed
-
-    def new_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None, notify_bain=False):
-        info = self[fileName] = self.factory(self.store_dir, fileName)
-        if owner is not None:
-            self.table.setItem(fileName, 'installer', owner)
-        if notify_bain:
-            self._notify_bain(changed={info.abs_path})
-        return info
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
@@ -2476,10 +2469,10 @@ class ModInfos(FileInfos):
         return iniFiles
 
     def create_new_mod(self, newName, selected=(), masterless=False,
-                       directory=u'', bashed_patch=False):
+                       directory=empty_path, bashed_patch=False):
         directory = directory or self.store_dir
         new_name = GPath(newName)
-        newInfo = self.factory(directory, new_name)
+        newInfo = self.factory(directory.join(new_name))
         newFile = ModFile(newInfo)
         if not masterless:
             newFile.tes4.masters = [self.masterName]

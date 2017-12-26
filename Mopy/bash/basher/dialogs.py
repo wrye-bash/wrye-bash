@@ -462,10 +462,10 @@ class CreateNewProject(balt.Dialog):
         tempProject = tmpDir.join(projectName)
         if self.checkEsp.IsChecked():
             fileName = u'Blank, %s.esp' % bush.game.fsName
-            bosh.modInfos.create_new_mod(fileName, directory=tempProject.s)
+            bosh.modInfos.create_new_mod(fileName, directory=tempProject)
         if self.checkEspMasterless.IsChecked():
             fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
-            bosh.modInfos.create_new_mod(fileName, directory=tempProject.s,
+            bosh.modInfos.create_new_mod(fileName, directory=tempProject,
                                          masterless=True)
         if self.checkWizard.IsChecked():
             # Create empty wizard.txt

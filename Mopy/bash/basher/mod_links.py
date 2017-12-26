@@ -116,7 +116,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             if master in bosh.modInfos:
                 continue
             # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(self._selected_info.dir, master)
+            newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
             refresh.append((master, newInfo, previous_master))
             previous_master = master
             if doCBash:
@@ -1719,8 +1719,7 @@ class Mod_Face_Import(OneItemLink):
                                 wildcard=wildcard, mustExist=True)
         if not srcPath: return
         #--Get face
-        srcDir,srcName = srcPath.headTail
-        srcInfo = bosh.SaveInfo(srcDir,srcName)
+        srcInfo = bosh.SaveInfo(srcPath)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
@@ -1783,7 +1782,7 @@ class _Mod_Import_Link(OneItemLink):
             if ext == u'.csv':
                 parser.readFromText(textPath)
             else:
-                srcInfo = bosh.ModInfo(textDir, textName)
+                srcInfo = bosh.ModInfo(GPath(textDir).join(textName))
                 parser.readFromMod(srcInfo)
             progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
             changed = parser.writeToMod(self._selected_info)
