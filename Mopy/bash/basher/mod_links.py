@@ -138,7 +138,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         to_select = []
         for mod, info, previous in refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games
-            bosh.modInfos.refreshFile(mod) # use refreshFile so BAIN is aware
+            bosh.modInfos.new_info(mod, notify_bain=True)
             bosh.modInfos.cached_lo_insert_after(previous, mod)
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
@@ -1433,7 +1433,7 @@ class Mod_AddMaster(OneItemLink):
             self._selected_info.header.masters.append(masters_name)
         self._selected_info.header.changed = True
         self._selected_info.writeHeader()
-        bosh.modInfos.refreshFile(self._selected_item)
+        bosh.modInfos.new_info(self._selected_item, notify_bain=True)
         self.window.RefreshUI(refreshSaves=False) # why refreshing saves ?
 
 #------------------------------------------------------------------------------

@@ -244,7 +244,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
             # keep load order but recalculate the crc
             self._selected_info.setmtime(current_mtime, crc_changed=True)
             try:
-                self.window.data_store.refreshFile(fileName)
+                self.window.data_store.new_info(fileName, notify_bain=True)
             except exception.FileError: # FIXME(ut) - we just lost the correct file
                 balt.showError(self,_(u'Snapshot file is corrupt!'))
                 self.window.panel.ClearDetails()

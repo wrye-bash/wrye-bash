@@ -2179,7 +2179,8 @@ class InstallersData(DataStore):
                           u'from old file.\n\n')
                 ini.writelines(lines)
             # we notify BAIN below, although highly improbable the created ini
-            iniInfos.refreshFile(tweakPath.tail) # is included to a package
+            # is included to a package
+            iniInfos.new_info(tweakPath.tail, notify_bain=True)
         tweaksCreated -= removed
 
     def _install(self, packages, refresh_ui, progress=None, last=False,
@@ -2229,7 +2230,7 @@ class InstallersData(DataStore):
         from . import modInfos, iniInfos
         for mod in set(mods):
             try:
-                modInfos.add_info(mod, owner=installer.archive)
+                modInfos.new_info(mod, owner=installer.archive)
             except FileError:
                 mods.discard(mod)
         modInfos.cached_lo_append_if_missing(mods)
@@ -2242,7 +2243,7 @@ class InstallersData(DataStore):
             s, c, (d != -1 and d) or bass.dirs['mods'].join(dest).mtime)) for
             dest, (s, c, d) in data_sizeCrcDate_update.iteritems())
         for ini in inis:
-            iniInfos.add_info(ini, owner=installer.archive)
+            iniInfos.new_info(ini, owner=installer.archive)
 
     def sorted_pairs(self, package_keys=None, reverse=False):
         """Return pairs of key, installer for package_keys in self, sorted by
