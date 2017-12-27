@@ -279,8 +279,8 @@ class AFile(object):
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
-    def __init__(self, abs_path, load_cache=False):
-        self._abs_path = GPath(abs_path)
+    def __init__(self, fullpath, load_cache=False):
+        self._abs_path = GPath(fullpath)
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
@@ -392,8 +392,8 @@ class FileInfo(AFile):
 
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
-    def __init__(self, abs_path, load_cache=False):
-        g_path = GPath(abs_path)
+    def __init__(self, fullpath, load_cache=False):
+        g_path = GPath(fullpath)
         self.dir = g_path.head
         self.name = g_path.tail # ghost must be lopped off
         self.header = None
@@ -557,13 +557,13 @@ reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 class ModInfo(FileInfo):
     """An esp/m/l file."""
 
-    def __init__(self, g_path, load_cache=False):
-        self.isGhost = endsInGhost = (g_path.cs[-6:] == u'.ghost')
-        if endsInGhost: g_path = GPath(g_path.s[:-6])
+    def __init__(self, fullpath, load_cache=False):
+        self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
+        if endsInGhost: fullpath = GPath(fullpath.s[:-6])
         else: # new_info() path
             self.isGhost = \
-                not g_path.exists() and (g_path + u'.ghost').exists()
-        super(ModInfo, self).__init__(g_path, load_cache)
+                not fullpath.exists() and (fullpath + u'.ghost').exists()
+        super(ModInfo, self).__init__(fullpath, load_cache)
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
@@ -1187,11 +1187,11 @@ class BSAInfo(FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
 
-    def __init__(self, abs_path, load_cache=False):
+    def __init__(self, fullpath, load_cache=False):
         try: # Never load_cache for memory reasons - let it be loaded as needed
-            super(BSAInfo, self).__init__(abs_path, load_cache=False)
+            super(BSAInfo, self).__init__(fullpath, load_cache=False)
         except BSAError as e:
-            raise FileError, (GPath(abs_path).tail,
+            raise FileError, (GPath(fullpath).tail,
                 e.__class__.__name__ + u' ' + e.message), sys.exc_info()[2]
         self._reset_bsa_mtime()
 

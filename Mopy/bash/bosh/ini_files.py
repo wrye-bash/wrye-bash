@@ -46,8 +46,8 @@ class IniFile(AFile):
     __empty = LowerDict()
     defaultSection = u'General'
 
-    def __init__(self, abs_path):
-        super(IniFile, self).__init__(abs_path)
+    def __init__(self, fullpath):
+        super(IniFile, self).__init__(fullpath)
         self.isCorrupted = u''
         #--Settings cache
         self._ci_settings_cache_linenum = self.__empty
@@ -340,8 +340,9 @@ class DefaultIniFile(IniFile):
     """A default ini tweak - hardcoded."""
     __empty = _LowerOrderedDict()
 
-    def __init__(self, path, settings_dict=__empty): # CALL SUPER
-        self.abs_path = GPath(path)
+    def __init__(self, default_ini_name, settings_dict=__empty):
+        # we don't call AFile#__init__ to avoid stat'ing the non existing file
+        self.abs_path = GPath(default_ini_name)
         self._file_size, self._file_mod_time = self._null_stat
         #--Settings cache
         self.lines, current_line = [], 0
@@ -540,16 +541,16 @@ class OblivionIni(IniFile):
     encoding = 'cp1252'
     _ini_language = None
 
-    def __init__(self,name):
+    def __init__(self, ini_name): #TODO(ut) move this logic in caller
         # Use local copy of the oblivion.ini if present
-        if dirs['app'].join(name).exists():
-            IniFile.__init__(self, dirs['app'].join(name))
+        if dirs['app'].join(ini_name).exists():
+            IniFile.__init__(self, dirs['app'].join(ini_name))
             # is bUseMyGamesDirectory set to 0?
             if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
                 return
         # oblivion.ini was not found in the game directory or
         # bUseMyGamesDirectory was not set.  Default to user profile directory
-        IniFile.__init__(self, dirs['saveBase'].join(name))
+        IniFile.__init__(self, dirs['saveBase'].join(ini_name))
 
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""

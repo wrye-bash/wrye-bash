@@ -288,8 +288,8 @@ class ABsa(AFile):
     header_type = BsaHeader
     _assets = frozenset()
 
-    def __init__(self, abs_path, load_cache=False, names_only=True):
-        super(ABsa, self).__init__(abs_path)
+    def __init__(self, fullpath, load_cache=False, names_only=True):
+        super(ABsa, self).__init__(fullpath)
         self.bsa_header = self.__class__.header_type()
         self.bsa_folders = collections.OrderedDict() # keep folder order
         self._filenames = []
