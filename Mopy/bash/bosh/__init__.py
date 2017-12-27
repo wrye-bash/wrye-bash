@@ -1311,14 +1311,14 @@ class TableFileInfos(DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def new_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None, notify_bain=False):
+    def new_info(self, fileName, _in_refresh=False, owner=None,
+                 notify_bain=False):
         """Create, add to self and return a new info using self.factory.
-        By default it will try to read the file to cache its header
-        etc, so use on existing files. WIP, in particular _in_refresh must go,
-        but that needs rewriting corrupted handling."""
+        It will try to read the file to cache its header etc, so use on
+        existing files. WIP, in particular _in_refresh must go, but that
+        needs rewriting corrupted handling."""
         info = self[fileName] = self.factory(self.store_dir.join(fileName),
-                                             load_cache=load_cache)
+                                             load_cache=True)
         if owner is not None:
             self.table.setItem(fileName, 'installer', owner)
         if notify_bain:
@@ -1395,11 +1395,11 @@ class FileInfos(TableFileInfos):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
-    def new_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None, notify_bain=False):
+    def new_info(self, fileName, _in_refresh=False, owner=None,
+                 notify_bain=False):
         try:
-            fileInfo = super(FileInfos, self).new_info(
-                fileName, load_cache, owner=owner, notify_bain=notify_bain)
+            fileInfo = super(FileInfos, self).new_info(fileName, owner=owner,
+                                                       notify_bain=notify_bain)
             self.corrupted.pop(fileName, None)
             return fileInfo
         except FileError as error:
@@ -1509,7 +1509,7 @@ class FileInfos(TableFileInfos):
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
         if destDir == self.store_dir:
             # TODO(ut) : pass the info in and load_cache=False
-            self.new_info(destName, load_cache=True, notify_bain=True)
+            self.new_info(destName, notify_bain=True)
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
                 if set_mtime == '+1':
@@ -1549,7 +1549,8 @@ class INIInfos(TableFileInfos):
         _default_tweaks = {}
 
     def __init__(self):
-        super(INIInfos, self).__init__(dirs['tweaks'], ini_info_factory)
+        super(INIInfos, self).__init__(dirs['tweaks'],
+                                       factory=ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -1779,7 +1780,7 @@ class ModInfos(FileInfos):
         pass
 
     def __init__(self):
-        FileInfos.__init__(self, dirs['mods'], ModInfo)
+        FileInfos.__init__(self, dirs['mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         for fname in bush.game.masterFiles:
@@ -2172,13 +2173,13 @@ class ModInfos(FileInfos):
         return pairs
 
     #--Refresh File
-    def new_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None, notify_bain=False):
+    def new_info(self, fileName, _in_refresh=False, owner=None,
+                 notify_bain=False):
         # we should refresh info sets if we manage to add the info, but also
         # if we fail, which might mean that some info got corrupted
         self._reset_info_sets()
-        return super(ModInfos, self).new_info(fileName, load_cache,
-                                              _in_refresh, owner, notify_bain)
+        return super(ModInfos, self).new_info(fileName, _in_refresh, owner,
+                                              notify_bain)
 
     #--Mod selection ----------------------------------------------------------
     def getSemiActive(self,masters=None):
@@ -2764,7 +2765,7 @@ class SaveInfos(FileInfos):
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
         super(SaveInfos, self).__init__(dirs['saveBase'].join(self.localSave),
-                                        SaveInfo)
+                                        factory=SaveInfo)
         # Save Profiles database
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
@@ -2881,7 +2882,8 @@ class BSAInfos(FileInfos):
     except AttributeError:
         pass
 
-    def __init__(self): super(BSAInfos, self).__init__(dirs['mods'], BSAInfo)
+    def __init__(self):
+        super(BSAInfos, self).__init__(dirs['mods'], factory=BSAInfo)
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
