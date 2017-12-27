@@ -187,7 +187,8 @@ class RecordHeader(object):
             if RecordHeader.plugin_form_version:
                 extra1, extra2 = struct_unpack('=2h',
                                                struct_pack('=I', self.extra))
-                extra1 = RecordHeader.plugin_form_version
+                if extra1 == 0:
+                    extra1 = RecordHeader.plugin_form_version
                 self.extra = \
                     struct_unpack('=I', struct_pack('=2h', extra1, extra2))[0]
                 pack_args.append(self.extra)
