@@ -541,17 +541,6 @@ class OblivionIni(IniFile):
     encoding = 'cp1252'
     _ini_language = None
 
-    def __init__(self, ini_name): #TODO(ut) move this logic in caller
-        # Use local copy of the oblivion.ini if present
-        if dirs['app'].join(ini_name).exists():
-            IniFile.__init__(self, dirs['app'].join(ini_name))
-            # is bUseMyGamesDirectory set to 0?
-            if self.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
-                return
-        # oblivion.ini was not found in the game directory or
-        # bUseMyGamesDirectory was not set.  Default to user profile directory
-        IniFile.__init__(self, dirs['saveBase'].join(ini_name))
-
     def saveSetting(self,section,key,value):
         """Changes a single setting in the file."""
         ini_settings = {section:{key:value}}

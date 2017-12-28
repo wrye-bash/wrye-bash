@@ -3119,12 +3119,24 @@ def initDirs(bashIni_, personal, localAppData):
     localAppData = getLocalAppDataPath(bashIni_, localAppData)
     dirs['userApp'] = localAppData.join(bush.game.fsName)
 
-    # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
+    # Use local copy of the oblivion.ini if present
     global gameInis
     global oblivionIni
-    gameInis = tuple(OblivionIni(x) for x in bush.game.iniFiles)
-    oblivionIni = gameInis[0]
-    if oblivionIni.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
+    data_oblivion_ini = dirs['app'].join(bush.game.iniFiles[0])
+    use_data_dir = False
+    if data_oblivion_ini.exists():
+        oblivionIni = OblivionIni(data_oblivion_ini)
+        # is bUseMyGamesDirectory set to 0?
+        if oblivionIni.getSetting(u'General', u'bUseMyGamesDirectory', u'1') == u'0':
+            use_data_dir = True
+    if not use_data_dir: # FIXME that's what the code was doing - loaded the ini in saveBase and tried again ??
+        # oblivion.ini was not found in the game directory or
+        # bUseMyGamesDirectory was not set.  Default to user profile directory
+        oblivionIni = OblivionIni(dirs['saveBase'].join(bush.game.iniFiles[0]))
+        # is bUseMyGamesDirectory set to 0?
+        if oblivionIni.getSetting(u'General', u'bUseMyGamesDirectory', u'1') == u'0':
+            use_data_dir = True
+    if use_data_dir:
         # Set the save game folder to the Oblivion directory
         dirs['saveBase'] = dirs['app']
         # Set the data folder to sLocalMasterPath
@@ -3133,6 +3145,8 @@ def initDirs(bashIni_, personal, localAppData):
         # these are relative to the mods path so they must be updated too
         dirs['patches'] = dirs['mods'].join(u'Bash Patches')
         dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
+    gameInis = [oblivionIni]
+    gameInis.extend(OblivionIni(dirs['saveBase'].join(x)) for x in bush.game.iniFiles[1:])
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_)
     dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni_)
