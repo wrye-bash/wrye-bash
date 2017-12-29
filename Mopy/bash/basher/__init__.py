@@ -1177,10 +1177,12 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         event.Skip()
 
     @balt.conversation
-    def _refresh_detail_info(self, load_cache):
+    def _refresh_detail_info(self):
         try: # use self.file_info.name, as name may have been updated
-            self.panel_uilist.data_store.refreshFile(self.file_info.name,
-                                                     load_cache=load_cache)
+            # Although we could avoid rereading the header I leave it here as
+            # an extra error check - error handling is WIP
+            self.panel_uilist.data_store.new_info(self.file_info.name,
+                                                  notify_bain=True)
             return self.file_info.name
         except FileError as e:
             deprint(u'Failed to edit details for %s' % self.displayed_item,
@@ -1454,8 +1456,8 @@ class ModDetails(_SashDetailsPanel):
         if changeDate:
             self._set_date(modInfo) # crc recalculated in writeHeader if needed
         if changeDate or changeHedr or changeMasters:
-            detail_item = self._refresh_detail_info(
-                load_cache=True) ##: changeHedr or changeMasters but blows on modInfos refresh
+            # we reread header to make sure was written correctly
+            detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.name
         #--Done
         with load_order.Unlock():
@@ -1978,7 +1980,7 @@ class SaveDetails(_SashDetailsPanel):
             saveInfo.header.masters = self.uilist.GetNewMasters()
             saveInfo.write_masters()
             saveInfo.setmtime(prevMTime)
-            detail_item = self._refresh_detail_info(load_cache=True)
+            detail_item = self._refresh_detail_info()
         else: detail_item = self.file_info.name
         kwargs = dict(to_del=to_del, detail_item=detail_item)
         if detail_item is None:
@@ -4022,13 +4024,13 @@ class BashApp(wx.App):
         progress(0.05, _(u'Initializing BsaInfos'))
         #bsaInfos: used in warnTooManyModsBsas() and modInfos strings detection
         bosh.bsaInfos = bosh.BSAInfos()
-        bosh.bsaInfos.refresh()
+        bosh.bsaInfos.refresh(booting=True)
         progress(0.20, _(u'Initializing ModInfos'))
         bosh.modInfos = bosh.ModInfos()
-        bosh.modInfos.refresh()
+        bosh.modInfos.refresh(booting=True)
         progress(0.50, _(u'Initializing SaveInfos'))
         bosh.saveInfos = bosh.SaveInfos()
-        bosh.saveInfos.refresh()
+        bosh.saveInfos.refresh(booting=True)
         progress(0.60, _(u'Initializing IniInfos'))
         bosh.iniInfos = bosh.INIInfos()
         bosh.iniInfos.refresh(refresh_target=False)

@@ -179,6 +179,7 @@ class PatchDialog(balt.Dialog):
         patchFile = progress = None
         try:
             patch_name = self.patchInfo.name
+            patch_size = self.patchInfo.size
             progress = balt.Progress(patch_name.s,(u' '*60+u'\n'), abort=True)
             timer1 = time.clock()
             #--Save configs
@@ -261,8 +262,15 @@ class PatchDialog(balt.Dialog):
                     balt.showError(self, _(
                         u'Unable to add mod %s because load list is full.')
                                    % patch_name.s)
-            bosh.modInfos.refreshFile(patch_name)
-            bosh.modInfos[patch_name].calculate_crc(recalculate=True) # yak fix refreshFile
+            # although improbable user has package with bashed patches...
+            info = bosh.modInfos.new_info(patch_name, notify_bain=True)
+            if info.size == patch_size:
+                # needed if size remains the same - mtime is set in
+                # parsers.ModFile#safeSave (or save for CBash...) which can't
+                # use setmtime(crc_changed), as no info is there. In this case
+                # _reset_cache > calculate_crc() would not detect the crc
+                # change. That's a general problem with crc cache - API limits
+                info.calculate_crc(recalculate=True)
             BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except FileEditError as error:
             balt.playSound(self.parent, bass.inisettings['SoundError'].s)

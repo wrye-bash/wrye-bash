@@ -265,7 +265,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             with outFile.open('w') as out:
                 for line in generateTweakLines(wizardEdits, iniFile):
                     out.write(line + u'\n')
-            bosh.iniInfos.add_info(outFile.tail, owner=installer.archive)
+            bosh.iniInfos.new_info(outFile.tail, owner=installer.archive)
             # trigger refresh UI
             ui_refresh[1] = True
             # We wont automatically apply tweaks to anything other than

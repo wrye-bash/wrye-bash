@@ -279,8 +279,8 @@ class AFile(object):
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
-    def __init__(self, abs_path, load_cache=False):
-        self._abs_path = GPath(abs_path)
+    def __init__(self, fullpath, load_cache=False):
+        self._abs_path = GPath(fullpath)
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
@@ -392,16 +392,17 @@ class FileInfo(AFile):
 
     def _stat_tuple(self): return self.abs_path.size_mtime_ctime()
 
-    def __init__(self, parent_dir, name, load_cache=False):
-        self.dir = GPath(parent_dir)
-        self.name = GPath(name) # ghost must be lopped off
+    def __init__(self, fullpath, load_cache=False):
+        g_path = GPath(fullpath)
+        self.dir = g_path.head
+        self.name = g_path.tail # ghost must be lopped off
         self.header = None
         self.masterNames = tuple()
         self.masterOrder = tuple()
         self.madeBackup = False
         #--Ancillary storage
         self.extras = {}
-        super(FileInfo, self).__init__(self.dir.join(name), load_cache)
+        super(FileInfo, self).__init__(g_path, load_cache)
 
     def _reset_masters(self):
         #--Master Names/Order
@@ -440,10 +441,6 @@ class FileInfo(AFile):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         pass
-
-    def copy_header(self, original_info):
-        self.header = original_info.header
-        self._reset_masters()
 
     def getStatus(self):
         """Returns status of this file -- which depends on status of masters.
@@ -515,7 +512,7 @@ class FileInfo(AFile):
         env.shellCopy(*zip(*backup_paths))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self._file_mod_time, crc_changed=True)
-        self.getFileInfos().refreshFile(self.name)
+        self.getFileInfos().new_info(self.name, notify_bain=True)
 
     def getNextSnapshot(self):
         """Returns parameters for next snapshot."""
@@ -560,14 +557,13 @@ reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 class ModInfo(FileInfo):
     """An esp/m/l file."""
 
-    def __init__(self, parent_dir, name, load_cache=False):
-        self.isGhost = endsInGhost = (name.cs[-6:] == u'.ghost')
-        if endsInGhost: name = GPath(name.s[:-6])
-        else: # refreshFile() path
-            absPath = GPath(parent_dir).join(name)
+    def __init__(self, fullpath, load_cache=False):
+        self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')
+        if endsInGhost: fullpath = GPath(fullpath.s[:-6])
+        else: # new_info() path
             self.isGhost = \
-                not absPath.exists() and (absPath + u'.ghost').exists()
-        super(ModInfo, self).__init__(parent_dir, name, load_cache)
+                not fullpath.exists() and (fullpath + u'.ghost').exists()
+        super(ModInfo, self).__init__(fullpath, load_cache)
 
     def _reset_cache(self, stat_tuple, load_cache):
         super(ModInfo, self)._reset_cache(stat_tuple, load_cache)
@@ -1191,12 +1187,11 @@ class BSAInfo(FileInfo, _bsa_type):
     _default_mtime = time.mktime(
         time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
 
-    def __init__(self, parent_dir, bsa_name, load_cache=False):
+    def __init__(self, fullpath, load_cache=False):
         try: # Never load_cache for memory reasons - let it be loaded as needed
-            super(BSAInfo, self).__init__(parent_dir, bsa_name,
-                                          load_cache=False)
+            super(BSAInfo, self).__init__(fullpath, load_cache=False)
         except BSAError as e:
-            raise FileError, (GPath(bsa_name),
+            raise FileError, (GPath(fullpath).tail,
                 e.__class__.__name__ + u' ' + e.message), sys.exc_info()[2]
         self._reset_bsa_mtime()
 
@@ -1209,8 +1204,6 @@ class BSAInfo(FileInfo, _bsa_type):
 
     def readHeader(self): # just reset the cache
         self._assets = self.__class__._assets
-
-    def copy_header(self, original_info): pass
 
     def _reset_bsa_mtime(self):
         if bush.game.allow_reset_bsa_timestamps and inisettings[
@@ -1318,17 +1311,18 @@ class TableFileInfos(DataStore):
         self.factory=factory
         self._initDB(dir_)
 
-    def add_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None):
-        info = self[fileName] = self.factory(self.store_dir, fileName,
-                                             load_cache=load_cache)
+    def new_info(self, fileName, _in_refresh=False, owner=None,
+                 notify_bain=False):
+        """Create, add to self and return a new info using self.factory.
+        It will try to read the file to cache its header etc, so use on
+        existing files. WIP, in particular _in_refresh must go, but that
+        needs rewriting corrupted handling."""
+        info = self[fileName] = self.factory(self.store_dir.join(fileName),
+                                             load_cache=True)
         if owner is not None:
             self.table.setItem(fileName, 'installer', owner)
-        return info
-
-    def refreshFile(self, fileName, load_cache=True, _in_refresh=False): # YAK - tmp _in_refresh
-        info = self.add_info(fileName, load_cache, _in_refresh)
-        self._notify_bain(changed={info.abs_path})
+        if notify_bain:
+            self._notify_bain(changed={info.abs_path})
         return info
 
     def _names(self): # performance intensive
@@ -1354,7 +1348,7 @@ class TableFileInfos(DataStore):
             try:
                 fileInfo = self[fileName]
             except KeyError: # corrupted
-                fileInfo = self.factory(self.store_dir, fileName)
+                fileInfo = self.factory(self.store_dir.join(fileName))
             #--File
             filePath = fileInfo.abs_path
             abs_delete_paths.append(filePath)
@@ -1401,11 +1395,11 @@ class FileInfos(TableFileInfos):
         self.corrupted = {} #--errorMessage = corrupted[fileName]
 
     #--Refresh File
-    def add_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None):
+    def new_info(self, fileName, _in_refresh=False, owner=None,
+                 notify_bain=False):
         try:
-            fileInfo = super(FileInfos, self).add_info(
-                fileName, load_cache=load_cache, owner=owner)
+            fileInfo = super(FileInfos, self).new_info(fileName, owner=owner,
+                                                       notify_bain=notify_bain)
             self.corrupted.pop(fileName, None)
             return fileInfo
         except FileError as error:
@@ -1415,7 +1409,7 @@ class FileInfos(TableFileInfos):
             raise
 
     #--Refresh
-    def refresh(self, refresh_infos=True):
+    def refresh(self, refresh_infos=True, booting=False):
         """Refresh from file directory."""
         oldNames = set(self.data) | set(self.corrupted)
         _added = set()
@@ -1428,8 +1422,8 @@ class FileInfos(TableFileInfos):
                     if oldInfo.do_update(): # will reread the header
                         _updated.add(name)
                 else: # added or known corrupted, get a new info
-                    # TODO(ut): notify BAIN for added files but not on boot
-                    self.add_info(name, _in_refresh=True)
+                    self.new_info(name, _in_refresh=True,
+                                  notify_bain=not booting)
                     _added.add(name)
             except FileError as e: # old still corrupted, or new(ly) corrupted
                 if not name in self.corrupted \
@@ -1515,7 +1509,7 @@ class FileInfos(TableFileInfos):
         srcPath.copyTo(destPath) # will set destPath.mtime to the srcPath one
         if destDir == self.store_dir:
             # TODO(ut) : pass the info in and load_cache=False
-            self.refreshFile(destName, load_cache=True)
+            self.new_info(destName, notify_bain=True)
             self.table.copyRow(fileName, destName)
             if set_mtime is not None:
                 if set_mtime == '+1':
@@ -1531,9 +1525,12 @@ class DefaultIniInfo(DefaultIniFile, INIInfo):
     @property
     def is_default_tweak(self): return True
 
-def ini_info_factory(parent_dir, filename):
-    """:rtype: INIInfo"""
-    fullpath = GPath(parent_dir).join(filename)
+# noinspection PyUnusedLocal
+def ini_info_factory(fullpath, load_cache='Ignored'):
+    """INIInfos factory
+    :param fullpath: fullpath to the ini file to wrap
+    :param load_cache: dummy param used in INIInfos#new_info factory call
+    :rtype: INIInfo"""
     INICount = IniFile.formatMatch(fullpath)
     OBSECount = OBSEIniFile.formatMatch(fullpath)
     if INICount >= OBSECount:
@@ -1552,7 +1549,8 @@ class INIInfos(TableFileInfos):
         _default_tweaks = {}
 
     def __init__(self):
-        super(INIInfos, self).__init__(dirs['tweaks'], ini_info_factory)
+        super(INIInfos, self).__init__(dirs['tweaks'],
+                                       factory=ini_info_factory)
         self._ini = None
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
@@ -1639,7 +1637,7 @@ class INIInfos(TableFileInfos):
             if oldInfo is not None and not oldInfo.is_default_tweak:
                 if oldInfo.do_update(): _updated.add(name)
             else: # added
-                oldInfo = self.factory(self.store_dir, name)
+                oldInfo = self.factory(self.store_dir.join(name))
                 _added.add(name)
             self[name] = oldInfo
         _deleted = oldNames - newNames
@@ -1671,13 +1669,6 @@ class INIInfos(TableFileInfos):
         change = bool(_added) or bool(_updated) or bool(_deleted) or changed
         if not change: return change
         return _added, _updated, _deleted, changed
-
-    def add_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None):
-        info = self[fileName] = self.factory(self.store_dir, fileName)
-        if owner is not None:
-            self.table.setItem(fileName, 'installer', owner)
-        return info
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'INI Data')
@@ -1715,16 +1706,16 @@ class INIInfos(TableFileInfos):
         with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
             # writelines does not do what you'd expect, would concatenate lines
             ini_file.write('\n'.join(info.read_ini_lines()))
-        self.refreshFile(new_tweak.tail)
+        self.new_info(new_tweak.tail, notify_bain=True)
         return self[new_tweak.tail]
 
     def duplicate_ini(self, tweak, new_tweak):
         """Duplicate tweak into new_tweak, copying current target settings"""
         if not new_tweak: return False
         # new_tweak is an abs path, join works ok relative to self.store_dir
-        new_info = self._copy_to_new_tweak(self[tweak], new_tweak)
+        dup_info = self._copy_to_new_tweak(self[tweak], new_tweak)
         # Now edit it with the values from the target INI
-        new_tweak_settings = bolt.LowerDict(new_info.get_ci_settings())
+        new_tweak_settings = bolt.LowerDict(dup_info.get_ci_settings())
         target_settings = self.ini.get_ci_settings()
         for section in new_tweak_settings:
             if section in target_settings:
@@ -1735,7 +1726,7 @@ class INIInfos(TableFileInfos):
         for k,v in new_tweak_settings.items(): # drop line numbers
             new_tweak_settings[k] = dict( # saveSettings converts to LowerDict
                 (sett, val[0]) for sett, val in v.iteritems())
-        new_info.saveSettings(new_tweak_settings)
+        dup_info.saveSettings(new_tweak_settings)
         return True
 
 def _lo_cache(lord_func):
@@ -1789,7 +1780,7 @@ class ModInfos(FileInfos):
         pass
 
     def __init__(self):
-        FileInfos.__init__(self, dirs['mods'], ModInfo)
+        FileInfos.__init__(self, dirs['mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
         for fname in bush.game.masterFiles:
@@ -1987,7 +1978,7 @@ class ModInfos(FileInfos):
             else: unghosted_names.add(name)
         return unghosted_names
 
-    def refresh(self, refresh_infos=True, _modTimesChange=False):
+    def refresh(self, refresh_infos=True, booting=False, _modTimesChange=False):
         """Update file data for additions, removals and date changes.
 
         See usages for how to use the refresh_infos and _modTimesChange params.
@@ -2003,7 +1994,7 @@ class ModInfos(FileInfos):
         hasChanged = deleted = False
         # Scan the data dir, getting info on added, deleted and modified files
         if refresh_infos:
-            change = FileInfos.refresh(self)
+            change = FileInfos.refresh(self, booting=booting)
             if change: _added, _updated, deleted = change
             hasChanged = bool(change)
         # If refresh_infos is False and mods are added _do_ manually refresh
@@ -2182,12 +2173,13 @@ class ModInfos(FileInfos):
         return pairs
 
     #--Refresh File
-    def add_info(self, fileName, load_cache=True, _in_refresh=False,
-                 owner=None):
+    def new_info(self, fileName, _in_refresh=False, owner=None,
+                 notify_bain=False):
         # we should refresh info sets if we manage to add the info, but also
         # if we fail, which might mean that some info got corrupted
         self._reset_info_sets()
-        super(ModInfos, self).add_info(fileName, load_cache, _in_refresh, owner)
+        return super(ModInfos, self).new_info(fileName, _in_refresh, owner,
+                                              notify_bain)
 
     #--Mod selection ----------------------------------------------------------
     def getSemiActive(self,masters=None):
@@ -2478,10 +2470,10 @@ class ModInfos(FileInfos):
         return iniFiles
 
     def create_new_mod(self, newName, selected=(), masterless=False,
-                       directory=u'', bashed_patch=False):
+                       directory=empty_path, bashed_patch=False):
         directory = directory or self.store_dir
         new_name = GPath(newName)
-        newInfo = self.factory(directory, new_name)
+        newInfo = self.factory(directory.join(new_name))
         newFile = ModFile(newInfo)
         if not masterless:
             newFile.tes4.masters = [self.masterName]
@@ -2489,7 +2481,7 @@ class ModInfos(FileInfos):
             newFile.tes4.author = u'BASHED PATCH'
         newFile.safeSave()
         if directory == self.store_dir:
-            self.refreshFile(new_name) # add to self, refresh size etc
+            self.new_info(new_name, notify_bain=True) # notify just in case...
             last_selected = load_order.get_ordered(selected)[
                 -1] if selected else self._lo_wip[-1]
             self.cached_lo_insert_after(last_selected, new_name)
@@ -2773,7 +2765,7 @@ class SaveInfos(FileInfos):
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
         super(SaveInfos, self).__init__(dirs['saveBase'].join(self.localSave),
-                                        SaveInfo)
+                                        factory=SaveInfo)
         # Save Profiles database
         self.profiles = bolt.Table(bolt.PickleDict(
             dirs['saveBase'].join(u'BashProfiles.dat')))
@@ -2781,9 +2773,9 @@ class SaveInfos(FileInfos):
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
 
-    def refresh(self, refresh_infos=True):
+    def refresh(self, refresh_infos=True, booting=False):
         self._refreshLocalSave()
-        return refresh_infos and FileInfos.refresh(self)
+        return refresh_infos and FileInfos.refresh(self, booting=booting)
 
     def _additional_deletes(self, fileInfo, toDelete):
         toDelete.extend(CoSaves.getPaths(fileInfo.getPath()))
@@ -2808,7 +2800,7 @@ class SaveInfos(FileInfos):
             if d.tail in moved: CoSaves(s).move(d)
         for d in moved:
             try:
-                self.refreshFile(d)
+                self.new_info(d, notify_bain=True)
             except FileError:
                 pass # will warn below
         bash_frame.warn_corrupted(warn_mods=False, warn_strings=False)
@@ -2890,7 +2882,8 @@ class BSAInfos(FileInfos):
     except AttributeError:
         pass
 
-    def __init__(self): super(BSAInfos, self).__init__(dirs['mods'], BSAInfo)
+    def __init__(self):
+        super(BSAInfos, self).__init__(dirs['mods'], factory=BSAInfo)
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
@@ -3128,12 +3121,24 @@ def initDirs(bashIni_, personal, localAppData):
     localAppData = getLocalAppDataPath(bashIni_, localAppData)
     dirs['userApp'] = localAppData.join(bush.game.fsName)
 
-    # Use local paths if bUseMyGamesDirectory=0 in Oblivion.ini
+    # Use local copy of the oblivion.ini if present
     global gameInis
     global oblivionIni
-    gameInis = tuple(OblivionIni(x) for x in bush.game.iniFiles)
-    oblivionIni = gameInis[0]
-    if oblivionIni.getSetting(u'General',u'bUseMyGamesDirectory',u'1') == u'0':
+    data_oblivion_ini = dirs['app'].join(bush.game.iniFiles[0])
+    use_data_dir = False
+    if data_oblivion_ini.exists():
+        oblivionIni = OblivionIni(data_oblivion_ini)
+        # is bUseMyGamesDirectory set to 0?
+        if oblivionIni.getSetting(u'General', u'bUseMyGamesDirectory', u'1') == u'0':
+            use_data_dir = True
+    if not use_data_dir: # FIXME that's what the code was doing - loaded the ini in saveBase and tried again ??
+        # oblivion.ini was not found in the game directory or
+        # bUseMyGamesDirectory was not set.  Default to user profile directory
+        oblivionIni = OblivionIni(dirs['saveBase'].join(bush.game.iniFiles[0]))
+        # is bUseMyGamesDirectory set to 0?
+        if oblivionIni.getSetting(u'General', u'bUseMyGamesDirectory', u'1') == u'0':
+            use_data_dir = True
+    if use_data_dir:
         # Set the save game folder to the Oblivion directory
         dirs['saveBase'] = dirs['app']
         # Set the data folder to sLocalMasterPath
@@ -3142,6 +3147,8 @@ def initDirs(bashIni_, personal, localAppData):
         # these are relative to the mods path so they must be updated too
         dirs['patches'] = dirs['mods'].join(u'Bash Patches')
         dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
+    gameInis = [oblivionIni]
+    gameInis.extend(OblivionIni(dirs['saveBase'].join(x)) for x in bush.game.iniFiles[1:])
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_)
     dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni_)

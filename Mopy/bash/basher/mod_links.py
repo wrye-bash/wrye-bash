@@ -116,7 +116,7 @@ class Mod_CreateDummyMasters(OneItemLink):
             if master in bosh.modInfos:
                 continue
             # Missing master, create a dummy plugin for it
-            newInfo = bosh.ModInfo(self._selected_info.dir, master)
+            newInfo = bosh.ModInfo(self._selected_info.dir.join(master))
             refresh.append((master, newInfo, previous_master))
             previous_master = master
             if doCBash:
@@ -138,7 +138,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         to_select = []
         for mod, info, previous in refresh:
             # add it to modInfos or lo_insert_after blows for timestamp games
-            bosh.modInfos.refreshFile(mod) # use refreshFile so BAIN is aware
+            bosh.modInfos.new_info(mod, notify_bain=True)
             bosh.modInfos.cached_lo_insert_after(previous, mod)
             to_select.append(mod)
         bosh.modInfos.cached_lo_save_lo()
@@ -1433,7 +1433,7 @@ class Mod_AddMaster(OneItemLink):
             self._selected_info.header.masters.append(masters_name)
         self._selected_info.header.changed = True
         self._selected_info.writeHeader()
-        bosh.modInfos.refreshFile(self._selected_item)
+        bosh.modInfos.new_info(self._selected_item, notify_bain=True)
         self.window.RefreshUI(refreshSaves=False) # why refreshing saves ?
 
 #------------------------------------------------------------------------------
@@ -1719,8 +1719,7 @@ class Mod_Face_Import(OneItemLink):
                                 wildcard=wildcard, mustExist=True)
         if not srcPath: return
         #--Get face
-        srcDir,srcName = srcPath.headTail
-        srcInfo = bosh.SaveInfo(srcDir,srcName)
+        srcInfo = bosh.SaveInfo(srcPath)
         srcFace = bosh.faces.PCFaces.save_getPlayerFace(srcInfo)
         #--Save Face
         npc = bosh.faces.PCFaces.mod_addFace(self._selected_info, srcFace)
@@ -1783,7 +1782,7 @@ class _Mod_Import_Link(OneItemLink):
             if ext == u'.csv':
                 parser.readFromText(textPath)
             else:
-                srcInfo = bosh.ModInfo(textDir, textName)
+                srcInfo = bosh.ModInfo(GPath(textDir).join(textName))
                 parser.readFromMod(srcInfo)
             progress(0.2, _(u'Applying to') +u' ' +self._selected_item.s +u'.')
             changed = parser.writeToMod(self._selected_info)
