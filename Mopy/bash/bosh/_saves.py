@@ -72,7 +72,7 @@ class SreNPC(object):
         acbs = SreNPC.ACBS()
         (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold, acbs.level,
                 acbs.calcMin, acbs.calcMax) = (0,0,0,0,1,0,0)
-        acbs.flags = bush.game.MreNpc._flags(acbs.flags)
+        acbs.flags = bush.game_mod.MreNpc._flags(acbs.flags)
         return acbs
 
     def load(self,flags,data):
@@ -89,7 +89,7 @@ class SreNPC(object):
                 acbs = self.acbs = SreNPC.ACBS()
                 (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
                  acbs.level, acbs.calcMin, acbs.calcMax) = _unpack('=I3Hh2H',16)
-                acbs.flags = bush.game.MreNpc._flags(acbs.flags)
+                acbs.flags = bush.game_mod.MreNpc._flags(acbs.flags)
             if flags.factions:
                 num, = _unpack('H',2)
                 self.factions = list(starmap(_unpack, repeat(('=Ib', 5), num)))

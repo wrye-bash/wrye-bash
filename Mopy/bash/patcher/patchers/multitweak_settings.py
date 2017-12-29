@@ -204,8 +204,8 @@ class GmstTweaker(MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
     scanOrder = 29
     editOrder = 29
-    class_tweaks = [(GlobalsTweak, bush.game.GlobalsTweaks),
-                    (GmstTweak, bush.game.GmstTweaks)]
+    class_tweaks = [(GlobalsTweak, bush.game_mod.GlobalsTweaks),
+                    (GmstTweak, bush.game_mod.GmstTweaks)]
 
     #--Patch Phase ------------------------------------------------------------
     def getReadClasses(self):
@@ -239,8 +239,8 @@ class GmstTweaker(MultiTweaker, _AGmstTweaker):
 
 class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
     """Tweaks miscellaneous gmsts in miscellaneous ways."""
-    class_tweaks = [(CBash_GlobalsTweak, bush.game.GlobalsTweaks),
-                    (CBash_GmstTweak, bush.game.GmstTweaks)]
+    class_tweaks = [(CBash_GlobalsTweak, bush.game_mod.GlobalsTweaks),
+                    (CBash_GmstTweak, bush.game_mod.GmstTweaks)]
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):

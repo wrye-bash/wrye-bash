@@ -732,9 +732,9 @@ class ModInfo(FileInfo):
     #--Header Editing ---------------------------------------------------------
     def _read_tes4_header(self, ins):
         tes4_rec_header = ins.unpackRecHeader()
-        if tes4_rec_header.recType != bush.game.MreHeader.classType:
+        if tes4_rec_header.recType != bush.game_mod.MreHeader.classType:
             raise ModError(self.name, u'Expected %s, but got %s' % (
-                bush.game.MreHeader.classType, tes4_rec_header.recType))
+                bush.game_mod.MreHeader.classType, tes4_rec_header.recType))
         return tes4_rec_header
 
     def readHeader(self):
@@ -742,7 +742,7 @@ class ModInfo(FileInfo):
         with ModReader(self.name,self.getPath().open('rb')) as ins:
             try:
                 tes4_rec_header = self._read_tes4_header(ins)
-                self.header = bush.game.MreHeader(tes4_rec_header,ins,True)
+                self.header = bush.game_mod.MreHeader(tes4_rec_header,ins,True)
             except struct.error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
         if bush.game.fsName == u'Skyrim Special Edition':
@@ -1543,7 +1543,7 @@ class INIInfos(TableFileInfos):
     file_pattern = re.compile(ur'\.ini$', re.I | re.U)
     try:
         _default_tweaks = dict((GPath(k), DefaultIniInfo(k, v)) for k, v in
-                               bush.game.default_tweaks.iteritems())
+                               bush.game_mod.default_tweaks.iteritems())
     except AttributeError:
         _default_tweaks = {}
 

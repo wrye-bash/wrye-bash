@@ -328,7 +328,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
             # Refresh Data - only if we are now including Bethsoft files
             with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
                                message=u'\n' + u' ' * 60) as progress:
-                self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
+                self.idata.update_for_overridden_skips(bush.game_mod.bethDataFiles,
                                                        progress)
         # Refresh Installers
         toRefresh = set(name for name, installer in self.idata.iteritems() if

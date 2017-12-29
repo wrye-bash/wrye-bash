@@ -29,7 +29,7 @@ import re
 # Internal
 from ... import bosh # for modInfos
 from ... import load_order
-from ...bush import game # for Name patcher
+from ...bush import game, game_mod # for Name patcher
 from ...bolt import GPath, MemorySet
 from ...brec import MreRecord, MelObject
 from ...cint import ValidateDict, ValidateList, FormID, validTypes, \
@@ -236,7 +236,7 @@ class _ACellImporter(AImportPatcher):
     name = _(u'Import Cells')
 
 class CellImporter(_ACellImporter, ImportPatcher):
-    autoKey = game.cellAutoKeys
+    autoKey = game_mod.cellAutoKeys
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
@@ -245,8 +245,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
         self.cellData = collections.defaultdict(dict)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
-        self.recAttrs = game.cellRecAttrs # dict[unicode, tuple[str]]
-        self.recFlags = game.cellRecFlags # dict[unicode, str]
+        self.recAttrs = game_mod.cellRecAttrs # dict[unicode, tuple[str]]
+        self.recFlags = game_mod.cellRecFlags # dict[unicode, str]
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
@@ -478,8 +478,8 @@ class _AGraphicsPatcher(AImportPatcher):
     autoKey = {u'Graphics'}
 
 class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
-    rec_attrs = game.graphicsTypes
-    long_types = game.graphicsLongsTypes
+    rec_attrs = game_mod.graphicsTypes
+    long_types = game_mod.graphicsLongsTypes
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self,patchFile,loadMods):
@@ -504,7 +504,7 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
         # for recClass in (MreRecord.type_class[x] for x in ('MGEF',)):
         #     recFidAttrs_class[recClass] = game.graphicsMgefFidAttrs
         self.recFidAttrs_class = {MreRecord.type_class[recType]: attrs for
-                        recType, attrs in game.graphicsFidTypes.iteritems()}
+                        recType, attrs in game_mod.graphicsFidTypes.iteritems()}
 
     def _init_data_loop(self, mapper, recClass, srcFile, srcMod, temp_id_data):
         recAttrs = self.recAttrs_class[recClass]
@@ -543,7 +543,7 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
                     if record.__getattribute__(attr).lower() != value.lower():
                         break
                     continue
-                elif attr in game.graphicsModelAttrs:
+                elif attr in game_mod.graphicsModelAttrs:
                     try:
                         if record.__getattribute__(
                                 attr).modPath.lower() != value.modPath.lower():
@@ -1688,11 +1688,11 @@ class ImportInventory(ImportPatcher, _AImportInventory):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return game.inventoryTypes if self.isActive else ()
+        return game_mod.inventoryTypes if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return game.inventoryTypes if self.isActive else ()
+        return game_mod.inventoryTypes if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile0
         """Add record from modFile."""
@@ -1705,8 +1705,8 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         #--Master or source?
         if modName in self.allMods:
             id_entries = mod_id_entries[modName] = {}
-            modFile.convertToLongFids(game.inventoryTypes)
-            for type in game.inventoryTypes:
+            modFile.convertToLongFids(game_mod.inventoryTypes)
+            for type in game_mod.inventoryTypes:
                 for record in getattr(modFile,type).getActiveRecords():
                     if record.fid in touched:
                         id_entries[record.fid] = record.items[:]
@@ -1729,7 +1729,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
                 deltas.append((removeItems,addEntries))
         #--Keep record?
         if modFile.fileInfo.name not in self.inventOnlyMods:
-            for type in game.inventoryTypes:
+            for type in game_mod.inventoryTypes:
                 patchBlock = getattr(self.patchFile,type)
                 id_records = patchBlock.id_records
                 for record in getattr(modFile,type).getActiveRecords():
@@ -1743,7 +1743,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         keep = self.patchFile.getKeeper()
         id_deltas = self.id_deltas
         mod_count = collections.defaultdict(int)
-        for type in game.inventoryTypes:
+        for type in game_mod.inventoryTypes:
             for record in getattr(self.patchFile,type).records:
                 changed = False
                 deltas = id_deltas.get(record.fid)
@@ -2610,8 +2610,8 @@ class SoundPatcher(_SimpleImporter, _ASoundPatcher):
     text = _(u"Import sounds (from Magic Effects, Containers, Activators,"
              u" Lights, Weathers and Doors) from source mods.")
     tip = text
-    rec_attrs = game.soundsTypes
-    long_types = game.soundsLongsTypes
+    rec_attrs = game_mod.soundsTypes
+    long_types = game_mod.soundsLongsTypes
 
 class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     """Imports sounds from source mods into patch."""

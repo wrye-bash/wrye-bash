@@ -466,7 +466,7 @@ class Installer(object):
             if len(rootLower) > 1:
                 self.skipDirFiles.add(full)
                 return None # we dont want to install those files
-            if fileLower in bush.game.bethDataFiles:
+            if fileLower in bush.game_mod.bethDataFiles:
                 self.hasBethFiles = True
                 if not self.overrideSkips and not bass.settings[
                     'bash.installers.autoRefreshBethsoft']:
@@ -602,7 +602,7 @@ class Installer(object):
         dataDirsMinus = self.dataDirsMinus
         skipExts = self.skipExts
         unSize = 0
-        bethFiles = bush.game.bethDataFiles
+        bethFiles = bush.game_mod.bethDataFiles
         skips, global_skip_ext = self._init_skips()
         if self.overrideSkips:
             renameStrings = False
@@ -1934,7 +1934,7 @@ class InstallersData(DataStore):
             bethFiles = set()
         else:
             bethFiles = LowerDict.fromkeys(set(
-                map(CIstr, bush.game.bethDataFiles)) - self.overridden_skips)
+                map(CIstr, bush.game_mod.bethDataFiles)) - self.overridden_skips)
         skipExts = Installer.skipExts
         relPos = len(bass.dirs['mods'].s) + 1
         for index, (asDir, __sDirs, sFiles) in enumerate(dirDirsFiles):
@@ -2485,7 +2485,7 @@ class InstallersData(DataStore):
                                 reverse=True):
             if installer.isActive:
                 keepFiles.update(installer.ci_dest_sizeCrc)
-        keepFiles.update((bolt.CIstr(f) for f in bush.game.allBethFiles))
+        keepFiles.update((bolt.CIstr(f) for f in bush.game_mod.allBethFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
         removes = set(self.data_sizeCrcDate) - keepFiles

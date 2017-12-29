@@ -35,13 +35,15 @@ from env import get_game_path
 from exception import BoltError
 
 # Game detection --------------------------------------------------------------
-game = None         # type: game_init
+game = None         # type: game_init.GameInfo
+game_mod = None     # type: game_init
 gamePath = None     # absolute bolt Path to the game directory
-foundGames = {}     # 'name':Path dict used by the Settings switch game menu
+foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
 
 # Module Cache
-_allGames={} # 'name'->module
-_registryGames={} # 'name'->path
+_allGames = {}        # 'name' -> GameInfo
+_allModules = {}      # 'name' -> module
+_registryGames = {}   # 'name' -> path
 _fsName_display = {}
 _display_fsName = {}
 
@@ -61,14 +63,16 @@ def _supportedGames(useCache=True):
         try:
             module = __import__('game',globals(),locals(),[modname],-1)
             submod = getattr(module,modname)
-            _allGames[submod.fsName] = submod
-            _fsName_display[submod.fsName] = submod.displayName
+            game_type = submod.GAME_TYPE
+            _allModules[game_type.fsName] = submod
+            _allGames[game_type.fsName] = game_type
+            _fsName_display[game_type.fsName] = game_type.displayName
             #--Get this game's install path
-            game_path = get_game_path(submod)
+            game_path = get_game_path(game_type)
         except (ImportError, AttributeError):
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
-        if game_path: _registryGames[submod.fsName] = game_path
+        if game_path: _registryGames[game_type.fsName] = game_path
         del module
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
@@ -136,10 +140,10 @@ def _detectGames(cli_path=u'', bash_ini_=None):
     deprint(u'Detecting games via the -o argument, bash.ini and relative path:')
     # iterate installPaths in insert order ('cmd', 'ini', 'upMopy')
     for test_path, foundMsg, errorMsg in installPaths.itervalues():
-        for name, module in _allGames.items():
-            if test_path.join(module.exe).exists():
+        for name, info in _allGames.items():
+            if test_path.join(info.exe).exists():
                 # Must be this game
-                deprint(foundMsg % {'gamename':name}, test_path)
+                deprint(foundMsg % {'gamename': name}, test_path)
                 foundGames_[name] = test_path
                 return foundGames_, name
         # no game exe in this install path - print error message
@@ -149,14 +153,17 @@ def _detectGames(cli_path=u'', bash_ini_=None):
 
 def __setGame(name, msg):
     """Set bush game globals - raise if they are already set."""
-    global gamePath, game
+    global gamePath, game, game_mod
     if game is not None: raise BoltError(u'Trying to reset the game')
     gamePath = foundGames[name]
     game = _allGames[name]
+    game_mod = _allModules[name]
     deprint(msg % {'gamename': name}, gamePath)
     # Unload the other modules from the cache
     for i in _allGames.keys():
-        if i != name: del _allGames[i]
+        if i != name:
+            del _allGames[i]
+            del _allModules[i]  # the keys should be the same
     game.init()
 
 def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):

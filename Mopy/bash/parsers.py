@@ -1177,7 +1177,7 @@ class FullNames:
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
     try:
-        defaultTypes = bush.game.namesTypes # PYDEV ERROR
+        defaultTypes = bush.game_mod.namesTypes # PYDEV ERROR
     except AttributeError: # 'NoneType' object has no attribute 'namesTypes'
         pass
 
@@ -1365,7 +1365,7 @@ class ItemStats:
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
     try:
-        class_attrs = bush.game.statsTypes
+        class_attrs = bush.game_mod.statsTypes
     except AttributeError: # 'NoneType' object has no attribute 'statsTypes'
         pass
 
@@ -1506,7 +1506,7 @@ class ItemStats:
                     elif stype is sfloat: csvFormat += u',"{0[%d]:f}"' % index
                 csvFormat = csvFormat[1:] #--Chop leading comma
                 out.write(csvFormat.format(values) + u'\n')
-            for group,header in bush.game.statsHeaders:
+            for group,header in bush.game_mod.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
@@ -1521,7 +1521,7 @@ class CBash_ItemStats:
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
     try:
-        class_attrs = bush.game.statsTypes
+        class_attrs = bush.game_mod.statsTypes
     except AttributeError: # 'NoneType' object has no attribute 'statsTypes'
         pass
 
@@ -1642,7 +1642,7 @@ class CBash_ItemStats:
                     elif stype is sfloat: _csvFormat += u',"{0[%d]:f}"' % index
                 _csvFormat = _csvFormat[1:] #--Chop leading comma
                 out.write(_csvFormat.format(values) + u'\n')
-            for group,header in bush.game.statsHeaders:
+            for group,header in bush.game_mod.statsHeaders:
                 fid_attr_value = class_fid_attr_value[group]
                 if not fid_attr_value: continue
                 attrs = self.class_attrs[group]
@@ -2277,7 +2277,7 @@ class ItemPrices(_ItemPrices):
     value, name and eid of records."""
 
     def __init__(self,types=None,aliases=None):
-        self.class_fid_stats = bush.game.pricesTypes
+        self.class_fid_stats = bush.game_mod.pricesTypes
         self.aliases = aliases or {} #--For aliasing mod names
 
     def readFromMod(self,modInfo):
@@ -3893,7 +3893,7 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = bush.game.MreHeader(ModReader.recHeader())
+        self.tes4 = bush.game_mod.MreHeader(ModReader.recHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = {} #--Top groups.
@@ -3926,7 +3926,7 @@ class ModFile(object):
             insRecHeader = ins.unpackRecHeader
             #--TES4 Header of the mod file
             header = insRecHeader()
-            self.tes4 = bush.game.MreHeader(header,ins,True)
+            self.tes4 = bush.game_mod.MreHeader(header,ins,True)
             #--Strings
             self.strings.clear()
             if unpack and self.tes4.flags1[7] and loadStrings:
