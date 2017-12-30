@@ -24,7 +24,8 @@ import sys
 import tempfile
 import urllib
 
-sys.path.append(u'Mopy')
+mopy_path = os.path.join(os.getcwd(), '..', 'Mopy')
+sys.path.append(mopy_path)
 
 import loot_api
 
@@ -56,12 +57,14 @@ gamesData = [
 for fsName, masterFileName, repository, gameType in gamesData:
     gameInstallPath = MockGameInstall(masterFileName)
     masterlistPath = os.path.join(gameInstallPath, u'masterlist.yaml')
-    taglistDir = u'Mopy/Bash Patches/{}/taglist.yaml'.format(fsName)
+    taglistDir = u'../Mopy/Bash Patches/{}/taglist.yaml'.format(fsName)
     if not os.path.exists(taglistDir):
         print u'Skipping taglist for {} as its output directory does not exist'.format(fsName)
         continue
     DownloadMasterlist(repository, masterlistPath)
-    lootDb = loot_api.create_database(gameType, gameInstallPath)
+    loot_api.initialise_locale('')
+    loot_game = loot_api.create_game_handle(gameType, gameInstallPath)
+    lootDb = loot_game.get_database()
     lootDb.load_lists(masterlistPath)
     lootDb.write_minimal_list(taglistDir, True)
     print u'{} masterlist converted.'.format(fsName)
