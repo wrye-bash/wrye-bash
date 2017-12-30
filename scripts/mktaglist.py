@@ -6,11 +6,10 @@
 #
 # This script generates taglist.yaml files in Mopy/Bashed Patches game
 # subdirectories using the LOOT API and masterlists. The LOOT API Python module
-# must be installed in the Mopy folder (use the install_loot_api.py script),
-# and this script must be run from the repository root. The script will skip
-# generating taglists for any games that do not have a folder in
-# Mopy/Bashed Patches that matches the first tuple value of an element in the
-# gamesData list below, so if adding a taglist for a new game, create the
+# must be installed in the Mopy folder (use the install_loot_api.py script).
+# The script will skip generating taglists for any games that do not have a
+# folder in Mopy/Bashed Patches that matches the first tuple element in the
+# gamesData tuples below, so if adding a taglist for a new game, create the
 # folder first.
 #
 # Usage:
@@ -24,7 +23,8 @@ import sys
 import tempfile
 import urllib
 
-sys.path.append(u'Mopy')
+mopy_path = os.path.join(os.getcwd(), '..', 'Mopy')
+sys.path.append(mopy_path)
 
 import loot_api
 
@@ -56,12 +56,14 @@ gamesData = [
 for fsName, masterFileName, repository, gameType in gamesData:
     gameInstallPath = MockGameInstall(masterFileName)
     masterlistPath = os.path.join(gameInstallPath, u'masterlist.yaml')
-    taglistDir = u'Mopy/Bash Patches/{}/taglist.yaml'.format(fsName)
+    taglistDir = u'../Mopy/Bash Patches/{}/taglist.yaml'.format(fsName)
     if not os.path.exists(taglistDir):
         print u'Skipping taglist for {} as its output directory does not exist'.format(fsName)
         continue
     DownloadMasterlist(repository, masterlistPath)
-    lootDb = loot_api.create_database(gameType, gameInstallPath)
+    loot_api.initialise_locale('')
+    loot_game = loot_api.create_game_handle(gameType, gameInstallPath)
+    lootDb = loot_game.get_database()
     lootDb.load_lists(masterlistPath)
     lootDb.write_minimal_list(taglistDir, True)
     print u'{} masterlist converted.'.format(fsName)
