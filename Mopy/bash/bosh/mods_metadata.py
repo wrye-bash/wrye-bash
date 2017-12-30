@@ -229,10 +229,8 @@ class ConfigHelpers:
             deprint(u'Using LOOT API version:', loot_api.Version.string())
             try:
                 gameType = self.getLootApiGameType(bush.game.fsName)
-                loot_api.initialise_locale('')
-                loot_game = loot_api.create_game_handle(gameType, bass.dirs['app'].s)
-                lootDb = loot_game.get_database()
-            except (OSError, AttributeError):
+                lootDb = loot_api.create_database(gameType, bass.dirs['app'].s)
+            except OSError:
                 deprint(u'The LOOT API failed to initialize', traceback=True)
                 lootDb = None
             except ValueError:
@@ -278,6 +276,7 @@ class ConfigHelpers:
                         lootDb.load_lists(path.s,userpath.s)
                     else:
                         lootDb.load_lists(path.s)
+                    lootDb.eval_lists()
                     return # we are done
                 # unfortunatelly the pyd file throws generic Exception - see
                 # http://pybind11.readthedocs.io/en/latest/advanced/exceptions.html#built-in-exception-translation
@@ -295,6 +294,7 @@ class ConfigHelpers:
         try:
             self.tagCache = {}
             lootDb.load_lists(self.tagList.s)
+            lootDb.eval_lists()
         except Exception:
             deprint(u'An error occurred while parsing taglist.yaml:',
                     traceback=True)
@@ -306,7 +306,7 @@ class ConfigHelpers:
             if lootDb is None:
                 tags = (set(), set(), set())
             else:
-                tags = lootDb.get_plugin_tags(modName.s, True)
+                tags = lootDb.get_plugin_tags(modName.s)
                 tags = (tags.added, tags.removed, tags.userlist_modified)
             self.tagCache[modName] = tags
             return tags
@@ -336,7 +336,7 @@ class ConfigHelpers:
     def getDirtyMessage(modName):
         if lootDb is None:
             return False, u''
-        if lootDb.get_plugin_cleanliness(modName.s, True) == loot_api.PluginCleanliness.dirty:
+        if lootDb.get_plugin_cleanliness(modName.s) == loot_api.PluginCleanliness.dirty:
             return True, 'Contains dirty edits, needs cleaning.'
         else:
             return False, ''
