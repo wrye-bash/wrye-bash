@@ -3398,7 +3398,6 @@ def initLogFile():
 
 def initBosh(personal=empty_path, localAppData=empty_path, bashIni=None):
     #--Bash Ini
-    if not bashIni: bashIni = bass.GetBashIni()
     initDirs(bashIni, personal, localAppData)
     load_order.initialize_load_order_files()
     initOptions(bashIni)

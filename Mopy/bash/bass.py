@@ -25,27 +25,17 @@
 """This module just stores some data that all modules have to be able to access
 without worrying about circular imports. Currently used to expose layout
 and environment issues - do not modify or imitate (ut)."""
-import ConfigParser as _cp
-import os as _os
+
+# no imports
 
 language = None
 AppVersion = u"307" # must represent a valid float
-__bashIni = None
 
 #--Null strings (for default empty byte arrays)
 null1 = '\x00'
 null2 = null1*2
 null3 = null1*3
 null4 = null1*4
-
-def GetBashIni(iniPath=None, reload_=False): ##: needs work
-    iniPath = iniPath or u'bash.ini'
-    global __bashIni
-    if reload_ or __bashIni is None:
-        if _os.path.exists(iniPath):
-            __bashIni = _cp.ConfigParser()
-            __bashIni.read(iniPath)
-    return __bashIni
 
 #--Global dictionaries - do _not_ reassign !
 # Bash's directories - values are absolute Paths - populated in initDirs()

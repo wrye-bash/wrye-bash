@@ -47,6 +47,13 @@ _registryGames = {}   # 'name' -> path
 _fsName_display = {}
 _display_fsName = {}
 
+def reset_bush_globals():
+    global game, game_mod, gamePath
+    game  = game_mod = gamePath = None
+    for d in (_allGames, _allModules, _registryGames, _fsName_display,
+              _display_fsName):
+        d.clear()
+
 def _supportedGames(useCache=True):
     """Set games supported by Bash and return their paths from the registry."""
     if useCache and _allGames: return _registryGames.copy()

@@ -37,20 +37,18 @@ the backup
 """
 
 import cPickle
+import os
 from os.path import join as jo
 
 import archives
-import bash
 import bass
 import bolt
 import bush
 from bass import dirs
+from balt import askSave, askOpen, showWarning, showInfo, Link, BusyCursor, \
+    askYes
 from bolt import GPath, deprint
-from balt import askSave, askOpen, askWarning, showError, showWarning, \
-    showInfo, Link, BusyCursor, askYes
-from exception import AbstractError
-
-opts = None # command line arguments used when launching Bash, set on bash
+from exception import AbstractError, BoltError, StateError
 
 def _init_settings_files(fsName_):
     """Construct a dict mapping directory paths to setting files. Keys are
@@ -220,63 +218,118 @@ class BackupSettings(BaseBackupSettings):
 #------------------------------------------------------------------------------
 class RestoreSettings(BaseBackupSettings):
 
-    def Apply(self):
-        temp_settings_restore_dir = bolt.Path.tempDir()
+    def __init__(self, parent=None, settings_file=None, do_quit=False):
+        super(RestoreSettings, self).__init__(parent, settings_file, do_quit)
+        self._saved_settings_version = self._settings_saved_with = None
+
+    def _get_settings_versions(self, tmp_dir):
+        if self._saved_settings_version is None:
+            with tmp_dir.join(u'backup.dat').open('rb') as ins:
+                # version of Bash that created the backed up settings
+                self._saved_settings_version = cPickle.load(ins)
+                # version of Bash that created the backup
+                self._settings_saved_with = cPickle.load(ins)
+        return self._saved_settings_version, self._settings_saved_with
+
+    @staticmethod
+    def restore_ini(tmp_dir):
+        backup_bash_ini = RestoreSettings.bash_ini_path(tmp_dir)
+        dest_dir = bass.dirs['mopy']
+        old_bash_ini = dest_dir.join(u'bash.ini')
+        timestamped_old = u''.join(
+            [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
         try:
-            self._Apply(temp_settings_restore_dir)
+            old_bash_ini.moveTo(timestamped_old)
+        except StateError: # does not exist
+            timestamped_old = None
+        if backup_bash_ini is not None:
+            GPath(backup_bash_ini).copyTo(old_bash_ini)
+        return backup_bash_ini, timestamped_old
+
+    @staticmethod
+    def bash_ini_path(tmp_dir):
+        # search for Bash ini
+        for r, d, fs in bolt.walkdir(u'%s' % tmp_dir):
+            for f in fs:
+                if f == u'bash.ini':
+                    return jo(r, f)
+        return None
+
+    @staticmethod
+    def _get_backup_game(tmp_dir):
+        """Get the game this backup was for - hack, this info belongs to backup.dat."""
+        for node in os.listdir(u'%s' % tmp_dir):
+            if node != u'My Games' and not node.endswith(
+                    u'Mods') and os.path.isdir(tmp_dir.join(node).s):
+                return node
+        raise BoltError(u'%s does not contain a game dir' % tmp_dir)
+
+    @staticmethod
+    def extract_backup(backup_path):
+        """Extract the backup file and return the tmp directory used. If
+        the backup file is a dir we assume it was created by us before
+        restarting."""
+        backup_path = GPath(backup_path)
+        if backup_path.isfile():
+            temp_dir = bolt.Path.tempDir(prefix=u'RestoreSettingsWryeBash_')
+            command = archives.extractCommand(backup_path, temp_dir)
+            archives.extract7z(command, backup_path)
+            return temp_dir
+        elif backup_path.isdir():
+            return backup_path
+        raise BoltError(
+            u'%s is not a valid backup location' % backup_path)
+
+    def Apply(self, backup_path=None):
+        temp_settings_restore_dir = self.extract_backup(backup_path)
+        try:
+            self.restore_settings(temp_settings_restore_dir)
         finally:
             if temp_settings_restore_dir:
-                temp_settings_restore_dir.rmtree(safety=u'WryeBash_')
+                temp_settings_restore_dir.rmtree(safety=u'RestoreSettingsWryeBash_')
 
-    def incompatible_backup(self, temp_dir):
-        # TODO add game check, bash.ini check
-        with temp_dir.join(u'backup.dat').open('rb') as ins:
-            # version of Bash that created the backed up settings
-            saved_settings_version = cPickle.load(ins)
-            # version of Bash that created the backup
-            settings_saved_with = cPickle.load(ins)
+    def incompatible_backup_error(self, temp_dir, current_game):
+        saved_settings_version, settings_saved_with = \
+            self._get_settings_versions(temp_dir)
         if saved_settings_version > bass.settings['bash.version']:
             # Disallow restoring settings saved on a newer version of bash # TODO(ut) drop?
-            showError(self.parent, u'\n'.join([
+            return u'\n'.join([
                 _(u'The data format of the selected backup file is newer than '
-                u'the current Bash version!'),
+                  u'the current Bash version!'),
                 _(u'Backup v%s is not compatible with v%s') % (
-                    saved_settings_version, bass.settings['bash.version']),u'',
-                _(u'You cannot use this backup with this version of Bash.')]),
-                      _(u'Error: Settings are from newer Bash version'))
-            self.WarnFailed()
-            return True
-        elif settings_saved_with != bass.settings['bash.version'] and not \
-             askWarning(self.parent, u'\n'.join([
-                 _(u'The version of Bash used to create the selected backup '
+                    saved_settings_version, bass.settings['bash.version']),
+                u'', _(u'You cannot use this backup with this version of '
+                       u'Bash.')]), _(
+                u'Error: Settings are from newer Bash version')
+        else:
+            game_name = RestoreSettings._get_backup_game(temp_dir)
+            if game_name != current_game:
+                return u'\n'.join(
+                    [_(u'The selected backup file is for %(game_name)s while '
+                       u'your current game is %(current_game)s') % locals(),
+                     _(u'You cannot use this backup with this game.')]), _(
+                    u'Error: Settings are from a different game')
+        return u'', u''
+
+    def incompatible_backup_warn(self, temp_dir):
+        saved_settings_version, settings_saved_with = \
+            self._get_settings_versions(temp_dir)
+        if settings_saved_with != bass.settings['bash.version']:
+            return u'\n'.join(
+                [_(u'The version of Bash used to create the selected backup '
                    u'file does not match the current Bash version!'),
                  _(u'Backup v%s does not match v%s') % (
                      settings_saved_with, bass.settings['bash.version']), u'',
-                 _(u'Do you want to restore this backup anyway?')]),
-                                           _(u'Warning: Version Mismatch!')):
-            return True
-        return False
+                 _(u'Do you want to restore this backup anyway?')]), _(
+                u'Warning: Version Mismatch!')
+        return u'', u''
 
-    def _Apply(self, temp_dir):
-        command = archives.extractCommand(self._settings_file, temp_dir)
-        archives.extract7z(command, self._settings_file)
-        if self.incompatible_backup(temp_dir): return
-
+    def restore_settings(self, temp_dir, game=None):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
 
-        # reinitialize bass.dirs using the backup copy of bash.ini if it exists
-        game = bush.game.fsName
-        tmpBash = temp_dir.join(game, u'Mopy', u'bash.ini')
-
-        bash.SetUserPath(tmpBash.s,opts.userPath)
-
-        bashIni = bass.GetBashIni(tmpBash.s, reload_=True)
-        import bosh
-        bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
-
         # restore all the settings files
-        restore_paths = _init_settings_files(game).keys()
+        restore_paths = _init_settings_files(bush.game.fsName).keys()
         for dest_dir, back_path in restore_paths:
             full_back_path = temp_dir.join(back_path)
             for name in full_back_path.list():
@@ -298,14 +351,9 @@ class RestoreSettings(BaseBackupSettings):
                     full_back_path.join(root_dir, name).copyTo(
                         saves_dir.join(root_dir, name))
 
-        # tell the user the restore is complete and warn about restart
-        self.WarnRestart()
-        if Link.Frame: # should always exist
-            Link.Frame.Destroy()
-
     @staticmethod
     def _get_backup_filename(parent, filename, do_quit):
-        if filename is None or filename.cext != u'.7z' or not filename.isfile():
+        if filename is None or (filename.isfile() and filename.cext != u'.7z'):
             # former may be None
             base_dir = bass.settings['bash.backupPath'] or bass.dirs[
                 'modsBash']
@@ -318,12 +366,3 @@ class RestoreSettings(BaseBackupSettings):
             _(u'There was an error while trying to restore your settings from '
               u'the backup file!'), _(u'No settings were restored.')]),
                     _(u'Unable to restore backup!'))
-
-    def WarnRestart(self):
-        if self.quit: return
-        showWarning(self.parent, '\n'.join([
-            _(u'Your Bash settings have been successfully restored.'),
-            _(u'Backup Path: ') + self._settings_file.s, u'',
-            _(u'Before the settings can take effect, Wrye Bash must restart.'),
-            _(u'Click OK to restart now.')]), _(u'Bash Settings Restored'))
-        Link.Frame.Restart()
