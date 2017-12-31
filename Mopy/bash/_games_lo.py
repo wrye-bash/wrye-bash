@@ -1313,6 +1313,10 @@ class Fallout4(AsteriskGame):
         return {bolt.GPath(u'Fallout4.esm')} | set(
             self.must_be_active_if_present)
 
+class Fallout4VR(Fallout4):
+    must_be_active_if_present = (bolt.GPath(u'Fallout4_VR.esm'),)
+    _ccc_filename = u''
+
 class SkyrimSE(AsteriskGame):
     must_be_active_if_present = (bolt.GPath(u'Update.esm'),
                                  bolt.GPath(u'Dawnguard.esm'),
@@ -1431,6 +1435,8 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4':
         return Fallout4(mod_infos, plugins_txt_path)
+    elif game_fsName == u'Fallout4VR':
+        return Fallout4VR(mod_infos, plugins_txt_path)
     elif game_fsName == u'Morrowind':
         return Morrowind(mod_infos)
     else:
