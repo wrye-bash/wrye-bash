@@ -332,6 +332,8 @@ class ConfigHelpers:
             return loot_api.GameType.fonv
         elif fsName == 'Fallout4':
             return loot_api.GameType.fo4
+        elif fsName == 'Fallout4VR':
+            return loot_api.GameType.fo4vr
         else:
             return None
 
@@ -1203,7 +1205,8 @@ class ModDetails:
                 recType, rec_siz = header.recType, header.size
                 if recType == 'GRUP':
                     # FIXME(ut): monkey patch for fallout QUST GRUP
-                    if bush.game.fsName == u'Fallout4' and header.groupType == 10:
+                    if bush.game.fsName in (u'Fallout4', u'Fallout4VR') and \
+                            header.groupType == 10:
                         ins.seek(rec_siz - header.__class__.rec_header_size, 1)
                         continue
                     label = header.label
