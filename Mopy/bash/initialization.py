@@ -24,11 +24,13 @@
 """Functions for initializing Bash data structures on boot. For now export
 functions to init bass.dirs that need be initialized high up into the boot
 sequence to be able to backup/restore settings."""
+import os
+import sys
 from ConfigParser import ConfigParser
 # Local - don't import anything else
 import env
 from bass import dirs
-from bolt import GPath
+from bolt import GPath, Path
 from env import get_personal_path, get_local_app_data_path
 from exception import BoltError, NonExistentDriveError
 
@@ -127,7 +129,7 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
     else:
         return oldPath, oldSrc
 
-def initDirs(bashIni_, personal, localAppData, game_info, game_path):
+def init_dirs(bashIni_, personal, localAppData, game_info, game_path):
     #--Oblivion (Application) Directories
     dirs['app'] = game_path
     dirs['mods'] = dirs['app'].join(u'Data')
@@ -239,3 +241,40 @@ def initDirs(bashIni_, personal, localAppData, game_info, game_path):
             msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
     return game_ini_path
+
+def init_dirs_mopy_and_cd(is_standalone):
+    # ensure we are in the correct directory so relative paths will work
+    # properly
+    if is_standalone:
+        pathToProg = os.path.dirname(
+            unicode(sys.executable, Path.sys_fs_enc))
+    else:
+        pathToProg = os.path.dirname(
+            unicode(sys.argv[0], Path.sys_fs_enc))
+    if pathToProg:
+        os.chdir(pathToProg)
+    dirs['mopy'] = Path.getcwd().root
+    dirs['bash'] = dirs['mopy'].join(u'bash')
+    dirs['compiled'] = dirs['bash'].join(u'compiled')
+    dirs['l10n'] = dirs['bash'].join(u'l10n')
+    dirs['db'] = dirs['bash'].join(u'db')
+    dirs['templates'] = dirs['mopy'].join(u'templates')
+    dirs['images'] = dirs['bash'].join(u'images')
+
+def getLocalSaveDirs():
+    """Return a list of possible local save directories, NOT including the
+    base directory."""
+    baseSaves = dirs['saveBase'].join(u'Saves')
+    # Path.list returns [] for non existent dirs
+    localSaveDirs = [x for x in baseSaves.list() if
+                     (x != u'Bash' and baseSaves.join(x).isdir())]
+    # Filter out non-encodable names
+    bad = set()
+    for folder in localSaveDirs:
+        try:
+            folder.s.encode('cp1252')
+        except UnicodeEncodeError:
+            bad.add(folder)
+    localSaveDirs = [x for x in localSaveDirs if x not in bad]
+    localSaveDirs.sort()
+    return localSaveDirs

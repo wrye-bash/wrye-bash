@@ -2760,25 +2760,6 @@ class SaveInfos(FileInfos):
         CoSaves(self.store_dir, fileName).move(destDir, fileName)
 
     #--Local Saves ------------------------------------------------------------
-    @staticmethod
-    def getLocalSaveDirs():
-        """Returns a list of possible local save directories, NOT including the base directory."""
-        baseSaves = dirs['saveBase'].join(u'Saves')
-        if baseSaves.exists():
-            localSaveDirs = [x for x in baseSaves.list() if (x != u'Bash' and baseSaves.join(x).isdir())]
-            # Filter out non-encodable names
-            bad = set()
-            for folder in localSaveDirs:
-                try:
-                    folder.s.encode('cp1252')
-                except UnicodeEncodeError:
-                    bad.add(folder)
-            localSaveDirs = [x for x in localSaveDirs if x not in bad]
-        else:
-            localSaveDirs = []
-        localSaveDirs.sort()
-        return localSaveDirs
-
     def _refreshLocalSave(self):
         """Refreshes self.localSave and self.dir."""
         #--self.localSave is NOT a Path object.
