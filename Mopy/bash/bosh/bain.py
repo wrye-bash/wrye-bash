@@ -2488,7 +2488,9 @@ class InstallersData(DataStore):
                                 reverse=True):
             if installer.isActive:
                 keepFiles.update(installer.ci_dest_sizeCrc)
+        from . import modInfos
         keepFiles.update((bolt.CIstr(f) for f in bush.game_mod.allBethFiles))
+        keepFiles.update((bolt.CIstr(f.s) for f in modInfos.bashed_patches))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
         removes = set(self.data_sizeCrcDate) - keepFiles
@@ -2498,36 +2500,31 @@ class InstallersData(DataStore):
         skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
         skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
         skipPrefixes = tuple(skipPrefixes)
-        try:
-            self._clean_data_dir(destDir, removes, skipPrefixes, refresh_ui)
+        try: # NB: we do _not_ remove Ini Tweaks/*
+            emptyDirs, mods = set(), set()
+            norm_ghost = Installer.getGhosted()
+            for filename in removes:
+                # don't remove files in Wrye Bash-related directories
+                if filename.lower().startswith(skipPrefixes): continue
+                full_path = bass.dirs['mods'].join(
+                    norm_ghost.get(filename, filename))
+                try:
+                    full_path.moveTo(destDir.join(filename)) # will drop .ghost
+                    if modInfos.rightFileType(full_path):
+                        mods.add(GPath(filename))
+                        refresh_ui[0] = True
+                    self.data_sizeCrcDate.pop(filename, None)
+                    emptyDirs.add(full_path.head)
+                except:
+                    #It's not imperative that files get moved, so ignore errors
+                    deprint(u'Clean Data: moving %s to % s failed' % (
+                                full_path, destDir), traceback=True)
+            modInfos.delete_refresh(mods, None, check_existence=False)
+            for emptyDir in emptyDirs:
+                if emptyDir.isdir() and not emptyDir.list():
+                    emptyDir.removedirs()
         finally:
             self.irefresh(what='NS')
-
-    def _clean_data_dir(self, destDir, removes, skipPrefixes,
-                        refresh_ui): # we do _not_ remove Ini Tweaks/*
-        emptyDirs, mods = set(), set()
-        norm_ghost = Installer.getGhosted()
-        from . import modInfos
-        for filename in removes:
-            # don't remove files in Wrye Bash-related directories
-            if filename.lower().startswith(skipPrefixes): continue
-            full_path = bass.dirs['mods'].join(
-                norm_ghost.get(filename, filename))
-            try:
-                full_path.moveTo(destDir.join(filename)) # will drop .ghost
-                if modInfos.rightFileType(full_path):
-                    mods.add(GPath(filename))
-                    refresh_ui[0] = True
-                self.data_sizeCrcDate.pop(filename, None)
-                emptyDirs.add(full_path.head)
-            except:
-                # It's not imperative that files get moved, so ignore errors
-                deprint(u'Clean Data: moving %s to % s failed' % (
-                            full_path, destDir), traceback=True)
-        modInfos.delete_refresh(mods, None, check_existence=False)
-        for emptyDir in emptyDirs:
-            if emptyDir.isdir() and not emptyDir.list():
-                emptyDir.removedirs()
 
     #--Utils
     def getConflictReport(self, srcInstaller, mode, modInfos):

@@ -115,11 +115,12 @@ class GameInfo(object):
         shortName = u''
         longName = u''
         # exe is treated specially here.  If it is a string, then it should
-        # be the path relative to the root directory of the game
-        # if it is list, each list element should be an iterable to pass to Path.join
-        # relative to the root directory of the game.  In this case, each filename
-        # will be tested in reverse order.  This was required for Oblivion, as the newer
-        # OBGE has a different filename than the older OBGE
+        # be the path relative to the root directory of the game, if it is
+        # a list, each list element should be an iterable to pass to Path.join
+        # relative to the root directory of the game.  In this case,
+        # each filename will be tested in reverse order.  This was required
+        # for Oblivion, as the newer OBGE has a different filename than the
+        # older OBGE
         exe = u''
         url = u''
         urlTip = u''
@@ -152,9 +153,9 @@ class GameInfo(object):
     # Save Game format stuff
     class ess(object):
         # Save file capabilities
-        canReadBasic = True     # Can read the info needed for the Save Tab display
-        canEditMore = False     # Advanced editing
-        ext = u'.ess'           # Save file extension
+        canReadBasic = True # Can read the info needed for the Save Tab display
+        canEditMore = False # Advanced editing
+        ext = u'.ess'       # Save file extension
 
     # INI setting used to setup Save Profiles
     #  (section,key)
@@ -167,18 +168,8 @@ class GameInfo(object):
     dataDirsPlus = set()
 
     # Installer
-    # Files to exclude from clean data ##: we need a regex here and clean up
-    wryeBashDataFiles = {u'Bashed Patch.esp', u'Bashed Patch, 0.esp',
-                         u'Bashed Patch, 1.esp', u'Bashed Patch, 2.esp',
-                         u'Bashed Patch, 3.esp', u'Bashed Patch, 4.esp',
-                         u'Bashed Patch, 5.esp', u'Bashed Patch, 6.esp',
-                         u'Bashed Patch, 7.esp', u'Bashed Patch, 8.esp',
-                         u'Bashed Patch, 9.esp', u'Bashed Patch, CBash.esp',
-                         u'Bashed Patch, Python.esp',
-                         u'Bashed Patch, Warrior.esp',
-                         u'Bashed Patch, Thief.esp', u'Bashed Patch, Mage.esp',
-                         u'Bashed Patch, Test.esp',
-                         u'Docs\\Bash Readme Template.html',
+    # Files to exclude from clean data
+    wryeBashDataFiles = {u'Docs\\Bash Readme Template.html',
                          u'Docs\\wtxt_sand_small.css', u'Docs\\wtxt_teal.css',
                          u'Docs\\Bash Readme Template.txt'}
     wryeBashDataDirs = {u'Bash Patches\\', u'INI Tweaks\\'}

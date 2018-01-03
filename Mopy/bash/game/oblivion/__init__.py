@@ -108,7 +108,7 @@ class OblivionGameInfo(GameInfo):
         u'obse',
     }
     wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
-        u'Bashed Patch, FCOM.esp', u'ArchiveInvalidationInvalidated!.bsa'}
+        u'ArchiveInvalidationInvalidated!.bsa'}
     ignoreDataFiles = {
         u'OBSE\\Plugins\\Construction Set Extender.dll',
         u'OBSE\\Plugins\\Construction Set Extender.ini'
