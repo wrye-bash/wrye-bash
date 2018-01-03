@@ -34,36 +34,22 @@ from ...bolt import struct_pack, struct_unpack
 
 
 class Fallout4GameInfo(GameInfo):
-    #--Name of the game to use in UI.
     displayName = u'Fallout 4'
-    #--Name of the game's filesystem folder.
     fsName = u'Fallout4'
-    #--Alternate display name to use instead of "Wrye Bash for ***"
     altName = u'Wrye Flash'
-    #--Name of game's default ini file.
     defaultIniFile = u'Fallout4_default.ini'
 
-    #--Exe to look for to see if this is the right game
     exe = u'Fallout4.exe'
 
-    #--Registry keys to read to find the install location
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
 
-    #--patch information
-    ## URL to download patches for the main game.
-    # Update via steam
-    patchURL = u''
     patchTip = u'Update via Steam'
 
-    #--URL to the Nexus site for this game
     nexusUrl = u'http://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
     nexusKey = 'bash.installers.openFallout4Nexus.continue'
 
-    # Bsa info
-    allow_reset_bsa_timestamps = False
     bsa_extension = ur'ba2'
-    supports_mod_inis = True
     vanilla_string_bsas = {
         u'fallout4.esm': [u'Fallout4 - Interface.ba2'],
         u'dlcrobot.esm': [u'DLCRobot - Main.ba2'],
@@ -79,121 +65,55 @@ class Fallout4GameInfo(GameInfo):
         u'sResourceArchiveListBeta'
     )
 
-    # plugin extensions
     espm_extensions = {u'.esp', u'.esm', u'.esl'}
 
-    # Load order info
-    using_txt_file = True
+    class cs(GameInfo.cs):
+        # TODO:  When the Fallout 4 Creation Kit is actually released,
+        # double check that the filename is correct, and create an actual icon
+        shortName = u'FO4CK'
+        longName = u'Creation Kit'
+        exe = u'CreationKit.exe'
+        seArgs = None
+        imageName = u'creationkit%s.png'
 
-    #--Creation Kit Set information
-    class cs:
-        ## TODO:  When the Fallout 4 Creation Kit is actually released, double check
-        ## that the filename is correct, and create an actual icon
-        shortName = u'FO4CK'                 # Abbreviated name
-        longName = u'Creation Kit'           # Full name
-        exe = u'CreationKit.exe'             # Executable to run
-        seArgs = None                        # u'-editor'
-        imageName = u'creationkit%s.png'     # Image name template for the status bar
+    class se(GameInfo.se):
+        shortName = u'F4SE'
+        longName = u'Fallout 4 Script Extender'
+        exe = u'f4se_loader.exe'
+        steamExe = u'f4se_steam_loader.dll'
+        url = u'http://f4se.silverlock.org/'
+        urlTip = u'http://f4se.silverlock.org/'
 
-    #--Script Extender information
-    class se:
-        shortName = u'F4SE'                      # Abbreviated name
-        longName = u'Fallout 4 Script Extender'  # Full name
-        exe = u'f4se_loader.exe'                 # Exe to run
-        steamExe = u'f4se_steam_loader.dll'      # Exe to run if a steam install
-        url = u'http://f4se.silverlock.org/'     # URL to download from
-        urlTip = u'http://f4se.silverlock.org/'  # Tooltip for mouse over the URL
-
-    #--Script Dragon
-    class sd:
-        shortName = u''
-        longName = u''
-        installDir = u''
-
-    #--SkyProc Patchers
-    class sp:
-        shortName = u''
-        longName = u''
-        installDir = u''
-
-    #--Quick shortcut for combining the SE and SD names
     se_sd = se.shortName
 
-    #--Graphics Extender information
-    class ge:
-        shortName = u''
-        longName = u''
-        ## exe is treated specially here.  If it is a string, then it should
-        ## be the path relative to the root directory of the game
-        ## if it is list, each list element should be an iterable to pass to Path.join
-        ## relative to the root directory of the game.  In this case, each filename
-        ## will be tested in reverse order.  This was required for Oblivion, as the newer
-        ## OBGE has a different filename than the older OBGE
+    class ge(GameInfo.ge):
         exe = u'**DNE**'
-        url = u''
-        urlTip = u''
 
-    #--4gb Launcher
-    class laa:
-        # Skyrim has a 4gb Launcher, but as of patch 1.3.10, it is
-        # no longer required (Bethsoft updated TESV.exe to already
-        # be LAA)
-        name = u''
-        exe = u'**DNE**'       # Executable to run
-        launchesSE = False
-
-    # Files BAIN shouldn't skip
-    dontSkip = (
-    # Nothing so far
-    )
-
-    # Directories where specific file extensions should not be skipped by BAIN
     dontSkipDirs = {
         # This rule is to allow mods with string translation enabled.
         'interface\\translations':['.txt']
     }
 
-    #Folders BAIN should never check
-    SkipBAINRefresh = {
-        #Use lowercase names
-        u'fo4edit backups',
-    }
+    SkipBAINRefresh = {u'fo4edit backups'}
 
-    #--Some stuff dealing with INI files
-    class ini:
-        #--True means new lines are allowed to be added via INI Tweaks
-        #  (by default)
+    class ini(GameInfo.ini):
         allowNewLines = True
-
-        #--INI Entry to enable BSA Redirection
         bsaRedirection = (u'',u'')
 
-    #--Save Game format stuff
-    class ess:
-        # Save file capabilities
-        canReadBasic = True         # All the basic stuff needed for the Saves Tab
-        canEditMore = False         # No advanced editing
-        ext = u'.fos'               # Save file extension
+    class ess(GameInfo.ess):
+        canReadBasic = True
+        ext = u'.fos'
 
-    #--INI files that should show up in the INI Edits tab
+    masterFiles = [u'Fallout4.esm']
+
     iniFiles = [
         u'Fallout4.ini',
         u'Fallout4Prefs.ini',
         u'Fallout4Custom.ini',
         ]
 
-    #--INI setting to setup Save Profiles
-    saveProfilesKey = (u'General',u'SLocalSavePath')
-
-    #--The main plugin Wrye Bash should look for
-    masterFiles = [
-        u'Fallout4.esm',
-        ]
-
-    #The pickle file for this game. Holds encoded GMST IDs from the big list below.
     pklfile = ur'bash\db\Fallout4_ids.pkl'
 
-    #--BAIN: Directories that are OK to install to
     dataDirs = {
         u'interface',
         u'lodsettings',
@@ -218,113 +138,31 @@ class Fallout4GameInfo(GameInfo):
         u'mcm',   # FO4 MCM
     }
 
-    # Installer -------------------------------------------------------------------
-    # ensure all path strings are prefixed with 'r' to avoid interpretation of
-    #   accidental escape sequences
-    wryeBashDataFiles = {
-        u'Bashed Patch.esp',
-        u'Bashed Patch, 0.esp',
-        u'Bashed Patch, 1.esp',
-        u'Bashed Patch, 2.esp',
-        u'Bashed Patch, 3.esp',
-        u'Bashed Patch, 4.esp',
-        u'Bashed Patch, 5.esp',
-        u'Bashed Patch, 6.esp',
-        u'Bashed Patch, 7.esp',
-        u'Bashed Patch, 8.esp',
-        u'Bashed Patch, 9.esp',
-        u'Bashed Patch, CBash.esp',
-        u'Bashed Patch, Python.esp',
-        u'Bashed Patch, Warrior.esp',
-        u'Bashed Patch, Thief.esp',
-        u'Bashed Patch, Mage.esp',
-        u'Bashed Patch, Test.esp',
-        u'Docs\\Bash Readme Template.html',
-        u'Docs\\wtxt_sand_small.css',
-        u'Docs\\wtxt_teal.css',
-        u'Docs\\Bash Readme Template.txt',
-        u'Docs\\Bashed Patch, 0.html',
-        u'Docs\\Bashed Patch, 0.txt',
-    }
-
-    wryeBashDataDirs = {
-        u'Bash Patches',
-        u'INI Tweaks'
-    }
-
-    ignoreDataFiles = set()
-    ignoreDataFilePrefixes = set()
-    ignoreDataDirs = set()
-
-    #--Tags supported by this game
-    allTags = sorted((
-        u'Delev', u'NoMerge', u'Relev',
-        ))
-
-    #--Gui patcher classes available when building a Bashed Patch
-    patchers = (
-        u'ListsMerger',
-        )
-
-    #--CBash Gui patcher classes available when building a Bashed Patch
-    CBash_patchers = tuple()
-
-    # Magic Info ------------------------------------------------------------------
-    weaponTypes = tuple()
-
-    # Race Info -------------------------------------------------------------------
-    raceNames = dict()
-    raceShortNames = dict()
-    raceHairMale = dict()
-    raceHairFemale = dict()
-
-    #--Plugin format stuff
-    class esp:
-        #--Wrye Bash capabilities
-        canBash = True          # Can create Bashed Patches
-        canCBash = False        # CBash can handle this game's records
-        canEditHeader = True    # Can edit anything in the TES4 record
-
-        #--Valid ESM/ESP header versions
+    class esp(GameInfo.esp):
+        canBash = True
+        canEditHeader = True
         validHeaderVersions = (0.95,)
 
-        #--Strings Files
-        stringsFiles = [
-            ((u'Strings',), u'%(body)s_%(language)s.STRINGS'),
-            ((u'Strings',), u'%(body)s_%(language)s.DLSTRINGS'),
-            ((u'Strings',), u'%(body)s_%(language)s.ILSTRINGS'),
-        ]
+    allTags = sorted((u'Delev', u'NoMerge', u'Relev'))
 
-    #------------------------------------------------------------------------------
+    patchers = (u'ListsMerger',)
+
+    # -------------------------------------------------------------------------
     # These Are normally not mergable but added to brec.MreRecord.type_class
     #
     #       MreCell,
-    #------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # These have undefined FormIDs Do not merge them
     #
     #       MreNavi, MreNavm,
-    #------------------------------------------------------------------------------
+    # -------------------------------------------------------------------------
     # These need syntax revision but can be merged once that is corrected
     #
     #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
-    #------------------------------------------------------------------------------
-    #--Mergeable record types
-    mergeClasses = tuple()
-
-    #--Extra read classes: these record types will always be loaded, even if
-    # patchers don't need them directly (for example, MGEF for magic effects info)
-    readClasses = tuple()
-    writeClasses = tuple()
+    # -------------------------------------------------------------------------
 
     @classmethod
     def init(cls):
-        # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
-        # re-executing all lines within the module, it acts like another 'import'
-        # statement - in otherwords, nothing happens.  This means any lines that
-        # affect outside modules must do so within this function, which will be
-        # called instead of 'reload'
-
-        #--Top types in Skyrim order.
         brec.RecordHeader.topTypes = [
             'GMST', 'KYWD', 'LCRT', 'AACT', 'TRNS', 'CMPO', 'TXST', 'GLOB', 'DMGT',
             'CLAS', 'FACT', 'HDPT', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'LTEX', 'ENCH',
@@ -343,20 +181,17 @@ class Fallout4GameInfo(GameInfo):
             'OMOD', 'MSWP', 'ZOOM', 'INNR', 'KSSM', 'AECH', 'SCCO', 'AORU', 'SCSN',
             'STAG', 'NOCM', 'LENS', 'GDRY', 'OVIS']
 
-        #--Record types that don't appear at the top level (sub-GRUPs)
         brec.RecordHeader.recordTypes = (set(brec.RecordHeader.topTypes) |
                        {'GRUP','TES4','REFR','NAVM','PGRE','PHZD','LAND',
                            'PMIS','DLBR','DIAL','INFO','SCEN'})
         brec.RecordHeader.plugin_form_version = 131
 
-        #--Record Types
         brec.MreRecord.type_class = dict((x.classType,x) for x in (
             MreLvli, MreLvln,
             ####### for debug
             MreHeader,
             ))
 
-        #--Simple records
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4',})
 
