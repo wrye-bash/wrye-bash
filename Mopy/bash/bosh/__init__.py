@@ -22,11 +22,9 @@
 #
 # =============================================================================
 
-"""This module defines objects and functions for working with Oblivion
-files and environment. It does not provide interface functions which are instead
-provided by separate modules: bish for CLI and bash/basher for GUI."""
-
-############# bush.game must be set by the time you import bosh ! #############
+"""The data model, complete with initialization functions. Main hierarchies
+are the DataStore singletons and AFile subclasses populating the data
+stores. bush.game must be set, to properly instantiate the data stores."""
 
 # Imports ---------------------------------------------------------------------
 #--Python
@@ -59,24 +57,16 @@ from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     PluginsFullError, SaveFileError, SaveHeaderError, SkipError, StateError
 from ..parsers import ModFile
 
-#--Settings
-try:
-    allTags = bush.game.allTags
-    allTagsSet = set(allTags)
-except AttributeError: # 'NoneType' object has no attribute 'allTags'
-    pass
+# Singletons, Constants -------------------------------------------------------
+#--Constants
 oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
-
 reOblivion = re.compile(
     u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
-empty_path = GPath(u'')
+empty_path = GPath(u'') # evaluates to False in boolean expressions
 undefinedPaths = {GPath(u'C:\\Path\\exe.exe'), undefinedPath}
-
-# Singletons, Constants -------------------------------------------------------
-#--Constants
 #..Bit-and this with the fid to get the objectindex.
 oiMask = 0xFFFFFFL
 
@@ -109,15 +99,14 @@ imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 #------------------------------------------------------------------------------
 class CoSaves:
     """Handles co-files (.pluggy, .obse, .skse) for saves."""
-    try:
-        reSave = re.compile(ur'\.' + bush.game.ess.ext[1:] + '(f?)$',
-                            re.I | re.U)
-    except AttributeError: # 'NoneType' object has no attribute 'ess'
-        pass
+    reSave = None
 
     @staticmethod
     def getPaths(savePath):
         """Returns cofile paths."""
+        if CoSaves.reSave is None:
+            CoSaves.reSave = re.compile(re.escape(bush.game.ess.ext) + '(f?)$',
+                                        re.I | re.U)
         maSave = CoSaves.reSave.search(savePath.s)
         if maSave: savePath = savePath.root
         first = maSave and maSave.group(1) or u''
@@ -715,7 +704,8 @@ class ModInfo(FileInfo):
             return set()
         else:
             bashTags = maBashKeys.group(1).split(u',')
-            return set([str.strip() for str in bashTags]) & allTagsSet - oldTagsSet
+            return set([tag.strip() for tag in
+                        bashTags]) & bush.game.allTags - oldTagsSet
 
     def reloadBashTags(self):
         """Reloads bash tags from mod description and LOOT"""
@@ -723,7 +713,7 @@ class ModInfo(FileInfo):
         tags |= self.getBashTagsDesc()
         tags -= removed
         # Filter and remove old tags
-        tags &= allTagsSet
+        tags &= bush.game.allTags
         if tags & oldTagsSet:
             tags -= oldTagsSet
             self.setBashTagsDesc(tags)
@@ -1086,12 +1076,13 @@ from ._saves import PluggyFile
 from . import cosaves
 
 class SaveInfo(FileInfo):
-    try:
-        _cosave_type = cosaves.get_cosave_type(bush.game.fsName)
-        save_header_type = get_save_header_type(bush.game.fsName)
-    except AttributeError:
-        _cosave_type = cosaves.ACoSaveFile
-        save_header_type = SaveFileHeader
+    _cosave_type = None  # type: cosaves.ACoSaveFile
+
+    @property
+    def cosave_type(self):
+        if self._cosave_type is None:
+            SaveInfo._cosave_type = cosaves.get_cosave_type(bush.game.fsName)
+        return self._cosave_type
 
     def getFileInfos(self): return saveInfos
 
@@ -1112,7 +1103,7 @@ class SaveInfo(FileInfo):
     def readHeader(self):
         """Read header from file and set self.header attribute."""
         try:
-            self.header = self.save_header_type(self.abs_path)
+            self.header = get_save_header_type(bush.game.fsName)(self.abs_path)
         except SaveHeaderError as e:
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
         self._reset_masters()
@@ -1163,7 +1154,7 @@ class SaveInfo(FileInfo):
         cosave_path = self._get_se_cosave_path()
         if cosave_path is None: return None
         try:
-            return self._cosave_type(cosave_path) # type: cosaves.ACoSaveFile
+            return self.cosave_type(cosave_path) # type: cosaves.ACoSaveFile
         except (OSError, IOError, FileError) as e:
             if isinstance(e, FileError) or (
                 isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
@@ -1171,44 +1162,8 @@ class SaveInfo(FileInfo):
             return None
 
     def _get_se_cosave_path(self):
-        if self._cosave_type is None: return None
-        return self.getPath().root + u'.' + self._cosave_type.signature.lower()
-
-#------------------------------------------------------------------------------
-from . import bsa_files
-
-try:
-    _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
-except AttributeError:
-    _bsa_type = bsa_files.ABsa
-
-class BSAInfo(FileInfo, _bsa_type):
-    _default_mtime = time.mktime(
-        time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
-
-    def __init__(self, fullpath, load_cache=False):
-        try: # Never load_cache for memory reasons - let it be loaded as needed
-            super(BSAInfo, self).__init__(fullpath, load_cache=False)
-        except BSAError as e:
-            raise FileError, (GPath(fullpath).tail,
-                e.__class__.__name__ + u' ' + e.message), sys.exc_info()[2]
-        self._reset_bsa_mtime()
-
-    def getFileInfos(self): return bsaInfos
-
-    def do_update(self):
-        changed = super(BSAInfo, self).do_update()
-        self._reset_bsa_mtime()
-        return changed
-
-    def readHeader(self): # just reset the cache
-        self._assets = self.__class__._assets
-
-    def _reset_bsa_mtime(self):
-        if bush.game.allow_reset_bsa_timestamps and inisettings[
-            'ResetBSATimestamps']:
-            if self._file_mod_time != self._default_mtime:
-                self.setmtime(self._default_mtime)
+        if self.cosave_type is None: return None
+        return self.getPath().root + u'.' + self.cosave_type.signature.lower()
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
@@ -1541,13 +1496,11 @@ class INIInfos(TableFileInfos):
     """:type _ini: IniFile
     :type data: dict[bolt.Path, IniInfo]"""
     file_pattern = re.compile(ur'\.ini$', re.I | re.U)
-    try:
-        _default_tweaks = dict((GPath(k), DefaultIniInfo(k, v)) for k, v in
-                               bush.game_mod.default_tweaks.iteritems())
-    except AttributeError:
-        _default_tweaks = {}
 
     def __init__(self):
+        INIInfos._default_tweaks = dict(
+            (GPath(k), DefaultIniInfo(k, v)) for k, v in
+            bush.game_mod.default_tweaks.iteritems())
         super(INIInfos, self).__init__(dirs['tweaks'],
                                        factory=ini_info_factory)
         self._ini = None
@@ -1772,13 +1725,11 @@ def _lo_cache(lord_func):
 #------------------------------------------------------------------------------
 class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
-    try:
-        file_pattern = re.compile(ur'(' + '|'.join(map(re.escape, bush.game.espm_extensions)) +
-                                  ur')(.ghost)?$', re.I | re.U)
-    except AttributeError:
-        pass
 
     def __init__(self):
+        self.__class__.file_pattern = re.compile(ur'(' + '|'.join(
+            map(re.escape, bush.game.espm_extensions)) + ur')(\.ghost)?$',
+                                                 re.I | re.U)
         FileInfos.__init__(self, dirs['mods'], factory=ModInfo)
         #--Info lists/sets
         self.mergeScanned = [] #--Files that have been scanned for mergeability.
@@ -2739,15 +2690,6 @@ class ModInfos(FileInfos):
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = False
-    try:
-        _ext = ur'\.' + bush.game.ess.ext[1:]
-    except AttributeError: # 'NoneType' object has no attribute 'ess'
-        _ext = u''
-    file_pattern = re.compile(
-        ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...) or
-        _ext + ur'|' + _ext[:-1] + ur'r' + ur'))$', # enabled or disabled save
-        re.I | re.U)
-    del _ext
     bak_file_pattern = re.compile(ur'(quick|auto)save(\.bak)+', re.I | re.U)
 
     def _setLocalSaveFromIni(self):
@@ -2761,6 +2703,11 @@ class SaveInfos(FileInfos):
         self.localSave = decode(self.localSave) # encoding = 'cp1252' ?
 
     def __init__(self):
+        _ext = re.escape(bush.game.ess.ext)
+        self.__class__.file_pattern = re.compile(
+            ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...)
+            _ext + ur'|' + _ext[:-1] + ur'r' + ur'))$', # enabled/disabled save
+            re.I | re.U)
         self.localSave = u'Saves\\'
         self._setLocalSaveFromIni()
         super(SaveInfos, self).__init__(dirs['saveBase'].join(self.localSave),
@@ -2873,15 +2820,48 @@ class SaveInfos(FileInfos):
             return fileName
 
 #------------------------------------------------------------------------------
+from . import bsa_files
+
 class BSAInfos(FileInfos):
     """BSAInfo collection. Represents bsa files in game's Data directory."""
-    try:
-        file_pattern = re.compile(ur'\.' + bush.game.bsa_extension + ur'$',
-                                  re.I | re.U)
-    except AttributeError:
-        pass
 
     def __init__(self):
+        self.__class__.file_pattern = re.compile(
+            ur'\.' + bush.game.bsa_extension + ur'$', re.I | re.U)
+        _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
+
+        class BSAInfo(FileInfo, _bsa_type):
+            _default_mtime = time.mktime(
+                time.strptime(u'01-01-2006 00:00:00', u'%m-%d-%Y %H:%M:%S'))
+
+            def __init__(self, fullpath, load_cache=False):
+                try:  # Never load_cache for memory reasons - let it be
+                    # loaded as needed
+                    super(BSAInfo, self).__init__(fullpath, load_cache=False)
+                except BSAError as e:
+                    raise FileError, (GPath(fullpath).tail,
+                                      e.__class__.__name__ + u' ' +
+                                      e.message), \
+                        sys.exc_info()[2]
+                self._reset_bsa_mtime()
+
+            def getFileInfos(self):
+                return bsaInfos
+
+            def do_update(self):
+                changed = super(BSAInfo, self).do_update()
+                self._reset_bsa_mtime()
+                return changed
+
+            def readHeader(self):  # just reset the cache
+                self._assets = self.__class__._assets
+
+            def _reset_bsa_mtime(self):
+                if bush.game.allow_reset_bsa_timestamps and inisettings[
+                    'ResetBSATimestamps']:
+                    if self._file_mod_time != self._default_mtime:
+                        self.setmtime(self._default_mtime)
+
         super(BSAInfos, self).__init__(dirs['mods'], factory=BSAInfo)
 
     @property

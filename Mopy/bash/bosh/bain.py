@@ -69,13 +69,7 @@ class Installer(object):
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
     dataDirsMinus = {u'bash', u'--'}
-    try:
-        reDataFile = ur'(\.(' + u'|'.join(
-            {x[1:] for x in bush.game.espm_extensions} | {
-            bush.game.bsa_extension} | {u'ini'}) + ur'))$'
-    except AttributeError: # YAK
-        reDataFile = ur'(\.(esp|esm|bsa|ini))$'
-    reDataFile = re.compile(reDataFile, re.I | re.U)
+    _reDataFile = None
     docExts = {u'.txt', u'.rtf', u'.htm', u'.html', u'.doc', u'.docx', u'.odt',
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
@@ -216,6 +210,15 @@ class Installer(object):
         self.missingFiles = set()
         self.mismatchedFiles = set()
         self.mismatchedEspms = set()
+
+    @property
+    def reDataFile(self):
+        if self.__class__._reDataFile is None:
+            _reDataFile = ur'(\.(' + u'|'.join(
+                {x[1:] for x in bush.game.espm_extensions} | {
+                    bush.game.bsa_extension, u'ini'}) + ur'))$'
+            self.__class__._reDataFile = re.compile(_reDataFile, re.I | re.U)
+        return self.__class__._reDataFile
 
     @property
     def num_of_files(self): return len(self.fileSizeCrcs)

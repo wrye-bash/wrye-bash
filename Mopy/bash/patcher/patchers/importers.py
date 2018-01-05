@@ -2753,7 +2753,7 @@ class CBash_StatsPatcher(_AStatsPatcher, _RecTypeModLogging):
         super(CBash_StatsPatcher, self).initPatchFile(patchFile, loadMods)
         if not self.isActive: return
         self.csvFid_attr_value = {}
-        self.class_attrs = CBash_ItemStats.class_attrs
+        self.class_attrs = game_mod.statsTypes
 
     def initData(self,group_patchers,progress):
         """Compiles material, i.e. reads source text, esp's, etc. as necessary."""

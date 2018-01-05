@@ -82,19 +82,21 @@ class ModRuleSet:
 
     class RuleParser:
         """A class for parsing ruleset files."""
-        try: espmls = bush.game.espm_extensions
-        except AttributeError: espmls = {u'.esp', u'.esm'} # YAK!
         ruleBlockIds = (u'NOTES',u'CONFIG',u'SUGGEST',u'WARN')
         reComment = re.compile(ur'##.*',re.U)
         reBlock   = re.compile(ur'^>>\s+([A-Z]+)\s*(.*)',re.U)
-        reMod     = re.compile(ur'\s*([\-|]?)(.+?(' + u'|'.join(
-            map(re.escape, espmls)) + ur'))(\s*\[[^\]]\])?', re.I | re.U)
         reRule    = re.compile(ur'^(x|o|\+|-|-\+)\s+([^/]+)\s*(\[[^\]]+\])?\s*//(.*)',re.U)
         reExists  = re.compile(ur'^(e)\s+([^/]+)//(.*)',re.U)
-        reModVersion = re.compile(ur'(.+(' + u'|'.join(
-            map(re.escape, espmls)) + ur'))\s*(\[[^\]]+\])?', re.I | re.U)
+        reMod = reModVersion = None
 
         def __init__(self,ruleSet):
+            if self.__class__.reMod is None: # bush.game must have been set
+                espmls = u'|'.join(map(re.escape, bush.game.espm_extensions))
+                self.__class__.reMod = re.compile(
+                    ur'\s*([\-|]?)(.+?(' + espmls + ur'))(\s*\[[^\]]\])?',
+                    re.I | re.U)
+                self.__class__.reModVersion = re.compile(
+                    ur'(.+(' + espmls + ur'))\s*(\[[^\]]+\])?', re.I | re.U)
             self.ruleSet = ruleSet
             #--Temp storage while parsing.
             self.assumed = []

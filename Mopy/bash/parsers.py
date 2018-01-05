@@ -1176,14 +1176,10 @@ class CBash_FidReplacer:
 class FullNames:
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
-    try:
-        defaultTypes = bush.game_mod.namesTypes # PYDEV ERROR
-    except AttributeError: # 'NoneType' object has no attribute 'namesTypes'
-        pass
 
     def __init__(self,types=None,aliases=None):
         self.type_id_name = {} #--(eid,name) = type_id_name[type][longid]
-        self.types = types or FullNames.defaultTypes
+        self.types = types or bush.game_mod.namesTypes
         self.aliases = aliases or {}
 
     def readFromMod(self,modInfo):
@@ -1364,10 +1360,6 @@ class CBash_FullNames:
 class ItemStats:
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
-    try:
-        class_attrs = bush.game_mod.statsTypes
-    except AttributeError: # 'NoneType' object has no attribute 'statsTypes'
-        pass
 
     @staticmethod
     def sstr(value):
@@ -1388,6 +1380,7 @@ class ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
+        self.class_attrs = bush.game_mod.statsTypes
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
         if bush.game.fsName == u'Skyrim':
@@ -1520,10 +1513,6 @@ class ItemStats:
 class CBash_ItemStats:
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
-    try:
-        class_attrs = bush.game_mod.statsTypes
-    except AttributeError: # 'NoneType' object has no attribute 'statsTypes'
-        pass
 
     @staticmethod
     def sstr(value):
@@ -1544,6 +1533,7 @@ class CBash_ItemStats:
         return x
 
     def __init__(self,types=None,aliases=None):
+        self.class_attrs = bush.game_mod.statsTypes
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
         self.attr_type = {'eid':self.sstr,

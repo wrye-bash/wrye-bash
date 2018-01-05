@@ -136,21 +136,23 @@ class OblivionGameInfo(GameInfo):
         validHeaderVersions = (0.8,1.0)
         stringsFiles = []
 
-    allTags = sorted((
-        u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Climate',
-        u'C.Light', u'C.Music', u'C.Name', u'C.RecordFlags', u'C.Owner',
-        u'C.Water', u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations',
-        u'Filter', u'Graphics', u'Hair', u'IIM', u'Invent', u'Names', u'NoMerge',
-        u'NpcFaces', u'R.Relations', u'Relev', u'Scripts', u'ScriptContents',
-        u'Sound', u'SpellStats', u'Stats', u'Voice-F', u'Voice-M', u'R.Teeth',
-        u'R.Mouth', u'R.Ears', u'R.Head', u'R.Attributes-F', u'R.Attributes-M',
-        u'R.Skills', u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads',
-        u'Actors.Anims', u'Actors.AIData', u'Actors.DeathItem',
-        u'Actors.AIPackages', u'Actors.AIPackagesForceAdd', u'Actors.Stats',
-        u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood',
-        u'Actors.Spells', u'Actors.SpellsForceAdd', u'NPC.Race',
-        u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported',
-        u'Npc.HairOnly', u'Npc.EyesOnly'))  # , 'ForceMerge'
+    allTags = {u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F',
+               u'C.Climate', u'C.Light', u'C.Music', u'C.Name',
+               u'C.RecordFlags', u'C.Owner', u'C.Water', u'Deactivate',
+               u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter',
+               u'Graphics', u'Hair', u'IIM', u'Invent', u'Names', u'NoMerge',
+               u'NpcFaces', u'R.Relations', u'Relev', u'Scripts',
+               u'ScriptContents', u'Sound', u'SpellStats', u'Stats',
+               u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears',
+               u'R.Head', u'R.Attributes-F', u'R.Attributes-M', u'R.Skills',
+               u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads',
+               u'Actors.Anims', u'Actors.AIData', u'Actors.DeathItem',
+               u'Actors.AIPackages', u'Actors.AIPackagesForceAdd',
+               u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
+               u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells',
+               u'Actors.SpellsForceAdd', u'NPC.Race', u'Actors.Skeleton',
+               u'NpcFacesForceFullImport', u'MustBeActiveIfImported',
+               u'Npc.HairOnly', u'Npc.EyesOnly'}  # , 'ForceMerge'
 
     patchers = (
         'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',

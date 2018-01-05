@@ -203,7 +203,7 @@ class GameInfo(object):
         ]
 
     # Bash Tags supported by this game
-    allTags = sorted(())
+    allTags = set()
 
     # Patcher available when building a Bashed Patch (referenced by class name)
     patchers = ()

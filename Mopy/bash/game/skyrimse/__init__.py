@@ -70,9 +70,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
 
     espm_extensions = {u'.esp', u'.esm', u'.esl'}
 
-    allTags = sorted((
-        u'Deactivate', u'Delev', u'Invent', u'NoMerge', u'Relev',
-        ))
+    allTags = {u'Deactivate', u'Delev', u'Invent', u'NoMerge', u'Relev'}
 
     patchers = (
         u'GmstTweaker', u'ImportInventory', u'ListsMerger', u'PatchMerger',
