@@ -185,21 +185,6 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
 def game_path(display_name): return foundGames[_display_fsName[display_name]]
 def get_display_name(fs_name): return _fsName_display[fs_name]
 
-# Tes3 Group/Top Types --------------------------------------------------------
-groupTypes = [
-    _(u'Top (Type)'),
-    _(u'World Children'),
-    _(u'Int Cell Block'),
-    _(u'Int Cell Sub-Block'),
-    _(u'Ext Cell Block'),
-    _(u'Ext Cell Sub-Block'),
-    _(u'Cell Children'),
-    _(u'Topic Children'),
-    _(u'Cell Persistent Children'),
-    _(u'Cell Temporary Children'),
-    _(u'Cell Visible Distant Children'),
-]
-
 # Id Functions ----------------------------------------------------------------
 def getIdFunc(modName):
     return lambda x: (GPath(modName),x)
