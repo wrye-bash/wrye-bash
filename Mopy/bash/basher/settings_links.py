@@ -24,15 +24,15 @@
 
 import locale
 import sys
-import wx
-from ..balt import ItemLink, vSizer, hSizer, hspacer, Button, AppendableLink, \
-    RadioLink, CheckLink, MenuLink, TransLink, EnabledLink, BoolLink, \
-    StaticText, tooltip, Link, staticBitmap, hspace
-from .. import barb, bush, balt, bass, bolt, env, exception
-from ..bolt import deprint, GPath
+
 from . import BashFrame, BashStatusBar
+from .app_buttons import App_Button  # TODO(ut): ugly
 from .dialogs import ColorDialog
-from .app_buttons import App_Button # TODO(ut): ugly
+from .. import barb, bush, balt, bass, bolt, env, exception
+from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
+    TransLink, EnabledLink, BoolLink, tooltip, Link
+from ..bolt import deprint, GPath
+
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
 __all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
@@ -58,26 +58,8 @@ class Settings_BackupSettings(ItemLink):
         msg = _(u'Do you want to backup your Bash settings now?')
         if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
         with balt.BusyCursor(): BashFrame.SaveSettings(Link.Frame)
-        dialog = balt.Dialog(Link.Frame,_(u'Backup Images?'),size=(400,200))
-        icon = staticBitmap(dialog)
-        sizer = vSizer(
-            (hSizer((icon,0,wx.ALL,6), hspace(6),
-                    (StaticText(dialog,_(u'Do you want to backup any images?'),
-                                noAutoResize=True),1,wx.EXPAND),
-                    ),1,wx.EXPAND|wx.ALL,6),
-            (hSizer(hspacer,
-                    Button(dialog, label=_(u'Backup All Images'),
-                           onButClick=lambda: dialog.EndModal(2)), hspace(),
-                    Button(dialog, label=_(u'Backup Changed Images'),
-                           onButClick=lambda: dialog.EndModal(1)), hspace(),
-                    Button(dialog, label=_(u'None'),
-                           onButClick=lambda: dialog.EndModal(0)),
-                    ),0,wx.EXPAND|wx.ALL^wx.TOP,6),
-            )
-        dialog.SetSizer(sizer)
-        with dialog: images = dialog.ShowModal()
         backup = barb.BackupSettings.get_backup_instance(
-            Link.Frame, settings_file=None, handle_images=images)
+            Link.Frame, settings_file=None)
         if not backup: return
         try:
             with balt.BusyCursor(): backup.Apply()
@@ -103,9 +85,6 @@ class Settings_RestoreSettings(ItemLink):
             Link.Frame, settings_file=None) # prompt for backup filename
         if not backup: return
         try:
-            backup.restore_images = balt.askYes(Link.Frame,
-                _(u'Do you want to restore saved images as well as settings?'),
-                _(u'Restore Settings'))
             with balt.BusyCursor(): backup.Apply()
         except exception.StateError:
             deprint(u'Restore settings failed:', traceback=True)

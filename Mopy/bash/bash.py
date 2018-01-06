@@ -97,7 +97,7 @@ def cmdBackup(opts):
     if barb.new_bash_version_prompt_backup() or opts.backup:
         frame = balt.Link.Frame
         backup = barb.BackupSettings.get_backup_instance(frame, path,
-            should_quit, opts.backup_images)
+            should_quit)
         if not backup: return
         try:
             backup.Apply()
@@ -119,7 +119,7 @@ def cmdRestore(opts):
     if not basher: import basher, balt, barb
     should_quit = opts.quietquit
     backup = barb.RestoreSettings.get_backup_instance(balt.Link.Frame,
-        opts.filename or None, should_quit, opts.backup_images)
+        opts.filename or None, should_quit)
     if not backup : return False
     backup.Apply()
     return should_quit

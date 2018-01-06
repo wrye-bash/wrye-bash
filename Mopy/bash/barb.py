@@ -45,7 +45,6 @@ import bass
 import bolt
 import bosh
 import bush
-from . import images_list
 from bolt import GPath, deprint
 from balt import askSave, askOpen, askWarning, showError, showWarning, \
     showInfo, Link, BusyCursor, askYes
@@ -104,14 +103,13 @@ class BaseBackupSettings(object):
         raise AbstractError
 
     @classmethod
-    def get_backup_instance(cls, parent, settings_file, do_quit=False,
-                            handle_images=None):
+    def get_backup_instance(cls, parent, settings_file, do_quit=False):
         settings_file = GPath(settings_file)
         settings_file = cls._get_backup_filename(parent, settings_file,
                                                  do_quit)
         if not settings_file: return None
         with BusyCursor():
-            return cls(parent, settings_file, do_quit, handle_images)
+            return cls(parent, settings_file, do_quit)
 
     @staticmethod
     def _get_backup_filename(parent, filename, do_quit):
@@ -132,8 +130,7 @@ def SameAppVersion(): return bass.AppVersion == bass.settings['bash.version']
 
 #------------------------------------------------------------------------------
 class BackupSettings(BaseBackupSettings):
-    def __init__(self, parent=None, settings_file=None, do_quit=False,
-                 handle_images=None):
+    def __init__(self, parent=None, settings_file=None, do_quit=False):
         super(BackupSettings, self).__init__(parent, settings_file, do_quit)
         game, dirs = bush.game.fsName, bass.dirs
         for (bash_dir, tmpdir), setting_files in \
@@ -145,21 +142,6 @@ class BackupSettings(BaseBackupSettings):
                 fpath = bash_dir.join(name)
                 if fpath.exists():
                     self.files[tmp_dir.join(name)] = fpath
-
-        #backup image files if told to
-        def _isChanged(ab_path, rel_path):
-            for ver_list in images_list.values():
-                if  ver_list.get(rel_path.s, -1) == ab_path.size: return False
-            return True
-        if handle_images: # 1 is changed images only, 2 is all images
-            onlyChanged = handle_images == 1
-            tmpdir = GPath(jo(game, u'Mopy', u'bash', u'images'))
-            image_dir = dirs['images']
-            for name in image_dir.list():
-                fullname = image_dir.join(name)
-                if fullname.isfile() and not name.s.lower() == u'thumbs.db' \
-                        and (not onlyChanged or _isChanged(fullname, name)):
-                    self.files[tmpdir.join(name)] = fullname
 
         #backup save profile settings
         savedir = GPath(u'My Games').join(game)
@@ -236,10 +218,6 @@ class BackupSettings(BaseBackupSettings):
 
 #------------------------------------------------------------------------------
 class RestoreSettings(BaseBackupSettings):
-    def __init__(self, parent=None, settings_file=None, do_quit=False,
-                 handle_images=None):
-        super(RestoreSettings, self).__init__(parent, settings_file, do_quit)
-        self.restore_images = handle_images
 
     def Apply(self):
         temp_settings_restore_dir = bolt.Path.tempDir()
@@ -297,9 +275,6 @@ class RestoreSettings(BaseBackupSettings):
 
         # restore all the settings files
         restore_paths = init_settings_files().keys()
-        if self.restore_images:
-            restore_paths += [
-                (dirs['images'], jo(game, u'Mopy', u'bash', u'images'))]
         for dest_dir, back_path in restore_paths:
             full_back_path = temp_dir.join(back_path)
             if full_back_path.exists():

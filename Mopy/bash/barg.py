@@ -93,22 +93,6 @@ def parse():
     any prompts or message dialogs."""
     arg(backupGroup, '-q', '--quiet-quit', dest='quietquit',
         action='store_true', default=False)
-    # images...
-    parser.set_defaults(backup_images=0)
-    backupGroup.add_argument('-i', '--include-changed-images',
-                             action='store_const',
-                             const=1,
-                             dest='backup_images',
-                             help='Include changed images from '
-                                  'mopy/bash/images in the backup. Include '
-                                  'any image(s) from backup file in restore.')
-    backupGroup.add_argument('-I', '--include-all-images',
-                             action='store_const',
-                             const=2,
-                             dest='backup_images',
-                             help='Include all images from mopy/bash/images '
-                                  'in the backup/restore (if present in '
-                                  'backup file).')
 
     #### Individual Arguments ####
     parser.add_argument('-d', '--debug',
@@ -159,7 +143,6 @@ _short_to_long = dict(
     [('-o', '--oblivionPath'), ('-p', '--personalPath'), ('-u', '--userPath'),
      ('-l', '--localAppDataPath'), ('-b', '--backup'), ('-r', '--restore'),
      ('-q', '--quiet-quit'), ('-f', '--filename'),
-     ('-i', '--include-changed-images'), ('-I', '--include-all-images'),
      ('-d', '--debug'), ('-C', '--Cbash-mode'), ('-P', '--Python-mode'),
      ('-L', '--Language'), ])
 
