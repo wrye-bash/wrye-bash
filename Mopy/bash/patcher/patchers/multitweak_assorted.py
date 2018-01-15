@@ -546,24 +546,24 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
             return u'<div align=%s>' % align_text[mo.group(1)]
         for record in patchFile.BOOK.records:
             if record.text and not record.enchantment:
-                text = record.text
-                text = text.replace(u'\u201d', u'')  # there are some FUNKY
+                rec_text = record.text
+                rec_text = rec_text.replace(u'\u201d', u'')  # there are some FUNKY
                 # quotes that don't translate properly. (they are in *latin*
                 # encoding not even cp1252 or something normal but non-unicode)
-                if reHead2.match(text):
+                if reHead2.match(rec_text):
                     self.inBold = False
-                    text = reHead2.sub(
+                    rec_text = reHead2.sub(
                         ur'\1<font face=1 color=220000>\2<font face=3 '
-                        ur'color=444444>\r\n', text)
-                    text = reHead3.sub(
+                        ur'color=444444>\r\n', rec_text)
+                    rec_text = reHead3.sub(
                         ur'\1<font face=3 color=220000>\2<font face=3 '
                         ur'color=444444>\r\n',
-                        text)
-                    text = reAlign.sub(replaceAlign,text)
-                    text = reBold.sub(replaceBold,text)
-                    text = re.sub(ur'\r\n',ur'<br>\r\n',text)
+                        rec_text)
+                    rec_text = reAlign.sub(replaceAlign,rec_text)
+                    rec_text = reBold.sub(replaceBold,rec_text)
+                    rec_text = re.sub(ur'\r\n',ur'<br>\r\n',rec_text)
                 else:
-                    maColor = reColor.search(text)
+                    maColor = reColor.search(rec_text)
                     if maColor:
                         color = maColor.group(1)
                     elif record.flags.isScroll:
@@ -571,14 +571,14 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
                     else:
                         color = u'444444'
                     fontFace = u'<font face=3 color='+color+u'>'
-                    text = reTagInWord.sub(ur'\1',text)
-                    text.lower()
-                    if reDiv.search(text) and not reFont.search(text):
-                        text = fontFace+text
+                    rec_text = reTagInWord.sub(ur'\1',rec_text)
+                    rec_text.lower()
+                    if reDiv.search(rec_text) and not reFont.search(rec_text):
+                        rec_text = fontFace+rec_text
                     else:
-                        text = reFont1.sub(fontFace,text)
-                if text != record.text:
-                    record.text = text
+                        rec_text = reFont1.sub(fontFace,rec_text)
+                if rec_text != record.text:
+                    record.text = rec_text
                     keep(record.fid)
                     srcMod = record.fid[0]
                     count[srcMod] = count.get(srcMod,0) + 1
@@ -599,8 +599,8 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
             return u'<div align=%s>' % align_text[mo.group(1)]
 
         if record.text and not record.enchantment:
-            text = record.text
-            text = text.replace(u'\u201d', u'')  # there are some FUNKY
+            rec_text = record.text
+            rec_text = rec_text.replace(u'\u201d', u'')  # there are some FUNKY
             # quotes that don't translate properly. (they are in *latin*
             # encoding not even cp1252 or something normal but non-unicode)
             reColor = self.__class__.reColor
@@ -614,18 +614,18 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
             reAlign = self.__class__.reAlign
             align_text = {u'^^':u'center',u'<<':u'left',u'>>':u'right'}
             self.inBold = False
-            if reHead2.match(text):
-                text = reHead2.sub(
+            if reHead2.match(rec_text):
+                rec_text = reHead2.sub(
                     ur'\1<font face=1 color=220000>\2<font face=3 '
-                    ur'color=444444>\r\n', text)
-                text = reHead3.sub(
+                    ur'color=444444>\r\n', rec_text)
+                rec_text = reHead3.sub(
                     ur'\1<font face=3 color=220000>\2<font face=3 '
-                    ur'color=444444>\r\n', text)
-                text = reAlign.sub(replaceAlign,text)
-                text = reBold.sub(replaceBold,text)
-                text = re.sub(ur'\r\n',r'<br>\r\n',text)
+                    ur'color=444444>\r\n', rec_text)
+                rec_text = reAlign.sub(replaceAlign,rec_text)
+                rec_text = reBold.sub(replaceBold,rec_text)
+                rec_text = re.sub(ur'\r\n',r'<br>\r\n',rec_text)
             else:
-                maColor = reColor.search(text)
+                maColor = reColor.search(rec_text)
                 if maColor:
                     color = maColor.group(1)
                 elif record.IsScroll:
@@ -633,16 +633,16 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
                 else:
                     color = u'444444'
                 fontFace = u'<font face=3 color='+color+u'>'
-                text = reTagInWord.sub(ur'\1',text)
-                text.lower()
-                if reDiv.search(text) and not reFont.search(text):
-                    text = fontFace+text
+                rec_text = reTagInWord.sub(ur'\1',rec_text)
+                rec_text.lower()
+                if reDiv.search(rec_text) and not reFont.search(rec_text):
+                    rec_text = fontFace+rec_text
                 else:
-                    text = reFont1.sub(fontFace,text)
-            if text != record.text:
+                    rec_text = reFont1.sub(fontFace,rec_text)
+            if rec_text != record.text:
                 override = record.CopyAsOverride(self.patchFile)
                 if override:
-                    override.text = text
+                    override.text = rec_text
                     self.mod_count[modFile.GName] += 1
                     record.UnloadRecord()
                     record._RecordID = override._RecordID

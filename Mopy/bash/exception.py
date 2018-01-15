@@ -166,9 +166,9 @@ class BSAFlagError(BSAError):
             u'{} (flag {}) unset'.format(message, flag))
 
 class BSADecodingError(BSAError):
-    def __init__(self, text):  # type: (basestring) -> None
+    def __init__(self, string):  # type: (basestring) -> None
         super(BSADecodingError, self).__init__(
-            u'Undecodable string {!r}'.format(text))
+            u'Undecodable string {!r}'.format(string))
 
 # Misc exceptions -------------------------------------------------------------
 class StateError(BoltError):

@@ -405,12 +405,12 @@ def _show_wx_error(msg):
                                           _wx.DIALOG_NO_PARENT |
                                           _wx.RESIZE_BORDER)
                 sizer = _wx.BoxSizer(_wx.VERTICAL)
-                text = _wx.TextCtrl(self,
+                text_ctrl = _wx.TextCtrl(self,
                                     style=_wx.TE_MULTILINE | _wx.TE_BESTWRAP |
                                           _wx.TE_READONLY | _wx.BORDER_NONE)
-                text.SetValue(msg)
-                text.SetBackgroundColour(_wx.SystemSettings.GetColour(4))
-                sizer.Add(text, proportion=1, flag=_wx.GROW | _wx.ALL,
+                text_ctrl.SetValue(msg)
+                text_ctrl.SetBackgroundColour(_wx.SystemSettings.GetColour(4))
+                sizer.Add(text_ctrl, proportion=1, flag=_wx.GROW | _wx.ALL,
                           border=5)
                 button = _wx.Button(self, _wx.ID_CANCEL, _(u'Quit'))
                 button.SetDefault()

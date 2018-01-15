@@ -575,9 +575,9 @@ class Mod_ListBashTags(ItemLink):
     def Execute(self):
         #--Get masters list
         modInfos = [x for x in self.iselected_infos()]
-        text = bosh.modInfos.getTagList(modInfos)
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False)
+        tags_text = bosh.modInfos.getTagList(modInfos)
+        balt.copyToClipboard(tags_text)
+        self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
 
 def _getUrl(fileName, installer, text):
     """"Try to get the url of the file (order of priority will be: TESNexus,
@@ -604,10 +604,10 @@ class Mod_CreateBOSSReport(EnabledLink):
             not bosh.reOblivion.match(self.selected[0].s))
 
     def Execute(self):
-        text = u''
+        log_txt = u''
         if len(self.selected) > 5:
             spoiler = True
-            text += u'[spoiler]\n'
+            log_txt += u'[spoiler]\n'
         else:
             spoiler = False
         # Scan for ITM and UDR's
@@ -622,28 +622,28 @@ class Mod_CreateBOSSReport(EnabledLink):
             if fileName == u'Oblivion.esm': continue
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
-            if not installer: text += fileName.s
-            else: text = _getUrl(fileName, installer, text)
+            if not installer: log_txt += fileName.s
+            else: log_txt = _getUrl(fileName, installer, log_txt)
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:
-                text += u'\n'+_(u'Version')+u': %s' % version
+                log_txt += u'\n'+_(u'Version')+u': %s' % version
             #-- CRC
-            text += u'\n'+_(u'CRC')+u': ' + fileInfo.crc_string()
+            log_txt += u'\n'+_(u'CRC')+u': ' + fileInfo.crc_string()
             #-- Dirty edits
             if udr_itm_fog:
                 udrs,itms,fogs = udr_itm_fog[i]
                 if udrs or itms:
                     if bass.settings['bash.CBashEnabled']:
-                        text += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
+                        log_txt += (u'\nUDR: %i, ITM: %i '+_(u'(via Wrye Bash)')) % (len(udrs),len(itms))
                     else:
-                        text += (u'\nUDR: %i, ITM not scanned '+_(u'(via Wrye Bash)')) % len(udrs)
-            text += u'\n\n'
-        if spoiler: text += u'[/spoiler]'
+                        log_txt += (u'\nUDR: %i, ITM not scanned '+_(u'(via Wrye Bash)')) % len(udrs)
+            log_txt += u'\n\n'
+        if spoiler: log_txt += u'[/spoiler]'
 
         # Show results + copy to clipboard
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'BOSS Report'), fixedFont=False)
+        balt.copyToClipboard(log_txt)
+        self._showLog(log_txt, title=_(u'BOSS Report'), fixedFont=False)
 
 class Mod_CopyModInfo(ItemLink):
     """Copies the basic info about selected mod(s)."""
@@ -651,10 +651,10 @@ class Mod_CopyModInfo(ItemLink):
     help = _(u'Copies the basic info about selected mod(s)')
 
     def Execute(self):
-        text = u''
+        info_txt = u''
         if len(self.selected) > 5:
             spoiler = True
-            text += u'[spoiler]'
+            info_txt += u'[spoiler]'
         else:
             spoiler = False
         # Create the report
@@ -662,24 +662,24 @@ class Mod_CopyModInfo(ItemLink):
         for i,fileName in enumerate(self.selected):
             # add a blank line in between mods
             if isFirst: isFirst = False
-            else: text += u'\n\n'
+            else: info_txt += u'\n\n'
             #-- Name of file, plus a link if we can figure it out
             installer = bosh.modInfos.table.getItem(fileName,'installer',u'')
-            if not installer: text += fileName.s
-            else: text = _getUrl(fileName, installer, text)
+            if not installer: info_txt += fileName.s
+            else: info_txt = _getUrl(fileName, installer, info_txt)
             labels = self.window.labels
             for col in self.window.cols:
                 if col == 'File': continue
                 lab = labels[col](self.window, fileName)
-                text += u'\n%s: %s' % (col, lab if lab else u'-')
+                info_txt += u'\n%s: %s' % (col, lab if lab else u'-')
             #-- Version, if it exists
             version = bosh.modInfos.getVersion(fileName)
             if version:
-                text += u'\n'+_(u'Version')+u': %s' % version
-        if spoiler: text += u'[/spoiler]'
+                info_txt += u'\n'+_(u'Version')+u': %s' % version
+        if spoiler: info_txt += u'[/spoiler]'
         # Show results + copy to clipboard
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u'Mod Info Report'), fixedFont=False)
+        balt.copyToClipboard(info_txt)
+        self._showLog(info_txt, title=_(u'Mod Info Report'), fixedFont=False)
 
 class Mod_ListDependent(OneItemLink):
     """Copies list of masters to clipboard."""
@@ -703,7 +703,7 @@ class Mod_ListDependent(OneItemLink):
             log(u'[spoiler][xml]')
             log.setHeader(head + self.legend + u': ')
             loOrder =  lambda tup: load_order.cached_lo_index_or_max(tup[0])
-            text = u''
+            text_list = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
                 if self._selected_item in info.header.masters:
                     hexIndex = modInfos.hexIndexString(mod)
@@ -713,13 +713,13 @@ class Mod_ListDependent(OneItemLink):
                         prefix = bul + u'++'
                     else:
                         prefix = bul + (u'**' if mod in imported_ else u'__')
-                    text = u'%s  %s' % (prefix, mod.s,)
-                    log(text)
-            if not text:  log(u'None')
+                    text_list = u'%s  %s' % (prefix, mod.s,)
+                    log(text_list)
+            if not text_list:  log(u'None')
             log(u'[/xml][/spoiler]')
-            text = bolt.winNewLines(log.out.getvalue())
-        balt.copyToClipboard(text)
-        self._showLog(text, title=self.legend, fixedFont=False)
+            text_list = bolt.winNewLines(log.out.getvalue())
+        balt.copyToClipboard(text_list)
+        self._showLog(text_list, title=self.legend, fixedFont=False)
 
 class Mod_JumpToInstaller(AppendableLink, OneItemLink):
     """Go to the installers tab and highlight the mods installer"""

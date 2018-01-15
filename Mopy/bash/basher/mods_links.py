@@ -249,9 +249,9 @@ class Mods_ListMods(ItemLink):
 
     def Execute(self):
         #--Get masters list
-        text = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Active Mod Files"), fixedFont=False)
+        list_txt = bosh.modInfos.getModList(showCRC=balt.getKeyState(67))
+        balt.copyToClipboard(list_txt)
+        self._showLog(list_txt, title=_(u"Active Mod Files"), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
@@ -260,9 +260,9 @@ class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
     help = _(u"Copies list of bash tags to clipboard.")
 
     def Execute(self):
-        text = bosh.modInfos.getTagList()
-        balt.copyToClipboard(text)
-        self._showLog(text, title=_(u"Bash Tags"), fixedFont=False)
+        tags_text = bosh.modInfos.getTagList()
+        balt.copyToClipboard(tags_text)
+        self._showLog(tags_text, title=_(u"Bash Tags"), fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Mods_CleanDummyMasters(EnabledLink):

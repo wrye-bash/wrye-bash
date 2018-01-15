@@ -1212,19 +1212,19 @@ class InstallerArchive(Installer):
     def _list_package(apath, log):
         with apath.unicodeSafe() as tempArch:
             filepath = [u'']
-            text = []
+            list_text = []
             def _parse_archive_line(key, value):
                 if key == u'Path':
                     filepath[0] = value.decode('utf8')
                 elif key == u'Attributes':
-                    text.append( # attributes may be empty
+                    list_text.append( # attributes may be empty
                         (u'%s' % filepath[0], value and (u'D' in value)))
                 elif key == u'Method':
                     filepath[0] = u''
             list_archive(tempArch, _parse_archive_line)
-        text.sort()
+        list_text.sort()
         #--Output
-        for node, isdir in text:
+        for node, isdir in list_text:
             log(u'  ' * node.count(os.sep) + os.path.split(node)[1] + (
                 os.sep if isdir else u''))
 

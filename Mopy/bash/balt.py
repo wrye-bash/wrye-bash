@@ -2746,7 +2746,7 @@ class _CheckList_SelectAll(ItemLink):
     def __init__(self,select=True):
         super(_CheckList_SelectAll, self).__init__()
         self.select = select
-        self.text = _(u'Select All') if select else _(u'Select None')
+        self._text = _(u'Select All') if select else _(u'Select None')
 
     def Execute(self):
         for i in xrange(self.window.GetCount()):

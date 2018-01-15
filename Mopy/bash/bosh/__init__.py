@@ -1042,41 +1042,41 @@ class INIInfo(IniFile):
     def listErrors(self):
         """Returns ini tweak errors as text."""
         ini_infos_ini = iniInfos.ini
-        text = [u'%s:' % self.abs_path.stail]
+        errors = [u'%s:' % self.abs_path.stail]
         if self._incompatible(ini_infos_ini):
-            text.append(u' ' + _(u'Format mismatch:'))
+            errors.append(u' ' + _(u'Format mismatch:'))
             if isinstance(self, OBSEIniFile):
-                text.append(u'  '+ _(u'Target format: INI') +
+                errors.append(u'  '+ _(u'Target format: INI') +
                             u'\n  ' + _(u'Tweak format: Batch Script'))
             else:
-                text.append(u'  ' + _(u'Target format: Batch Script') +
+                errors.append(u'  ' + _(u'Target format: Batch Script') +
                             u'\n  ' + _(u'Tweak format: INI'))
         else:
             tweak_settings = self.get_ci_settings()
             ini_settings = ini_infos_ini.get_ci_settings()
             if len(tweak_settings) == 0:
                 if not isinstance(self, OBSEIniFile):
-                    text.append(_(u' No valid INI format lines.'))
+                    errors.append(_(u' No valid INI format lines.'))
                 else:
-                    text.append(_(u' No valid Batch Script format lines.'))
+                    errors.append(_(u' No valid Batch Script format lines.'))
             else:
                 missing_settings = []
                 for key in tweak_settings:
                     if key not in ini_settings:
-                        text.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
+                        errors.append(u' [%s] - %s' % (key,_(u'Invalid Header')))
                     else:
                         for item in tweak_settings[key]:
                             if item not in ini_settings[key]:
                                 missing_settings.append(
                                     u'  [%s] %s' % (key, item))
                 if missing_settings:
-                    text.append(u' ' + _(u'Settings missing from target ini:'))
-                    text.extend(missing_settings)
-        if len(text) == 1:
-            text.append(u' None')
+                    errors.append(u' ' + _(u'Settings missing from target ini:'))
+                    errors.extend(missing_settings)
+        if len(errors) == 1:
+            errors.append(u' None')
         with sio() as out:
             log = bolt.LogFile(out)
-            for line in text:
+            for line in errors:
                 log(line)
             return bolt.winNewLines(log.out.getvalue())
 
