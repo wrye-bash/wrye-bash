@@ -26,8 +26,8 @@
 from .. import brec
 # from .constants import * # TODO(ut): create a .constants module
 
-
 class GameInfo(object):
+    # Main game info - should be overridden -----------------------------------
     # Name of the game to use in UI.
     displayName = u'' ## Example: u'Skyrim'
     # Name of the game's filesystem folder.
@@ -36,10 +36,15 @@ class GameInfo(object):
     altName = u'' ## Example: u'Wrye Smash'
     # Name of game's default ini file.
     defaultIniFile = u''
-
     # Exe to look for to see if this is the right game
     exe = u'' ## Example: u'TESV.exe'
-
+    # The main plugin Wrye Bash should look for
+    masterFiles = []
+    # INI files that should show up in the INI Edits tab
+    #  Example: [u'Oblivion.ini']
+    iniFiles = []
+    # The pickle file for this game.  Holds encoded GMST IDs from the big list below
+    pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
     # Registry keys to read to find the install location
     # These are relative to:
     #  HKLM\Software
@@ -48,28 +53,24 @@ class GameInfo(object):
     #  HKCU\Software\Wow6432Node
     # Example: (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     regInstallKeys = ()
-
-    # Patch information
-    # URL to download patches for the main game.
-    patchURL = u''
-    # Tooltip to display over the URL when displayed
-    patchTip = u''
-
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
     nexusKey = u''   # Key for the "always ask this question" setting in settings.dat
 
+    # Additional game info - override as needed -------------------------------
+    # URL to download patches for the main game.
+    patchURL = u''
+    # Tooltip to display over the URL when displayed
+    patchTip = u'Update via Steam'
     # Bsa info
     allow_reset_bsa_timestamps = False
     bsa_extension = ur'bsa'
     supports_mod_inis = True  # this game supports mod ini files aka ini fragments
     vanilla_string_bsas = {}
     resource_archives_keys = ()
-
     # plugin extensions
     espm_extensions = {u'.esp', u'.esm'}
-
     # Load order info
     using_txt_file = True
 
@@ -84,7 +85,7 @@ class GameInfo(object):
     # Script Extender information
     class se(object):
         shortName = u''   # Abbreviated name.  If this is empty, it signals that no SE is available
-        longname = u''    # Full name
+        longName = u''    # Full name
         exe = u''         # Exe to run
         steamExe = u''    # Exe to run if a steam install
         url = u''         # URL to download from
@@ -103,7 +104,11 @@ class GameInfo(object):
         installDir = u''
 
     # Quick shortcut for combining the SE and SD names
-    se_sd = u''
+    @classmethod
+    def se_sd(cls):
+        se_sd_ = cls.se.shortName
+        if cls.sd.longName: se_sd_ += u'/' + cls.sd.longName
+        return se_sd_
 
     # Graphics Extender information
     class ge(object):
@@ -141,30 +146,19 @@ class GameInfo(object):
         # True means new lines are allowed to be added via INI tweaks
         #  (by default)
         allowNewLines = False
-
         # INI Entry to enable BSA Redirection
         bsaRedirection = (u'Archive', u'sArchiveList')
 
     # Save Game format stuff
     class ess(object):
         # Save file capabilities
-        canReadBasic = False    # Can read the info needed for the Save Tab display
+        canReadBasic = True     # Can read the info needed for the Save Tab display
         canEditMore = False     # Advanced editing
         ext = u'.ess'           # Save file extension
-
-    # The main plugin Wrye Bash should look for
-    masterFiles = []
-
-    # INI files that should show up in the INI Edits tab
-    #  Example: [u'Oblivion.ini']
-    iniFiles = []
 
     # INI setting used to setup Save Profiles
     #  (section,key)
     saveProfilesKey = (u'General', u'SLocalSavePath')
-
-    # The pickle file for this game.  Holds encoded GMST IDs from the big list below
-    pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
 
     # BAIN:
     #  These are the allowed default data directories that BAIN can install to
@@ -198,16 +192,10 @@ class GameInfo(object):
         canBash = False         # Can create Bashed Patches
         canCBash = False        # CBash can handle this game's records
         canEditHeader = False   # Can edit basic info in the TES4 record
-
         # Valid ESM/ESP header versions
         #  These are the valid 'version' numbers for the game file headers
         validHeaderVersions = tuple()
-
-        # Class to use to read the TES4 record
-        #  This is the class name in bosh.py to use for the TES4 record when reading
-        #  Example: 'MreTes4'
-        tes4ClassName = ''
-
+        # used to locate string translation files
         stringsFiles = [
             ((u'Strings',), u'%(body)s_%(language)s.STRINGS'),
             ((u'Strings',), u'%(body)s_%(language)s.DLSTRINGS'),
@@ -226,7 +214,7 @@ class GameInfo(object):
     # Magic Info
     weaponTypes = ()
 
-    # Race Info
+    # Race Info, used in faces.py
     raceNames = {}
     raceShortNames = {}
     raceHairMale = {}

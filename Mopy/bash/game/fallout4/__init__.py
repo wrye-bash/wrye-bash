@@ -30,21 +30,17 @@ from .default_tweaks import default_tweaks
 from .records import MreHeader, MreLvli, MreLvln
 from .. import GameInfo
 from ... import brec
-from ...bolt import struct_pack, struct_unpack
-
 
 class Fallout4GameInfo(GameInfo):
     displayName = u'Fallout 4'
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
     defaultIniFile = u'Fallout4_default.ini'
-
     exe = u'Fallout4.exe'
-
+    masterFiles = [u'Fallout4.esm']
+    iniFiles = [u'Fallout4.ini', u'Fallout4Prefs.ini', u'Fallout4Custom.ini', ]
+    pklfile = ur'bash\db\Fallout4_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
-
-    patchTip = u'Update via Steam'
-
     nexusUrl = u'http://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
     nexusKey = 'bash.installers.openFallout4Nexus.continue'
@@ -84,8 +80,6 @@ class Fallout4GameInfo(GameInfo):
         url = u'http://f4se.silverlock.org/'
         urlTip = u'http://f4se.silverlock.org/'
 
-    se_sd = se.shortName
-
     class ge(GameInfo.ge):
         exe = u'**DNE**'
 
@@ -101,18 +95,7 @@ class Fallout4GameInfo(GameInfo):
         bsaRedirection = (u'',u'')
 
     class ess(GameInfo.ess):
-        canReadBasic = True
         ext = u'.fos'
-
-    masterFiles = [u'Fallout4.esm']
-
-    iniFiles = [
-        u'Fallout4.ini',
-        u'Fallout4Prefs.ini',
-        u'Fallout4Custom.ini',
-        ]
-
-    pklfile = ur'bash\db\Fallout4_ids.pkl'
 
     dataDirs = {
         u'interface',

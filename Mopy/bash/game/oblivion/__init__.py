@@ -37,26 +37,24 @@ from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, \
     MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
 from .. import GameInfo
 from ... import brec
-from ...bolt import struct_pack, struct_unpack
 from ...brec import MreGlob
-
 
 class OblivionGameInfo(GameInfo):
     displayName = u'Oblivion'
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
     defaultIniFile = u'Oblivion_default.ini'
-
     exe = u'Oblivion.exe'
-
+    masterFiles = [u'Oblivion.esm', u'Nehrim.esm']
+    iniFiles = [u'Oblivion.ini']
+    pklfile = ur'bash\db\Oblivion_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
-
-    patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
-    patchTip = u'http://www.elderscrolls.com/'
-
     nexusUrl = u'http://oblivion.nexusmods.com/'
     nexusName = u'TES Nexus'
     nexusKey = 'bash.installers.openTesNexus.continue'
+
+    patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
+    patchTip = u'http://www.elderscrolls.com/'
 
     allow_reset_bsa_timestamps = True
     supports_mod_inis = False
@@ -78,8 +76,6 @@ class OblivionGameInfo(GameInfo):
         url = u'http://obse.silverlock.org/'
         urlTip = u'http://obse.silverlock.org/'
 
-    se_sd = se.shortName
-
     class ge(GameInfo.ge):
         shortName = u'OBGE'
         longName = u'Oblivion Graphics Extender'
@@ -96,14 +92,7 @@ class OblivionGameInfo(GameInfo):
     }
 
     class ess(GameInfo.ess):
-        canReadBasic = True
         canEditMore = True
-
-    masterFiles = [u'Oblivion.esm', u'Nehrim.esm']
-
-    iniFiles = [u'Oblivion.ini']
-
-    pklfile = ur'bash\db\Oblivion_ids.pkl'
 
     dataDirs = {
         u'distantlod',

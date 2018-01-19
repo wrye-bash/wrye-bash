@@ -43,22 +43,18 @@ from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, MreInfo, \
     MreIpct, MreAspc, MreRela, MreEfsh, MreSnct, MreOtft
 from .. import GameInfo
 from ... import brec
-from ...bolt import struct_pack, struct_unpack
 from ...brec import MreGlob
-
 
 class SkyrimGameInfo(GameInfo):
     displayName = u'Skyrim'
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
     defaultIniFile = u'Skyrim_default.ini'
-
     exe = u'TESV.exe'
-
+    masterFiles = [u'Skyrim.esm', u'Update.esm']
+    iniFiles = [u'Skyrim.ini', u'SkyrimPrefs.ini']
+    pklfile = r'bash\db\Skyrim_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
-
-    patchTip = u'Update via Steam'
-
     nexusUrl = u'http://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
     nexusKey = 'bash.installers.openSkyrimNexus.continue'
@@ -97,8 +93,6 @@ class SkyrimGameInfo(GameInfo):
         longName = u'SkyProc'
         installDir = u'SkyProc Patchers'
 
-    se_sd = se.shortName + u'/' + sd.longName
-
     class ge(GameInfo.ge):
         exe = u'**DNE**'
 
@@ -130,15 +124,6 @@ class SkyrimGameInfo(GameInfo):
     class ini(GameInfo.ini):
         allowNewLines = True
         bsaRedirection = (u'', u'')
-
-    class ess(GameInfo.ess):
-        canReadBasic = True
-
-    masterFiles = [u'Skyrim.esm', u'Update.esm']
-
-    iniFiles = [u'Skyrim.ini', u'SkyrimPrefs.ini']
-
-    pklfile = r'bash\db\Skyrim_ids.pkl'
 
     dataDirs = {
         u'dialogueviews',

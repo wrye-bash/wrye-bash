@@ -517,9 +517,9 @@ class _Installers_SkipDocs(_Installers_Process_Skip):
 
 class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
-    _text = _(u'Skip %s Plugins') % bush.game.se_sd
+    _text = _(u'Skip %s Plugins') % bush.game.se_sd()
     key = 'bash.installers.allowOBSEPlugins'
-    def _append(self, window): return bool(bush.game.se_sd)
+    def _append(self, window): return bool(bush.game.se_sd())
     def _check(self): return not bass.settings[self.key]
 
 class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
