@@ -27,14 +27,6 @@
 
 from .constants import *
 from .default_tweaks import default_tweaks
-from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, \
-    MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, \
-    MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGras, MreHair, MreIngr, \
-    MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, \
-    MreNpc, MrePack, MreQust, MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, \
-    MreSpel, MreStat, MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, \
-    MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
-    MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
 from .. import GameInfo
 from ... import brec
 from ...brec import MreGlob
@@ -238,53 +230,60 @@ class OblivionGameInfo(GameInfo):
         0x223c8 : 0x69473, #--Bos
         }
 
-    mergeClasses = (
-        MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn,
-        MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes,
-        MreFact, MreFlor, MreFurn, MreGlob, MreGras, MreHair, MreIngr, MreKeym,
-        MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc,
-        MrePack, MreQust, MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel,
-        MreStat, MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle,
-        MreLtex, MreRegn, MreSbsp, MreSkil,
-        )
-
-    readClasses = (MreMgef, MreScpt,)
-    writeClasses = (MreMgef,)
-
     @classmethod
     def init(cls):
+        from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \
+            MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
+            MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, \
+            MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, \
+            MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, \
+            MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, \
+            MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
+            MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
+            MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
+        cls.mergeClasses = (
+            MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
+            MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
+            MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
+            MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli,
+            MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, MreRace,
+            MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
+            MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
+            MreRegn, MreSbsp, MreSkil,
+        )
+        cls.readClasses = (MreMgef, MreScpt,)
+        cls.writeClasses = (MreMgef,)
+        # Setting RecordHeader class variables - Oblivion is special
         __rec_type = brec.RecordHeader
         __rec_type.rec_header_size = 20
         __rec_type.rec_pack_format = '=4s4I'
         __rec_type.pack_formats = {0: '=4sI4s2I'}
-        __rec_type.pack_formats.update({x: '=4s4I' for x in {1, 6, 7, 8, 9, 10}})
+        __rec_type.pack_formats.update(
+            {x: '=4s4I' for x in {1, 6, 7, 8, 9, 10}})
         __rec_type.pack_formats.update({x: '=4sIi2I' for x in {2, 3}})
         __rec_type.pack_formats.update({x: '=4sIhh2I' for x in {4, 5}})
-
+        # Similar to other games
         __rec_type.topTypes = [
-            'GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',
-            'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI', 'APPA', 'ARMO',
-            'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC', 'STAT', 'GRAS',
-            'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'SLGM',
-            'KEYM', 'ALCH', 'SBSP', 'SGST', 'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL',
-            'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO',
-            'WATR', 'EFSH']
-
+            'GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN',
+            'SKIL', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI',
+            'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH',
+            'MISC', 'STAT', 'GRAS', 'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO',
+            'NPC_', 'CREA', 'LVLC', 'SLGM', 'KEYM', 'ALCH', 'SBSP', 'SGST',
+            'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL', 'WRLD', 'DIAL', 'QUST',
+            'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH']
         __rec_type.recordTypes = set(
-            __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR', 'ACRE',
-                                   'PGRD', 'LAND', 'INFO'])
-
+            __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR',
+                                   'ACRE', 'PGRD', 'LAND', 'INFO'])
         brec.MreRecord.type_class = dict((x.classType,x) for x in (
-            MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo,
-            MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont, MreCrea, MreDoor,
-            MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGmst,
-            MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli,
-            MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, MreRace, MreRefr,
-            MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat,
-            MreTree, MreHeader, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt,
-            MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,
-            ))
-
+            MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa,
+            MreArmo, MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont,
+            MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor,
+            MreFurn, MreGlob, MreGmst, MreGras, MreHair, MreIngr, MreKeym,
+            MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc,
+            MreNpc, MrePack, MreQust, MreRace, MreRefr, MreRoad, MreScpt,
+            MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
+            MreHeader, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty,
+            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'ACRE', 'REFR',
                                               'CELL', 'PGRD', 'ROAD', 'LAND',

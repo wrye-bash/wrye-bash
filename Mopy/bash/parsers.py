@@ -3883,7 +3883,7 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = bush.game_mod.MreHeader(ModReader.recHeader())
+        self.tes4 = bush.game_mod.records.MreHeader(ModReader.recHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = {} #--Top groups.
@@ -3916,7 +3916,7 @@ class ModFile(object):
             insRecHeader = ins.unpackRecHeader
             #--TES4 Header of the mod file
             header = insRecHeader()
-            self.tes4 = bush.game_mod.MreHeader(header,ins,True)
+            self.tes4 = bush.game_mod.records.MreHeader(header,ins,True)
             #--Strings
             self.strings.clear()
             if unpack and self.tes4.flags1[7] and loadStrings:

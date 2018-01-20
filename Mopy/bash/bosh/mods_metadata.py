@@ -1101,7 +1101,7 @@ class ModDetails:
                 return reader,sizeCheck
         progress = progress or bolt.Progress()
         group_records = self.group_records = {}
-        records = group_records[bush.game_mod.MreHeader.classType] = []
+        records = group_records[bush.game_mod.records.MreHeader.classType] = []
         with ModReader(modInfo.name,modInfo.getPath().open('rb')) as ins:
             while not ins.atEnd():
                 header = ins.unpackRecHeader()
@@ -1128,4 +1128,4 @@ class ModDetails:
                         recs.seek(rec_siz, 1)
                     records.append((header.fid,eid))
                     ins.seek(nextRecord)
-        del group_records[bush.game_mod.MreHeader.classType]
+        del group_records[bush.game_mod.records.MreHeader.classType]

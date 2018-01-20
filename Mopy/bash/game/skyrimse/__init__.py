@@ -28,20 +28,6 @@
 from .constants import *
 from .default_tweaks import default_tweaks
 from ... import brec
-from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, MreInfo, \
-    MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, MreLvsp, MreEnch, \
-    MreProj, MreDlbr, MreRfct, MreMisc, MreActi, MreEqup, MreCpth, MreDoor, \
-    MreAnio, MreHazd, MreIdlm, MreEczn, MreIdle, MreLtex, MreQust, MreMstt, \
-    MreNpc, MreFlst, MreIpds, MreGmst, MreRevb, MreClmt, MreDebr, MreSmbn, \
-    MreLvli, MreSpel, MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, \
-    MreGras, MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreColl, \
-    MreArto, MreAddn, MreSopm, MreCsty, MreAppa, MreArma, MreArmo, MreKeym, \
-    MreTxst, MreHdpt, MreHeader, MreAlch, MreBook, MreSpgd, MreSndr, MreImgs, \
-    MreScrl, MreMust, MreFstp, MreFsts, MreMgef, MreLgtm, MreMusc, MreClas, \
-    MreLctn, MreTact, MreBptd, MreDobj, MreLscr, MreDlvw, MreTree, MreWatr, \
-    MreFlor, MreEyes, MreWeap, MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, \
-    MreLcrt, MreStat, MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, \
-    MreIpct, MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MreVoli, MreLens
 from ...brec import MreGlob
 from ..skyrim import SkyrimGameInfo
 
@@ -76,72 +62,90 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         u'GmstTweaker', u'ImportInventory', u'ListsMerger', u'PatchMerger',
     )
 
-    mergeClasses = (
-        # MreAchr, MreDial, MreInfo,
-        # MreFact,
-        MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa, MreArma,
-        MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook, MreBptd, MreCams,
-        MreClas, MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty,
-        MreDebr, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
-        MreEnch, MreEqup, MreExpl, MreEyes, MreFlor, MreFlst, MreFstp, MreFsts,
-        MreFurn, MreGlob, MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, MreIdlm,
-        MreImad, MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt,
-        MreLctn, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp,
-        MreMato, MreMatt, MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc,
-        MreMust, MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb, MreRfct,
-        MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr,
-        MreSopm, MreSoun, MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst,
-        MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr, MreVoli,
-        ####### for debug
-        MreQust,
-    )
-
     # MreScpt is Oblivion/FO3/FNV Only
     # MreMgef, has not been verified to be used here for Skyrim
 
     @classmethod
     def init(cls):
+        from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, \
+            MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
+            MreLvsp, MreEnch, MreProj, MreDlbr, MreRfct, MreMisc, MreActi, \
+            MreEqup, MreCpth, MreDoor, MreAnio, MreHazd, MreIdlm, MreEczn, \
+            MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreFlst, MreIpds, \
+            MreGmst, MreRevb, MreClmt, MreDebr, MreSmbn, MreLvli, MreSpel, \
+            MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, MreGras, \
+            MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreColl, \
+            MreArto, MreAddn, MreSopm, MreCsty, MreAppa, MreArma, MreArmo, \
+            MreKeym, MreTxst, MreHdpt, MreHeader, MreAlch, MreBook, MreSpgd, \
+            MreSndr, MreImgs, MreScrl, MreMust, MreFstp, MreFsts, MreMgef, \
+            MreLgtm, MreMusc, MreClas, MreLctn, MreTact, MreBptd, MreDobj, \
+            MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
+            MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
+            MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
+            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MreVoli, MreLens
+        cls.mergeClasses = (
+            # MreAchr, MreDial, MreInfo, MreFact,
+            MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
+            MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif, MreBook,
+            MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
+            MreCont, MreCpth, MreCsty, MreDebr, MreDlbr, MreDlvw, MreDobj,
+            MreDoor, MreDual, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl,
+            MreEyes, MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGlob,
+            MreGmst, MreGras, MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad,
+            MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt,
+            MreLctn, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvli, MreLvln,
+            MreLvsp, MreMato, MreMatt, MreMesg, MreMgef, MreMisc, MreMovt,
+            MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MreProj, MreRegn,
+            MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn,
+            MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel,
+            MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr,
+            MreWeap, MreWoop, MreWthr, MreVoli,
+            ####### for debug
+            MreQust,
+        )
+        # Setting RecordHeader class variables --------------------------------
         brec.RecordHeader.topTypes = [
-            'GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT', 'HDPT',
-            'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT', 'LTEX', 'ENCH',
-            'SPEL', 'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR',
-            'LIGH', 'MISC', 'APPA', 'STAT', 'SCOL', 'MSTT', 'PWAT', 'GRAS', 'TREE',
-            'CLDC', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH',
-            'IDLM', 'COBJ', 'PROJ', 'HAZD', 'SLGM', 'LVLI', 'WTHR', 'CLMT', 'SPGD',
-            'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK',
-            'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS',
-            'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH', 'VTYP',
-            'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'RGDL', 'DOBJ',
-            'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN', 'SMEN', 'DLBR', 'MUST',
-            'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA', 'SCEN', 'ASTP', 'OTFT', 'ARTO',
-            'MATO', 'MOVT', 'SNDR', 'DUAL', 'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB',
-            'LENS', 'VOLI']
-
+            'GMST', 'KYWD', 'LCRT', 'AACT', 'TXST', 'GLOB', 'CLAS', 'FACT',
+            'HDPT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'SCPT',
+            'LTEX', 'ENCH', 'SPEL', 'SCRL', 'ACTI', 'TACT', 'ARMO', 'BOOK',
+            'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC', 'APPA', 'STAT', 'SCOL',
+            'MSTT', 'PWAT', 'GRAS', 'TREE', 'CLDC', 'FLOR', 'FURN', 'WEAP',
+            'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM', 'COBJ', 'PROJ',
+            'HAZD', 'SLGM', 'LVLI', 'WTHR', 'CLMT', 'SPGD', 'RFCT', 'REGN',
+            'NAVI', 'CELL', 'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY',
+            'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS',
+            'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH',
+            'VTYP', 'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG',
+            'RGDL', 'DOBJ', 'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN',
+            'SMEN', 'DLBR', 'MUST', 'DLVW', 'WOOP', 'SHOU', 'EQUP', 'RELA',
+            'SCEN', 'ASTP', 'OTFT', 'ARTO', 'MATO', 'MOVT', 'SNDR', 'DUAL',
+            'SNCT', 'SOPM', 'COLL', 'CLFM', 'REVB', 'LENS', 'VOLI']
         #-> this needs updating for Skyrim
         brec.RecordHeader.recordTypes = set(
-            brec.RecordHeader.topTypes + ['GRUP', 'TES4', 'REFR', 'ACHR', 'ACRE',
-                                          'LAND', 'INFO', 'NAVM', 'PHZD', 'PGRE'])
+            brec.RecordHeader.topTypes + ['GRUP', 'TES4', 'REFR', 'ACHR',
+                                          'ACRE', 'LAND', 'INFO', 'NAVM',
+                                          'PHZD', 'PGRE'])
         brec.RecordHeader.plugin_form_version = 44
-
         brec.MreRecord.type_class = dict((x.classType,x) for x in (
-            MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch, MreAmmo,
-            MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, MreAstp, MreAvif,
-            MreBook, MreBptd, MreCams, MreClas, MreClfm, MreClmt, MreCobj, MreColl,
-            MreCont, MreCpth, MreCsty, MreDebr, MreDlbr, MreDlvw, MreDobj, MreDoor,
-            MreDual, MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact,
-            MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGlob, MreGmst, MreGras,
-            MreHazd, MreHdpt, MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct,
-            MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh, MreLscr,
-            MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt, MreMesg, MreMgef,
-            MreMisc, MreMovt, MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MreProj,
-            MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn,
-            MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd,
-            MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
-            MreWthr, MreCell, MreWrld, MreVoli, MreLens, # MreNavm, MreNavi
+            MreAchr, MreDial, MreInfo, MreAact, MreActi, MreAddn, MreAlch,
+            MreAmmo, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc,
+            MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClfm,
+            MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, MreDebr,
+            MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, MreEczn, MreEfsh,
+            MreEnch, MreEqup, MreExpl, MreEyes, MreFact, MreFlor, MreFlst,
+            MreFstp, MreFsts, MreFurn, MreGlob, MreGmst, MreGras, MreHazd,
+            MreHdpt, MreIdle, MreIdlm, MreImad, MreImgs, MreIngr, MreIpct,
+            MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh,
+            MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt,
+            MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, MreMust,
+            MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb, MreRfct,
+            MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct,
+            MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat, MreTact,
+            MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr,
+            MreCell, MreWrld, MreVoli, MreLens,  # MreNavm, MreNavi
             ####### for debug
             MreQust, MreHeader,
         ))
-
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
                                               'INFO', 'WRLD', })

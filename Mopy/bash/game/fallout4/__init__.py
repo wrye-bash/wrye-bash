@@ -27,7 +27,6 @@
 
 from .constants import *
 from .default_tweaks import default_tweaks
-from .records import MreHeader, MreLvli, MreLvln
 from .. import GameInfo
 from ... import brec
 
@@ -130,51 +129,52 @@ class Fallout4GameInfo(GameInfo):
 
     patchers = (u'ListsMerger',)
 
-    # -------------------------------------------------------------------------
-    # These Are normally not mergable but added to brec.MreRecord.type_class
-    #
-    #       MreCell,
-    # -------------------------------------------------------------------------
-    # These have undefined FormIDs Do not merge them
-    #
-    #       MreNavi, MreNavm,
-    # -------------------------------------------------------------------------
-    # These need syntax revision but can be merged once that is corrected
-    #
-    #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
-    # -------------------------------------------------------------------------
-
     @classmethod
     def init(cls):
-        brec.RecordHeader.topTypes = [
-            'GMST', 'KYWD', 'LCRT', 'AACT', 'TRNS', 'CMPO', 'TXST', 'GLOB', 'DMGT',
-            'CLAS', 'FACT', 'HDPT', 'RACE', 'SOUN', 'ASPC', 'MGEF', 'LTEX', 'ENCH',
-            'SPEL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT', 'DOOR', 'INGR', 'LIGH',
-            'MISC', 'STAT', 'SCOL', 'MSTT', 'GRAS', 'TREE', 'FLOR', 'FURN', 'WEAP',
-            'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH', 'IDLM', 'NOTE', 'PROJ', 'HAZD',
-            'BNDS', 'TERM', 'GRAS', 'TREE', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN',
-            'KEYM', 'ALCH', 'IDLM', 'NOTE', 'PROJ', 'HAZD', 'BNDS', 'LVLI', 'WTHR',
-            'CLMT', 'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD', 'QUST', 'IDLE',
-            'PACK', 'CSTY', 'LSCR', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR', 'IMGS',
-            'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS', 'CPTH', 'VTYP',
-            'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN', 'MESG', 'DOBJ', 'DFOB',
-            'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN', 'SMQN', 'SMEN', 'MUST', 'DLVW',
-            'EQUP', 'RELA', 'ASTP', 'OTFT', 'ARTO', 'MATO', 'MOVT', 'SNDR', 'SNCT',
-            'SOPM', 'COLL', 'CLFM', 'REVB', 'PKIN', 'RFGP', 'AMDL', 'LAYR', 'COBJ',
-            'OMOD', 'MSWP', 'ZOOM', 'INNR', 'KSSM', 'AECH', 'SCCO', 'AORU', 'SCSN',
-            'STAG', 'NOCM', 'LENS', 'GDRY', 'OVIS']
+        from .records import MreHeader, MreLvli, MreLvln
+        # ---------------------------------------------------------------------
+        # These Are normally not mergable but added to brec.MreRecord.type_class
+        #
+        #       MreCell,
+        # ---------------------------------------------------------------------
+        # These have undefined FormIDs Do not merge them
+        #
+        #       MreNavi, MreNavm,
+        # ---------------------------------------------------------------------
+        # These need syntax revision but can be merged once that is corrected
+        #
+        #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
+        # ---------------------------------------------------------------------
 
+        # Setting RecordHeader class variables --------------------------------
+        brec.RecordHeader.topTypes = [
+            'GMST', 'KYWD', 'LCRT', 'AACT', 'TRNS', 'CMPO', 'TXST', 'GLOB',
+            'DMGT', 'CLAS', 'FACT', 'HDPT', 'RACE', 'SOUN', 'ASPC', 'MGEF',
+            'LTEX', 'ENCH', 'SPEL', 'ACTI', 'TACT', 'ARMO', 'BOOK', 'CONT',
+            'DOOR', 'INGR', 'LIGH', 'MISC', 'STAT', 'SCOL', 'MSTT', 'GRAS',
+            'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM',
+            'ALCH', 'IDLM', 'NOTE', 'PROJ', 'HAZD', 'BNDS', 'TERM', 'GRAS',
+            'TREE', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'LVLN', 'KEYM', 'ALCH',
+            'IDLM', 'NOTE', 'PROJ', 'HAZD', 'BNDS', 'LVLI', 'WTHR', 'CLMT',
+            'SPGD', 'RFCT', 'REGN', 'NAVI', 'CELL', 'WRLD', 'QUST', 'IDLE',
+            'PACK', 'CSTY', 'LSCR', 'ANIO', 'WATR', 'EFSH', 'EXPL', 'DEBR',
+            'IMGS', 'IMAD', 'FLST', 'PERK', 'BPTD', 'ADDN', 'AVIF', 'CAMS',
+            'CPTH', 'VTYP', 'MATT', 'IPCT', 'IPDS', 'ARMA', 'ECZN', 'LCTN',
+            'MESG', 'DOBJ', 'DFOB', 'LGTM', 'MUSC', 'FSTP', 'FSTS', 'SMBN',
+            'SMQN', 'SMEN', 'MUST', 'DLVW', 'EQUP', 'RELA', 'ASTP', 'OTFT',
+            'ARTO', 'MATO', 'MOVT', 'SNDR', 'SNCT', 'SOPM', 'COLL', 'CLFM',
+            'REVB', 'PKIN', 'RFGP', 'AMDL', 'LAYR', 'COBJ', 'OMOD', 'MSWP',
+            'ZOOM', 'INNR', 'KSSM', 'AECH', 'SCCO', 'AORU', 'SCSN', 'STAG',
+            'NOCM', 'LENS', 'GDRY', 'OVIS']
         brec.RecordHeader.recordTypes = (set(brec.RecordHeader.topTypes) |
                        {'GRUP','TES4','REFR','NAVM','PGRE','PHZD','LAND',
                            'PMIS','DLBR','DIAL','INFO','SCEN'})
         brec.RecordHeader.plugin_form_version = 131
-
         brec.MreRecord.type_class = dict((x.classType,x) for x in (
             MreLvli, MreLvln,
             ####### for debug
             MreHeader,
             ))
-
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4',})
 

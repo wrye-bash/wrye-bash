@@ -220,9 +220,9 @@ class GameInfo(object):
     raceHairMale = {}
     raceHairFemale = {}
 
+    # Record information - set in cls.init ------------------------------------
     # Mergeable record types
     mergeClasses = ()
-
     # Extra read classes: these record types will always be loaded, even if patchers
     #  don't need them directly (for example, for MGEF info)
     readClasses = ()
@@ -230,16 +230,16 @@ class GameInfo(object):
 
     @classmethod
     def init(cls):
+        # Setting RecordHeader class variables --------------------------------
         # Top types in order of the main ESM
         brec.RecordHeader.topTypes = []
         brec.RecordHeader.recordTypes = set(
             brec.RecordHeader.topTypes + ['GRUP', 'TES4'])
-
         # Record Types
         brec.MreRecord.type_class = dict((x.classType,x) for x in  (
                 ))
-
         # Simple records
-        brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {'TES4'})
+        brec.MreRecord.simpleTypes = (
+                set(brec.MreRecord.type_class) - {'TES4'})
 
 GAME_TYPE = None
