@@ -395,14 +395,14 @@ magicEffects = {
     'ZZOM': [1,_(u'Summon Zombie'),16.67],
     }
 
-_strU = struct.Struct('I')
+_strU = struct.Struct('I').unpack
 
 mgef_school = dict((x, y) for x, [y, z, _num] in magicEffects.items())
 mgef_name = dict((x, z) for x, [y, z, __num] in magicEffects.items())
 mgef_basevalue = dict((x,a) for x,[y,z,a] in magicEffects.items())
-mgef_school.update(dict((_strU.unpack(x)[0],y) for x,[y,z,a] in magicEffects.items()))
-mgef_name.update(dict((_strU.unpack(x)[0],z) for x,[y,z,a] in magicEffects.items()))
-mgef_basevalue.update(dict((_strU.unpack(x)[0],a) for x,[y,z,a] in magicEffects.items()))
+mgef_school.update({_strU(x)[0]:y for x,[y,z,a] in magicEffects.items()})
+mgef_name.update({_strU(x)[0]:z for x,[y,z,a] in magicEffects.items()})
+mgef_basevalue.update({_strU(x)[0]:a for x,[y,z,a] in magicEffects.items()})
 
 hostileEffects = {
     'ABAT', #--Absorb Attribute
@@ -441,7 +441,7 @@ hostileEffects = {
     'WKPO', #--Weakness to Poison
     'WKSH', #--Weakness to Shock
     }
-hostileEffects |= set((_strU.unpack(x)[0] for x in hostileEffects))
+hostileEffects |= set((_strU(x)[0] for x in hostileEffects))
 
 #Doesn't list mgefs that use actor values, but rather mgefs that have a generic name
 #Ex: Absorb Attribute becomes Absorb Magicka if the effect's actorValue field contains 9
@@ -457,7 +457,7 @@ genericAVEffects = {
     'FOSK', #--Fortify Skill (Use Skill)
     'REAT', #--Restore Attribute (Use Attribute)
     }
-genericAVEffects |= set((_strU.unpack(x)[0] for x in genericAVEffects))
+genericAVEffects |= set((_strU(x)[0] for x in genericAVEffects))
 
 actorValues = [
     _(u'Strength'), #--00

@@ -2263,9 +2263,9 @@ class InstallersData(DataStore):
         :type package_keys: None | collections.Iterable[Path]
         :rtype: list[Installer]
         """
-        if package_keys is None: pairs = self.values()
-        else: pairs = [self[k] for k in package_keys]
-        return sorted(pairs, key=attrgetter('order'), reverse=reverse)
+        if package_keys is None: values = self.values()
+        else: values = [self[k] for k in package_keys]
+        return sorted(values, key=attrgetter('order'), reverse=reverse)
 
     def bain_install(self, packages, refresh_ui, progress=None, last=False,
                      override=True):
@@ -2482,10 +2482,8 @@ class InstallersData(DataStore):
                              progress)
 
     def clean_data_dir(self, refresh_ui):
-        getArchiveOrder = lambda x: x.order
         keepFiles = set()
-        for installer in sorted(self.values(), key=getArchiveOrder,
-                                reverse=True):
+        for installer in self.sorted_values(reverse=True):
             if installer.isActive:
                 keepFiles.update(installer.ci_dest_sizeCrc)
         from . import modInfos

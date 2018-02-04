@@ -22,7 +22,8 @@
 #
 # =============================================================================
 
-"""This module contains all of the basic types used to read ESP/ESM mod files"""
+"""This module contains all of the basic types used to read ESP/ESM mod files.
+"""
 import zlib
 import StringIO
 import os
@@ -340,14 +341,14 @@ class ModReader:
     def findSubRecord(self,subType,recType='----'):
         """Finds subrecord with specified type."""
         atEnd = self.atEnd
-        unpack = self.unpack
+        self_unpack = self.unpack
         seek = self.seek
         while not atEnd():
-            (type,size) = unpack('4sH',6,recType+'.SUB_HEAD')
-            if type == subType:
-                return self.read(size,recType+'.'+subType)
+            (sub_type_,sub_rec_size) = self_unpack('4sH',6,recType+'.SUB_HEAD')
+            if sub_type_ == subType:
+                return self.read(sub_rec_size,recType+'.'+subType)
             else:
-                seek(size,1,recType+'.'+type)
+                seek(sub_rec_size,1,recType+'.'+sub_type_)
         #--Didn't find it?
         else:
             return None
@@ -1226,7 +1227,7 @@ class MelSet:
         return [s for element in self.elements for s in element.getSlotsUsed()]
 
     def initRecord(self,record,header,ins,unpack):
-        """Initialize record."""
+        """Initialize record, setting its attributes based on its elements."""
         for element in self.elements:
             element.setDefault(record)
         MreRecord.__init__(record,header,ins,unpack)
