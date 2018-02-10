@@ -27,400 +27,266 @@
 
 from .constants import *
 from .default_tweaks import default_tweaks
-from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, \
-    MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, \
-    MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGras, MreHair, MreIngr, \
-    MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, \
-    MreNpc, MrePack, MreQust, MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, \
-    MreSpel, MreStat, MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, \
-    MreIdle, MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
-    MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
+from .. import GameInfo
 from ... import brec
-from ...bolt import struct_pack, struct_unpack
 from ...brec import MreGlob
 
-#--Name of the game to use in UI.
-displayName = u'Oblivion'
-#--Name of the game's filesystem folder.
-fsName = u'Oblivion'
-#--Alternate display name to use instead of "Wrye Bash for ***"
-altName = u'Wrye Bash'
-#--Name of game's default ini file.
-defaultIniFile = u'Oblivion_default.ini'
+class OblivionGameInfo(GameInfo):
+    displayName = u'Oblivion'
+    fsName = u'Oblivion'
+    altName = u'Wrye Bash'
+    defaultIniFile = u'Oblivion_default.ini'
+    exe = u'Oblivion.exe'
+    masterFiles = [u'Oblivion.esm', u'Nehrim.esm']
+    iniFiles = [u'Oblivion.ini']
+    pklfile = ur'bash\db\Oblivion_ids.pkl'
+    regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
+    nexusUrl = u'http://oblivion.nexusmods.com/'
+    nexusName = u'TES Nexus'
+    nexusKey = 'bash.installers.openTesNexus.continue'
 
-#--Exe to look for to see if this is the right game
-exe = u'Oblivion.exe'
+    patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
+    patchTip = u'http://www.elderscrolls.com/'
 
-#--Registry keys to read to find the install location
-regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
+    allow_reset_bsa_timestamps = True
+    supports_mod_inis = False
 
-#--patch information
-patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
-patchTip = u'http://www.elderscrolls.com/'
+    using_txt_file = False
 
-#--URL to the Nexus site for this game
-nexusUrl = u'http://oblivion.nexusmods.com/'
-nexusName = u'TES Nexus'
-nexusKey = 'bash.installers.openTesNexus.continue'
+    class cs(GameInfo.cs):
+        shortName = u'TESCS'
+        longName = u'Construction Set'
+        exe = u'TESConstructionSet.exe'
+        seArgs = u'-editor'
+        imageName = u'tescs%s.png'
 
-# Bsa info
-allow_reset_bsa_timestamps = True
-bsa_extension = ur'bsa'
-supports_mod_inis = False
-vanilla_string_bsas = {}
-resource_archives_keys = ()
+    class se(GameInfo.se):
+        shortName = u'OBSE'
+        longName = u'Oblivion Script Extender'
+        exe = u'obse_loader.exe'
+        steamExe = u'obse_1_2_416.dll'
+        url = u'http://obse.silverlock.org/'
+        urlTip = u'http://obse.silverlock.org/'
 
-# plugin extensions
-espm_extensions = {u'.esp', u'.esm'}
+    class ge(GameInfo.ge):
+        shortName = u'OBGE'
+        longName = u'Oblivion Graphics Extender'
+        exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
+               (u'Data',u'obse',u'plugins',u'obgev2.dll'),
+               ]
+        url = u'http://oblivion.nexusmods.com/mods/30054'
+        urlTip = u'http://oblivion.nexusmods.com/'
 
-# Load order info
-using_txt_file = False
-
-#--Construction Set information
-class cs:
-    shortName = u'TESCS'            # Abbreviated name
-    longName = u'Construction Set'  # Full name
-    exe = u'TESConstructionSet.exe' # Executable to run
-    seArgs = u'-editor'             # Argument to pass to the SE to load the CS
-    imageName = u'tescs%s.png'      # Image name template for the status bar
-
-#--Script Extender information
-class se:
-    shortName = u'OBSE'                      # Abbreviated name
-    longName = u'Oblivion Script Extender'   # Full name
-    exe = u'obse_loader.exe'                 # Exe to run
-    steamExe = u'obse_1_2_416.dll'           # Exe to run if a steam install
-    url = u'http://obse.silverlock.org/'     # URL to download from
-    urlTip = u'http://obse.silverlock.org/'  # Tooltip for mouse over the URL
-
-#--Script Dragon
-class sd:
-    shortName = u''
-    longName = u''
-    installDir = u''
-
-#--SkyProc Patchers
-class sp:
-    shortName = u''
-    longName = u''
-    installDir = u''
-
-#--Quick shortcut for combining the SE and SD names
-se_sd = se.shortName
-
-#--Graphics Extender information
-class ge:
-    shortName = u'OBGE'
-    longName = u'Oblivion Graphics Extender'
-    exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
-           (u'Data',u'obse',u'plugins',u'obgev2.dll'),
-           ]
-    url = u'http://oblivion.nexusmods.com/mods/30054'
-    urlTip = u'http://oblivion.nexusmods.com/'
-
-#--4gb Launcher
-class laa:
-    name = u''           # Name
-    exe = u'**DNE**'     # Executable to run
-    launchesSE = False  # Whether the launcher will automatically launch the SE as well
-
-# Files BAIN shouldn't skip
-dontSkip = (
-# Nothing so far
-)
-
-# Directories where specific file extensions should not be skipped by BAIN
-dontSkipDirs = {
-# Nothing so far
-}
-
-#Folders BAIN should never check
-SkipBAINRefresh = {
-    u'tes4edit backups',
-    u'bgsee',
-    u'conscribe logs',
-    #Use lowercase names
-}
-
-#--Some stuff dealing with INI files
-class ini:
-    #--True means new lines are allowed to be added via INI Tweaks
-    #  (by default)
-    allowNewLines = False
-
-    #--INI Entry to enable BSA Redirection
-    bsaRedirection = (u'Archive',u'sArchiveList')
-
-#--Save Game format stuff
-class ess:
-    # Save file capabilities
-    canReadBasic = True         # All the basic stuff needed for the Saves Tab
-    canEditMore = True          # advanced editing
-    ext = u'.ess'               # Save file extension
-
-#--INI files that should show up in the INI Edits tab
-iniFiles = [
-    u'Oblivion.ini',
-    ]
-
-#--INI setting to setup Save Profiles
-saveProfilesKey = (u'General',u'SLocalSavePath')
-
-#--The main plugin Wrye Bash should look for
-masterFiles = [
-    u'Oblivion.esm',
-    u'Nehrim.esm',
-    ]
-
-#The pickle file for this game. Holds encoded GMST IDs from the big list below.
-pklfile = ur'bash\db\Oblivion_ids.pkl'
-
-#--BAIN: Directories that are OK to install to
-dataDirs = {
-    u'distantlod',
-    u'facegen',
-    u'fonts',
-    u'menus',
-    u'meshes',
-    u'music',
-    u'shaders',
-    u'sound',
-    u'textures',
-    u'trees',
-    u'video',
-}
-dataDirsPlus = {
-    u'streamline',
-    u'_tejon',
-    u'scripts',
-    u'pluggy',
-    u'ini',
-    u'obse',
-}
-
-# Installer -------------------------------------------------------------------
-# ensure all path strings are prefixed with 'r' to avoid interpretation of
-#   accidental escape sequences
-wryeBashDataFiles = {
-    u'Bashed Patch.esp',
-    u'Bashed Patch, 0.esp',
-    u'Bashed Patch, 1.esp',
-    u'Bashed Patch, 2.esp',
-    u'Bashed Patch, 3.esp',
-    u'Bashed Patch, 4.esp',
-    u'Bashed Patch, 5.esp',
-    u'Bashed Patch, 6.esp',
-    u'Bashed Patch, 7.esp',
-    u'Bashed Patch, 8.esp',
-    u'Bashed Patch, 9.esp',
-    u'Bashed Patch, CBash.esp',
-    u'Bashed Patch, Python.esp',
-    u'Bashed Patch, FCOM.esp',
-    u'Bashed Patch, Warrior.esp',
-    u'Bashed Patch, Thief.esp',
-    u'Bashed Patch, Mage.esp',
-    u'Bashed Patch, Test.esp',
-    u'ArchiveInvalidationInvalidated!.bsa',
-    u'Docs\\Bash Readme Template.html',
-    u'Docs\\wtxt_sand_small.css',
-    u'Docs\\wtxt_teal.css',
-    u'Docs\\Bash Readme Template.txt'
-}
-wryeBashDataDirs = {
-    u'Bash Patches',
-    u'INI Tweaks'
-}
-ignoreDataFiles = {
-    u'OBSE\\Plugins\\Construction Set Extender.dll',
-    u'OBSE\\Plugins\\Construction Set Extender.ini'
-}
-ignoreDataFilePrefixes = {
-    u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
-}
-ignoreDataDirs = {
-    u'OBSE\\Plugins\\ComponentDLLs\\CSE',
-    u'LSData'
-}
-
-#--Tags supported by this game
-allTags = sorted((
-    u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F', u'C.Climate',
-    u'C.Light', u'C.Music', u'C.Name', u'C.RecordFlags', u'C.Owner',
-    u'C.Water', u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations',
-    u'Filter', u'Graphics', u'Hair', u'IIM', u'Invent', u'Names', u'NoMerge',
-    u'NpcFaces', u'R.Relations', u'Relev', u'Scripts', u'ScriptContents',
-    u'Sound', u'SpellStats', u'Stats', u'Voice-F', u'Voice-M', u'R.Teeth',
-    u'R.Mouth', u'R.Ears', u'R.Head', u'R.Attributes-F', u'R.Attributes-M',
-    u'R.Skills', u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads',
-    u'Actors.Anims', u'Actors.AIData', u'Actors.DeathItem',
-    u'Actors.AIPackages', u'Actors.AIPackagesForceAdd', u'Actors.Stats',
-    u'Actors.ACBS', u'NPC.Class', u'Actors.CombatStyle', u'Creatures.Blood',
-    u'Actors.Spells', u'Actors.SpellsForceAdd', u'NPC.Race',
-    u'Actors.Skeleton', u'NpcFacesForceFullImport', u'MustBeActiveIfImported',
-    u'Npc.HairOnly', u'Npc.EyesOnly')) ##, 'ForceMerge'
-
-#--Gui patcher classes available when building a Bashed Patch
-patchers = (
-    'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',
-    'KFFZPatcher', 'ActorImporter', 'DeathItemPatcher', 'NPCAIPackagePatcher',
-    'CoblExhaustion', 'UpdateReferences', 'CellImporter', 'ClothesTweaker',
-    'GmstTweaker', 'GraphicsPatcher', 'ImportFactions', 'ImportInventory',
-    'SpellsPatcher', 'TweakActors', 'ImportRelations', 'ImportScripts',
-    'ImportActorsSpells', 'ListsMerger', 'MFactMarker', 'NamesPatcher',
-    'NamesTweaker', 'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
-    'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
-    )
-
-#--CBash Gui patcher classes available when building a Bashed Patch
-CBash_patchers = (
-    'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_PatchMerger',
-    'CBash_AlchemicalCatalogs', 'CBash_KFFZPatcher', 'CBash_ActorImporter',
-    'CBash_DeathItemPatcher', 'CBash_NPCAIPackagePatcher',
-    'CBash_CoblExhaustion', 'CBash_UpdateReferences', 'CBash_CellImporter',
-    'CBash_ClothesTweaker', 'CBash_GmstTweaker', 'CBash_GraphicsPatcher',
-    'CBash_ImportFactions', 'CBash_ImportInventory', 'CBash_SpellsPatcher',
-    'CBash_TweakActors', 'CBash_ImportRelations', 'CBash_ImportScripts',
-    'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
-    'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
-    'CBash_RacePatcher', 'CBash_RoadImporter', 'CBash_SoundPatcher',
-    'CBash_StatsPatcher', 'CBash_SEWorldEnforcer', 'CBash_ContentsChecker',
-    )
-
-# Magic Info ------------------------------------------------------------------
-weaponTypes = (
-    _(u'Blade (1 Handed)'),
-    _(u'Blade (2 Handed)'),
-    _(u'Blunt (1 Handed)'),
-    _(u'Blunt (2 Handed)'),
-    _(u'Staff'),
-    _(u'Bow'),
-    )
-
-# Race Info -------------------------------------------------------------------
-raceNames = {
-    0x23fe9 : _(u'Argonian'),
-    0x224fc : _(u'Breton'),
-    0x191c1 : _(u'Dark Elf'),
-    0x19204 : _(u'High Elf'),
-    0x00907 : _(u'Imperial'),
-    0x22c37 : _(u'Khajiit'),
-    0x224fd : _(u'Nord'),
-    0x191c0 : _(u'Orc'),
-    0x00d43 : _(u'Redguard'),
-    0x00019 : _(u'Vampire'),
-    0x223c8 : _(u'Wood Elf'),
+    SkipBAINRefresh = {
+        u'tes4edit backups',
+        u'bgsee',
+        u'conscribe logs',
     }
 
-raceShortNames = {
-    0x23fe9 : u'Arg',
-    0x224fc : u'Bre',
-    0x191c1 : u'Dun',
-    0x19204 : u'Alt',
-    0x00907 : u'Imp',
-    0x22c37 : u'Kha',
-    0x224fd : u'Nor',
-    0x191c0 : u'Orc',
-    0x00d43 : u'Red',
-    0x223c8 : u'Bos',
+    class ess(GameInfo.ess):
+        canEditMore = True
+
+    dataDirs = {
+        u'distantlod',
+        u'facegen',
+        u'fonts',
+        u'menus',
+        u'meshes',
+        u'music',
+        u'shaders',
+        u'sound',
+        u'textures',
+        u'trees',
+        u'video',
+    }
+    dataDirsPlus = {
+        u'streamline',
+        u'_tejon',
+        u'scripts',
+        u'pluggy',
+        u'ini',
+        u'obse',
+    }
+    wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
+        u'ArchiveInvalidationInvalidated!.bsa'}
+    ignoreDataFiles = {
+        u'OBSE\\Plugins\\Construction Set Extender.dll',
+        u'OBSE\\Plugins\\Construction Set Extender.ini'
+    }
+    ignoreDataFilePrefixes = {
+        u'Meshes\\Characters\\_Male\\specialanims\\0FemaleVariableWalk_'
+    }
+    ignoreDataDirs = {
+        u'OBSE\\Plugins\\ComponentDLLs\\CSE',
+        u'LSData'
     }
 
-raceHairMale = {
-    0x23fe9 : 0x64f32, #--Arg
-    0x224fc : 0x90475, #--Bre
-    0x191c1 : 0x64214, #--Dun
-    0x19204 : 0x7b792, #--Alt
-    0x00907 : 0x90475, #--Imp
-    0x22c37 : 0x653d4, #--Kha
-    0x224fd : 0x1da82, #--Nor
-    0x191c0 : 0x66a27, #--Orc
-    0x00d43 : 0x64215, #--Red
-    0x223c8 : 0x690bc, #--Bos
-    }
+    class esp(GameInfo.esp):
+        canBash = True
+        canCBash = True
+        canEditHeader = True
+        validHeaderVersions = (0.8,1.0)
+        stringsFiles = []
 
-raceHairFemale = {
-    0x23fe9 : 0x64f33, #--Arg
-    0x224fc : 0x1da83, #--Bre
-    0x191c1 : 0x1da83, #--Dun
-    0x19204 : 0x690c2, #--Alt
-    0x00907 : 0x1da83, #--Imp
-    0x22c37 : 0x653d0, #--Kha
-    0x224fd : 0x1da83, #--Nor
-    0x191c0 : 0x64218, #--Orc
-    0x00d43 : 0x64210, #--Red
-    0x223c8 : 0x69473, #--Bos
-    }
+    allTags = {u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F',
+               u'C.Climate', u'C.Light', u'C.Music', u'C.Name',
+               u'C.RecordFlags', u'C.Owner', u'C.Water', u'Deactivate',
+               u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter',
+               u'Graphics', u'Hair', u'IIM', u'Invent', u'Names', u'NoMerge',
+               u'NpcFaces', u'R.Relations', u'Relev', u'Scripts',
+               u'ScriptContents', u'Sound', u'SpellStats', u'Stats',
+               u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears',
+               u'R.Head', u'R.Attributes-F', u'R.Attributes-M', u'R.Skills',
+               u'R.Description', u'R.AddSpells', u'R.ChangeSpells', u'Roads',
+               u'Actors.Anims', u'Actors.AIData', u'Actors.DeathItem',
+               u'Actors.AIPackages', u'Actors.AIPackagesForceAdd',
+               u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
+               u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells',
+               u'Actors.SpellsForceAdd', u'NPC.Race', u'Actors.Skeleton',
+               u'NpcFacesForceFullImport', u'MustBeActiveIfImported',
+               u'Npc.HairOnly', u'Npc.EyesOnly'}  # , 'ForceMerge'
 
-#--Plugin format stuff
-class esp:
-    #--Wrye Bash capabilities
-    canBash = True          # Can create Bashed Patches
-    canCBash = True         # CBash can handle this game's records
-    canEditHeader = True    # Can edit anything in the TES4 record
+    patchers = (
+        'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',
+        'KFFZPatcher', 'ActorImporter', 'DeathItemPatcher', 'NPCAIPackagePatcher',
+        'CoblExhaustion', 'UpdateReferences', 'CellImporter', 'ClothesTweaker',
+        'GmstTweaker', 'GraphicsPatcher', 'ImportFactions', 'ImportInventory',
+        'SpellsPatcher', 'TweakActors', 'ImportRelations', 'ImportScripts',
+        'ImportActorsSpells', 'ListsMerger', 'MFactMarker', 'NamesPatcher',
+        'NamesTweaker', 'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
+        'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
+        )
 
-    #--Valid ESM/ESP header versions
-    validHeaderVersions = (0.8,1.0)
+    CBash_patchers = (
+        'CBash_AliasesPatcher', 'CBash_AssortedTweaker', 'CBash_PatchMerger',
+        'CBash_AlchemicalCatalogs', 'CBash_KFFZPatcher', 'CBash_ActorImporter',
+        'CBash_DeathItemPatcher', 'CBash_NPCAIPackagePatcher',
+        'CBash_CoblExhaustion', 'CBash_UpdateReferences', 'CBash_CellImporter',
+        'CBash_ClothesTweaker', 'CBash_GmstTweaker', 'CBash_GraphicsPatcher',
+        'CBash_ImportFactions', 'CBash_ImportInventory', 'CBash_SpellsPatcher',
+        'CBash_TweakActors', 'CBash_ImportRelations', 'CBash_ImportScripts',
+        'CBash_ImportActorsSpells', 'CBash_ListsMerger', 'CBash_MFactMarker',
+        'CBash_NamesPatcher', 'CBash_NamesTweaker', 'CBash_NpcFacePatcher',
+        'CBash_RacePatcher', 'CBash_RoadImporter', 'CBash_SoundPatcher',
+        'CBash_StatsPatcher', 'CBash_SEWorldEnforcer', 'CBash_ContentsChecker',
+        )
 
-    stringsFiles = []
+    weaponTypes = (
+        _(u'Blade (1 Handed)'),
+        _(u'Blade (2 Handed)'),
+        _(u'Blunt (1 Handed)'),
+        _(u'Blunt (2 Handed)'),
+        _(u'Staff'),
+        _(u'Bow'),
+        )
 
-#------------------------------------------------------------------------------
-#--Mergeable record types
-mergeClasses = (
-    MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook, MreBsgn,
-    MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes,
-    MreFact, MreFlor, MreFurn, MreGlob, MreGras, MreHair, MreIngr, MreKeym,
-    MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc,
-    MrePack, MreQust, MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel,
-    MreStat, MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle,
-    MreLtex, MreRegn, MreSbsp, MreSkil,
-    )
+    raceNames = {
+        0x23fe9 : _(u'Argonian'),
+        0x224fc : _(u'Breton'),
+        0x191c1 : _(u'Dark Elf'),
+        0x19204 : _(u'High Elf'),
+        0x00907 : _(u'Imperial'),
+        0x22c37 : _(u'Khajiit'),
+        0x224fd : _(u'Nord'),
+        0x191c0 : _(u'Orc'),
+        0x00d43 : _(u'Redguard'),
+        0x00019 : _(u'Vampire'),
+        0x223c8 : _(u'Wood Elf'),
+        }
+    raceShortNames = {
+        0x23fe9 : u'Arg',
+        0x224fc : u'Bre',
+        0x191c1 : u'Dun',
+        0x19204 : u'Alt',
+        0x00907 : u'Imp',
+        0x22c37 : u'Kha',
+        0x224fd : u'Nor',
+        0x191c0 : u'Orc',
+        0x00d43 : u'Red',
+        0x223c8 : u'Bos',
+        }
+    raceHairMale = {
+        0x23fe9 : 0x64f32, #--Arg
+        0x224fc : 0x90475, #--Bre
+        0x191c1 : 0x64214, #--Dun
+        0x19204 : 0x7b792, #--Alt
+        0x00907 : 0x90475, #--Imp
+        0x22c37 : 0x653d4, #--Kha
+        0x224fd : 0x1da82, #--Nor
+        0x191c0 : 0x66a27, #--Orc
+        0x00d43 : 0x64215, #--Red
+        0x223c8 : 0x690bc, #--Bos
+        }
+    raceHairFemale = {
+        0x23fe9 : 0x64f33, #--Arg
+        0x224fc : 0x1da83, #--Bre
+        0x191c1 : 0x1da83, #--Dun
+        0x19204 : 0x690c2, #--Alt
+        0x00907 : 0x1da83, #--Imp
+        0x22c37 : 0x653d0, #--Kha
+        0x224fd : 0x1da83, #--Nor
+        0x191c0 : 0x64218, #--Orc
+        0x00d43 : 0x64210, #--Red
+        0x223c8 : 0x69473, #--Bos
+        }
 
-#--Extra read classes: need info from magic effects
-readClasses = (MreMgef, MreScpt,)
-writeClasses = (MreMgef,)
+    @classmethod
+    def init(cls):
+        from .records import MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, \
+            MreArmo, MreBook, MreBsgn, MreClas, MreClot, MreCont, MreCrea, \
+            MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, \
+            MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, \
+            MreLvli, MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, \
+            MreRace, MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, \
+            MreTree, MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, \
+            MreLtex, MreRegn, MreSbsp, MreSkil, MreAchr, MreAcre, MreCell, \
+            MreGmst, MreRefr, MreRoad, MreHeader, MreWrld, MreDial, MreInfo
+        cls.mergeClasses = (
+            MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo, MreBook,
+            MreBsgn, MreClas, MreClot, MreCont, MreCrea, MreDoor, MreEfsh,
+            MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGras,
+            MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli,
+            MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, MreRace,
+            MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
+            MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
+            MreRegn, MreSbsp, MreSkil,
+        )
+        cls.readClasses = (MreMgef, MreScpt,)
+        cls.writeClasses = (MreMgef,)
+        # Setting RecordHeader class variables - Oblivion is special
+        __rec_type = brec.RecordHeader
+        __rec_type.rec_header_size = 20
+        __rec_type.rec_pack_format = '=4s4I'
+        __rec_type.pack_formats = {0: '=4sI4s2I'}
+        __rec_type.pack_formats.update(
+            {x: '=4s4I' for x in {1, 6, 7, 8, 9, 10}})
+        __rec_type.pack_formats.update({x: '=4sIi2I' for x in {2, 3}})
+        __rec_type.pack_formats.update({x: '=4sIhh2I' for x in {4, 5}})
+        # Similar to other games
+        __rec_type.topTypes = [
+            'GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN',
+            'SKIL', 'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI',
+            'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH',
+            'MISC', 'STAT', 'GRAS', 'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO',
+            'NPC_', 'CREA', 'LVLC', 'SLGM', 'KEYM', 'ALCH', 'SBSP', 'SGST',
+            'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL', 'WRLD', 'DIAL', 'QUST',
+            'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO', 'WATR', 'EFSH']
+        __rec_type.recordTypes = set(
+            __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR',
+                                   'ACRE', 'PGRD', 'LAND', 'INFO'])
+        brec.MreRecord.type_class = dict((x.classType,x) for x in (
+            MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa,
+            MreArmo, MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont,
+            MreCrea, MreDoor, MreEfsh, MreEnch, MreEyes, MreFact, MreFlor,
+            MreFurn, MreGlob, MreGmst, MreGras, MreHair, MreIngr, MreKeym,
+            MreLigh, MreLscr, MreLvlc, MreLvli, MreLvsp, MreMgef, MreMisc,
+            MreNpc, MrePack, MreQust, MreRace, MreRefr, MreRoad, MreScpt,
+            MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
+            MreHeader, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt, MreCsty,
+            MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,))
+        brec.MreRecord.simpleTypes = (
+            set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'ACRE', 'REFR',
+                                              'CELL', 'PGRD', 'ROAD', 'LAND',
+                                              'WRLD', 'INFO', 'DIAL'})
 
-
-def init():
-    # Due to a bug with py2exe, 'reload' doesn't function properly.  Instead of
-    # re-executing all lines within the module, it acts like another 'import'
-    # statement - in otherwords, nothing happens.  This means any lines that
-    # affect outside modules must do so within this function, which will be
-    # called instead of 'reload'
-    __rec_type = brec.RecordHeader
-    __rec_type.rec_header_size = 20
-    __rec_type.rec_pack_format = '=4s4I'
-    __rec_type.pack_formats = {0: '=4sI4s2I'}
-    __rec_type.pack_formats.update({x: '=4s4I' for x in {1, 6, 7, 8, 9, 10}})
-    __rec_type.pack_formats.update({x: '=4sIi2I' for x in {2, 3}})
-    __rec_type.pack_formats.update({x: '=4sIhh2I' for x in {4, 5}})
-
-    #--Top types in Oblivion order.
-    __rec_type.topTypes = [
-        'GMST', 'GLOB', 'CLAS', 'FACT', 'HAIR', 'EYES', 'RACE', 'SOUN', 'SKIL',
-        'MGEF', 'SCPT', 'LTEX', 'ENCH', 'SPEL', 'BSGN', 'ACTI', 'APPA', 'ARMO',
-        'BOOK', 'CLOT', 'CONT', 'DOOR', 'INGR', 'LIGH', 'MISC', 'STAT', 'GRAS',
-        'TREE', 'FLOR', 'FURN', 'WEAP', 'AMMO', 'NPC_', 'CREA', 'LVLC', 'SLGM',
-        'KEYM', 'ALCH', 'SBSP', 'SGST', 'LVLI', 'WTHR', 'CLMT', 'REGN', 'CELL',
-        'WRLD', 'DIAL', 'QUST', 'IDLE', 'PACK', 'CSTY', 'LSCR', 'LVSP', 'ANIO',
-        'WATR', 'EFSH']
-
-    __rec_type.recordTypes = set(
-        __rec_type.topTypes + ['GRUP', 'TES4', 'ROAD', 'REFR', 'ACHR', 'ACRE',
-                               'PGRD', 'LAND', 'INFO'])
-
-    #--Record Types
-    brec.MreRecord.type_class = dict((x.classType,x) for x in (
-        MreAchr, MreAcre, MreActi, MreAlch, MreAmmo, MreAnio, MreAppa, MreArmo,
-        MreBook, MreBsgn, MreCell, MreClas, MreClot, MreCont, MreCrea, MreDoor,
-        MreEfsh, MreEnch, MreEyes, MreFact, MreFlor, MreFurn, MreGlob, MreGmst,
-        MreGras, MreHair, MreIngr, MreKeym, MreLigh, MreLscr, MreLvlc, MreLvli,
-        MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, MreRace, MreRefr,
-        MreRoad, MreScpt, MreSgst, MreSkil, MreSlgm, MreSoun, MreSpel, MreStat,
-        MreTree, MreHeader, MreWatr, MreWeap, MreWrld, MreWthr, MreClmt,
-        MreCsty, MreIdle, MreLtex, MreRegn, MreSbsp, MreDial, MreInfo,
-        ))
-
-    #--Simple records
-    brec.MreRecord.simpleTypes = (
-        set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'ACRE', 'REFR',
-                                          'CELL', 'PGRD', 'ROAD', 'LAND',
-                                          'WRLD', 'INFO', 'DIAL'})
+GAME_TYPE = OblivionGameInfo

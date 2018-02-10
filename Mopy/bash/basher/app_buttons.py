@@ -339,7 +339,7 @@ class _Mods_xEditExpert(BoolLink):
 
     def __init__(self):
         super(_Mods_xEditExpert, self).__init__()
-        self._text, self.key = bush.game.xEdit_expert
+        self._text, self.key = bush.game_mod.xEdit_expert
 
 class App_Tes4View(App_Button):
     """Allow some extra args for Tes4View."""
@@ -379,7 +379,7 @@ class App_Tes4View(App_Button):
 #  or name ends with Trans.exe
     def __init__(self,*args,**kwdargs):
         App_Button.__init__(self,*args,**kwdargs)
-        if bush.game.xEdit_expert:
+        if bush.game_mod.xEdit_expert:
             self.mainMenu.append(_Mods_xEditExpert())
 
     def IsPresent(self):
@@ -397,7 +397,7 @@ class App_Tes4View(App_Button):
             extraArgs.append(u'-FixupPGRD')
         if balt.getKeyState_Shift():
             extraArgs.append(u'-skipbsa')
-        if bush.game.xEdit_expert and bass.settings[bush.game.xEdit_expert[1]]:
+        if bush.game_mod.xEdit_expert and bass.settings[bush.game_mod.xEdit_expert[1]]:
             extraArgs.append(u'-IKnowWhatImDoing')
         self.extraArgs = tuple(extraArgs)
         super(App_Tes4View, self).Execute()
@@ -686,7 +686,7 @@ class App_GenPickle(StatusBar_Button):
         #--Eid list? - if the GMST has a 00000000 eid when looking at it in
         # the CS with nothing but oblivion.esm loaded you need to add the
         # gmst to this list, rebuild the pickle and overwrite the old one.
-        for eid in bush.game.gmstEids:
+        for eid in bush.game_mod.gmstEids:
             if eid not in fids:
                 maxId += 1
                 fids[eid] = maxId
@@ -694,7 +694,7 @@ class App_GenPickle(StatusBar_Button):
         #--Source file
         if fileName:
             sorter = lambda a: a.eid
-            loadFactory = parsers.LoadFactory(False, bush.game.records.MreGmst)
+            loadFactory = parsers.LoadFactory(False, bush.game_mod.records.MreGmst)
             modInfo = bosh.modInfos[GPath(fileName)]
             modFile = parsers.ModFile(modInfo, loadFactory)
             modFile.load(True)

@@ -102,19 +102,19 @@ class Settings_SaveSettings(ItemLink):
 #------------------------------------------------------------------------------
 class Settings_ExportDllInfo(AppendableLink, ItemLink):
     """Exports list of good and bad dll's."""
-    _text = _(
-        u"Export list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
+    _text = _(u"Export list of allowed/disallowed %s plugin dlls") % \
+            bush.game.se_sd()
     help = _(u"Export list of allowed/disallowed plugin dlls to a txt file"
         u" (for BAIN).")
 
-    def _append(self, window): return bush.game.se_sd
+    def _append(self, window): return bool(bush.game.se_sd())
 
     def Execute(self):
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
         title = _(u'Export list of allowed/disallowed %s plugin dlls to:') % \
-                bush.game.se_sd
+                bush.game.se_sd()
         file_ = bush.game.se.shortName + u' ' + _(u'dll permissions') + u'.txt'
         textPath = self._askSave(title=title, defaultDir=textDir,
                                  defaultFile=file_, wildcard=u'*.txt')
@@ -138,12 +138,12 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
 #------------------------------------------------------------------------------
 class Settings_ImportDllInfo(AppendableLink, ItemLink):
     """Imports list of good and bad dll's."""
-    _text = _(
-        u"Import list of allowed/disallowed %s plugin dlls") % bush.game.se_sd
+    _text = _(u"Import list of allowed/disallowed %s plugin dlls") % \
+            bush.game.se_sd()
     help = _(u"Import list of allowed/disallowed plugin dlls from a txt file"
         u" (for BAIN).")
 
-    def _append(self, window): return bush.game.se_sd
+    def _append(self, window): return bool(bush.game.se_sd())
 
     def Execute(self):
         textDir = bass.dirs['patches']
@@ -152,7 +152,7 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
         defFile = bush.game.se.shortName + u' ' + _(
             u'dll permissions') + u'.txt'
         title = _(u'Import list of allowed/disallowed %s plugin dlls from:') \
-                % bush.game.se_sd
+                % bush.game.se_sd()
         textPath = self._askOpen(title=title, defaultDir=textDir,
                                  defaultFile=defFile, wildcard=u'*.txt',
                                  mustExist=True)

@@ -482,7 +482,7 @@ class ImportPatcher(AImportPatcher, ListPatcher):
         log(self.__class__.logMsg)
         for top_rec_type, count, counts in allCounts:
             if not count: continue
-            typeName = bush.game.record_type_name[top_rec_type]
+            typeName = bush.game_mod.record_type_name[top_rec_type]
             log(u'* %s: %d' % (typeName, count))
             for modName in sorted(counts):
                 log(u'  * %s: %d' % (modName.s, counts[modName]))

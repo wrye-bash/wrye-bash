@@ -1050,7 +1050,7 @@ from .patcher_dialog import PBash_gui_patchers, CBash_gui_patchers, \
 # scope
 from importlib import import_module
 gamePatcher = import_module('.patcher', ##: move in bush.py !
-                       package=bush.game.__name__)
+                       package=bush.game_mod.__name__)
 for patcher_name, typeInfo in gamePatcher.gameSpecificPatchers.items():
     globals()[patcher_name] = type(patcher_name, (typeInfo.clazz, _PatcherPanel), {})
     if typeInfo.twinPatcher:

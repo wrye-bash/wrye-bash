@@ -328,7 +328,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
             # Refresh Data - only if we are now including Bethsoft files
             with balt.Progress(title=_(u'Refreshing Bethsoft Content'),
                                message=u'\n' + u' ' * 60) as progress:
-                self.idata.update_for_overridden_skips(bush.game.bethDataFiles,
+                self.idata.update_for_overridden_skips(bush.game_mod.bethDataFiles,
                                                        progress)
         # Refresh Installers
         toRefresh = set(name for name, installer in self.idata.iteritems() if
@@ -517,9 +517,9 @@ class _Installers_SkipDocs(_Installers_Process_Skip):
 
 class _Installers_SkipOBSEPlugins(AppendableLink, _Installers_Skip):
     """Toggle allowOBSEPlugins setting and update."""
-    _text = _(u'Skip %s Plugins') % bush.game.se_sd
+    _text = _(u'Skip %s Plugins') % bush.game.se_sd()
     key = 'bash.installers.allowOBSEPlugins'
-    def _append(self, window): return bool(bush.game.se_sd)
+    def _append(self, window): return bool(bush.game.se_sd())
     def _check(self): return not bass.settings[self.key]
 
 class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):

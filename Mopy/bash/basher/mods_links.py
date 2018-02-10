@@ -42,7 +42,7 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
 # "Load" submenu --------------------------------------------------------------
 def _getLoadListsDict():
     loadListData = bass.settings['bash.loadLists.data']
-    loadListData['Bethesda ESMs'] = [GPath(x) for x in bush.game.bethDataFiles
+    loadListData['Bethesda ESMs'] = [GPath(x) for x in bush.game_mod.bethDataFiles
         if x.endswith(u'.esm') # but avoid activating modding esms for oblivion
     and (not _re.match(bosh.reOblivion.pattern, x, _re.IGNORECASE)
          or x == u'oblivion.esm')]

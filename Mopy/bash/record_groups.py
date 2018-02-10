@@ -28,9 +28,23 @@ from operator import itemgetter
 # Wrye Bash imports
 from brec import ModReader
 from bolt import sio, struct_pack, struct_unpack
-import bush # for groupTypes
 import bosh # for modInfos
 from exception import AbstractError, ArgumentError, ModError
+
+# Tes3 Group/Top Types --------------------------------------------------------
+groupTypes = [
+    _(u'Top (Type)'),
+    _(u'World Children'),
+    _(u'Int Cell Block'),
+    _(u'Int Cell Sub-Block'),
+    _(u'Ext Cell Block'),
+    _(u'Ext Cell Sub-Block'),
+    _(u'Cell Children'),
+    _(u'Topic Children'),
+    _(u'Cell Persistent Children'),
+    _(u'Cell Temporary Children'),
+    _(u'Cell Visible Distant Children'),
+]
 
 class MobBase(object):
     """Group of records and/or subgroups. This basic implementation does not
@@ -102,7 +116,7 @@ class MobBase(object):
         else:
             numSubRecords = 0
             reader = self.getReader()
-            errLabel = bush.groupTypes[self.groupType]
+            errLabel = groupTypes[self.groupType]
             readerAtEnd = reader.atEnd
             readerRecHeader = reader.unpackRecHeader
             readerSeek = reader.seek
