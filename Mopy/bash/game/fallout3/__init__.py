@@ -310,24 +310,10 @@ class Fallout3GameInfo(GameInfo):
                                           'INFO', 'LAND', 'NAVM', 'PGRE',
                                           'PMIS', 'REFR'])
         brec.RecordHeader.plugin_form_version = 15
-        brec.MreRecord.type_class = dict((x.classType,x) for x in (
-            MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreArma, MreArmo,
-            MreAspc, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt,
-            MreCobj, MreCont, MreCpth, MreCrea, MreCsty, MreDebr, MreDobj,
-            MreDoor, MreEczn, MreEfsh, MreEnch, MreExpl, MreEyes, MreFact,
-            MreFlst, MreFurn, MreGlob, MreGras, MreHair, MreHdpt, MreIdle,
-            MreIdlm, MreImad, MreImgs, MreIngr, MreIpct, MreIpds, MreKeym,
-            MreLgtm, MreLigh, MreLscr, MreLtex, MreLvlc, MreLvli, MreLvln,
-            MreMesg, MreMgef, MreMicn, MreMisc, MreMstt, MreMusc, MreNote,
-            MreNpc, MrePack, MrePerk, MreProj, MrePwat, MreQust, MreRace,
-            MreRads, MreRegn, MreRgdl, MreScol, MreScpt, MreSoun, MreSpel,
-            MreStat, MreTact, MreTerm, MreTree, MreTxst, MreVtyp, MreWatr,
-            MreWeap, MreWthr,
-            # Not Mergeable
-            MreAchr, MreAcre, MreCell, MreDial, MreGmst, MreInfo, MreNavi,
-            MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreHeader,
-            ))
-
+        brec.MreRecord.type_class = dict(
+            (x.classType, x) for x in (cls.mergeClasses + # Not Mergeable
+            (MreAchr, MreAcre, MreCell, MreDial, MreGmst, MreInfo, MreNavi,
+             MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreHeader)))
         brec.MreRecord.simpleTypes = (set(brec.MreRecord.type_class) - {
             # 'TES4','ACHR','ACRE','REFR','CELL','PGRD','ROAD','LAND',
             # 'WRLD','INFO','DIAL','PGRE','NAVM'
