@@ -266,23 +266,23 @@ class FalloutNVGameInfo(GameInfo):
         # MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTes4, MreTree,
         # MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreCell, MreWrld,
         # MreNavm,
-        from .records import MreActi, MreAlch, MreAloc, MreAmef, MreAmmo, \
-            MreArma, MreArmo, MreAspc, MreCcrd, MreCdck, MreChal, MreChip, \
-            MreCmny, MreCont, MreCpth, MreCsno, MreCsty, MreDehy, MreDobj, \
-            MreEnch, MreFact, MreHdpt, MreHung, MreIdle, MreImad, MreImod, \
-            MreIpct, MreKeym, MreLigh, MreLscr, MreLsct, MreMesg, MreMisc, \
-            MreMset, MreMusc, MrePack, MrePerk, MreProj, MreQust, MreRace, \
-            MreRcct, MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreSpel, \
-            MreStat, MreTact, MreTerm, MreWeap, MreWthr, MreAchr, MreAcre, \
-            MreCell, MreDial, MreGmst, MreInfo, MrePgre, MrePmis, MreRefr, \
-            MreHeader, MreNpc
+        from .records import MreActi, MreAloc, MreAmef, MreAmmo, MreArma, \
+            MreArmo, MreAspc, MreCcrd, MreCdck, MreChal, MreChip, MreCmny, \
+            MreCont, MreCpth, MreCsno, MreCsty, MreDehy, MreDobj, MreEnch, \
+            MreFact, MreHdpt, MreHung, MreIdle, MreImad, MreImod, MreIpct, \
+            MreKeym, MreLigh, MreLscr, MreLsct, MreMesg, MreMisc, MreMset, \
+            MreMusc, MrePack, MrePerk, MreProj, MreQust, MreRace, MreRcct, \
+            MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreSpel, MreStat, \
+            MreTact, MreTerm, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, \
+            MreDial, MreGmst, MreInfo, MrePgre, MrePmis, MreRefr, MreHeader, \
+            MreNpc
         from ..fallout3.records import MreAddn, MreAnio, MreAvif, MreBook, \
             MreBptd, MreCams, MreClas, MreClmt, MreCobj, MreCrea, MreDebr, \
             MreDoor, MreEczn, MreEfsh, MreExpl, MreEyes, MreFlst, MreFurn, \
             MreGras, MreHair, MreIdlm, MreImgs, MreIngr, MreIpds, MreLgtm, \
             MreLtex, MreLvlc, MreLvli, MreLvln, MreMgef, MreMicn, MreMstt, \
             MreNavi, MreNavm, MreNote, MrePwat, MreRads, MreRgdl, MreScol, \
-            MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, MreWrld
+            MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, MreWrld, MreAlch
         # Old Mergeable from Valda's version
         # MreActi, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio, MreAppa,
         # MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreBsgn,

@@ -26,20 +26,19 @@
 import struct
 import itertools
 from ...bolt import Flags, DataDict, GPath
-""" Can't import MelConditions, MelEffects, MreAlch,
+""" Can't import
     MreCpth, MreIdle, MreMesg, MrePack, MrePerk, MreQust, MreSpel, MreTerm,
     Because once the imported Fallout 3 record is used it will use Fallout 3
     constants.py regardless of imports in falloutnv.records.py."""
 from ..fallout3.records import MreHeader, MreNpc #accessed via game_mod.records
 from ..fallout3.records import MelBipedFlags, MelDestructible, MreHasEffects, \
-    MelModel, MelOwnership, MelScrxen
+    MelModel, MelOwnership, MelScrxen, MelConditions, MelEffects
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MelBase, MelFidList, MelStructA, MreRecord, MreGmstBase, MelFull0
 from ...bass import null1, null2, null3, null4
 from ... import bush
-from constants import allConditions, fid1Conditions, fid2Conditions
-from ...exception import BoltError, ModError, ModSizeError
+from ...exception import ModError, ModSizeError
 
 from_iterable = itertools.chain.from_iterable
 
@@ -99,113 +98,6 @@ defaultEyes = {
         standardEyes,
     }
 
-#------------------------------------------------------------------------------
-# Record Elements    ----------------------------------------------------------
-#------------------------------------------------------------------------------
-class MelConditions(MelStructs):
-    """Represents a set of quest/dialog conditions. Difficulty is that FID state
-    of parameters depends on function index."""
-    def __init__(self):
-        """Initialize."""
-        MelStructs.__init__(self,'CTDA','=B3sfH2siiII','conditions',
-            'operFlag',('unused1',null3),'compValue','ifunc',('unused2',null2),
-            'param1','param2','runOn','reference')
-
-    def getDefault(self):
-        """Returns a default copy of object."""
-        target = MelStructs.getDefault(self)
-        target.form1234 = 'iiII'
-        return target
-
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
-        if sub_type == 'CTDA':
-            if size_ != 28 and size_ != 24 and size_ != 20:
-                raise ModSizeError(ins.inName, readId, 28, size_, False)
-        else:
-            raise ModError(ins.inName,_(u'Unexpected subrecord: ')+readId)
-        target = MelObject()
-        record.conditions.append(target)
-        target.__slots__ = self.attrs
-        unpacked1 = ins.unpack('=B3sfH2s',12,readId)
-        (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
-        #--Get parameters
-        if ifunc not in allConditions:
-            raise BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
-        # Form1 is Param1
-        form1 = 'I' if ifunc in fid1Conditions else 'i'
-        # Form2 is Param2
-        form2 = 'I' if ifunc in fid2Conditions else 'i'
-        # Form3 is runOn
-        form3 = 'I'
-        # Form4 is reference, this is a formID when runOn = 2
-        form4 = 'I'
-        if size_ == 28:
-            form1234 = form1+form2+form3+form4
-            unpacked2 = ins.unpack(form1234,16,readId)
-            (target.param1,target.param2,target.runOn,target.reference) = unpacked2
-        elif size_ == 24:
-            form1234 = form1+form2+form3
-            unpacked2 = ins.unpack(form1234,12,readId)
-            (target.param1,target.param2,target.runOn) = unpacked2
-            target.reference = null4
-        elif size_ == 20:
-            form1234 = form1+form2
-            unpacked2 = ins.unpack(form1234,8,readId)
-            (target.param1,target.param2) = unpacked2
-            target.runOn = null4
-            target.reference = null4
-        else:
-            raise ModSizeError(ins.inName, readId, 28, size_, False)
-        (target.ifunc,target.form1234) = (ifunc,form1234)
-        if self._debug:
-            unpacked = unpacked1+unpacked2
-            print u' ',zip(self.attrs,unpacked)
-            if len(unpacked) != len(self.attrs):
-                print u' ',unpacked
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        for target in record.conditions:
-            out.packSub('CTDA','=B3sfH2s'+target.form1234,
-                target.operFlag, target.unused1, target.compValue,
-                target.ifunc, target.unused2, target.param1, target.param2,
-                target.runOn, target.reference)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids. If save is true, then fid is set
-        to result of function."""
-        for target in record.conditions:
-            form1234 = target.form1234
-            if form1234[0] == 'I':
-                result = function(target.param1)
-                if save: target.param1 = result
-            if form1234[1] == 'I':
-                result = function(target.param2)
-                if save: target.param2 = result
-            # runOn is intU32, never FID, and Enum in FO3Edit/FNVEdit
-            #0:Subject,1:Target,2:Reference,3:Combat Target,4:Linked Reference
-            if len(form1234) > 3 and form1234[3] == 'I' and target.runOn == 2:
-                result = function(target.reference)
-                if save: target.reference = result
-
-#------------------------------------------------------------------------------
-class MelEffects(MelGroups):
-    """Represents ingredient/potion/enchantment/spell effects."""
-
-    def __init__(self,attr='effects'):
-        """Initialize elements."""
-        MelGroups.__init__(self,attr,
-            MelFid('EFID','baseEffect'),
-            MelStruct('EFIT','4Ii','magnitude','area','duration','recipient','actorValue'),
-            MelConditions(),
-            )
-
-#------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 # FalloutNV Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -324,35 +216,6 @@ class MreActi(MelRecord):
         MelFid('RNAM','radioStation'),
         MelFid('WNAM','waterType'),
         MelString('XATO','activationPrompt'),
-        )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
-class MreAlch(MelRecord,MreHasEffects):
-    """ALCH (potion) record."""
-    classType = 'ALCH'
-    _flags = Flags(0L,Flags.getNames('autoCalc','isFood','medicine',))
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
-        MelFull0(),
-        MelModel(),
-        MelString('ICON','iconPath'),
-        MelString('MICO','smallIconPath'),
-        MelFid('SCRI','script'),
-        MelDestructible(),
-        MelFid('YNAM','pickupSound'),
-        MelFid('ZNAM','dropSound'),
-        #-1:None,0:Big Guns,1:Energy Weapons,2:Small Guns,3:Melee Weapons,
-        #4:Unarmed Weapon,5:Thrown Weapons,6:Mine,7:Body Wear,8:Head Wear,
-        #9:Hand Wear,10:Chems,11:Stimpack,12:Food,13:Alcohol
-        MelStruct('ETYP','i',('etype',-1)),
-        MelStruct('DATA','f','weight'),
-        MelStruct('ENIT','iB3sIfI','value',(_flags,'flags',0L),('unused1',null3),
-                  (FID,'withdrawalEffect',None),'addictionChance',(FID,'soundConsume',None)),
-        MelEffects(),
         )
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
 
