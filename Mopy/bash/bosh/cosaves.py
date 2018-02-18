@@ -367,8 +367,10 @@ class ACoSaveFile(object):
         log.setHeader(_(u'Header'))
         log(u'=' * 80)
         log(_(u'  Format version:   %08X') % (self.cosave_header.formatVersion,))
-        log(_(u'  OBSE version:     %u.%u') % (self.cosave_header.obseVersion,self.cosave_header.obseMinorVersion,))
-        log(_(u'  Oblivion version: %08X') % (self.cosave_header.oblivionVersion,))
+        log(_(u'  %s version:      %u.%u') % (
+            self.signature, self.cosave_header.obseVersion,
+            self.cosave_header.obseMinorVersion,))
+        log(_(u'  Game version:     %08X') % (self.cosave_header.oblivionVersion,))
         #--Plugins
         for plugin_ch in self.plugin_chunks: # type: _PluginChunk
             plugin_sig = plugin_ch.plugin_signature

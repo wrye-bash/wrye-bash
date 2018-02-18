@@ -756,19 +756,15 @@ class Save_StatObse(AppendableLink, OneItemLink):
 
     def _enable(self):
         if not super(Save_StatObse, self)._enable(): return False
-        cosave = self._selected_info.getPath().root + u'.' + \
-                   bush.game.se.shortName
+        cosave = self._selected_info.get_se_cosave_path()
         return cosave.exists()
 
     def Execute(self):
-        saveFile = bosh._saves.SaveFile(self._selected_info)
-        with balt.Progress(u'.'+bush.game.se.shortName) as progress:
-            saveFile.load(SubProgress(progress,0,0.9))
+        with balt.BusyCursor():
             log = bolt.LogFile(StringIO.StringIO())
-            progress(0.9,_(u"Calculating statistics."))
             cosave = self._selected_info.get_cosave()
             if cosave is not None:
-                cosave.logStatObse(log, saveFile.masters)
+                cosave.logStatObse(log, self._selected_info.header.masters)
         text = log.out.getvalue()
         log.out.close()
         self._showLog(text, title=self._selected_item.s, fixedFont=False)
