@@ -1506,7 +1506,7 @@ class MreRecord(object):
             fullClass = MreRecord.type_class[self.recType]
             myCopy = fullClass(self.getHeader())
             myCopy.data = self.data
-            myCopy.load(unpack=True)
+            myCopy.load(do_unpack=True)
         else:
             myCopy = copy.deepcopy(self)
         if mapper and not myCopy.longFids:
