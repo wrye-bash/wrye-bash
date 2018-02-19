@@ -1227,11 +1227,11 @@ class MelSet:
         """This function returns all of the attributes used in record instances that use this instance."""
         return [s for element in self.elements for s in element.getSlotsUsed()]
 
-    def initRecord(self,record,header,ins,unpack):
+    def initRecord(self, record, header, ins, do_unpack):
         """Initialize record, setting its attributes based on its elements."""
         for element in self.elements:
             element.setDefault(record)
-        MreRecord.__init__(record,header,ins,unpack)
+        MreRecord.__init__(record, header, ins, do_unpack)
 
     def getDefault(self,attr):
         """Returns default instance of specified instance. Only useful for
@@ -1469,7 +1469,7 @@ class MreRecord(object):
     simpleTypes = None
     isKeyedByEid = False
 
-    def __init__(self,header,ins=None,unpack=False):
+    def __init__(self, header, ins=None, do_unpack=False):
         self.header = header
         self.recType = header.recType
         self.fid = header.fid
@@ -1481,7 +1481,7 @@ class MreRecord(object):
         self.subrecords = None
         self.data = ''
         self.inName = ins and ins.inName
-        if ins: self.load(ins,unpack)
+        if ins: self.load(ins, do_unpack)
 
     def __repr__(self):
         if hasattr(self,'eid') and self.eid is not None:
@@ -1506,7 +1506,7 @@ class MreRecord(object):
             fullClass = MreRecord.type_class[self.recType]
             myCopy = fullClass(self.getHeader())
             myCopy.data = self.data
-            myCopy.load(unpack=True)
+            myCopy.load(do_unpack=True)
         else:
             myCopy = copy.deepcopy(self)
         if mapper and not myCopy.longFids:
@@ -1533,11 +1533,11 @@ class MreRecord(object):
                                      % (size,len(decomp)))
         return decomp
 
-    def load(self,ins=None,unpack=False):
+    def load(self, ins=None, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
         type = self.recType
         #--Read, but don't analyze.
-        if not unpack:
+        if not do_unpack:
             self.data = ins.read(self.size,type)
         #--Unbuffered analysis?
         elif ins and not self.flags1.compressed:
@@ -1555,7 +1555,7 @@ class MreRecord(object):
                     if ins and ins.hasStrings: reader.setStringTable(ins.strings)
                     self.loadData(reader,reader.size)
         #--Discard raw data?
-        if unpack == 2:
+        if do_unpack == 2:
             self.data = None
             self.changed = True
 
@@ -1684,9 +1684,9 @@ class MelRecord(MreRecord):
     melSet = None #--Subclasses must define as MelSet(*mels)
     __slots__ = MreRecord.__slots__
 
-    def __init__(self,header,ins=None,unpack=False):
+    def __init__(self, header, ins=None, do_unpack=False):
         """Initialize."""
-        self.__class__.melSet.initRecord(self,header,ins,unpack)
+        self.__class__.melSet.initRecord(self, header, ins, do_unpack)
 
     def getDefault(self,attr):
         """Returns default instance of specified instance. Only useful for
@@ -1826,9 +1826,9 @@ class MreLeveledListBase(MelRecord):
     __slots__ = (MelRecord.__slots__ +
         ['mergeOverLast','mergeSources','items','delevs','relevs'])
 
-    def __init__(self,header,ins=None,unpack=False):
+    def __init__(self, header, ins=None, do_unpack=False):
         """Initialize"""
-        MelRecord.__init__(self,header,ins,unpack)
+        MelRecord.__init__(self, header, ins, do_unpack)
         self.mergeOverLast = False #--Merge overrides last mod merged
         self.mergeSources = None #--Set to list by other functions
         self.items  = None #--Set of items included in list

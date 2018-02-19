@@ -3908,7 +3908,7 @@ class ModFile(object):
         else:
             raise ArgumentError(u'Invalid top group type: '+topType)
 
-    def load(self,unpack=False,progress=None,loadStrings=True):
+    def load(self, do_unpack=False, progress=None, loadStrings=True):
         """Load file."""
         progress = progress or bolt.Progress()
         progress.setFull(1.0)
@@ -3919,7 +3919,7 @@ class ModFile(object):
             self.tes4 = bush.game_mod.records.MreHeader(header,ins,True)
             #--Strings
             self.strings.clear()
-            if unpack and self.tes4.flags1[7] and loadStrings:
+            if do_unpack and self.tes4.flags1[7] and loadStrings:
                 stringsProgress = SubProgress(progress,0,0.1) # Use 10% of progress bar for strings
                 lang = bosh.oblivionIni.get_ini_language()
                 stringsPaths = self.fileInfo.getStringsPaths(lang)
@@ -3948,7 +3948,7 @@ class ModFile(object):
                 try:
                     if topClass:
                         self.tops[label] = topClass(header, self.loadFactory)
-                        self.tops[label].load(ins, unpack and (topClass != MobBase))
+                        self.tops[label].load(ins, do_unpack and (topClass != MobBase))
                     else:
                         self.topsSkipped.add(label)
                         insSeek(size-header.__class__.rec_header_size,1,type + '.' + label)
