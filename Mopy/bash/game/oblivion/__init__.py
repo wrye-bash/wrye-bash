@@ -86,26 +86,21 @@ class OblivionGameInfo(GameInfo):
     class ess(GameInfo.ess):
         canEditMore = True
 
-    dataDirs = {
+    dataDirs = GameInfo.dataDirs | {
         u'distantlod',
         u'facegen',
         u'fonts',
         u'menus',
-        u'meshes',
-        u'music',
         u'shaders',
-        u'sound',
-        u'textures',
         u'trees',
-        u'video',
     }
     dataDirsPlus = {
-        u'streamline',
         u'_tejon',
-        u'scripts',
-        u'pluggy',
         u'ini',
         u'obse',
+        u'pluggy',
+        u'scripts',
+        u'streamline',
     }
     wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
         u'ArchiveInvalidationInvalidated!.bsa'}

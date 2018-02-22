@@ -2494,9 +2494,9 @@ class InstallersData(DataStore):
         removes = set(self.data_sizeCrcDate) - keepFiles
         destDir = bass.dirs['bainData'].join(u'Data Folder Contents (%s)' %
             bolt.timestamp())
-        skipPrefixes = [os.path.normcase(skipDir)+os.sep for skipDir in bush.game.wryeBashDataDirs]
-        skipPrefixes.extend([os.path.normcase(skipDir)+os.sep for skipDir in bush.game.ignoreDataDirs])
-        skipPrefixes.extend([os.path.normcase(skipPrefix) for skipPrefix in bush.game.ignoreDataFilePrefixes])
+        skipPrefixes = [skipDir.lower() + os.sep for skipDir in
+                        bush.game.wryeBashDataDirs | bush.game.ignoreDataDirs]
+        skipPrefixes.extend([skipPrefix.lower() for skipPrefix in bush.game.ignoreDataFilePrefixes])
         skipPrefixes = tuple(skipPrefixes)
         try: # NB: we do _not_ remove Ini Tweaks/*
             emptyDirs, mods = set(), set()

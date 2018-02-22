@@ -3640,6 +3640,7 @@ class BashFrame(BaltFrame):
         self.inRefreshData = False #--Prevent recursion while refreshing.
         self.knownCorrupted = set()
         self.knownInvalidVerions = set()
+        self.known_sse_form43_mods = set()
         self.incompleteInstallError = False
 
     @staticmethod
@@ -3824,12 +3825,12 @@ class BashFrame(BaltFrame):
             m.extend(sorted(invalidVersions - self.knownInvalidVerions))
             message.append(m)
             self.knownInvalidVerions |= invalidVersions
-        if warn_mods and not bosh.modInfos.sse_form43 <= self.knownInvalidVerions:
+        if warn_mods and not bosh.modInfos.sse_form43 <= self.known_sse_form43_mods:
             m = [_(u'Older Plugin Record Version'),
                  _(u"The following mods don't use the current plugin Form Version: ")]
-            m.extend(sorted(bosh.modInfos.sse_form43 - self.knownInvalidVerions))
+            m.extend(sorted(bosh.modInfos.sse_form43 - self.known_sse_form43_mods))
             message.append(m)
-            self.knownInvalidVerions |= bosh.modInfos.sse_form43
+            self.known_sse_form43_mods |= bosh.modInfos.sse_form43
         if warn_strings and bosh.modInfos.new_missing_strings:
             m = [_(u'Missing String Localization files:'),
                  _(u'This will cause CTDs if activated.')]

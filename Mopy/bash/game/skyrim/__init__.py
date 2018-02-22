@@ -111,29 +111,24 @@ class SkyrimGameInfo(GameInfo):
         allowNewLines = True
         bsaRedirection = (u'', u'')
 
-    dataDirs = {
+    dataDirs = GameInfo.dataDirs | {
         u'dialogueviews',
-        u'interface',
-        u'meshes',
-        u'strings',
-        u'textures',
-        u'video',
-        u'lodsettings',
         u'grass',
+        u'interface',
+        u'lodsettings',
         u'scripts',
-        u'shadersfx',
-        u'music',
-        u'sound',
         u'seq',
+        u'shadersfx',
+        u'strings',
     }
     dataDirsPlus = {
-        u'skse',
-        u'ini',
         u'asi',
-        u'skyproc patchers',
         u'calientetools', # bodyslide
         u'dyndolod',
-        u'tools',
+        u'ini',
+        u'skse',
+        u'skyproc patchers',
+        u'tools', # Bodyslide, FNIS
     }
 
     ignoreDataDirs = {u'LSData'}

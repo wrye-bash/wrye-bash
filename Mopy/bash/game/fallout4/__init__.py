@@ -96,28 +96,23 @@ class Fallout4GameInfo(GameInfo):
     class ess(GameInfo.ess):
         ext = u'.fos'
 
-    dataDirs = {
+    dataDirs = GameInfo.dataDirs | {
         u'interface',
         u'lodsettings',
         u'materials',
-        u'meshes',
         u'misc',
-        u'music',
         u'programs',
         u'scripts',
         u'seq',
         u'shadersfx',
-        u'sound',
         u'strings',
-        u'textures',
-        u'video',
         u'vis',
     }
     dataDirsPlus = {
         u'f4se',
         u'ini',
-        u'tools', # bodyslide
         u'mcm',   # FO4 MCM
+        u'tools', # bodyslide
     }
 
     class esp(GameInfo.esp):
