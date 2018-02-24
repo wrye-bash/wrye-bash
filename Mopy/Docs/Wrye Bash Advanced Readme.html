@@ -126,7 +126,7 @@
 <p style="clear:both;">
 
 <h2 id="intro">Introduction</h2>
-<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, TES V: Skyrim, SSE: Skyrim Special Edition and Fallout 4. Its features include:
+<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, Fallout 3, Fallout New Vegas, TES V: Skyrim, Fallout 4 and SSE: Skyrim Special Edition. Its features include:
 <ul>
     <li>A mod installation and conflict manager
     <li>A plugin load order manager
@@ -151,7 +151,7 @@
     <li><code>[Bash Version]</code>: This is the version number for the version of Wrye Bash running. Useful when troubleshooting.
     <li><code>[Install Type]</code>: If the Python version is running, this will read <q>Python</q>. If the Standalone version is running, it will read <q>(Standalone)</q>. See the <a href="#install">Installation</a> section for more information.
     <li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>,
-    this will display <q>for Oblivion</q>, <q>for Skyrim</q> or <q>for Fallout 4</q> depending on the game it is being run for.
+    this will display <q>for Oblivion</q>, <q>for Skyrim</q> or <q>for Fallout</q> depending on the game it is being run for.
     <li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
     <li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profiles">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
     <li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
@@ -333,8 +333,11 @@ tab. The directories skipped are:
     <thead><tr><th>Game<th>Skipped Data subdirectories<td>Script extender(s) directories
     <tbody>
         <tr><td>Oblivion<td>tes4edit backups, bgsee, conscribe logs<td>OBSE
+        <tr><td>Fallout 3<td>fo3edit backups<td>FOSE
+        <tr><td>Fallout New Vegas<td>fnvedit backups<td>NVSE
         <tr><td>Skyrim<td>tes5edit backups<td>SKSE, SkyProc, Script Dragon
-        <tr><td>Fallout 4<td>fo4edit backups<td>F4SEs
+        <tr><td>Fallout 4<td>fo4edit backups<td>F4SE
+        <tr><td>Skyrim SE<td>sseedit backups<td>SKSE
 </table>
 
 <p>Skipping of Data subdirectories has some implications vis-à-vis uninstalling those skipped files. So say you turn Skip DistantLOD on, all packages
@@ -1448,7 +1451,7 @@ and masterlist relative priority and role see the LOOT docs.
 
 <h3 id="patch-tweaks">Tweak Options In Detail</h3>
 <p>Each <q>Tweak...</q> section has a table below that details the options found within it.
-<p>Tweaks are game dependant, most apply for Oblivion, not all of them will be available for Skyrim / Fallout 4 / Skyrim SE.
+<p>Tweaks are game dependant, most apply for Oblivion, not all of them will be available for Skyrim / Fallout.
 <table>
     <thead>
         <tr><th colspan="2">Race Tweaks

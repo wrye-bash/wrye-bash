@@ -107,7 +107,7 @@
 <p style="clear:both;">
 
 <h2 id="intro">Introduction</h2>
-<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, TES V: Skyrim, SSE: Skyrim Special Edition and Fallout 4. Its features include:
+<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, Fallout 3, Fallout New Vegas, TES V: Skyrim, Fallout 4 and SSE: Skyrim Special Edition. Its features include:
 <ul>
     <li>A mod installation and conflict manager
     <li>A plugin load order manager
@@ -123,7 +123,7 @@
 <h3 id="intro-glossary">Glossary</h3>
 <p>Modding for Oblivion and Skyrim has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
 <ul>
-    <li><b>The game</b> is the game that Wrye Bash is running for, either Oblivion, Skyrim / Skyrim SE or Fallout4.
+    <li><b>The game</b> is the game that Wrye Bash is running for, either Oblivion, Fallout3, FalloutNV, Skyrim, Fallout4 or Skyrim SE.
     <li><b>CTD</b> is an acronym for Crash To Desktop. Used to describe the game crashing.
     <li><b>DLC</b> refers to any of the official downloadable content for the game.
     <li><b>Mod</b> refers to any unofficial user-made modification to the game.
@@ -140,7 +140,7 @@
     <li><b>ITMs</b> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.
     <li><b>UDRs</b> are Undeleted and Disabled References. Deleted References can cause crashing, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. This acronym is generally misused - the UDR acronym is frequently used to refer to the deleted references, rather than their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.
 </ul>
-<p>This readme will also use the placeholder <b>[Game]</b>. Replace this with <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout 4</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII='/> go to pages that are not part of the Wrye Bash documentation.
+<p>This readme will also use the placeholder <b>[Game]</b>. Replace this with <q>Oblivion</q>, <q>Fallout 3</q>, <q>Fallout NV</q>, <q>Skyrim</q>, <q>Fallout 4</q> or <q>Skyrim SE</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII='/> go to pages that are not part of the Wrye Bash documentation.
 
 
 <h2 id="install">Installation</h2>
@@ -150,7 +150,7 @@
 <p>Manual Standalone Version Install:
 <ol>
     <li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
-    <li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout 4</q> depending on the game) so that the Mopy
+    <li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q> depending on the game) so that the Mopy
         directory appears in the game folder.
     <li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
 </ol>
@@ -161,7 +161,7 @@
         for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
         you may not need to install them again.
     <li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
-    <li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout 4</q> depending on the game) so that the Mopy
+    <li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q> depending on the game) so that the Mopy
     directory appears by the game executable. See the
     <a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
     <li>Navigate to the Mopy directory and run Wrye Bash by double-clicking <q>Wrye Bash Launcher.pyw</q>.
@@ -249,6 +249,8 @@ but there are game specific directories as well (all directory detection is <i>c
     <thead><tr><th>Game<th>Extra Game Directories<th>Bonus Directories (tools or modders)
     <tbody>
         <tr><td>Oblivion<td>distantlod, facegen, fonts, menus, shaders, trees<td>_tejon, ini, obse, pluggy, scripts, streamline
+        <tr><td>Fallout 3<td>facegen, lodsettings, menus, shaders<td>ini, fose, scripts
+        <tr><td>Fallout NV<td>facegen, lodsettings, menus, shaders<td>ini, nvse, scripts
         <tr><td>Skyrim<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (Bodyslide, FNIS), dyndolod
         <tr><td>Fallout 4<td>interface, lodsettings, materials, misc, programs, scripts, seq, shadersfx, strings, vis<td>f4se, ini, mcm (Fallout 4 MCM), tools (BodySlide, FNIS)
         <tr><td>Skyrim SE<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (BodySlide, FNIS), dyndolod
