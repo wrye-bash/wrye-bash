@@ -69,25 +69,19 @@ class FalloutNVGameInfo(GameInfo):
     class ess(GameInfo.ess):
         ext = u'.fos'
 
-    dataDirs = {
-        u'bash patches',
+    dataDirs = GameInfo.dataDirs | {
         u'distantlod',
         u'docs',
         u'facegen',
         u'fonts',
         u'menus',
-        u'meshes',
-        u'music',
         u'shaders',
-        u'sound',
-        u'textures',
         u'trees',
-        u'video',
         }
     dataDirsPlus = {
-        u'scripts',
         u'ini',
         u'nvse'
+        u'scripts',
         }
 
     wryeBashDataFiles = {
