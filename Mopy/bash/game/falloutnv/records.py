@@ -788,9 +788,9 @@ class MreDial(MelRecord):
 
     __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed() + ['infoStamp','infoStamp2','infos']
 
-    def __init__(self,header,ins=None,unpack=False):
+    def __init__(self, header, ins=None, do_unpack=False):
         """Initialize."""
-        MelRecord.__init__(self,header,ins,unpack)
+        MelRecord.__init__(self, header, ins, do_unpack)
         self.infoStamp = 0 #--Stamp for info GRUP
         self.infoStamp2 = 0 #--Stamp for info GRUP
         self.infos = []
