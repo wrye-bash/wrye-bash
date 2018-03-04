@@ -1611,8 +1611,8 @@ class Mod_FlipMasters(OneItemLink, _Esm_Flip):
             if __reEspExt.search(master.s)] if enable else []
         self.enable = enable and bool(self.espMasters)
         if not self.enable: return
-        for masterName in self.espMasters:
-            masterInfo = bosh.modInfos.get(masterName, None)
+        for mastername in self.espMasters:
+            masterInfo = bosh.modInfos.get(mastername, None)
             if masterInfo and masterInfo.isInvertedMod():
                 self._text = _(u'Espify Masters')
                 self.toEsm = False
@@ -2546,10 +2546,10 @@ class MasterList_AddMasters(ItemLink): # CRUFT
                 return self._showError(
                     name.s + u' ' + _(u"is already a master."))
             names.append(name)
-        for masterName in load_order.get_ordered(names):
-            if masterName in bosh.modInfos:
-                masterName = bosh.modInfos[masterName].name
-            modInfo.header.masters.append(masterName)
+        for mastername in load_order.get_ordered(names):
+            if mastername in bosh.modInfos:
+                mastername = bosh.modInfos[mastername].name
+            modInfo.header.masters.append(mastername)
         modInfo.header.changed = True
         self.window.SetFileInfo(modInfo)
         self.window.InitEdit()

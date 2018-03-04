@@ -1752,7 +1752,6 @@ class MreFurn(MelRecord):
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Fallout 3 GMST record"""
-    Master = u'Fallout3'
     isKeyedByEid = True # NULL fids are acceptable.
 
 #------------------------------------------------------------------------------
