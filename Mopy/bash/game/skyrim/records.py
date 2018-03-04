@@ -3108,7 +3108,6 @@ class MreFurn(MelRecord):
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Skyrim GMST record"""
-    Master = u'Skyrim'
     isKeyedByEid = True # NULL fids are acceptable.
 
 # Verified for 305

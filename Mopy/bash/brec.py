@@ -1760,10 +1760,8 @@ class MreGlob(MelRecord):
 
 #------------------------------------------------------------------------------
 class MreGmstBase(MelRecord):
-    """Game Setting record.  Base class, each game should derive from this class
-       and set class member 'Master' to the file name of the game's main master
-       file."""
-    Master = None
+    """Game Setting record.  Base class, each game should derive from this
+    class."""
     Ids = None
     classType = 'GMST'
     class MelGmstValue(MelBase):
@@ -1793,19 +1791,19 @@ class MreGmstBase(MelRecord):
         """Returns <Oblivion/Skyrim/etc>.esm fid in long format for specified
            eid."""
         cls = self.__class__
+        import bosh, bush # Late import to avoid circular imports
         if not cls.Ids:
-            fname = cls.Master + u'_ids.pkl'
+            fname = bush.game.pklfile
             try:
-                import bosh # Late import to avoid circular imports
-                cls.Ids = cPickle.load(
-                    bass.dirs['db'].join(fname).open())[cls.classType]
+                with open(fname) as pkl_file:
+                    cls.Ids = cPickle.load(pkl_file)[cls.classType]
             except:
                 old = bolt.deprintOn
                 bolt.deprintOn = True
                 bolt.deprint(u'Error loading %s:' % fname, traceback=True)
                 bolt.deprintOn = old
                 raise
-        return GPath(cls.Master+u'.esm'),cls.Ids[self.eid]
+        return bosh.modInfos.masterName,cls.Ids[self.eid]
 
 #------------------------------------------------------------------------------
 class MreLeveledListBase(MelRecord):

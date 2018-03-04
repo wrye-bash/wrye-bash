@@ -165,9 +165,9 @@ class ListsMerger(_AListsMerger, ListPatcher):
                     if isDelev:
                         id_masterItems = self.masterItems.get(listId)
                         if id_masterItems:
-                            for masterName in modFile.tes4.masters:
-                                if masterName in id_masterItems:
-                                    delevs |= id_masterItems[masterName]
+                            for mastername in modFile.tes4.masters:
+                                if mastername in id_masterItems:
+                                    delevs |= id_masterItems[mastername]
                             delevs -= items
                             newLevList.items |= delevs
                 #--Cache/Merge
@@ -568,9 +568,9 @@ class FidListsMerger(_AListsMerger,ListPatcher):
                     if isDeflst:
                         id_masterItems = self.masterItems.get(listId)
                         if id_masterItems:
-                            for masterName in modFile.tes4.masters:
-                                if masterName in id_masterItems:
-                                    deflsts |= id_masterItems[masterName]
+                            for mastername in modFile.tes4.masters:
+                                if mastername in id_masterItems:
+                                    deflsts |= id_masterItems[mastername]
                             deflsts -= items
                             newLevList.items |= deflsts
                 #--Cache/Merge
