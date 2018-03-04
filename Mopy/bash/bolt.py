@@ -31,6 +31,7 @@ import collections
 import copy
 import csv
 import datetime
+import errno
 import gettext
 import locale
 import os
@@ -1010,8 +1011,15 @@ class Path(object):
                 else:
                     # this will fail with Access Denied (!) if self._s is
                     # (unexpectedly) a directory
-                    os.remove(self._s)
+                    try:
+                        os.remove(self._s)
+                    except OSError as e:
+                        if e.errno != errno.EACCES:
+                            raise
+                        self.clearRO()
+                        os.remove(self._s)
             shutil.move(self.temp._s, self._s)
+
     def editable(self):
         """Safely check whether a file is editable."""
         delete = not os.path.exists(self._s)
