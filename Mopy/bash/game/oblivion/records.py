@@ -1028,7 +1028,6 @@ class MreFurn(MelRecord):
 
 class MreGmst(MreGmstBase):
     """Oblivion gmst record"""
-    Master = u'Oblivion'
 
 class MreGras(MelRecord):
     """Grass record."""

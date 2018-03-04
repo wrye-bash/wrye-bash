@@ -909,7 +909,6 @@ class MreFact(MelRecord):
 #------------------------------------------------------------------------------
 class MreGmst(MreGmstBase):
     """Fallout New Vegas GMST record"""
-    Master = u'FalloutNV'
     isKeyedByEid = True # NULL fids are acceptable.
 
 #------------------------------------------------------------------------------
