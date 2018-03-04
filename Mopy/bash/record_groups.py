@@ -53,7 +53,7 @@ class MobBase(object):
     __slots__ = ['header','size','label','groupType','stamp','debug','data',
                  'changed','numRecords','loadFactory','inName']
 
-    def __init__(self,header,loadFactory,ins=None,unpack=False):
+    def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         """Initialize."""
         self.header = header
         if header.recType == 'GRUP':
@@ -69,13 +69,13 @@ class MobBase(object):
         self.numRecords = -1
         self.loadFactory = loadFactory
         self.inName = ins and ins.inName
-        if ins: self.load(ins,unpack)
+        if ins: self.load(ins, do_unpack)
 
-    def load(self,ins=None,unpack=False):
+    def load(self, ins=None, do_unpack=False):
         """Load data from ins stream or internal data buffer."""
         if self.debug: print u'GRUP load:',self.label
         #--Read, but don't analyze.
-        if not unpack:
+        if not do_unpack:
             self.data = ins.read(self.size - self.header.__class__.rec_header_size, type(self))
         #--Analyze ins.
         elif ins is not None:
@@ -86,7 +86,7 @@ class MobBase(object):
             with self.getReader() as reader:
                 self.loadData(reader,reader.size)
         #--Discard raw data?
-        if unpack:
+        if do_unpack:
             self.data = None
             self.setChanged()
 
@@ -160,11 +160,11 @@ class MobObjects(MobBase):
     """Represents a top level group consisting of one type of record only. I.e.
     all top groups except CELL, WRLD and DIAL."""
 
-    def __init__(self,header,loadFactory,ins=None,unpack=False):
+    def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         """Initialize."""
         self.records = []
         self.id_records = {}
-        MobBase.__init__(self,header,loadFactory,ins,unpack)
+        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
@@ -369,7 +369,7 @@ class MobCell(MobBase):
     __slots__ = MobBase.__slots__ + ['cell','persistent','distant','temp',
                                      'land','pgrd']
 
-    def __init__(self,header,loadFactory,cell,ins=None,unpack=False):
+    def __init__(self, header, loadFactory, cell, ins=None, do_unpack=False):
         """Initialize."""
         self.cell = cell
         self.persistent = []
@@ -377,7 +377,7 @@ class MobCell(MobBase):
         self.temp = []
         self.land = None
         self.pgrd = None
-        MobBase.__init__(self,header,loadFactory,ins,unpack)
+        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
@@ -593,12 +593,12 @@ class MobCells(MobBase):
     cells, bsbs are tuples of two numbers, while for exterior cells, bsb labels
     are tuples of grid tuples."""
 
-    def __init__(self,header,loadFactory,ins=None,unpack=False):
+    def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         """Initialize."""
         self.cellBlocks = [] #--Each cellBlock is a cell and its related
         # records.
         self.id_cellBlock = {}
-        MobBase.__init__(self,header,loadFactory,ins,unpack)
+        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
 
     def indexRecords(self):
         """Indexes records by fid."""
@@ -793,12 +793,12 @@ class MobICells(MobCells):
 
 #------------------------------------------------------------------------------
 class MobWorld(MobCells):
-    def __init__(self,header,loadFactory,world,ins=None,unpack=False):
+    def __init__(self, header, loadFactory, world, ins=None, do_unpack=False):
         """Initialize."""
         self.world = world
         self.worldCellBlock = None
         self.road = None
-        MobCells.__init__(self,header,loadFactory,ins,unpack)
+        MobCells.__init__(self, header, loadFactory, ins, do_unpack)
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
@@ -1000,12 +1000,12 @@ class MobWorlds(MobBase):
     """Tes4 top block for world records and related roads and cells. Consists
     of world blocks."""
 
-    def __init__(self,header,loadFactory,ins=None,unpack=False):
+    def __init__(self, header, loadFactory, ins=None, do_unpack=False):
         """Initialize."""
         self.worldBlocks = []
         self.id_worldBlocks = {}
         self.orphansSkipped = 0
-        MobBase.__init__(self,header,loadFactory,ins,unpack)
+        MobBase.__init__(self, header, loadFactory, ins, do_unpack)
 
     def loadData(self,ins,endPos):
         """Loads data from input stream. Called by load()."""
