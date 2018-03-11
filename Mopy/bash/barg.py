@@ -147,6 +147,7 @@ _short_to_long = dict(
      ('-L', '--Language'), ])
 
 def convert_to_long_options(sys_argv):
+    sys_argv = list(sys_argv)
     for j, arg in enumerate(sys_argv):
         if arg in _short_to_long:
             sys_argv[j] = _short_to_long[arg]
