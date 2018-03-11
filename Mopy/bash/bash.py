@@ -206,7 +206,7 @@ def dump_environment():
         u'filesystem encoding: %s%s' % (fse,
             (u' - using %s' % bolt.Path.sys_fs_enc) if bolt is not None
                                                        and not fse else u''),
-        u'command line: %s' % (bass.sys_argv, )
+        u'command line: %s' % (sys.argv, )
     ])
     if bolt.scandir is not None:
         msg = u'\n'.join( [msg, 'Using scandir ' + bolt.scandir.__version__])

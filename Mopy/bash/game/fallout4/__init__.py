@@ -79,9 +79,6 @@ class Fallout4GameInfo(GameInfo):
         url = u'http://f4se.silverlock.org/'
         urlTip = u'http://f4se.silverlock.org/'
 
-    class ge(GameInfo.ge):
-        exe = u'**DNE**'
-
     dontSkipDirs = {
         # This rule is to allow mods with string translation enabled.
         'interface\\translations':['.txt']

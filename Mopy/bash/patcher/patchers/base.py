@@ -26,13 +26,13 @@
 import collections
 from operator import itemgetter
 # Internal
-from ... import bosh, load_order, bass, bush # for bosh.modInfos
 from .. import getPatchesPath
+from ..base import AMultiTweakItem, AMultiTweaker, Patcher, CBash_Patcher, \
+    AAliasesPatcher, AListPatcher, AImportPatcher, APatchMerger, \
+    AUpdateReferences
+from ... import bosh, load_order, bush  # for bosh.modInfos
 from ...bolt import GPath, CsvReader
 from ...brec import MreRecord
-from ..base import AMultiTweakItem, AMultiTweaker, Patcher, \
-    CBash_Patcher, AAliasesPatcher, AListPatcher, AImportPatcher, \
-    APatchMerger, AUpdateReferences
 
 # Patchers 1 ------------------------------------------------------------------
 class ListPatcher(AListPatcher,Patcher): pass

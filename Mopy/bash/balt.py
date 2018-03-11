@@ -2780,10 +2780,10 @@ class ListBoxes(Dialog):
         self._ids = {}
         labels = {wx.ID_CANCEL: bCancel, wx.ID_OK: bOk}
         self.SetSize(wxSize(minWidth, -1))
-        for i,group in enumerate(lists):
-            title = group[0] # also serves as key in self._ids dict
-            tip = group[1]
-            strings = [u'%s' % x for x in group[2:]] # works for Path & strings
+        for i,item_group in enumerate(lists):
+            title = item_group[0] # also serves as key in self._ids dict
+            tip = item_group[1]
+            strings = [u'%s' % x for x in item_group[2:]] # works for Path & strings
             if len(strings) == 0: continue
             subsizer = hsbSizer(self, title)
             if liststyle == 'check':
@@ -2802,7 +2802,7 @@ class ListBoxes(Dialog):
                                                wx.TR_HIDE_ROOT)
                 root = checksCtrl.AddRoot(title)
                 checksCtrl.Bind(wx.EVT_MOTION, self.OnMotion)
-                for item, subitems in group[2].iteritems():
+                for item, subitems in item_group[2].iteritems():
                     child = checksCtrl.AppendItem(root,item.s)
                     for subitem in subitems:
                         checksCtrl.AppendItem(child,subitem.s)
