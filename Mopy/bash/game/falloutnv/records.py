@@ -30,12 +30,13 @@ from ...bolt import Flags, DataDict, GPath
     MreCpth, MreIdle, MreMesg, MrePack, MrePerk, MreQust, MreSpel, MreTerm,
     Because once the imported Fallout 3 record is used it will use Fallout 3
     constants.py regardless of imports in falloutnv.records.py."""
-from ..fallout3.records import MreHeader, MreNpc #accessed via game_mod.records
+from ..fallout3.records import MreNpc #accessed via game_mod.records
 from ..fallout3.records import MelBipedFlags, MelDestructible, MreHasEffects, \
     MelModel, MelOwnership, MelScrxen, MelConditions, MelEffects
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MelBase, MelFidList, MelStructA, MreRecord, MreGmstBase, MelFull0
+    MelBase, MelFidList, MelStructA, MreRecord, MreGmstBase, MelFull0, \
+    MreHeaderBase, MelUnicode
 from ...bass import null1, null2, null3, null4
 from ... import bush
 from ...exception import ModError, ModSizeError
@@ -101,6 +102,24 @@ defaultEyes = {
 #------------------------------------------------------------------------------
 # FalloutNV Records -----------------------------------------------------------
 #------------------------------------------------------------------------------
+class MreHeader(MreHeaderBase):
+    """TES4 Record.  File header."""
+    classType = 'TES4'
+
+    #--Data elements
+    melSet = MelSet(
+        MelStruct('HEDR','f2I',('version',1.34),'numRecords',('nextObject',0xCE6)),
+        MelBase('OFST','ofst_p',),  #--Obsolete?
+        MelBase('DELE','dele_p',),  #--Obsolete?
+        MelUnicode('CNAM','author',u'',512),
+        MelUnicode('SNAM','description',u'',512),
+        MreHeaderBase.MelMasterName('MAST','masters'),
+        MelNull('DATA'), # 8 Bytes in Length
+        MelFidList('ONAM','overrides'),
+        MelBase('SCRN', 'scrn_p'),
+        )
+    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+
 class MreAchr(MelRecord):
     """Placed NPC"""
     classType = 'ACHR'
