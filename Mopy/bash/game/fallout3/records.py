@@ -496,16 +496,16 @@ class MelScrxen(MelFids):
                 result = function(value)
                 if save: scrxen[index] = (isFid,result)
 
-#-------------------------------------------------------------------------------
-# Fallout3 Records ---------------------------------------------------------------
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+# Fallout3 Records ------------------------------------------------------------
+#------------------------------------------------------------------------------
 class MreHeader(MreHeaderBase):
     """TES4 Record.  File header."""
     classType = 'TES4'
 
     #--Data elements
     melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.85),'numRecords',('nextObject',0xCE6)),
+        MelStruct('HEDR','f2I',('version',0.94),'numRecords',('nextObject',0xCE6)),
         MelBase('OFST','ofst_p',),  #--Obsolete?
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
