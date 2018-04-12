@@ -42,7 +42,7 @@ class Fallout3GameInfo(GameInfo):
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
-    nexusKey = u'bash.installers.openFallout3Nexus'
+    nexusKey = u'bash.installers.openFallout3Nexus.continue'
 
     using_txt_file = False
     plugin_name_specific_dirs = GameInfo.plugin_name_specific_dirs + [

@@ -40,7 +40,7 @@ class Fallout4GameInfo(GameInfo):
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
-    nexusKey = 'bash.installers.openFallout4Nexus.continue'
+    nexusKey = u'bash.installers.openFallout4Nexus.continue'
 
     espm_extensions = GameInfo.espm_extensions | {u'.esl'}
     has_achlist = True

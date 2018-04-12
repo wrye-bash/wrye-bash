@@ -260,17 +260,17 @@ class _ModsUIList(balt.UIList):
 
     _esmsFirstCols = balt.UIList.nonReversibleCols
     @property
-    def esmsFirst(self): return settings.get(self.keyPrefix + '.esmsFirst',
+    def esmsFirst(self): return settings.get(self.keyPrefix + u'.esmsFirst',
                             True) or self.sort_column in self._esmsFirstCols
     @esmsFirst.setter
-    def esmsFirst(self, val): settings[self.keyPrefix + '.esmsFirst'] = val
+    def esmsFirst(self, val): settings[self.keyPrefix + u'.esmsFirst'] = val
 
     @property
     def selectedFirst(self):
-        return settings.get(self.keyPrefix + '.selectedFirst', False)
+        return settings.get(self.keyPrefix + u'.selectedFirst', False)
     @selectedFirst.setter
     def selectedFirst(self, val):
-        settings[self.keyPrefix + '.selectedFirst'] = val
+        settings[self.keyPrefix + u'.selectedFirst'] = val
 
     def _sortEsmsFirst(self, items):
         if self.esmsFirst:
@@ -289,7 +289,7 @@ class _ModsUIList(balt.UIList):
 class MasterList(_ModsUIList):
     column_links = Links()
     context_links = Links()
-    keyPrefix = 'bash.masters' # use for settings shared among the lists (cols)
+    keyPrefix = u'bash.masters' # use for settings shared among the lists (cols)
     _editLabels = True
     #--Sorting
     _default_sort_col = 'Num'
@@ -336,7 +336,7 @@ class MasterList(_ModsUIList):
         self.detailsPanel = detailsPanel
         self.fileInfo = None
         self.loadOrderNames = [] # cache, orders missing last alphabetically
-        self._allowEditKey = keyPrefix + '.allowEdit'
+        self._allowEditKey = keyPrefix + u'.allowEdit'
         self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
         super(MasterList, self).__init__(parent,
@@ -349,7 +349,7 @@ class MasterList(_ModsUIList):
     def allowEdit(self, val):
         if val and (not self.detailsPanel.allowDetailsEdit or not
                balt.askContinue(
-                   self, self.message, self.keyPrefix + '.update.continue',
+                   self, self.message, self.keyPrefix + u'.update.continue',
                    _(u'Update Masters') + u' ' + _(u'BETA'))):
             return
         bass.settings[self._allowEditKey] = val
@@ -856,7 +856,7 @@ class ModList(_ModsUIList):
 
     def dndAllow(self, event):
         msg = u''
-        continue_key = 'bash.mods.dnd.column.continue'
+        continue_key = u'bash.mods.dnd.column.continue'
         if not self.sort_column in self._dndColumns:
             msg = _(u'Reordering mods is only allowed when they are sorted '
                     u'by Load Order.')
@@ -865,7 +865,7 @@ class ModList(_ModsUIList):
             if pinned:
                 msg = _(u"You can't reorder the following mods:\n" +
                         u', '.join(map(unicode, pinned)))
-                continue_key = 'bash.mods.dnd.pinned.continue'
+                continue_key = u'bash.mods.dnd.pinned.continue'
         if msg:
             balt.askContinue(self, msg, continue_key)
             return super(ModList, self).dndAllow(event) # disallow
@@ -1379,7 +1379,7 @@ class _ModMasterList(MasterList):
 
 class ModDetails(_ModsSavesDetails):
     """Details panel for mod tab."""
-    keyPrefix = 'bash.mods.details' # used in sash/scroll position, sorting
+    keyPrefix = u'bash.mods.details' # used in sash/scroll position, sorting
     _master_list_type = _ModMasterList
 
     @property
@@ -1574,7 +1574,7 @@ class ModDetails(_ModsSavesDetails):
                     u'able to activate this plugin because of this.  Do you '
                     u'want to rename the plugin anyway?')
                                      % (newName,bush.game.displayName),
-                                     'bash.rename.isBadFileName.continue')
+                                     u'bash.rename.isBadFileName.continue')
                 ):
                 return
             settings.getChanged(u'bash.mods.renames')[oldName] = newName
@@ -1702,7 +1702,7 @@ class ModDetails(_ModsSavesDetails):
 
 #------------------------------------------------------------------------------
 class INIDetailsPanel(_DetailsMixin, SashPanel):
-    keyPrefix = 'bash.ini.details'
+    keyPrefix = u'bash.ini.details'
 
     @property
     def displayed_item(self): return self._ini_detail
@@ -1845,7 +1845,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         if destroy: self._inis_combo_box.unsubscribe_handler_()
 
 class INIPanel(BashTab):
-    keyPrefix = 'bash.ini'
+    keyPrefix = u'bash.ini'
     _ui_list_type = INIList
     _details_panel_type = INIDetailsPanel
 
@@ -1875,7 +1875,7 @@ class INIPanel(BashTab):
 
 #------------------------------------------------------------------------------
 class ModPanel(BashTab):
-    keyPrefix = 'bash.mods'
+    keyPrefix = u'bash.mods'
     _ui_list_type = ModList
     _details_panel_type = ModDetails
 
@@ -2002,7 +2002,7 @@ class SaveList(balt.UIList):
                 u"by changing its extension to %(ess)s (enabled) or .esr "
                 u"(disabled). Autosaves and quicksaves will be left alone."
                 % {'ess': bush.game.Ess.ext})
-        if not balt.askContinue(self, msg, 'bash.saves.askDisable.continue'):
+        if not balt.askContinue(self, msg, u'bash.saves.askDisable.continue'):
             return
         newEnabled = not bosh.SaveInfos.is_save_enabled(hitItem)
         newName = self.data_store.enable(hitItem, newEnabled)
@@ -2020,7 +2020,7 @@ class SaveList(balt.UIList):
 #------------------------------------------------------------------------------
 class SaveDetails(_ModsSavesDetails):
     """Savefile details panel."""
-    keyPrefix = 'bash.saves.details' # used in sash/scroll position, sorting
+    keyPrefix = u'bash.saves.details' # used in sash/scroll position, sorting
 
     @property
     def file_info(self): return self.saveInfo
@@ -2176,7 +2176,7 @@ class SaveDetails(_ModsSavesDetails):
 #------------------------------------------------------------------------------
 class SavePanel(BashTab):
     """Savegames tab."""
-    keyPrefix = 'bash.saves'
+    keyPrefix = u'bash.saves'
     _status_str = _(u'Saves:') + u' %d'
     _ui_list_type = SaveList
     _details_panel_type = SaveDetails
@@ -2526,7 +2526,7 @@ class InstallersList(balt.UIList):
         if not self.sort_column in self._dndColumns:
             msg = _(u"Drag and drop in the Installer's list is only allowed "
                     u"when the list is sorted by install order")
-            balt.askContinue(self, msg, 'bash.installers.dnd.column.continue')
+            balt.askContinue(self, msg, u'bash.installers.dnd.column.continue')
             return super(InstallersList, self).dndAllow(event) # disallow
         return True
 
@@ -2651,7 +2651,7 @@ class InstallersList(balt.UIList):
 
 #------------------------------------------------------------------------------
 class InstallersDetails(_SashDetailsPanel):
-    keyPrefix = 'bash.installers.details'
+    keyPrefix = u'bash.installers.details'
     defaultSashPos = - 32 # negative so it sets bottom panel's (comments) size
     minimumSize = 32 # so comments dont take too much space
     _ui_settings = {u'.checkListSplitterSashPos' : _UIsetting(lambda self: 0,
@@ -3045,7 +3045,7 @@ class InstallersPanel(BashTab):
     """Panel for InstallersTank."""
     espmMenu = Links()
     subsMenu = Links()
-    keyPrefix = 'bash.installers'
+    keyPrefix = u'bash.installers'
     _ui_list_type = InstallersList
     _details_panel_type = InstallersDetails
 
@@ -3338,7 +3338,7 @@ class ScreensDetails(_DetailsMixin, NotebookPanel):
 #------------------------------------------------------------------------------
 class ScreensPanel(BashTab):
     """Screenshots tab."""
-    keyPrefix = 'bash.screens'
+    keyPrefix = u'bash.screens'
     _status_str = _(u'Screens:') + u' %d'
     _ui_list_type = ScreensList
     _details_panel_type = ScreensDetails
@@ -3438,7 +3438,7 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
 #------------------------------------------------------------------------------
 class BSAPanel(BashTab):
     """BSA info tab."""
-    keyPrefix = 'bash.BSAs'
+    keyPrefix = u'bash.BSAs'
     _status_str = _(u'BSAs:') + u' %d'
     _ui_list_type = BSAList
     _details_panel_type = BSADetails

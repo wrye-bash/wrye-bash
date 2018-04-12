@@ -341,7 +341,7 @@ class Mods_LockLoadOrder(CheckLink):
                         u'feature is good for maintaining your load order, it '
                         u'will also undo any load order changes that you have '
                         u'made outside Bash.')
-            return self._askContinue(message, 'bash.load_order.lock_continue',
+            return self._askContinue(message, u'bash.load_order.lock.continue',
                                      title=_(u'Lock Load Order'))
         load_order.toggle_lock_load_order(_show_lo_lock_warning)
 

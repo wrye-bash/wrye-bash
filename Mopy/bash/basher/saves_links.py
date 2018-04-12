@@ -864,7 +864,7 @@ class Save_UpdateNPCLevels(EnabledLink):
 
     def Execute(self):
         message = _(u'This will relevel the NPCs in the selected save game(s) according to the npc levels in the currently active mods.  This supersedes the older "Import NPC Levels" command.')
-        if not self._askContinue(message, 'bash.updateNpcLevels.continue',
+        if not self._askContinue(message, u'bash.updateNpcLevels.continue',
                                  _(u'Update NPC Levels')): return
         with balt.Progress(_(u'Update NPC Levels')) as progress:
             #--Loop over active mods

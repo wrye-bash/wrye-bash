@@ -583,8 +583,9 @@ class LanguagePage(_AScrollablePage):
             u'This function is for translating Bash itself (NOT mods) into '
             u'non-English languages. For more info, '
             u'see the Internationalization section of the Advanced Readme.')
-        if not balt.askContinue(self, message, 'bash.dump_translator.continue',
-                _(u'Dump Localization')): return
+        if not balt.askContinue(self, message,
+                u'bash.dump_translator.continue', _(u'Dump Localization')):
+            return
         outPath = bass.dirs[u'l10n']
         with BusyCursor():
             outFile = dump_translator(outPath.s, bass.active_locale)
@@ -1060,7 +1061,7 @@ class ConfirmationsPage(_AFixedPage):
         _(u'[Mods] Importing groups from a text file'):
             u'bash.groups.import.continue',
         _(u'[Mods] Locking or unlocking the load order'):
-            u'bash.load_order.lock_continue',
+            u'bash.load_order.lock.continue',
         _(u'[Mods] Removing world orphans'):
             u'bash.removeWorldOrphans.continue',
         _(u"[Mods] Renaming a plugin to something that %s can't "

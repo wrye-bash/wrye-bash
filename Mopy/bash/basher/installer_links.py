@@ -653,6 +653,7 @@ class Installer_Open(balt.UIList_OpenItems, _NoMarkerLink):
 #------------------------------------------------------------------------------
 class _Installer_OpenAt(_InstallerLink):
     group = 2  # the regexp group we are interested in (2 is id, 1 is modname)
+    _open_at_continue = u'OVERRIDE'
 
     def _enable(self):
         x = self.__class__.regexp.search(self.selected[0].s)
@@ -663,7 +664,7 @@ class _Installer_OpenAt(_InstallerLink):
     def _url(self): return self.__class__.baseUrl + self.mod_url_id
 
     def Execute(self):
-        if self._askContinue(self.message, self.key, self.askTitle):
+        if self._askContinue(self.message, self._open_at_continue, self.askTitle):
             webbrowser.open(self._url())
 
 class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
@@ -677,7 +678,7 @@ class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
         u"number of the mod at %(nexusName)s. If this assumption is wrong, "
         u"you'll just get a random mod page (or error notice) at %("
         u"nexusName)s.") % {'nexusName': bush.game.nexusName}
-    key = bush.game.nexusKey
+    _open_at_continue = bush.game.nexusKey
     askTitle = _(u'Open at %(nexusName)s') % {'nexusName':bush.game.nexusName}
     baseUrl = bush.game.nexusUrl + u'mods/'
 
@@ -688,7 +689,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
     regexp = bosh.reTesNexus
     _text = _(u'Google...')
     _help = _(u"Searches for this mod's title on Google.")
-    key = 'bash.installers.opensearch.continue'
+    _open_at_continue = u'bash.installers.opensearch.continue'
     askTitle = _(u'Open a search')
     message = _(u"Open a search for this on Google?")
 
@@ -700,7 +701,7 @@ class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA
     _text = _(u'TES Alliance...')
     _help = _(u"Opens this mod's page at TES Alliance.")
-    key = 'bash.installers.openTESA.continue'
+    _open_at_continue = u'bash.installers.openTESA.continue'
     askTitle = _(u'Open at TES Alliance')
     message = _(
         u"Attempt to open this as a mod at TES Alliance? This assumes that "
