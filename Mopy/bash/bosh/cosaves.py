@@ -449,7 +449,7 @@ def get_cosave_type(game_fsName):
         return ObseCosave
     elif game_fsName == u'Skyrim':
         return SkseCosave
-    elif game_fsName == u'Skyrim Special Edition':
+    elif game_fsName == u'Skyrim Special Edition' or game_fsName == u'Skyrim VR':
         return SkseSECosave
     elif game_fsName == u'Fallout4':
         return F4seCosave

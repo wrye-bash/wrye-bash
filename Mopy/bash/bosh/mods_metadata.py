@@ -322,7 +322,7 @@ class ConfigHelpers:
             return loot_api.GameType.tes4
         elif fsName == 'Skyrim':
             return loot_api.GameType.tes5
-        elif fsName == 'Skyrim Special Edition':
+        elif fsName == 'Skyrim Special Edition' or fsName == u'Skyrim VR':
             return loot_api.GameType.tes5se
         elif fsName == 'Fallout3':
             return loot_api.GameType.fo3

@@ -573,7 +573,7 @@ def get_bsa_type(game_fsName):
         return OblivionBsa
     elif game_fsName in {u'Skyrim', u'Fallout3', u'FalloutNV'}:
         return SkyrimBsa
-    elif game_fsName == u'Skyrim Special Edition':
+    elif game_fsName == u'Skyrim Special Edition' or game_fsName == u'Skyrim VR':
         return SkyrimSeBsa
     elif game_fsName == u'Fallout4':
         return Fallout4Ba2

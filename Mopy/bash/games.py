@@ -894,12 +894,51 @@ class SkyrimSE(AsteriskGame):
                     bolt.formatDate(dlc_mtime), bolt.formatDate(master_mtime)))
         return add
 
+class SkyrimVR(AsteriskGame):
+
+    must_be_active_if_present = (bolt.GPath(u'Update.esm'),
+                                 bolt.GPath(u'Dawnguard.esm'),
+                                 bolt.GPath(u'Hearthfires.esm'),
+                                 bolt.GPath(u'Dragonborn.esm'),
+                                 bolt.GPath(u'SkyrimVR.esm'),)
+    _ccc_filename = u'Skyrim.ccc'
+
+    @property
+    def remove_from_plugins_txt(self):
+        return {bolt.GPath(u'Skyrim.esm')} | set(
+            self.must_be_active_if_present)
+
+    __dlc_spacing = 60 # in seconds
+    def _fixed_order_plugins(self):
+        """Return the semi fixed plugins after pinning them in correct order by
+        timestamping them."""
+        # get existing
+        add = [self.master_path]
+        add.extend(
+            x for x in self.must_be_active_if_present if x in self.mod_infos)
+        # rewrite mtimes
+        master_mtime = self.mod_infos[self.master_path].mtime
+        update = bolt.GPath(u'Update.esm')
+        for dlc in add[1:]:
+            if dlc == update:
+                master_mtime = self.mod_infos[update].mtime
+            else:
+                master_mtime += self.__dlc_spacing
+                dlc_mtime = self.mod_infos[dlc].mtime
+                if dlc_mtime != master_mtime:
+                    self.mod_infos[dlc].setmtime(master_mtime)
+                    bolt.deprint(u'Restamped %s  from %s to %s' % (dlc,
+                    bolt.formatDate(dlc_mtime), bolt.formatDate(master_mtime)))
+        return add
+
 # Game factory
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
     if name == u'Skyrim':
         return TextfileGame(mod_infos, plugins_txt_path, loadorder_txt_path)
     elif name == u'Skyrim Special Edition':
         return SkyrimSE(mod_infos, plugins_txt_path)
+    elif name == u'Skyrim VR':
+        return SkyrimVR(mod_infos, plugins_txt_path)
     elif name == u'Fallout4':
         return Fallout4(mod_infos, plugins_txt_path)
     else:
