@@ -420,6 +420,7 @@ class MelIsSSE(MelUnion):
             u'Enderal': le_version,
             u'Skyrim': le_version,
             u'Skyrim Special Edition': se_version,
+            u'Skyrim VR': se_version,
         }, decider=GameDecider())
 
 class MelSSEOnly(MelIsSSE):

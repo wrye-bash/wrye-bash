@@ -915,7 +915,7 @@ def get_bsa_type(game_fsName):
         return OblivionBsa
     elif game_fsName in (u'Enderal', u'Fallout3', u'FalloutNV', u'Skyrim'):
         return BSA
-    elif game_fsName == u'Skyrim Special Edition':
+    elif game_fsName in (u'Skyrim Special Edition', u'Skyrim VR'):
         return SkyrimSeBsa
     elif game_fsName in (u'Fallout4', u'Fallout4VR'):
         # Hashes are I not Q in BA2s!
