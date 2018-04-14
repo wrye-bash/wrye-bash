@@ -295,6 +295,16 @@ class Installer(object):
 
     def __setstate__(self,values):
         """Used by unpickler to recreate object."""
+        try:
+            self.__setstate(values)
+        except Exception as e:
+            print ('Failed loading %s' % values[0]) + ' due to %s' % e
+            deprint('Failed loading %s' % values[0], traceback=True)
+            # init to default values and let it be picked for refresh in
+            # InstallersData#scan_installers_dir
+            self.initDefault()
+
+    def __setstate(self,values):
         self.initDefault() # runs on __init__ called by __reduce__
         map(self.__setattr__,self.persistent,values)
         rescan = False
