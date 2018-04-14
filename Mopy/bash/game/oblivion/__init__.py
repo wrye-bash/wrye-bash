@@ -41,7 +41,7 @@ class OblivionGameInfo(GameInfo):
     iniFiles = [u'Oblivion.ini']
     pklfile = ur'bash\db\Oblivion_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
-    nexusUrl = u'http://oblivion.nexusmods.com/'
+    nexusUrl = u'http://www.nexusmods.com/oblivion/'
     nexusName = u'TES Nexus'
     nexusKey = 'bash.installers.openTesNexus.continue'
 
