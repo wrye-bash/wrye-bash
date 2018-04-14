@@ -412,7 +412,7 @@ class _Mods_BOSSDisableLockTimes(BoolLink):
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
-    """If BOSS.exe is available then BOSS GUI.exe should be too."""
+    """If BOSS.exe is available then boss_gui.exe should be too."""
     _text, key, help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
                        _(u"If selected, Bash will run BOSS's GUI.")
 
@@ -425,7 +425,7 @@ class App_BOSS(App_Button):
 
     def Execute(self):
         if bass.settings['BOSS.UseGUI']:
-            self.exePath = self.exePath.head.join(u'BOSS GUI.exe')
+            self.exePath = self.exePath.head.join(u'boss_gui.exe')
         self.wait = bool(bass.settings['BOSS.ClearLockTimes'])
         extraArgs = []
         if balt.getKeyState(82) and balt.getKeyState_Shift():
