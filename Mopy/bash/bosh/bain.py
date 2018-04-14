@@ -298,6 +298,7 @@ class Installer(object):
             self.__setstate(values)
         except Exception as e:
             print ('Failed loading %s' % values[0]) + ' due to %s' % e
+            deprint('Failed loading %s' % values[0], traceback=True)
             # init to default values and let it be picked for refresh in
             # InstallersData#scan_installers_dir
             self.initDefault()
