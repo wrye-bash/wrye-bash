@@ -51,8 +51,6 @@ os_sep = unicode(os.path.sep)
 class Installer(object):
     """Object representing an installer archive, its user configuration, and
     its installation state."""
-
-    type_string = _(u'Unrecognized')
     #--Member data
     persistent = ('archive', 'order', 'group', 'modified', 'size', 'crc',
         'fileSizeCrcs', 'type', 'isActive', 'subNames', 'subActives',
@@ -65,6 +63,7 @@ class Installer(object):
         'espmMap', 'hasReadme', 'hasBCF', 'hasBethFiles', '_dir_dirs_files')
     __slots__ = persistent + volatile
     #--Package analysis/porting.
+    type_string = _(u'Unrecognized')
     docDirs = {u'screenshots'}
     #--Will be skipped even if hasExtraData == True (bonus: skipped also on
     # scanning the game Data directory)
@@ -310,27 +309,25 @@ class Installer(object):
         rescan = False
         if not isinstance(self.extras_dict, dict):
             self.extras_dict = {}
-            if self.fileRootIdex: # we need to add 'root_path' key
+            if self.fileRootIdex: # need to add 'root_path' key to extras_dict
                 rescan = True
         elif self.fileRootIdex and not self.extras_dict.get('root_path', u''):
             rescan = True ##: for people that used my wip branch, drop on 307
         package_path = bass.dirs['installers'].join(self.archive)
-        exists = package_path.exists()
-        if not exists: # the pickled package was deleted outside bash
-            pass # don't do anything should be deleted from our data soon
+        if not package_path.exists():  # pickled installer deleted outside bash
+            return  # don't do anything should be deleted from our data soon
+        if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
+            self.src_sizeCrcDate = bolt.LowerDict(
+                ('%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
+        if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
+            self.dirty_sizeCrc = bolt.LowerDict(
+                ('%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
+        if rescan:
+            dest_scr = self.refreshBasic(bolt.Progress(),
+                                         recalculate_project_crc=False)
         else:
-            if not isinstance(self.src_sizeCrcDate, bolt.LowerDict):
-                self.src_sizeCrcDate = bolt.LowerDict(
-                    ('%s' % x, y) for x, y in self.src_sizeCrcDate.iteritems())
-            if not isinstance(self.dirty_sizeCrc, bolt.LowerDict):
-                self.dirty_sizeCrc = bolt.LowerDict(
-                    ('%s' % x, y) for x, y in self.dirty_sizeCrc.iteritems())
-            if rescan:
-                dest_scr = self.refreshBasic(bolt.Progress(),
-                                             recalculate_project_crc=False)
-            else:
-                dest_scr = self.refreshDataSizeCrc()
-        if exists and self.overrideSkips:
+            dest_scr = self.refreshDataSizeCrc()
+        if self.overrideSkips:
             InstallersData.overridden_skips.update(dest_scr.keys())
 
     def __copy__(self):
@@ -784,9 +781,8 @@ class Installer(object):
     def _find_root_index(self, _os_sep=os_sep, skips_start=_silentSkipsStart):
         # basically just care for skips and complex/simple packages
         #--Sort file names
-        split = os.path.split
-        sort_keys_dict = dict(
-            (x, split(x[0].lower())) for x in self.fileSizeCrcs)
+        sort_keys_dict = dict( # sort as (dir_path, filename) pairs
+            (x, os.path.split(x[0].lower())) for x in self.fileSizeCrcs)
         self.fileSizeCrcs.sort(key=sort_keys_dict.__getitem__)
         #--Find correct starting point to treat as BAIN package
         self.extras_dict.clear() # if more keys are added be careful cleaning
@@ -1796,7 +1792,8 @@ class InstallersData(DataStore):
 
     def scan_installers_dir(self, installers_paths=(), fullRefresh=False):
         """March through the Bash Installers dir scanning for new and modified
-        projects/packages, skipping as necessary.
+        projects/packages, skipping as necessary. It will refresh projects on
+        boot.
         :rtype: InstallersData._RefreshInfo"""
         installers = set()
         installersJoin = bass.dirs['installers'].join
