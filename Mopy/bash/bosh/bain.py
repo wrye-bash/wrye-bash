@@ -2485,10 +2485,16 @@ class InstallersData(DataStore):
         keepFiles = set()
         for installer in self.sorted_values(reverse=True):
             if installer.isActive:
-                keepFiles.update(installer.ci_dest_sizeCrc)
+                keepFiles.update(installer.ci_dest_sizeCrc) # relative to Data/
         from . import modInfos
         keepFiles.update((bolt.CIstr(f) for f in bush.game_mod.allBethFiles))
-        keepFiles.update((bolt.CIstr(f.s) for f in modInfos.bashed_patches))
+        for f in modInfos.bashed_patches: # type: bolt.Path
+            keepFiles.add(bolt.CIstr(f.s))
+            bp_doc = modInfos.table.getItem(f, 'doc')
+            if bp_doc: # path is absolute, convert to relative to the Data/ dir
+                bp_doc = bp_doc.relpath(bass.dirs['mods'].s)
+                keepFiles.add((bolt.CIstr('%s' % bp_doc))) # .txt
+                keepFiles.add((bolt.CIstr(bp_doc.root.s + u'.html')))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
         removes = set(self.data_sizeCrcDate) - keepFiles
