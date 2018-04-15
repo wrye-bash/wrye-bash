@@ -168,7 +168,7 @@ class Installer(object):
         #--For InstallerProject's, cache if refresh projects is skipped
         self.src_sizeCrcDate = bolt.LowerDict()
         #--Set by refreshBasic
-        self.fileRootIdex = 0 # unused - just used in setstate
+        self.fileRootIdex = 0 # len of the root path including the final separator
         self.type = 0 #--Package type: 0: unset/invalid; 1: simple; 2: complex
         self.subNames = []
         self.subActives = []
@@ -852,10 +852,10 @@ class Installer(object):
         dataDirsPlus = self.dataDirsPlus
         root_path = self.extras_dict.get('root_path', u'')
         for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
-            frags = full.split(_os_sep)
             if root_path: # exclude all files that are not under root_dir
-                if frags[0] != root_path[:-1]: continue # chop off os_sep
-                frags = frags[1:]
+                if not full.startswith(root_path): continue
+                full = full[self.fileRootIdex:]
+            frags = full.split(_os_sep)
             nfrags = len(frags)
             f0_lower = frags[0].lower()
             #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
