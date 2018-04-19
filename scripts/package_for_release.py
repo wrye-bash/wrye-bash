@@ -319,7 +319,7 @@ def CreateStandaloneExe(args, file_version):
         # Call the setup script
         os.chdir(mopy)
         lprint(' Calling py2exe...')
-        subprocess.call([setup, 'py2exe', '-q'], shell=True, stdout=pipe,
+        subprocess.call([sys.executable, setup, 'py2exe', '-q'], shell=True, stdout=pipe,
                         stderr=pipe)
         os.chdir(root)
 
