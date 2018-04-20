@@ -212,6 +212,8 @@ class Installer(object):
 
     @property
     def reDataFile(self):
+        """Files that may be installed in top Data/ directory - espml,
+        bsa/ba2, ini."""
         if self.__class__._reDataFile is None:
             _reDataFile = ur'(\.(' + u'|'.join(
                 {x[1:] for x in bush.game.espm_extensions} | {
@@ -346,8 +348,7 @@ class Installer(object):
     _silentSkipsStart = (
         u'--', u'omod conversion data%s' % os_sep, u'fomod%s' % os_sep,
         u'wizard images%s' % os_sep)
-    _silentSkipsEnd = (
-        u'%sthumbs.db' % os_sep, u'%sdesktop.ini' % os_sep, u'meta.ini', u'config')
+    _silentSkipsEnd = (u'thumbs.db', u'desktop.ini', u'meta.ini', u'config')
 
     # global skips that can be overridden en masse by the installer
     _global_skips = []
@@ -856,26 +857,32 @@ class Installer(object):
         subNameSet.add(u'') # set(u'') == set() (unicode is iterable), so add
         reDataFileSearch = self.reDataFile.search
         dataDirsPlus = self.dataDirsPlus
+        # hasExtraData is NOT taken into account when calculating package
+        # structure or the root_path
         root_path = self.extras_dict.get('root_path', u'')
         for full, size, crc in self.fileSizeCrcs:#break if type=1 else churn on
             if root_path: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
                 full = full[self.fileRootIdex:]
+            if full.lower().startswith(skips_start): continue
             frags = full.split(_os_sep)
             nfrags = len(frags)
             f0_lower = frags[0].lower()
             #--Type 1 ? break ! data files/dirs are not allowed in type 2 top
             if (nfrags == 1 and reDataFileSearch(f0_lower) or
-                nfrags > 1 and f0_lower in dataDirsPlus):
+                    nfrags > 1 and f0_lower in dataDirsPlus):
                 type_ = 1
                 break
             #--Else churn on to see if we have a Type 2 package
             elif not frags[0] in subNameSet and not \
                     f0_lower.startswith(skips_start) and (
-                (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
-                (nfrags == 2 and reDataFileSearch(frags[1]))):
+                    (nfrags > 2 and frags[1].lower() in dataDirsPlus) or
+                    (nfrags == 2 and reDataFileSearch(frags[1]))):
                 subNameSet.add(frags[0])
                 type_ = 2
+                # keep looking for a type one package - having a loose file or
+                # a top directory with name in dataDirsPlus will turn this into
+                # a type one package
         self.type = type_
         #--SubNames, SubActives
         if type_ == 2:
