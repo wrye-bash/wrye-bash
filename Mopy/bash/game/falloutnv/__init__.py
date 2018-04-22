@@ -269,14 +269,13 @@ class FalloutNVGameInfo(GameInfo):
             MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreSpel, MreStat, \
             MreTact, MreTerm, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, \
             MreDial, MreGmst, MreInfo, MrePgre, MrePmis, MreRefr, MreHeader, \
-            MreNpc
-        from ..fallout3.records import MreAddn, MreAnio, MreAvif, MreBook, \
-            MreBptd, MreCams, MreClas, MreClmt, MreCobj, MreCrea, MreDebr, \
-            MreDoor, MreEczn, MreEfsh, MreExpl, MreEyes, MreFlst, MreFurn, \
-            MreGras, MreHair, MreIdlm, MreImgs, MreIngr, MreIpds, MreLgtm, \
-            MreLtex, MreLvlc, MreLvli, MreLvln, MreMgef, MreMicn, MreMstt, \
-            MreNavi, MreNavm, MreNote, MrePwat, MreRads, MreRgdl, MreScol, \
-            MreScpt, MreTree, MreTxst, MreVtyp, MreWatr, MreWrld, MreAlch
+            MreNpc, MreAddn, MreAnio, MreAvif, MreBook, MreBptd, MreCams, \
+            MreClas, MreClmt, MreCobj, MreCrea, MreDebr, MreDoor, MreEczn, \
+            MreEfsh, MreExpl, MreEyes, MreFlst, MreFurn, MreGras, MreHair, \
+            MreIdlm, MreImgs, MreIngr, MreIpds, MreLgtm, MreLtex, MreLvlc, \
+            MreLvli, MreLvln, MreMgef, MreMicn, MreMstt, MreNavi, MreNavm, \
+            MreNote, MrePwat, MreRads, MreRgdl, MreScol, MreScpt, MreTree, \
+            MreTxst, MreVtyp, MreWatr, MreWrld, MreAlch
         # Old Mergeable from Valda's version
         # MreActi, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio, MreAppa,
         # MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreBsgn,
