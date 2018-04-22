@@ -3397,7 +3397,7 @@ class MreRace(MelRecord):
             self._debug = False
 
         def getSlotsUsed(self):
-            return ('_loadAttrs','_modelAttrs')
+            return '_loadAttrs', '_modelAttrs'
 
         def getLoaders(self,loaders):
             """Self as loader for structure types."""
@@ -3565,7 +3565,7 @@ class MreRefr(MelRecord):
                     out.write(struct_pack('=4sH','XMRK',0))
                     out.packSub('FNAM','B',record.flags.dump())
                     value = record.full
-                    if value != None:
+                    if value is not None:
                         out.packSub0('FULL',value)
                     out.packSub('TNAM','Bs',record.markerType, record.unused5)
                     # WMI1 not used in FO3, leaving so it doesn't break something
@@ -4038,7 +4038,7 @@ class MreTes4(MelRecord):
         """Gets next object index and increments it for next time."""
         self.changed = True
         self.nextObject += 1
-        return (self.nextObject -1)
+        return self.nextObject - 1
 
 #------------------------------------------------------------------------------
 class MreTree(MelRecord):
