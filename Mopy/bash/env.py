@@ -32,8 +32,7 @@ import stat
 
 from bolt import GPath, deprint, Path, decode, struct_unpack
 from exception import BoltError, CancelError, SkipError, AccessDeniedError, \
-    DirectoryFileCollisionError, InvalidPathsError, FileOperationError, \
-    NonExistentDriveError
+    DirectoryFileCollisionError, FileOperationError, NonExistentDriveError
 
 try:
     import _winreg as winreg
