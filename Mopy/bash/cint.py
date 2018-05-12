@@ -15311,14 +15311,13 @@ class ObCollection(object):
         self._CollectionID, self._WhichGame = (CollectionID,_CGetCollectionType(CollectionID)) if CollectionID else (_CCreateCollection(_encode(ModsPath), CollectionType),CollectionType)
         self._ModIndex, self.LoadOrderMods, self.AllMods = -1, [], []
         self._ModType = ObModFile if self._WhichGame == 0 else FnvModFile
+        self._cwd = os.getcwd()
 
     def __enter__(self):
-        self._cwd = os.getcwd()
         return self
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         self.Close()
-        os.chdir(self._cwd)
 
     def __eq__(self, other):
         return self._CollectionID == other._CollectionID if type(other) is type(self) else False
@@ -15333,6 +15332,7 @@ class ObCollection(object):
         _CUnloadCollection(self._CollectionID)
 
     def Close(self):
+        os.chdir(self._cwd)
         _CDeleteCollection(self._CollectionID)
 
     @staticmethod
