@@ -459,20 +459,20 @@ class CBash_PatchFile(_PFile, ObModFile):
         self.Current.load()
 
         if self.Current.LookupModFileLoadOrder(self.patchName.temp.s) <= 0:
-            print (_(u"Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/.") +
-                   u'\n' +
-                   _(u'Also with:') +
-                   u'\n' +
-                   _(u'1. Your OS:') +
-                   u'\n' +
-                   _(u'2. Your installed MS Visual C++ redistributable versions:') +
-                   u'\n' +
-                   _(u'3. Your system RAM amount:') +
-                   u'\n' +
-                   _(u'4. How much memory Python.exe\pythonw.exe or Wrye Bash.exe is using') +
-                   u'\n' +
-                   _(u'5. and finally... if restarting Wrye Bash and trying again and building the CBash Bashed Patch right away works fine') +
-                   u'\n')
+            print (u'\n'.join(
+                (_(u"Please copy this entire message and report it on the "
+                   u"current official thread at "
+                   u"https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games."),
+                 _(u'Also with:'),
+                 _(u'1. Your OS:'),
+                 _(u'2. Your installed MS Visual C++ redistributable '
+                   u'versions:'),
+                 _(u'3. Your system RAM amount:'),
+                 _(u'4. How much memory Python.exe\pythonw.exe or '
+                   u'Wrye Bash.exe is using'),
+                 _(u'5. and finally... if restarting Wrye Bash and trying '
+                   u'again and building the CBash Bashed Patch right away '
+                   u'works fine'))) + u'\n')
             print self.Current.Debug_DumpModFiles()
             raise StateError()
         ObModFile.__init__(self, patchFile._ModID)

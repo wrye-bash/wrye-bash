@@ -224,6 +224,7 @@ class ConfigHelpers:
     """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
 
     def __init__(self):
+        """bass.dir must have been initialized"""
         global lootDb
         if loot_api is not None:
             deprint(u'Using LOOT API version:', loot_api.Version.string())
@@ -278,7 +279,7 @@ class ConfigHelpers:
                         lootDb.load_lists(path.s)
                     lootDb.eval_lists()
                     return # we are done
-                # unfortunatelly the pyd file throws generic Exception - see
+                # unfortunately the pyd file throws generic Exception - see
                 # http://pybind11.readthedocs.io/en/latest/advanced/exceptions.html#built-in-exception-translation
                 except Exception:
                     deprint(u'An error occurred while parsing file%s %s:'

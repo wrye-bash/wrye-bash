@@ -286,7 +286,9 @@ class PatchDialog(balt.Dialog):
         finally:
             if self.doCBash:
                 try: patchFile.Current.Close()
-                except: pass
+                except:
+                    bolt.deprint(u'Failed to close CBash collection',
+                                 traceback=True)
             if progress: progress.Destroy()
 
     def _save_pbash(self, patchFile, patch_name):
