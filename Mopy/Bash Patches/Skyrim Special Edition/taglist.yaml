@@ -21,6 +21,10 @@ plugins:
   - name: 'Alternate Start - Live Another Life.esp'
     tag:
       - C.Location
+  - name: 'Ars Metallica.esp'
+    tag:
+      - Invent
+      - Relev
   - name: 'AyleidCitadel.esp'
     tag:
       - C.Regions
@@ -40,6 +44,41 @@ plugins:
   - name: 'BetterQuestObjectives.esp'
     tag:
       - NoMerge
+  - name: 'Book Covers Skyrim - Lost Library.esp'
+    tag:
+      - Delev
+  - name: 'Book Covers Skyrim.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'BS_DLC_patch.esp'
+    tag:
+      - Delev
+      - Invent
+  - name: 'BSAssets.esm'
+    tag:
+      - C.Light
+      - C.RecordFlags
+  - name: 'BSHeartland.esm'
+    tag:
+      - Actors.ACBS
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Stats
+      - C.Light
+      - C.RecordFlags
+      - C.Regions
+      - Delev
+      - Factions
+      - Graphics
+      - Invent
+      - Names
+    dirty:
+      - crc: 0xb12b4e7
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 485
+        udr: 3
   - name: 'CraftingSupplies_AIO_ALL.esp'
     tag:
       - Invent
@@ -86,6 +125,12 @@ plugins:
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 6
         nav: 57
+      - crc: 0x81a481e8
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 621
+        udr: 82
+        nav: 57
       - crc: 0xbfba5a40
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
@@ -113,6 +158,8 @@ plugins:
     tag:
       - Delev
       - Invent
+      - Names
+      - Relev
   - name: 'Dragonborn.esm'
     tag:
       - Invent
@@ -130,13 +177,27 @@ plugins:
         itm: 67
         udr: 8
         nav: 1
+      - crc: 0x64625bcd
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 69
+        udr: 8
+        nav: 1
       - crc: 0xc7e30215
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 69
         udr: 8
         nav: 1
+  - name: 'ELE_SSE.esp'
+    tag:
+      - -C.ImageSpace
+      - -C.Light
   - name: 'HarvestOverhaul_Redone.esp'
+    tag:
+      - Invent
+      - Names
+  - name: 'HarvestOverhaul_Redone_Creatures.esp'
     tag:
       - Delev
       - Invent
@@ -145,6 +206,12 @@ plugins:
     tag:
       - Invent
     dirty:
+      - crc: 0xa631401b
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 178
+        udr: 11
+        nav: 5
       - crc: 0xeb21f448
         util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
@@ -180,8 +247,19 @@ plugins:
     tag:
       - Invent
       - Relev
+  - name: 'imp_helm_legend.esp'
+    tag:
+      - Graphics
+    dirty:
+      - crc: 0x8491d752
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 5
   - name: 'Imperious - Races of Skyrim.esp'
     tag:
+      - Body-Size-F
+      - Body-Size-M
+      - Names
       - R.Description
       - R.Skills
   - name: 'JK''s SkyHaven Forge.esp'
@@ -197,6 +275,12 @@ plugins:
   - name: 'Kayla_CharPreset.esp'
     tag:
       - NoMerge
+  - name: 'KrittaKittyHorsesForSSE.esp'
+    dirty:
+      - crc: 0x6e242e9e
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 1
   - name: 'LADX_SSE.esp'
     tag:
       - Delev
@@ -212,6 +296,29 @@ plugins:
     tag:
       - Delev
       - Relev
+  - name: 'MLU - Improved Closefaced Helmets.esp'
+    tag:
+      - Stats
+      - -Names
+  - name: 'MLU.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.Stats
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Stats
+  - name: 'MoonAndStar_MAS.esp'
+    tag:
+      - C.Location
+    dirty:
+      - crc: 0xeb5aefaf
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 1
   - name: 'Morrowloot.esp'
     tag:
       - Delev
@@ -219,12 +326,24 @@ plugins:
   - name: 'Open Cities Skyrim.esp'
     tag:
       - C.Location
+  - name: 'Ordinator - Perks of Skyrim.esp'
+    tag:
+      - C.Regions
+      - Graphics
+      - Names
+      - Sound
+  - name: 'Prometheus_No_snow_Under_the_roof.esp'
+    dirty:
+      - crc: 0x87d18f2b
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 59
+        udr: 5
   - name: 'RealisticWaterTwo.esp'
     tag:
-      - C.Location
-      - C.Regions
       - C.Water
       - Graphics
+      - Sound
   - name: 'Rebalanced Leveled Lists.esp'
     tag:
       - Delev
@@ -233,6 +352,16 @@ plugins:
   - name: 'RichMerchantsSkyrim_x\d+.esp'
     tag:
       - Relev
+  - name: 'Sacrosanct - Vampires of Skyrim.esp'
+    tag:
+      - Graphics
+      - Names
+      - Sound
+    dirty:
+      - crc: 0x93553bd1
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 20
   - name: 'Severa_CharPreset.esp'
     tag:
       - NoMerge
@@ -246,6 +375,9 @@ plugins:
   - name: 'Skyrim Alchemy Fixed.esp'
     tag:
       - Delev
+  - name: 'SMIM-SE.esp'
+    tag:
+      - Graphics
   - name: 'Solitude Expansion.esp'
     tag:
       - C.Location
@@ -253,6 +385,20 @@ plugins:
   - name: 'SSEMerged.esp'
     tag:
       - NoMerge
+  - name: 'TheChoiceIsYours.esp'
+    tag:
+      - Actors.AIPackages
+      - Names
+  - name: 'TradeBarter.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+  - name: 'TradeBarterLite.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
   - name: 'TrueStormsSE.esp'
     tag:
       - Sound
@@ -266,11 +412,27 @@ plugins:
   - name: 'ULRiverwoodForestJKPatch.esp'
     tag:
       - C.Water
+  - name: 'Undeath.esp'
+    tag:
+      - Graphics
+      - Sound
+    dirty:
+      - crc: 0x6e988e26
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 17
+      - crc: 0xeb75a960
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 18
   - name: 'Unique Loot Compatibility Patch.esp'
     tag:
       - Delev
       - Invent
       - Relev
+  - name: 'unofficial skyrim survival patch.esp'
+    tag:
+      - Graphics
   - name: 'Update.esm'
     tag:
       - Delev
@@ -290,6 +452,12 @@ plugins:
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 235
         udr: 91
+      - crc: 0xfe610a99
+        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 239
+        udr: 91
+        nav: 2
   - name: 'WarmongerArmory_LeveledList.esp'
     tag:
       - Delev

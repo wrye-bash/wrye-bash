@@ -10852,6 +10852,30 @@ plugins:
         util: '[TES5Edit](http://www.nexusmods.com/skyrim/mods/25859)'
         info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
         itm: 3
+  - name: 'SkyR - Riverwood Interiors.esp'
+    dirty:
+      - crc: 0xf4a6bf2c
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 2
+  - name: 'SkyR - Solitude Interiors.esp'
+    dirty:
+      - crc: 0xe8683895
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 4
+  - name: 'SkyR - Windhelm Interiors.esp'
+    dirty:
+      - crc: 0xbcdf56be
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 1
+  - name: 'SKYR Interiors - Riften.esp'
+    dirty:
+      - crc: 0xbd2cc10d
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 1
   - name: 'SkyRe_Enemies.esp'
     tag:
       - Relev
@@ -10994,6 +11018,18 @@ plugins:
   - name: 'skyrim philter of phantom recipe mod.esp'
     tag:
       - Delev
+  - name: 'Skyrim Radioactive - Solitude Docks.esp'
+    dirty:
+      - crc: 0x56f9e63f
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 23
+  - name: 'Skyrim Radioactive - Windhelm Docks.esp'
+    dirty:
+      - crc: 0x8ef087e5
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 14
   - name: 'Skyrim Scaling Stopper - Misc Edits.esp'
     tag:
       - Delev
@@ -12145,6 +12181,78 @@ plugins:
   - name: 'TES5Merged.esp'
     tag:
       - NoMerge
+  - name: 'TES5R - AngelinesAromatics.esp'
+    dirty:
+      - crc: 0xf40ca459
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 2
+  - name: 'TES5R - Arcadia''s Cauldron.esp'
+    dirty:
+      - crc: 0x278f2b12
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 2
+  - name: 'TES5R - Erikur''s house.esp'
+    dirty:
+      - crc: 0xa27bf085
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 1
+  - name: 'TES5R - EvetteSansHouse.esp'
+    dirty:
+      - crc: 0x4565e70b
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 1
+  - name: 'TES5R - Fletcher.esp'
+    dirty:
+      - crc: 0x1198c1ae
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 2
+  - name: 'TES5R - HalloftheDead.esp'
+    dirty:
+      - crc: 0x21fca3fd
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 1
+  - name: 'TES5R - HouseGrayMane.esp'
+    dirty:
+      - crc: 0xcf8031ea
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        itm: 2
+  - name: 'TES5R - Katlasfarm.esp'
+    dirty:
+      - crc: 0xe88d7d4e
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 1
+  - name: 'TES5R - Olavashouse.esp'
+    dirty:
+      - crc: 0x2f271721
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 2
+  - name: 'TES5R - SolitudeStables.esp'
+    dirty:
+      - crc: 0x49725f58
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 2
+  - name: 'TES5R - The Winking Skeever.esp'
+    dirty:
+      - crc: 0x8d8f222
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 1
+  - name: 'TES5R -The Warmaidens.esp'
+    dirty:
+      - crc: 0x5b3b77e0
+        util: 'TES5Edit v3.2.2'
+        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        nav: 3
   - name: 'TG Headquarters Overhaul v.1.5.esp'
     dirty:
       - crc: 0xd29b4ea2
