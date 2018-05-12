@@ -61,7 +61,9 @@ for fsName, masterFileName, repository, gameType in gamesData:
         print u'Skipping taglist for {} as its output directory does not exist'.format(fsName)
         continue
     DownloadMasterlist(repository, masterlistPath)
-    lootDb = loot_api.create_database(gameType, gameInstallPath)
+    loot_api.initialise_locale('')
+    loot_game = loot_api.create_game_handle(gameType, gameInstallPath)
+    lootDb = loot_game.get_database()
     lootDb.load_lists(masterlistPath)
     lootDb.write_minimal_list(taglistDir, True)
     print u'{} masterlist converted.'.format(fsName)
