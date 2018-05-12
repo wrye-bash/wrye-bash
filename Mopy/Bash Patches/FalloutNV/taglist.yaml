@@ -1059,6 +1059,19 @@ plugins:
     tag:
       - Actors.ACBS
       - Factions
+  - name: 'lexx_brahmin-betsy.esp'
+    dirty:
+      - crc: 0xba26c46
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 13
+  - name: 'lexx_brahmin-variant.esp'
+    dirty:
+      - crc: 0xb596767c
+        util: '[FNVEdit](http://www.nexusmods.com/newvegas/mods/34703)'
+        info: ''
+        itm: 16
+        udr: 1
   - name: 'LFox Bottle That Water.esp'
     tag:
       - Names
