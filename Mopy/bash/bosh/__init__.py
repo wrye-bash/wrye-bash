@@ -1509,14 +1509,18 @@ class INIInfos(TableFileInfos):
         # Check the list of target INIs, remove any that don't exist
         # if _target_inis is not an OrderedDict choice won't be set correctly
         _target_inis = bass.settings['bash.ini.choices'] # type: OrderedDict
+        deprint(u'_target_inis %s' % _target_inis)
         choice = bass.settings['bash.ini.choice'] # type: int
+        deprint(u'choice %s' % choice)
         if isinstance(_target_inis, OrderedDict):
+            deprint(u'isinstance(_target_inis, OrderedDict)')
             try:
                 previous_ini = _target_inis.keys()[choice]
             except IndexError:
                 choice, previous_ini = -1, None
         else: # not an OrderedDict, updating from 306
             choice, previous_ini = -1, None
+        deprint(u'choice %s, previous_ini %s' % (choice, previous_ini))
         for ini_name in _target_inis.keys():
             if ini_name == _(u'Browse...'): continue
             ini_path = _target_inis[ini_name]
@@ -1530,19 +1534,25 @@ class INIInfos(TableFileInfos):
                 del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
+        deprint(u'_target_inis after cleanup %s' % _target_inis)
         csChoices = set(x.lower() for x in _target_inis)
         for iFile in gameInis: # add the game inis even if missing
             if iFile.abs_path.tail.cs not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
+        deprint(u'_target_inis after adding game inis %s' % _target_inis)
         if _(u'Browse...') not in _target_inis:
             _target_inis[_(u'Browse...')] = None
+        deprint(u'_target_inis after adding Browse %s' % _target_inis)
         self.__sort_target_inis()
+        deprint(u'_target_inis after sorting %s' % bass.settings['bash.ini.choices'])
         if previous_ini:
             choice = bass.settings['bash.ini.choices'].keys().index(
                 previous_ini)
+        deprint(u'choice %s, previous_ini %s after sort' % (choice, previous_ini))
         bass.settings['bash.ini.choice'] = choice if choice >= 0 else 0
         self.ini = bass.settings['bash.ini.choices'].values()[
             bass.settings['bash.ini.choice']]
+        deprint(u'self.ini %s' % self.ini)
 
     @property
     def ini(self):
