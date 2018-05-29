@@ -2104,11 +2104,11 @@ class InstallersData(DataStore):
             relpath = apath.relpath(bass.dirs['mods'])
             # ghosts...
             key = relpath.root.s if relpath.cs[-6:] == u'.ghost' else relpath.s
-            if apath in changed:
+            if apath in deleted:
+                do_refresh |= bool(self.data_sizeCrcDate.pop(key, None))
+            else:
                 self.data_sizeCrcDate[key] = (apath.size,apath.crc,apath.mtime)
                 do_refresh = True
-            else:
-                do_refresh |= bool(self.data_sizeCrcDate.pop(key, None))
         return do_refresh # Some tracked files changed, update installers status
 
     #--Operations -------------------------------------------------------------
