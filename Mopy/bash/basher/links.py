@@ -322,6 +322,8 @@ def InitInstallerLinks():
     InstallersList.itemMenu.append(Installer_CopyConflicts())
     InstallersList.itemMenu.append(InstallerProject_OmodConfig())
     InstallersList.itemMenu.append(Installer_ListStructure())
+    if bush.game.has_achlist:
+        InstallersList.itemMenu.append(Installer_ExportAchlist())
     #--espms Main Menu
     InstallersPanel.espmMenu.append(Installer_Espm_SelectAll())
     InstallersPanel.espmMenu.append(Installer_Espm_DeselectAll())

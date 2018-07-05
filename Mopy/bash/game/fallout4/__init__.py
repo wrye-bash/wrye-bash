@@ -61,6 +61,7 @@ class Fallout4GameInfo(GameInfo):
     )
 
     espm_extensions = {u'.esp', u'.esm', u'.esl'}
+    has_achlist = True
 
     class cs(GameInfo.cs):
         # TODO:  When the Fallout 4 Creation Kit is actually released,

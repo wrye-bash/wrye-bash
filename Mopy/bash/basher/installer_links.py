@@ -33,6 +33,7 @@ Their window attribute points to the InstallersPanel singleton.
 
 import StringIO
 import copy
+import os
 import re
 import webbrowser
 from collections import defaultdict
@@ -64,7 +65,8 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_Espm_Rename', 'Installer_Espm_Reset',
            'Installer_Espm_ResetAll', 'Installer_Subs_SelectAll',
            'Installer_Subs_DeselectAll', 'Installer_Subs_ToggleSelection',
-           'Installer_Subs_ListSubPackages', 'Installer_OpenNexus']
+           'Installer_Subs_ListSubPackages', 'Installer_OpenNexus',
+           'Installer_ExportAchlist']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -534,6 +536,32 @@ class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Warudd
         balt.copyToClipboard(source_list_txt)
         self._showLog(source_list_txt, title=_(u'Package Structure'),
                       fixedFont=False)
+
+class Installer_ExportAchlist(OneItemLink, _InstallerLink):
+    """Write an achlist file with all the destinations files for this
+    installer in this configuration."""
+    _text = _(u"Export Achlist")
+    _mode_info_dir = u'Mod Info Exports'
+    help = _(u'Create achlist file for use by the CK')
+
+    def _enable(self):
+        isSingle = super(Installer_ExportAchlist, self)._enable()
+        return isSingle and not isinstance(self._selected_info,
+                                           bosh.InstallerMarker)
+
+    def Execute(self):
+        info_dir = bass.dirs['app'].join(self.__class__._mode_info_dir)
+        info_dir.makedirs()
+        achlist = info_dir.join(self._selected_info.archive + u'.achlist')
+        with balt.BusyCursor(), open(achlist.s, 'w') as out:
+            out.write(u'[\n\t"')
+            lines = u'",\n\t"'.join(
+                u'\\'.join((u'Data', d)).replace(u'\\', u'\\\\') for d in
+                bolt.sortFiles(self._selected_info.ci_dest_sizeCrc)
+                # exclude top level files and docs - last one monkey patched
+                if os.path.split(d)[0] and not d.lower().startswith(u'docs'))
+            out.write(lines)
+            out.write(u'"\n]')
 
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""

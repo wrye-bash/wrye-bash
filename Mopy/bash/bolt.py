@@ -913,7 +913,11 @@ class Path(object):
         else:
             return open(self._s,*args,**kwdargs)
     def makedirs(self):
-        if not self.exists(): os.makedirs(self._s)
+        try:
+            os.makedirs(self._s)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
     def remove(self):
         try:
             if self.exists(): os.remove(self._s)

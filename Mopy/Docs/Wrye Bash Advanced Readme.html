@@ -629,6 +629,12 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainUnpackToProject">Unpack To Project(s)...<td>Archives only. Unpack the archive to a project.
         <tr><td colspan="2" id="bainPackToArchive">Pack to Archive...<td>Projects only. Packs the project to an archive. It defaults to .7z, but also supports .zip.
         <tr><td colspan="2" id="bainPackageForRelease">Package For Release...<td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".
+        <tr><td colspan="2" id="bainExportACHlist">Export ACHList<td>This exports a file list of the files configured to be installed by
+            this installer (except top level files and docs installed in Data/Docs folder). This list is used when the CK asks for a list of
+            files to make new BSA files, for use when uploading to Bethesda.net. It will generate a <code>installer-name.achlist</code> file
+            inside the Mod Info Exports directory in the game (exe) folder. Mod Info Exports will be created if it doesn't exist. If an
+            achlist with the same name exists it will be overwritten. Import the ACHList Bash generated and it will then package your files
+            into the proper archives for upload. Available only for Skyrim Special Edition and Fallout 4.
         <tr><td colspan="2" id="bainSyncFromData">Sync From Data<td>Projects only. Synchronize the project with files from the Data directory. This is essentially the reverse of "Install" for projects since it copies from the Data directory to the project rather than the other way around.
         <tr><td colspan="2" id="bainCopyConflictsToProject">Copy Conflicts to Project<td>Copies all files that conflict with the selected package into a new project. Conflicts with inactive
             installers and lower order packages are included as if <a href="#bainShowInactiveConflicts">Show Inactive Conflicts</a> and <a href="#bainShowLowerConflicts">Show Lower

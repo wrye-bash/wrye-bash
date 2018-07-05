@@ -73,6 +73,8 @@ class GameInfo(object):
     espm_extensions = {u'.esp', u'.esm'}
     # Load order info
     using_txt_file = True
+    # bethesda net export files
+    has_achlist = False
 
     # Construction Set information
     class cs(object):
