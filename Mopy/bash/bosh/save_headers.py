@@ -34,7 +34,6 @@ import copy
 import itertools
 import StringIO
 import struct
-import sys
 from collections import OrderedDict
 from functools import partial
 from .. import bolt
@@ -42,7 +41,7 @@ from ..bolt import decode, cstrip, unpack_string, unpack_int, unpack_str8, \
     unpack_short, unpack_float, unpack_str16, unpack_byte, struct_pack, \
     struct_unpack, unpack_int_delim, unpack_str16_delim, unpack_byte_delim, \
     unpack_many
-from ..exception import SaveHeaderError
+from ..exception import SaveHeaderError, raise_bolt_error
 
 class SaveFileHeader(object):
     save_magic = 'OVERRIDE'
@@ -61,9 +60,9 @@ class SaveFileHeader(object):
             with save_path.open('rb') as ins:
                 self.load_header(ins)
         #--Errors
-        except (OSError, struct.error) as e:
-            bolt.deprint(u'Save file error:', traceback=True)
-            raise SaveHeaderError, e.message, sys.exc_info()[2]
+        except (OSError, struct.error, OverflowError):
+            bolt.deprint(u'Failed to read %s' % save_path, traceback=True)
+            raise_bolt_error(u'Failed to read %s' % save_path, SaveHeaderError)
 
     def load_header(self, ins):
         save_magic = unpack_string(ins, len(self.__class__.save_magic))

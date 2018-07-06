@@ -27,17 +27,17 @@ import sys
 import traceback
 # NO LOCAL IMPORTS! This has to be importable from any module/package.
 
-def raise_bolt_error(msg):
-    extype, ex, tb = sys.exc_info()
-    formatted = traceback.format_exception_only(extype, ex)[-1]
-    raise BoltError, u'%s caused by %s' % (msg, formatted), tb
-
 class BoltError(Exception):
     """Generic error with a string message."""
     def __init__(self, message):
         self.message = message
     def __str__(self):
         return self.message
+
+def raise_bolt_error(msg, exc=BoltError):
+    extype, ex, tb = sys.exc_info()
+    formatted = traceback.format_exception_only(extype, ex)[-1]
+    raise exc, u'%s caused by %s' % (msg, formatted), tb
 
 # Code errors -----------------------------------------------------------------
 class AbstractError(BoltError):
