@@ -1682,7 +1682,7 @@ class MreRecord(object):
 class MelRecord(MreRecord):
     """Mod record built from mod record elements."""
     melSet = None #--Subclasses must define as MelSet(*mels)
-    __slots__ = MreRecord.__slots__
+    __slots__ = []
 
     def __init__(self, header, ins=None, do_unpack=False):
         """Initialize."""
@@ -1743,7 +1743,7 @@ class MreHeaderBase(MelRecord):
         self.nextObject += 1
         return self.nextObject -1
 
-    __slots__ = MelRecord.__slots__
+    __slots__ = []
 
 #------------------------------------------------------------------------------
 class MreGlob(MelRecord):
@@ -1756,7 +1756,7 @@ class MreGlob(MelRecord):
         MelStruct('FNAM','s',('format','s')),
         MelStruct('FLTV','f','value'),
         )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreGmstBase(MelRecord):
@@ -1785,7 +1785,7 @@ class MreGmstBase(MelRecord):
         MelString('EDID','eid'),
         MelGmstValue('DATA','value'),
         )
-    __slots__ = MelRecord.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
     def getGMSTFid(self):
         """Returns <Oblivion/Skyrim/etc>.esm fid in long format for specified
@@ -1822,8 +1822,7 @@ class MreLeveledListBase(MelRecord):
     """
     _flags = bolt.Flags(0L,bolt.Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
     copyAttrs = ()
-    __slots__ = (MelRecord.__slots__ +
-        ['mergeOverLast','mergeSources','items','delevs','relevs'])
+    __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'delevs', 'relevs']
 
     def __init__(self, header, ins=None, do_unpack=False):
         """Initialize"""
