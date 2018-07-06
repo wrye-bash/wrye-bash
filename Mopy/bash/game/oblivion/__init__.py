@@ -77,15 +77,10 @@ class OblivionGameInfo(GameInfo):
         url = u'http://oblivion.nexusmods.com/mods/30054'
         urlTip = u'http://oblivion.nexusmods.com/'
 
-    SkipBAINRefresh = {
-        u'tes4edit backups',
-        u'bgsee',
-        u'conscribe logs',
-    }
-
     class ess(GameInfo.ess):
         canEditMore = True
 
+    # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'distantlod',
         u'facegen',
@@ -101,6 +96,11 @@ class OblivionGameInfo(GameInfo):
         u'pluggy',
         u'scripts',
         u'streamline',
+    }
+    SkipBAINRefresh = {
+        u'tes4edit backups',
+        u'bgsee',
+        u'conscribe logs',
     }
     wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
         u'ArchiveInvalidationInvalidated!.bsa'}

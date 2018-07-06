@@ -64,11 +64,10 @@ class FalloutNVGameInfo(GameInfo):
         url = u'http://nvse.silverlock.org/'
         urlTip = u'http://nvse.silverlock.org/'
 
-    SkipBAINRefresh = {u'fnvedit backups'}
-
     class ess(GameInfo.ess):
         ext = u'.fos'
 
+    # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'distantlod',
         u'docs',
@@ -83,7 +82,7 @@ class FalloutNVGameInfo(GameInfo):
         u'nvse'
         u'scripts',
         }
-
+    SkipBAINRefresh = {u'fnvedit backups'}
     wryeBashDataFiles = {
         ur'ArchiveInvalidationInvalidated!.bsa'
         ur'Fallout - AI!.bsa'

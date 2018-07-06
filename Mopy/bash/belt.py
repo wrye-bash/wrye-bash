@@ -533,11 +533,11 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(balt.StaticText(self, _(u'Have')))
         sizerVersions.AddStretchSpacer()
 
-        def _link(label, url): return wx.HyperlinkCtrl(self, balt.defId,
+        def _hyperlink(label, url): return wx.HyperlinkCtrl(self, balt.defId,
                                                        label=label, url=url)
         # Game
         if bush.game.patchURL != u'':
-            linkGame = _link(bush.game.displayName, bush.game.patchURL)
+            linkGame = _hyperlink(bush.game.displayName, bush.game.patchURL)
             linkGame.SetVisitedColour(linkGame.GetNormalColour())
         else:
             linkGame = balt.StaticText(self, bush.game.displayName)
@@ -549,7 +549,7 @@ class PageVersions(PageInstaller):
 
         # Script Extender
         if bush.game.se.shortName != u'':
-            linkSE = _link(bush.game.se.longName, bush.game.se.url)
+            linkSE = _hyperlink(bush.game.se.longName, bush.game.se.url)
             linkSE.SetVisitedColour(linkSE.GetNormalColour())
             linkSE.SetToolTip(balt.tooltip(bush.game.se.urlTip))
             sizerVersions.Add(linkSE)
@@ -559,7 +559,7 @@ class PageVersions(PageInstaller):
 
         # Graphics extender
         if bush.game.ge.shortName != u'':
-            linkGE = _link(bush.game.ge.longName, bush.game.ge.url)
+            linkGE = _hyperlink(bush.game.ge.longName, bush.game.ge.url)
             linkGE.SetVisitedColour(linkGE.GetNormalColour())
             linkGE.SetToolTip(balt.tooltip(bush.game.ge.urlTip))
             sizerVersions.Add(linkGE)
@@ -567,8 +567,8 @@ class PageVersions(PageInstaller):
             sizerVersions.Add(balt.StaticText(self, geHave))
             sizerVersions.Add(balt.staticBitmap(self, bmp[bGEOk]))
 
-        linkWB = _link(u'Wrye Bash',
-                       u'http://oblivion.nexusmods.com/mods/22368')
+        linkWB = _hyperlink(u'Wrye Bash',
+                            u'http://oblivion.nexusmods.com/mods/22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
         linkWB.SetToolTip(balt.tooltip(u'http://oblivion.nexusmods.com/'))
         sizerVersions.Add(linkWB)

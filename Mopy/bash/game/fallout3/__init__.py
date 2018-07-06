@@ -65,13 +65,10 @@ class Fallout3GameInfo(GameInfo):
         url = u'http://fose.silverlock.org/'
         urlTip = u'http://fose.silverlock.org/'
 
-    SkipBAINRefresh = {
-        u'fo3edit backups',
-    }
-
     class ess(GameInfo.ess):
         ext = u'.fos'
 
+    # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'distantlod',
         u'docs',
@@ -86,7 +83,9 @@ class Fallout3GameInfo(GameInfo):
         u'ini',
         u'fose',
         }
-
+    SkipBAINRefresh = {
+        u'fo3edit backups',
+    }
     wryeBashDataFiles = {
         ur'ArchiveInvalidationInvalidated!.bsa'
         ur'Fallout - AI!.bsa'

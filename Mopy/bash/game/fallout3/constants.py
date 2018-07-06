@@ -198,7 +198,7 @@ allBethFiles = {
 conditionFunctionData = ( #--0: no param; 1: int param; 2: formid param; 3: float param
     (  1, 'GetDistance', 2, 0),
     (  5, 'GetLocked', 0, 0),
-    (  6, 'GetPos', 0, 0), 
+    (  6, 'GetPos', 0, 0),
     (  8, 'GetAngle', 0, 0),
     ( 10, 'GetStartingPos', 0, 0),
     ( 11, 'GetStartingAngle', 0, 0),

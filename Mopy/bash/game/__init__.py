@@ -136,17 +136,6 @@ class GameInfo(object):
         exe = u'*DNE*'      # Executable to run
         launchesSE = False  # Whether the launcher will automatically launch the SE
 
-    # Files BAIN shouldn't skip
-    dontSkip = ()
-
-    # Directories where specific file extensions should not be skipped by BAIN
-    dontSkipDirs = {}
-
-    # Folders BAIN should never CRC check in the Data directory
-    SkipBAINRefresh = set((
-        # Use lowercase names
-    ))
-
     # Some stuff dealing with INI files
     class ini(object):
         # True means new lines are allowed to be added via INI tweaks
@@ -171,8 +160,14 @@ class GameInfo(object):
     dataDirs = {u'meshes', u'music', u'sound', u'textures', u'video'}
     #  These are additional special directories that BAIN can install to
     dataDirsPlus = set()
-
-    # Installer
+    # Files BAIN shouldn't skip
+    dontSkip = ()
+    # Directories where specific file extensions should not be skipped by BAIN
+    dontSkipDirs = {}
+    # Folders BAIN should never CRC check in the Data directory
+    SkipBAINRefresh = set((
+        # Use lowercase names
+    ))
     # Files to exclude from clean data
     wryeBashDataFiles = {u'Docs\\Bash Readme Template.html',
                          u'Docs\\wtxt_sand_small.css', u'Docs\\wtxt_teal.css',

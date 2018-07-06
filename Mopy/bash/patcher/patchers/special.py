@@ -542,8 +542,8 @@ class FidListsMerger(_AListsMerger,ListPatcher):
         modFile.convertToLongFids(self.listTypes)
         #--PreScan for later Deflsts?
         if modName in self.deflstMasters:
-            for type in self.listTypes:
-                for levList in getattr(modFile,type).getActiveRecords():
+            for list_type in self.listTypes:
+                for levList in getattr(modFile,list_type).getActiveRecords():
                     masterItems = self.masterItems.setdefault(levList.fid,{})
                     # masterItems[modName] = set([entry.listId for entry in levList.entries])
                     masterItems[modName] = set(levList.formIDInList)
@@ -552,9 +552,9 @@ class FidListsMerger(_AListsMerger,ListPatcher):
         configChoice = self.configChoices.get(modName,tuple())
         isDeflst = (u'Deflst' in configChoice)
         #--Scan
-        for type in self.listTypes:
-            levLists = self.type_list[type]
-            newLevLists = getattr(modFile,type)
+        for list_type in self.listTypes:
+            levLists = self.type_list[list_type]
+            newLevLists = getattr(modFile,list_type)
             for newLevList in newLevLists.getActiveRecords():
                 listId = newLevList.fid
                 isListOwner = (listId[0] == modName)

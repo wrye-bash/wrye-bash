@@ -80,13 +80,6 @@ class Fallout4GameInfo(GameInfo):
         url = u'http://f4se.silverlock.org/'
         urlTip = u'http://f4se.silverlock.org/'
 
-    dontSkipDirs = {
-        # This rule is to allow mods with string translation enabled.
-        'interface\\translations':['.txt']
-    }
-
-    SkipBAINRefresh = {u'fo4edit backups'}
-
     class ini(GameInfo.ini):
         allowNewLines = True
         bsaRedirection = (u'',u'')
@@ -94,6 +87,7 @@ class Fallout4GameInfo(GameInfo):
     class ess(GameInfo.ess):
         ext = u'.fos'
 
+    # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'interface',
         u'lodsettings',
@@ -112,6 +106,11 @@ class Fallout4GameInfo(GameInfo):
         u'mcm',   # FO4 MCM
         u'tools', # bodyslide
     }
+    dontSkipDirs = {
+        # This rule is to allow mods with string translation enabled.
+        'interface\\translations':['.txt']
+    }
+    SkipBAINRefresh = {u'fo4edit backups'}
 
     class esp(GameInfo.esp):
         canBash = True

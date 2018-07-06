@@ -79,38 +79,11 @@ class SkyrimGameInfo(GameInfo):
         longName = u'SkyProc'
         installDir = u'SkyProc Patchers'
 
-    class ge(GameInfo.ge):
-        exe = u'**DNE**'
-
-    dontSkip = (
-           # These are all in the Interface folder. Apart from the skyui_ files,
-           # they are all present in vanilla.
-           u'skyui_cfg.txt',
-           u'skyui_translate.txt',
-           u'credits.txt',
-           u'credits_french.txt',
-           u'fontconfig.txt',
-           u'controlmap.txt',
-           u'gamepad.txt',
-           u'mouse.txt',
-           u'keyboard_english.txt',
-           u'keyboard_french.txt',
-           u'keyboard_german.txt',
-           u'keyboard_spanish.txt',
-           u'keyboard_italian.txt',
-    )
-
-    dontSkipDirs = {
-        # This rule is to allow mods with string translation enabled.
-        'interface\\translations':['.txt']
-    }
-
-    SkipBAINRefresh = {u'tes5edit backups'}
-
     class ini(GameInfo.ini):
         allowNewLines = True
         bsaRedirection = (u'', u'')
 
+    # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'dialogueviews',
         u'grass',
@@ -130,7 +103,28 @@ class SkyrimGameInfo(GameInfo):
         u'skyproc patchers',
         u'tools', # Bodyslide, FNIS
     }
-
+    dontSkip = (
+           # These are all in the Interface folder. Apart from the skyui_ files,
+           # they are all present in vanilla.
+           u'skyui_cfg.txt',
+           u'skyui_translate.txt',
+           u'credits.txt',
+           u'credits_french.txt',
+           u'fontconfig.txt',
+           u'controlmap.txt',
+           u'gamepad.txt',
+           u'mouse.txt',
+           u'keyboard_english.txt',
+           u'keyboard_french.txt',
+           u'keyboard_german.txt',
+           u'keyboard_spanish.txt',
+           u'keyboard_italian.txt',
+    )
+    dontSkipDirs = {
+        # This rule is to allow mods with string translation enabled.
+        'interface\\translations':['.txt']
+    }
+    SkipBAINRefresh = {u'tes5edit backups'}
     ignoreDataDirs = {u'LSData'}
 
     class esp(GameInfo.esp):
