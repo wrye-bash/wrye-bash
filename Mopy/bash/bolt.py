@@ -120,6 +120,9 @@ def decode(byte_str, encoding=None, avoidEncodings=()):
     """Decode a byte string to unicode, using heuristics on encoding."""
     if isinstance(byte_str, unicode) or byte_str is None: return byte_str
     # Try the user specified encoding first
+    # TODO(ut) monkey patch
+    if encoding == 'cp65001':
+        encoding = 'utf-8'
     if encoding:
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
