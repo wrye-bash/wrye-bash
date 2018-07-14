@@ -999,6 +999,10 @@ class SpellsPatcher(importers.SpellsPatcher, _ImporterPatcherPanel): pass
 class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
                           _ImporterPatcherPanel): pass
 
+class DestructiblePatcher(importers.DestructiblePatcher, _ListPatcherPanel): pass
+
+class WeaponModsPatcher(importers.WeaponModsPatcher, _ListPatcherPanel): pass
+
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,
                       _TweakPatcherPanel): default_isEnabled = True
@@ -1035,6 +1039,13 @@ class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,
 
 class ListsMerger(special.ListsMerger, _ListsMergerPanel): pass
 class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel): pass
+
+class FidListsMerger(special.FidListsMerger, _ListsMergerPanel):
+    listLabel = _(u"Override Deflst Tags")
+    forceItemCheck = False #--Force configChecked to True for all items
+    choiceMenu = (u'Auto', u'----', u'Deflst')
+    # CONFIG DEFAULTS
+    default_isEnabled = False
 
 class ContentsChecker(special.ContentsChecker, _PatcherPanel):
     default_isEnabled = True

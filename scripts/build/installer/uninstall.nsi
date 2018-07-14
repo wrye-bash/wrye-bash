@@ -41,6 +41,18 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Fallout3 == ${BST_CHECKED}
+            ${If} $Path_Fallout3 != $Empty
+                !insertmacro UninstallBash $Path_Fallout3 "Fallout3"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_FalloutNV == ${BST_CHECKED}
+            ${If} $Path_FalloutNV != $Empty
+                !insertmacro UninstallBash $Path_FalloutNV "FalloutNV"
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ${If} $Path_Ex1 != $Empty
                 !insertmacro UninstallBash $Path_Ex1 "Extra Path 1"
@@ -65,6 +77,8 @@
         ${AndIf} $Path_Skyrim == $Empty
         ${AndIf} $Path_Fallout4 == $Empty
         ${AndIf} $Path_SkyrimSE == $Empty
+        ${AndIf} $Path_Fallout3 == $Empty
+        ${AndIf} $Path_FalloutNV == $Empty
         ${AndIf} $Path_Ex1 == $Empty
         ${AndIf} $Path_Ex2 == $Empty
             DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Wrye Bash"
