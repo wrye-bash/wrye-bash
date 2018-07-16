@@ -58,14 +58,19 @@ class Settings_BackupSettings(ItemLink):
         msg = _(u'Do you want to backup your Bash settings now?')
         if not balt.askYes(Link.Frame, msg,_(u'Backup Bash Settings?')): return
         with balt.BusyCursor(): BashFrame.SaveSettings(Link.Frame)
-        backup = barb.BackupSettings.get_backup_instance(
-            Link.Frame, settings_file=None)
-        if not backup: return
+        base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
+        settings_file = balt.askSave(Link.Frame,
+                                     title=_(u'Backup Bash Settings'),
+                                     defaultDir=base_dir, wildcard=u'*.7z',
+                                     defaultFile=barb.backup_filename())
+        if not settings_file: return
+        with balt.BusyCursor():
+            backup = barb.BackupSettings(settings_file)
         try:
-            with balt.BusyCursor(): backup.Apply()
+            with balt.BusyCursor(): backup.backup_settings(balt)
         except exception.StateError:
             deprint(u'Backup settings failed', traceback=True)
-            backup.WarnFailed()
+            backup.warn_message(balt)
 
 #------------------------------------------------------------------------------
 class Settings_RestoreSettings(ItemLink):
@@ -81,14 +86,18 @@ class Settings_RestoreSettings(ItemLink):
                            u'settings are restored.')
         if not balt.askYes(Link.Frame, msg, _(u'Restore Bash Settings?')):
             return
-        backup = barb.RestoreSettings.get_backup_instance( # type: barb.RestoreSettings
-            Link.Frame, settings_file=None) # prompt for backup filename
-        if not backup: return
+        # former may be None
+        base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
+        settings_file = balt.askOpen(Link.Frame, _(u'Restore Bash Settings'),
+                                     base_dir, u'', u'*.7z')
+        if not settings_file: return
+        with balt.BusyCursor():
+            backup = barb.RestoreSettings(settings_file)
         backup_dir = None
         restarting = False
         try:
             with balt.BusyCursor():
-                backup_dir = backup.extract_backup(backup._settings_file)
+                backup_dir = backup.extract_backup(settings_file)
             error_msg, error_title = backup.incompatible_backup_error(
                 backup_dir, bush.game.fsName)
             if error_msg:
@@ -102,14 +111,13 @@ class Settings_RestoreSettings(ItemLink):
             restarting = True
             balt.showInfo(balt.Link.Frame, '\n'.join([
                 _(u'Your Bash settings have been successfully extracted.'),
-                _(u'Backup Path: ') + backup._settings_file.s, u'',
-                _(u'Before the settings can take effect, Wrye Bash must '
-                  u'restart.'), _(u'Click OK to restart now.')]),
-                          _(u'Bash Settings Extracted'))
+                _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
+                  u'settings can take effect, Wrye Bash must restart.'), _(
+                u'Click OK to restart now.')]), _(u'Bash Settings Extracted'))
             Link.Frame.Restart(['--restore'], ['--filename', backup_dir.s])
         except exception.StateError:
             deprint(u'Restore settings failed:', traceback=True)
-            backup.WarnFailed()
+            backup.warn_message(balt)
         except BoltError:
             self._showError(u'Invalid backup path: %s' % backup._settings_file)
         finally:

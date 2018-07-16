@@ -45,10 +45,8 @@ import bass
 import bolt
 import bush
 from bass import dirs
-from balt import askSave, askOpen, showWarning, showInfo, Link, BusyCursor, \
-    askYes
 from bolt import GPath, deprint
-from exception import AbstractError, BoltError, StateError
+from exception import BoltError, StateError
 
 def _init_settings_files(fsName_):
     """Construct a dict mapping directory paths to setting files. Keys are
@@ -88,36 +86,11 @@ def _init_settings_files(fsName_):
                 setting_files.add(settings_file + u'.bak')
     return settings_info
 
-#------------------------------------------------------------------------------
-class BaseBackupSettings(object):
-
-    def __init__(self, parent=None, settings_file=None, do_quit=False):
-        self.quit = do_quit
-        self._settings_file = settings_file
-        self.parent = parent
-        self.files = {}
-
-    def Apply(self):
-        raise AbstractError
-
-    @classmethod
-    def get_backup_instance(cls, parent, settings_file, do_quit=False):
-        settings_file = GPath(settings_file)
-        settings_file = cls._get_backup_filename(parent, settings_file,
-                                                 do_quit)
-        if not settings_file: return None
-        with BusyCursor():
-            return cls(parent, settings_file, do_quit)
-
-    @staticmethod
-    def _get_backup_filename(parent, filename, do_quit):
-        raise AbstractError
-
-def new_bash_version_prompt_backup():
+def new_bash_version_prompt_backup(balt_):
     # return False if old version == 0 (as in not previously installed)
     if bass.settings['bash.version'] == 0: return False
     # return True if not same app version and user opts to backup settings
-    return not SameAppVersion() and askYes(Link.Frame, u'\n'.join([
+    return not SameAppVersion() and balt_.askYes(balt_.Link.Frame, u'\n'.join([
         _(u'A different version of Wrye Bash was previously installed.'),
         _(u'Previous Version: ') + (u'%s' % bass.settings['bash.version']),
         _(u'Current Version: ') + (u'%s' % bass.AppVersion),
@@ -126,10 +99,16 @@ def new_bash_version_prompt_backup():
 
 def SameAppVersion(): return bass.AppVersion == bass.settings['bash.version']
 
+def backup_filename():
+    return u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
+        bush.game.fsName, bolt.timestamp(), bass.settings['bash.version'],
+        bass.AppVersion)
+
 #------------------------------------------------------------------------------
-class BackupSettings(BaseBackupSettings):
-    def __init__(self, parent=None, settings_file=None, do_quit=False):
-        super(BackupSettings, self).__init__(parent, settings_file, do_quit)
+class BackupSettings(object):
+    def __init__(self, settings_file):
+        self._settings_file = settings_file
+        self.files = {}
         game = bush.game.fsName
         for (bash_dir, tmpdir), setting_files in \
                 _init_settings_files(game).iteritems():
@@ -140,7 +119,6 @@ class BackupSettings(BaseBackupSettings):
                 fpath = bash_dir.join(name)
                 if fpath.exists():
                     self.files[tmp_dir.join(name)] = fpath
-
         # backup save profile settings
         savedir = GPath(u'My Games').join(game)
         import bosh # FIXME(ut) - move this code out of init
@@ -158,68 +136,56 @@ class BackupSettings(BaseBackupSettings):
             if fpath.exists(): self.files[tpath] = fpath
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
 
-    def Apply(self):
+    def backup_settings(self, balt_):
         deprint(u'')
         deprint(_(u'BACKUP BASH SETTINGS: ') + self._settings_file.s)
         temp_settings_backup_dir = bolt.Path.tempDir()
         try:
             self._backup_settings(temp_settings_backup_dir)
+            self._backup_success(balt_)
         finally:
             if temp_settings_backup_dir:
                 temp_settings_backup_dir.rmtree(safety=u'WryeBash_')
 
     def _backup_settings(self, temp_dir):
-        with BusyCursor():
-            # copy all files to ~tmp backup dir
-            for tpath,fpath in self.files.iteritems():
-                deprint(tpath.s + u' <-- ' + fpath.s)
-                fpath.copyTo(temp_dir.join(tpath))
-            # dump the version info and file listing
-            with temp_dir.join(u'backup.dat').open('wb') as out:
-                # Bash version the settings were saved with, if this is newer
-                # than the installed settings version, do not allow restore
-                cPickle.dump(bass.settings['bash.version'], out, -1)
-                # app version, if this doesn't match the installed settings
-                # version, warn the user on restore
-                cPickle.dump(bass.AppVersion, out, -1)
-            # create the backup archive in 7z format WITH solid compression
-            # may raise StateError
-            backup_dir, dest7z = self._settings_file.head, \
-                                 self._settings_file.tail
-            command = archives.compressCommand(dest7z, backup_dir, temp_dir)
-            archives.compress7z(command, backup_dir, dest7z, temp_dir)
-            bass.settings['bash.backupPath'] = backup_dir
-        if self.quit: return
-        showInfo(self.parent, u'\n'.join([
+        # copy all files to ~tmp backup dir
+        for tpath, fpath in self.files.iteritems():
+            deprint(tpath.s + u' <-- ' + fpath.s)
+            fpath.copyTo(temp_dir.join(tpath))
+        # dump the version info and file listing
+        with temp_dir.join(u'backup.dat').open('wb') as out:
+            # Bash version the settings were saved with, if this is newer
+            # than the installed settings version, do not allow restore
+            cPickle.dump(bass.settings['bash.version'], out, -1)
+            # app version, if this doesn't match the installed settings
+            # version, warn the user on restore
+            cPickle.dump(bass.AppVersion, out, -1)
+        # create the backup archive in 7z format WITH solid compression
+        # may raise StateError
+        backup_dir, dest7z = self._settings_file.head, self._settings_file.tail
+        command = archives.compressCommand(dest7z, backup_dir, temp_dir)
+        archives.compress7z(command, backup_dir, dest7z, temp_dir)
+        bass.settings['bash.backupPath'] = backup_dir
+
+    def _backup_success(self, balt_):
+        if balt_ is None: return
+        balt_.showInfo(balt_.Link.Frame, u'\n'.join([
             _(u'Your Bash settings have been backed up successfully.'),
             _(u'Backup Path: ') + self._settings_file.s]),
             _(u'Backup File Created'))
 
     @staticmethod
-    def _get_backup_filename(parent, filename, do_quit):
-        if filename is None or filename.isfile(): # don't overwrite existing
-            filename = u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-                bush.game.fsName, bolt.timestamp(),
-                bass.settings['bash.version'], bass.AppVersion)
-            if not do_quit: # we are called from UI ask user for backup name
-                base_dir = bass.settings['bash.backupPath'] or bass.dirs[
-                    'modsBash']
-                filename = askSave(parent, title=_(u'Backup Bash Settings'),
-                                   defaultDir=base_dir, defaultFile=filename,
-                                   wildcard=u'*.7z')
-        return filename
-
-    def WarnFailed(self):
-        showWarning(self.parent, u'\n'.join([
+    def warn_message(balt_):
+        if balt_ is None: return
+        balt_.showWarning(balt_.Link.Frame, u'\n'.join([
             _(u'There was an error while trying to backup the Bash settings!'),
-            _(u'No backup was created.')]),
-            _(u'Unable to create backup!'))
+            _(u'No backup was created.')]), _(u'Unable to create backup!'))
 
 #------------------------------------------------------------------------------
-class RestoreSettings(BaseBackupSettings):
+class RestoreSettings(object):
 
-    def __init__(self, parent=None, settings_file=None, do_quit=False):
-        super(RestoreSettings, self).__init__(parent, settings_file, do_quit)
+    def __init__(self, settings_file=None):
+        self._settings_file = settings_file
         self._saved_settings_version = self._settings_saved_with = None
 
     def _get_settings_versions(self, tmp_dir):
@@ -280,10 +246,10 @@ class RestoreSettings(BaseBackupSettings):
         raise BoltError(
             u'%s is not a valid backup location' % backup_path)
 
-    def Apply(self, backup_path=None):
+    def restore_settings(self, backup_path):
         temp_settings_restore_dir = self.extract_backup(backup_path)
         try:
-            self.restore_settings(temp_settings_restore_dir)
+            self._restore_settings(temp_settings_restore_dir)
         finally:
             if temp_settings_restore_dir:
                 temp_settings_restore_dir.rmtree(safety=u'RestoreSettingsWryeBash_')
@@ -324,10 +290,9 @@ class RestoreSettings(BaseBackupSettings):
                 u'Warning: Version Mismatch!')
         return u'', u''
 
-    def restore_settings(self, temp_dir, game=None):
+    def _restore_settings(self, temp_dir, game=None):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
-
         # restore all the settings files
         restore_paths = _init_settings_files(bush.game.fsName).keys()
         for dest_dir, back_path in restore_paths:
@@ -337,7 +302,6 @@ class RestoreSettings(BaseBackupSettings):
                     deprint(GPath(back_path).join(
                         name).s + u' --> ' + dest_dir.join(name).s)
                     full_back_path.join(name).copyTo(dest_dir.join(name))
-
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(game, u'Saves')
         saves_dir = dirs['saveBase'].join(u'Saves')
@@ -352,17 +316,9 @@ class RestoreSettings(BaseBackupSettings):
                         saves_dir.join(root_dir, name))
 
     @staticmethod
-    def _get_backup_filename(parent, filename, do_quit):
-        if filename is None or (filename.isfile() and filename.cext != u'.7z'):
-            # former may be None
-            base_dir = bass.settings['bash.backupPath'] or bass.dirs[
-                'modsBash']
-            filename = askOpen(parent, _(u'Restore Bash Settings'), base_dir,
-                               u'', u'*.7z')
-        return filename
-
-    def WarnFailed(self):
-        showWarning(self.parent, u'\n'.join([
+    def warn_message(balt_):
+        if balt_ is None: return
+        balt_.showWarning(balt_.Link.Frame, u'\n'.join([
             _(u'There was an error while trying to restore your settings from '
               u'the backup file!'), _(u'No settings were restored.')]),
-                    _(u'Unable to restore backup!'))
+                          _(u'Unable to restore backup!'))

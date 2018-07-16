@@ -82,18 +82,24 @@ def cmdBackup(opts):
     # backup settings if app version has changed or on user request
     global basher, balt, barb
     if not basher: import basher, balt, barb
-    path = (opts.backup and opts.filename) or None
+    settings_file = (opts.backup and opts.filename) or None
     should_quit = opts.backup and opts.quietquit
-    if barb.new_bash_version_prompt_backup() or opts.backup:
+    if opts.backup or barb.new_bash_version_prompt_backup(balt):
         frame = balt.Link.Frame
-        backup = barb.BackupSettings.get_backup_instance(frame, path,
-            should_quit)
-        if not backup: return
+        base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
+        if not settings_file:
+            settings_file = balt.askSave(frame,
+                                         title=_(u'Backup Bash Settings'),
+                                         defaultDir=base_dir, wildcard=u'*.7z',
+                                         defaultFile=barb.backup_filename())
+        if not settings_file: return
+        with balt.BusyCursor():
+            backup = barb.BackupSettings(settings_file)
         try:
-            backup.Apply()
+            with balt.BusyCursor(): backup.backup_settings(balt)
         except exception.StateError:
             if barb.SameAppVersion():
-                backup.WarnFailed()
+                backup.warn_message(balt)
             elif balt.askYes(frame, u'\n'.join([
             _(u'There was an error while trying to backup the Bash settings!'),
             _(u'If you continue, your current settings may be overwritten.'),
@@ -191,8 +197,8 @@ def dump_environment():
     print msg
     return msg
 
-def _bash_ini_parser(iniPath):
-    iniPath = iniPath or u'bash.ini'
+def _bash_ini_parser():
+    iniPath = u'bash.ini'
     bash_ini_parser = None
     if os.path.exists(iniPath):
         bash_ini_parser = ConfigParser()
@@ -296,13 +302,11 @@ def _main(opts):
         except exception.BoltError:
             bolt.deprint(u'Failed to restore backup', traceback=True)
 
-    bashIni, bush_game, game_path = _detect_game(backup_bash_ini, opts)
+    bashIni, bush_game, game_path = _detect_game(opts)
     if not bush_game: return
     # from now on bush.game is set
     if restore_dir:
-        should_quit = opts.quietquit
-        backup = barb.RestoreSettings(balt.Link.Frame, restore_dir,
-                                      should_quit)
+        backup = barb.RestoreSettings(restore_dir)
         error_msg, error_title = backup.incompatible_backup_error(
             restore_dir, bush_game.fsName)
         if not error_msg:
@@ -321,10 +325,10 @@ def _main(opts):
             # reset the game
             import bush
             bush.reset_bush_globals()
-            bashIni, bush_game, game_path = _detect_game(None, opts)
+            bashIni, bush_game, game_path = _detect_game(opts)
         else:
-            backup.Apply()
-        if should_quit: return
+            backup.restore_settings(restore_dir)
+        if opts.quietquit: return
 
     #--Initialize Directories and some settings
     #  required before the rest has imported
@@ -389,9 +393,9 @@ def _main(opts):
     app.Init() # Link.Frame is set here !
     app.MainLoop()
 
-def _detect_game(backup_bash_ini, opts):
+def _detect_game(opts):
     # Read the bash.ini file - if no backup ini exists ignore the existing one
-    bashIni = _bash_ini_parser(backup_bash_ini)
+    bashIni = _bash_ini_parser()
     # if uArg is None, then get the UserPath from the ini file
     if opts.userPath:
         SetHomePath(opts.userPath)

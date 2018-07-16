@@ -74,19 +74,20 @@ def parse():
         operations.""")
     # backup #
     h = """Backup all Bash settings to an archive file before the app
-    launches. Either specify the filepath with  the -f/--filename options or
-    Wrye Bash will prompt the user for the backup file path."""
+    launches. You have to specify the filepath with the -f/--filename
+    option. If also -r is specified Bash will not start."""
     arg(backupGroup, '-b', '--backup', dest='backup', action='store_true',
         default=False)
     # restore #
     h = """Restore all Bash settings from an archive file before the app
-    launches. Either specify the filepath with  the -f/--filename options or
-    Wrye Bash will prompt the user for the backup file path."""
+    launches. You have to specify the filepath with the -f/--filename
+    option. If also -b is specified Bash will not start."""
     arg(backupGroup, '-r', '--restore', dest='restore', action='store_true',
         default=False)
     # filename #
-    h = """The file to use with the -r or -b options. Must end in '.7z' and
-    be a valid path and for -r exist and for -b not already exist."""
+    h = """The file to use with the -r or -b options. Must end in '.7z' (or
+    be a valid directory path for -r) and be a valid path and for -r exist
+    and for -b not already exist."""
     arg(backupGroup, '-f', '--filename', dest='filename')
     # quietquit #
     h = """Close Bash after creating or restoring backup and do not display
@@ -135,8 +136,12 @@ def parse():
                         dest='language',
                         help='Specify the user language overriding the system '
                              'language settings.')
-
+    # parse and error check backup options
     args = parser.parse_args()
+    if args.backup and args.restore:
+        parser.error('You specified both backup and restore')
+    elif (args.backup or args.restore) and not args.filename:
+        parser.error('You must specify a filename for use with backup/restore')
     return args
 
 _short_to_long = dict(
