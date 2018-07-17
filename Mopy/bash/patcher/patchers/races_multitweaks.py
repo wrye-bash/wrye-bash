@@ -684,8 +684,8 @@ class RacePatcher(_ARacePatcher, ListPatcher):
         ],key=lambda a: a.label.lower())
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(RacePatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(RacePatcher, self).initPatchFile(patchFile)
         self.races_data = {'EYES':[],'HAIR':[]}
         self.raceData = {} #--Race eye meshes, hair,eyes
         self.tempRaceData = {}
@@ -1152,7 +1152,7 @@ class CBash_RacePatcher_Relations(SpecialPatcher):
     applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
+    def initPatchFile(self,srcs,patchFile):
         self.patchFile = patchFile
         self.srcs = srcs
         self.isActive = bool(srcs)
@@ -1240,7 +1240,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
     applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
+    def initPatchFile(self, srcs, patchFile):
         self.patchFile = patchFile
         self.srcs = srcs
         self.isActive = bool(srcs)
@@ -1303,7 +1303,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
     applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
+    def initPatchFile(self, srcs, patchFile):
         self.patchFile = patchFile
         self.srcs = srcs
         self.isActive = bool(srcs)
@@ -1369,7 +1369,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
     applyRequiresChecked = False
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,srcs,patchFile,loadMods):
+    def initPatchFile(self, srcs, patchFile):
         self.patchFile = patchFile
         self.srcs = srcs
         self.isActive = True #--Always partially enabled to support eye
@@ -1702,13 +1702,13 @@ class CBash_RacePatcher(_ARacePatcher, CBash_ListPatcher):
         ],key=lambda a: a.label.lower())
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_RacePatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_RacePatcher, self).initPatchFile(patchFile)
         #This single tweak is broken into several parts to make it easier to
         # manage
         #Each part is a group of tags that are processed similarly
         for tweak in self.tweakers:
-            tweak.initPatchFile(self.srcs,patchFile,loadMods)
+            tweak.initPatchFile(self.srcs, patchFile)
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
 

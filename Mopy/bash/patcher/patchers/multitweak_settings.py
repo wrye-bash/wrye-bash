@@ -243,7 +243,7 @@ class CBash_GmstTweaker(CBash_MultiTweaker, _AGmstTweaker):
                     (CBash_GmstTweak, bush.game_mod.GmstTweaks)]
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
+    def initPatchFile(self, patchFile):
         self.patchFile = patchFile
         for tweak in self.tweaks:
             tweak.patchFile = patchFile

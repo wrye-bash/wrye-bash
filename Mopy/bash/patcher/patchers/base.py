@@ -41,8 +41,8 @@ class CBash_ListPatcher(AListPatcher,CBash_Patcher):
     unloadedText = u'\n\n'+_(u'Any non-active, non-merged mods in the'
                              u' following list will be IGNORED.')
 
-    def initPatchFile(self, patchFile, loadMods):
-        super(CBash_ListPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ListPatcher, self).initPatchFile(patchFile)
         # used in all subclasses except CBash_RacePatcher,
         # CBash_PatchMerger, CBash_UpdateReferences
         self.mod_count = collections.defaultdict(int)
@@ -128,8 +128,8 @@ class CBash_MultiTweaker(AMultiTweaker,CBash_Patcher):
                 group_patchers.setdefault(type_,[]).append(tweak)
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self, patchFile, loadMods):
-        super(CBash_MultiTweaker, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_MultiTweaker, self).initPatchFile(patchFile)
         for tweak in self.tweaks:
             tweak.patchFile = patchFile
 
@@ -153,8 +153,8 @@ class CBash_PatchMerger(APatchMerger, CBash_ListPatcher):
 class UpdateReferences(AUpdateReferences,ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(UpdateReferences, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(UpdateReferences, self).initPatchFile(patchFile)
         self.types = MreRecord.simpleTypes
         self.classes = self.types.union(
             {'CELL', 'WRLD', 'REFR', 'ACHR', 'ACRE'})
@@ -346,8 +346,8 @@ from ...parsers import CBash_FidReplacer
 class CBash_UpdateReferences(AUpdateReferences, CBash_ListPatcher):
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_UpdateReferences, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_UpdateReferences, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.old_eid = {} #--Maps old fid to old editor id
         self.new_eid = {} #--Maps new fid to new editor id

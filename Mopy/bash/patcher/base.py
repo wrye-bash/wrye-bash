@@ -65,7 +65,7 @@ class _Abstract_Patcher(object):
         # super(Abstract_Patcher, self).__init__()#UNNEEDED (ALWAYS BEFORE obj)
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
+    def initPatchFile(self, patchFile):
         """Prepare to handle specified patch mod. All functions are called
         after this. Base implementation sets the patchFile to the actively
         executing patch - be sure to call super."""
@@ -152,11 +152,11 @@ class AListPatcher(_Abstract_Patcher):
         if self._patches_set is None: self.list_patches_dir()
         return self._patches_set
 
-    def initPatchFile(self, patchFile, loadMods):
+    def initPatchFile(self, patchFile):
         """Prepare to handle specified patch mod. All functions are called
         after this. In addition to super implemenation this defines the
         self.srcs AListPatcher attribute."""
-        super(AListPatcher, self).initPatchFile(patchFile, loadMods)
+        super(AListPatcher, self).initPatchFile(patchFile)
         self.srcs = self.getConfigChecked()
         self.isActive = bool(self.srcs)
 
@@ -192,10 +192,10 @@ class AAliasesPatcher(_Abstract_Patcher):
     tip = None
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
+    def initPatchFile(self, patchFile):
         """Prepare to handle specified patch mod. All functions are called
         after this."""
-        super(AAliasesPatcher, self).initPatchFile(patchFile,loadMods)
+        super(AAliasesPatcher, self).initPatchFile(patchFile)
         if self.isEnabled:
             self.patchFile.aliases = self.aliases
 
@@ -291,14 +291,15 @@ class APatchMerger(AListPatcher):
     autoKey = {u'Merge'}
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(APatchMerger,self).initPatchFile(patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(APatchMerger, self).initPatchFile(patchFile)
         #--WARNING: Since other patchers may rely on the following update
         # during their initPatchFile section, it's important that PatchMerger
         # runs first or near first.
         if not self.isActive: return
         if self.isEnabled: #--Since other mods may rely on this
-            patchFile.setMods(None, self.srcs) # self.srcs set in initPatchFile
+            patchFile.set_mergeable_mods( # self.srcs set in initPatchFile
+                self.srcs)
 
 class AUpdateReferences(AListPatcher):
     """Imports Form Id replacers into the Bashed Patch."""

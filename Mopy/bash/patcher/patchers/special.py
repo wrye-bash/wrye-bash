@@ -51,10 +51,10 @@ class _AListsMerger(SpecialPatcher, AListPatcher):
 class ListsMerger(_AListsMerger, ListPatcher):
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ListsMerger, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(ListsMerger, self).initPatchFile(patchFile)
         self.srcs_ordered = self.srcs
-        self.srcs = set(self.srcs) & set(loadMods)
+        self.srcs = set(self.srcs) & patchFile.loadSet
         self.listTypes = bush.game_mod.listTypes
         self.type_list = dict([(type,{}) for type in self.listTypes])
         self.masterItems = {}
@@ -250,14 +250,14 @@ class CBash_ListsMerger(_AListsMerger, CBash_ListPatcher):
     applyRequiresChecked = False
 
     #--Patch Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ListsMerger, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ListsMerger, self).initPatchFile(patchFile)
         self.isActive = True
         self.id_delevs = {}
         self.id_list = {}
         self.id_attrs = {}
         self.empties = set()
-        importMods = set(self.srcs) & set(loadMods)
+        importMods = set(self.srcs) & patchFile.loadSet
         OverhaulCompat = False
         OOOMods = {GPath(u"Oscuro's_Oblivion_Overhaul.esm"),
                    GPath(u"Oscuro's_Oblivion_Overhaul.esp")}
@@ -509,10 +509,11 @@ class FidListsMerger(_AListsMerger,ListPatcher):
     iiMode = True
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        super(FidListsMerger, self).initPatchFile(patchFile, loadMods)
-        self.srcMods = set(self.getConfigChecked()) & set(loadMods)
+    def initPatchFile(self, patchFile):
+        """Prepare to handle specified patch mod. All functions are called
+        after this."""
+        super(FidListsMerger, self).initPatchFile(patchFile)
+        self.srcMods = set(self.getConfigChecked()) & patchFile.loadSet
         self.listTypes = ('FLST',)
         self.type_list = dict([(type,{}) for type in self.listTypes])
         self.masterItems = {}
@@ -531,9 +532,8 @@ class FidListsMerger(_AListsMerger,ListPatcher):
         """Add lists from modFile."""
         #--Level Masters (complete initialization)
         if self.levelers is None:
-            allMods = set(self.patchFile.allMods)
             self.levelers = [leveler for leveler in self.getConfigChecked() if
-                             leveler in allMods]
+                             leveler in self.patchFile.allSet]
             self.deflstMasters = set()
             for leveler in self.levelers:
                 self.deflstMasters.update(bosh.modInfos[leveler].header.masters)
@@ -630,8 +630,8 @@ class _AContentsChecker(SpecialPatcher):
 class ContentsChecker(_AContentsChecker,Patcher):
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ContentsChecker, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(ContentsChecker, self).initPatchFile(patchFile)
         self.id_type = {}
         self.id_eid = {}
 
@@ -713,8 +713,8 @@ class CBash_ContentsChecker(_AContentsChecker,CBash_Patcher):
     # with the least processing required.
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ContentsChecker, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ContentsChecker, self).initPatchFile(patchFile)
         self.isActive = True
         self.listTypes = {'LVSP', 'LVLC', 'LVLI'}
         self.containerTypes = {'CONT', 'CREA', 'NPC_'}

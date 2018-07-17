@@ -48,8 +48,8 @@ class _SimpleImporter(ImportPatcher):
     long_types = None
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(_SimpleImporter, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(_SimpleImporter, self).initPatchFile(patchFile)
         #--(attribute-> value) dicts keyed by long fid.
         self.id_data = collections.defaultdict(dict)
         self.srcClasses = set() #--Record classes actually provided by src
@@ -212,8 +212,8 @@ class _RecTypeModLogging(CBash_ImportPatcher):
     logModRecs = u'* ' + _(u'Modified %(type)s Records: %(count)d')
     logMsg = u'\n=== ' + _(u'Modified Records')
 
-    def initPatchFile(self,patchFile,loadMods):
-        super(_RecTypeModLogging, self).initPatchFile(patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(_RecTypeModLogging, self).initPatchFile(patchFile)
         self.mod_count = collections.defaultdict(
             lambda: collections.defaultdict(int))
         self.fid_attr_value = collections.defaultdict(dict) # used in some
@@ -261,8 +261,8 @@ class CellImporter(_ACellImporter, ImportPatcher):
     logMsg = _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CellImporter, self).initPatchFile(patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CellImporter, self).initPatchFile(patchFile)
         self.cellData = collections.defaultdict(dict)
         # TODO: docs: recAttrs vs tag_attrs - extra in PBash:
         # 'unused1','unused2','unused3'
@@ -440,8 +440,8 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
     logMsg = u'* ' + _(u'Cells/Worlds Patched') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_CellImporter, self).initPatchFile(patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_CellImporter, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.fid_attr_value = collections.defaultdict(dict)
         self.tag_attrs = {
@@ -551,8 +551,8 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
     long_types = game_mod.graphicsLongsTypes
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(GraphicsPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(GraphicsPatcher, self).initPatchFile(patchFile)
         #--Type Fields
         # Not available in Skyrim yet LAND, PERK, PACK, QUST, RACE, SCEN, REFR, REGN
         # Look into why these records are not included, are they part of other patchers?
@@ -630,8 +630,8 @@ class GraphicsPatcher(_SimpleImporter, _AGraphicsPatcher):
 class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_GraphicsPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_GraphicsPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         class_attrs = self.class_attrs = {}
         model = ('modPath','modb','modt_p')
@@ -867,9 +867,10 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
 class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        super(CBash_ActorImporter, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        """Prepare to handle specified patch mod. All functions are called
+        after this."""
+        super(CBash_ActorImporter, self).initPatchFile(patchFile)
         if not self.isActive: return
         class_tag_attrs = self.class_tag_attrs = {}
         class_tag_attrs['NPC_'] = {
@@ -955,8 +956,8 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     logMsg = u'* ' + _(u'Imported Animations') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_KFFZPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_animations = collections.defaultdict(list)
 
@@ -995,8 +996,8 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
     logMsg = _(u'AI Package Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(NPCAIPackagePatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(NPCAIPackagePatcher, self).initPatchFile(patchFile)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
         self.longTypes = {'CREA', 'NPC_'}
@@ -1168,8 +1169,8 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
     logMsg = u'* ' + _(u'AI Package Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_NPCAIPackagePatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.previousPackages = {}
         self.mergedPackageList = {}
@@ -1258,8 +1259,8 @@ class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
     logMsg = u'* ' + _(u'Imported Death Items') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_DeathItemPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_deathItem = {}
 
@@ -1308,8 +1309,8 @@ class ImportFactions(_SimpleImporter, _AImportFactions):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ImportFactions, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(ImportFactions, self).initPatchFile(patchFile)
         self.activeTypes = []  #--Types ('CREA','NPC_') of data actually
         # provided by src mods/files.
 
@@ -1388,8 +1389,8 @@ class CBash_ImportFactions(_RecTypeModLogging, _AImportFactions):
     logModRecs = u'* ' + _(u'Refactioned %(type)s Records: %(count)d')
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ImportFactions, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ImportFactions, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_factions = {}
         self.csvId_factions = {}
@@ -1483,8 +1484,8 @@ class ImportRelations(_SimpleImporter, _AImportRelations):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ImportRelations, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(ImportRelations, self).initPatchFile(patchFile)
         self.id_data = {}  #--[(otherLongid0,disp0),(...)] =
         # id_relations[mainLongid]. # WAS id_relations -renamed for _buildPatch
 
@@ -1567,8 +1568,8 @@ class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
     logMsg = u'* ' + _(u'Re-Relationed Records') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ImportRelations, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.fid_faction_mod = {}
         self.csvFid_faction_mod = {}
@@ -1640,8 +1641,8 @@ class ImportScripts(_SimpleImporter, _AImportScripts):
 class CBash_ImportScripts(_RecTypeModLogging, _AImportScripts):
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ImportScripts, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ImportScripts, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_script = {}
 
@@ -1697,8 +1698,8 @@ class ImportInventory(ImportPatcher, _AImportInventory):
     logMsg = _(u'Inventories Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ImportInventory, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(ImportInventory, self).initPatchFile(patchFile)
         self.id_deltas = {}
         self.srcs = [x for x in self.srcs if
                      x in bosh.modInfos and x in patchFile.allSet]
@@ -1828,8 +1829,8 @@ class CBash_ImportInventory(_RecTypeModLogging, _AImportInventory):
     logModRecs = u'%(type)s ' + _(u'Inventories Changed') + u': %(count)d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_ImportInventory, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ImportInventory, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_deltas = {}
         #should be redundant since this patcher doesn't allow unloaded
@@ -1922,8 +1923,8 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
     logMsg = _(u'Spell Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(ImportActorsSpells, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(ImportActorsSpells, self).initPatchFile(patchFile)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
         self.longTypes = {'CREA', 'NPC_'}
@@ -2090,8 +2091,8 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
     logMsg = u'* '+_(u'Imported Spell Lists') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_ImportActorsSpells, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_spells = {}
 
@@ -2158,8 +2159,8 @@ class _ANamesPatcher(AImportPatcher):
 class NamesPatcher(_ANamesPatcher, ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(NamesPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(NamesPatcher, self).initPatchFile(patchFile)
         self.id_full = {} #--Names keyed by long fid.
         self.activeTypes = []  #--Types ('ALCH', etc.) of data actually
         # provided by src mods/files.
@@ -2251,8 +2252,8 @@ class NamesPatcher(_ANamesPatcher, ImportPatcher):
 class CBash_NamesPatcher(_ANamesPatcher, _RecTypeModLogging):
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_NamesPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_NamesPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_full = {}
         self.csvId_full = {}
@@ -2316,8 +2317,8 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
     logMsg = u'\n=== '+_(u'Faces Patched')+ u': %d'
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(NpcFacePatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(NpcFacePatcher, self).initPatchFile(patchFile)
         self.faceData = {}
 
     def initData(self,progress):
@@ -2441,8 +2442,8 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
     logMsg = u'* '+_(u'Faces Patched') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_NpcFacePatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_face = {}
         self.faceData = (
@@ -2524,8 +2525,8 @@ class RoadImporter(ImportPatcher, _ARoadImporter):
     logMsg = _(u'Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(RoadImporter, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(RoadImporter, self).initPatchFile(patchFile)
         self.world_road = {}
 
     def initData(self,progress):
@@ -2601,9 +2602,10 @@ class CBash_RoadImporter(CBash_ImportPatcher, _ARoadImporter):
     #This isn't standard behavior for import patchers, but consistency between patchers is more important.
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        """Prepare to handle specified patch mod. All functions are called
+        after this."""
+        super(CBash_RoadImporter, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_ROAD = {}
 
@@ -2670,8 +2672,8 @@ class CBash_SoundPatcher(_RecTypeModLogging, _ASoundPatcher):
     tip = text
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(CBash_SoundPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_SoundPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         class_attrs = self.class_attrs = {}
         class_attrs['ACTI'] = ('sound',)
@@ -2719,8 +2721,8 @@ class _AStatsPatcher(AImportPatcher):
 class StatsPatcher(_AStatsPatcher, ImportPatcher):
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(StatsPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(StatsPatcher, self).initPatchFile(patchFile)
         #--To be filled by initData
         self.fid_attr_value = {} #--Stats keyed by long fid.
         self.activeTypes = [] #--Types ('ARMO', etc.) of data actually provided by src mods/files.
@@ -2798,9 +2800,10 @@ class StatsPatcher(_AStatsPatcher, ImportPatcher):
 class CBash_StatsPatcher(_AStatsPatcher, _RecTypeModLogging):
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        """Prepare to handle specified patch mod. All functions are called after this."""
-        super(CBash_StatsPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        """Prepare to handle specified patch mod. All functions are called
+        after this."""
+        super(CBash_StatsPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.csvFid_attr_value = {}
         self.class_attrs = game_mod.statsTypes
@@ -2855,8 +2858,8 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        super(SpellsPatcher, self).initPatchFile(patchFile, loadMods)
+    def initPatchFile(self, patchFile):
+        super(SpellsPatcher, self).initPatchFile(patchFile)
         #--To be filled by initData
         self.id_stat = {} #--Stats keyed by long fid.
         self.spell_attrs = None #set in initData
@@ -2927,8 +2930,8 @@ class CBash_SpellsPatcher(CBash_ImportPatcher, _ASpellsPatcher):
     logMsg = u'* ' + _(u'Modified SPEL Stats') + u': %d'
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
-        CBash_ImportPatcher.initPatchFile(self,patchFile,loadMods)
+    def initPatchFile(self, patchFile):
+        super(CBash_SpellsPatcher, self).initPatchFile(patchFile)
         if not self.isActive: return
         self.id_stats = {}
         self.csvId_stats = {}

@@ -1001,7 +1001,7 @@ class CBash_NamesTweaker(_ANamesTweaker,CBash_MultiTweaker):
     tweaks.insert(0,CBash_NamesTweak_BodyTags())
 
     #--Config Phase -----------------------------------------------------------
-    def initPatchFile(self,patchFile,loadMods):
+    def initPatchFile(self, patchFile):
         self.patchFile = patchFile
         for tweak in self.tweaks[1:]:
             tweak.patchFile = patchFile

@@ -69,18 +69,18 @@ class _PFile(object):
             self.patchName, bosh.modInfos) if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods loading before the bashed patch")
-        self.setMods(loadMods, [])
+        self.loadMods = tuple(loadMods)
+        self.loadSet = frozenset(self.loadMods)
+        self.set_mergeable_mods([])
         for patcher in self.patchers:
-            patcher.initPatchFile(self, loadMods)
+            patcher.initPatchFile(self)
 
-    def setMods(self,loadMods=None,mergeMods=None):
-        """Sets mod lists and sets."""
-        if loadMods is not None: self.loadMods = loadMods
-        if mergeMods is not None: self.mergeMods = mergeMods
-        self.loadSet = set(self.loadMods)
+    def set_mergeable_mods(self, mergeMods):
+        """Add to mod lists and sets the mergeable mods."""
+        self.mergeMods = mergeMods
         self.mergeSet = set(self.mergeMods)
         self.allMods = load_order.get_ordered(self.loadSet | self.mergeSet)
-        self.allSet = set(self.allMods)
+        self.allSet = frozenset(self.allMods)
 
     def _log_header(self, log, patch_name):
         log.setHeader((u'= %s' % patch_name) + u' ' + u'=' * 30 + u'#', True)
@@ -145,7 +145,7 @@ class _PFile(object):
         log.setHeader(u'=== ' + _(u'Active Mods'), True)
         for name in self.allMods:
             version = bosh.modInfos.getVersion(name)
-            if name in self.loadMods:
+            if name in self.loadSet:
                 message = u'* %02X ' % (self.loadMods.index(name),)
             else:
                 message = u'* ++ '
@@ -215,13 +215,12 @@ class PatchFile(_PFile, ModFile):
 
     def scanLoadMods(self,progress):
         """Scans load+merge mods."""
-        if not len(self.loadMods): return
         nullProgress = Progress()
         progress = progress.setFull(len(self.allMods))
         for index,modName in enumerate(self.allMods):
             modInfo = bosh.modInfos[modName]
             bashTags = modInfo.getBashTags()
-            if modName in self.loadMods and u'Filter' in bashTags:
+            if modName in self.loadSet and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             try:
                 loadFactory = (self.readFactory,self.mergeFactory)[modName in self.mergeSet]
@@ -423,7 +422,6 @@ class CBash_PatchFile(_PFile, ObModFile):
 
     def buildPatch(self,progress):
         """Scans load+merge mods."""
-        if not len(self.loadMods): return
         #Parent records must be processed before any children
         #EYES,HAIR must be processed before RACE
         # This should probably be updated for FO3/FNV/TES5 - see issue #287
@@ -518,7 +516,7 @@ class CBash_PatchFile(_PFile, ObModFile):
             modFile = self.Current.LookupModFile(modInfo.getPath().stail)
 
             #--Error checks
-            if modName in self.loadMods and u'Filter' in bashTags:
+            if modName in self.loadSet and u'Filter' in bashTags:
                 self.unFilteredMods.append(modName)
             if bush.game.fsName == u'Oblivion':
                 gls = modFile.LookupRecord(FormID(0x00025811))

@@ -2191,12 +2191,12 @@ class ModInfos(FileInfos):
                 log.setHeader(head+_(u'Active Mod Files:'))
                 masters = set(load_order.cached_active_tuple())
                 merged,imported = self.merged,self.imported
-            allMods = masters | merged | imported
-            allMods = load_order.get_ordered([x for x in allMods if x in self])
+            all_mods = (masters | merged | imported) & set(self.keys())
+            all_mods = load_order.get_ordered(all_mods)
             #--List
             modIndex = 0
             if not wtxt: log(u'[spoiler][xml]\n', appendNewline=False)
-            for name in allMods:
+            for name in all_mods:
                 if name in masters:
                     prefix = bul+u'%02X' % modIndex
                     modIndex += 1
@@ -2376,11 +2376,11 @@ class ModInfos(FileInfos):
 
     def lo_activate_exact(self, modNames):
         """Activate exactly the specified set of mods."""
-        modsSet, allMods = set(modNames), set(self.keys())
+        modsSet, all_mods = set(modNames), set(self.keys())
         #--Ensure plugins that cannot be deselected stay selected
-        modsSet.update(load_order.must_be_active_if_present() & allMods)
+        modsSet.update(load_order.must_be_active_if_present() & all_mods)
         #--Deselect/select plugins
-        missingSet = modsSet - allMods
+        missingSet = modsSet - all_mods
         toSelect = modsSet - missingSet
         listToSelect = load_order.get_ordered(toSelect)
         acti_filtered_espm = [x for x in listToSelect if x.cext != u'.esl']
