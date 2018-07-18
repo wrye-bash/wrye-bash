@@ -326,14 +326,20 @@ def _main(opts):
             import bush
             bush.reset_bush_globals()
             bashIni, bush_game, game_path = _detect_game(opts)
-        else:
-            backup.restore_settings(restore_dir)
+            restore_dir = None
         if opts.quietquit: return
 
-    #--Initialize Directories and some settings
-    #  required before the rest has imported
+    #--Initialize Directories to perform backup/restore operations
+    import initialization
+    game_ini_path = initialization.initDirs(bashIni, opts.personalPath,
+                                            opts.localAppDataPath, bush_game,
+                                            game_path)
+    should_quit = cmdBackup(opts)
+    if restore_dir:
+        backup.restore_settings(restore_dir)
+    if should_quit or opts.quietquit: return
     import bosh # this imports balt (DUH) which imports wx
-    bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
+    bosh.initBosh(bashIni, game_ini_path)
     try:
         env.isUAC = env.testUAC(game_path.join(u'Data'))
         global basher, balt
@@ -367,11 +373,6 @@ def _main(opts):
 
     if not is_standalone and (
         not _rightWxVersion() or not _rightPythonVersion()): return
-
-    # process backup/restore options
-    # quit if either is true, but only after calling both
-    should_quit = cmdBackup(opts)
-    if should_quit: return
     if env.isUAC:
         uacRestart = opts.uac
         if not opts.noUac and not opts.uac:
