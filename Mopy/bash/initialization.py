@@ -26,12 +26,11 @@ functions to init bass.dirs that need be initialized high up into the boot
 sequence to be able to backup/restore settings."""
 from ConfigParser import ConfigParser
 # Local - don't import anything else
-import balt
 import env
 from bass import dirs
 from bolt import GPath
-from env import get_personal_path, get_local_app_data_path, test_permissions
-from exception import BoltError, NonExistentDriveError, PermissionError
+from env import get_personal_path, get_local_app_data_path
+from exception import BoltError, NonExistentDriveError
 
 def get_ini_option(bash_ini_, option_key, section_key=u'General'):
     if not bash_ini_ or not bash_ini_.has_option(section_key, option_key):
@@ -188,22 +187,6 @@ def initDirs(bashIni_, personal, localAppData, game_info, game_path):
     dirs['converters'] = dirs['installers'].join(u'Bain Converters')
     dirs['dupeBCFs'] = dirs['converters'].join(u'--Duplicates')
     dirs['corruptBCFs'] = dirs['converters'].join(u'--Corrupt')
-
-    #--Test correct permissions for the directories
-    badPermissions = [test_dir for test_dir in dirs.itervalues()
-                      if not test_permissions(test_dir)] # DOES NOTHING !!!
-    if not test_permissions(oblivionMods):
-        badPermissions.append(oblivionMods)
-    if badPermissions:
-        # Do not have all the required permissions for all directories
-        # TODO: make this gracefully degrade.  IE, if only the BAIN paths are
-        # bad, just disable BAIN.  If only the saves path is bad, just disable
-        # saves related stuff.
-        msg = balt.fill(_(u'Wrye Bash cannot access the following paths:'))
-        msg += u'\n\n' + u'\n'.join(
-            [u' * ' + bad_dir.s for bad_dir in badPermissions]) + u'\n\n'
-        msg += balt.fill(_(u'See: "Wrye Bash.html, Installation - Windows Vista/7" for information on how to solve this problem.'))
-        raise PermissionError(msg)
 
     # create bash user folders, keep these in order
     keys = ('modsBash', 'installers', 'converters', 'dupeBCFs', 'corruptBCFs',
