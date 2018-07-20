@@ -44,7 +44,8 @@ from itertools import imap
 #--Local
 from ._mergeability import isPBashMergeable, isCBashMergeable
 from .mods_metadata import ConfigHelpers
-from .. import bass, bolt, balt, bush, env, load_order, archives
+from .. import bass, bolt, balt, bush, env, load_order, archives, \
+    initialization
 from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
@@ -3160,6 +3161,8 @@ def initLogFile():
 
 def initBosh(bashIni, game_ini_path):
     # Setup LOOT API, needs to be done after the dirs are initialized
+    if not initialization.bash_dirs_initialized:
+        raise BoltError(u'initBosh: Bash dirs are not initialized')
     global configHelpers
     configHelpers = ConfigHelpers()
     # game ini files

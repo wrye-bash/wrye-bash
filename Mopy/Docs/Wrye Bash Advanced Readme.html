@@ -2082,7 +2082,7 @@ and masterlist relative priority and role see the LOOT docs.
                 <li>All files in the <code>Data\Bashed Patches</code> directory.
                 <li>All INI Tweaks.
             </ul>
-        <tr><td colspan="2">Restore Settings...<td>Restores your settings from a backup of your choice. This will force a restart of Wrye Bash to ensure the new settings take effect.
+        <tr><td colspan="2" id="settingsRestore">Restore Settings...<td>Restores your settings from a backup of your choice. This will force a restart of Wrye Bash to ensure the new settings take effect.
         <tr><td colspan="2">Save Settings<td>Normally, Wrye Bash saves its settings to disc only on closing. Use this to force a save right now.
         <tr><td colspan="2" id="settingsExportList">Export list of allowed/disallowed OBSE plugin dlls<td>This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.
         <tr><td colspan="2" id="settingsImportList">Import list of allowed/disallowed OBSE plugin dlls<td>This will import the list of Good/Bad OBSE dll definitions from a text file previously exported using <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a>.
@@ -2293,9 +2293,10 @@ and masterlist relative priority and role see the LOOT docs.
 
         <tr>
             <td><code>-r, --restore</code>
-            <td>Backup all Bash settings to an archive file before the app
-                launches. Either specify the filepath with the <code>-f/--filename</code>
-                options or Wrye Bash will prompt the user for the backup file path.
+            <td>Restore all Bash settings from an archive file/dir before the app
+                launches. You must specify the filepath with the <code>-f/--filename</code>
+                options. Restoring from the command line skips all error checks that are done
+                in <a href="#settingsRestore">Restore Settings</a> menu item.
 
         <tr>
             <td><code>-f FILENAME, --filename=FILENAME</code>

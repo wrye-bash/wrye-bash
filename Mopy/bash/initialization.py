@@ -34,6 +34,8 @@ from bolt import GPath, Path
 from env import get_personal_path, get_local_app_data_path
 from exception import BoltError, NonExistentDriveError
 
+mopy_dirs_initialized = bash_dirs_initialized = False
+
 def get_ini_option(bash_ini_, option_key, section_key=u'General'):
     if not bash_ini_ or not bash_ini_.has_option(section_key, option_key):
         return None
@@ -130,6 +132,8 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
         return oldPath, oldSrc
 
 def init_dirs(bashIni_, personal, localAppData, game_info, game_path):
+    if not mopy_dirs_initialized:
+        raise BoltError(u'init_dirs: Mopy dirs uninitialized')
     #--Oblivion (Application) Directories
     dirs['app'] = game_path
     dirs['mods'] = dirs['app'].join(u'Data')
@@ -240,6 +244,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info, game_path):
                              u'symbolic links or NTFS Junctions') + u':\n\n'
             msg += u'\n'.join([u'%s' % x for x in relativePathError])
         raise BoltError(msg)
+    global bash_dirs_initialized
+    bash_dirs_initialized = True
     return game_ini_path
 
 def init_dirs_mopy_and_cd(is_standalone):
@@ -260,6 +266,8 @@ def init_dirs_mopy_and_cd(is_standalone):
     dirs['db'] = dirs['bash'].join(u'db')
     dirs['templates'] = dirs['mopy'].join(u'templates')
     dirs['images'] = dirs['bash'].join(u'images')
+    global mopy_dirs_initialized
+    mopy_dirs_initialized = True
 
 def getLocalSaveDirs():
     """Return a list of possible local save directories, NOT including the

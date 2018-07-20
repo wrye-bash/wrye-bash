@@ -115,12 +115,16 @@ class Settings_RestoreSettings(ItemLink):
                 _(u'Backup Path: ') + settings_file.s, u'', _(u'Before the '
                   u'settings can take effect, Wrye Bash must restart.'), _(
                 u'Click OK to restart now.')]), _(u'Bash Settings Extracted'))
+            try: # we currently disallow backup and restore on the same boot
+                bass.sys_argv.remove('--backup')
+            except ValueError:
+                pass
             Link.Frame.Restart(['--restore'], ['--filename', backup_dir.s])
         except exception.StateError:
             deprint(u'Restore settings failed:', traceback=True)
             backup.warn_message(balt)
-        except BoltError:
-            self._showError(u'Invalid backup path: %s' % backup._settings_file)
+        except BoltError as e:
+            self._showError(e.message)
         finally:
             if not restarting and backup_dir is not None:
                 backup_dir.rmtree(safety=u'RestoreSettingsWryeBash_')

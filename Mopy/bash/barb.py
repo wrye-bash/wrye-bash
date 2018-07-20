@@ -53,6 +53,8 @@ def _init_settings_files(fsName_):
     tuples of absolute paths to directories, paired with the relative paths
     in the backup file. Values are sets of setting files in those paths,
     or empty, meaning we have to list those paths and backup everything."""
+    if not initialization.bash_dirs_initialized:
+        raise BoltError(u'_init_settings_files: Bash dirs are not initialized')
     settings_info = {
         (dirs['mopy'], jo(fsName_, u'Mopy')): {u'bash.ini', },
         (dirs['mods'].join(u'Bash'), jo(fsName_, u'Data', u'Bash')): {
@@ -105,7 +107,7 @@ def backup_filename(fsName_):
 #------------------------------------------------------------------------------
 class BackupSettings(object):
     def __init__(self, settings_file, fsName):
-        self._settings_file = settings_file
+        self._backup_dest_file = settings_file # absolute path to dest 7z file
         self.files = {}
         for (bash_dir, tmpdir), setting_files in \
                 _init_settings_files(fsName).iteritems():
@@ -134,7 +136,7 @@ class BackupSettings(object):
 
     def backup_settings(self, balt_):
         deprint(u'')
-        deprint(_(u'BACKUP BASH SETTINGS: ') + self._settings_file.s)
+        deprint(_(u'BACKUP BASH SETTINGS: ') + self._backup_dest_file.s)
         temp_settings_backup_dir = bolt.Path.tempDir()
         try:
             self._backup_settings(temp_settings_backup_dir)
@@ -158,7 +160,7 @@ class BackupSettings(object):
             cPickle.dump(AppVersion, out, -1)
         # create the backup archive in 7z format WITH solid compression
         # may raise StateError
-        backup_dir, dest7z = self._settings_file.head, self._settings_file.tail
+        backup_dir, dest7z = self._backup_dest_file.head, self._backup_dest_file.tail
         command = archives.compressCommand(dest7z, backup_dir, temp_dir)
         archives.compress7z(command, backup_dir, dest7z, temp_dir)
         bass.settings['bash.backupPath'] = backup_dir
@@ -167,8 +169,8 @@ class BackupSettings(object):
         if balt_ is None: return
         balt_.showInfo(balt_.Link.Frame, u'\n'.join([
             _(u'Your Bash settings have been backed up successfully.'),
-            _(u'Backup Path: ') + self._settings_file.s]),
-            _(u'Backup File Created'))
+            _(u'Backup Path: ') + self._backup_dest_file.s]),
+                       _(u'Backup File Created'))
 
     @staticmethod
     def warn_message(balt_):
@@ -179,6 +181,11 @@ class BackupSettings(object):
 
 #------------------------------------------------------------------------------
 class RestoreSettings(object):
+    """Class responsible for restoring settings from a 7z backup file
+    created by BackupSettings. We need bass.dirs initialized to restore the
+    settings, which depends on the bash.ini - so this exports also functions
+    to restore the backed up ini, if it exists. Restoring the settings must
+    be done on boot as soon as we are able to initialize bass#dirs."""
 
     def __init__(self, settings_file=None):
         self._settings_file = settings_file
