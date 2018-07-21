@@ -263,7 +263,7 @@ def _main(opts):
         return None
     # The rest of backup/restore functionality depends on setting the game
     try:
-        bashIni, bush_game, game_path, game_ini_path = _detect_game(opts)
+        bashIni, bush_game, game_ini_path = _detect_game(opts)
         if not bush_game: return
         if restore_dir:
             try:
@@ -284,10 +284,10 @@ def _main(opts):
                 # reset the game
                 import bush
                 bush.reset_bush_globals()
-                bashIni, bush_game, game_path, game_ini_path = _detect_game(opts)
+                bashIni, bush_game, game_ini_path = _detect_game(opts)
         import bosh # this imports balt (DUH) which imports wx
         bosh.initBosh(bashIni, game_ini_path)
-        env.isUAC = env.testUAC(game_path.join(u'Data'))
+        env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
         global basher, balt
         import basher, balt
     except (exception.PermissionError,
@@ -374,7 +374,7 @@ def _main(opts):
     app.Init() # Link.Frame is set here !
     app.MainLoop()
 
-def _detect_game(opts, __not_set=[None]*4):
+def _detect_game(opts, __not_set=[None]*3):
     # Read the bash.ini file - if no backup ini exists ignore the existing one
     bashIni = _bash_ini_parser()
     # if uArg is None, then get the UserPath from the ini file
@@ -385,14 +385,13 @@ def _detect_game(opts, __not_set=[None]*4):
         u'General', u'sUserPath') == u'.':
         SetHomePath(bashIni.get(u'General', u'sUserPath'))
     # Detect the game we're running for ---------------------------------------
-    bush_game, game_path = _import_bush_and_set_game(opts, bashIni)
+    bush_game = _import_bush_and_set_game(opts, bashIni)
     if not bush_game: return __not_set
     #--Initialize Directories to perform backup/restore operations
     #--They depend on setting the bash.ini and the game
     game_ini_path = initialization.init_dirs(bashIni, opts.personalPath,
-                                             opts.localAppDataPath, bush_game,
-                                             game_path)
-    return bashIni, bush_game, game_path, game_ini_path
+                                             opts.localAppDataPath, bush_game)
+    return bashIni, bush_game, game_ini_path
 
 def _import_bush_and_set_game(opts, bashIni):
     import bush
@@ -421,7 +420,7 @@ def _import_bush_and_set_game(opts, bashIni):
         bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
     # Force Python mode if CBash can't work with this game
     bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
-    return bush.game, bush.gamePath
+    return bush.game
 
 def _show_wx_error(msg):
     """Shows an error message in a wx window."""

@@ -76,6 +76,9 @@ class GameInfo(object):
     # bethesda net export files
     has_achlist = False
 
+    def __init__(self, gamePath):
+        self.gamePath = gamePath # absolute bolt Path to the game directory
+
     # Construction Set information
     class cs(object):
         imageName = u''   # Image name template for the status bar

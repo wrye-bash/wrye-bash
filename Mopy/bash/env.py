@@ -66,7 +66,7 @@ def get_registry_path(subkey, entry, exe):
             return installPath
     return None
 
-def get_game_path(submod):
+def get_registry_game_path(submod):
     """Check registry supplied game paths for the game.exe."""
     subkey, entry = submod.regInstallKeys
     return get_registry_path(subkey, entry, submod.exe)

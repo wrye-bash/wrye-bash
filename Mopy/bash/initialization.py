@@ -131,11 +131,11 @@ def getLegacyPathWithSource(newPath, oldPath, newSrc, oldSrc=None):
     else:
         return oldPath, oldSrc
 
-def init_dirs(bashIni_, personal, localAppData, game_info, game_path):
+def init_dirs(bashIni_, personal, localAppData, game_info):
     if not mopy_dirs_initialized:
         raise BoltError(u'init_dirs: Mopy dirs uninitialized')
     #--Oblivion (Application) Directories
-    dirs['app'] = game_path
+    dirs['app'] = game_info.gamePath
     dirs['mods'] = dirs['app'].join(u'Data')
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches', game_info.fsName)

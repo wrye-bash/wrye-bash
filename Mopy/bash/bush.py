@@ -31,13 +31,12 @@ import collections
 import struct
 import game as game_init
 from bolt import GPath, Path, deprint
-from env import get_game_path
+from env import get_registry_game_path
 from exception import BoltError
 
 # Game detection --------------------------------------------------------------
 game = None         # type: game_init.GameInfo
 game_mod = None     # type: game_init
-gamePath = None     # absolute bolt Path to the game directory
 foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
 
 # Module Cache
@@ -48,8 +47,8 @@ _fsName_display = {}
 _display_fsName = {}
 
 def reset_bush_globals():
-    global game, game_mod, gamePath
-    game  = game_mod = gamePath = None
+    global game, game_mod
+    game = game_mod = None
     for d in (_allGames, _allModules, _registryGames, _fsName_display,
               _display_fsName):
         d.clear()
@@ -75,7 +74,7 @@ def _supportedGames(useCache=True):
             _allGames[game_type.fsName] = game_type
             _fsName_display[game_type.fsName] = game_type.displayName
             #--Get this game's install path
-            game_path = get_game_path(game_type)
+            game_path = get_registry_game_path(game_type)
         except (ImportError, AttributeError):
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
@@ -160,10 +159,10 @@ def _detectGames(cli_path=u'', bash_ini_=None):
 
 def __setGame(name, msg):
     """Set bush game globals - raise if they are already set."""
-    global gamePath, game, game_mod
+    global game, game_mod
     if game is not None: raise BoltError(u'Trying to reset the game')
     gamePath = foundGames[name]
-    game = _allGames[name]
+    game = _allGames[name](gamePath)
     game_mod = _allModules[name]
     deprint(msg % {'gamename': name}, gamePath)
     # Unload the other modules from the cache
