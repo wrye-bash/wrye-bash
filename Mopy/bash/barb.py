@@ -88,22 +88,6 @@ def _init_settings_files(fsName_):
                 setting_files.add(settings_file + u'.bak')
     return settings_info
 
-def new_bash_version_prompt_backup(balt_, previous_bash_version):
-    # return False if old version == 0 (as in not previously installed)
-    if previous_bash_version == 0 or AppVersion == previous_bash_version:
-        return False
-    # return True if not same app version and user opts to backup settings
-    return balt_.askYes(balt_.Link.Frame, u'\n'.join([
-        _(u'A different version of Wrye Bash was previously installed.'),
-        _(u'Previous Version: ') + (u'%s' % previous_bash_version),
-        _(u'Current Version: ') + (u'%s' % AppVersion),
-        _(u'Do you want to create a backup of your Bash settings before '
-          u'they are overwritten?')]))
-
-def backup_filename(fsName_):
-    return u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
-        fsName_, bolt.timestamp(), bass.settings['bash.version'], AppVersion)
-
 #------------------------------------------------------------------------------
 class BackupSettings(object):
     def __init__(self, settings_file, fsName):
@@ -133,6 +117,25 @@ class BackupSettings(object):
             fpath = dirs['saveBase'].join(*table)
             if fpath.exists(): self.files[tpath] = fpath
             if fpath.backup.exists(): self.files[tpath.backup] = fpath.backup
+
+    @staticmethod
+    def new_bash_version_prompt_backup(balt_, previous_bash_version):
+        # return False if old version == 0 (as in not previously installed)
+        if previous_bash_version == 0 or AppVersion == previous_bash_version:
+            return False
+        # return True if not same app version and user opts to backup settings
+        return balt_.askYes(balt_.Link.Frame, u'\n'.join([
+            _(u'A different version of Wrye Bash was previously installed.'),
+            _(u'Previous Version: ') + (u'%s' % previous_bash_version),
+            _(u'Current Version: ') + (u'%s' % AppVersion),
+            _(u'Do you want to create a backup of your Bash settings before '
+              u'they are overwritten?')]))
+
+    @staticmethod
+    def backup_filename(fsName_):
+        return u'Backup Bash Settings %s (%s) v%s-%s.7z' % (
+            fsName_, bolt.timestamp(), bass.settings['bash.version'],
+            AppVersion)
 
     def backup_settings(self, balt_):
         deprint(u'')
@@ -186,6 +189,7 @@ class RestoreSettings(object):
     settings, which depends on the bash.ini - so this exports also functions
     to restore the backed up ini, if it exists. Restoring the settings must
     be done on boot as soon as we are able to initialize bass#dirs."""
+    __tmpdir_prefix = u'RestoreSettingsWryeBash_'
 
     def __init__(self, settings_file=None):
         self._settings_file = settings_file
@@ -216,6 +220,10 @@ class RestoreSettings(object):
         return backup_bash_ini, timestamped_old
 
     @staticmethod
+    def remove_extract_dir(backup_dir):
+        backup_dir.rmtree(safety=RestoreSettings.__tmpdir_prefix)
+
+    @staticmethod
     def bash_ini_path(tmp_dir):
         # search for Bash ini
         for r, d, fs in bolt.walkdir(u'%s' % tmp_dir):
@@ -240,7 +248,7 @@ class RestoreSettings(object):
         restarting."""
         backup_path = GPath(backup_path)
         if backup_path.isfile():
-            temp_dir = bolt.Path.tempDir(prefix=u'RestoreSettingsWryeBash_')
+            temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
             command = archives.extractCommand(backup_path, temp_dir)
             archives.extract7z(command, backup_path)
             return temp_dir
@@ -255,7 +263,7 @@ class RestoreSettings(object):
             self._restore_settings(temp_settings_restore_dir, fsName)
         finally:
             if temp_settings_restore_dir:
-                temp_settings_restore_dir.rmtree(safety=u'RestoreSettingsWryeBash_')
+                self.remove_extract_dir(temp_settings_restore_dir)
 
     def incompatible_backup_error(self, temp_dir, current_game):
         saved_settings_version, settings_saved_with = \

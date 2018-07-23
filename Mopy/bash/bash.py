@@ -342,7 +342,7 @@ def _main(opts):
     # backup higher up in the boot sequence.
     previous_bash_version = bass.settings['bash.version']
     # backup settings if app version has changed or on user request
-    if opts.backup or barb.new_bash_version_prompt_backup(
+    if opts.backup or barb.BackupSettings.new_bash_version_prompt_backup(
             balt, previous_bash_version):
         frame = None # balt.Link.Frame, not defined yet, no harm done
         base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
@@ -352,8 +352,8 @@ def _main(opts):
                                          title=_(u'Backup Bash Settings'),
                                          defaultDir=base_dir,
                                          wildcard=u'*.7z',
-                                         defaultFile=barb.backup_filename(
-                                             bush_game.fsName, ))
+                                         defaultFile=barb.BackupSettings.
+                                         backup_filename(bush_game.fsName))
         if settings_file:
             with balt.BusyCursor():
                 backup = barb.BackupSettings(settings_file,

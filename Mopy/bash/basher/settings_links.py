@@ -62,8 +62,8 @@ class Settings_BackupSettings(ItemLink):
         settings_file = balt.askSave(Link.Frame,
                                      title=_(u'Backup Bash Settings'),
                                      defaultDir=base_dir, wildcard=u'*.7z',
-                                     defaultFile=barb.backup_filename(
-                                         bush.game.fsName))
+                                     defaultFile=barb.BackupSettings.
+                                     backup_filename(bush.game.fsName))
         if not settings_file: return
         with balt.BusyCursor():
             backup = barb.BackupSettings(settings_file, bush.game.fsName)
@@ -82,10 +82,10 @@ class Settings_RestoreSettings(ItemLink):
 
     @balt.conversation
     def Execute(self):
-        msg = _(u'Do you want to restore your Bash settings from a backup?')
-        msg += u'\n\n' + _(u'This will force a restart of Wrye Bash once your '
-                           u'settings are restored.')
-        if not balt.askYes(Link.Frame, msg, _(u'Restore Bash Settings?')):
+        if not balt.askYes(Link.Frame, u'\n\n'.join([
+            _(u'Do you want to restore your Bash settings from a backup?'),
+            _(u'This will force a restart of Wrye Bash once your settings are '
+              u'restored.')]), _(u'Restore Bash Settings?')):
             return
         # former may be None
         base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
@@ -127,7 +127,7 @@ class Settings_RestoreSettings(ItemLink):
             self._showError(e.message)
         finally:
             if not restarting and backup_dir is not None:
-                backup_dir.rmtree(safety=u'RestoreSettingsWryeBash_')
+                barb.RestoreSettings.remove_extract_dir(backup_dir)
 
 #------------------------------------------------------------------------------
 class Settings_SaveSettings(ItemLink):
