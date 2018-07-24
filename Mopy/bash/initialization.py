@@ -136,10 +136,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         raise BoltError(u'init_dirs: Mopy dirs uninitialized')
     #--Oblivion (Application) Directories
     dirs['app'] = game_info.gamePath
-    dirs['mods'] = dirs['app'].join(u'Data')
-    dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches', game_info.fsName)
-    dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
 
     #  Personal
     personal = getPersonalPath(bashIni_, personal)
@@ -158,23 +155,26 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     # the Oblivion.ini directory where Oblivion.exe is run from will
     # actually matter.
     # Utumno: not sure how/if this applies to other games
-    game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
     data_oblivion_ini = dirs['app'].join(game_info.iniFiles[0])
+    use_data_dir = False
     if data_oblivion_ini.exists():
         oblivionIni = ConfigParser(data_oblivion_ini.s)
         # is bUseMyGamesDirectory set to 0?
         use_data_dir = get_ini_option(oblivionIni,
                                       u'bUseMyGamesDirectory') == u'0'
-        if use_data_dir:
-            game_ini_path = data_oblivion_ini
-            # Set the save game folder to the Oblivion directory
-            dirs['saveBase'] = dirs['app']
-            # Set the data folder to sLocalMasterPath
-            dirs['mods'] = dirs['app'].join(get_ini_option(oblivionIni,
-                u'SLocalMasterPath') or u'Data')
-            # these are relative to the mods path so they must be updated too
-            dirs['patches'] = dirs['mods'].join(u'Bash Patches')
-            dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
+    if use_data_dir:
+        game_ini_path = data_oblivion_ini
+        # Set the save game folder to the Oblivion directory
+        dirs['saveBase'] = dirs['app']
+        # Set the data folder to sLocalMasterPath
+        dirs['mods'] = dirs['app'].join(get_ini_option(oblivionIni,
+            u'SLocalMasterPath') or u'Data')
+    else:
+        game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
+        dirs['mods'] = dirs['app'].join(u'Data')
+    # these are relative to the mods path so they must be set here
+    dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+    dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_, game_info)
     dirs['modsBash'], modsBashSrc = getBashModDataPath(bashIni_, game_info)
