@@ -1535,7 +1535,11 @@ class INIInfos(TableFileInfos):
                 del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
-        csChoices = set(x.lower() for x in _target_inis)
+        try:
+            csChoices = set(x.lower() for x in _target_inis)
+        except AttributeError: # 'Path' object has no attribute 'lower'
+            deprint(u'_target_inis contain a Path %s' % _target_inis.keys())
+            csChoices = set((u'%s' % x).lower() for x in _target_inis)
         for iFile in gameInis: # add the game inis even if missing
             if iFile.abs_path.tail.cs not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
@@ -1583,7 +1587,8 @@ class INIInfos(TableFileInfos):
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
                       len_inis + 1 if a == _(u'Browse...') else len_inis))
         bass.settings['bash.ini.choices'] = collections.OrderedDict(
-            [(k, bass.settings['bash.ini.choices'][k]) for k in keys])
+            # convert stray Path instances back to unicode
+            [(u'%s' % k, bass.settings['bash.ini.choices'][k]) for k in keys])
 
     def _refresh_infos(self):
         """Refresh from file directory."""
