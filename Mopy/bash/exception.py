@@ -23,7 +23,14 @@
 # =============================================================================
 """This module contains all custom exceptions for Wrye Bash."""
 
+import sys
+import traceback
 # NO LOCAL IMPORTS! This has to be importable from any module/package.
+
+def raise_bolt_error(msg):
+    extype, ex, tb = sys.exc_info()
+    formatted = traceback.format_exception_only(extype, ex)[-1]
+    raise BoltError, u'%s caused by %s' % (msg, formatted), tb
 
 class BoltError(Exception):
     """Generic error with a string message."""

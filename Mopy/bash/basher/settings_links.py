@@ -120,11 +120,9 @@ class Settings_RestoreSettings(ItemLink):
             except ValueError:
                 pass
             Link.Frame.Restart(['--restore'], ['--filename', backup_dir.s])
-        except exception.StateError:
-            deprint(u'Restore settings failed:', traceback=True)
-            backup.warn_message(balt)
         except BoltError as e:
-            self._showError(e.message)
+            deprint(u'Restore settings failed:', traceback=True)
+            backup.warn_message(balt, e.message)
         finally:
             if not restarting and backup_dir is not None:
                 barb.RestoreSettings.remove_extract_dir(backup_dir)

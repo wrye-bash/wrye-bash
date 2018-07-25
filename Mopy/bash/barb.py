@@ -46,7 +46,7 @@ import bolt
 import initialization
 from bass import dirs, AppVersion
 from bolt import GPath, deprint
-from exception import BoltError, StateError
+from exception import BoltError, StateError, raise_bolt_error
 
 def _init_settings_files(fsName_):
     """Construct a dict mapping directory paths to setting files. Keys are
@@ -90,6 +90,11 @@ def _init_settings_files(fsName_):
 
 #------------------------------------------------------------------------------
 class BackupSettings(object):
+    """Create a 7z backup file with the settings files used by Bash. We need
+    bass.dirs initialized and also bass.settings - to get the version of the
+    settings we backup (bass.settings['bash.version']). Creates a backup.dat
+    file that stores those versions."""
+
     def __init__(self, settings_file, fsName):
         self._backup_dest_file = settings_file # absolute path to dest 7z file
         self.files = {}
@@ -197,16 +202,20 @@ class RestoreSettings(object):
 
     def _get_settings_versions(self, tmp_dir):
         if self._saved_settings_version is None:
-            with tmp_dir.join(u'backup.dat').open('rb') as ins:
-                # version of Bash that created the backed up settings
-                self._saved_settings_version = cPickle.load(ins)
-                # version of Bash that created the backup
-                self._settings_saved_with = cPickle.load(ins)
+            backup_dat = tmp_dir.join(u'backup.dat')
+            try:
+                with backup_dat.open('rb') as ins:
+                    # version of Bash that created the backed up settings
+                    self._saved_settings_version = cPickle.load(ins)
+                    # version of Bash that created the backup
+                    self._settings_saved_with = cPickle.load(ins)
+            except (OSError, IOError, cPickle.UnpicklingError, EOFError):
+                raise_bolt_error(u'Failed to read %s' % backup_dat)
         return self._saved_settings_version, self._settings_saved_with
 
     @staticmethod
     def restore_ini(tmp_dir):
-        backup_bash_ini = RestoreSettings.bash_ini_path(tmp_dir)
+        backup_bash_ini = RestoreSettings._bash_ini_path(tmp_dir)
         dest_dir = dirs['mopy']
         old_bash_ini = dest_dir.join(u'bash.ini')
         timestamped_old = u''.join(
@@ -224,7 +233,7 @@ class RestoreSettings(object):
         backup_dir.rmtree(safety=RestoreSettings.__tmpdir_prefix)
 
     @staticmethod
-    def bash_ini_path(tmp_dir):
+    def _bash_ini_path(tmp_dir):
         # search for Bash ini
         for r, d, fs in bolt.walkdir(u'%s' % tmp_dir):
             for f in fs:
@@ -327,9 +336,9 @@ class RestoreSettings(object):
                         saves_dir.join(root_dir, name))
 
     @staticmethod
-    def warn_message(balt_):
+    def warn_message(balt_, msg=u''):
         if balt_ is None: return
         balt_.showWarning(balt_.Link.Frame, u'\n'.join([
             _(u'There was an error while trying to restore your settings from '
-              u'the backup file!'), _(u'No settings were restored.')]),
+              u'the backup file!'), msg, _(u'No settings were restored.')]),
                           _(u'Unable to restore backup!'))
