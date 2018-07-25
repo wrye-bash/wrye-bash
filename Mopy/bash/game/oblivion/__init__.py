@@ -21,9 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This modules defines static data for use by bush, when
-   TES IV: Oblivion is set at the active game."""
+"""GameInfo override for TES IV: Oblivion."""
 
 from .constants import *
 from .default_tweaks import default_tweaks

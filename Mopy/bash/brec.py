@@ -1143,27 +1143,8 @@ class MelFull0(MelString):
         MelString.__init__(self,'FULL','full')
 
 #------------------------------------------------------------------------------
-class MelModel(MelGroup):
-    """Represents a model record."""
-    typeSets = (
-        ('MODL','MODB','MODT'),
-        ('MOD2','MO2B','MO2T'),
-        ('MOD3','MO3B','MO3T'),
-        ('MOD4','MO4B','MO4T'),)
-
-    def __init__(self,attr='model',index=0):
-        """Initialize. Index is 0,2,3,4 for corresponding type id."""
-        types = self.__class__.typeSets[(0,index-1)[index>0]]
-        MelGroup.__init__(self,attr,
-            MelString(types[0],'modPath'),
-            MelStruct(types[1],'f','modb'), ### Bound Radius, Float
-            MelBase(types[2],'modt_p'),) ###Texture Files Hashes, Byte Array
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        for element in self.elements[:2]: element.debug(on)
-        return self
-
+# Hack for allowing record imports from parent games - set per game
+MelModel = None # type: type
 #------------------------------------------------------------------------------
 class MelOptStruct(MelStruct):
     """Represents an optional structure, where if values are null, is skipped."""
@@ -1897,3 +1878,51 @@ class MreLeveledListBase(MelRecord):
             self.mergeSources = [otherMod]
         #--Done
         self.setChanged(self.mergeOverLast)
+
+#------------------------------------------------------------------------------
+# Skyrim and Fallout ----------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelMODS(MelBase):
+    """MODS/MO2S/etc/DMDS subrecord"""
+    def hasFids(self,formElements):
+        """Include self if has fids."""
+        formElements.add(self)
+
+    def setDefault(self,record):
+        """Sets default value for record instance."""
+        record.__setattr__(self.attr,None)
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        """Reads data from ins into record attribute."""
+        insUnpack = ins.unpack
+        insRead32 = ins.readString32
+        count, = insUnpack('I',4,readId)
+        data = []
+        dataAppend = data.append
+        for x in xrange(count):
+            string = insRead32(readId)
+            fid = ins.unpackRef()
+            index, = insUnpack('I',4,readId)
+            dataAppend((string,fid,index))
+        record.__setattr__(self.attr,data)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        data = record.__getattribute__(self.attr)
+        if data is not None:
+            data = record.__getattribute__(self.attr)
+            outData = struct_pack('I', len(data))
+            for (string,fid,index) in data:
+                outData += struct_pack('I', len(string))
+                outData += encode(string)
+                outData += struct_pack('=2I', fid, index)
+            out.packSub(self.subType,outData)
+
+    def mapFids(self,record,function,save=False):
+        """Applies function to fids.  If save is true, then fid is set
+           to result of function."""
+        attr = self.attr
+        data = record.__getattribute__(attr)
+        if data is not None:
+            data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
+            if save: record.__setattr__(attr,data)

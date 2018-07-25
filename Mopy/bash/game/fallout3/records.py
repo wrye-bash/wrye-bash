@@ -21,21 +21,50 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This module contains the fallout3 record classes"""
+"""This module contains the fallout3 record classes. You must import from it
+__once__ only in game.fallout3.Fallout3GameInfo#init. No other game.records
+file must be imported till then."""
+import itertools
 import re
 import struct
-import itertools
+from operator import attrgetter
+from ... import brec
+from ... import bush
+from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, sio, DataDict, encode, GPath, struct_unpack, \
     struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
-    MreGmstBase, MelStrings, MelFull0, MelTuple
-from ...bass import null1, null2, null3, null4
-from ... import bush
-from operator import attrgetter
+    MreGmstBase, MelStrings, MelFull0, MelTuple, MelMODS
 from ...exception import BoltError, ModError, ModSizeError, StateError
+# Set MelModel in brec but only if unset
+if brec.MelModel is None:
+    class _MelModel(brec.MelGroup):
+        """Represents a model record."""
+        typeSets = (('MODL', 'MODB', 'MODT', 'MODS', 'MODD'),
+                    ('MOD2', 'MO2B', 'MO2T', 'MO2S', 'MO2D'),
+                    ('MOD3', 'MO3B', 'MO3T', 'MO3S', 'MOSD'),
+                    ('MOD4', 'MO4B', 'MO4T', 'MO4S', 'MO4D'),)
+
+        def __init__(self, attr='model', index=0):
+            """Initialize. Index is 0,2,3,4 for corresponding type id."""
+            types = self.__class__.typeSets[(0, index - 1)[index > 0]]
+            MelGroup.__init__(self, attr, MelString(types[0], 'modPath'),
+                              MelBase(types[1], 'modb_p'),
+                              ### Bound Radius, Float
+                              MelBase(types[2], 'modt_p'),
+                              ###Texture Files Hashes, Byte Array
+                              MelMODS(types[3], 'alternateTextures'),
+                              MelBase(types[4], 'modd_p'), )
+
+        def debug(self, on=True):
+            """Sets debug flag on self."""
+            for element in self.elements[:2]: element.debug(on)
+            return self
+    brec.MelModel = _MelModel
+
+from ...brec import MelModel
 
 from_iterable = itertools.chain.from_iterable
 
@@ -381,76 +410,6 @@ class MreLeveledList(MelRecord):
             self.mergeSources = [otherMod]
         #--Done
         self.setChanged(self.mergeOverLast)
-
-#------------------------------------------------------------------------------
-class MelMODS(MelBase):
-    """MODS/MO2S/etc/DMDS subrecord"""
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,None)
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
-        insUnpack = ins.unpack
-        insRead32 = ins.readString32
-        count, = insUnpack('I',4,readId)
-        data = []
-        dataAppend = data.append
-        for x in xrange(count):
-            string = insRead32(readId)
-            fid = ins.unpackRef()
-            index, = insUnpack('I',4,readId)
-            dataAppend((string,fid,index))
-        record.__setattr__(self.attr,data)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        data = record.__getattribute__(self.attr)
-        if data is not None:
-            data = record.__getattribute__(self.attr)
-            outData = struct_pack('I', len(data))
-            for (string,fid,index) in data:
-                outData += struct_pack('I', len(string))
-                outData += encode(string)
-                outData += struct_pack('=2I', fid, index)
-            out.packSub(self.subType,outData)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids.  If save is true, then fid is set
-           to result of function."""
-        attr = self.attr
-        data = record.__getattribute__(attr)
-        if data is not None:
-            data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
-            if save: record.__setattr__(attr,data)
-
-#------------------------------------------------------------------------------
-class MelModel(MelGroup):
-    """Represents a model record."""
-    typeSets = (
-        ('MODL','MODB','MODT','MODS','MODD'),
-        ('MOD2','MO2B','MO2T','MO2S','MO2D'),
-        ('MOD3','MO3B','MO3T','MO3S','MOSD'),
-        ('MOD4','MO4B','MO4T','MO4S','MO4D'),)
-
-    def __init__(self,attr='model',index=0):
-        """Initialize. Index is 0,2,3,4 for corresponding type id."""
-        types = MelModel.typeSets[(0,index-1)[index>0]]
-        MelGroup.__init__(self,attr,
-            MelString(types[0],'modPath'),
-            MelBase(types[1],'modb_p'), ### Bound Radius, Float
-            MelBase(types[2],'modt_p'), ###Texture Files Hashes, Byte Array
-            MelMODS(types[3],'alternateTextures'),
-            MelBase(types[4],'modd_p'),)
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        for element in self.elements[:2]: element.debug(on)
-        return self
 
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):

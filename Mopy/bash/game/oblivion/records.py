@@ -21,20 +21,47 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This module contains the oblivion record classes. Ripped from oblivion.py"""
+"""This module contains the oblivion record classes."""
 import re
 import struct
-from ...bolt import Flags, sio, DataDict, struct_pack
-from ...brec import MelRecord, MelStructs, \
-    MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
-    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MreHeaderBase, MelBase, MelUnicode, MelXpci, MelModel, MelFull0, \
-    MelFidList, MelStructA, MelStrings, MreRecord, MreGmstBase, MelTuple
+from .constants import allConditions, fid1Conditions, fid2Conditions
+from ... import brec
 from ...bass import null1, null2, null3, null4
+from ...bolt import Flags, sio, DataDict, struct_pack
+from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
+    FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
+    MelFull0, MelFidList, MelStructA, MelStrings, MreRecord, MreGmstBase, \
+    MelTuple
 from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
-from constants import allConditions, fid1Conditions, fid2Conditions
 from ...exception import BoltError, ModError, ModSizeError, StateError
+# Set brec MelModel to the one for Oblivion
+if brec.MelModel is None:
+
+    class _MelModel(brec.MelGroup):
+        """Represents a model record."""
+        typeSets = (
+            ('MODL','MODB','MODT'),
+            ('MOD2','MO2B','MO2T'),
+            ('MOD3','MO3B','MO3T'),
+            ('MOD4','MO4B','MO4T'),)
+
+        def __init__(self,attr='model',index=0):
+            """Initialize. Index is 0,2,3,4 for corresponding type id."""
+            types = self.__class__.typeSets[(0,index-1)[index>0]]
+            MelGroup.__init__(self,attr,
+                MelString(types[0],'modPath'),
+                MelStruct(types[1],'f','modb'), ### Bound Radius, Float
+                MelBase(types[2],'modt_p'),) ###Texture Files Hashes, Byte Array
+
+        def debug(self,on=True):
+            """Sets debug flag on self."""
+            for element in self.elements[:2]: element.debug(on)
+            return self
+
+    brec.MelModel = _MelModel
+
+from ...brec import MelModel
 
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------

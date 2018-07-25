@@ -21,17 +21,23 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains the falloutnv record classes."""
-# Import records from fallout3 and override as needed
-from ..fallout3.records import *
-from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, \
-    FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
+import itertools
+import struct
+# Set MelModel in brec, in this case it's identical to the fallout 3 one
+from ..fallout3.records import MelScrxen, MelOwnership, MelDestructible, \
+    MelBipedFlags, MelEffects, MelConditions, MreHasEffects
+from ...bass import null1, null2, null3, null4
+from ...bolt import Flags, GPath
+from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
+from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
+    MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MelBase, MelFidList, MelStructA, MreRecord, MreGmstBase, MelFull0, \
     MreHeaderBase, MelUnicode
-from ...bass import null1, null2, null3, null4
-from ... import bush
 from ...exception import ModError, ModSizeError
+
+# Those are unused here, but need be in this file as are accessed via it
+from ..fallout3.records import MreNpc ##: used in Oblivion only save code really
 
 from_iterable = itertools.chain.from_iterable
 

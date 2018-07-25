@@ -21,24 +21,61 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This module contains the skyrim record classes. Ripped from skyrim.py"""
+"""This module contains the skyrim record classes."""
+import itertools
 import re
 import struct
-import itertools
-from ...bolt import Flags, sio, DataDict, winNewLines, \
-    encode, struct_pack, struct_unpack
-from ...brec import MelRecord, MelStructs, \
-    MelObject, MelGroups, MelStruct, FID, MelGroup, MelString, \
-    MreLeveledListBase, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreRecord, \
-    MreGmstBase, MelLString, MelCountedFidList, MelOptStructA, \
-    MelCountedFids, MelSortedFidList, MelStrings
-from ...bass import null1, null2, null3, null4
-from ... import bush
-from constants import allConditions, fid1Conditions, fid2Conditions, \
+
+from .constants import allConditions, fid1Conditions, fid2Conditions, \
     fid5Conditions
+from ... import brec
+from ... import bush
+from ...bass import null1, null2, null3, null4
+from ...bolt import Flags, sio, DataDict, winNewLines, encode, struct_pack, \
+    struct_unpack
+from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
+    FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
+    MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
+    MelStructA, MreRecord, MreGmstBase, MelLString, MelCountedFidList, \
+    MelOptStructA, MelCountedFids, MelSortedFidList, MelStrings, MelMODS
 from ...exception import BoltError, ModError, ModSizeError, StateError
+# Set MelModel in brec but only if unset, otherwise we are being imported from
+# fallout4.records
+if brec.MelModel is None:
+    class _MelModel(brec.MelGroup):
+        """Represents a model record."""
+        # MODB and MODD are no longer used by TES5Edit
+        typeSets = {'MODL': ('MODL', 'MODT', 'MODS'),
+                    'MOD2': ('MOD2', 'MO2T', 'MO2S'),
+                    'MOD3': ('MOD3', 'MO3T', 'MO3S'),
+                    'MOD4': ('MOD4', 'MO4T', 'MO4S'),
+                    'MOD5': ('MOD5', 'MO5T', 'MO5S'),
+                    'DMDL': ('DMDL', 'DMDT', 'DMDS'), }
+
+        class MelModelHash(MelBase):
+            """TextureHashes are not used for loose files and there is never a
+            Bashed Patch.bsa. So we read the record if present and then
+            discarded."""
+            def loadData(self, record, ins, sub_type, size_, readId):
+                MelBase.loadData(self, record, ins, sub_type, size_, readId)
+            def getSlotsUsed(self):
+                return ()
+            def setDefault(self, record): return
+            def dumpData(self, record, out): return
+
+        def __init__(self, attr='model', subType='MODL'):
+            """Initialize."""
+            types = self.__class__.typeSets[subType]
+            MelGroup.__init__(self, attr, MelString(types[0], 'modPath'),
+                              self.MelModelHash(types[1], 'textureHashes'),
+                              MelMODS(types[2], 'alternateTextures'), )
+
+        def debug(self, on=True):
+            """Sets debug flag on self."""
+            for element in self.elements[:2]: element.debug(on)
+            return self
+    brec.MelModel = _MelModel
+from ...brec import MelModel
 
 from_iterable = itertools.chain.from_iterable
 
@@ -446,77 +483,6 @@ class MelKeywords(MelFidList):
             # Only write the KSIZ/KWDA subrecords if count > 0
             out.packSub('KSIZ','I',len(keywords))
             MelFidList.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
-class MelMODS(MelBase):
-    """MODS/MO2S/etc/DMDS subrecord"""
-    def hasFids(self,formElements):
-        """Include self if has fids."""
-        formElements.add(self)
-
-    def setDefault(self,record):
-        """Sets default value for record instance."""
-        record.__setattr__(self.attr,None)
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        """Reads data from ins into record attribute."""
-        insUnpack = ins.unpack
-        count, = insUnpack('I',4,readId)
-        data = []
-        dataAppend = data.append
-        for x in xrange(count):
-            string = ins.readString32(readId)
-            fid = ins.unpackRef()
-            index, = ins.unpack('I',4,readId)
-            dataAppend((string,fid,index))
-        record.__setattr__(self.attr,data)
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        data = record.__getattribute__(self.attr)
-        if data is not None:
-            data = record.__getattribute__(self.attr)
-            outData = struct_pack('I', len(data))
-            for (string,fid,index) in data:
-                outData += struct_pack('I', len(string))
-                outData += encode(string)
-                outData += struct_pack('=2I', fid, index)
-            out.packSub(self.subType,outData)
-
-    def mapFids(self,record,function,save=False):
-        """Applies function to fids.  If save is true, then fid is set
-           to result of function."""
-        attr = self.attr
-        data = record.__getattribute__(attr)
-        if data is not None:
-            data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
-            if save: record.__setattr__(attr,data)
-
-#------------------------------------------------------------------------------
-class MelModel(MelGroup):
-    """Represents a model record."""
-    # MODB and MODD are no longer used by TES5Edit
-    typeSets = {
-        'MODL': ('MODL','MODT','MODS'),
-        'MOD2': ('MOD2','MO2T','MO2S'),
-        'MOD3': ('MOD3','MO3T','MO3S'),
-        'MOD4': ('MOD4','MO4T','MO4S'),
-        'MOD5': ('MOD5','MO5T','MO5S'),
-        'DMDL': ('DMDL','DMDT','DMDS'),
-        }
-    def __init__(self, attr='model', subType='MODL'):
-        """Initialize."""
-        types = self.__class__.typeSets[subType]
-        MelGroup.__init__(self,attr,
-            MelString(types[0],'modPath'),
-            MelBase(types[1],'modt_p'),
-            MelMODS(types[2],'alternateTextures'),
-            )
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        for element in self.elements[:2]: element.debug(on)
-        return self
 
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):

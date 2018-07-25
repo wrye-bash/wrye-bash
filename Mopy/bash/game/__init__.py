@@ -21,7 +21,10 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-"""Constants and classes to define for each new game - still a WIP."""
+"""GameInfo class encapsulating static info for active game. Avoid adding
+state and methods. game.GameInfo#init classmethod is used to import rest of
+active game package as needed (currently the record files) and to set some
+brec.RecordHeader/MreRecord class variables."""
 
 from .. import brec
 # from .constants import * # TODO(ut): create a .constants module
@@ -140,8 +143,8 @@ class GameInfo(object):
 
     # Graphics Extender information
     class ge(object):
-        ge_abbrev = u'' # Abbreviated name. If this is empty, it signals that no graphics
-                        # extender is available for this game.
+        ge_abbrev = u'' # Abbreviated name. If this is empty, it signals
+                        # that no graphics extender is available for this game.
         long_name = u'' # Full name
         # exe is treated specially here.  If it is a string, then it should
         # be the path relative to the root directory of the game, if it is
@@ -158,8 +161,8 @@ class GameInfo(object):
     class laa(object):
         name = u''          # Display name of the launcher
         exe = u'*DNE*'      # Executable to run
-        launchesSE = False  # Whether the launcher will automatically launch the
-                            # SE
+        launchesSE = False  # Whether the launcher will automatically launch
+                            # the SE
 
     # Some stuff dealing with INI files
     class ini(object):

@@ -21,9 +21,19 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This module contains the skyrim SE record classes imported from skyrim"""
-from ..skyrim.records import *
+"""This module contains the skyrim SE record classes. The great majority are
+imported from skyrim."""
+# Set MelModel in brec, in this case it's identical to the skyrim one
+from ..skyrim.records import MelBounds, MelDestructible, MelVmad
+from ...bass import null1, null2, null3, null4
+from ...bolt import Flags
+from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
+from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
+    FID, MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
+    MelStructA, MelLString, MelCountedFidList
+from ...exception import ModSizeError
+# Those are unused here, but need be in this file as are accessed via it
+from ..skyrim.records import MreHeader, MreGmst
 
 #------------------------------------------------------------------------------
 # Updated for SSE -------------------------------------------------------------

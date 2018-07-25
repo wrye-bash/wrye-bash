@@ -21,9 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This modules defines static data for use by bush, when
-   Fallout 3 is set at the active game."""
+"""GameInfo override for Fallout 3."""
 from .constants import *
 from .default_tweaks import default_tweaks
 from .. import GameInfo

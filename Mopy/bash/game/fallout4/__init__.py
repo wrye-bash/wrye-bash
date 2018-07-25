@@ -21,9 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This modules defines static data for use by bush, when Fallout 4 is set as
-   the active game."""
+"""GameInfo override for Fallout 4."""
 
 from .constants import *
 from .default_tweaks import default_tweaks
@@ -133,6 +131,7 @@ class Fallout4GameInfo(GameInfo):
 
     @classmethod
     def init(cls):
+        # First import from fallout4.records file, so MelModel is set correctly
         from .records import MreHeader, MreLvli, MreLvln
         # ---------------------------------------------------------------------
         # These Are normally not mergable but added to brec.MreRecord.type_class
