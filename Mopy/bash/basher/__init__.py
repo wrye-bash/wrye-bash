@@ -1592,7 +1592,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     # Read only wrappers around bass.settings['bash.ini.choices']
     @property
     def current_ini_path(self):
-        """ Return path of currently chosen ini."""
+        """Return path of currently chosen ini."""
         return self.target_inis.values()[settings['bash.ini.choice']]
 
     @property

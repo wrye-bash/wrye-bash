@@ -1514,6 +1514,10 @@ class INIInfos(TableFileInfos):
         if isinstance(_target_inis, OrderedDict):
             try:
                 previous_ini = _target_inis.keys()[choice]
+                ##: HACK - sometimes choice points to Browse... - real fix
+                # is to remove Browse from the list of inis....
+                if _target_inis[previous_ini] is None:
+                    choice, previous_ini = -1, None
             except IndexError:
                 choice, previous_ini = -1, None
         else: # not an OrderedDict, updating from 306
