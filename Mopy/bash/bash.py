@@ -167,12 +167,11 @@ def dump_environment():
     print msg
     return msg
 
-def _bash_ini_parser():
-    iniPath = u'bash.ini'
+def _bash_ini_parser(bash_ini_path):
     bash_ini_parser = None
-    if os.path.exists(iniPath):
+    if bash_ini_path is not None and os.path.exists(bash_ini_path):
         bash_ini_parser = ConfigParser()
-        bash_ini_parser.read(iniPath)
+        bash_ini_parser.read(bash_ini_path)
     return bash_ini_parser
 
 # Main ------------------------------------------------------------------------
@@ -247,44 +246,35 @@ def _main(opts):
         return
 
     # We need the Mopy dirs to initialize restore settings instance
-    backup_bash_ini, timestamped_old, restore_dir = None, None, None
+    bash_ini_path, restore_dir = u'bash.ini', None
     # import barb that does not import from bosh/balt/bush
     import barb
     if opts.restore:
         try:
             restore_dir = barb.RestoreSettings.extract_backup(opts.filename)
-            backup_bash_ini, timestamped_old = \
-                barb.RestoreSettings.restore_ini(restore_dir)
+            restore = barb.RestoreSettings(restore_dir)
+            # get the bash.ini from the backup, or None - use in _detect_game
+            bash_ini_path = restore.backup_ini_path(restore_dir)
         except (exception.BoltError, exception.StateError, OSError, IOError):
             bolt.deprint(u'Failed to restore backup', traceback=True)
             restore_dir = None
-    def _restore_previous_ini():
-        bolt.GPath(timestamped_old).moveTo(bass.dirs['mopy'].join(u'bash.ini'))
-        return None
     # The rest of backup/restore functionality depends on setting the game
     try:
-        bashIni, bush_game, game_ini_path = _detect_game(opts)
+        bashIni, bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
         if not bush_game: return
         if restore_dir:
             try:
-                restore = barb.RestoreSettings(restore_dir)
                 # TODO(ut) error checks
                 restore.restore_settings(restore_dir, bush_game.fsName)
-                timestamped_old = None
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
             except Exception as e:
                 bolt.deprint(u'Failed to restore backup: %s' % e)
-                if timestamped_old:
-                    bolt.deprint(u'Restoring bash.ini')
-                    timestamped_old = _restore_previous_ini()
-                elif backup_bash_ini:
-                    # remove bash.ini as it is the one from the backup
-                    bolt.GPath(u'bash.ini').remove()
+                restore.restore_ini()
                 # reset the game
                 import bush
                 bush.reset_bush_globals()
-                bashIni, bush_game, game_ini_path = _detect_game(opts)
+                bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
         import bosh # this imports balt (DUH) which imports wx
         bosh.initBosh(bashIni, game_ini_path)
         env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
@@ -295,8 +285,6 @@ def _main(opts):
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
                           traceback.format_exc(e)])
-        if timestamped_old:
-            _restore_previous_ini()
         _close_dialog_windows()
         _show_wx_error(msg)
         return
@@ -374,9 +362,9 @@ def _main(opts):
     app.Init() # Link.Frame is set here !
     app.MainLoop()
 
-def _detect_game(opts, __not_set=[None]*3):
-    # Read the bash.ini file - if no backup ini exists ignore the existing one
-    bashIni = _bash_ini_parser()
+def _detect_game(opts, backup_bash_ini, __not_set=[None]*3):
+    # Read the bash.ini file either from Mopy or from the backup location
+    bashIni = _bash_ini_parser(backup_bash_ini)
     # if uArg is None, then get the UserPath from the ini file
     if opts.userPath:
         SetHomePath(opts.userPath)

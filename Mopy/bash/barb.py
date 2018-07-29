@@ -22,7 +22,8 @@
 #
 # =============================================================================
 
-"""Rollback library.
+"""Backup/restore Bash settings. Settings paths are defined in
+_init_settings_files().
 
 Re: bass.AppVersion, bass.settings['bash.version']
 
@@ -195,10 +196,14 @@ class RestoreSettings(object):
     to restore the backed up ini, if it exists. Restoring the settings must
     be done on boot as soon as we are able to initialize bass#dirs."""
     __tmpdir_prefix = u'RestoreSettingsWryeBash_'
+    __unset = object()
 
     def __init__(self, settings_file=None):
         self._settings_file = settings_file
         self._saved_settings_version = self._settings_saved_with = None
+        # bash.ini handling
+        self._timestamped_old = self.__unset
+        self._bash_ini_path = self.__unset
 
     def _get_settings_versions(self, tmp_dir):
         if self._saved_settings_version is None:
@@ -213,33 +218,29 @@ class RestoreSettings(object):
                 raise_bolt_error(u'Failed to read %s' % backup_dat)
         return self._saved_settings_version, self._settings_saved_with
 
-    @staticmethod
-    def restore_ini(tmp_dir):
-        backup_bash_ini = RestoreSettings._bash_ini_path(tmp_dir)
-        dest_dir = dirs['mopy']
-        old_bash_ini = dest_dir.join(u'bash.ini')
-        timestamped_old = u''.join(
-            [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
-        try:
-            old_bash_ini.moveTo(timestamped_old)
-        except StateError: # does not exist
-            timestamped_old = None
-        if backup_bash_ini is not None:
-            GPath(backup_bash_ini).copyTo(old_bash_ini)
-        return backup_bash_ini, timestamped_old
+    def restore_ini(self):
+        if self._timestamped_old is self.__unset:
+            return # we did not move bash.ini
+        if self._timestamped_old is not None:
+            bolt.deprint(u'Restoring bash.ini')
+            GPath(self._timestamped_old).copyTo(u'bash.ini')
+        elif self._bash_ini_path:
+            # remove bash.ini as it is the one from the backup
+            bolt.GPath(u'bash.ini').remove()
 
     @staticmethod
     def remove_extract_dir(backup_dir):
         backup_dir.rmtree(safety=RestoreSettings.__tmpdir_prefix)
 
-    @staticmethod
-    def _bash_ini_path(tmp_dir):
+    def backup_ini_path(self, tmp_dir):
         # search for Bash ini
         for r, d, fs in bolt.walkdir(u'%s' % tmp_dir):
             for f in fs:
                 if f == u'bash.ini':
-                    return jo(r, f)
-        return None
+                    self._bash_ini_path = jo(r, f)
+                    break
+        else: self.bash_ini_path = None
+        return self._bash_ini_path
 
     @staticmethod
     def _get_backup_game(tmp_dir):
@@ -267,6 +268,8 @@ class RestoreSettings(object):
             u'%s is not a valid backup location' % backup_path)
 
     def restore_settings(self, backup_path, fsName):
+        if self._bash_ini_path is self.__unset: raise BoltError(
+            u'restore_settings: you must handle bash ini first')
         temp_settings_restore_dir = self.extract_backup(backup_path)
         try:
             self._restore_settings(temp_settings_restore_dir, fsName)
@@ -313,6 +316,14 @@ class RestoreSettings(object):
     def _restore_settings(self, temp_dir, fsName):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
+        # backup previous Bash ini if it exists
+        old_bash_ini = dirs['mopy'].join(u'bash.ini')
+        self._timestamped_old = u''.join(
+            [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
+        try:
+            old_bash_ini.moveTo(self._timestamped_old)
+        except StateError: # does not exist
+            self._timestamped_old = None
         # restore all the settings files
         restore_paths = _init_settings_files(fsName).keys()
         for dest_dir, back_path in restore_paths:
