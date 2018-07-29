@@ -94,6 +94,7 @@ def assure_single_instance(instance):
             dialog.ShowModal()
         sys.exit(1)
 
+_bugdump_handle = None
 def exit_cleanup():
     # Cleanup temp installers directory
     import tempfile
@@ -108,7 +109,9 @@ def exit_cleanup():
                     file_.remove()
             except:
                 pass
-
+    # make sure to flush the BashBugDump.log
+    if _bugdump_handle is not None:
+        _bugdump_handle.close()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
         try:
@@ -129,7 +132,6 @@ def exit_cleanup():
                 cmd_line = (is_standalone and cli) or [sys.executable] + cli
                 subprocess.Popen(cmd_line, # a list, no need to escape spaces
                                  close_fds=True)
-
         except Exception as error:
             print error
             print u'Error Attempting to Restart Wrye Bash!'
@@ -216,12 +218,13 @@ def _main(opts):
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
-        # errLog = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding='utf-8')
-        errLog = codecs.getwriter('utf-8')(
+        global _bugdump_handle
+        # _bugdump_handle = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding='utf-8')
+        _bugdump_handle = codecs.getwriter('utf-8')(
             open(os.path.join(os.getcwdu(), u'BashBugDump.log'), 'w'))
-        sys.stdout = errLog
-        sys.stderr = errLog
-        old_stderr = errLog
+        sys.stdout = _bugdump_handle
+        sys.stderr = _bugdump_handle
+        old_stderr = _bugdump_handle
 
     if opts.debug:
         dump_environment()
