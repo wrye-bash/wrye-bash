@@ -625,7 +625,7 @@ class INIList(balt.UIList):
             else: stat = ini_info.tweak_status
             if stat == 20 or not ini_info.is_applicable(stat): continue
             needsRefresh |= target_ini_file.applyTweakFile(
-                ini_info.read_ini_lines())
+                ini_info.read_ini_content())
         return needsRefresh
 
     @staticmethod

@@ -105,7 +105,7 @@ _encodingSwap = {
 # setting it tries the specified encoding first
 pluginEncoding = None
 
-def _getbestencoding(bitstream):
+def getbestencoding(bitstream):
     """Tries to detect the encoding a bitstream was saved in.  Uses Mozilla's
        detection library to find the best match (heuristics)"""
     result = chardet.detect(bitstream)
@@ -124,7 +124,7 @@ def decode(byte_str, encoding=None, avoidEncodings=()):
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
     # Try to detect the encoding next
-    encoding,confidence = _getbestencoding(byte_str)
+    encoding,confidence = getbestencoding(byte_str)
     if encoding and confidence >= 0.55 and (encoding not in avoidEncodings or confidence == 1.0):
         try: return unicode(byte_str, encoding)
         except UnicodeDecodeError: pass
@@ -153,7 +153,7 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
     for encoding in encodings:
         try:
             temp = text_str.encode(encoding)
-            detectedEncoding = _getbestencoding(temp)
+            detectedEncoding = getbestencoding(temp)
             if detectedEncoding[0] == encoding:
                 # This encoding also happens to be detected
                 # By the encoding detector as the same thing,

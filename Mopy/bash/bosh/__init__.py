@@ -939,12 +939,12 @@ def BestIniFile(abs_ini_path):
     game_ini = get_game_ini(abs_ini_path)
     if game_ini:
         return game_ini
-    INICount = IniFile.formatMatch(abs_ini_path)
-    OBSECount = OBSEIniFile.formatMatch(abs_ini_path)
+    INICount, detected_encoding = IniFile.formatMatch(abs_ini_path)
+    OBSECount, detected_encoding = OBSEIniFile.formatMatch(abs_ini_path)
     if INICount >= OBSECount:
-        return IniFile(abs_ini_path)
+        return IniFile(abs_ini_path, detected_encoding)
     else:
-        return OBSEIniFile(abs_ini_path)
+        return OBSEIniFile(abs_ini_path, detected_encoding)
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile):
@@ -1488,12 +1488,12 @@ def ini_info_factory(fullpath, load_cache='Ignored'):
     :param fullpath: fullpath to the ini file to wrap
     :param load_cache: dummy param used in INIInfos#new_info factory call
     :rtype: INIInfo"""
-    INICount = IniFile.formatMatch(fullpath)
-    OBSECount = OBSEIniFile.formatMatch(fullpath)
+    INICount, detected_encoding = IniFile.formatMatch(fullpath)
+    OBSECount, detected_encoding = OBSEIniFile.formatMatch(fullpath)
     if INICount >= OBSECount:
-        return INIInfo(fullpath)
+        return INIInfo(fullpath, detected_encoding)
     else:
-        return ObseIniInfo(fullpath)
+        return ObseIniInfo(fullpath, detected_encoding)
 
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
@@ -1659,8 +1659,7 @@ class INIInfos(TableFileInfos):
         return deleted
 
     def get_tweak_lines_infos(self, tweakPath):
-        tweak_lines = self[tweakPath].read_ini_lines()
-        return self._ini.get_lines_infos(tweak_lines)
+        return self._ini.get_lines_infos(self[tweakPath])
 
     def open_or_copy(self, tweak):
         info = self[tweak] # type: INIInfo
@@ -1671,12 +1670,10 @@ class INIInfos(TableFileInfos):
             info.abs_path.start()
             return False
 
-    def _copy_to_new_tweak(self, info, new_tweak): ##: encoding....
-        with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
-            # writelines does not do what you'd expect, would concatenate lines
-            ini_file.write('\n'.join(info.read_ini_lines()))
-        self.new_info(new_tweak.tail, notify_bain=True)
-        return self[new_tweak.tail]
+    def _copy_to_new_tweak(self, info, new_tweak):
+        with open(self.store_dir.join(new_tweak).s, 'wb') as ini_file:
+            ini_file.write(info.read_ini_content(as_unicode=False)) # binary
+        return self.new_info(new_tweak.tail, notify_bain=True)
 
     def duplicate_ini(self, tweak, new_tweak):
         """Duplicate tweak into new_tweak, copying current target settings"""
@@ -2000,7 +1997,7 @@ class ModInfos(FileInfos):
         for iniPath in iniPaths:
             if iniPath not in self._plugin_inis or self._plugin_inis[
                 iniPath].do_update():
-                self._plugin_inis[iniPath] = IniFile(iniPath)
+                self._plugin_inis[iniPath] = IniFile(iniPath, 'cp1252')
         self._plugin_inis = OrderedDict(
             [(k, self._plugin_inis[k]) for k in iniPaths])
 
@@ -3181,10 +3178,10 @@ def initBosh(bashIni, game_ini_path):
     configHelpers = ConfigHelpers()
     # game ini files
     global oblivionIni, gameInis
-    oblivionIni = OblivionIni(game_ini_path)
+    oblivionIni = OblivionIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]
-    gameInis.extend(
-        OblivionIni(dirs['saveBase'].join(x)) for x in bush.game.iniFiles[1:])
+    gameInis.extend(OblivionIni(dirs['saveBase'].join(x), 'cp1252') for x in
+                    bush.game.iniFiles[1:])
     load_order.initialize_load_order_files()
     initOptions(bashIni)
     try:

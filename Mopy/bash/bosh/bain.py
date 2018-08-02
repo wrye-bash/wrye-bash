@@ -2169,10 +2169,8 @@ class InstallersData(DataStore):
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
             lines = []
-            with tweakPath.open('r') as tweak:
-                tweak_lines = tweak.readlines()
             for (text, section, setting, value, status, lineNo,
-                 deleted) in iniFile.get_lines_infos(tweak_lines):
+                 deleted) in iniFile.get_lines_infos(BestIniFile(tweakPath)):
                 if status in (10, -10):
                     # A setting that exists in both INI's, but is different,
                     # or a setting that doesn't exist in the new INI.
