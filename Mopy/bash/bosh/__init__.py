@@ -925,7 +925,8 @@ class ModInfo(FileInfo):
         return [self.hasBsa(),voicesPath.exists()]
 
 #------------------------------------------------------------------------------
-from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni
+from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni, \
+    get_ini_type_and_encoding
 def get_game_ini(ini_path, is_abs=True):
     """:rtype: OblivionIni | None"""
     for game_ini in gameInis:
@@ -939,12 +940,9 @@ def BestIniFile(abs_ini_path):
     game_ini = get_game_ini(abs_ini_path)
     if game_ini:
         return game_ini
-    INICount, detected_encoding = IniFile.formatMatch(abs_ini_path)
-    OBSECount, detected_encoding = OBSEIniFile.formatMatch(abs_ini_path)
-    if INICount >= OBSECount:
-        return IniFile(abs_ini_path, detected_encoding)
-    else:
-        return OBSEIniFile(abs_ini_path, detected_encoding)
+    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(
+        abs_ini_path)
+    return inferred_ini_type(abs_ini_path, detected_encoding)
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile):
@@ -1488,12 +1486,9 @@ def ini_info_factory(fullpath, load_cache='Ignored'):
     :param fullpath: fullpath to the ini file to wrap
     :param load_cache: dummy param used in INIInfos#new_info factory call
     :rtype: INIInfo"""
-    INICount, detected_encoding = IniFile.formatMatch(fullpath)
-    OBSECount, detected_encoding = OBSEIniFile.formatMatch(fullpath)
-    if INICount >= OBSECount:
-        return INIInfo(fullpath, detected_encoding)
-    else:
-        return ObseIniInfo(fullpath, detected_encoding)
+    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath)
+    ini_info_type = (inferred_ini_type is IniFile and INIInfo) or ObseIniInfo
+    return ini_info_type(fullpath, detected_encoding)
 
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
@@ -1606,6 +1601,9 @@ class INIInfos(TableFileInfos):
                     oldInfo = self.factory(tweak_path)
                 except UnicodeDecodeError:
                     deprint(u'Failed to read %s' % tweak_path, traceback=True)
+                    continue
+                except BoltError as e:
+                    deprint(e.message)
                     continue
                 _added.add(name)
             self[name] = oldInfo

@@ -24,17 +24,43 @@
 import codecs
 import re
 import time
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 from . import AFile
 from .. import env, bush, balt
 from ..bass import dirs
 from ..bolt import LowerDict, CIstr, deprint, GPath, DefaultLowerDict, \
     decode, getbestencoding
-from ..exception import AbstractError, CancelError, SkipError
+from ..exception import AbstractError, CancelError, SkipError, BoltError
 
 def _to_lower(ini_settings): # transform dict of dict to LowerDict of LowerDict
     return LowerDict((x, LowerDict(y)) for x, y in ini_settings.iteritems())
+
+def get_ini_type_and_encoding(abs_ini_path):
+    """Return ini type (one of IniFile, OBSEIniFile) and inferred encoding
+    of the file at abs_ini_path. It reads the file and performs heuristics
+    for detecting the encoding, then decodes and applies regexes to every
+    line to detect the ini type. Those operations are somewhat expensive so
+    it would make sense to pass an encoding in, if we know that the ini file
+    must have a specific encoding (for instance the game ini files that
+    reportedly must be cp1252). More investigation needed."""
+    with open(u'%s' % abs_ini_path, 'rb') as ini_file:
+        content = ini_file.read()
+    detected_encoding, _confidence = getbestencoding(content)
+    decoded_content = decode(content, detected_encoding)
+    count = Counter()
+    for line in decoded_content.splitlines():
+        for ini_type in (IniFile, OBSEIniFile):
+            stripped = ini_type.reComment.sub(u'', line).strip()
+            for regex in ini_type.formatRes:
+                if regex.match(stripped):
+                    count[ini_type] += 1
+                    break
+    try:
+        inferred_ini_type = count.most_common(1)[0][0]
+    except IndexError: # empty file or failed to parse ini lines
+        raise BoltError(u'Failed to infer type for %s' % abs_ini_path)
+    return inferred_ini_type, detected_encoding
 
 class IniFile(AFile):
     """Any old ini file."""
@@ -56,21 +82,6 @@ class IniFile(AFile):
         self._deleted_cache = self.__empty
         self._deleted = False
         self.updated = False # notify iniInfos which should clear this flag
-
-    @classmethod
-    def formatMatch(cls, path):
-        count = 0
-        with open(u'%s' % path, 'rb') as ini_file:
-            content = ini_file.read()
-        detected_encoding, _confidence = getbestencoding(content)
-        decoded_content = decode(content, detected_encoding)
-        for line in decoded_content.splitlines():
-            stripped = cls.reComment.sub(u'',line).strip()
-            for regex in cls.formatRes:
-                if regex.match(stripped):
-                    count += 1
-                    break
-        return count, detected_encoding
 
     def getSetting(self, section, key, default):
         """Gets a single setting from the file."""
@@ -266,22 +277,28 @@ class IniFile(AFile):
         reSection = self.reSection
         reSetting = self.reSetting
         #--Read init, write temp
-        section = sectionSettings = None
+        section = None
+        sectionSettings = {}
         ini_lines = self.read_ini_content(as_unicode=True)
         with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
             tmpFileWrite = tmpFile.write
             def _add_remaining_new_items(section_):
+                wrote_newline = False
                 if section_ and ini_settings.get(section_, {}):
                     for sett, val in ini_settings[section_].iteritems():
                         tmpFileWrite(u'%s=%s\n' % (sett, val))
                     del ini_settings[section_]
                     tmpFileWrite(u'\n')
+                    wrote_newline = True
+                return wrote_newline
             for line in ini_lines:
+                # if not line.rstrip(): continue
                 stripped = reComment.sub(u'', line).strip()
                 maSection = reSection.match(stripped)
                 if maSection:
                     # 'new' entries still to be added from previous section
-                    _add_remaining_new_items(section)
+                    if section is not None and not _add_remaining_new_items(section):
+                        tmpFileWrite(u'\n')
                     section = maSection.group(1)  # entering new section
                     sectionSettings = ini_settings.get(section, {})
                 else:
@@ -289,13 +306,13 @@ class IniFile(AFile):
                         line)  # note we run maDeleted on LINE
                     if match:
                         setting = match.group(1)
-                        if sectionSettings and setting in sectionSettings:
+                        if setting in sectionSettings:
                             value = sectionSettings[setting]
                             line = u'%s=%s\n' % (setting, value)
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-' + line
-                tmpFileWrite(line)
+                tmpFileWrite(line.rstrip(u'\n\r') + u'\n')
             # This will occur for the last INI section in the ini file
             _add_remaining_new_items(section)
             # Add remaining new entries
@@ -485,6 +502,7 @@ class OBSEIniFile(IniFile):
         with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
             # Modify/Delete existing lines
             for line in ini_lines:
+                # if not line.rstrip(): continue
                 # Test if line is currently deleted
                 maDeleted = reDeleted.match(line)
                 if maDeleted: stripped = maDeleted.group(1)
@@ -507,7 +525,7 @@ class OBSEIniFile(IniFile):
                     elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:
                         # It isn't deleted, but we want it deleted
                         line = u';-' + line
-                tmpFile.write(line)
+                tmpFile.write(line.rstrip(u'\n\r') + u'\n')
             # Add new lines
             for sectionKey in ini_settings:
                 section = ini_settings[sectionKey]
