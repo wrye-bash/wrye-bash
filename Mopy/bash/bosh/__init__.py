@@ -1657,7 +1657,7 @@ class INIInfos(TableFileInfos):
         return deleted
 
     def get_tweak_lines_infos(self, tweakPath):
-        return self._ini.get_lines_infos(self[tweakPath])
+        return self._ini.analyse_tweak(self[tweakPath])
 
     def open_or_copy(self, tweak):
         info = self[tweak] # type: INIInfo

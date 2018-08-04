@@ -586,7 +586,7 @@ class INIList(balt.UIList):
             mousetext = _(u'Some settings are changed.')
         elif status < 0:
             # Bad tweak
-            if not iniInfo.is_applicable():
+            if not iniInfo.is_applicable(status):
                 icon = 20
                 mousetext = _(u'Tweak is invalid')
             else:
