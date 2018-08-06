@@ -699,7 +699,7 @@ class ModInfo(FileInfo):
     def getBashTagsDesc(self):
         """Returns any Bash flag keys."""
         description = self.header.description or u''
-        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}',description,flags=re.U)
+        maBashKeys = re.search(u'{{ *BASH *:([^}]+)}}',description,flags=re.U|re.I)
         if not maBashKeys:
             return set()
         else:
