@@ -392,12 +392,15 @@ class App_Tes4View(App_Button):
         return True
 
     def Execute(self):
-        extraArgs = []
+        is_expert = bush.game_mod.xEdit_expert and bass.settings[
+            bush.game_mod.xEdit_expert[1]]
+        extraArgs = bass.inisettings[
+            'xEditCommandLineArguments'].split() if is_expert else []
         if balt.getKeyState_Control():
             extraArgs.append(u'-FixupPGRD')
         if balt.getKeyState_Shift():
             extraArgs.append(u'-skipbsa')
-        if bush.game_mod.xEdit_expert and bass.settings[bush.game_mod.xEdit_expert[1]]:
+        if is_expert:
             extraArgs.append(u'-IKnowWhatImDoing')
         self.extraArgs = tuple(extraArgs)
         super(App_Tes4View, self).Execute()
