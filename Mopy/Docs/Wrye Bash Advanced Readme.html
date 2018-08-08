@@ -2082,7 +2082,11 @@ and masterlist relative priority and role see the LOOT docs.
                 <li>All files in the <code>Data\Bashed Patches</code> directory.
                 <li>All INI Tweaks.
             </ul>
-        <tr><td colspan="2" id="settingsRestore">Restore Settings...<td>Restores your settings from a backup of your choice. This will force a restart of Wrye Bash to ensure the new settings take effect.
+        <tr><td colspan="2" id="settingsRestore">Restore Settings...<td>Restores your settings from a backup of your choice. This will force
+            a restart of Wrye Bash to ensure the new settings take effect. We extract the backup in a temporary folder, then we check that
+            the backup is for the current game and that the settings are not from a newer Bash version. Then we restart Bash and apply the
+            settings. Note that if you have a bash.ini this will be copied in the Mopy folder to a file named as in
+            <code>bash(YEAR-MONTH-DAY hh.mm.sec).ini</code> so you do not lose your precious ini settings in case something goes wrong.
         <tr><td colspan="2">Save Settings<td>Normally, Wrye Bash saves its settings to disc only on closing. Use this to force a save right now.
         <tr><td colspan="2" id="settingsExportList">Export list of allowed/disallowed OBSE plugin dlls<td>This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.
         <tr><td colspan="2" id="settingsImportList">Import list of allowed/disallowed OBSE plugin dlls<td>This will import the list of Good/Bad OBSE dll definitions from a text file previously exported using <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a>.
@@ -2301,8 +2305,9 @@ and masterlist relative priority and role see the LOOT docs.
         <tr>
             <td><code>-f FILENAME, --filename=FILENAME</code>
             <td>The file to use with the <code>-r</code> or <code>-b</code>
-                options. Must end in '.7z' and be a valid path and for <code>-r</code>
-                exist and for <code>-b</code> not already exist.
+                options. For <code>-r</code> must be a '.7z' backup file or a dir
+                where such a file was extracted. For <code>-b</code> must be a valid path
+                to a '.7z' file that will be overwritten if it exists.
         <tr>
             <td><code>-q, --quiet-quit</code>
             <td>Close Bash after creating or restoring backup and do not

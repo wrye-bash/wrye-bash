@@ -205,52 +205,7 @@ class RestoreSettings(object):
         self._timestamped_old = self.__unset
         self._bash_ini_path = self.__unset
 
-    def _get_settings_versions(self, tmp_dir):
-        if self._saved_settings_version is None:
-            backup_dat = tmp_dir.join(u'backup.dat')
-            try:
-                with backup_dat.open('rb') as ins:
-                    # version of Bash that created the backed up settings
-                    self._saved_settings_version = cPickle.load(ins)
-                    # version of Bash that created the backup
-                    self._settings_saved_with = cPickle.load(ins)
-            except (OSError, IOError, cPickle.UnpicklingError, EOFError):
-                raise_bolt_error(u'Failed to read %s' % backup_dat)
-        return self._saved_settings_version, self._settings_saved_with
-
-    def restore_ini(self):
-        if self._timestamped_old is self.__unset:
-            return # we did not move bash.ini
-        if self._timestamped_old is not None:
-            bolt.deprint(u'Restoring bash.ini')
-            GPath(self._timestamped_old).copyTo(u'bash.ini')
-        elif self._bash_ini_path:
-            # remove bash.ini as it is the one from the backup
-            bolt.GPath(u'bash.ini').remove()
-
-    @staticmethod
-    def remove_extract_dir(backup_dir):
-        backup_dir.rmtree(safety=RestoreSettings.__tmpdir_prefix)
-
-    def backup_ini_path(self, tmp_dir):
-        # search for Bash ini
-        for r, d, fs in bolt.walkdir(u'%s' % tmp_dir):
-            for f in fs:
-                if f == u'bash.ini':
-                    self._bash_ini_path = jo(r, f)
-                    break
-        else: self.bash_ini_path = None
-        return self._bash_ini_path
-
-    @staticmethod
-    def _get_backup_game(tmp_dir):
-        """Get the game this backup was for - hack, this info belongs to backup.dat."""
-        for node in os.listdir(u'%s' % tmp_dir):
-            if node != u'My Games' and not node.endswith(
-                    u'Mods') and os.path.isdir(tmp_dir.join(node).s):
-                return node
-        raise BoltError(u'%s does not contain a game dir' % tmp_dir)
-
+    # Restore API -------------------------------------------------------------
     @staticmethod
     def extract_backup(backup_path):
         """Extract the backup file and return the tmp directory used. If
@@ -267,6 +222,18 @@ class RestoreSettings(object):
         raise BoltError(
             u'%s is not a valid backup location' % backup_path)
 
+    def backup_ini_path(self, tmp_dir):
+        """Get the path to the backup bash.ini if it exists - must be run
+        before restore_settings is called, as we need the Bash ini to
+        initialize bass.dirs."""
+        for r, d, fs in bolt.walkdir(u'%s' % tmp_dir):
+            for f in fs:
+                if f == u'bash.ini':
+                    self._bash_ini_path = jo(r, f)
+                    break
+        else: self.bash_ini_path = None
+        return self._bash_ini_path
+
     def restore_settings(self, backup_path, fsName):
         if self._bash_ini_path is self.__unset: raise BoltError(
             u'restore_settings: you must handle bash ini first')
@@ -277,6 +244,41 @@ class RestoreSettings(object):
             if temp_settings_restore_dir:
                 self.remove_extract_dir(temp_settings_restore_dir)
 
+    def _restore_settings(self, temp_dir, fsName):
+        deprint(u'')
+        deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
+        # backup previous Bash ini if it exists
+        old_bash_ini = dirs['mopy'].join(u'bash.ini')
+        self._timestamped_old = u''.join(
+            [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
+        try:
+            old_bash_ini.moveTo(self._timestamped_old)
+            deprint(u'Existing bash.ini moved to %s' % self._timestamped_old)
+        except StateError: # does not exist
+            self._timestamped_old = None
+        # restore all the settings files
+        restore_paths = _init_settings_files(fsName).keys()
+        for dest_dir, back_path in restore_paths:
+            full_back_path = temp_dir.join(back_path)
+            for name in full_back_path.list():
+                if full_back_path.join(name).isfile():
+                    deprint(GPath(back_path).join(
+                        name).s + u' --> ' + dest_dir.join(name).s)
+                    full_back_path.join(name).copyTo(dest_dir.join(name))
+        # restore savegame profile settings
+        back_path = GPath(u'My Games').join(fsName, u'Saves')
+        saves_dir = dirs['saveBase'].join(u'Saves')
+        full_back_path = temp_dir.join(back_path)
+        if full_back_path.exists():
+            for root_dir, folders, files_ in full_back_path.walk(True,None,True):
+                root_dir = GPath(u'.'+root_dir.s)
+                for name in files_:
+                    deprint(back_path.join(root_dir,name).s + u' --> '
+                            + saves_dir.join(root_dir, name).s)
+                    full_back_path.join(root_dir, name).copyTo(
+                        saves_dir.join(root_dir, name))
+
+    # Validation --------------------------------------------------------------
     def incompatible_backup_error(self, temp_dir, current_game):
         saved_settings_version, settings_saved_with = \
             self._get_settings_versions(temp_dir)
@@ -313,38 +315,42 @@ class RestoreSettings(object):
                 u'Warning: Version Mismatch!')
         return u'', u''
 
-    def _restore_settings(self, temp_dir, fsName):
-        deprint(u'')
-        deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
-        # backup previous Bash ini if it exists
-        old_bash_ini = dirs['mopy'].join(u'bash.ini')
-        self._timestamped_old = u''.join(
-            [old_bash_ini.root.s, u'(', bolt.timestamp(), u').ini'])
-        try:
-            old_bash_ini.moveTo(self._timestamped_old)
-        except StateError: # does not exist
-            self._timestamped_old = None
-        # restore all the settings files
-        restore_paths = _init_settings_files(fsName).keys()
-        for dest_dir, back_path in restore_paths:
-            full_back_path = temp_dir.join(back_path)
-            for name in full_back_path.list():
-                if full_back_path.join(name).isfile():
-                    deprint(GPath(back_path).join(
-                        name).s + u' --> ' + dest_dir.join(name).s)
-                    full_back_path.join(name).copyTo(dest_dir.join(name))
-        # restore savegame profile settings
-        back_path = GPath(u'My Games').join(fsName, u'Saves')
-        saves_dir = dirs['saveBase'].join(u'Saves')
-        full_back_path = temp_dir.join(back_path)
-        if full_back_path.exists():
-            for root_dir, folders, files_ in full_back_path.walk(True,None,True):
-                root_dir = GPath(u'.'+root_dir.s)
-                for name in files_:
-                    deprint(back_path.join(root_dir,name).s + u' --> '
-                            + saves_dir.join(root_dir, name).s)
-                    full_back_path.join(root_dir, name).copyTo(
-                        saves_dir.join(root_dir, name))
+    def _get_settings_versions(self, tmp_dir):
+        if self._saved_settings_version is None:
+            backup_dat = tmp_dir.join(u'backup.dat')
+            try:
+                with backup_dat.open('rb') as ins:
+                    # version of Bash that created the backed up settings
+                    self._saved_settings_version = cPickle.load(ins)
+                    # version of Bash that created the backup
+                    self._settings_saved_with = cPickle.load(ins)
+            except (OSError, IOError, cPickle.UnpicklingError, EOFError):
+                raise_bolt_error(u'Failed to read %s' % backup_dat)
+        return self._saved_settings_version, self._settings_saved_with
+
+    @staticmethod
+    def _get_backup_game(tmp_dir):
+        """Get the game this backup was for - hack, this info belongs to backup.dat."""
+        for node in os.listdir(u'%s' % tmp_dir):
+            if node != u'My Games' and not node.endswith(
+                    u'Mods') and os.path.isdir(tmp_dir.join(node).s):
+                return node
+        raise BoltError(u'%s does not contain a game dir' % tmp_dir)
+
+    # Dialogs and cleanup/error handling --------------------------------------
+    @staticmethod
+    def remove_extract_dir(backup_dir):
+        backup_dir.rmtree(safety=RestoreSettings.__tmpdir_prefix)
+
+    def restore_ini(self):
+        if self._timestamped_old is self.__unset:
+            return # we did not move bash.ini
+        if self._timestamped_old is not None:
+            bolt.deprint(u'Restoring bash.ini')
+            GPath(self._timestamped_old).copyTo(u'bash.ini')
+        elif self._bash_ini_path:
+            # remove bash.ini as it is the one from the backup
+            bolt.GPath(u'bash.ini').remove()
 
     @staticmethod
     def warn_message(balt_, msg=u''):

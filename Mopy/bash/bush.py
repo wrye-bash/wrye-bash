@@ -30,6 +30,7 @@ that are used by multiple objects."""
 import collections
 import struct
 import game as game_init
+from bass import get_ini_option
 from bolt import GPath, Path, deprint
 from env import get_registry_game_path
 from exception import BoltError
@@ -122,9 +123,9 @@ def _detectGames(cli_path=u'', bash_ini_=None):
             _(u'No known game in the path specified via -o argument: ' +
               u'%(path)s'))
     #--Second: check if sOblivionPath is specified in the ini
-    if bash_ini_ and bash_ini_.has_option(u'General', u'sOblivionPath') \
-               and not bash_ini_.get(u'General', u'sOblivionPath') == u'.':
-        test_path = GPath(bash_ini_.get(u'General', u'sOblivionPath').strip())
+    ini_game_path = get_ini_option(bash_ini_, u'sOblivionPath')
+    if ini_game_path and not ini_game_path == u'.':
+        test_path = GPath(ini_game_path.strip())
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
         installPaths['ini'] = (test_path,

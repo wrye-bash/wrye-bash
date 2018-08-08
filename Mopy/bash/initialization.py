@@ -29,17 +29,12 @@ import sys
 from ConfigParser import ConfigParser
 # Local - don't import anything else
 import env
-from bass import dirs
+from bass import dirs, get_ini_option
 from bolt import GPath, Path
 from env import get_personal_path, get_local_app_data_path
 from exception import BoltError, NonExistentDriveError
 
 mopy_dirs_initialized = bash_dirs_initialized = False
-
-def get_ini_option(bash_ini_, option_key, section_key=u'General'):
-    if not bash_ini_ or not bash_ini_.has_option(section_key, option_key):
-        return None
-    return bash_ini_.get(section_key, option_key)
 
 def get_path_from_ini(bash_ini_, option_key, section_key=u'General'):
     get_value = get_ini_option(bash_ini_, option_key, section_key)

@@ -73,11 +73,6 @@ def _import_wx():
         sys.exit(1)
 
 #------------------------------------------------------------------------------
-def SetHomePath(homePath):
-    drive,path = os.path.splitdrive(homePath)
-    os.environ['HOMEDRIVE'] = drive
-    os.environ['HOMEPATH'] = path
-
 def assure_single_instance(instance):
     """Ascertain that only one instance of Wrye Bash is running.
 
@@ -365,19 +360,23 @@ def _main(opts):
     app.Init() # Link.Frame is set here !
     app.MainLoop()
 
-def _detect_game(opts, backup_bash_ini, __not_set=[None]*3):
+def _detect_game(opts, backup_bash_ini):
     # Read the bash.ini file either from Mopy or from the backup location
     bashIni = _bash_ini_parser(backup_bash_ini)
     # if uArg is None, then get the UserPath from the ini file
-    if opts.userPath:
-        SetHomePath(opts.userPath)
-    elif bashIni and bashIni.has_option(u'General',
-                                        u'sUserPath') and not bashIni.get(
-        u'General', u'sUserPath') == u'.':
-        SetHomePath(bashIni.get(u'General', u'sUserPath'))
+    user_path = opts.userPath or None  ##: not sure why this must be set first
+    if user_path is None:
+        ini_user_path = bass.get_ini_option(bashIni, u'sUserPath')
+        if ini_user_path and not ini_user_path == u'.':
+            user_path = ini_user_path
+    if user_path:
+        drive, path = os.path.splitdrive(user_path)
+        os.environ['HOMEDRIVE'] = drive
+        os.environ['HOMEPATH'] = path
     # Detect the game we're running for ---------------------------------------
     bush_game = _import_bush_and_set_game(opts, bashIni)
-    if not bush_game: return __not_set
+    if not bush_game:
+        return None, None, None
     #--Initialize Directories to perform backup/restore operations
     #--They depend on setting the bash.ini and the game
     game_ini_path = initialization.init_dirs(bashIni, opts.personalPath,

@@ -92,3 +92,9 @@ def newTempDir():
     from bolt import Path
     _tempDir = Path.tempDir()
     return _tempDir
+
+# logic for getting the path from the ini - get(section, key, default), duh
+def get_ini_option(ini_parser, option_key, section_key=u'General'):
+    if not ini_parser or not ini_parser.has_option(section_key, option_key):
+        return None
+    return ini_parser.get(section_key, option_key)

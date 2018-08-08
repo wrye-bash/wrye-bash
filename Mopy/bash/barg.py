@@ -85,9 +85,9 @@ def parse():
     arg(backupGroup, '-r', '--restore', dest='restore', action='store_true',
         default=False)
     # filename #
-    h = """The file to use with the -r or -b options. Must end in '.7z' (or
-    be a valid directory path for -r) and be a valid path and for -r exist
-    and for -b not already exist."""
+    h = """The file to use with the -r or -b options. For -r must be a '.7z'
+    backup file or a dir where such a file was extracted. For -b must be a
+    valid path to a '.7z' file that will be overwritten if it exists."""
     arg(backupGroup, '-f', '--filename', dest='filename')
     # quietquit #
     h = """Close Bash after creating or restoring backup and do not display
