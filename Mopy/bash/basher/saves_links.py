@@ -30,7 +30,7 @@ import re
 import shutil
 from . import BashFrame
 from .dialogs import ImportFaceDialog
-from .. import bass, bosh, bolt, balt, bush, parsers, load_order
+from .. import bass, bosh, bolt, balt, bush, parsers, load_order, initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
 from ..bolt import GPath, SubProgress, formatInteger, struct_pack, struct_unpack
@@ -65,7 +65,7 @@ class Saves_ProfilesData(balt.ListEditorData):
     def getItemList(self):
         """Returns load list keys in alpha order."""
         #--Get list of directories in Hidden, but do not include default.
-        items = [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
+        items = [x.s for x in initialization.getLocalSaveDirs()]
         items.sort(key=lambda a: a.lower())
         return items
 
@@ -152,7 +152,7 @@ class Saves_Profiles(ChoiceLink):
     local = None
 
     @property
-    def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
+    def _choices(self): return [x.s for x in initialization.getLocalSaveDirs()]
 
     class _ProfileLink(CheckLink, EnabledLink):
         @property
@@ -584,7 +584,7 @@ class Save_Move(ChoiceLink):
             u'Move save(s) to %s')
 
     @property
-    def _choices(self): return [x.s for x in bosh.saveInfos.getLocalSaveDirs()]
+    def _choices(self): return [x.s for x in initialization.getLocalSaveDirs()]
 
     def _initData(self, window, selection):
         super(Save_Move, self)._initData(window, selection)

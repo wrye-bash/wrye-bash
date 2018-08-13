@@ -33,11 +33,13 @@ import os
 import platform
 import sys
 import traceback
+from ConfigParser import ConfigParser
 # Local
 import bass
 import exception
+import initialization
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
-basher = balt = barb = bolt = None
+basher = balt = bolt = None
 _wx = None
 is_standalone = hasattr(sys, 'frozen')
 
@@ -71,59 +73,6 @@ def _import_wx():
         sys.exit(1)
 
 #------------------------------------------------------------------------------
-def SetHomePath(homePath):
-    drive,path = os.path.splitdrive(homePath)
-    os.environ['HOMEDRIVE'] = drive
-    os.environ['HOMEPATH'] = path
-
-#------------------------------------------------------------------------------
-def SetUserPath(iniPath=None, uArg=None):
-#if uArg is None, then get the UserPath from the ini file
-    if uArg:
-        SetHomePath(uArg)
-    else:
-        bashIni = bass.GetBashIni(iniPath=iniPath, reload_=iniPath is not None)
-        if bashIni and bashIni.has_option(u'General', u'sUserPath')\
-                   and not bashIni.get(u'General', u'sUserPath') == u'.':
-            SetHomePath(bashIni.get(u'General', u'sUserPath'))
-
-# Backup/Restore --------------------------------------------------------------
-def cmdBackup(opts):
-    # backup settings if app version has changed or on user request
-    global basher, balt, barb
-    if not basher: import basher, balt, barb
-    path = (opts.backup and opts.filename) or None
-    should_quit = opts.backup and opts.quietquit
-    if barb.new_bash_version_prompt_backup() or opts.backup:
-        frame = balt.Link.Frame
-        backup = barb.BackupSettings.get_backup_instance(frame, path,
-            should_quit)
-        if not backup: return
-        try:
-            backup.Apply()
-        except exception.StateError:
-            if barb.SameAppVersion():
-                backup.WarnFailed()
-            elif balt.askYes(frame, u'\n'.join([
-            _(u'There was an error while trying to backup the Bash settings!'),
-            _(u'If you continue, your current settings may be overwritten.'),
-            _(u'Do you want to quit Wrye Bash now?')]),
-                             title=_(u'Unable to create backup!')):
-                return True # Quit
-    return should_quit
-
-def cmdRestore(opts):
-    # restore settings on user request
-    if not opts.restore: return False
-    global basher, balt, barb
-    if not basher: import basher, balt, barb
-    should_quit = opts.quietquit
-    backup = barb.RestoreSettings.get_backup_instance(balt.Link.Frame,
-        opts.filename or None, should_quit)
-    if not backup : return False
-    backup.Apply()
-    return should_quit
-
 def assure_single_instance(instance):
     """Ascertain that only one instance of Wrye Bash is running.
 
@@ -140,6 +89,7 @@ def assure_single_instance(instance):
             dialog.ShowModal()
         sys.exit(1)
 
+_bugdump_handle = None
 def exit_cleanup():
     # Cleanup temp installers directory
     import tempfile
@@ -154,7 +104,9 @@ def exit_cleanup():
                     file_.remove()
             except:
                 pass
-
+    # make sure to flush the BashBugDump.log
+    if _bugdump_handle is not None:
+        _bugdump_handle.close()
     if bass.is_restarting:
         cli = cmd_line = bass.sys_argv # list of cli args
         try:
@@ -175,7 +127,6 @@ def exit_cleanup():
                 cmd_line = (is_standalone and cli) or [sys.executable] + cli
                 subprocess.Popen(cmd_line, # a list, no need to escape spaces
                                  close_fds=True)
-
         except Exception as error:
             print error
             print u'Error Attempting to Restart Wrye Bash!'
@@ -212,6 +163,13 @@ def dump_environment():
         msg = u'\n'.join( [msg, 'Using scandir ' + bolt.scandir.__version__])
     print msg
     return msg
+
+def _bash_ini_parser(bash_ini_path):
+    bash_ini_parser = None
+    if bash_ini_path is not None and os.path.exists(bash_ini_path):
+        bash_ini_parser = ConfigParser()
+        bash_ini_parser.read(bash_ini_path)
+    return bash_ini_parser
 
 # Main ------------------------------------------------------------------------
 def main(opts):
@@ -255,12 +213,13 @@ def _main(opts):
         # Standalone stdout is NUL no matter what.   Redirect it to stderr.
         # Also, setup stdout/stderr to the debug log if debug mode /
         # standalone before wxPython is up
-        # errLog = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding='utf-8')
-        errLog = codecs.getwriter('utf-8')(
+        global _bugdump_handle
+        # _bugdump_handle = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding='utf-8')
+        _bugdump_handle = codecs.getwriter('utf-8')(
             open(os.path.join(os.getcwdu(), u'BashBugDump.log'), 'w'))
-        sys.stdout = errLog
-        sys.stderr = errLog
-        old_stderr = errLog
+        sys.stdout = _bugdump_handle
+        sys.stderr = _bugdump_handle
+        old_stderr = _bugdump_handle
 
     if opts.debug:
         dump_environment()
@@ -269,77 +228,58 @@ def _main(opts):
     instance = _wx.SingleInstanceChecker('Wrye Bash') # must stay alive !
     assure_single_instance(instance)
 
-    # ensure we are in the correct directory so relative paths will work
-    # properly
-    if is_standalone:
-        pathToProg = os.path.dirname(
-            unicode(sys.executable, bolt.Path.sys_fs_enc))
-    else:
-        pathToProg = os.path.dirname(
-            unicode(sys.argv[0], bolt.Path.sys_fs_enc))
-    if pathToProg:
-        os.chdir(pathToProg)
-    del pathToProg
+    #--Bash installation directories, set on boot, not likely to change
+    initialization.init_dirs_mopy_and_cd(is_standalone)
 
-    # Detect the game we're running for ---------------------------------------
-    import bush
-    bolt.deprint (u'Searching for game to manage:')
-    # set the Bash ini global in bass
-    bashIni = bass.GetBashIni()
-    ret = bush.detect_and_set_game(opts.oblivionPath, bashIni)
-    if ret is not None: # None == success
-        if len(ret) == 0:
-            msgtext = _(
-                u"Wrye Bash could not find a game to manage. Please use "
-                u"-o command line argument to specify the game path")
-        else:
-            msgtext = _(
-                u"Wrye Bash could not determine which game to manage.  "
-                u"The following games have been detected, please select "
-                u"one to manage.")
-            msgtext += u'\n\n'
-            msgtext += _(
-                u'To prevent this message in the future, use the -o command '
-                u'line argument or the bash.ini to specify the game path')
-        retCode = _wxSelectGame(ret, msgtext)
-        if retCode is None:
-            bolt.deprint(u"No games were found or Selected. Aborting.")
-            return
-        # Add the game to the command line, so we use it if we restart
-        bass.update_sys_argv(['--oblivionPath', bush.game_path(retCode).s])
-        bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
+    # if HTML file generation was requested, just do it and quit
+    if opts.genHtml is not None:
+        msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
+        msg2 = _(u'done')
+        try: print msg1
+        except UnicodeError: print msg1.encode(bolt.Path.sys_fs_enc)
+        import belt # this imports bosh which imports wx (DUH)
+        bolt.WryeText.genHtml(opts.genHtml)
+        try: print msg2
+        except UnicodeError: print msg2.encode(bolt.Path.sys_fs_enc)
+        return
 
-    # from now on bush.game is set
-
-    #--Initialize Directories and some settings
-    #  required before the rest has imported
-    SetUserPath(uArg=opts.userPath)
-
-    # Force Python mode if CBash can't work with this game
-    bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
+    # We need the Mopy dirs to initialize restore settings instance
+    bash_ini_path, restore_ = u'bash.ini', None
+    # import barb that does not import from bosh/balt/bush
+    import barb
+    if opts.restore:
+        try:
+            restore_ = barb.RestoreSettings(opts.filename)
+            restore_.extract_backup()
+            # get the bash.ini from the backup, or None - use in _detect_game
+            bash_ini_path = restore_.backup_ini_path()
+        except (exception.BoltError, exception.StateError, OSError, IOError):
+            bolt.deprint(u'Failed to restore backup', traceback=True)
+            restore_ = None
+    # The rest of backup/restore functionality depends on setting the game
     try:
+        bashIni, bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
+        if not bush_game: return
+        if restore_:
+            try:
+                # TODO(ut) error checks - limit except Exception below
+                restore_.restore_settings(bush_game.fsName)
+                # we currently disallow backup and restore on the same boot
+                if opts.quietquit: return
+            except Exception:
+                bolt.deprint(u'Failed to restore backup', traceback=True)
+                restore_.restore_ini()
+                # reset the game and ini
+                import bush
+                bush.reset_bush_globals()
+                bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
         import bosh # this imports balt (DUH) which imports wx
-        env.isUAC = env.testUAC(bush.gamePath.join(u'Data'))
-        bosh.initBosh(opts.personalPath, opts.localAppDataPath, bashIni)
-
-        # if HTML file generation was requested, just do it and quit
-        if opts.genHtml is not None:
-            msg1 = _(u"generating HTML file from: '%s'") % opts.genHtml
-            msg2 = _(u'done')
-            try: print msg1
-            except UnicodeError: print msg1.encode(bolt.Path.sys_fs_enc)
-            import belt # this imports bosh which imports wx (DUH)
-            bolt.WryeText.genHtml(opts.genHtml)
-            try: print msg2
-            except UnicodeError: print msg2.encode(bolt.Path.sys_fs_enc)
-            return
-        global basher, balt, barb
-        import basher
-        import barb
-        import balt
-        barb.opts = opts
+        bosh.initBosh(bashIni, game_ini_path)
+        env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
+        global basher, balt
+        import basher, balt
     except (exception.PermissionError,
-            exception.BoltError, ImportError) as e:
+            exception.BoltError, ImportError, OSError, IOError) as e:
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
                           traceback.format_exc(e)])
@@ -366,12 +306,6 @@ def _main(opts):
 
     if not is_standalone and (
         not _rightWxVersion() or not _rightPythonVersion()): return
-
-    # process backup/restore options
-    # quit if either is true, but only after calling both
-    should_quit = cmdBackup(opts)
-    should_quit = cmdRestore(opts) or should_quit
-    if should_quit: return
     if env.isUAC:
         uacRestart = opts.uac
         if not opts.noUac and not opts.uac:
@@ -381,7 +315,7 @@ def _main(opts):
                 u"to the %(gameName)s directory.  If you do not start Wrye "
                 u"Bash with elevated privileges, you will be prompted at "
                 u"each operation that requires elevated privileges.") % {
-                          'gameName': bush.game.displayName}
+                          'gameName': bush_game.displayName}
             uacRestart = balt.ask_uac_restart(message,
                                               title=_(u'UAC Protection'),
                                               mopy=bass.dirs['mopy'])
@@ -389,9 +323,94 @@ def _main(opts):
         if uacRestart:
             bass.is_restarting = True
             return
+    # Backup the Bash settings - we need settings being initialized to get
+    # the previous version - we should read this from a file so we can move
+    # backup higher up in the boot sequence.
+    previous_bash_version = bass.settings['bash.version']
+    # backup settings if app version has changed or on user request
+    if opts.backup or barb.BackupSettings.new_bash_version_prompt_backup(
+            balt, previous_bash_version):
+        frame = None # balt.Link.Frame, not defined yet, no harm done
+        base_dir = bass.settings['bash.backupPath'] or bass.dirs['modsBash']
+        settings_file = (opts.backup and opts.filename) or None
+        if not settings_file:
+            settings_file = balt.askSave(frame,
+                                         title=_(u'Backup Bash Settings'),
+                                         defaultDir=base_dir,
+                                         wildcard=u'*.7z',
+                                         defaultFile=barb.BackupSettings.
+                                         backup_filename(bush_game.fsName))
+        if settings_file:
+            with balt.BusyCursor():
+                backup = barb.BackupSettings(settings_file,
+                                             bush_game.fsName)
+            try:
+                with balt.BusyCursor():
+                    backup.backup_settings(balt)
+            except exception.StateError:
+                if balt.askYes(frame, u'\n'.join([
+                    _(u'There was an error while trying to backup the '
+                      u'Bash settings!'),
+                    _(u'If you continue, your current settings may be '
+                        u'overwritten.'),
+                    _(u'Do you want to quit Wrye Bash now?')]),
+                                 title=_(u'Unable to create backup!')):
+                    return  # Quit
 
     app.Init() # Link.Frame is set here !
     app.MainLoop()
+
+def _detect_game(opts, backup_bash_ini):
+    # Read the bash.ini file either from Mopy or from the backup location
+    bashIni = _bash_ini_parser(backup_bash_ini)
+    # if uArg is None, then get the UserPath from the ini file
+    user_path = opts.userPath or None  ##: not sure why this must be set first
+    if user_path is None:
+        ini_user_path = bass.get_ini_option(bashIni, u'sUserPath')
+        if ini_user_path and not ini_user_path == u'.':
+            user_path = ini_user_path
+    if user_path:
+        drive, path = os.path.splitdrive(user_path)
+        os.environ['HOMEDRIVE'] = drive
+        os.environ['HOMEPATH'] = path
+    # Detect the game we're running for ---------------------------------------
+    bush_game = _import_bush_and_set_game(opts, bashIni)
+    if not bush_game:
+        return None, None, None
+    #--Initialize Directories to perform backup/restore operations
+    #--They depend on setting the bash.ini and the game
+    game_ini_path = initialization.init_dirs(bashIni, opts.personalPath,
+                                             opts.localAppDataPath, bush_game)
+    return bashIni, bush_game, game_ini_path
+
+def _import_bush_and_set_game(opts, bashIni):
+    import bush
+    bolt.deprint(u'Searching for game to manage:')
+    ret = bush.detect_and_set_game(opts.oblivionPath, bashIni)
+    if ret is not None:  # None == success
+        if len(ret) == 0:
+            msgtext = _(
+                u"Wrye Bash could not find a game to manage. Please use "
+                u"-o command line argument to specify the game path")
+        else:
+            msgtext = _(
+                u"Wrye Bash could not determine which game to manage.  "
+                u"The following games have been detected, please select "
+                u"one to manage.")
+            msgtext += u'\n\n'
+            msgtext += _(
+                u'To prevent this message in the future, use the -o command '
+                u'line argument or the bash.ini to specify the game path')
+        retCode = _wxSelectGame(ret, msgtext)
+        if retCode is None:
+            bolt.deprint(u"No games were found or Selected. Aborting.")
+            return None, None
+        # Add the game to the command line, so we use it if we restart
+        bass.update_sys_argv(['--oblivionPath', bush.game_path(retCode).s])
+        bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
+    # Force Python mode if CBash can't work with this game
+    bolt.CBash = opts.mode if bush.game.esp.canCBash else 1 #1 = python mode...
+    return bush.game
 
 def _show_wx_error(msg):
     """Shows an error message in a wx window."""

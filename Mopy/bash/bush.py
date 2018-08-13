@@ -30,14 +30,14 @@ that are used by multiple objects."""
 import collections
 import struct
 import game as game_init
+from bass import get_ini_option
 from bolt import GPath, Path, deprint
-from env import get_game_path
+from env import get_registry_game_path
 from exception import BoltError
 
 # Game detection --------------------------------------------------------------
 game = None         # type: game_init.GameInfo
 game_mod = None     # type: game_init
-gamePath = None     # absolute bolt Path to the game directory
 foundGames = {}     # {'name': Path} dict used by the Settings switch game menu
 
 # Module Cache
@@ -46,6 +46,13 @@ _allModules = {}      # 'name' -> module
 _registryGames = {}   # 'name' -> path
 _fsName_display = {}
 _display_fsName = {}
+
+def reset_bush_globals():
+    global game, game_mod
+    game = game_mod = None
+    for d in (_allGames, _allModules, _registryGames, _fsName_display,
+              _display_fsName):
+        d.clear()
 
 def _supportedGames(useCache=True):
     """Set games supported by Bash and return their paths from the registry."""
@@ -68,7 +75,7 @@ def _supportedGames(useCache=True):
             _allGames[game_type.fsName] = game_type
             _fsName_display[game_type.fsName] = game_type.displayName
             #--Get this game's install path
-            game_path = get_game_path(game_type)
+            game_path = get_registry_game_path(game_type)
         except (ImportError, AttributeError):
             deprint(u'Error in game support module:', modname, traceback=True)
             continue
@@ -116,9 +123,9 @@ def _detectGames(cli_path=u'', bash_ini_=None):
             _(u'No known game in the path specified via -o argument: ' +
               u'%(path)s'))
     #--Second: check if sOblivionPath is specified in the ini
-    if bash_ini_ and bash_ini_.has_option(u'General', u'sOblivionPath') \
-               and not bash_ini_.get(u'General', u'sOblivionPath') == u'.':
-        test_path = GPath(bash_ini_.get(u'General', u'sOblivionPath').strip())
+    ini_game_path = get_ini_option(bash_ini_, u'sOblivionPath')
+    if ini_game_path and not ini_game_path == u'.':
+        test_path = GPath(ini_game_path.strip())
         if not test_path.isabs():
             test_path = Path.getcwd().join(test_path)
         installPaths['ini'] = (test_path,
@@ -153,10 +160,10 @@ def _detectGames(cli_path=u'', bash_ini_=None):
 
 def __setGame(name, msg):
     """Set bush game globals - raise if they are already set."""
-    global gamePath, game, game_mod
+    global game, game_mod
     if game is not None: raise BoltError(u'Trying to reset the game')
     gamePath = foundGames[name]
-    game = _allGames[name]
+    game = _allGames[name](gamePath)
     game_mod = _allModules[name]
     deprint(msg % {'gamename': name}, gamePath)
     # Unload the other modules from the cache
