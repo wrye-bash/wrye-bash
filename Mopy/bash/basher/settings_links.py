@@ -93,19 +93,18 @@ class Settings_RestoreSettings(ItemLink):
                                      base_dir, u'', u'*.7z')
         if not settings_file: return
         with balt.BusyCursor():
-            backup = barb.RestoreSettings(settings_file)
+            restore_ = barb.RestoreSettings(settings_file)
         backup_dir = None
         restarting = False
         try:
             with balt.BusyCursor():
-                backup_dir = backup.extract_backup(settings_file)
-            error_msg, error_title = backup.incompatible_backup_error(
-                backup_dir, bush.game.fsName)
+                backup_dir = restore_.extract_backup()
+            error_msg, error_title = restore_.incompatible_backup_error(
+                bush.game.fsName)
             if error_msg:
                 balt.showError(Link.Frame, error_msg, error_title)
                 return
-            error_msg, error_title = backup.incompatible_backup_warn(
-                backup_dir)
+            error_msg, error_title = restore_.incompatible_backup_warn()
             if error_msg and not balt.askWarning(Link.Frame, error_msg,
                                                  error_title):
                 return
@@ -122,7 +121,7 @@ class Settings_RestoreSettings(ItemLink):
             Link.Frame.Restart(['--restore'], ['--filename', backup_dir.s])
         except BoltError as e:
             deprint(u'Restore settings failed:', traceback=True)
-            backup.warn_message(balt, e.message)
+            restore_.warn_message(balt, e.message)
         finally:
             if not restarting and backup_dir is not None:
                 barb.RestoreSettings.remove_extract_dir(backup_dir)

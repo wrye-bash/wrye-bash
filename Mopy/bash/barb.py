@@ -198,35 +198,39 @@ class RestoreSettings(object):
     __tmpdir_prefix = u'RestoreSettingsWryeBash_'
     __unset = object()
 
-    def __init__(self, settings_file=None):
-        self._settings_file = settings_file
+    def __init__(self, settings_file):
+        self._settings_file = GPath(settings_file)
         self._saved_settings_version = self._settings_saved_with = None
         # bash.ini handling
         self._timestamped_old = self.__unset
         self._bash_ini_path = self.__unset
+        # extract folder
+        self._extract_dir = self.__unset
 
     # Restore API -------------------------------------------------------------
-    @staticmethod
-    def extract_backup(backup_path):
+    def extract_backup(self):
         """Extract the backup file and return the tmp directory used. If
         the backup file is a dir we assume it was created by us before
         restarting."""
-        backup_path = GPath(backup_path)
-        if backup_path.isfile():
+        if self._settings_file.isfile():
             temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
-            command = archives.extractCommand(backup_path, temp_dir)
-            archives.extract7z(command, backup_path)
-            return temp_dir
-        elif backup_path.isdir():
-            return backup_path
-        raise BoltError(
-            u'%s is not a valid backup location' % backup_path)
+            command = archives.extractCommand(self._settings_file, temp_dir)
+            archives.extract7z(command, self._settings_file)
+            self._extract_dir = temp_dir
+        elif self._settings_file.isdir():
+            self._extract_dir = self._settings_file
+        else:
+            raise BoltError(
+                u'%s is not a valid backup location' % self._settings_file)
+        return self._extract_dir
 
-    def backup_ini_path(self, tmp_dir):
+    def backup_ini_path(self):
         """Get the path to the backup bash.ini if it exists - must be run
         before restore_settings is called, as we need the Bash ini to
         initialize bass.dirs."""
-        for r, d, fs in bolt.walkdir(u'%s' % tmp_dir):
+        if self._extract_dir is self.__unset: raise BoltError(
+            u'backup_ini_path: you must extract the settings file first')
+        for r, d, fs in bolt.walkdir(u'%s' % self._extract_dir):
             for f in fs:
                 if f == u'bash.ini':
                     self._bash_ini_path = jo(r, f)
@@ -234,17 +238,17 @@ class RestoreSettings(object):
         else: self.bash_ini_path = None
         return self._bash_ini_path
 
-    def restore_settings(self, backup_path, fsName):
+    def restore_settings(self, fsName):
         if self._bash_ini_path is self.__unset: raise BoltError(
             u'restore_settings: you must handle bash ini first')
-        temp_settings_restore_dir = self.extract_backup(backup_path)
+        if self._extract_dir is self.__unset: raise BoltError(
+            u'restore_settings: you must extract the settings file first')
         try:
-            self._restore_settings(temp_settings_restore_dir, fsName)
+            self._restore_settings(fsName)
         finally:
-            if temp_settings_restore_dir:
-                self.remove_extract_dir(temp_settings_restore_dir)
+            self.remove_extract_dir(self._extract_dir)
 
-    def _restore_settings(self, temp_dir, fsName):
+    def _restore_settings(self, fsName):
         deprint(u'')
         deprint(_(u'RESTORE BASH SETTINGS: ') + self._settings_file.s)
         # backup previous Bash ini if it exists
@@ -259,7 +263,7 @@ class RestoreSettings(object):
         # restore all the settings files
         restore_paths = _init_settings_files(fsName).keys()
         for dest_dir, back_path in restore_paths:
-            full_back_path = temp_dir.join(back_path)
+            full_back_path = self._extract_dir.join(back_path)
             for name in full_back_path.list():
                 if full_back_path.join(name).isfile():
                     deprint(GPath(back_path).join(
@@ -268,7 +272,7 @@ class RestoreSettings(object):
         # restore savegame profile settings
         back_path = GPath(u'My Games').join(fsName, u'Saves')
         saves_dir = dirs['saveBase'].join(u'Saves')
-        full_back_path = temp_dir.join(back_path)
+        full_back_path = self._extract_dir.join(back_path)
         if full_back_path.exists():
             for root_dir, folders, files_ in full_back_path.walk(True,None,True):
                 root_dir = GPath(u'.'+root_dir.s)
@@ -279,9 +283,9 @@ class RestoreSettings(object):
                         saves_dir.join(root_dir, name))
 
     # Validation --------------------------------------------------------------
-    def incompatible_backup_error(self, temp_dir, current_game):
+    def incompatible_backup_error(self, current_game):
         saved_settings_version, settings_saved_with = \
-            self._get_settings_versions(temp_dir)
+            self._get_settings_versions()
         if saved_settings_version > bass.settings['bash.version']:
             # Disallow restoring settings saved on a newer version of bash # TODO(ut) drop?
             return u'\n'.join([
@@ -293,7 +297,7 @@ class RestoreSettings(object):
                        u'Bash.')]), _(
                 u'Error: Settings are from newer Bash version')
         else:
-            game_name = RestoreSettings._get_backup_game(temp_dir)
+            game_name = self._get_backup_game()
             if game_name != current_game:
                 return u'\n'.join(
                     [_(u'The selected backup file is for %(game_name)s while '
@@ -302,9 +306,9 @@ class RestoreSettings(object):
                     u'Error: Settings are from a different game')
         return u'', u''
 
-    def incompatible_backup_warn(self, temp_dir):
+    def incompatible_backup_warn(self):
         saved_settings_version, settings_saved_with = \
-            self._get_settings_versions(temp_dir)
+            self._get_settings_versions()
         if settings_saved_with != bass.settings['bash.version']:
             return u'\n'.join(
                 [_(u'The version of Bash used to create the selected backup '
@@ -315,9 +319,12 @@ class RestoreSettings(object):
                 u'Warning: Version Mismatch!')
         return u'', u''
 
-    def _get_settings_versions(self, tmp_dir):
+    def _get_settings_versions(self):
+        if self._extract_dir is self.__unset: raise BoltError(
+            u'_get_settings_versions: you must extract the settings file '
+            u'first')
         if self._saved_settings_version is None:
-            backup_dat = tmp_dir.join(u'backup.dat')
+            backup_dat = self._extract_dir.join(u'backup.dat')
             try:
                 with backup_dat.open('rb') as ins:
                     # version of Bash that created the backed up settings
@@ -328,14 +335,13 @@ class RestoreSettings(object):
                 raise_bolt_error(u'Failed to read %s' % backup_dat)
         return self._saved_settings_version, self._settings_saved_with
 
-    @staticmethod
-    def _get_backup_game(tmp_dir):
+    def _get_backup_game(self):
         """Get the game this backup was for - hack, this info belongs to backup.dat."""
-        for node in os.listdir(u'%s' % tmp_dir):
+        for node in os.listdir(u'%s' % self._extract_dir):
             if node != u'My Games' and not node.endswith(
-                    u'Mods') and os.path.isdir(tmp_dir.join(node).s):
+                    u'Mods') and os.path.isdir(self._extract_dir.join(node).s):
                 return node
-        raise BoltError(u'%s does not contain a game dir' % tmp_dir)
+        raise BoltError(u'%s does not contain a game dir' % self._extract_dir)
 
     # Dialogs and cleanup/error handling --------------------------------------
     @staticmethod

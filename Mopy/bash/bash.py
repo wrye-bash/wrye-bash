@@ -244,32 +244,32 @@ def _main(opts):
         return
 
     # We need the Mopy dirs to initialize restore settings instance
-    bash_ini_path, restore_dir = u'bash.ini', None
+    bash_ini_path, restore_ = u'bash.ini', None
     # import barb that does not import from bosh/balt/bush
     import barb
     if opts.restore:
         try:
-            restore_dir = barb.RestoreSettings.extract_backup(opts.filename)
-            restore = barb.RestoreSettings(restore_dir)
+            restore_ = barb.RestoreSettings(opts.filename)
+            restore_.extract_backup()
             # get the bash.ini from the backup, or None - use in _detect_game
-            bash_ini_path = restore.backup_ini_path(restore_dir)
+            bash_ini_path = restore_.backup_ini_path()
         except (exception.BoltError, exception.StateError, OSError, IOError):
             bolt.deprint(u'Failed to restore backup', traceback=True)
-            restore_dir = None
+            restore_ = None
     # The rest of backup/restore functionality depends on setting the game
     try:
         bashIni, bush_game, game_ini_path = _detect_game(opts, bash_ini_path)
         if not bush_game: return
-        if restore_dir:
+        if restore_:
             try:
-                # TODO(ut) error checks
-                restore.restore_settings(restore_dir, bush_game.fsName)
+                # TODO(ut) error checks - limit except Exception below
+                restore_.restore_settings(bush_game.fsName)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
-            except Exception as e:
-                bolt.deprint(u'Failed to restore backup: %s' % e)
-                restore.restore_ini()
-                # reset the game
+            except Exception:
+                bolt.deprint(u'Failed to restore backup', traceback=True)
+                restore_.restore_ini()
+                # reset the game and ini
                 import bush
                 bush.reset_bush_globals()
                 bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
