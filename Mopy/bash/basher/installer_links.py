@@ -190,7 +190,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
     def __init__(self, bAuto):
         super(Installer_Wizard, self).__init__()
         self.bAuto = bAuto
-        self._text = _(u'Auto Wizard') if self.bAuto else _(u'Wizard')
+        self._text = _(u'Auto Wizard') if self.bAuto else _(u'Manual Wizard')
 
     def _enable(self):
         isSingle = super(Installer_Wizard, self)._enable()
@@ -357,7 +357,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
 class Installer_Anneal(_InstallLink):
     """Anneal all packages."""
     _text = _(u'Anneal')
-    help = _(u"Anneal all packages.")
+    help = _(u"Anneal all files in this package.")
 
     def Execute(self):
         ui_refresh = [False, False]
@@ -487,7 +487,7 @@ class Installer_SkipRefresh(CheckLink, _SingleProject):
 class Installer_Install(_InstallLink):
     """Install selected packages."""
     mode_title = {'DEFAULT': _(u'Install'), 'LAST': _(u'Install Last'),
-                  'MISSING': _(u'Install Missing')}
+                  'MISSING': _(u'Install Missing Files')}
 
     def __init__(self,mode='DEFAULT'):
         super(Installer_Install, self).__init__()
@@ -1278,7 +1278,7 @@ class InstallerConverter_ConvertMenu(balt.MenuLink):
 
 class InstallerConverter_MainMenu(balt.MenuLink):
     """Main BCF Menu"""
-    _text = _(u"Conversions")
+    _text = _(u"BAIN Conversions")
     def _enable(self):
         for item in self.selected:
             if not isinstance(self.window.data_store[item], bosh.InstallerArchive):
