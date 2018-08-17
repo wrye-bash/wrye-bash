@@ -357,7 +357,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
 class Installer_Anneal(_InstallLink):
     """Anneal all packages."""
     _text = _(u'Anneal')
-    help = _(u"Anneal all files in this package.")
+    help = _(u"Anneal all files in selected package(s).")
 
     def Execute(self):
         ui_refresh = [False, False]
