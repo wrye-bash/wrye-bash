@@ -569,78 +569,195 @@ tab. The directories skipped are:
 </table>
 <table id="bainPackageCommands">
     <thead>
-        <tr><th colspan="3">Package Context Menu
-        <tr><th colspan="2">Command<th>Description
+        <tr>
+            <th colspan="3">Package Context Menu</th>
+        </tr>
+        <tr>
+            <th colspan="2">Command</th>
+            <th>Description</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td colspan="2" id="bainOpenFile">Open...<td>Opens the selected package(s) in the file system.
-        <tr><td colspan="2" id="bainDuplicate">Duplicate...<td>Makes a duplicate of the selected package(s).
-        <tr><td colspan="2" id="bainDelete">Delete<td>Deletes the selected package(s). Deleted packages are <b>not</b> sent to the Recycling Bin, they are permanently deleted.
-        <tr><td rowspan="4" id="bainOpenAt">Open at<td>Google...<td>Attempts to perform a Google search for the selected package's name.
-        <tr><td>TES Nexus...<td>Attempts to open the selected package's page on TES Nexus.  This command assumes that the trailing digits in a package's name is the package ID at the site.
-        <tr><td>Skyrim Nexus...<td>Attempts to open the selected package's page on Skyrim Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.
-        <tr><td>TES Alliance...<td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.
-        <tr><td colspan="2" id="bainHide">Hide...<td>Hides the package in the list, and moves it to the
-            <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
-        <tr><td colspan="2" id="bainRename">Rename...<td>Renames the selected package(s) or marker(s). All selected items must be of the
-            same type. For archives the extension will remain the same.
-        <tr><td colspan="2" id="bainRefresh">Refresh<td>As <a href="#bainRefresh">Quick Refresh</a> below. Refresh will however recalculate the
-            <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all selected items <i>from scratch</i>, which is not what you usually need (for projects
-            especially it will take much longer than for packages, cause to calculate the CRC of a project <i>all the individual CRCs</i> of <i>all</i> the files in the project folder must be
-            recalculated). Bash will of course recalculate CRCs for files that have their dates/sizes changed <i>anyway</i>, so forcing CRC recalculation with Refresh is only needed if you
-            changed the contents of a file inside a project <i>without changing its modification time <b>and</b> its size</i> - that's super rare, you most probably just need Quick Refresh
-            below.
-        <tr><td colspan="2" id="bainQuickRefresh">Quick Refresh<td>Refreshes all info for the selected package(s), also checking the files that correspond to this package inside the Data
-            directory. It will bypass skip refresh flags on projects (see case A below). BAIN does refresh package information whenever the installer's tab regains focus, except for projects
-            if project skipping is on, but does not scan the Data folder but once on boot. So this command is useful if:
-            <ol type="A">
-                <li>a <i>project</i> has been changed and it has <a href="#bainDontRefresh">Don't Refresh</a> selected, or the <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a>
-                    option is disabled
-                <li>files that correspond to a package/project have changed in the game's Data directory, but the package is still marked in sync (or out of sync) erroneously
-            </ol>Case B) is relevant cause now Bash will recheck the files in Data that would belong to the packages that are being refreshed - this was not the case in 306, where you needed
-        a full <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.
-        <tr><td colspan="2" id="bainMoveTo">Move To...<td>Moves the selected package(s) to the specified position.
-        <tr><td colspan="2" id="bainHasExtraDirectories">Has Extra Directories<td>BAIN only recognises a limited set of subdirectories of
-            the Data folder (the <a href="Wrye%20Bash%20General%20Readme.html#bain-structure">standard game directories</a>), and skips any
-            unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories (Unless the files
-            within are on the list of files which are always skipped such as .exe files, see <a href="#bain-skipped">Skipped Files</a>)<br>
-            <b>NB:</b> extra directories will not be taken into account at all when calculating package structure. There must be at least some
-            standard game directory or a data file (espml, bsa/ba2, ini) in the package for BAIN to recognise its structure.
-        <tr><td colspan="2" id="bainOverrideSkips">Override Skips<td>If this is checked, Bain will not skip over files that would normally be skipped due to a <a href="#bainGlobalSkips">global
-            skip option</a>.
-        <tr><td colspan="2" id="bainSkipVoices">Skip Voices<td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys' <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.
-        <tr><td colspan="2" id="bainDontRefresh">Don't Refresh<td>When refreshing installers (when switching out and in the installers tab), this <i>project</i> won't be scanned for changes.
-            The project will only get refreshed during the first refresh of BAIN on a restart, or by manually refreshing (see <a href="#bainQuickRefresh">Quick Refresh</a> and co).
-        <tr><td colspan="2" id="bainWizard">Wizard<td>Runs the Wizard for the package, if it has one.
-        <tr><td colspan="2" id="bainAutoWizard">Auto Wizard<td>Runs the Wizard for the package, if it has one, selecting the default options.
-        <tr><td colspan="2" id="bainViewWizard">View Wizard...<td>Opens the wizard.txt for viewing.
-        <tr><td colspan="2" id="bainOpenReadme">Open Readme<td>If BAIN detects a readme in the selected package, it will be opened.
-        <tr><td colspan="2" id="bainAnneal">Anneal<td>Installs missing files and corrects install order errors. Note: If an already
-            installed file is changed outside of Wrye Bash control, Wrye Bash will not anneal that file. Anneal is relative to other
-            installed packages. This is because we do not want to override user changes like cleaning plugins and the like. If you do want
-            to override the change use <a href="#bainInstall">Install</a> instead. Note2: The change will be detected immediately in case of
-            ini tweaks, mods or bsas, but on next Bash load for other files (like nifs etc). To detect the change without restarting
-            <a href="#bainQuickRefresh">(Quick) Refresh</a> the package.
-        <tr><td colspan="2" id="bainInstall">Install<td>Fully installs the package except for files that would be overridden by later packages.
-        <tr><td colspan="2" id="bainInstallLast">Install Last<td>Moves the package to the end of the order list and installs it.
-        <tr><td colspan="2" id="bainInstallMissing">Install Missing<td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.
-        <tr><td colspan="2" id="bainUninstall">Uninstall<td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overridden will be installed as required.
-        <tr><td rowspan="2" id="bainConversion">Conversions<td>Create...<td>Archives only. Creates a new Bain Conversion File.
-        <tr><td>Apply->[BCF]<td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.
-        <tr><td colspan="2" id="bainUnpackToProject">Unpack To Project(s)...<td>Archives only. Unpack the archive to a project.
-        <tr><td colspan="2" id="bainPackToArchive">Pack to Archive...<td>Projects only. Packs the project to an archive. It defaults to .7z, but also supports .zip.
-        <tr><td colspan="2" id="bainPackageForRelease">Package For Release...<td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".
-        <tr><td colspan="2" id="bainExportACHlist">Export ACHList<td>This exports a file list of the files configured to be installed by
-            this installer (except top level files and docs installed in Data/Docs folder). This list is used when the CK asks for a list of
-            files to make new BSA files, for use when uploading to Bethesda.net. It will generate a <code>installer-name.achlist</code> file
-            inside the Mod Info Exports directory in the game (exe) folder. Mod Info Exports will be created if it doesn't exist. If an
-            achlist with the same name exists it will be overwritten. Import the ACHList Bash generated and it will then package your files
-            into the proper archives for upload. Available only for Skyrim Special Edition and Fallout 4.
-        <tr><td colspan="2" id="bainSyncFromData">Sync From Data<td>Projects only. Synchronize the project with files from the Data directory. This is essentially the reverse of "Install" for projects since it copies from the Data directory to the project rather than the other way around.
-        <tr><td colspan="2" id="bainCopyConflictsToProject">Copy Conflicts to Project<td>Copies all files that conflict with the selected package into a new project. Conflicts with inactive
-            installers and lower order packages are included as if <a href="#bainShowInactiveConflicts">Show Inactive Conflicts</a> and <a href="#bainShowLowerConflicts">Show Lower
-                Conflicts</a> options were selected. Useful for comparing conflicting resources.
-        <tr><td colspan="2" id="bainOmodInfo">Omod Info...<td>Projects only. Allows you to read/write omod configuration info.
-        <tr><td colspan="2" id="bainListStructure">List Structure...<td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.
+        <tr>
+            <td rowspan="5" id="bainFileMenu">File...</td>
+            <td id="bainOpenFile">Open...</td>
+            <td>Opens the selected package(s) in the file system.</td>
+        </tr>
+        <tr>
+            <td id="bainRename">Rename...</td>
+            <td>Renames the selected package(s) or marker(s). All selected items must be of the same type. For archives the extension will remain the same.</td>
+        </tr>
+        <tr>
+            <td id="bainDuplicate">Duplicate...</td>
+            <td>Makes a duplicate of the selected package(s).</td>
+        </tr>
+        <tr>
+            <td id="bainHide">Hide...</td>
+            <td>Hides the package in the list, and moves it to the
+                <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.</td>
+        </tr>
+        <tr>
+            <td id="bainDelete">Delete</td>
+            <td>Deletes the selected package(s). Deleted packages are
+                <b>not</b> sent to the Recycling Bin, they are permanently deleted.</td>
+        </tr>
+        <tr>
+            <td rowspan="4" id="bainOpenAt">Open at</td>
+            <td>Google...</td>
+            <td>Attempts to perform a Google search for the selected package's name.</td>
+        </tr>
+        <tr>
+            <td>TES Nexus...</td>
+            <td>Attempts to open the selected package's page on TES Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
+        </tr>
+        <tr>
+            <td>Skyrim Nexus...</td>
+            <td>Attempts to open the selected package's page on Skyrim Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
+        </tr>
+        <tr>
+            <td>TES Alliance...</td>
+            <td>Attempts to open the selected package's page on TES Alliance. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainAnneal">Anneal</td>
+            <td>Installs missing files and corrects install order errors. Note: If an already installed file is changed outside of Wrye Bash control, Wrye Bash will not anneal that file. Anneal is relative to other installed packages. This is because we do not want to override user changes like cleaning plugins and the like. If you do want to override the change use
+                <a href="#bainInstall">Install</a> instead. Note2: The change will be detected immediately in case of ini tweaks, mods or bsas, but on next Bash load for other files (like nifs etc). To detect the change without restarting
+                <a href="#bainQuickRefresh">(Quick) Refresh</a> the package.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainInstall">Install</td>
+            <td>Fully installs the package except for files that would be overridden by later packages.</td>
+        </tr>
+        <tr>
+            <td rowspan="3" id="bainWizardMenu">Wizard Installer...</td>
+            <td id="bainWizard">Manual Wizard</td>
+            <td>Runs the Wizard for the package, if it has one.</td>
+        </tr>
+        <tr>
+            <td id="bainAutoWizard">Auto Wizard</td>
+            <td>Runs the Wizard for the package, if it has one, selecting the default options.</td>
+        </tr>
+        <tr>
+            <td id="bainViewWizard">View Wizard...</td>
+            <td>Opens the wizard.txt for viewing.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainInstallMissing">Install Missing Files</td>
+            <td>The same as Install, except that it only installs missing files – i.e. it will not override any currently existing files.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainUninstall">Uninstall</td>
+            <td>Uninstalls the package. If Auto-Anneal is active (the default) then files from earlier packages that were previously overridden will be installed as required.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainQuickRefresh">Quick Refresh</td>
+            <td>
+                <p>Refreshes all info for the selected package(s), also checking the files that correspond to this package inside the Data directory. It will bypass skip refresh flags on projects (see case A below). BAIN does refresh package information whenever the installer's tab regains focus, except for projects if project skipping is on, but does not scan the Data folder but once on boot.</p> So this command is useful if:
+                <ol type="A">
+                    <li>a
+                        <i>project</i> has been changed and it has
+                        <a href="#bainDontRefresh">Don't Refresh</a> selected, or the
+                        <a href="#bainAutoRefreshProjects">Auto-Refresh Projects</a> option is disabled</li>
+                    <li>files that correspond to a package/project have changed in the game's Data directory, but the package is still marked in sync (or out of sync) erroneously</li>
+                </ol>
+                <p>Case B) is relevant cause now Bash will recheck the files in Data that would belong to the packages that are being refreshed. This was not the case in 306, where you needed a full
+                    <a href="#bainRefreshData">Refresh Data</a>, which is now pretty much deprecated.</p>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainExportACHlist">Export ACHList</td>
+            <td> This exports a file list of the files configured to be installed by this installer (except top level files and docs installed in Data/Docs folder). This list is used when the CK asks for a list of files to make new BSA files, for use when uploading to Bethesda.net. It will generate a
+                <code>installer-name.achlist</code> file inside the Mod Info Exports directory in the game (exe) folder. Mod Info Exports will be created if it doesn't exist. If an achlist with the same name exists it will be overwritten. Import the ACHList Bash generated and it will then package your files into the proper archives for upload. Available only for Skyrim Special Edition and Fallout 4. </td>
+        </tr>
+        <tr>
+            <td rowspan="10" id="bainPackageMenu">Package..</td>
+            <td id="bainOpenReadme">Open Readme</td>
+            <td>If BAIN detects a readme in the selected package, it will be opened.</td>
+        </tr>
+        <tr>
+            <td id="bainMoveTo">Move To...</td>
+            <td>Moves the selected package(s) to the specified position.</td>
+        </tr>
+        <tr>
+            <td id="bainRefresh">Refresh</td>
+            <td>As
+                <a href="#bainRefresh">Quick Refresh</a> below. Refresh will however recalculate the
+                <abbr title="Cyclic redundancy check, digital signature of the file">CRCs</abbr> for all selected items
+                <i>from scratch</i>, which is not what you usually need (for projects especially it will take much longer than for packages, cause to calculate the CRC of a project
+                <i>all the individual CRCs</i> of
+                <i>all</i> the files in the project folder must be recalculated). Bash will of course recalculate CRCs for files that have their dates/sizes changed
+                <i>anyway</i>, so forcing CRC recalculation with Refresh is only needed if you changed the contents of a file inside a project
+                <i>without changing its modification time
+                    <b>and</b> its size</i> - that's super rare, you most probably just need Quick Refresh below.</td>
+        </tr>
+        <tr>
+            <td id="bainListStructure">List Structure...</td>
+            <td>Generates a list of the files and directories in a package. Useful for posting package structure on forums, eg. when troubleshooting an install.</td>
+        </tr>
+        <tr>
+            <td id="bainPackToArchive">Pack to Archive...</td>
+            <td>Projects only. Packs the project to an archive. It defaults to .7z, but also supports .zip.</td>
+        </tr>
+        <tr>
+            <td id="bainPackageForRelease">Package For Release...</td>
+            <td>Projects only. Just like "Pack to Archive" except it doesn't archive the following: thumbs.db, desktop.ini, and any folder that begins with "--".</td>
+        </tr>
+        <tr>
+            <td id="bainSyncFromData">Sync From Data</td>
+            <td>Projects only. Synchronize the project with files from the Data directory. This is essentially the reverse of "Install" for projects since it copies from the Data directory to the project rather than the other way around.</td>
+        </tr>
+        <tr>
+            <td id="bainUnpackToProject">Unpack To Project(s)...</td>
+            <td>Archives only. Unpack the archive to a project.</td>
+        </tr>
+        <tr>
+            <td id="bainCopyConflictsToProject">Copy Conflicts to Project</td>
+            <td>Copies all files that conflict with the selected package into a new project. Conflicts with inactive installers and lower order packages are included as if
+                <a href="#bainShowInactiveConflicts">Show Inactive Conflicts</a> and
+                <a href="#bainShowLowerConflicts">Show Lower Conflicts</a> options were selected. Useful for comparing conflicting resources.</td>
+        </tr>
+        <tr>
+            <td id="bainInstallLast">Install Last</td>
+            <td>Moves the package to the end of the order list and installs it.</td>
+        </tr>
+        <tr>
+            <td rowspan="2" id="bainConversion">BAIN Conversions</td>
+            <td>Create...</td>
+            <td>Archives only. Creates a new Bain Conversion File.</td>
+        </tr>
+        <tr>
+            <td>Apply&rarr;[BCF]</td>
+            <td>[BCF] is the name of a Bain Conversion File listed in the Apply submenu. Selecting a BCF applies it to the selected package.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainHasExtraDirectories">Has Extra Directories</td>
+            <td>BAIN only recognises a limited set of subdirectories of the Data folder (the
+                <a href="Wrye%20Bash%20General%20Readme.html#bain-structure">standard game directories</a>), and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories (Unless the files within are on the list of files which are always skipped such as .exe files, see
+                <a href="#bain-skipped">Skipped Files</a>)
+                <br>
+                <b>NB:</b> extra directories will not be taken into account at all when calculating package structure. There must be at least some standard game directory or a data file (espml, bsa/ba2, ini) in the package for BAIN to recognise its structure.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainOverrideSkips">Override Skips</td>
+            <td>If this is checked, Bain will not skip over files that would normally be skipped due to a
+                <a href="#bainGlobalSkips">global skip option</a>.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainSkipVoices">Skip Voices</td>
+            <td>If this is checked, Bain will skip over any voice files in the package. This is useful if the voice files are empty and/or the user prefers not to use them. If this option is used, then the user should also use Elys'
+                <a href="http://oblivion.nexusmods.com/mods/16622">Universal Silent Voice</a> extension to prevent dialog subtitles from fading too rapidly.</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainDontRefresh">Don't Refresh</td>
+            <td>When refreshing installers (when switching out and in the installers tab), this
+                <i>project</i> won't be scanned for changes. The project will only get refreshed during the first refresh of BAIN on a restart, or by manually refreshing (see
+                <a href="#bainQuickRefresh">Quick Refresh</a> and co)</td>
+        </tr>
+        <tr>
+            <td colspan="2" id="bainOmodInfo">Omod Info...</td>
+            <td>Projects only. Allows you to read/write omod configuration info.</td>
+        </tr>
+    </tbody>
 </table>
 <table>
     <thead>
