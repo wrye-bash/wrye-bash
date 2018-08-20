@@ -124,10 +124,15 @@ class MreMato(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 48: # old skyrim record
-                raise ModSizeError(record.inName, readId, 52, size_, True,
-                                   old_skyrim=True)
+                unpacked = ins.unpack('11fI', size_, readId)
             else:
                 raise ModSizeError(record.inName, readId, 52, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -161,10 +166,15 @@ class MreStat(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 8: # old skyrim record
-                raise ModSizeError(record.inName, readId, 12, size_, True,
-                                   old_skyrim=True)
+                unpacked = ins.unpack('fI', size_, readId)
             else:
                 raise ModSizeError(record.inName, readId, 12, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -194,10 +204,15 @@ class MreWatr(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 228: # old skyrim record
-                raise ModSizeError(record.inName, readId, 232, size_, True,
-                                   old_skyrim=True)
+                unpacked = ins.unpack('7f4s2f3Bs3Bs3Bs4s43f', size_, readId)
             else:
                 raise ModSizeError(record.inName, readId, 232, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -331,16 +346,29 @@ class MreWeap(MelRecord):
         ))
 
     class MelWeapCrdt(MelStruct):
-        """Handle older truncated CRDT for WEAP subrecord."""
+        """Handle older truncated CRDT for WEAP subrecord.
+
+           Old Skyrim format H2sfB3sI FormID is the last integer.
+
+           New Format H2sfB3s4sI4s FormID is the integer priot to the
+           last 4S. Bethesda did not append the record they inserted bytes
+           which shifts the FormID 4 bytes. """
         def loadData(self, record, ins, sub_type, size_, readId):
             if size_ == 24:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size_ == 16: # old skyrim record
-                raise ModSizeError(record.inName, readId, 24, size_, True,
-                                   old_skyrim=True)
+            elif size_ == 16: # old skyrim record, do not change unpacked
+                var1, var2, var3, var4, var5, formID = ins.unpack('H2sfB3sI', size_, readId)
+                unpacked = (var1, var2, var3, var4, null3, null4, formID, null4)
             else:
                 raise ModSizeError(record.inName, readId, 24, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -382,10 +410,10 @@ class MreWeap(MelRecord):
                   'rumbleLeftMotorStrength','rumbleRightMotorStrength',
                   'rumbleDuration',('dnamUnk5',null4+null4+null4),'skill',
                   ('dnamUnk6',null4+null4),'resist',('dnamUnk7',null4),'stagger',),
-        MelWeapCrdt('CRDT','H2sfB3s4sI4s','critDamage',('crdtUnk1',null2),
-                  'criticalMultiplier',(WeapFlags3,'criticalFlags',0L),
-                  ('crdtUnk2',null3),('crdtUnk3',null4),
-                  (FID,'criticalEffect',None),('crdtUnk4',null4),),
+        MelWeapCrdt('CRDT','H2sfB3s4sI4s',('critDamage',0),('crdtUnk1',null2),
+                    ('criticalMultiplier',1.0),(WeapFlags3,'criticalFlags',0L),
+                    ('crdtUnk2',null3),('crdtUnk3',null4),
+                    (FID,'criticalEffect',None),('crdtUnk4',null4),),
         MelStruct('VNAM','I','detectionSoundLevel'),
         MelFid('CNAM','template',),
         )
