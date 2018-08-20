@@ -56,9 +56,13 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     has_achlist = True
     check_esl = True
 
-    allTags = {u'Deactivate', u'Delev', u'Invent', u'Relev'}
+    allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
 
-    patchers = (u'GmstTweaker', u'ImportInventory', u'ListsMerger',)
+    patchers = (
+        u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
+        u'ImportInventory', u'ListsMerger', u'SoundPatcher', u'StatsPatcher',
+        u'NamesPatcher',
+        )
 
     # MreScpt is Oblivion/FO3/FNV Only
     # MreMgef, has not been verified to be used here for Skyrim
