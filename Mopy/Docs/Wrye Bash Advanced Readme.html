@@ -15,7 +15,7 @@
     ol ol {list-style:lower-alpha;}
  ol ol li {margin-bottom:0.2em;}
     td, th {border:1px solid black; padding: 5px; vertical-align:top;}
-    table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
+    table {margin: 2em auto; background:#fdfdfd; border-collapse:collapse; width: 98%; }
     thead {font-weight:bold; background:#8af;}
     img {border:0;}
     a[href^="http"]:after {padding-left:2px; content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);}
@@ -1007,427 +1007,2744 @@ and masterlist relative priority and role see the LOOT docs.
 <p>Bash Tags may also be set manually, by right-clicking a plugin's Bash Tags field in the Mods Tab sidebar and checking or unchecking tags in the list displayed. If you wish to revert to automatic tagging, choose <q>Automatic</q> in the right-click list. If you are a mod author, you may wish to use <q>Copy to Description</q> for your mod's plugins before releasing it to ensure that users have the tags applied automatically.
 
 <p><b>Note:</b> A Bash Tag should only be applied when it is <b>important</b> that the plugin's change to whatever the Tag relates to is preserved. If a change your plugin makes is not important to the functioning of your mod, do not add a Bash Tag for it. Doing otherwise negates the purpose of the Bash Tag system.
-
+<p>Wrye Bash Supported Games: TESIV: Oblivion, TESV: Skyrim, TESV: Skyrim SE, Fallout 3, Fallout&colon; New Vegas, Fallout 4.</p>
+<p>
+    <b>Note:</b> Not all record types or bash tags are available/supported for each game.</p>
 <table>
     <thead>
-        <tr><th colspan="3">Bash Tags Available For All Games
-        <tr><th>Tag<td>Used When The Mod<th>Specific Record Types/Changes Supported
+        <tr>
+            <th colspan="3">Special Function Bash Tags</th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <th>Used When The Mod</th>
+            <th>Specific Record Types/Changes Supported</th>
+        </tr>
+    </thead>
     <tbody>
-
-        <tr><td>Deactivate<td>Should be deactivated.<td><i>N/A</i>
-        <tr><td>Delev<td>Deletes entries from Leveled Lists.<td>Removal of entries from the leveled list entries of Leveled Creature (LVLC) (<i>Oblivion only</i>), Leveled Actor (LVLI) (<i>Skyrim only</i>), Leveled Item (LVLI) or Leveled Spell (LVSP) records.
-        <tr><td>Filter<td>Does not require all its masters to be installed to function. See the <a href="#patch-filter">Merge Filtering</a> section for more information.<td><i>N/A</i>
-        <tr><td>NoMerge<td>Should not be merged even though it is technically mergeable.<td><i>N/A</i>
-        <tr><td>Relev<td>Relevels items in Leveled Lists.<td>Re-levelling of entries from the leveled list entries of Leveled Creature (LVLC) (<i>Oblivion only</i>), Leveled Actor (LVLI) (<i>Skyrim only</i>), Leveled Item (LVLI) or Leveled Spell (LVSP) records.
+        <tr>
+            <td>Deactivate</td>
+            <td>Should be deactivated.</td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Filter</td>
+            <td>Does not require all its masters to be installed to function. See the
+                <a href="#patch-filter">Merge Filtering</a> section for more information.</td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+        <tr>
+            <td>IIM</td>
+            <td>Is to be used in Item Interchange Mode. See the
+                <a href="#patch-iim">Item Interchange Mode</a> section for more information.</td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+        <tr>
+            <td>InventOnly</td>
+            <td>
+                <i>Deprecated. Use Invent in conjunction with IIM instead.</i>
+            </td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Merge</td>
+            <td>
+                <i>Obsolete. This tag is ignored.</i>
+            </td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+        <tr>
+            <td>MustBeActiveIfImported</td>
+            <td>Must be active to function correctly even if it is imported into the Bashed Patch. Currently this tags only function is that Bash won't ask to deactivate the plugin.</td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+        <tr>
+            <td>NoMerge</td>
+            <td>Should not be merged even though it is technically mergeable.</td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+    </tbody>
 </table>
 <table>
     <thead>
-        <tr><th colspan="3">Bash Tags Available For Oblivion Only
-        <tr><th>Tag<td>Used When The Mod<th>Specific Record Types/Changes Supported
+        <tr>
+            <th colspan="3">Common Bash Tags</th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <th>Used When The Mod</th>
+            <th>Specific Record Types/Changes Supported</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td>Actors.ACBS<td>Modifies creature or NPC ACBS configuration.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
-            <ul>
-                <li>Base spell points
-                <li>Fatigue
-                <li>Barter gold
-                <li>Level
-                <li>Calc min
-                <li>Calc max
-                <li>IsBiped
-                <li>Sex
-                <li>IsEssential
-                <li>IsWeaponAndShield
-                <li>IsRespawn
-                <li>IsSwims
-                <li>IsFlies
-                <li>IsWalks
-                <li>IsAutoCalc
-                <li>IsPCLevelOffset
-                <li>IsNoLowLevel
-                <li>IsNoBloodSpray
-                <li>IsNoBloodDecal
-                <li>IsNoHead
-                <li>IsNoRightArm
-                <li>IsNoLeftArm
-                <li>IsNoCombatInWater
-                <li>IsNoShadow
-                <li>IsNoRumors
-                <li>IsSummonable
-                <li>IsNoPersuasion
-                <li>IsCanCorpseCheck
-            </ul>
-        <tr><td>Actors.AIData<td>Modifies creature or NPC AI data.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
-            <ul>
-                <li>Aggression
-                <li>Confidence
-                <li>Energy level
-                <li>Responsibility
-                <li>Services
-                <li>Training skill
-                <li>Training level
-            </ul>
-        <tr><td>Actors.AIPackages<td>Modifies creature or NPC AI packages list.<td>Addition or removal of AI Packages in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Actors.AIPackagesForceAdd<td>Adds to creature or NPC AI package list. This tag forces the addition of packages even if they are removed by later-loading plugins tagged with Actors.AIPackages.<td>Addition of AI Packages in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Actors.Animations<td>Modifies creature or NPC special animations lists.<td>The Animations (KFFZ) subrecord in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Actors.CombatStyle<td>Modifies creature or NPC assigned combat styles.<td>The Combat Style (ZNAM) subrecord in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Actors.DeathItem<td>Modifies creature or NPC death items.<td>The Death Items (INAM) subrecord in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Actors.Skeleton<td>Modifies creature or NPC skeletons.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
-            <ul>
-                <li>Model path (MODL)
-                <li>Bound radius (MODB)
-                <li>MODT
-            </ul>
-        <tr><td>Actors.Spells<td>Modifies creature or NPC spell lists.<td>Addition or removal of spells in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Actors.SpellsForceAdd<td>Modifies creature or NPC spell lists. This tag forces the addition of spells even if they are removed by other plugins tagged with Actors.Spells.<td>Addition of spells in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Actors.Stats<td>Modifies creature or NPC stats.<td>The following NPC (NPC_) or Creature (CREA) subrecords:
-            <ul>
-                <li>Armorer
-                <li>Athletics
-                <li>Blade
-                <li>Block
-                <li>Blunt
-                <li>Hand to Hand
-                <li>Heavy Armor
-                <li>Alchemy
-                <li>Alteration
-                <li>Conjuration
-                <li>Destruction
-                <li>Illusion
-                <li>Mysticism
-                <li>Restoration
-                <li>Acrobatics
-                <li>Light Armor
-                <li>Marksman
-                <li>Mercantile
-                <li>Security
-                <li>Sneak
-                <li>Speechcraft
-                <li>Health
-                <li>Strength
-                <li>Intelligence
-                <li>Willpower
-                <li>Agility
-                <li>Speed
-                <li>Endurance
-                <li>Personality
-                <li>Luck
-            </ul>
-        <tr><td>Body-F<td>Modifies female body mesh/texture definitions.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Female tail model path
-                <li>Female tail model bound radius
-                <li>Female tail MODT
-                <li>Female upper body texture path
-                <li>Female lower body texture path
-                <li>Female hand texture path
-                <li>Female foot texture path
-                <li>Female tail texture path
-            </ul>
-        <tr><td>Body-M<td>Modifies male body mesh/texture definitions.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Male tail model path
-                <li>Male tail model bound radius
-                <li>Male tail MODT
-                <li>Male upper body texture path
-                <li>Male lower body texture path
-                <li>Male hand texture path
-                <li>Male foot texture path
-                <li>Male tail texture path
-            </ul>
-        <tr><td>Body-Size-F<td>Modifies female body weight/height definitions.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Female height
-                <li>Female weight
-            </ul>
-        <tr><td>Body-Size-M<td>Modifies male body weight/height definitions.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Male height
-                <li>Male weight
-            </ul>
-        <tr><td>C.Acoustic<td>Modifies cell Acoustic Space. (TES5)<td>The Acoustic Space (XCAS) subrecord in Cell (CELL) records.
-        <tr><td>C.Climate<td>Modifies cell climates.<td>The following Cell (CELL) subrecords:
-            <ul>
-                <li>Climate (XCCM)
-                <li>IsBehaveLikeExterior or Show Sky flag
-            </ul>
-        <tr><td>C.Encounter<td>Modifies cell Encounter Zone. (TES5)<td>The Encounter Zone (XEZN) subrecord in Cell (CELL) records.
-        <tr><td>C.ImageSpace<td>Modifies cell ImageSpace. (TES5)<td>The Image Space (XCIM) subrecord in Cell (CELL) records.
-        <tr><td>C.Light<td>Modifies cell lighting or fog.<td>The following Cell (CELL) subrecords:
-            <ul>
-                <li>Lighting Ambient Color
-                <li>Lighting Directional Color
-                <li>Lighting Fog Color
-                <li>LTMP subrecord in Cell (CELL) records
-            </ul>
-        <tr><td>C.Location<td>Modifies cell Location. (TES5)<td>The Location (XLCN) subrecord in Cell (CELL) records.
-        <tr><td>C.Music<td>Modifies cell music type.<td>The Music (XCMT) subrecord in Cell (CELL) records.
-        <tr><td>C.Name<td>Modifies cell names.<td>The Name (FULL) subrecord in Cell (CELL) records.
-        <tr><td>C.Owner<td>Modifies cell ownership.<td>The following Cell (CELL) subrecords:
-            <ul>
-                <li>Owner (XOWN)
-                <li>Rank (XRNK)
-                <li>Gobal variable (XGLB)
-                <li>IsPublicPlace flag
-            </ul>
-        <tr><td>C.RecordFlags<td>Modifies the off-limits or dangerous flags.<td>Any Cell (CELL) record flags not covered by the other Cell-related Bash Tags.
-        <tr><td>C.Regions<td>Modifies the Cells Region subrecord.<td>Any XCLR subrecord of the Cell (CELL) record
-        <tr><td>C.SkyLighting<td>Modifies Use Sky Lighting cell flag.<td>Use Sky Lighting (CELL) flag (TES5)
-        <tr><td>C.Water<td>Modifies cell water type or level.<td>The following Cell (CELL) subrecords:
-            <ul>
-                <li>Water (XCWT)
-                <li>Water height (XCLW)
-                <li>IsHasWater flag
-            </ul>
-        <tr><td>Creatures.Blood<td>Modifies the creature blood subrecords.<td>The following Creature (CREA) subrecords: (TES4)
-            <ul>
-                <li>Blood spray (NAM0)
-                <li>Blood decal (NAM1)
-            </ul>
-        <tr><td>Eyes<td>Adds eyes to races.<td>The Eyes (ENAM) subrecord of Race (RACE) records.
-        <tr><td>Factions<td>Changes creature or NPC factions.<td>Addition or removal of a faction, or change of faction rank in NPC (NPC_) or Creature (CREA) records.
-        <tr><td>Graphics<td>Is a graphics replacer.<td>The following subrecords:
-            <ul>
-                <li>Birthsign: Icon path (ICON)
-                <li>Load Screen: Icon path (ICON)
-                <li>Class: Icon path (ICON)
-                <li>Landscape Texture: Icon path (ICON)
-                <li>Region: Icon path (ICON)
-                <li>Activator: Model path (MODL), bound radius (MODB) or MODT.
-                <li>Door: Model path (MODL), bound radius (MODB) or MODT.
-                <li>Flora: Model path (MODL), bound radius (MODB) or MODT.
-                <li>Furniture: Model path (MODL), bound radius (MODB) or MODT.
-                <li>Grass: Model path (MODL), bound radius (MODB) or MODT.
-                <li>Static: Model path (MODL), bound radius (MODB) or MODT.
-                <li>Potion: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Ammunition: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Alchemical Apparatus: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Book: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Ingredient: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Key: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Light Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Misc. Item: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Sigil Stone: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Soul Gem: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Weapon: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Tree: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Armor: Male biped model path (MODL), male biped model bound radius (MODB), male world model path (MOD2), male world model bound radius (MO2B), male icon path (ICON), female biped model path (MOD3), female biped model bound radius (MO3B), female world model path (MOD4), female world model bound radius (MO4B), female icon path (ICO2), flags or MODT.
-                <li>Clothing: Male biped model path (MODL), male biped model bound radius (MODB), male world model path (MOD2), male world model bound radius (MO2B), male icon path (ICON), female biped model path (MOD3), female biped model bound radius (MO3B), female world model path (MOD4), female world model bound radius (MO4B), female icon path (ICO2), flags or MODT.
-                <li>Creature: Models (NIFZ) or NIFT.
-                <li>Magic Effect: Icon path (ICON), model path (MODL), bound radius (MODB) or MODT.
-                <li>Effect Shader: Almost anything.
-            </ul>
-        <tr><td>Hair<td>Adds hairs to races.<td>The Hairs (HNAM) subrecord of Race (RACE) records.
-        <tr><td>IIM<td>Is to be used in Item Interchange Mode. See the <a href="#patch-iim">Item Interchange Mode</a> section for more information.<td><i>N/A</i>
-        <tr><td>Invent<td>Changes inventories.<td>Addition, removal or change in count/number of an item in NPC (NPC_), Creature (CREA) or Container (CONT) records.
-        <tr><td>InventOnly<td><i>Deprecated. Use Invent in conjunction with IIM instead.</i><td><i>N/A</i>
-        <tr><td>Merge<td><i>Obsolete. This tag is ignored.</i><td><i>N/A</i>
-        <tr><td>MustBeActiveIfImported<td>Must be active to function correctly even if it is imported into the Bashed Patch. Currently this tags only function is that Bash won't ask to deactivate the plugin.<td><i>N/A</i>
-        <tr><td>Names<td>Changes the names of things.<td>The Name (FULL) subrecord in the following record types:
-            <ul>
-                <li>Class
-                <li>Faction
-                <li>Hair
-                <li>Eyes
-                <li>Race
-                <li>Magic Effect
-                <li>Enchantment
-                <li>Spell
-                <li>Birthsign
-                <li>Activator
-                <li>Alchemical Apparatus
-                <li>Armor
-                <li>Book
-                <li>Clothing
-                <li>Container
-                <li>Door
-                <li>Ingredient
-                <li>Light
-                <li>Misc. Item
-                <li>Flora
-                <li>Furniture
-                <li>Weapon
-                <li>Ammunition
-                <li>NPC
-                <li>Creature
-                <li>Soul Gem
-                <li>Key
-                <li>Potion
-                <li>Sigil Stone
-                <li>World
-                <li>Cell
-                <li>Dialogue
-                <li>Quest
-            </ul>
-        <tr><td>NpcFaces<td>Modifies NPC faces.<td>The following NPC (NPC_) subrecords:
-            <ul>
-                <li>FaceGen Geometry-Symmetric (FGGS)
-                <li>FaceGen Geometry-Asymmetric (FGGA)
-                <li>FaceGen Texture-Symmetry (FGTS)
-                <li>Eyes (ENAM)
-                <li>Hair (HNAM)
-                <li>Hair length (LNAM)
-                <li>Hair colour (HCLR)
-                <li>FNAM
-            </ul>
-        <tr><td>NpcFacesForceFullImport<td>Modifies NPC faces, and you wish to import the unmodified subrecords as well as the modified subrecords.<td><i>See NpcFaces for the list of supported subrecords.</i>
-        <tr><td>NPC.Class<td>Changes the classes of NPCs.<td>The Class (CNAM) subrecord of NPC (NPC_) records.
-        <tr><td>Npc.EyesOnly<td>Modifies NPC eyes.<td>The Eyes (ENAM) subrecord of NPC (NPC_) records.
-        <tr><td>Npc.HairOnly<td>Modifies NPC hair.<td>The Hair (HNAM) subrecord of NPC (NPC_) records.
-        <tr><td>NPC.Race<td>Modifies NPC races.<td>The Race (RNAM) subrecord of NPC (NPC_) records.
-        <tr><td>Relations<td>Changes faction relationships.<td>The relations of Faction (FACT) records.
-        <tr><td>Roads<td>Modifies road records.<td>The Road (ROAD) subrecord of Worldspace (WRLD) records.
-        <tr><td>R.AddSpells<td>Adds spells to racial spell list(s). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.<td>Additions to the spell list of Race (RACE) records.
-        <tr><td>R.Attributes-F<td>Modifies racial attributes for females.<td>The following Race (RACE) subrecords (ATTR):
-            <ul>
-                <li>Female strength
-                <li>Female intelligence
-                <li>Female willpower
-                <li>Female agility
-                <li>Female speed
-                <li>Female endurance
-                <li>Female personality
-                <li>Female luck
-            </ul>
-        <tr><td>R.Attributes-M<td>Modifies racial attributes for males.<td>The following Race (RACE) subrecords (ATTR):
-            <ul>
-                <li>Male strength
-                <li>Male intelligence
-                <li>Male willpower
-                <li>Male agility
-                <li>Male speed
-                <li>Male endurance
-                <li>Male personality
-                <li>Male luck
-            </ul>
-        <tr><td>R.ChangeSpells<td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.<td>Additions or removals to the spell list (SPLO) of Race (RACE) records.
-        <tr><td>R.Description<td>Modifies race descriptions.<td>The Description (DESC) subrecord of Race (RACE) records.
-        <tr><td>R.Ears<td>Modifies race ears.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Ear (Male) model path
-                <li>Ear (Male) model bound radius
-                <li>Ear (Male) MODT
-                <li>Ear (Male) icon path
-                <li>Ear (Female) model path
-                <li>Ear (Female) model bound radius
-                <li>Ear (Female) MODT
-                <li>Ear (Female) icon path
-            </ul>
-        <tr><td>R.Head<td>Modifies race heads.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Head model path
-                <li>Head model bound radius
-                <li>Head icon path
-                <li>FaceGen Geometry-Symmetric (FGGS)
-                <li>FaceGen Geometry-Asymmetric (FGGA)
-                <li>FaceGen Texture-Symmetry (FGTS)
-            </ul>
-        <tr><td>R.Mouth<td>Modifies race mouths.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Mouth model path
-                <li>Mouth model bound radius
-                <li>Mouth MODT
-                <li>Mouth icon path
-                <li>Tongue model path
-                <li>Tongue model bound radius
-                <li>Tongue MODT
-                <li>Tongue icon path
-            </ul>
-        <tr><td>R.Relations<td>Modifies race relationships.<td>The faction list (XNAM) of Race (RACE) records.
-        <tr><td>R.Skills<td>Modifies race skill bonuses.<td>The skill boosts (DATA) of Race (RACE) records.
-        <tr><td>R.Teeth<td>Modifies race upper or lower teeth.<td>The following Race (RACE) subrecords:
-            <ul>
-                <li>Teeth (Lower) model path
-                <li>Teeth (Lower) model bound radius
-                <li>Teeth (Lower) MODT
-                <li>Teeth (Lower) icon path
-                <li>Teeth (Upper) model path
-                <li>Teeth (Upper) model bound radius
-                <li>Teeth (Upper) MODT
-                <li>Teeth (Upper) icon path
-            </ul>
-        <tr><td>ScriptContents<td><i>Should not be used. Can cause serious issues.</i><td><i>N/A</i>
-        <tr><td>Scripts<td>Modifies item, NPC or object scripts.<td>The Script (SCRI) subrecord in the following record types:
-            <ul>
-                <li>Activator
-                <li>Potion
-                <li>Alchemical Apparatus
-                <li>Armor
-                <li>Bool
-                <li>Clothing
-                <li>Container
-                <li>Creature
-                <li>Door
-                <li>Flora
-                <li>Furniture
-                <li>Ingredient
-                <li>Key
-                <li>Light
-                <li>Leveled Creature
-                <li>Misc
-                <li>NPC
-                <li>Quest
-                <li>Sigil Stone
-                <li>Soul Gem
-                <li>Weapon
-            </ul>
-        <tr><td>Sound<td>Replaces sounds.<td>The following subrecords:
-            <ul>
-                <li>(ACTI) Activator: sound (SNAM, VNAM)
-                <li>(ADDN) Addon: Ambient Sound (SNAM)
-                <li>(ALCH) Allchemy: Drop Sound (ZNAM), Pickup Sound (YNAM), Consume sound (ENIT)
-                <li>(AMMO) Ammunition: Drop Sound (ZNAM), pickup Sound (YNAM)
-                <li>(APPA) Aparatus: Drop Sound (ZNAM), Pickup Sound (YNAM)
-                <li>(ARMA) Armor Addon (Armature): Footstep Sound (SNDD)
-                <li>(ARMO) Armor: Drop Sound (ZNAM), Pickup Sound (YNAM)
-                <li>(ASPC) Acustic Space: Ambient Sound (ZNAM), Pickup Sound (YNAM), Consume sound (ENIT)
-                <li>(BOOK) Book: Drop Sound (ZNAM), Pickup Sound (YNAM),
-                <li>(CONT) Container: open sound (SNAM), close sound (QNAM).
-                <li>(CREA) Creature: foot weight (WNAM), inherits sounds from (CSCR), other sounds. (TES4, FO3, FNV)
-                <li>(DOOR) Door: open sound (SNAM), close sound (ANAM), loop sound (BNAM).
-                <li>(EXPL) Explosion: sound1, sound2 (DATA).
-                <li>(LIGH) Light: sound (SNAM)
-                <li>(MGEF) Magic Effect: casting/bolt/hit/area sounds.
-                <li>(SNCT) Sound Category: parent (PNAM), staticVolumeMultiplier (VNAM). (TES5 Only)
-                <li>(SNDR) Sound Descriptor: category (GNAM), sounds (ANAM), all from (LNAM) & (BNAM). (TES5 Only)
-                <li>(SOPM) Sound Output Model: reverbSendpct (NAM1), outputType (MNAM), Output Values (ONAM), Attenuation Values (ANAM). (TES5 Only)
-                <li>(SOUN) Door: open sound (SNAM), close sound (ANAM), loop sound (BNAM).
-                <li>(WTHR) Weather: sounds
-                <li>(WEAP) Magic Effect: Attack Sound, Looping Sounds, Attack Fail Sound, Idle Sound, Equip Sound, Unequip Sound, Gun Shot Sounds, Melee Swing Sounds, Block Sounds, Mod Shoot Sounds
-            </ul>
-            Not all apply to each game
-        <tr><td>SpellStats<td>Modifies spell stats.<td>The following Spell (SPEL) subrecords:
-            <ul>
-                <li>Name (FULL)
-                <li>Cost
-                <li>Level type
-                <li>Spell type
-            </ul>
-        <tr><td>Stats<td>Modifies item stats.<td>The following subrecords:
-            <ul>
-                <li>Potion: Weight, value.
-                <li>Ammunition: Weight, value, damage, speed, enchantment points (ANAM).
-                <li>Alchemical Apparatus: Weight, value, quality.
-                <li>Armor: Weight, value, health, strength
-                <li>Book: Weight, value, enchantment points (ANAM).
-                <li>Clothing: Weight, value, enchantment points (ANAM).
-                <li>Ingredient: Weight, value.
-                <li>Key: Weight, value.
-                <li>Light: Weight, value, duration.
-                <li>Misc. Item: Weight, value.
-                <li>Sigil Stone: Weight, value, uses.
-                <li>Weapon: Weight, value, health, damage, speed, reach, enchantment points (ANAM).
-            </ul>
-        <tr><td>Voice-F<td>Modifies female voice definitions.<td>The male voice (VNAM) of Race (RACE) records.
-        <tr><td>Voice-M<td>Modifies male voice definitions.<td>The female voice (VNAM) of Race (RACE) records.
+        <tr>
+            <td>C.Acoustic</td>
+            <td>Modifies cell Acoustic Space.</td>
+            <td>The Acoustic Space (XCAS) subrecord in Cell (CELL) records.
+                <br>
+                <br>
+                <strong>Not Available for Oblivion, Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Climate</td>
+            <td>Modifies (CELL) cell climates.</td>
+            <td>The following subrecords:
+                <br>
+                <br>
+                <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                <ul>
+                    <li>(XCCM) Climate</li>
+                    <li>(DATA - flags) Behave Like Exterior</li>
+                </ul>
+                <strong>Skyrim.</strong>
+                <ul>
+                    <li>(XCCM) Sky/Weather from Region</li>
+                    <li>(DATA - flags) Show Sky</li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Encounter</td>
+            <td>Modifies cell Encounter Zone.</td>
+            <td>The Encounter Zone (XEZN) subrecord in Cell (CELL) records.
+                <br>
+                <br>
+                <strong>Not Available for Oblivion, Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.ImageSpace</td>
+            <td>Modifies cell ImageSpace.</td>
+            <td>The Image Space (XCIM) subrecord in Cell (CELL) records.
+                <br>
+                <br>
+                <strong>Not Available for Oblivion, Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Light</td>
+            <td>Modifies (CELL) cell lighting or fog.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(XCLL) lighting
+                        <ul>
+                            <li>Ambient Color</li>
+                            <li>Directional Color</li>
+                            <li>Fog Color</li>
+                            <li>Fog Near</li>
+                            <li>Fog Far</li>
+                            <li>Fog Clip Dist</li>
+                            <li>Fog Power &mdash;
+                                <strong>Not Available for Oblivion.</strong>
+                            </li>
+                            <li>Directional Rotation XY</li>
+                            <li>Directional Rotation Z</li>
+                            <li>Directional Fade</li>
+                            <li>Ambient Colors &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Ambient Colors Directional &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Ambient Colors Specular &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Ambient Colors Scale &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Fog Color Far &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Fog Max &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Light Fade Begin &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Light Fade End &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                            <li>Inherits &mdash;
+                                <strong>Skyrim only.</strong>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>Light Template &mdash;
+                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                        <ul>
+                            <li>(LTMP) Template.</li>
+                            <li>(LNAM) Inherits</li>
+                        </ul>
+                    </li>
+                    <li>(LTMP) Lighting Template. &mdash;
+                        <strong>Skyrim only.</strong>
+                    </li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Location</td>
+            <td>Modifies cell Location.</td>
+            <td>The Location (XLCN) subrecord in Cell (CELL) records.
+                <br>
+                <br>
+                <strong>Available for Skyrim Only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Music</td>
+            <td>Modifies (CELL) cell music type.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(XCMT) Music &mdash;
+                        <strong>Oblivion Only</strong>
+                    </li>
+                    <li>(XCMO) Music &mdash;
+                        <strong>Skyrim, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Name</td>
+            <td>Modifies cell names.</td>
+            <td>
+                The (FULL) - Name subrecord in Cell (CELL) records.
+                <br>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Owner</td>
+            <td>Modifies Cell Ownership.</td>
+            <td>The following Cell (CELL) subrecords:
+                <ul>
+                    <li>Ownership
+                        <ul>
+                            <li>(XOWN) Owner</li>
+                            <li>(XRNK) Rank</li>
+                            <li>(XGLB) Global variable &mdash;
+                                <strong>Oblivion Only</strong>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(DATA - flags) Public place</li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.RecordFlags</td>
+            <td>Modifies the off-limits or dangerous flags.</td>
+            <td>Any Cell (CELL) record flags not covered by the other Cell-related Bash Tags.
+                <br>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Regions</td>
+            <td>Modifies the Cells Region subrecord.</td>
+            <td>Any (XCLR) subrecord of the Cell (CELL) record.
+                <br>
+                <br>
+                <strong>Available for Skyrim Only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.SkyLighting</td>
+            <td>Modifies Use Sky Lighting cell flag.</td>
+            <td>(DATA - Flags) Use Sky Lighting
+                <br>
+                <br>
+                <strong>Available for Skyrim Only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>C.Water</td>
+            <td>Modifies cell water type or level.</td>
+            <td>The following Cell (CELL) subrecords:
+                <ul>
+                    <li>(XCWT) Water</li>
+                    <li>(XCLW) Water height</li>
+                    <li>(DATA - flags) Has water</li>
+                    <li>(XNAM) Water Noise Texture &mdash;
+                        <strong>Not Available for Oblivion.</strong>
+                    </li>
+                    <li>(XWEN) Water Environment Map &mdash;
+                        <strong>Skyrim Only</strong>
+                    </li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Delev</td>
+            <td>Deletes entries from Leveled Lists.</td>
+            <td>Removal of a (LVLO) Level List Entry from the following records:
+                <ul>
+                    <li>(LVLC) Leveled Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(LVLI) Leveled Item</li>
+                    <li>(LVLN) Leveled NPC &mdash;
+                        <strong>Not Available for Oblivion.</strong>
+                    </li>
+                    <li>(LVSP) Leveled SPELL &mdash;
+                        <strong>Oblivion, Skyrim &amp; Skyrim&colon; Special Edition only.</strong>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Factions</td>
+            <td>Changes Creature or Non-Player Character factions.</td>
+            <td>Addition or removal of a faction, or change of faction rank in Non-Player Character (NPC_) or Creature (CREA) records.
+                <ul>
+                    <li>Factions
+                        <ul>
+                            <li>(SNAM) Faction</li>
+                            <li>(SNAM) Faction - Rank</li>
+                        </ul>
+                    </li>
+                </ul>
+                <br>
+                <br>
+                <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Graphics</td>
+            <td>Is a graphics replacer.</td>
+            <td>The following subrecords: See game specific sections below for record types.
+                <ul>
+                    <li>
+                        <a href="#GraphicsOblivion">Oblivion</a> Graphics section for more information.
+                    </li>
+                    <li>
+                        <a href="#GraphicsFO3">Fallout 3</a> Graphics section for more information.
+                    </li>
+                    <li>
+                        <a href="#GraphicsFNV">Fallout&colon;New Vegas</a> Graphics section for more information.
+                    </li>
+                    <li>
+                        <a href="#GraphicsSkyrim">Skyrim</a> Graphics section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Invent</td>
+            <td>Changes inventories.</td>
+            <td>Addition, removal or change in count/number of an item in records:
+                <ul>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not Available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Names</td>
+            <td>Changes the names of things.</td>
+            <td>The following subrecords: See game specific sections below for record types.
+                <ul>
+                    <li>
+                        <a href="#NamesOblivion">Oblivion</a> Names section for more information.
+                    </li>
+                    <li>
+                        <a href="#NamesFO3">Fallout 3</a> Names section for more information.
+                    </li>
+                    <li>
+                        <a href="#NamesFNV">Fallout&colon;New Vegas</a> Names section for more information.
+                    </li>
+                    <li>
+                        <a href="#NamesSkyrim">Skyrim</a> Names section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Relations</td>
+            <td>Changes faction relationships.</td>
+            <td>Adds, Removes or Modifies the (XNAM) Relation subrecord of Relations in Faction (FACT) records.
+                <ul>
+                    <li>Faction</li>
+                    <li>Modifier</li>
+                </ul>
+                <br>
+                <br>
+                <strong>Not Available for Skyrim, Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Relev</td>
+            <td>Re-levels leveled list entries.</td>
+            <td>Changes to the Level or Count of a (LVLO) leveled list entry in:
+                <ul>
+                    <li>(LVLC) Leveled Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(LVLI) Leveled Item</li>
+                    <li>(LVLN) Leveled NPC &mdash;
+                        <strong>Not Available in Oblivion.</strong>
+                    </li>
+                    <li>(LVSP) Leveled SPELL &mdash;
+                        <strong>Oblivion, Skyrim &amp; Skyrim&colon; Special Edition only.</strong>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Sound</td>
+            <td>Replaces sounds.</td>
+            <td>The following subrecords: See game specific sections below for record types.
+                <ul>
+                    <li>
+                        <a href="#SoundOblivion">Oblivion</a> Sound section for more information.
+                    </li>
+                    <li>
+                        <a href="#SoundFO3">Fallout 3</a> Sound section for more information.
+                    </li>
+                    <li>
+                        <a href="#SoundFNV">Fallout&colon;New Vegas</a> Sound section for more information.
+                    </li>
+                    <li>
+                        <a href="#SoundSkyrim">Skyrim</a> Sound section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Stats</td>
+            <td>Modifies the Stats of items and Objects.</td>
+            <td>The following subrecords: See game specific sections below for record types.
+                <ul>
+                    <li>
+                        <a href="#StatsOblivion">Oblivion</a> Stats section for more information.
+                    </li>
+                    <li>
+                        <a href="#StatsFO3">Fallout 3</a> Stats section for more information.
+                    </li>
+                    <li>
+                        <a href="#StatsFNV">Fallout&colon;New Vegas</a> Stats section for more information.
+                    </li>
+                    <li>
+                        <a href="#StatsSkyrim">Skyrim</a> Stats section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not Available for Skyrim&colon; Special Edition OR Fallout 4.</strong>
+            </td>
+        </tr>
+    </tbody>
 </table>
 <table>
     <thead>
-        <tr><th colspan="3">Bash Tags Available For Skyrim Only
-        <tr><th>Tag<td>Used When The Mod<th>Specific Record Types/Changes Supported
+        <tr>
+            <th colspan="3">Bash Tags Available For Oblivion</th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <td>Used When The Mod</td>
+            <th>Specific Record Types/Changes Supported</th>
+        </tr>
+    </thead>
     <tbody>
-        <tr><td><i>N/A</i><td><i>N/A</i><td><i>N/A</i>
+        <tr>
+            <td>Actors.ACBS</td>
+            <td>Modifies the (ACBS) Configuration subrecord of:
+                <ul>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(CREA) Creature</li>
+                </ul>
+            </td>
+            <td>Changes to the following subrecords in (ACBS) - Configuration:
+                <ul>
+                    <li>Base spell points</li>
+                    <li>Fatigue</li>
+                    <li>Barter Gold</li>
+                    <li>Level (Offset)</li>
+                    <li>Calc min</li>
+                    <li>Calc max</li>
+                    <li>(NPC_) Flags:
+                        <p>Female, Essential, Respawn, Auto-calc stats, PC Level Offset, No Low Level Processing, No Rumors, Summonable, No Persuasion, Can Corpse Check.</p>
+                    </li>
+                    <li>(CREA) Flags:
+                        <p>Biped, Essential, Weapon &amp; Shield, Respawn, Swims, Flies, Walks, PC Level Offset, No Low level Processing, No Blood Spray, No Decal Blood, No Head, No Right Arm, No Left Arm, No Combat in Water, No Shadow, No Corpse Check.</p>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.AIData</td>
+            <td>Modifies the AI Data of:
+                <ul>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(CREA) Creature</li>
+                </ul>
+            </td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(AIDT) AI Data
+                        <ul>
+                            <li>Aggression</li>
+                            <li>Confidence</li>
+                            <li>Energy level</li>
+                            <li>Responsibility</li>
+                            <li>Buys/Sells and Services</li>
+                            <li>Teaches</li>
+                            <li>Maximum Training level</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.AIPackages</td>
+            <td>Modifies AI packages lists of Creatures or NPCs.</td>
+            <td>Addition or removal of an (PKID) AI Package in the AI Packages subrecord.</td>
+        </tr>
+        <tr>
+            <td>Actors.AIPackagesForceAdd</td>
+            <td>Adds to creature or NPC AI package list. This tag forces the addition of packages even if they are removed by later-loading plugins tagged with Actors.AIPackages.</td>
+            <td>Addition of an (PKID) AI Package in the AI Packages subrecord.</td>
+        </tr>
+        <tr>
+            <td>Actors.Anims</td>
+            <td>Modifies Creature or NPC special animations lists.</td>
+            <td>Modification of the Animations (KFFZ) subrecord.</td>
+        </tr>
+        <tr>
+            <td>Actors.CombatStyle</td>
+            <td>Modifies Creature or NPC assigned combat styles.</td>
+            <td>Modification of the Combat Style (ZNAM) subrecord.</td>
+        </tr>
+        <tr>
+            <td>Actors.DeathItem</td>
+            <td>Modifies Creature or NPC death items.</td>
+            <td>Modification of the Death Items (INAM) subrecord.</td>
+        </tr>
+        <tr>
+            <td>Actors.Skeleton</td>
+            <td>Modifies Creature or NPC skeletons.</td>
+            <td>The following NPC (NPC_) or Creature (CREA) subrecords:
+                <ul>
+                    <li>(MODL) Model filename.</li>
+                    <li>(MODB) Bound Radius.</li>
+                    <li>(MODT) Texture Files Hashes.</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Spells</td>
+            <td>Modifies the Spells list of (NPC_) Non-Player Character or (CREA) Creature.</td>
+            <td>Addition or removal of (SPLO) Spell to the Spells list.</td>
+        </tr>
+        <tr>
+            <td>Actors.SpellsForceAdd</td>
+            <td>Modifies Creature or Non-Player Character spell lists. This tag forces the addition of spells even if they are removed by other plugins tagged with Actors.Spells.</td>
+            <td>Addition of (SPLO) Spell to the Spells list.</td>
+        </tr>
+        <tr>
+            <td>Actors.Stats</td>
+            <td>Modifies Creature or Non-Player Character stats.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>Creature Data
+                        <p>
+                            Combat Skill, Magic Skill, Stealth Skill, Soul, Health, Attack, Damage, Strength, Intelligence, Willpower, Agility, Speed, Endurance, Personality, Luck.
+                        </p>
+                    </li>
+                    <li>NPC Stats
+                        <p>
+                            Armorer, Athletics, Blades, Block, Blunt, Hand to Hand, Heavy Armor, Alchemy, Alteration, Conjuration, Destruction, Illusion, Mysticism, Restoration, Acrobatics, Light Armor, Marksman, Mercantile, Security, Sneak, Speechcraft, Health, Strength, Intelligence, Willpower, Agility, Speed, Endurance, Personality, Luck.
+                        </p>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Body-F</td>
+            <td>Modifies female body mesh/texture definitions in (RACE) Race record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Female Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Body-M</td>
+            <td>Modifies male body mesh/texture definitions in (RACE) Race record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>Male Body Data
+                        <ul>
+                            <li>Model</li>
+                            <li>Parts</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Body-Size-F</td>
+            <td>Modifies female body weight/height definitions (RACE) Race record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA): Female height</li>
+                    <li>(DATA): Female weight</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Body-Size-M</td>
+            <td>Modifies male body weight/height definitions (RACE) Race record.</td>
+            <td>Changes to the following subrecords:
+                <ul>
+                    <li>(DATA): Male height</li>
+                    <li>(DATA): Male weight</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Creatures.Blood</td>
+            <td>Modifies the creature blood subrecords.</td>
+            <td>The following Creature (CREA) subrecords:
+                <ul>
+                    <li>(NAM0) Blood spray</li>
+                    <li>(NAM1) Blood decal</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Eyes</td>
+            <td>Adds eyes to races.</td>
+            <td>The Eyes (ENAM) subrecord of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td id="GraphicsOblivion">Graphics</td>
+            <td>Is a graphics replacer.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator: Model</li>
+                    <li>(ALCH) Potion: (ICON) Icon filename, Model</li>
+                    <li>(AMMO) Ammunition: (ICON) Icon filename, Model</li>
+                    <li>(APPA) Alchemical Apparatus: (ICON) Icon filename, Model</li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li>(BMDT) Biped Data</li>
+                            <li>Male Biped model</li>
+                            <li>Male World model</li>
+                            <li>(ICON) Male Icon filename</li>
+                            <li>Female Biped model</li>
+                            <li>Female World model</li>
+                            <li>(ICO2) Female Icon filename</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book: (ICON) Icon filename, Model</li>
+                    <li>(BSGN) Birthsign: (ICON) Icon filename</li>
+                    <li>(CLAS) Class: (ICON) Icon filename</li>
+                    <li>(CLOT) Clothing: See Armor entry above.</li>
+                    <li>(CREA) Creature: Model, (NIFZ) Models</li>
+                    <li>(DOOR) Door: Model</li>
+                    <li>(EFSH) Effect Shader:
+                        <ul>
+                            <li>(ICON) Fill Texture</li>
+                            <li>(ICO2) Particle Shader Texture</li>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Flags</li>
+                                    <li>Membrane Shader</li>
+                                    <li>Fill/Texture Effect</li>
+                                    <li>Edge Effect</li>
+                                    <li>Particle Shader</li>
+                                    <li>Color Key</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(FLOR) Flora: Model</li>
+                    <li>(FURN) Furniture: Model</li>
+                    <li>(GRAS) Grass: Model</li>
+                    <li>(INGR) Ingredient: (ICON) Icon filename, Model</li>
+                    <li>(KEYM) Key: (ICON) Icon filename, Model</li>
+                    <li>(LIGH) Light (ICON) Icon filename, Model</li>
+                    <li>(LSCR) Load Screen: (ICON) Icon filename</li>
+                    <li>(LTEX) Landscape Texture: (ICON) Icon filename</li>
+                    <li>(MGEF) Magic Effect: (ICON) Icon filename, Model</li>
+                    <li>(MISC) Misc. Item: (ICON) Icon filename, Model</li>
+                    <li>(REGN) Region: (ICON) Icon filename</li>
+                    <li>(SGST) Sigil Stone: (ICON) Icon filename, Model</li>
+                    <li>(SLGM) Soul Gem: (ICON) Icon filename, Model</li>
+                    <li>(STAT) Static: Model</li>
+                    <li>(TREE) Tree: (ICON) Icon filename, Model</li>
+                    <li>(WEAP) Weapon: (ICON) Icon filename, Model</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Hair</td>
+            <td>Adds hairs to races.</td>
+            <td>The Hairs (HNAM) subrecord of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td id="NamesOblivion">Names</td>
+            <td>Changes the names of things.</td>
+            <td>The Name (FULL) subrecord in the following record types:
+                <ul>
+                    <li>(ALCH) Potion</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(APPA) Alchemical Apparatus</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(BOOK) Book</li>
+                    <li>(BSGN) Birthsign</li>
+                    <li>(CLAS) Class</li>
+                    <li>(CLOT) Clothing</li>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature</li>
+                    <li>(DOOR) Door</li>
+                    <li>(EYES) Eyes</li>
+                    <li>(FACT) Faction</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(HAIR) Hair</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(RACE) Race</li>
+                    <li>(SGST) Sigil Stone</li>
+                    <li>(SLGM) Soul Gem</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>NpcFaces</td>
+            <td>Modifies Non-Player Character faces.</td>
+            <td>The following Non-Player Character (NPC_) subrecords:
+                <ul>
+                    <li>FaceGen Data
+                        <ul>
+                            <li>(FGGS) FaceGen Geometry-Symmetric</li>
+                            <li>(FGGA) FaceGen Geometry-Asymmetric</li>
+                            <li>(FGTS) FaceGen Texture-Symmetry </li>
+                        </ul>
+                    </li>
+                    <li>(ENAM) Eyes</li>
+                    <li>(HNAM) Hair</li>
+                    <li>(LNAM) Hair length</li>
+                    <li>(HCLR) Hair colour</li>
+                    <li>(FNAM) Unknown</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>NpcFacesForceFullImport</td>
+            <td>Modifies Non-Player Character faces, and you wish to import the unmodified subrecords as well as the modified subrecords.
+            </td>
+            <td>
+                <i>See NpcFaces for the list of supported subrecords.</i>
+            </td>
+        </tr>
+        <tr>
+            <td>NPC.Class</td>
+            <td>Changes the classes of Non-Player Character.</td>
+            <td>The Class (CNAM) subrecord of Non-Player Character (NPC_) records.</td>
+        </tr>
+        <tr>
+            <td>Npc.EyesOnly</td>
+            <td>Modifies Non-Player Character eyes.</td>
+            <td>The Eyes (ENAM) subrecord of Non-Player Character (NPC_) records.</td>
+        </tr>
+        <tr>
+            <td>Npc.HairOnly</td>
+            <td>Modifies Non-Player Character hair.</td>
+            <td>The Hair (HNAM) subrecord of Non-Player Character (NPC_) records.</td>
+        </tr>
+        <tr>
+            <td>NPC.Race</td>
+            <td>Modifies Non-Player Character races.</td>
+            <td>The Race (RNAM) subrecord of Non-Player Character (NPC_) records.</td>
+        </tr>
+        <tr>
+            <td>Roads</td>
+            <td>Modifies road records.</td>
+            <td>The Road (ROAD) subrecord of Worldspace (WRLD) records.</td>
+        </tr>
+        <tr>
+            <td>R.AddSpells</td>
+            <td>Adds spells to racial spell list(s). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.
+            </td>
+            <td>Additions to the spell list of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Attributes-F</td>
+            <td>Modifies racial attributes for females.</td>
+            <td>The following Race (RACE) subrecords (ATTR) Base Attributes:
+                <ul>
+                    <li>Female strength</li>
+                    <li>Female intelligence</li>
+                    <li>Female willpower</li>
+                    <li>Female agility</li>
+                    <li>Female speed</li>
+                    <li>Female endurance</li>
+                    <li>Female personality</li>
+                    <li>Female luck</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Attributes-M</td>
+            <td>Modifies racial attributes for males.</td>
+            <td>The following Race (RACE) subrecords (ATTR) Base Attributes:
+                <ul>
+                    <li>Male strength</li>
+                    <li>Male intelligence</li>
+                    <li>Male willpower</li>
+                    <li>Male agility</li>
+                    <li>Male speed</li>
+                    <li>Male endurance</li>
+                    <li>Male personality</li>
+                    <li>Male luck</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.ChangeSpells</td>
+            <td>Modifies racial spell list(s) (beyond adding spells). Either R.ChangeSpells or R.AddSpells should be used for a plugin, not both.</td>
+            <td>Additions or removals to the spell list (SPLO) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Description</td>
+            <td>Modifies race descriptions.</td>
+            <td>The Description (DESC) subrecord of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Ears</td>
+            <td>Modifies race ears.</td>
+            <td>The following Race (RACE) subrecords:
+                <ul>
+                    <li>Face Data Part: Ear (Male) (1)
+                        <ul>
+                            <li>(MODL) Model filename</li>
+                            <li>(MODB) Bound radius</li>
+                            <li>(ICON) Icon filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Ear (Female) (2)
+                        <ul>
+                            <li>(MODL) Model filename</li>
+                            <li>(MODB) Bound radius</li>
+                            <li>(ICON) Icon filename</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Head</td>
+            <td>Modifies race heads.</td>
+            <td>The following Race (RACE) subrecords:
+                <ul>
+                    <li>Face Data Part: Head (0)
+                        <ul>
+                            <li>(MODL) Model filename</li>
+                            <li>(MODB) Bound radius</li>
+                            <li>(ICON) Icon filename</li>
+                        </ul>
+                    </li>
+                    <li>FaceGen Data
+                        <ul>
+                            <li>(FGGS) Geometry-Symmetric</li>
+                            <li>(FGGA) Geometry-Asymmetric</li>
+                            <li>(FGTS) Texture-Symmetry </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Mouth</td>
+            <td>Modifies race mouths.</td>
+            <td>The following Race (RACE) subrecords:
+                <ul>
+                    <li>Face Data Part: Mouth (3)
+                        <ul>
+                            <li>(MODL) Model filename</li>
+                            <li>(MODB) Bound radius</li>
+                            <li>(ICON) Icon filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Tongue (6)
+                        <ul>
+                            <li>(MODL) Model filename</li>
+                            <li>(MODB) Bound radius</li>
+                            <li>(ICON) Icon filename</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>R.Relations</td>
+            <td>Modifies race relationships.</td>
+            <td>The faction list (XNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Skills</td>
+            <td>Modifies race skill bonuses.</td>
+            <td>The skill boosts (DATA) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>R.Teeth</td>
+            <td>Modifies race upper or lower teeth.</td>
+            <td>The following Race (RACE) subrecords:
+                <ul>
+                    <li>Face Data Part: Teeth (Lower) (4)
+                        <ul>
+                            <li>(MODL) Model filename</li>
+                            <li>(MODB) Bound radius</li>
+                            <li>(ICON) Icon filename</li>
+                        </ul>
+                    </li>
+                    <li>Face Data Part: Teeth (Upper) (5)
+                        <ul>
+                            <li>(MODL) Model filename</li>
+                            <li>(MODB) Bound radius</li>
+                            <li>(ICON) Icon filename</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>ScriptContents</td>
+            <td>
+                <i>Should not be used. Can cause serious issues.</i>
+            </td>
+            <td>
+                <i>N/A</i>
+            </td>
+        </tr>
+        <tr>
+            <td>Scripts</td>
+            <td>Modifies item, NPC or object scripts.</td>
+            <td>The Script (SCRI) subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Potion</li>
+                    <li>(APPA) Alchemical Apparatus</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(BOOK) BooK</li>
+                    <li>(CLOT) Clothing</li>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature</li>
+                    <li>(DOOR) Door</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(LVLC) Leveled Creature</li>
+                    <li>(MISC) Misc.Item</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(QUST) Quest</li>
+                    <li>(SGST) Sigil Stone</li>
+                    <li>(SLGM) Soul Gem</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="SoundOblivion">Sound</td>
+            <td>Replaces sounds.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator: (SNAM) Sound</li>
+                    <li>(CONT) Container: (SNAM) Open sound, (QNAM) Close sound.</li>
+                    <li>(CREA) Creature: (WNAM) Foot Weight , (CSCR) Inherits Sounds, Sound Types.</li>
+                    <li>(DOOR) Door: (SNAM) Open Sound, (ANAM) Close Sound, (BNAM) Loop Sound.</li>
+                    <li>(LIGH) Light: (SNAM) - Sound</li>
+                    <li>(MGEF) Magic Effect: (DATA) Casting sound, (DATA)Bolt sound, (DATA)Hit sound, (DATA)Area Sound.</li>
+                    <li>(SOUN) Sound: (FNAM) Sound File Name, (SNDX) - Sound Data.</li>
+                    <li>(WATR) Water: (SNAM) - Sound</li>
+                    <li>(WTHR) Weather: Sounds (SNAM) - Sound</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>SpellStats</td>
+            <td>Modifies spell stats.</td>
+            <td>The following Spell (SPEL) subrecords:
+                <ul>
+                    <li>Name (FULL)</li>
+                    <li>Cost</li>
+                    <li>Level type</li>
+                    <li>Spell type</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="StatsOblivion">Stats</td>
+            <td>Modifies item stats.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ALCH) Potion: Weight, value.</li>
+                    <li>(AMMO) Ammunition: Weight, value, damage, speed, enchantment points (ANAM).</li>
+                    <li>(APPA) Alchemical Apparatus: Weight, value, quality.</li>
+                    <li>(ARMO) Armor: Weight, value, health, strength</li>
+                    <li>(BOOK) Book: Weight, value, enchantment points (ANAM).</li>
+                    <li>(CLOT) Clothing: Weight, value, enchantment points (ANAM).</li>
+                    <li>(INGR) Ingredient: Weight, value.</li>
+                    <li>(KEYM) Key: Weight, value.</li>
+                    <li>(LIGH) Light: Weight, value, duration.</li>
+                    <li>(MISC) Misc. Item: Weight, value.</li>
+                    <li>(SGST) Sigil Stone: Weight, value, uses.</li>
+                    <li>(WEAP) Weapon: Weight, value, health, damage, speed, reach, enchantment points (ANAM).
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Voice-F</td>
+            <td>Modifies female voice definitions.</td>
+            <td>The male voice (VNAM) of Race (RACE) records.</td>
+        </tr>
+        <tr>
+            <td>Voice-M</td>
+            <td>Modifies male voice definitions.</td>
+            <td>The female voice (VNAM) of Race (RACE) records.</td>
+        </tr>
+    </tbody>
+</table>
+<table>
+    <thead>
+        <tr>
+            <th colspan="3">
+                Bash Tags details for Fallout 3
+            </th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <th>Used When The Mod</th>
+            <th>Specific Record Types/Changes Supported</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Deflst</td>
+            <td>Removes entries from the FormID List (FLST) record.</td>
+            <td>Removal of FormID from (FLST) FormID List record:
+                <ul>
+                    <li>FormIDs
+                        <ul>
+                            <li>(LNAM) FormID</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Destructible</td>
+            <td>Modifies destructible records.</td>
+            <td>The Destructible subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature</li>
+                    <li>(DOOR) Door</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NPC_) Non Playable Character</li>
+                    <li>(PROJ) Projectile</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(TERM) Terminal</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="GraphicsFO3">Graphics</td>
+            <td>Is a graphics replacer.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(ALCH) Ingredient:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(APPA) Alchemical Apparatus:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(ARMA) Armor Addon:
+                        <ul>
+                            <li> Male Biped Model (MODL).</li>
+                            <li> Male World Model (MOD2).</li>
+                            <li> Male Icon Filename (ICON).</li>
+                            <li> Female Biped Model (MOD3).</li>
+                            <li> Female World Model (MOD4).</li>
+                            <li> Female Icon 2 Filename (ICO2).</li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li> Male Biped Model (MODL).</li>
+                            <li> Male World Model (MOD2).</li>
+                            <li> Male Icon Filename (ICON).</li>
+                            <li> Female Biped Model (MOD3).</li>
+                            <li> Female World Model (MOD4).</li>
+                            <li> Female Icon 2 Filename (ICO2).</li>
+                            <li> Object Effect (EITM)</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(CLAS) Class:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(CREA) Creature:
+                        <ul>
+                            <li>(NIFZ) Model list</li>
+                            <li>(NIFT) Texture file hashes</li>
+                            <li>(EITM) Unarmed Attck effect</li>
+                        </ul>
+                    </li>
+                    <li>(DOOR) Door:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(EFSH) Effect Shader:
+                        <ul>
+                            <li>(DATA) All</li>
+                        </ul>
+                    </li>
+                    <li>(EXPL) Explosion:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(EITM) Object Effect</li>
+                        </ul>
+                    </li>
+                    <li>(FURN) Furniture:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(GRAS) Grass:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(INGR) Ingredient:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(KEYM) Key:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(LSCR) Load Screen:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(LTEX) Landscape Texture:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Base Effect:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(MISC) Misc. Item:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(NPC_) Non-Player Character:
+                        <ul>
+                            <li> (EITM) Unnarmed Attack Effect</li>
+                        </ul>
+                    </li>
+                    <li>(STAT) Static:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(TREE) Tree:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                            <li>(EITM) Object Effect</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="NamesFO3">Names</td>
+            <td>Changes the names of things.</td>
+            <td>The Name (FULL) subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CLAS) Class</li>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature</li>
+                    <li>(DOOR) Door</li>
+                    <li>(EYES) Eyes</li>
+                    <li>(FACT) Faction</li>
+                    <li>(HAIR) Hair</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(NOTE) Note</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(RACE) Race</li>
+                    <li>(SPEL) Actor Effect</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(TERM) Terminal</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="SoundFO3">Sound</td>
+            <td>Replaces sounds.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator:
+                        <ul>
+                            <li>(SNAM) Sound - Looping</li>
+                            <li>(VNAM) Sound - Activation</li>
+                        </ul>
+                    </li>
+                    <li>(ADDN) Addon Node:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(ALCH) Ingestible:
+                        <ul>
+                            <li>(ZNAM) Sound - Drop</li>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ENIT) Sound - Consume</li>
+                        </ul>
+                    </li>
+                    <li>(ASPC) Acoustic Space:
+                        <ul>
+                            <li>(SNAM) Sound - Looping</li>
+                            <li>(RDAT) Use Sound from region (Interiors Only)</li>
+                        </ul>
+                    </li>
+                    <li>(CONT) Container:
+                        <ul>
+                            <li>(SNAM) Sound - Open</li>
+                            <li>(QNAM) Sound - Close</li>
+                        </ul>
+                    </li>
+                    <li>(CREA) Creature:
+                        <ul>
+                            <li>(WNAM) Foot Weight</li>
+                            <li>(CSCR) Inherits sound from</li>
+                            <li>Sounds
+                                <ul>
+                                    <li>(CSDT) Sound Type</li>
+                                    <li>(CSDI) Sound</li>
+                                    <li>(CSDC) Sound Chance</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(DOOR) Door:
+                        <ul>
+                            <li>(SNAM) Sound Open</li>
+                            <li>(ANAM) Sound Close</li>
+                            <li>(BNAM) Sound Looping</li>
+                        </ul>
+                    </li>
+                    <li>(EXPL) Explosion:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Sound Level</li>
+                                    <li>Sound 1</li>
+                                    <li>Sound 2</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(IPCT) Impact:
+                        <ul>
+                            <li>(DATA) Sound Level</li>
+                            <li>(SNAM) Sound 1</li>
+                            <li>(NAM1) Sound 2</li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Base Effect:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Effect Sound</li>
+                                    <li>Bolt Sound</li>
+                                    <li>Hit Sound</li>
+                                    <li>Area Sound</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(PROJ) Projectile:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Sound</li>
+                                    <li>Sound - Countdown</li>
+                                    <li>Sound - Disable</li>
+                                    <li>Sound - Level</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(SOUN) Sound:
+                        <ul>
+                            <li>(FNAM) Sound Filename</li>
+                            <li>(SNDD) Sound Data</li>
+                        </ul>
+                    </li>
+                    <li>(TACT) Talking Activator:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(WATR) Water:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Drop</li>
+                            <li>(SNAM) Sound - Gun - Shoot 3D</li>
+                            <li>(XNAM) Sound - Gun - Shoot 2D</li>
+                            <li>(NAM7) Sound - Gun - Shoot 3D Looping</li>
+                            <li>(TNAM) Sound - Melee - Swing/Gun - No ammo</li>
+                            <li>(NAM6) Sound - Block</li>
+                            <li>(UNAM) Sound - Idle</li>
+                            <li>(NAM9) Sound - Equip</li>
+                            <li>(VNAM) Sound Level</li>
+                        </ul>
+                    </li>
+                    <li>(WTHR) Weather:
+                        <ul>
+                            <li>Sounds
+                                <ul>
+                                    <li>(SNAM) Sound
+                                        <ul>
+                                            <li>Sound</li>
+                                            <li>Type</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="StatsFO3">Stats</td>
+            <td>Modifies item stats.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ALCH) Ingestible:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(ENIT) Value</li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Speed</li>
+                            <li>(DATA) Clip Rounds</li>
+                        </ul>
+                    </li>
+                    <li>(ARMA) Armor Addon:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Max Condition</li>
+                            <li>(DNAM) AR</li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Max Condition</li>
+                            <li>(DNAM) AR</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                        </ul>
+                    </li>
+                    <li>(INGR) Ingredient:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(ENIT) Value</li>
+                        </ul>
+                    </li>
+                    <li>(KEYM) Key:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Time</li>
+                        </ul>
+                    </li>
+                    <li>(MISC) Misc. Item:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(DATA) -
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                    <li>Health</li>
+                                    <li>Base Damage</li>
+                                    <li>Clip Size</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM)
+                                <ul>
+                                    <li>Animation multiplier</li>
+                                    <li>Reach</li>
+                                    <li>Ammo Use</li>
+                                    <li>Min Spread</li>
+                                    <li>Spread</li>
+                                    <li>Sight FOV</li>
+                                    <li>Base VATS To-Hit Chance</li>
+                                    <li>Projectile Count</li>
+                                    <li>Min Range</li>
+                                    <li>Max Range</li>
+                                    <li>Animation Attack Multiplier</li>
+                                    <li>Fire Rate</li>
+                                    <li>Override - Action Points</li>
+                                    <li>Rumble - Left Motor Strength</li>
+                                    <li>Rumble - Right Motor Strength</li>
+                                    <li>Rumble - Duration</li>
+                                    <li>Override - Damage to Weapon Mult</li>
+                                    <li>Attack Shots/Sec</li>
+                                    <li>Reload Time</li>
+                                    <li>Jam Time</li>
+                                    <li>Aim Arc</li>
+                                    <li>Rumble - Wavelength</li>
+                                    <li>Limb Dmg Mult</li>
+                                    <li>Sight Usage</li>
+                                    <li>Semi-Automatic Fire Delay Min</li>
+                                    <li>Semi-Automatic Fire Delay Max</li>
+                                </ul>
+                            </li>
+                            <li>(CRDT) Critical Data
+                                <ul>
+                                    <li>Critical Damage</li>
+                                    <li>Crit &percnt; Mult</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
 </table>
 
+<table>
+    <thead>
+        <tr>
+            <th colspan="3">
+                Bash Tags details for Fallout: New Vegas
+            </th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <th>Used When The Mod</th>
+            <th>Specific Record Types/Changes Supported</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Deflst</td>
+            <td>Removes entries from the FormID List (FLST) record.</td>
+            <td>Removal of FormID from the following subrecords:
+                <ul>
+                    <li>FormIDs
+                        <ul>
+                            <li>(LNAM) FormID</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Destructible</td>
+            <td>Modifies destructible records.</td>
+            <td>The Destructible subrecord in the following record types:
+                <li>(ACTI) Activator</li>
+                <li>(ALCH) Ingestible</li>
+                <li>(AMMO) Ammunition</li>
+                <li>(ARMO) Armor</li>
+                <li>(BOOK) Book</li>
+                <li>(CHIP) Casino Chip</li>
+                <li>(CONT) Container</li>
+                <li>(CREA) Creature</li>
+                <li>(DOOR) Door</li>
+                <li>(FURN) Furniture</li>
+                <li>(IMOD) Item Mod</li>
+                <li>(KEYM) Key</li>
+                <li>(LIGH) Light</li>
+                <li>(MISC) Misc. Item</li>
+                <li>(MSTT) Moveable Static</li>
+                <li>(PROJ) Projectile</li>
+                <li>(TACT) Talking Activator</li>
+                <li>(TERM) Terminal</li>
+                <li>(WEAP) Weapon</li>
+            </td>
+        </tr>
+        <tr>
+            <td id="GraphicsFNV">Graphics</td>
+            <td>Is a graphics replacer.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(ALCH) Ingredient:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(APPA) Alchemical Apparatus:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(ARMA) Armor Addon:
+                        <ul>
+                            <li> Male Biped Model (MODL).</li>
+                            <li> Male World Model (MOD2).</li>
+                            <li> Male Icon Filename (ICON).</li>
+                            <li> Female Biped Model (MOD3).</li>
+                            <li> Female World Model (MOD4).</li>
+                            <li> Female Icon 2 Filename (ICO2).</li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li> Male Biped Model (MODL).</li>
+                            <li> Male World Model (MOD2).</li>
+                            <li> Male Icon Filename (ICON).</li>
+                            <li> Female Biped Model (MOD3).</li>
+                            <li> Female World Model (MOD4).</li>
+                            <li> Female Icon 2 Filename (ICO2).</li>
+                            <li> Object Effect (EITM)</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(BPTD) Body Part Data:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(CCRD) Caravan Card:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                            <li>High Rez Image - Face</li>
+                            <li>High Rez Image - Back</li>
+                        </ul>
+                    </li>
+                    <li>(CHIP) Casino Chip:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(CLAS) Class:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(CMNY) Caravan Money:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(CREA) Creature:
+                        <ul>
+                            <li>(NIFZ) Model list</li>
+                            <li>(NIFT) Texture file hashes</li>
+                            <li>(EITM) Unarmed Attck effect</li>
+                        </ul>
+                    </li>
+                    <li>(CSNO) Casino:
+                        <ul>
+                            <li>(MODL) Casino Chip Models</li>
+                            <li>(MODL) Slot Machine Model</li>
+                            <li>(MOD3) Blackjack Table Model.</li>
+                            <li>(MOD4) Roulette Table Model.</li>
+                            <li>Slot Reel Textures</li>
+                            <li>Blackjack Decks</li>
+                        </ul>
+                    </li>
+                    <li>(DOOR) Door:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(EFSH) Effect Shader:
+                        <ul>
+                            <li>(ICO2) Particle Shader Texture</li>
+                            <li>(ICON) Fill Texture</li>
+                            <li>(DATA) All</li>
+                        </ul>
+                    </li>
+                    <li>(EXPL) Explosion:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(EITM) Object Effect</li>
+                            <li>(MNAM) Image Space Modifier</li>
+                            <li>(DATA) Light</li>
+                            <li>(DATA) Image DataSet</li>
+                            <li>(INAM) Placed Impact Object</li>
+                        </ul>
+                    </li>
+                    <li>(FURN) Furniture:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(GRAS) Grass:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(HDPT) Head Part:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(IMOD) Item Mod:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(INGR) Ingredient:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(IPCT) Impact:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(DATA) Effect Duration</li>
+                            <li>(DATA) Effect Orientation</li>
+                            <li>(DATA) Angle Threshold</li>
+                            <li>(DATA) Placement Radius</li>
+                            <li>(DATA) Flag - No Decal Data</li>
+                            <li>(DODT) Decal Data
+                                <ul>
+                                    <li>Min Width</li>
+                                    <li>Max Width</li>
+                                    <li>Min Height</li>
+                                    <li>Max Height</li>
+                                    <li>Depth</li>
+                                    <li>Shininess</li>
+                                    <li>Parallax Scale</li>
+                                    <li>Parallax Passes</li>
+                                    <li>Decal Flags
+                                        <ul>
+                                            <li>Parallax</li>
+                                            <li>Alpha - Blending</li>
+                                            <li>Alpha - Testing</li>
+                                        </ul>
+                                    </li>
+                                    <li>Color
+                                        <ul>
+                                            <li>Red</li>
+                                            <li>Green</li>
+                                            <li>Blue</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>(DNAM) Texture Set</li>
+                        </ul>
+                    </li>
+                    <li>(IPDS) Impact Dataset:
+                        <ul>
+                            <li>(DATA) Impacts
+                                <ul>
+                                    <li>Stone</li>
+                                    <li>Dirt</li>
+                                    <li>Grass</li>
+                                    <li>Glass</li>
+                                    <li>Metal</li>
+                                    <li>Wood</li>
+                                    <li>Organic</li>
+                                    <li>Cloth</li>
+                                    <li>Water</li>
+                                    <li>Hollow Metal</li>
+                                    <li>Organic Bug</li>
+                                    <li>Organic Glow</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(KEYM) Key:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(LSCR) Load Screen:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(LTEX) Landscape Texture:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Base Effect:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(MICN) Menu Icon:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(MISC) Misc. Item:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(MSTT) Movable Static:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(NOTE) Note:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                            <li>(XNAM) Texture</li>
+                        </ul>
+                    </li>
+                    <li>(NPC_) Non-Player Character:
+                        <ul>
+                            <li> (EITM) Unnarmed Attack Effect</li>
+                        </ul>
+                    </li>
+                    <li>(PROJ) Projectile:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(PWAT) Placeable Water:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(REPU) Reputation:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                        </ul>
+                    </li>
+                    <li>(STAT) Static:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(TACT) Talking Activator:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(TERM) Terminal:
+                        <ul>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(TREE) Tree:
+                        <ul>
+                            <li>(ICON) Icon</li>
+                            <li>(MODL) Model</li>
+                        </ul>
+                    </li>
+                    <li>(TXST) Texture Set:
+                        <ul>
+                            <li>(TX00) Base Image/Transparency</li>
+                            <li>(TX01) Normal Map/Specular</li>
+                            <li>(TX02) Environment Map Mask</li>
+                            <li>(TX03) Glow Map</li>
+                            <li>(TX04) Parallax Map</li>
+                            <li>(TX05) Environment Map</li>
+                            <li>(DNAM) Flag - No Decal Data</li>
+                            <li>(DATA) Flag - No Decal Data</li>
+                            <li>(DODT) Decal Data
+                                <ul>
+                                    <li>Min Width</li>
+                                    <li>Max Width</li>
+                                    <li>Min Height</li>
+                                    <li>Max Height</li>
+                                    <li>Depth</li>
+                                    <li>Shininess</li>
+                                    <li>Parallax Scale</li>
+                                    <li>Parallax Passes</li>
+                                    <li>Decal Flags
+                                        <ul>
+                                            <li>Parallax</li>
+                                            <li>Alpha - Blending</li>
+                                            <li>Alpha - Testing</li>
+                                        </ul>
+                                    </li>
+                                    <li>Color
+                                        <ul>
+                                            <li>Red</li>
+                                            <li>Green</li>
+                                            <li>Blue</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(MODL) Model</li>
+                            <li>(ICON) Icon</li>
+                            <li>(MOD2) Shell Casing Model</li>
+                            <li>(MOD3) Scope Model</li>
+                            <li>(MOD4) World Model</li>
+                            <li>(WNAM) First Person Model</li>
+                            <li>(DNAM) Animation Type</li>
+                            <li>(DNAM) Grip Animation</li>
+                            <li>(DNAM) Reload Animation</li>
+                            <li>(MWD1-7) Model mod</li>
+                            <li>(WNM1-7) First Person Model mod</li>
+                            <li>(EITM) Object Effect</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="NamesFNV">Names</td>
+            <td>Changes the names of things.</td>
+            <td>The Name (FULL) subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CCRD) Caravan Card</li>
+                    <li>(CHIP) Casino Chip</li>
+                    <li>(CLAS) Class</li>
+                    <li>(CMNY) Caravan Money</li>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature</li>
+                    <li>(CSNO) Casino</li>
+                    <li>(DOOR) Door</li>
+                    <li>(EYES) Eyes</li>
+                    <li>(FACT) Faction</li>
+                    <li>(HAIR) Hair</li>
+                    <li>(IMOD) Item Mod</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(NOTE) Note</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(RACE) Race</li>
+                    <li>(RCCT) Recipe Category</li>
+                    <li>(RCPE) Recipe</li>
+                    <li>(REPU) Reputation</li>
+                    <li>(SPEL) Actor Effect</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(TERM) Terminal</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="SoundFNV">Sound</td>
+            <td>Replaces sounds.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator:
+                        <ul>
+                            <li>(SNAM) Sound - Looping</li>
+                            <li>(VNAM) Sound - Activation</li>
+                        </ul>
+                    </li>
+                    <li>(ADDN) Addon Node:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(ALCH) Ingestible:
+                        <ul>
+                            <li>(ZNAM) Sound - Drop</li>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ENIT) Sound - Consume</li>
+                        </ul>
+                    </li>
+                    <li>(ASPC) Acoustic Space:
+                        <ul>
+                            <li>(SNAM) Sound - Looping</li>
+                            <li>(RDAT) Use Sound from region (Interiors Only)</li>
+                        </ul>
+                    </li>
+                    <li>(CONT) Container:
+                        <ul>
+                            <li>(SNAM) Sound - Open</li>
+                            <li>(QNAM) Sound - Close</li>
+                            <li>(RNAM) Sound - Random/Looping</li>
+                        </ul>
+                    </li>
+                    <li>(CREA) Creature:
+                        <ul>
+                            <li>(WNAM) Foot Weight</li>
+                            <li>(CSCR) Inherits sound from</li>
+                            <li>Sounds
+                                <ul>
+                                    <li>(CSDT) Sound Type</li>
+                                    <li>(CSDI) Sound</li>
+                                    <li>(CSDC) Sound Chance</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(DOOR) Door:
+                        <ul>
+                            <li>(SNAM) Sound Open</li>
+                            <li>(ANAM) Sound Close</li>
+                            <li>(BNAM) Sound Looping</li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Base Effect:
+                        <ul>
+                            <li>(DATA)
+                                <ul>
+                                    <li>Effect Sound</li>
+                                    <li>Bolt Sound</li>
+                                    <li>Hit Sound</li>
+                                    <li>Area Sound</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(SOUN) Sound:
+                        <ul>
+                            <li>(FNAM) Sound Filename</li>
+                            <li>(SNDD) Sound Data</li>
+                        </ul>
+                    </li>
+                    <li>(WATR) Water:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Drop</li>
+                            <li>(SNAM) Sound - Gun - Shoot 3D</li>
+                            <li>(XNAM) Sound - Gun - Shoot 2D</li>
+                            <li>(NAM7) Sound - Gun - Shoot 3D Looping</li>
+                            <li>(TNAM) Sound - Melee - Swing/Gun - No ammo</li>
+                            <li>(NAM6) Sound - Block</li>
+                            <li>(UNAM) Sound - Idle</li>
+                            <li>(NAM9) Sound - Equip</li>
+                            <li>(NAM8) Sound - Unequip</li>
+                            <li>(WMS1) Sound - Mod1 - Shoot 3D</li>
+                            <li>(WMS2) Sound - Mod1 - Shoot 2D</li>
+                            <li>(VNAM) Sound Level</li>
+                        </ul>
+                    </li>
+                    <li>(WTHR) Weather:
+                        <ul>
+                            <li>Sounds
+                                <ul>
+                                    <li>(SNAM) Sound
+                                        <ul>
+                                            <li>Sound</li>
+                                            <li>Type</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="StatsFNV">Stats</td>
+            <td>Modifies item stats.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ALCH) Ingestible:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(ENIT) Value</li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Speed</li>
+                            <li>(DATA) Clip Rounds</li>
+                            <li>(DAT2) Proj. per shot</li>
+                            <li>(DAT2) Weight</li>
+                        </ul>
+                    </li>
+                    <li>(ARMA) Armor Addon:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Max Condition</li>
+                            <li>(DNAM) AR</li>
+                            <li>(DNAM) DT</li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Max Condition</li>
+                            <li>(DNAM) AR</li>
+                            <li>(DNAM) DT</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                        </ul>
+                    </li>
+                    <li>(INGR) Ingredient:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(ENIT) Value</li>
+                        </ul>
+                    </li>
+                    <li>(KEYM) Key:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                            <li>(DATA) Time</li>
+                        </ul>
+                    </li>
+                    <li>(MISC) Misc. Item:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(DATA) Value</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(DATA) -
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                    <li>Health</li>
+                                    <li>Base Damage</li>
+                                    <li>Clip Size</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM)
+                                <ul>
+                                    <li>Animation multiplier</li>
+                                    <li>Reach</li>
+                                    <li>Ammo Use</li>
+                                    <li>Min Spread</li>
+                                    <li>Spread</li>
+                                    <li>Sight FOV</li>
+                                    <li>Base VATS To-Hit Chance</li>
+                                    <li>Projectile Count</li>
+                                    <li>Min Range</li>
+                                    <li>Max Range</li>
+                                    <li>Animation Attack Multiplier</li>
+                                    <li>Fire Rate</li>
+                                    <li>Override - Action Points</li>
+                                    <li>Rumble - Left Motor Strength</li>
+                                    <li>Rumble - Right Motor Strength</li>
+                                    <li>Rumble - Duration</li>
+                                    <li>Override - Damage to Weapon Mult</li>
+                                    <li>Attack Shots/Sec</li>
+                                    <li>Reload Time</li>
+                                    <li>Jam Time</li>
+                                    <li>Aim Arc</li>
+                                    <li>Rumble - Wavelength</li>
+                                    <li>Limb Dmg Mult</li>
+                                    <li>Sight Usage</li>
+                                    <li>Semi-Automatic Fire Delay Min</li>
+                                    <li>Semi-Automatic Fire Delay Max</li>
+                                    <li>Strength Req</li>
+                                    <li>Regen Rate</li>
+                                    <li>Kill Impulse</li>
+                                    <li>Impulse Dist</li>
+                                    <li>Skill Req</li>
+                                </ul>
+                            </li>
+                            <li>(CRDT) Critical Data
+                                <ul>
+                                    <li>Critical Damage</li>
+                                    <li>Crit &percnt; Mult</li>
+                                </ul>
+                            </li>
+                            <li>(VATS) VATS
+                                <ul>
+                                    <li>Skill</li>
+                                    <li>Dam. Mult</li>
+                                    <li>AP (Action points)</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>WeaponMods</td>
+            <td>Changes Weapon Modifications.</td>
+            <td>The following Weapon (WEAP) subrecords:
+                <ul>
+                    <li>(MWD[1-7]) Model Mod</li>
+                    <li>(WNM[1-7]) 1st Person Model Mod</li>
+                    <li>(WMI[1-3]) Weapon mod</li>
+                    <li>(WMS1) Sound Mod 1 - Shoot 3D</li>
+                    <li>(WMS2) Sound Mod 1 - Shoot 2D</li>
+                    <li>(DNAM) Effect Mod [1-3]</li>
+                    <li>(DNAM) Value A Mod [1-3]</li>
+                    <li>(DNAM) Reload Animation Mod</li>
+                    <li>(DNAM) Value B Mod [1-3]</li>
+                    <li>(VATS) Mod Required</li>
+                    <li>(MOD3) Scope Model</li>
+                    <li>(DNAM) Flags 1 - Has Scope</li>
+                    <li>(DNAM) Flags 2 - Scope From Mod</li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<table>
+    <thead>
+        <tr>
+            <th colspan="3">Bash Tags Available For Skyrim</th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <th>Used when the Mod</th>
+            <th>Specific Record Types/Changes Supported.</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td id="GraphicsSkyrim">Graphics</td>
+            <td>Is a graphics replacer.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator: (MODL) Model</li>
+                    <li>(ALCH) Potion: (ICON) Icon, (MODL) Model</li>
+                    <li>(AMMO) Ammunition: (ICON) Icon, (MODL) Model</li>
+                    <li>(APPA) Alchemical Apparatus: (ICON) Icon, (MODL) Model</li>
+                    <li>(ARMA) Armor Addon:
+                        <ul>
+                            <li> Male World Model (MOD2).</li>
+                            <li> Female World Model (MOD3).</li>
+                            <li> Male 1st Person (MOD4).</li>
+                            <li> Female 1st Person (MOD5).</li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li> Male World Model (MOD2).</li>
+                            <li> (ICON) Icon</li>
+                            <li> Female World Model (MOD3).</li>
+                            <li> (ICO2) Icon 2 Filename.</li>
+                            <li> Armature - (MODL)</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book: (ICON) Icon, (MODL) Model,(INAM) Inventory Art.</li>
+                    <li>(CLAS) Class: (ICON) Icon</li>
+                    <li>(CONT) Container: (MODL) Model</li>
+                    <li>(DOOR) Door: (MODL) Model</li>
+                    <li>(EFSH) Effect Shader: All (DATA) subrecords.</li>
+                    <li>(FLOR) Flora: (MODL) Model</li>
+                    <li>(FURN) Furniture: (MODL) Model</li>
+                    <li>(GRAS) Grass: (MODL) Model</li>
+                    <li>(INGR) Ingredient: (ICON) Icon, (MODL) Model</li>
+                    <li>(KEYM) Key: (ICON) Icon, (MODL) Model</li>
+                    <li>(LIGH) Light (ICON) Icon, (MODL) Model</li>
+                    <li>(LSCR) Load Screen: (ICON) Icon</li>
+                    <li>(SLGM) Soul Gem: (ICON) Icon, (MODL) Model</li>
+                    <li>(STAT) Static: (MODL) Model</li>
+                    <li>(TREE) Tree: (ICON) Icon, (MODL) Model</li>
+                    <li>(WEAP) Weapon: (MODL) Model, (MOD3) Has Scope, (ICON) Icon, (WNAM) 1st Person Model Object.</li>
+                    <li>(WTHR) Directional Ambient Lighting Colors.</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="NamesSkyrim">NAMES</td>
+            <td>Changes the names of things.</td>
+            <td>The (FULL - Name) Subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(APPA) Alchemical Apparatus</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(AVIF) Actor Value Information</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CLAS) Class</li>
+                    <li>(CLFM) Colour</li>
+                    <li>(CONT) Container</li>
+                    <li>(DIAL) Dialogue Topic</li>
+                    <li>(DOOR) Door</li>
+                    <li>(ENCH) Object Effect</li>
+                    <li>(EXPL) Explosion</li>
+                    <li>(EYES) Eyes</li>
+                    <li>(FACT) Faction</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(HAZD) Hazard</li>
+                    <li>(HDPT) Head Part</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LCTN) Location</li>
+                    <li>(LIGH) Light</li>
+                    <li>(MESG) Message</li>
+                    <li>(MGEF) Magic Effect</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Movable Static</li>
+                    <li>(NPC_) Non Player Character</li>
+                    <li>(SCRL) Scroll</li>
+                    <li>(SHOU) Shout</li>
+                    <li>(SLGM) Soul Gem</li>
+                    <li>(SNCT) Sound Category</li>
+                    <li>(SPEL) Spell</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(TREE) Tree</li>
+                    <li>(WATR) Water</li>
+                    <li>(WEAP) Weapon</li>
+                    <li>(WOOP) Word Of Power</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="SoundSkyrim">Sound</td>
+            <td>Replaces sounds.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ACTI) Activator:
+                        <ul>
+                            <li>(SNAM) Looping</li>
+                            <li>(VNAM) Activation</li>
+                        </ul>
+                    </li>
+                    <li>(ADDN) Addon Node:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(ALCH) Ingestible:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                            <li>(ENIT) Sound - Consume</li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                        </ul>
+                    </li>
+                    <li>(APPA) Alchemical Apparatus:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                        </ul>
+                    </li>
+                    <li>(ARMA) Armor Addon:
+                        <ul>
+                            <li>(SNDD) Footstep Sound</li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li>
+                                (YNAM) Sound - Pick Up
+                            </li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                        </ul>
+                    </li>
+                    <li>(ASPC) Acoustic Space:
+                        <ul>
+                            <li>(ZNAM) Ambient Sound</li>
+                            <li>(RDAT) Use Sound from Region (interiors Only)</li>
+                            <li>(BNAM) Environment Type (reverb)</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>
+                                (YNAM) Sound - Pick Up
+                            </li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                        </ul>
+                    </li>
+                    <li>(CONT) Container:
+                        <ul>
+                            <li>(SNAM) Sound Open</li>
+                            <li>(QNAM) Sound Close</li>
+                        </ul>
+                    </li>
+                    <li>(DOOR) Door:
+                        <ul>
+                            <li>
+                                (SNAM) Sound Open
+                            </li>
+                            <li>
+                                (ANAM) Sound Close
+                            </li>
+                            <li>
+                                (BNAM) Loop Sound
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(EFSH) Effect Shader:
+                        <ul>
+                            <li>(DATA) Ambient Sound</li>
+                        </ul>
+                    </li>
+                    <li>(EXPL) Explosion:
+                        <ul>
+                            <li>(DATA) Sound 1</li>
+                            <li>(DATA) Sound 2</li>
+                        </ul>
+                    </li>
+                    <li>(FLOR) Flora:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(HAZD) Hazard:
+                        <ul>
+                            <li>(DATA) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(INGR) Ingredient:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                        </ul>
+                    </li>
+                    <li>(IPCT) Impact:
+                        <ul>
+                            <li>(SNAM) Sound 1</li>
+                            <li>(NAM1) Sound 2</li>
+                        </ul>
+                    </li>
+                    <li>(KEYM) Key:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>(SNAM) Sound</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Magic Effect:
+                        <ul>
+                            <li>(SNDD) Sounds</li>
+                        </ul>
+                    </li>
+                    <li>(MISC) Misc. Item:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                        </ul>
+                    </li>
+                    <li>(MSTT) Movable Static:
+                        <ul>
+                            <li>(SNAM) Looping Sound</li>
+                        </ul>
+                    </li>
+                    <li>(SNCT) Sound Category:
+                        <ul>
+                            <li>(PNAM) Parent</li>
+                            <li>(VNAM) Static Volume Multiplier</li>
+                        </ul>
+                    </li>
+                    <li>(SNDR) Sound Descriptor:
+                        <ul>
+                            <li>(GNAM) category</li>
+                            <li>Sounds - (ANAM) Sound File Name</li>
+                            <li>(ONAM) Output Model</li>
+                            <li>(LNAM) Values</li>
+                            <li>(BNAM) Values</li>
+                        </ul>
+                    </li>
+                    <li>(SOPM) Sound Output Model:
+                        <ul>
+                            <li>(NAM1 - Data) Reverb send &percnt;</li>
+                            <li>(MNAM) Type</li>
+                            <li>(ONAM) Output Values</li>
+                            <li>(ANAM) Attenuation Values</li>
+                        </ul>
+                    </li>
+                    <li>(SOUN) Sound Marker:
+                        <ul>
+                            <li>(SDSC) Sound Descriptor</li>
+                        </ul>
+                    </li>
+                    <li>(TACT) Talking Activator:
+                        <ul>
+                            <li>(SNAM) Looping Sound.</li>
+                        </ul>
+                    </li>
+                    <li>(TREE) Tree:
+                        <ul>
+                            <li>(SNAM) Harvest Sound</li>
+                        </ul>
+                    </li>
+                    <li>(WATR) Water:
+                        <ul>
+                            <li>(SNAM) Open Sound</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(YNAM) Sound - Pick Up</li>
+                            <li>(ZNAM) Sound - Put Down</li>
+                            <li>(SNAM) Attack Sound</li>
+                            <li>(XNAM) Attack Sound 2D</li>
+                            <li>(NAM7) Attack Loop Sound</li>
+                            <li>(TNAM) Attack fail sound</li>
+                            <li>(UNAM) Idle Sound</li>
+                            <li>(NAM9) Equip Sound</li>
+                            <li>(NAM8) Unequip Sound</li>
+                            <li>(VNAM) Detection Sound Level</li>
+                        </ul>
+                    </li>
+                    <li>(WTHR) Weather:
+                        <ul>
+                            <li>Sounds - all subrecords</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="StatsSkyrim">Stats</td>
+            <td>Modifies item stats.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ALCH) Ingestible:
+                        <ul>
+                            <li>(DATA) Weight</li>
+                            <li>(ENIT) Value</li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Damage</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(APPA) Alchemical Apparatus:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM) Armor Rating</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(INGR) Ingredient:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(KEYM) Key:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(LIGH) Light:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                    <li>Time</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(MISC) Misc. Item:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(SLGM) Soul Gem:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>DATA
+                                <ul>
+                                    <li>Weight</li>
+                                    <li>Value</li>
+                                    <li>Damage</li>
+                                </ul>
+                            </li>
+                            <li>DNAM
+                                <ul>
+                                    <li>Speed</li>
+                                    <li>Reach</li>
+                                    <li>Stagger</li>
+                                </ul>
+                            </li>
+                            <li>(EAMT) Enchantment Amount</li>
+                            <li>(CRTD) Critical Data
+                                <ul>
+                                    <li>Damage</li>
+                                    <li>Multiplier</li>
+                                    <li>Effect</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
+</table>
 
 <h3 id="patch-filter">Merge Filtering</h3>
 <p>Merge filtering is an advanced option that allows records in a merged mod to be selectively filtered according to the current load order. For example, a patch mod could be created to rebalance weapons from several different weapon-adding mods. This feature would allow the patch to be used even if you didn't use all the mods, and the Bashed Patch would just apply the bits for the mods you do use. This saves the need for a separate patch plugin for each mod.
