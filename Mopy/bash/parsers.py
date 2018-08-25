@@ -1383,7 +1383,7 @@ class ItemStats:
         self.class_attrs = bush.game_mod.statsTypes
         self.class_fid_attr_value = {}
         self.aliases = aliases or {} #--For aliasing mod names
-        if bush.game.fsName == u'Skyrim':
+        if bush.game.fsName in (u'Skyrim', u'Skyrim Special Edition') :
             self.attr_type = {'eid':self.sstr,
                               'weight':self.sfloat,
                               'value':self.sint,
@@ -1395,8 +1395,7 @@ class ItemStats:
                               'stagger':self.sfloat,
                               'enchantPoints':self.sint,
                               'critDamage':self.sint,
-                              'criticalMultiplier':self.sfloat,
-                              'criticalEffect':self.sint,}
+                              'criticalMultiplier':self.sfloat,}
         elif bush.game.fsName in (u'FalloutNV', u'Fallout3'):
             self.attr_type = {'eid':self.sstr,
                               'weight':self.sfloat,

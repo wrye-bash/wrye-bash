@@ -17070,7 +17070,7 @@ statsTypes = {
         'SLGM':('eid', 'weight', 'value'),
         'WEAP':('eid', 'weight', 'value', 'damage', 'speed', 'reach',
                 'enchantPoints', 'stagger', 'critDamage','criticalMultiplier',
-                'criticalEffect',),
+            ),
     }
 statsHeaders = (
     #--Alch
@@ -17117,7 +17117,8 @@ statsHeaders = (
     (u'WEAP',
         (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
         _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'Damage'),
-        _(u'Speed'),_(u'Reach'),_(u'EPoints'))) + u'"\n')),
+        _(u'Speed'),_(u'Reach'),_(u'EPoints'),_(u'Stagger'),
+        _(u'CritDamage'),_(u'criticalMultiplier'))) + u'"\n')),
 )
 
 #------------------------------------------------------------------------------
