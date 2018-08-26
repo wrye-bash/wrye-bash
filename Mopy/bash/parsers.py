@@ -1381,7 +1381,7 @@ class ItemStats:
 
     def __init__(self,types=None,aliases=None):
         self.class_attrs = bush.game_mod.statsTypes
-        self.class_fid_attr_value = {}
+        self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
         self.aliases = aliases or {} #--For aliasing mod names
         if bush.game.fsName == u'Skyrim':
             self.attr_type = {'eid':self.sstr,
@@ -1463,12 +1463,9 @@ class ItemStats:
                               'quality':self.sfloat,
                               'uses':self.sint,
                               'reach':self.sfloat,}
-        for group in self.class_attrs:
-            self.class_fid_attr_value[group] = {}
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
-        class_fid_attr_value = self.class_fid_attr_value
         typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
@@ -1476,19 +1473,18 @@ class ItemStats:
         mapper = modFile.getLongMapper()
         for group, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
-                class_fid_attr_value[group].setdefault(mapper(record.fid),
-                    {}).update(zip(attrs,map(record.__getattribute__,attrs)))
+                self.class_fid_attr_value[group][mapper(record.fid)].update(
+                    zip(attrs, map(record.__getattribute__, attrs)))
 
     def writeToMod(self,modInfo):
         """Writes stats to specified mod."""
-        class_fid_attr_value = self.class_fid_attr_value
         typeClasses = [MreRecord.type_class[x] for x in self.class_attrs]
         loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
         mapper = modFile.getLongMapper()
         changed = defaultdict(int) #--changed[modName] = numChanged
-        for group, fid_attr_value in class_fid_attr_value.iteritems():
+        for group, fid_attr_value in self.class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
             for record in getattr(modFile,group).getActiveRecords():
                 longid = mapper(record.fid)
@@ -1505,7 +1501,6 @@ class ItemStats:
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
-        class_fid_attr_value = self.class_fid_attr_value
         aliases = self.aliases
         with CsvReader(textPath) as ins:
             attr_type = self.attr_type
@@ -1519,8 +1514,7 @@ class ItemStats:
                 attr_value = {}
                 for attr, value in zip(attrs, fields[3:3+len(attrs)]):
                     attr_value[attr] = attr_type[attr](value)
-                class_fid_attr_value[group].setdefault(longid,{}).update(
-                    attr_value)
+                self.class_fid_attr_value[group][longid].update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -1587,7 +1581,7 @@ class CBash_ItemStats:
 
     def __init__(self,types=None,aliases=None):
         self.class_attrs = bush.game_mod.statsTypes
-        self.class_fid_attr_value = {}
+        self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
         self.aliases = aliases or {} #--For aliasing mod names
         self.attr_type = {'eid':self.sstr,
                           'weight':self.sfloat,
@@ -1601,29 +1595,24 @@ class CBash_ItemStats:
                           'quality':self.sfloat,
                           'uses':self.sint,
                           'reach':self.sfloat,}
-        for group in self.class_attrs:
-            self.class_fid_attr_value[group] = {}
 
     def readFromMod(self,modInfo):
         """Reads stats from specified mod."""
-        class_fid_attr_value = self.class_fid_attr_value
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
             for group, attrs in self.class_attrs.iteritems():
                 for record in getattr(modFile,group):
-                    class_fid_attr_value[group].setdefault(record.fid,
-                        {}).update(
+                    self.class_fid_attr_value[group][record.fid].update(
                         zip(attrs,map(record.__getattribute__,attrs)))
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
-        class_fid_attr_value = self.class_fid_attr_value
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
             changed = defaultdict(int) #--changed[modName] = numChanged
-            for group, fid_attr_value in class_fid_attr_value.iteritems():
+            for group, fid_attr_value in self.class_fid_attr_value.iteritems():
                 attrs = self.class_attrs[group]
                 fid_attr_value = FormID.FilterValidDict(fid_attr_value,modFile,
                                                         True,False)
@@ -1641,7 +1630,6 @@ class CBash_ItemStats:
 
     def readFromText(self,textPath):
         """Reads stats from specified text file."""
-        class_fid_attr_value = self.class_fid_attr_value
         aliases = self.aliases
         with CsvReader(textPath) as ins:
             attr_type = self.attr_type
@@ -1655,8 +1643,7 @@ class CBash_ItemStats:
                 attr_value = {}
                 for attr, value in zip(attrs, fields[3:3+len(attrs)]):
                     attr_value[attr] = attr_type[attr](value)
-                class_fid_attr_value[group].setdefault(longid,{}).update(
-                    attr_value)
+                self.class_fid_attr_value[group][longid].update(attr_value)
 
     def writeToText(self,textPath):
         """Writes stats to specified text file."""
@@ -2826,12 +2813,11 @@ class CBash_CompleteItemData(_UsesEffectsMixin): #Needs work
 
     def writeToMod(self,modInfo):
         """Exports type_id_name to specified mod."""
-        class_fid_attr_value = self.class_fid_attr_value
         with ObCollection(ModsPath=dirs['mods'].s) as Current:
             modFile = Current.addMod(modInfo.getPath().stail,LoadMasters=False)
             Current.load()
             changed = defaultdict(int) #--changed[modName] = numChanged
-            for group,fid_attr_value in class_fid_attr_value.iteritems():
+            for group,fid_attr_value in self.class_fid_attr_value.iteritems():
                 attrs = self.class_attrs[group]
                 fid_attr_value = FormID.FilterValidDict(fid_attr_value,modFile,
                                                         True,False)

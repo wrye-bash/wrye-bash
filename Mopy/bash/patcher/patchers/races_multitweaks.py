@@ -31,6 +31,7 @@ RacesTweaker patcher was calling their "log" method - now super's _patchLog()
 
 import random
 import re
+from collections import defaultdict
 # Internal
 from ... import bush # for defaultEyes (?)
 from ... import bosh # for modInfos
@@ -1246,7 +1247,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         self.isActive = bool(srcs)
         if not self.isActive: return
         self.racesPatched = set()
-        self.fid_attr_value = {}
+        self.fid_attr_value = defaultdict(dict)
 
     def initData(self,group_patchers,progress):
         if not self.isActive: return
@@ -1262,8 +1263,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
         for bashKey in bashTags & self.autoKey:
             attrs = self.tag_attrs[bashKey]
             if bashKey == 'Hair':
-                hairs = self.fid_attr_value.setdefault(recordId, {}).get(
-                    'hairs', [])
+                hairs = self.fid_attr_value[recordId].get('hairs', [])
                 hairs.extend([hair for hair in record.hairs if
                               hair.ValidateFormID(
                                   self.patchFile) and hair not in hairs])
@@ -1274,7 +1274,7 @@ class CBash_RacePatcher_Imports(SpecialPatcher):
                     self.patchFile.patcher_mod_skipcount[self.name][
                         modFile.GName] += 1
                     continue
-            self.fid_attr_value.setdefault(recordId,{}).update(attr_value)
+            self.fid_attr_value[recordId].update(attr_value)
 
     def apply(self,modFile,record,bashTags):
         """Edits patch file as desired."""
