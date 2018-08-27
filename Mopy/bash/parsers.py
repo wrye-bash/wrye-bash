@@ -32,7 +32,8 @@ from collections import defaultdict
 import re
 # Internal
 import bolt
-import bush # for game and actorValues
+import brec
+import bush # for game
 import bosh # for modInfos
 import env
 import load_order
@@ -1903,7 +1904,7 @@ class _UsesEffectsMixin(object):
         [(y.lower(),x) for x,y in recipientTypeNumber_Name.iteritems() if
          x is not None])
     actorValueNumber_Name = dict(
-        [(x,y) for x,y in enumerate(bush.actorValues)])
+        [(x,y) for x,y in enumerate(brec.actorValues)])
     actorValueNumber_Name[None] = u'NONE'
     actorValueName_Number = dict(
         [(y.lower(),x) for x,y in actorValueNumber_Name.iteritems() if
@@ -4118,7 +4119,7 @@ class ModFile(object):
         If magic effects are not available, it will revert to bush.py version."""
         if self.mgef_school and not _reload:
             return self.mgef_school
-        mgef_school = self.mgef_school = bush.mgef_school.copy()
+        mgef_school = self.mgef_school = brec.mgef_school.copy()
         if 'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 if isinstance(record,MreRecord.type_class['MGEF']):
@@ -4134,7 +4135,7 @@ class ModFile(object):
         If magic effects are not available, it will revert to bush.py version."""
         if self.hostileEffects and not _reload:
             return self.hostileEffects
-        hostileEffects = self.hostileEffects = bush.hostileEffects.copy()
+        hostileEffects = self.hostileEffects = brec.hostileEffects.copy()
         if 'MGEF' in self.tops:
             hostile = set()
             nonhostile = set()
@@ -4155,7 +4156,7 @@ class ModFile(object):
         If magic effects are not available, it will revert to bush.py version."""
         if self.mgef_name and not _reload:
             return self.mgef_name
-        mgef_name = self.mgef_name = bush.mgef_name.copy()
+        mgef_name = self.mgef_name = brec.mgef_name.copy()
         if 'MGEF' in self.tops:
             for record in self.MGEF.getActiveRecords():
                 if isinstance(record,MreRecord.type_class['MGEF']):

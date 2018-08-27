@@ -29,8 +29,7 @@ from ....patcher import getPatchesPath
 from ....parsers import LoadFactory, ModFile
 from ....brec import MreRecord, ModReader
 from ....bass import null4
-# from  bush import  genericAVEffects
-from .... import bush, bosh, load_order
+from .... import brec, bush, bosh, load_order
 from ....cint import MGEFCode, FormID
 from ....exception import StateError
 from ....patcher.base import Patcher, CBash_Patcher
@@ -99,8 +98,8 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         for mgef in mgef_name:
             mgef_name[mgef] = re.sub(_(u'(Attribute|Skill)'), u'',
                                      mgef_name[mgef])
-        actorEffects = bush.genericAVEffects
-        actorNames = bush.actorValues
+        actorEffects = brec.genericAVEffects
+        actorNames = brec.actorValues
         keep = self.patchFile.getKeeper()
         #--Book generatator
         def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
@@ -220,8 +219,8 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
         for mgef in mgef_name:
             mgef_name[mgef] = re.sub(_(u'(Attribute|Skill)'), u'',
                                      mgef_name[mgef])
-        actorEffects = bush.genericAVEffects
-        actorNames = bush.actorValues
+        actorEffects = brec.genericAVEffects
+        actorNames = brec.actorValues
         #--Book generator
         def getBook(patchFile, objectId):
             book = coblMod.LookupRecord(
@@ -273,13 +272,13 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                                 print
                                 print u'mgef:', mgef
                                 print
-                                if mgef in bush.mgef_name:
-                                    print u'mgef found in bush.mgef_name'
+                                if mgef in brec.mgef_name:
+                                    print u'mgef found in brec.mgef_name'
                                 else:
-                                    print u'mgef not found in bush.mgef_name'
-                            if mgef in bush.mgef_name:
+                                    print u'mgef not found in brec.mgef_name'
+                            if mgef in brec.mgef_name:
                                 effectName = re.sub(_(u'(Attribute|Skill)'),
-                                                    u'', bush.mgef_name[mgef])
+                                                    u'', brec.mgef_name[mgef])
                             else:
                                 effectName = u'Unknown Effect'
                         if mgef in actorEffects: effectName += actorNames[
@@ -303,13 +302,13 @@ class CBash_AlchemicalCatalogs(_AAlchemicalCatalogs,CBash_Patcher):
                         print
                         print u'mgef:', mgef
                         print
-                        if mgef in bush.mgef_name:
-                            print u'mgef found in bush.mgef_name'
+                        if mgef in brec.mgef_name:
+                            print u'mgef found in brec.mgef_name'
                         else:
-                            print u'mgef not found in bush.mgef_name'
-                    if mgef in bush.mgef_name:
+                            print u'mgef not found in brec.mgef_name'
+                    if mgef in brec.mgef_name:
                         effectName = re.sub(_(u'(Attribute|Skill)'), u'',
-                                            bush.mgef_name[mgef])
+                                            brec.mgef_name[mgef])
                     else:
                         effectName = u'Unknown Effect'
                 if mgef in actorEffects: effectName += actorNames[actorValue]

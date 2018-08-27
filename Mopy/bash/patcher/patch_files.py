@@ -31,7 +31,7 @@ from ..balt import readme_url
 from .. import load_order
 from .. import bass
 from ..parsers import LoadFactory, ModFile, MasterSet
-from ..brec import MreRecord
+from ..brec import MreRecord, mgef_name, mgef_school, hostileEffects
 from ..bolt import GPath, SubProgress, deprint, Progress
 from ..cint import ObModFile, FormID, dump_record, ObCollection, MGEFCode
 from ..exception import AbstractError, BoltError, CancelError, ModError, \
@@ -361,9 +361,9 @@ class CBash_PatchFile(_PFile, ObModFile):
         """Initialization."""
         self.group_patchers = {}
         self.indexMGEFs = False
-        self.mgef_school = bush.mgef_school.copy()
-        self.mgef_name = bush.mgef_name.copy()
-        self.hostileEffects = bush.hostileEffects.copy()
+        self.mgef_school = mgef_school.copy()
+        self.mgef_name = mgef_name.copy()
+        self.hostileEffects = hostileEffects.copy()
         self.scanSet = set()
         self.races_vanilla = ['argonian', 'breton', 'dremora', 'dark elf',
                               'dark seducer', 'golden saint', 'high elf',

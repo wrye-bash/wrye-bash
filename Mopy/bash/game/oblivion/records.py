@@ -22,18 +22,16 @@
 #
 # =============================================================================
 """This module contains the oblivion record classes."""
-import re
 import struct
 from .constants import allConditions, fid1Conditions, fid2Conditions
 from ... import brec
 from ...bass import null1, null2, null3, null4
-from ...bolt import Flags, sio, DataDict, struct_pack
+from ...bolt import Flags, DataDict, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
     MelFull0, MelFidList, MelStructA, MelStrings, MreRecord, MreGmstBase, \
-    MelTuple
-from ...bush import genericAVEffects, mgef_school, mgef_basevalue, actorValues
+    MelTuple, MreHasEffects
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -212,63 +210,6 @@ class MelEffects(MelGroups):
                 MelString('FULL','full'),
                 ),
             )
-
-class MreHasEffects:
-    """Mixin class for magic items."""
-    def getEffects(self):
-        """Returns a summary of effects. Useful for alchemical catalog."""
-        effects = []
-        avEffects = genericAVEffects
-        effectsAppend = effects.append
-        for effect in self.effects:
-            mgef, actorValue = effect.name, effect.actorValue
-            if mgef not in avEffects:
-                actorValue = 0
-            effectsAppend((mgef,actorValue))
-        return effects
-
-    def getSpellSchool(self,mgef_school=mgef_school):
-        """Returns the school based on the highest cost spell effect."""
-        spellSchool = [0,0]
-        for effect in self.effects:
-            school = mgef_school[effect.name]
-            effectValue = mgef_basevalue[effect.name]
-            if effect.magnitude:
-                effectValue *=  effect.magnitude
-            if effect.area:
-                effectValue *=  (effect.area/10)
-            if effect.duration:
-                effectValue *=  effect.duration
-            if spellSchool[0] < effectValue:
-                spellSchool = [effectValue,school]
-        return spellSchool[1]
-
-    def getEffectsSummary(self,mgef_school=None,mgef_name=None):
-        """Return a text description of magic effects."""
-        mgef_school = mgef_school or mgef_school
-        mgef_name = mgef_name or mgef_name
-        with sio() as buff:
-            avEffects = genericAVEffects
-            aValues = actorValues
-            buffWrite = buff.write
-            if self.effects:
-                school = self.getSpellSchool(mgef_school)
-                buffWrite(actorValues[20+school] + u'\n')
-            for index,effect in enumerate(self.effects):
-                if effect.scriptEffect:
-                    effectName = effect.scriptEffect.full or u'Script Effect'
-                else:
-                    effectName = mgef_name[effect.name]
-                    if effect.name in avEffects:
-                        effectName = re.sub(_(u'(Attribute|Skill)'),
-                                            aValues[effect.actorValue],
-                                            effectName)
-                buffWrite(u'o+*'[effect.recipient]+u' '+effectName)
-                if effect.magnitude: buffWrite(u' %sm'%effect.magnitude)
-                if effect.area: buffWrite(u' %sa'%effect.area)
-                if effect.duration > 1: buffWrite(u' %sd'%effect.duration)
-                buffWrite(u'\n')
-                return buff.getvalue()
 
 class MreLeveledList(MreLeveledListBase):
     """Leveled item/creature/spell list.."""

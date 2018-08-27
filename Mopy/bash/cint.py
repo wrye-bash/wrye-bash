@@ -944,22 +944,22 @@ class ActorValue(object):
         return self.actorValue.__repr__()
 
     @staticmethod
-    def FilterValid(actorValues, target, AsShort=False):
-        if AsShort: return [x.GetShortActorValue(target) for x in actorValues if x.ValidateActorValue(target)]
-        return [x for x in actorValues if x.ValidateActorValue(target)]
+    def FilterValid(ActorValues, target, AsShort=False):
+        if AsShort: return [x.GetShortActorValue(target) for x in ActorValues if x.ValidateActorValue(target)]
+        return [x for x in ActorValues if x.ValidateActorValue(target)]
 
     @staticmethod
-    def FilterValidDict(actorValues, target, KeysAreActorValues, ValuesAreActorValues, AsShort=False):
+    def FilterValidDict(ActorValues, target, KeysAreActorValues, ValuesAreActorValues, AsShort=False):
         if KeysAreActorValues:
             if ValuesAreActorValues:
-                if AsShort: return dict([(key.GetShortActorValue(target), value.GetShortFormID(target)) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
-                return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
-            if AsShort: return dict([(key.GetShortActorValue(target), value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
-            return dict([(key, value) for key, value in actorValues.iteritems() if key.ValidateActorValue(target)])
+                if AsShort: return dict([(key.GetShortActorValue(target), value.GetShortFormID(target)) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
+                return dict([(key, value) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target) and value.ValidateActorValue(target)])
+            if AsShort: return dict([(key.GetShortActorValue(target), value) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target)])
+            return dict([(key, value) for key, value in ActorValues.iteritems() if key.ValidateActorValue(target)])
         if ValuesAreActorValues:
-            if AsShort: return dict([(key, value.GetShortActorValue(target)) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
-            return dict([(key, value) for key, value in actorValues.iteritems() if value.ValidateActorValue(target)])
-        return actorValues
+            if AsShort: return dict([(key, value.GetShortActorValue(target)) for key, value in ActorValues.iteritems() if value.ValidateActorValue(target)])
+            return dict([(key, value) for key, value in ActorValues.iteritems() if value.ValidateActorValue(target)])
+        return ActorValues
 
     def ValidateActorValue(self, target):
         """Tests whether the ActorValue is valid for the destination target.
