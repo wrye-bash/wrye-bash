@@ -140,11 +140,12 @@ class SkyrimGameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.94, 1.70,)
 
-    allTags = {u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace',
-               u'C.Light', u'C.Location', u'C.SkyLighting', u'C.Music',
-               u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
-               u'C.Water', u'Deactivate', u'Delev', u'Filter', u'Graphics',
-               u'Invent', u'NoMerge', u'Relev', u'Sound', u'Stats', u'Names'}
+    allTags = {u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ForceHideLand',
+               u'C.ImageSpace', u'C.Light', u'C.Location', u'C.LockList',
+               u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
+               u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate',
+               u'Delev', u'Filter', u'Graphics', u'Invent', u'Names',
+               u'NoMerge', u'Relev', u'Sound', u'Stats'}
 
     patchers = (
         u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',

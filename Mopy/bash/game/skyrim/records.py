@@ -1815,7 +1815,8 @@ class MreCell(MelRecord):
             (10, 'lightFadeDistances'),
         ))
 
-    CellGridFlags = Flags(0L,Flags.getNames(
+    # 'Force Hide Land' flags
+    CellFHLFlags = Flags(0L,Flags.getNames(
             (0, 'quad1'),
             (1, 'quad2'),
             (2, 'quad3'),
@@ -1886,7 +1887,7 @@ class MreCell(MelRecord):
         MelString('EDID','eid'),
         MelLString('FULL','full'),
         MelCellData('DATA','BB',(CellDataFlags1,'flags',0L),(CellDataFlags2,'skyFlags',0L),),
-        MelOptStruct('XCLC','2iI','posX','posY',(CellGridFlags,'gridFlags',0L),),
+        MelOptStruct('XCLC','2iI','posX','posY',(CellFHLFlags,'fhlFlags',0L),),
         MelCellXcll('XCLL','BBBsBBBsBBBsffiifffBBBsBBBsBBBsBBBsBBBsBBBsBBBsfBBBsfffI',
                  'ambientRed','ambientGreen','ambientBlue',('unused1',null1),
                  'directionalRed','directionalGreen','directionalBlue',('unused2',null1),
