@@ -55,7 +55,7 @@ if brec.MelModel is None:
         class MelModelHash(MelBase):
             """TextureHashes are not used for loose files and there is never a
             Bashed Patch.bsa. So we read the record if present and then
-            discarded."""
+            discard it."""
             def loadData(self, record, ins, sub_type, size_, readId):
                 MelBase.loadData(self, record, ins, sub_type, size_, readId)
             def getSlotsUsed(self):

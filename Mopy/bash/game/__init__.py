@@ -23,7 +23,7 @@
 # =============================================================================
 """GameInfo class encapsulating static info for active game. Avoid adding
 state and methods. game.GameInfo#init classmethod is used to import rest of
-active game package as needed (currently the record files) and to set some
+active game package as needed (currently the record module) and to set some
 brec.RecordHeader/MreRecord class variables."""
 
 from .. import brec

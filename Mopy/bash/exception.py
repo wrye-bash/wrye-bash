@@ -113,20 +113,15 @@ class ModReadError(ModError):
 class ModSizeError(ModError):
     """Mod Error: Record/subrecord has wrong size."""
     def __init__(self, in_name, rec_type, read_size, max_size,
-                 exact_size=True, old_skyrim=False):
+                 exact_size=True):
         ## type: (Path, basestring, int, int, bool, bool) -> None
         self.rec_type = rec_type
         self.read_size = read_size
         self.max_size = max_size
         self.exact_size = exact_size
-        if old_skyrim:
-            message_form = (u'\nWrye Bash SSE expects a newer format for {} '
-                            u'than found.\nLoad and save {} with the Skyrim '
-                            u'SE CK\n'.format(rec_type, in_name))
-        else: message_form = u''
         op = '==' if exact_size else '<='
-        message_form += (u'{}: Expected size {} {}, but got: {}'
-                         u''.format(rec_type, op, read_size, max_size))
+        message_form = (u'{}: Expected size {} {}, but got: {}'
+                        u''.format(rec_type, op, read_size, max_size))
         super(ModSizeError, self).__init__(in_name.s, message_form)
 
 # Shell (OS) File Operation exceptions ----------------------------------------
