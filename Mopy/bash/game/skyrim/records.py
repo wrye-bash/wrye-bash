@@ -1887,7 +1887,7 @@ class MreCell(MelRecord):
         MelString('EDID','eid'),
         MelLString('FULL','full'),
         MelCellData('DATA','BB',(CellDataFlags1,'flags',0L),(CellDataFlags2,'skyFlags',0L),),
-        MelOptStruct('XCLC','2iI','posX','posY',(CellFHLFlags,'fhlFlags',0L),),
+        MelOptStruct('XCLC','2iI',('posX', 0),('posY', 0),(CellFHLFlags,'fhlFlags',0L),),
         MelCellXcll('XCLL','BBBsBBBsBBBsffiifffBBBsBBBsBBBsBBBsBBBsBBBsBBBsfBBBsfffI',
                  'ambientRed','ambientGreen','ambientBlue',('unused1',null1),
                  'directionalRed','directionalGreen','directionalBlue',('unused2',null1),
@@ -1919,8 +1919,9 @@ class MreCell(MelRecord):
         MelFid('XLCN','location',),
         MelBase('XWCN','unknown_XWCN'), # leftover
         MelBase('XWCS','unknown_XWCS'), # leftover
-        MelOptStruct('XWCU','3f4s3f','xOffset','yOffset','zOffset','unk1XWCU','xAngle',
-                  'yAngle','zAngle',dumpExtra='unk2XWCU',),
+        MelOptStruct('XWCU', '3f4s3f', ('xOffset', 0.0), ('yOffset', 0.0),
+                     ('zOffset', 0.0), ('unk1XWCU', null4), ('xAngle', 0.0),
+                     ('yAngle', 0.0), ('zAngle', 0.0), dumpExtra='unk2XWCU',),
         MelFid('XCWT','water'),
 
         # {--- Ownership ---}
@@ -6754,7 +6755,7 @@ class MreWrld(MelRecord):
         MelBase('MHDT','maxHeightData'),
         MelLString('FULL','full'),
         # Fixed Dimensions Center Cell
-        MelOptStruct('WCTR','2h','fixedX','fixedY',),
+        MelOptStruct('WCTR','2h',('fixedX', 0),('fixedY', 0),),
         MelFid('LTMP','interiorLighting',),
         MelFid('XEZN','encounterZone',),
         MelFid('XLCN','location',),
@@ -6765,8 +6766,9 @@ class MreWrld(MelRecord):
         MelFid('CNAM','climate',),
         MelFid('NAM2','water',),
         MelFid('NAM3','lODWaterType',),
-        MelOptStruct('NAM4','f','lODWaterHeight',),
-        MelOptStruct('DNAM','2f','defaultLandHeight','defaultWaterHeight',),
+        MelOptStruct('NAM4','f',('lODWaterHeight', 0.0),),
+        MelOptStruct('DNAM','2f',('defaultLandHeight', 0.0),
+                     ('defaultWaterHeight', 0.0),),
         MelString('ICON','mapImage'),
         MelModel('cloudModel','MODL',),
         MelWrldMnam('MNAM','2i4h3f','usableDimensionsX','usableDimensionsY',
