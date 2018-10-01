@@ -65,8 +65,9 @@ class _PFile(object):
         else: #--Default bodytags
             self.bodyTags = 'ARGHTCCPBS'
         #--Mods
+        # checking for files to include in patch, investigate
         loadMods = [m for m in load_order.cached_lower_loading_espms(
-            self.patchName, bosh.modInfos) if load_order.cached_is_active(m)]
+            self.patchName) if load_order.cached_is_active(m)]
         if not loadMods:
             raise BoltError(u"No active mods loading before the bashed patch")
         self.loadMods = tuple(loadMods)
@@ -450,7 +451,8 @@ class CBash_PatchFile(_PFile, ObModFile):
         #mods can't be added more than once, and a mod could be in both the loadSet and mergeSet or loadSet and scanSet
         #if it was added as a normal mod first, it isn't flagged correctly when later added as a merge mod
         #if it was added as a scan mod first, it isn't flagged correctly when later added as a normal mod
-        for m in load_order.cached_lower_loading_espms(self.patchName, infos):
+        # checking for files to include in patch, investigate
+        for m in load_order.cached_lower_loading_espms(self.patchName):
             real_filename = infos[m].getPath().stail # beware of .ghost
             if m in self.mergeSet: self.Current.addMergeMod(real_filename)
             elif m in self.loadSet: self.Current.addMod(real_filename)

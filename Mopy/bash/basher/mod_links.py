@@ -952,7 +952,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             if not self._askYes(msg, title=title): importConfig = False
         patch_files.executing_patch = self._selected_item
         mods_prior_to_patch = load_order.cached_lower_loading_espms(
-            self._selected_item, bosh.modInfos)
+            self._selected_item)
         if self.doCBash or bass.settings['bash.CBashEnabled']:
             # if doing a python patch but CBash is enabled, it's very likely
             # that the merge info currently is from a CBash mode scan, rescan
