@@ -42,7 +42,7 @@ from collections import OrderedDict, Iterable
 from functools import wraps, partial
 from itertools import imap
 #--Local
-from ._mergeability import isPBashMergeable, isCBashMergeable
+from ._mergeability import isPBashMergeable, isCBashMergeable, is_esl_capable
 from .mods_metadata import ConfigHelpers
 from .. import bass, bolt, balt, bush, env, load_order, archives, \
     initialization
@@ -1944,8 +1944,9 @@ class ModInfos(FileInfos):
                 key=lambda tup: load_order.cached_lo_index(tup[0]),
                                      reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
-            # if esm bit was flipped size won't change, so check this first
-            if modInfo.isEsm(): # modInfo must have its header set
+            # if esm/esl bit was flipped size won't change, so check this first
+            if modInfo.is_esl() or modInfo.isEsm():
+                # esl don't mark as esl capable - modInfo must have its header set
                 name_mergeInfo[mpath] = (modInfo.size, False)
                 self.mergeable.discard(mpath)
             elif size == modInfo.size:
@@ -1955,7 +1956,9 @@ class ModInfos(FileInfos):
         return newMods
 
     def rescanMergeable(self, names, prog=None, doCBash=None, verbose=False):
-        with prog or balt.Progress(_(u"Mark Mergeable") + u' ' * 30) as prog:
+        messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
+            else _(u"Mark Mergeable")
+        with prog or balt.Progress(_(messagetext) + u' ' * 30) as prog:
             return self._rescanMergeable(names, prog, doCBash, verbose)
 
     def _rescanMergeable(self, names, progress, doCBash, verbose):
@@ -1964,7 +1967,12 @@ class ModInfos(FileInfos):
             doCBash = CBashApi.Enabled
         elif doCBash and not CBashApi.Enabled:
             doCBash = False
-        is_mergeable = isCBashMergeable if doCBash else isPBashMergeable
+        if bush.game.check_esl:
+            is_mergeable = is_esl_capable
+        elif doCBash:
+            is_mergeable = isCBashMergeable
+        else:
+            is_mergeable = isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
         result, tagged_no_merge = OrderedDict(), set()
@@ -1972,7 +1980,8 @@ class ModInfos(FileInfos):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
-            if not bush.game.esp.canBash:
+            # do not mark esls as esl capable
+            if fileInfo.is_esl() or not bush.game.esp.canBash:
                 canMerge = False
             else:
                 try:

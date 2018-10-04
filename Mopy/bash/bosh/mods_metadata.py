@@ -25,6 +25,7 @@ import errno
 import os
 import re
 
+from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord
@@ -358,8 +359,9 @@ class ConfigHelpers:
             if path.mtime != ruleSet.mtime:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
-    _cleaning_wiki_url = (u'[[!http://cs.elderscrolls.com/constwiki/index.php/'
-                          u'TES4Edit_Cleaning_Guide|TES4Edit Cleaning Guide]]')
+    _cleaning_wiki_url = u'[[!https://tes5edit.github.io/docs/5-mod-cleaning' \
+                         u'-and-error-checking.html]]'
+
     def checkMods(self, showModList=False, showRuleSets=False, showNotes=False,
                   showConfig=True, showSuggest=True, showCRC=False,
                   showVersion=True, showWarn=True, mod_checker=None):
@@ -370,14 +372,29 @@ class ConfigHelpers:
         merged_ = modInfos.merged
         imported_ = modInfos.imported
         activeMerged = active | merged_
+        removeEslFlag = set()
         warning = u'=== <font color=red>'+_(u'WARNING:')+u'</font> '
         #--Header
         with sio() as out:
             log = bolt.LogFile(out)
             log.setHeader(u'= '+_(u'Check Mods'),True)
-            log(_(u'This is a report on your currently active/merged mods.'))
+            if bush.game.check_esl:
+                log(_(u'This is a report on your currently installed or '
+                      u'active mods.'))
+            else:
+                log(_(u'This is a report on your currently installed, active, '
+                      u'or merged mods.'))
             #--Mergeable/NoMerge/Deactivate tagged mods
-            shouldMerge = active & modInfos.mergeable
+            if bush.game.check_esl:
+                shouldMerge = modInfos.mergeable
+            else:
+                shouldMerge = active & modInfos.mergeable
+            if bush.game.check_esl:
+                for m, modinf in modInfos.items():
+                    if not modinf.is_esl():
+                        continue # we check .esl extension and ESL flagged mods
+                    if not is_esl_capable(modinf, modInfos, verbose=False):
+                        removeEslFlag.add(m)
             shouldDeactivateA, shouldDeactivateB = [], []
             for x in active:
                 tags = modInfos[x].getBashTags()
@@ -422,11 +439,21 @@ class ConfigHelpers:
                 if u'NoMerge' in modInfos[mod].getBashTags():
                     shouldMerge.discard(mod)
             if shouldMerge:
-                log.setHeader(u'=== '+_(u'Mergeable'))
-                log(_(u'Following mods are active, but could be merged into '
-                      u'the bashed patch.'))
+                if bush.game.check_esl:
+                    log.setHeader(u'=== '+_(u'ESL Capable'))
+                    log(_(u'Following mods could be assigned an ESL flag but '
+                          u'are not ESL flagged.'))
+                else:
+                    log.setHeader(u'=== ' + _(u'Mergeable'))
+                    log(_(u'Following mods are active, but could be merged into '
+                          u'the bashed patch.'))
                 for mod in sorted(shouldMerge):
                     log(u'* __'+mod.s+u'__')
+            if removeEslFlag:
+                log.setHeader(u'=== ' + _(u'Remove ESL Flag'))
+                log(_(u'Following mods have an ESL flag, but do not qualify.'))
+                for mod in sorted(removeEslFlag):
+                    log(u'* __' + mod.s + u'__')
             if shouldDeactivateB:
                 log.setHeader(u'=== '+_(u'NoMerge Tagged Mods'))
                 log(_(u'Following mods are tagged NoMerge and should be '
@@ -470,13 +497,14 @@ class ConfigHelpers:
                     u'=== ' + _(u'Mods that need cleaning with TES4Edit'))
                 log(_(u'Congratulations all mods appear clean.'))
             if invalidVersion:
+                ver_list = u', '.join(
+                    sorted(bush.game.esp.validHeaderVersions))
                 log.setHeader(
                     u'=== ' + _(u'Mods with non standard TES4 versions'))
                 log(_(u"Following mods have a TES4 version that isn't "
-                      u"recognized as one of the standard versions (0.8 and "
-                      u"1.0).  It is untested what effect this can have on "
-                      u"the game, but presumably Oblivion will refuse to "
-                      u"load anything above 1.0"))
+                      u"recognized as (one of) the standard version(s) "
+                      u"(%s).  It is untested what effect this can have on "
+                      u"%s.") % (ver_list, bush.game.displayName))
                 for mod in sorted(invalidVersion):
                     log(u'* __'+mod[0].s+u':__  '+mod[1])
             #--Missing/Delinquent Masters

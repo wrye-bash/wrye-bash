@@ -575,7 +575,7 @@ def InitModLinks():
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_DecompileAll())
         ModList.itemMenu.append(Mod_FlipEsm())
-        if bush.game.fsName in (u'Fallout4', u'Skyrim Special Edition'):
+        if bush.game.check_esl:
             ModList.itemMenu.append(Mod_FlipEsl())
         ModList.itemMenu.append(Mod_FlipMasters())
         if bush.game.fsName == u'Oblivion':

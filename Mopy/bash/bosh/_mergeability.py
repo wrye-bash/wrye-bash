@@ -113,6 +113,44 @@ def isPBashMergeable(modInfo, minfos, verbose):
     if reasons: return reasons
     return True
 
+def is_esl_capable(modInfo, minfos, verbose):
+    """Returns True or error message indicating whether specified mod is
+    convertible to a light plugin."""
+    reasons = [] if verbose else None # refactor API drop verbose param, add reasons output param
+    if modInfo.isBP():
+        if not verbose: return False
+        reasons.append(_(u'Is Bashed Patch.'))
+    # FIXME check all record types - return undecidable (False) if record not decoded
+    modFile = ModFile(modInfo, LoadFactory(False, *set(
+        recClass.classType for recClass in bush.game.mergeClasses)))
+    try:
+        modFile.load(True,loadStrings=False)
+    except ModError as error:
+        if not verbose: return False
+        reasons.append(u'%s.' % error)
+    #--Skipped over types?
+    if modFile.topsSkipped:
+        if not verbose: return False
+        reasons.append(_(u'Record type: ') + u', '.join(sorted(
+            modFile.topsSkipped)) + u' ; currently unsupported by ESLify ' \
+                                    u'verification. Use xEdit to check ESL '
+                                    u'qualifications and modify ESL flag.')
+    eslCapable = not verbose and not reasons
+    #--Form greater then 0xFFF
+    lenMasters = len(modFile.tes4.masters)
+    for rec_typ,block in modFile.tops.iteritems():
+        for record in block.getActiveRecords():
+            if record.fid >> 24 >= lenMasters:
+                if (record.fid & 0xFFFFFF) > 0xFFF:
+                    if not verbose: return False
+                    reasons.append(_(u'New Forms greater than 0xFFF.'))
+                    eslCapable = False
+                    break
+        if not eslCapable:
+            break
+    if reasons: return  u'\n.    '.join(reasons) # verbose
+    return True
+
 def _modIsMergeableLoad(modInfo, minfos, verbose):
     """Check if mod is mergeable, loading it and taking into account the
     rest of mods."""

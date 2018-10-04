@@ -45,10 +45,6 @@ colorInfo = {
         _(u'Tabs: Mods, Saves') + u'\n\n' +
         _(u'This is the text color used for ESLs in the Mods Tab, and in the '
           u'Masters info on both the Mods Tab and Saves Tab.'),),
-    'mods.text.mergeable': (_(u'Mergeable Plugin'),
-        _(u'Tabs: Mods') + u'\n\n' +
-        _(u'This is the text color used for mergeable plugins.'),
-    ),
     'mods.text.noMerge': (_(u"'NoMerge' Plugin"),
         _(u'Tabs: Mods') + u'\n\n' +
         _(u"This is the text color used for a mergeable plugin that is "
@@ -136,6 +132,16 @@ colorInfo = {
         _(u'This is the background color used for images.'),
     ),
 }
+if bush.game.check_esl:
+    colorInfo['mods.text.mergeable'] = (_(u'Esl Capable plugin'),
+            _(u'Tabs: Mods') + u'\n\n' +
+            _(u'This is the text color used for Esl Capable plugins.'),
+        )
+else:
+    colorInfo['mods.text.mergeable'] = (_(u'Mergeable Plugin'),
+            _(u'Tabs: Mods') + u'\n\n' +
+            _(u'This is the text color used for mergeable plugins.'),
+        )
 
 #--Load config/defaults
 settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
