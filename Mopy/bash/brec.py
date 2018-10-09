@@ -1801,7 +1801,12 @@ class MreLeveledListBase(MelRecord):
           chanceNone
           flags
     """
-    _flags = bolt.Flags(0L,bolt.Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
+    _flags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'calcFromAllLevels'),
+        (1, 'calcForEachItem'),
+        (2, 'useAllSpells'),
+        (3, 'specialLoot'),
+        ))
     copyAttrs = ()
     __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'delevs', 'relevs']
 
