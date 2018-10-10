@@ -117,7 +117,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn,
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel,
             MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr,
-            MreWeap, MreWoop, MreWthr, MreVoli,
+            MreWeap, MreWoop, MreWthr, MreVoli, MreLens,
             ####### for debug
             MreQust,
         )
