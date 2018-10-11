@@ -570,7 +570,9 @@ def InitModLinks():
             cleanMenu.links.append(Mod_FogFixer())
             cleanMenu.links.append(Mod_UndeleteRefs())
             ModList.itemMenu.append(cleanMenu)
-        ModList.itemMenu.append(Mod_AddMaster())
+        # Disabled since it's dangerous - it doesn't update FormIDs, breaking
+        # every record in the file.
+        # ModList.itemMenu.append(Mod_AddMaster())
         ModList.itemMenu.append(Mod_CopyToEsmp())
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_DecompileAll())
