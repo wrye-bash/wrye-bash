@@ -1643,6 +1643,10 @@ class MreRecord(object):
         #--Return it
         return decode(value)
 
+    def loadInfos(self,ins,endPos,infoClass):
+        """Load infos from ins. Called from MobDials."""
+        pass
+
 #------------------------------------------------------------------------------
 class MelRecord(MreRecord):
     """Mod record built from mod record elements."""
