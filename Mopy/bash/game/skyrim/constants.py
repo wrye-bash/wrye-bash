@@ -17041,8 +17041,9 @@ listTypes = ('LVLI','LVLN','LVSP',)
 # NamesPatcher
 #------------------------------------------------------------------------------
 # remaining to add: 'PERK', 'RACE',
+# Removed because nothing else is patching it: FACT
 namesTypes = {'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'AVIF', 'BOOK', 'CLAS',
-              'CLFM', 'CONT', 'DIAL', 'DOOR', 'ENCH', 'EXPL', 'EYES', 'FACT',
+              'CLFM', 'CONT', 'DIAL', 'DOOR', 'ENCH', 'EXPL', 'EYES',
               'FLOR', 'FURN', 'HAZD', 'HDPT', 'INGR', 'KEYM', 'LCTN', 'LIGH',
               'MESG', 'MGEF', 'MISC', 'MSTT', 'NPC_', 'PROJ', 'SCRL', 'SHOU',
               'SLGM', 'SNCT', 'SPEL', 'TACT', 'TREE', 'WATR', 'WEAP', 'WOOP'}
