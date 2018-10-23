@@ -328,7 +328,7 @@ class MreLeveledList(MelRecord):
                   MelLevListLvlo('LVLO','h2sIh2s','level',('unused1',null2),(FID,'listId',None),('count',1),('unused2',null2)),
                   MelOptStruct('COED','IIf',(FID,'owner',None),(FID,'glob',None),('condition',1.0)),
                   ),
-        MelNull('DATA'),
+        MelModel(),
         )
     __slots__ = melSet.getSlotsUsed() + ['mergeOverLast', 'mergeSources',
                                          'items', 'delevs', 'relevs']
