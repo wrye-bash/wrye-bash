@@ -37,6 +37,7 @@ from operator import itemgetter, attrgetter
 
 from . import imageExts, DataStore, BestIniFile, InstallerConverter, AFile, \
     ModInfos
+from .ini_files import OBSEIniFile
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
@@ -2165,21 +2166,27 @@ class InstallersData(DataStore):
         in the new ini."""
         removed = set()
         from . import iniInfos
+        pseudosections = set(OBSEIniFile.ci_pseudosections.values())
         for (tweakPath, iniAbsDataPath) in tweaksCreated:
             iniFile = BestIniFile(iniAbsDataPath)
             currSection = None
             lines = []
             for (text, section, setting, value, status, lineNo,
                  deleted) in iniFile.analyse_tweak(BestIniFile(tweakPath)):
+                if not text.rstrip():
+                    continue # possible empty lines at the start
                 if status in (10, -10):
                     # A setting that exists in both INI's, but is different,
                     # or a setting that doesn't exist in the new INI.
-                    if section == u']set[' or section == u']setGS[' or section == u']SetNumericGameSetting[':
+                    if section in pseudosections:
                         lines.append(text + u'\n')
                     elif section != currSection:
-                        section = currSection
+                        currSection = section
                         if not section: continue
                         lines.append(u'\n[%s]\n' % section)
+                        # a section line may have 0 status - may be a setting ?
+                        if setting is not None:
+                            lines.append(text + u'\n')
                     elif not section:
                         continue
                     else:

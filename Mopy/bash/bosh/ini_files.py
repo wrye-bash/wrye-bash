@@ -286,23 +286,19 @@ class IniFile(AFile):
         ini_lines = self.read_ini_content(as_unicode=True)
         with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
             tmpFileWrite = tmpFile.write
-            def _add_remaining_new_items(section_):
-                wrote_newline = False
-                if section_ and ini_settings.get(section_, {}):
-                    for sett, val in ini_settings[section_].iteritems():
-                        tmpFileWrite(u'%s=%s\n' % (sett, val))
-                    del ini_settings[section_]
-                    tmpFileWrite(u'\n')
-                    wrote_newline = True
-                return wrote_newline
+            def _add_remaining_new_items():
+                if not section: return
+                del ini_settings[section]
+                if not sectionSettings: return
+                for sett, val in sectionSettings.iteritems():
+                    tmpFileWrite(u'%s=%s\n' % (sett, val))
+                tmpFileWrite(u'\n')
             for line in ini_lines:
-                # if not line.rstrip(): continue
                 stripped = reComment.sub(u'', line).strip()
                 maSection = reSection.match(stripped)
                 if maSection:
                     # 'new' entries still to be added from previous section
-                    if section is not None and not _add_remaining_new_items(section):
-                        tmpFileWrite(u'\n')
+                    _add_remaining_new_items()
                     section = maSection.group(1)  # entering new section
                     sectionSettings = ini_settings.get(section, {})
                 else:
@@ -318,13 +314,13 @@ class IniFile(AFile):
                             line = u';-' + line
                 tmpFileWrite(line.rstrip(u'\n\r') + u'\n')
             # This will occur for the last INI section in the ini file
-            _add_remaining_new_items(section)
+            _add_remaining_new_items()
             # Add remaining new entries
             for section in set(ini_settings):  # _add_remaining_new_items may modify ini_settings
-                if ini_settings[section]:
-                    tmpFileWrite(u'\n')
+                sectionSettings = ini_settings[section]
+                if sectionSettings:
                     tmpFileWrite(u'[%s]\n' % section)
-                    _add_remaining_new_items(section)
+                    _add_remaining_new_items()
         #--Done
         self.abs_path.untemp()
 
@@ -491,7 +487,8 @@ class OBSEIniFile(IniFile):
                 else:         status = 10
             else:
                 status = -10
-            lines.append((line.strip(),section,setting,value,status,lineNo,bool(maDeleted)))
+            lines.append((line.rstrip('\r\n'), section, setting, value, status,
+                          lineNo, bool(maDeleted)))
         return lines
 
     def saveSettings(self,ini_settings,deleted_settings={}):
