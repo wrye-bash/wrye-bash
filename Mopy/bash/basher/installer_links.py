@@ -39,6 +39,7 @@ from collections import defaultdict
 
 from . import Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
+from .gui_fomod import InstallerFomod
 from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
@@ -65,7 +66,8 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_Espm_ResetAll', 'Installer_Subs_SelectAll',
            'Installer_Subs_DeselectAll', 'Installer_Subs_ToggleSelection',
            'Installer_Subs_ListSubPackages', 'Installer_OpenNexus',
-           'Installer_ExportAchlist', 'Installer_Espm_JumpToMod']
+           'Installer_ExportAchlist', 'Installer_Espm_JumpToMod',
+           'Installer_Fomod']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -165,6 +167,46 @@ class _InstallLink(_InstallerLink):
         return bool(self._installables)
 
 #------------------------------------------------------------------------------
+class Installer_Fomod(OneItemLink, _InstallerLink):
+    """Runs the FOMOD installer"""
+    parentWindow = ''
+    _text = _(u'FOMOD Installer...')
+    help = _(u"Run the FOMOD installer.")
+
+    def _enable(self):
+        is_single = super(Installer_Fomod, self)._enable()
+        return is_single and bool(self._selected_info.has_fomod_conf)
+
+    @balt.conversation
+    def Execute(self):
+        with balt.BusyCursor():
+            installer = self._selected_info
+            try:
+                wizard = InstallerFomod(self.window, installer)
+            except CancelError:
+                return
+            wizard.ensureDisplayed()
+        ret = wizard.run()
+        if ret.canceled:
+            return
+        # Install
+        ui_refresh = [False, False]
+        installer.extras_dict['fomod_active'] = True
+        installer.extras_dict['fomod_files_dict'] = ret.install_files
+        idetails = self.iPanel.detailsPanel
+        # FIXME(inf) And even more FOMOD hacks - deselect all subpackages, then
+        #  call refresh, otherwise the result in the GUI will be confusing
+        idetails.gSubList.set_all_checkmarks(checked=False)
+        for index in xrange(len(installer.subNames)):
+            installer.subActives[index] = False
+        try:
+            idetails.refreshCurrent(installer)
+            if ret.should_install:
+                with balt.Progress(_(u'Installing...'), u'\n'+u' '*60) as progress:
+                    self.idata.bain_install(self.selected, ui_refresh, progress)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
 class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
     _help = _(u"Edit the wizard.txt associated with this project.")
@@ -200,14 +242,14 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
     def Execute(self):
         with BusyCursor():
             installer = self._selected_info
-            subs = []
+            # FIXME(inf) More FOMOD hacks - need to clear the fomod first,
+            #  otherwise installer.espms will not be populated by the refresh
+            installer.extras_dict[u'fomod_active'] = False
             idetails = self.iPanel.detailsPanel
             idetails.refreshCurrent(installer)
-            for index in xrange(idetails.gSubList.lb_get_items_count()):
-                subs.append(idetails.gSubList.lb_get_str_item_at_index(index))
             try:
                 wizard = InstallerWizard(self.window, self._selected_info,
-                                         self.bAuto, subs)
+                                         self.bAuto)
             except CancelError:
                 return
             wizard.ensureDisplayed()
@@ -217,7 +259,13 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             return
         #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
-        for index in xrange(idetails.gSubList.lb_get_items_count()):
+        # FIXME(inf) This is a really ugly workaround for the empty subpackage.
+        #  We need a better way to do this, i.e. radio buttons in the GUI
+        # Uncheck the fomod (empty string) subpackage, check every selected one
+        if installer.subActives:
+            idetails.gSubList.lb_check_at_index(0, False)
+            installer.subActives[0] = False
+        for index in xrange(len(installer.subNames[1:])):
             select = installer.subNames[index + 1] in ret.select_sub_packages
             idetails.gSubList.lb_check_at_index(index, select)
             installer.subActives[index + 1] = select
@@ -890,7 +938,13 @@ class Installer_Subs_SelectAll(_Installer_Subs):
     def Execute(self):
         for index in xrange(self.window.gSubList.lb_get_items_count()):
             self.window.gSubList.lb_check_at_index(index, True)
-            self._installer.subActives[index + 1] = True
+            if self._installer.has_fomod_conf:
+                if index == 0:
+                    self._installer.extras_dict["fomod_active"] = True
+                else:
+                    self._installer.subActives[index] = True
+            else:
+                self._installer.subActives[index + 1] = True
         self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_DeselectAll(_Installer_Subs):
@@ -901,7 +955,13 @@ class Installer_Subs_DeselectAll(_Installer_Subs):
     def Execute(self):
         for index in xrange(self.window.gSubList.lb_get_items_count()):
             self.window.gSubList.lb_check_at_index(index, False)
-            self._installer.subActives[index + 1] = False
+            if self._installer.has_fomod_conf:
+                if index == 0:
+                    self._installer.extras_dict["fomod_active"] = False
+                else:
+                    self._installer.subActives[index] = False
+            else:
+                self._installer.subActives[index + 1] = False
         self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ToggleSelection(_Installer_Subs):
@@ -912,9 +972,17 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
 
     def Execute(self):
         for index in xrange(self.window.gSubList.lb_get_items_count()):
-            check = not self._installer.subActives[index+1]
+            if self._installer.has_fomod_conf:
+                if index == 0:
+                    check = not self._installer.extras_dict.get("fomod_active", False)
+                    self._installer.extras_dict["fomod_active"] = check
+                else:
+                    check = not self._installer.subActives[index]
+                    self._installer.subActives[index] = check
+            else:
+                check = not self._installer.subActives[index + 1]
+                self._installer.subActives[index + 1] = check
             self.window.gSubList.lb_check_at_index(index, check)
-            self._installer.subActives[index + 1] = check
         self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):

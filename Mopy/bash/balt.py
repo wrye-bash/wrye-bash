@@ -370,10 +370,11 @@ def vistaDialog(parent, message, title, checkBoxTxt=None,
                 return id_ in _win.GOOD_EXITS, None
     return False, checkbox
 
-def askStyled(parent,message,title,style,**kwdargs):
+def askStyled(parent, message, title, style, do_center=False, **kwdargs):
     """Shows a modal MessageDialog.
     Use ErrorMessage, WarningMessage or InfoMessage."""
     parent = _AComponent._resolve(parent)
+    if do_center: style |= wx.CENTER
     if canVista:
         vista_btn = []
         icon = None

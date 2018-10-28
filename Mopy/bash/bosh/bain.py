@@ -211,6 +211,7 @@ class Installer(object):
         # LowerDict mapping destinations (relative to Data/ directory) of files
         # in this installer to their size and crc - built in refreshDataSizeCrc
         self.ci_dest_sizeCrc = bolt.LowerDict()
+        self.has_fomod_conf = False
         self.hasWizard = False
         self.hasBCF = False
         self.espmMap = bolt.DefaultLowerDict(list)
@@ -607,6 +608,7 @@ class Installer(object):
         """
         bain_type    = self.type
         #--Init to empty
+        self.has_fomod_conf = False
         self.hasWizard = self.hasBCF = self.hasReadme = False
         self.packageDoc = self.packagePic = None # = self.extras_dict['readMe']
         for attr in {'skipExtFiles','skipDirFiles','espms'}:
@@ -655,6 +657,16 @@ class Installer(object):
         root_path = self.extras_dict.get('root_path', u'')
         rootIdex = len(root_path)
         for full,size,crc in self.fileSizeCrcs:
+            if full.lower() == "fomod" + os.sep + "moduleconfig.xml":
+                self.has_fomod_conf = full
+            fomod_dict = self.extras_dict.get('fomod_files_dict', {})
+            if self.extras_dict.get('fomod_active', False) and full in fomod_dict.values():
+                idx = fomod_dict.values().index(full)
+                dest = fomod_dict.keys()[idx]
+                data_sizeCrc[dest] = (size, crc)
+                dest_src[dest] = full
+                unSize += size
+                continue
             if rootIdex: # exclude all files that are not under root_dir
                 if not full.startswith(root_path): continue
             file_relative = full[rootIdex:]
@@ -796,7 +808,9 @@ class Installer(object):
             (x, os.path.split(x[0].lower())) for x in self.fileSizeCrcs)
         self.fileSizeCrcs.sort(key=sort_keys_dict.__getitem__)
         #--Find correct starting point to treat as BAIN package
-        self.extras_dict.clear() # if more keys are added be careful cleaning
+        # XXX: check this is fine
+        # self.extras_dict.clear() # if more keys are added be careful cleaning
+        self.extras_dict.pop(u'root_path', None)
         self.fileRootIdex = 0
         dataDirsPlus = Installer.dataDirsPlus
         layout = {}
@@ -990,6 +1004,7 @@ class Installer(object):
     def open_wizard(self): self._open_txt_file(self.hasWizard)
     def _open_txt_file(self, rel_path): raise AbstractError
     def wizard_file(self): raise AbstractError
+    def fomod_file(self): raise AbstractError
 
     def __repr__(self):
         return self.__class__.__name__ + u"<" + repr(self.archive) + u">"
@@ -1302,11 +1317,11 @@ class InstallerArchive(Installer):
                          u'\n%s\n%s' % (_(u'Fixing PNGs...'), target_png))
             archives.fix_png(tmp_dir.join(target_png).s)
 
-    def wizard_file(self):
-        with balt.Progress(_(u'Extracting wizard files...'), u'\n' + u' ' * 60,
+    def _extract_wizard_files(self, wizard_file_name, wizard_prog_title):
+        with balt.Progress(wizard_prog_title, u'\n' + u' ' * 60,
                            abort=True) as progress:
             # Extract the wizard, and any images as well
-            files_to_extract = [self.hasWizard]
+            files_to_extract = [wizard_file_name]
             files_to_extract.extend(x for (x, _s, _c) in self.fileSizeCrcs if
                                     x.lower().endswith((
                                         u'bmp', u'jpg', u'jpeg', u'png',
@@ -1318,7 +1333,15 @@ class InstallerArchive(Installer):
             unpack_dir = self.unpackToTemp(files_to_extract,
                 bolt.SubProgress(progress,0,0.7), recurse=True)
             self._fix_pngs(pngs_to_fix, bolt.SubProgress(progress, 0.7, 1.0))
-        return unpack_dir.join(self.hasWizard)
+        return unpack_dir.join(wizard_file_name)
+
+    def wizard_file(self):
+        return self._extract_wizard_files(self.hasWizard,
+                                          _(u'Extracting wizard files...'))
+
+    def fomod_file(self):
+        return self._extract_wizard_files(self.has_fomod_conf,
+                                          _(u'Extracting FOMOD files...'))
 
 #------------------------------------------------------------------------------
 class InstallerProject(Installer):
@@ -1525,6 +1548,9 @@ class InstallerProject(Installer):
 
     def wizard_file(self):
         return bass.dirs['installers'].join(self.archive, self.hasWizard)
+
+    def fomod_file(self):
+        return bass.dirs['installers'].join(self.archive, self.has_fomod_conf)
 
 def projects_walk_cache(func): ##: HACK ! Profile
     """Decorator to make sure I dont leak self._dir_dirs_files project cache.
