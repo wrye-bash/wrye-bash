@@ -39,6 +39,7 @@ from collections import defaultdict
 
 from . import settingDefaults, Installers_Link, BashFrame, INIList
 from .frames import InstallerProject_OmodConfigDialog
+from .gui_fomod import InstallerFomod
 from .. import bass, bolt, bosh, bush, balt, archives
 from ..balt import EnabledLink, CheckLink, AppendableLink, OneItemLink, \
     UIList_Rename, UIList_Hide
@@ -65,7 +66,7 @@ __all__ = ['Installer_Open', 'Installer_Duplicate', 'InstallerOpenAt_MainMenu',
            'Installer_Espm_ResetAll', 'Installer_Subs_SelectAll',
            'Installer_Subs_DeselectAll', 'Installer_Subs_ToggleSelection',
            'Installer_Subs_ListSubPackages', 'Installer_OpenNexus',
-           'Installer_ExportAchlist']
+           'Installer_ExportAchlist', 'Installer_Fomod']
 
 #------------------------------------------------------------------------------
 # Installer Links -------------------------------------------------------------
@@ -166,6 +167,80 @@ class _InstallLink(_InstallerLink):
         return bool(self._installables)
 
 #------------------------------------------------------------------------------
+class Installer_Fomod(OneItemLink, _InstallerLink):
+    """Runs the FOMOD installer"""
+    parentWindow = ''
+    _text = _(u'FOMOD Installer...')
+    help = _(u"Run the FOMOD installer.")
+
+    def _enable(self):
+        is_single = super(Installer_Fomod, self)._enable()
+        return is_single and bool(self._selected_info.has_fomod_conf)
+
+    @balt.conversation
+    def Execute(self):
+        with balt.BusyCursor():
+            installer = self._selected_info
+            default, page_size, pos = self._get_size_and_pos()
+            try:
+                wizard = InstallerFomod(self.window, installer, page_size, pos)
+            except CancelError:
+                return
+            balt.ensureDisplayed(wizard)
+        ret = wizard.run()
+        self._save_size_pos(default, ret)
+        if ret.cancelled:
+            return
+        # Install
+        ui_refresh = [False, False]
+        installer.extras_dict['fomod_active'] = True
+        installer.extras_dict['fomod_files_dict'] = ret.install_files
+        try:
+            installer.refreshDataSizeCrc(True)
+            if ret.install:
+                with balt.Progress(_(u'Installing...'), u'\n'+u' '*60) as progress:
+                    self.idata.bain_install(self.selected, ui_refresh, progress)
+        finally:
+            self.iPanel.RefreshUIMods(*ui_refresh)
+
+    # XXX: shares pos and size with Wizard
+    @staticmethod
+    def _save_size_pos(default, ret):
+        # Sanity checks on returned size/position
+        if not isinstance(ret.pos, balt.wxPoint):
+            deprint(_(
+                u'Returned Wizard position (%s) was not a wx.Point (%s), '
+                u'reverting to default position.') % (ret.pos, type(ret.pos)))
+            ret.pos = balt.defPos
+        if not isinstance(ret.page_size, balt.wxSize):
+            deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), '
+                      u'reverting to default size.') % (
+                        ret.page_size, type(ret.page_size)))
+            ret.page_size = tuple(default)
+        bass.settings['bash.wizard.size'] = (ret.page_size[0],
+                                             ret.page_size[1])
+        bass.settings['bash.wizard.pos'] = (ret.pos[0], ret.pos[1])
+
+    # XXX: shares pos and size with Wizard
+    @staticmethod
+    def _get_size_and_pos():
+        saved = bass.settings['bash.wizard.size']
+        default = settingDefaults['bash.wizard.size']
+        pos = bass.settings['bash.wizard.pos']
+        # Sanity checks on saved size/position
+        if not isinstance(pos, tuple) or len(pos) != 2:
+            deprint(_(u'Saved Wizard position (%s) was not a tuple (%s), '
+                      u'reverting to default position.') % (pos, type(pos)))
+            pos = tuple(balt.defPos)
+        if not isinstance(saved, tuple) or len(saved) != 2:
+            deprint(_(u'Saved Wizard size (%s) was not a tuple (%s), '
+                      u'reverting to default size.') % (saved, type(saved)))
+            page_size = tuple(default)
+        else:
+            page_size = (max(saved[0], default[0]), max(saved[1], default[1]))
+        return default, page_size, pos
+
+
 class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
     _help = _(u"Edit the wizard.txt associated with this project.")
@@ -915,7 +990,13 @@ class Installer_Subs_SelectAll(_Installer_Subs):
     def Execute(self):
         for index in xrange(self.window.gSubList.GetCount()):
             self.window.gSubList.Check(index, True)
-            self._installer.subActives[index + 1] = True
+            if self._installer.has_fomod_conf:
+                if index == 0:
+                    self._installer.extras_dict["fomod_active"] = True
+                else:
+                    self._installer.subActives[index] = True
+            else:
+                self._installer.subActives[index + 1] = True
         self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_DeselectAll(_Installer_Subs):
@@ -926,7 +1007,13 @@ class Installer_Subs_DeselectAll(_Installer_Subs):
     def Execute(self):
         for index in xrange(self.window.gSubList.GetCount()):
             self.window.gSubList.Check(index, False)
-            self._installer.subActives[index + 1] = False
+            if self._installer.has_fomod_conf:
+                if index == 0:
+                    self._installer.extras_dict["fomod_active"] = False
+                else:
+                    self._installer.subActives[index] = False
+            else:
+                self._installer.subActives[index + 1] = False
         self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ToggleSelection(_Installer_Subs):
@@ -937,9 +1024,17 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
 
     def Execute(self):
         for index in xrange(self.window.gSubList.GetCount()):
-            check = not self._installer.subActives[index+1]
+            if self._installer.has_fomod_conf:
+                if index == 0:
+                    check = not self._installer.extras_dict.get("fomod_active", False)
+                    self._installer.extras_dict["fomod_active"] = check
+                else:
+                    check = not self._installer.subActives[index]
+                    self._installer.subActives[index] = check
+            else:
+                check = not self._installer.subActives[index + 1]
+                self._installer.subActives[index + 1] = check
             self.window.gSubList.Check(index, check)
-            self._installer.subActives[index + 1] = check
         self.window.refreshCurrent(self._installer)
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):

@@ -2704,6 +2704,9 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                 self.gSubList.Clear()
             else:
                 balt.setCheckListItems(self.gSubList, [x.replace(u'&',u'&&') for x in installer.subNames[1:]], installer.subActives[1:])
+            if installer.has_fomod_conf:
+                self.gSubList.Insert("fomod", 0)
+                self.gSubList.Check(0, installer.extras_dict.get('fomod_active', False))
             #--Espms
             if not installer.espms:
                 self.gEspmList.Clear()
@@ -2848,8 +2851,16 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         installer = self.file_info
         index = event.GetSelection()
         self.gSubList.SetSelection(index)
+        has_fomod = False
+        if self.gSubList.GetString(0) == "fomod":
+            installer.extras_dict['fomod_active'] = self.gSubList.IsChecked(0)
+            self.gSubList.Delete(0)
+            has_fomod = True
         for index in range(self.gSubList.GetCount()):
             installer.subActives[index+1] = self.gSubList.IsChecked(index)
+        if has_fomod:
+            self.gSubList.Insert("fomod", 0)
+            self.gSubList.Check(0, installer.extras_dict.get('fomod_active', False))
         if not balt.getKeyState_Shift():
             self.refreshCurrent(installer)
 
