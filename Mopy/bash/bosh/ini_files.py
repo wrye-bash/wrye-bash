@@ -172,16 +172,14 @@ class IniFile(AFile):
     def read_ini_content(self, as_unicode=True):
         """Return a list of the decoded lines in the ini file, if as_unicode
         is True, or the raw bytes in the ini file, if as_unicode is False.
-        Note we keep line endings - this is dirty and it's due to
-        bosh.ini_files.OBSEIniFile#saveSettings accepting whole lines, needs
-        be fixed.
+        Note we strip line endings at the end of the line in unicode mode.
         :rtype: list[unicode]|str"""
-        try: #TODO(ut) parse get_ci_settings instead-see constructing default tweak
+        try:
             with self.abs_path.open('rb') as f:
                 content = f.read()
             if not as_unicode: return content
             decoded = unicode(content, self.ini_encoding)
-            return decoded.splitlines(True) # keepends=True, we want it False
+            return decoded.splitlines(False) # keepends=False
         except UnicodeDecodeError:
             deprint(u'Failed to decode %s using %s' % (
                 self.abs_path, self.ini_encoding), traceback=True)
@@ -256,8 +254,8 @@ class IniFile(AFile):
             else:
                 if stripped:
                     status = -10
-            lines.append((line.rstrip(u'\n\r'), section, setting, value,
-                          status, lineNo, deleted))
+            lines.append((line, section, setting, value, status, lineNo,
+                          deleted))
         return lines
 
     def _open_for_writing(self, filepath): # preserve windows EOL
@@ -308,11 +306,11 @@ class IniFile(AFile):
                         setting = match.group(1)
                         if setting in sectionSettings:
                             value = sectionSettings[setting]
-                            line = u'%s=%s\n' % (setting, value)
+                            line = u'%s=%s' % (setting, value)
                             del sectionSettings[setting]
                         elif section in deleted_settings and setting in deleted_settings[section]:
                             line = u';-' + line
-                tmpFileWrite(line.rstrip(u'\n\r') + u'\n')
+                tmpFileWrite(line + u'\n')
             # This will occur for the last INI section in the ini file
             _add_remaining_new_items()
             # Add remaining new entries
@@ -414,9 +412,9 @@ class OBSEIniFile(IniFile):
         section = self.ci_pseudosections.get(section, section)
         return super(OBSEIniFile, self).getSetting(section, key, default)
 
-    _regex_tuples = ((reSet, u']set[', u'set %s to %s\n'),
-      (reSetGS, u']setGS[', u'setGS %s %s\n'),
-      (reSetNGS, u']SetNumericGameSetting[', u'SetNumericGameSetting %s %s\n'))
+    _regex_tuples = ((reSet, u']set[', u'set %s to %s'),
+      (reSetGS, u']setGS[', u'setGS %s %s'),
+      (reSetNGS, u']SetNumericGameSetting[', u'SetNumericGameSetting %s %s'))
 
     @classmethod
     def _parse_obse_line(cls, line):
@@ -468,10 +466,10 @@ class OBSEIniFile(IniFile):
             else:
                 if stripped:
                     # Some other kind of line
-                    lines.append((line.strip('\r\n'),u'',u'',u'',-10,-1,False))
+                    lines.append((line, u'', u'', u'', -10, -1, False))
                 else:
                     # Just a comment line
-                    lines.append((line.strip('\r\n'),u'',u'',u'',0,-1,False))
+                    lines.append((line, u'', u'', u'', 0, -1, False))
                 continue
             setting = groups[0].strip()
             value = groups[1].strip()
@@ -487,8 +485,8 @@ class OBSEIniFile(IniFile):
                 else:         status = 10
             else:
                 status = -10
-            lines.append((line.rstrip('\r\n'), section, setting, value, status,
-                          lineNo, bool(maDeleted)))
+            lines.append((line, section, setting, value, status, lineNo,
+                          bool(maDeleted)))
         return lines
 
     def saveSettings(self,ini_settings,deleted_settings={}):
@@ -520,13 +518,13 @@ class OBSEIniFile(IniFile):
                         value = ini_settings[section_key][setting]
                         del ini_settings[section_key][setting]
                         if isinstance(value, basestring) and value[-1:] == u'\n':
-                            line = value
+                            line = value.rstrip(u'\n\r')
                         else:
                             line = format_string % (setting, value)
                     elif not maDeleted and section_key in deleted_settings and setting in deleted_settings[section_key]:
                         # It isn't deleted, but we want it deleted
                         line = u';-' + line
-                tmpFile.write(line.rstrip(u'\n\r') + u'\n')
+                tmpFile.write(line + u'\n')
             # Add new lines
             for sectionKey in ini_settings:
                 section = ini_settings[sectionKey]
