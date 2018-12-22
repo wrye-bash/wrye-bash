@@ -76,11 +76,15 @@ def compress7z(command, outDir, destArchive, srcDir, progress=None):
     #--Finalize the file, and cleanup
     outFile.untemp()
 
-def extract7z(command, srcFile, progress=None, readExtensions=None):
+def extract7z(src_archive, extract_dir, progress=None, readExtensions=None,
+              recursive=False, filelist_to_extract=None):
+    command = _extract_command(src_archive, extract_dir, recursive,
+                               filelist_to_extract)
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, bufsize=1,
                             stdin=subprocess.PIPE, startupinfo=startupinfo)
     # Error checking, progress feedback and subArchives for recursive unpacking
     index, errorLine, subArchives = 0, u'', []
+    source_archive = src_archive.tail.s
     with proc.stdout as out:
         for line in iter(out.readline, b''):
             line = unicode(line, 'utf8')
@@ -93,13 +97,13 @@ def extract7z(command, srcFile, progress=None, readExtensions=None):
                 if readExtensions and extracted.cext in readExtensions:
                     subArchives.append(extracted)
                 if not progress: continue
-                progress(index, srcFile.s + u'\n' + _(
+                progress(index, source_archive + u'\n' + _(
                     u'Extracting files...') + u'\n' + extracted.s)
                 index += 1
     returncode = proc.wait()
     if returncode or errorLine:
-        raise StateError(srcFile.s + u': Extraction failed:\n' +
-                u'7z.exe return value: ' + str(returncode) + u'\n' + errorLine)
+        raise StateError(u'%s: Extraction failed:\n7z.exe return value: %s\n%s'
+                         % (source_archive, str(returncode), errorLine))
     return subArchives
 
 def wrapPopenOut(command, wrapper, errorMsg):
@@ -151,9 +155,11 @@ def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
             u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
             srcFolder.join(u'*').s] # add a wildcard at the end of the path
 
-def extractCommand(archivePath, outDirPath):
+def _extract_command(archivePath, outDirPath, recursive, filelist_to_extract):
     command = u'"%s" x "%s" -y -bb1 -o"%s" -scsUTF-8 -sccUTF-8' % (
         exe7z, archivePath.s, outDirPath.s)
+    if recursive: command += u' -r'
+    if filelist_to_extract: command += (u' @"%s"' % filelist_to_extract)
     return command
 
 def list_archive(archive, parse_archive_line, __reList=reListArchive):

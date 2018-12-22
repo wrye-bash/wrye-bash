@@ -41,7 +41,7 @@ from .ini_files import OBSEIniFile
 from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
-    extractCommand, extract7z, compressionSettings
+    extract7z, compressionSettings
 from ..bolt import Path, deprint, formatInteger, round_size, GPath, sio, \
     SubProgress, CIstr, LowerDict
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
@@ -1175,11 +1175,9 @@ class InstallerArchive(Installer):
                 progress.setFull(len(fileNames))
             #--Extract files
             unpack_dir = bass.getTempDir()
-            command = extractCommand(arch, unpack_dir)
-            command += u' @%s' % self.tempList.s
-            if recurse: command += u' -r'
             try:
-                extract7z(command, GPath(self.archive), progress)
+                extract7z(arch, unpack_dir, progress, recursive=recurse,
+                          filelist_to_extract=self.tempList.s)
             finally:
                 self.tempList.remove()
                 bolt.clearReadOnly(unpack_dir)

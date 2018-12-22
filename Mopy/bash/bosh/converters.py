@@ -27,9 +27,9 @@ import cPickle
 import re
 import sys
 
-from ..archives import defaultExt, readExts, compressionSettings, \
-    compressCommand, extractCommand
 from .. import bolt, archives, bass
+from ..archives import defaultExt, readExts, compressionSettings, \
+    compressCommand
 from ..bolt import DataDict, PickleDict, GPath, Path, sio, SubProgress
 from ..exception import ArgumentError, StateError
 
@@ -331,9 +331,8 @@ class InstallerConverter(object):
         if progress: progress(0, self.fullPath.stail + u'\n' + _(
                 u'Extracting files...'))
         with self.fullPath.unicodeSafe() as tempPath:
-            command = extractCommand(tempPath, tmpDir)
             # don't pass progress in as we haven't got the count of BCF's files
-            archives.extract7z(command, tempPath, progress=None)
+            archives.extract7z(tempPath, tmpDir, progress=None)
         #--Extract source archives
         lastStep = 0
         if embedded:
@@ -559,7 +558,7 @@ class InstallerConverter(object):
         extracted to its own sub-directory to prevent file thrashing"""
         #--Sanity check
         if not fileNames: raise ArgumentError(
-                u"No files to extract for %s." % srcInstaller.s)
+                u"No files to extract for %s." % srcInstaller)
         tmpDir = bass.getTempDir()
         tempList = bolt.Path.baseTempDir().join(u'WryeBash_listfile.txt')
         #--Dump file list
@@ -581,12 +580,11 @@ class InstallerConverter(object):
         if progress:
             progress(0, srcInstaller.s + u'\n' + _(u'Extracting files...'))
             progress.setFull(1 + len(fileNames))
-        command = archives.extractCommand(apath, subTempDir)
-        command += u' @%s' % tempList.s
         #--Extract files
         try:
-            subArchives = archives.extract7z(command, srcInstaller, progress,
-                                             readExtensions=readExts)
+            subArchives = archives.extract7z(apath, subTempDir,
+                                             progress, readExtensions=readExts,
+                                             filelist_to_extract=tempList.s)
         finally:
             tempList.remove()
             bolt.clearReadOnly(subTempDir) ##: do this once

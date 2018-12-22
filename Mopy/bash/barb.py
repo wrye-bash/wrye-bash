@@ -214,8 +214,7 @@ class RestoreSettings(object):
         restarting."""
         if self._settings_file.isfile():
             temp_dir = bolt.Path.tempDir(prefix=RestoreSettings.__tmpdir_prefix)
-            command = archives.extractCommand(self._settings_file, temp_dir)
-            archives.extract7z(command, self._settings_file)
+            archives.extract7z(self._settings_file, temp_dir)
             self._extract_dir = temp_dir
         elif self._settings_file.isdir():
             self._extract_dir = self._settings_file
