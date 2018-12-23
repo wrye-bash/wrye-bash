@@ -404,7 +404,7 @@ def _import_bush_and_set_game(opts, bashIni):
         retCode = _wxSelectGame(ret, msgtext)
         if retCode is None:
             bolt.deprint(u"No games were found or Selected. Aborting.")
-            return None, None
+            return None
         # Add the game to the command line, so we use it if we restart
         bass.update_sys_argv(['--oblivionPath', bush.game_path(retCode).s])
         bush.detect_and_set_game(opts.oblivionPath, bashIni, retCode)
@@ -491,7 +491,7 @@ def _close_dialog_windows():
             window.Close()
 
 class _AppReturnCode(object):
-    def __init__(self, default=None): self.value = default
+    def __init__(self): self.value = None
     def get(self): return self.value
     def set(self, value): self.value = value
 

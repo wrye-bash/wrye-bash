@@ -79,7 +79,7 @@ class FalloutNVGameInfo(GameInfo):
         }
     dataDirsPlus = {
         u'ini',
-        u'nvse'
+        u'nvse',
         u'scripts',
         }
     SkipBAINRefresh = {u'fnvedit backups'}
