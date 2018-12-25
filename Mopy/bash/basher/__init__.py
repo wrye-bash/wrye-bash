@@ -586,7 +586,7 @@ class INIList(balt.UIList):
             mousetext = _(u'Some settings are changed.')
         elif status < 0:
             # Bad tweak
-            if not iniInfo.is_applicable():
+            if not iniInfo.is_applicable(status):
                 icon = 20
                 mousetext = _(u'Tweak is invalid')
             else:
@@ -625,7 +625,7 @@ class INIList(balt.UIList):
             else: stat = ini_info.tweak_status
             if stat == 20 or not ini_info.is_applicable(stat): continue
             needsRefresh |= target_ini_file.applyTweakFile(
-                ini_info.read_ini_lines())
+                ini_info.read_ini_content())
         return needsRefresh
 
     @staticmethod
@@ -708,6 +708,8 @@ class TargetINILineCtrl(INIListCtrl):
         try:
             with bosh.iniInfos.ini.abs_path.open('r') as target_ini_file:
                 lines = target_ini_file.readlines()
+            if bush.game.iniFiles[0] == bosh.iniInfos.ini.abs_path.stail:
+                Link.Frame.oblivionIniMissing = False
             for i,line in enumerate(lines):
                 if i >= num:
                     self.InsertStringItem(i, line.rstrip())
@@ -716,12 +718,8 @@ class TargetINILineCtrl(INIListCtrl):
             for i in xrange(len(lines), num):
                 self.DeleteItem(len(lines))
         except IOError:
-            warn = True
-            page = Link.Frame.notebook.currentPage
-            if page != self.GetParent().GetParent().GetParent():
-                warn = False
-            Link.Frame.queue_game_ini_missing()
-            if warn: Link.Frame.warn_game_ini()
+            if bush.game.iniFiles[0] == bosh.iniInfos.ini.abs_path.stail:
+                Link.Frame.oblivionIniMissing = True
         self.SetColumnWidth(0, wx.LIST_AUTOSIZE_USEHEADER)
 
 #------------------------------------------------------------------------------
@@ -1592,7 +1590,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     # Read only wrappers around bass.settings['bash.ini.choices']
     @property
     def current_ini_path(self):
-        """ Return path of currently chosen ini."""
+        """Return path of currently chosen ini."""
         return self.target_inis.values()[settings['bash.ini.choice']]
 
     @property
@@ -1680,6 +1678,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         # first RefreshIniContents as RefreshTweakLineCtrl needs its lines
         if new_target or target_changed:
             self.iniContents.RefreshIniContents(new_target)
+            Link.Frame.warn_game_ini()
         self.comboBox.SetSelection(settings['bash.ini.choice'])
 
     def ClosePanel(self, destroy=False):
@@ -3634,7 +3633,8 @@ class BashFrame(BaltFrame):
         self.SetStatusBar(BashStatusBar(self))
         #--Notebook panel
         # attributes used when ini panel is created (warn for missing game ini)
-        self.oblivionIniCorrupted = self.oblivionIniMissing = False
+        self.oblivionIniCorrupted = u''
+        self.oblivionIniMissing = self._oblivionIniMissing = False
         self.notebook = BashNotebook(self)
         #--Data
         self.inRefreshData = False #--Prevent recursion while refreshing.
@@ -3665,8 +3665,6 @@ class BashFrame(BaltFrame):
                     u" under auto-ghost for more details. ") % \
                           bush.game.displayName
             balt.showWarning(self, message, _(u'Too many mod files.'))
-
-    def queue_game_ini_missing(self): self.oblivionIniMissing = True
 
     def BindRefresh(self, bind=True, __event=wx.EVT_ACTIVATE):
         self.Bind(__event, self.RefreshData) if bind else self.Unbind(__event)
@@ -3853,11 +3851,12 @@ class BashFrame(BaltFrame):
                 msg = u'\n'.join([self.oblivionIniCorrupted, u'', _(u'Please '
                     u'replace the ini with a default copy and restart Bash.')])
                 balt.showWarning(self, msg, _(u'Corrupted game Ini'))
-        elif self.oblivionIniMissing:
-            self.oblivionIniMissing = False
-            balt.showWarning(self, self._ini_missing % {
-                'ini': bosh.oblivionIni.abs_path, 'game': bush.game.displayName},
-                             _(u'Missing game Ini'))
+        elif self.oblivionIniMissing != self._oblivionIniMissing:
+            self._oblivionIniMissing = self.oblivionIniMissing
+            if self._oblivionIniMissing:
+                balt.showWarning(self, self._ini_missing % {
+                    'ini': bosh.oblivionIni.abs_path,
+                    'game': bush.game.displayName}, _(u'Missing game Ini'))
 
     def _missingDocsDir(self):
         #--Missing docs directory?

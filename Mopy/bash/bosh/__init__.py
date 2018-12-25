@@ -925,7 +925,8 @@ class ModInfo(FileInfo):
         return [self.hasBsa(),voicesPath.exists()]
 
 #------------------------------------------------------------------------------
-from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni
+from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni, \
+    get_ini_type_and_encoding
 def get_game_ini(ini_path, is_abs=True):
     """:rtype: OblivionIni | None"""
     for game_ini in gameInis:
@@ -939,12 +940,9 @@ def BestIniFile(abs_ini_path):
     game_ini = get_game_ini(abs_ini_path)
     if game_ini:
         return game_ini
-    INICount = IniFile.formatMatch(abs_ini_path)
-    OBSECount = OBSEIniFile.formatMatch(abs_ini_path)
-    if INICount >= OBSECount:
-        return IniFile(abs_ini_path)
-    else:
-        return OBSEIniFile(abs_ini_path)
+    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(
+        abs_ini_path)
+    return inferred_ini_type(abs_ini_path, detected_encoding)
 
 #------------------------------------------------------------------------------
 class INIInfo(IniFile):
@@ -1488,12 +1486,9 @@ def ini_info_factory(fullpath, load_cache='Ignored'):
     :param fullpath: fullpath to the ini file to wrap
     :param load_cache: dummy param used in INIInfos#new_info factory call
     :rtype: INIInfo"""
-    INICount = IniFile.formatMatch(fullpath)
-    OBSECount = OBSEIniFile.formatMatch(fullpath)
-    if INICount >= OBSECount:
-        return INIInfo(fullpath)
-    else:
-        return ObseIniInfo(fullpath)
+    inferred_ini_type, detected_encoding = get_ini_type_and_encoding(fullpath)
+    ini_info_type = (inferred_ini_type is IniFile and INIInfo) or ObseIniInfo
+    return ini_info_type(fullpath, detected_encoding)
 
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
@@ -1514,6 +1509,10 @@ class INIInfos(TableFileInfos):
         if isinstance(_target_inis, OrderedDict):
             try:
                 previous_ini = _target_inis.keys()[choice]
+                ##: HACK - sometimes choice points to Browse... - real fix
+                # is to remove Browse from the list of inis....
+                if _target_inis[previous_ini] is None:
+                    choice, previous_ini = -1, None
             except IndexError:
                 choice, previous_ini = -1, None
         else: # not an OrderedDict, updating from 306
@@ -1531,7 +1530,11 @@ class INIInfos(TableFileInfos):
                 del _target_inis[ini_name]
                 if ini_name is previous_ini:
                     choice, previous_ini = -1, None
-        csChoices = set(x.lower() for x in _target_inis)
+        try:
+            csChoices = set(x.lower() for x in _target_inis)
+        except AttributeError: # 'Path' object has no attribute 'lower'
+            deprint(u'_target_inis contain a Path %s' % _target_inis.keys())
+            csChoices = set((u'%s' % x).lower() for x in _target_inis)
         for iFile in gameInis: # add the game inis even if missing
             if iFile.abs_path.tail.cs not in csChoices:
                 _target_inis[iFile.abs_path.stail] = iFile.abs_path
@@ -1579,9 +1582,10 @@ class INIInfos(TableFileInfos):
         keys.sort(key=lambda a: game_inis.index(a) if a in game_inis else (
                       len_inis + 1 if a == _(u'Browse...') else len_inis))
         bass.settings['bash.ini.choices'] = collections.OrderedDict(
-            [(k, bass.settings['bash.ini.choices'][k]) for k in keys])
+            # convert stray Path instances back to unicode
+            [(u'%s' % k, bass.settings['bash.ini.choices'][k]) for k in keys])
 
-    def _refresh_infos(self):
+    def _refresh_ini_tweaks(self):
         """Refresh from file directory."""
         oldNames=set(n for n, v in self.iteritems() if not v.is_default_tweak)
         _added = set()
@@ -1592,7 +1596,15 @@ class INIInfos(TableFileInfos):
             if oldInfo is not None and not oldInfo.is_default_tweak:
                 if oldInfo.do_update(): _updated.add(name)
             else: # added
-                oldInfo = self.factory(self.store_dir.join(name))
+                tweak_path = self.store_dir.join(name)
+                try:
+                    oldInfo = self.factory(tweak_path)
+                except UnicodeDecodeError:
+                    deprint(u'Failed to read %s' % tweak_path, traceback=True)
+                    continue
+                except BoltError as e:
+                    deprint(e.message)
+                    continue
                 _added.add(name)
             self[name] = oldInfo
         _deleted = oldNames - newNames
@@ -1615,7 +1627,7 @@ class INIInfos(TableFileInfos):
     def refresh(self, refresh_infos=True, refresh_target=True):
         _added = _deleted = _updated = set()
         if refresh_infos:
-            _added, _deleted, _updated = self._refresh_infos()
+            _added, _deleted, _updated = self._refresh_ini_tweaks()
         changed = refresh_target and (
             self.ini.updated or self.ini.do_update())
         if changed: # reset the status of all infos and let RefreshUI set it
@@ -1645,8 +1657,7 @@ class INIInfos(TableFileInfos):
         return deleted
 
     def get_tweak_lines_infos(self, tweakPath):
-        tweak_lines = self[tweakPath].read_ini_lines()
-        return self._ini.get_lines_infos(tweak_lines)
+        return self._ini.analyse_tweak(self[tweakPath])
 
     def open_or_copy(self, tweak):
         info = self[tweak] # type: INIInfo
@@ -1657,12 +1668,10 @@ class INIInfos(TableFileInfos):
             info.abs_path.start()
             return False
 
-    def _copy_to_new_tweak(self, info, new_tweak): ##: encoding....
-        with open(self.store_dir.join(new_tweak).s, 'w') as ini_file:
-            # writelines does not do what you'd expect, would concatenate lines
-            ini_file.write('\n'.join(info.read_ini_lines()))
-        self.new_info(new_tweak.tail, notify_bain=True)
-        return self[new_tweak.tail]
+    def _copy_to_new_tweak(self, info, new_tweak):
+        with open(self.store_dir.join(new_tweak).s, 'wb') as ini_file:
+            ini_file.write(info.read_ini_content(as_unicode=False)) # binary
+        return self.new_info(new_tweak.tail, notify_bain=True)
 
     def duplicate_ini(self, tweak, new_tweak):
         """Duplicate tweak into new_tweak, copying current target settings"""
@@ -1986,7 +1995,7 @@ class ModInfos(FileInfos):
         for iniPath in iniPaths:
             if iniPath not in self._plugin_inis or self._plugin_inis[
                 iniPath].do_update():
-                self._plugin_inis[iniPath] = IniFile(iniPath)
+                self._plugin_inis[iniPath] = IniFile(iniPath, 'cp1252')
         self._plugin_inis = OrderedDict(
             [(k, self._plugin_inis[k]) for k in iniPaths])
 
@@ -3167,10 +3176,10 @@ def initBosh(bashIni, game_ini_path):
     configHelpers = ConfigHelpers()
     # game ini files
     global oblivionIni, gameInis
-    oblivionIni = OblivionIni(game_ini_path)
+    oblivionIni = OblivionIni(game_ini_path, 'cp1252')
     gameInis = [oblivionIni]
-    gameInis.extend(
-        OblivionIni(dirs['saveBase'].join(x)) for x in bush.game.iniFiles[1:])
+    gameInis.extend(OblivionIni(dirs['saveBase'].join(x), 'cp1252') for x in
+                    bush.game.iniFiles[1:])
     load_order.initialize_load_order_files()
     initOptions(bashIni)
     try:
