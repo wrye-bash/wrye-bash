@@ -61,6 +61,9 @@ _lords_pickle = None # type: bolt.PickleDict
 
 max_espms = games.max_espms
 
+def in_master_block(minf):
+    return _game_handle.in_master_block(minf) # minf is a master or mod info
+
 def initialize_load_order_files():
     if bass.dirs['saveBase'] == bass.dirs['app']:
         #--If using the game directory as rather than the appdata dir.

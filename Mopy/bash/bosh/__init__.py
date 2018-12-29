@@ -218,12 +218,6 @@ class MasterInfo:
         else:
             return self.name.cext == u'.esm'
 
-    def is_esml(self):
-        if self.modInfo:
-            return self.modInfo.is_esml()
-        else:
-            return self.name.cext == u'.esm' or self.name.cext == u'.esl'
-
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
         if self.modInfo:
@@ -449,9 +443,6 @@ class ModInfo(FileInfo):
     def is_esl(self):
         # game seems not to care about the flag, at least for load order
         return self.name.cext == u'.esl'
-
-    def is_esml(self):
-        return self.is_esl() or self.isEsm()
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
@@ -1690,7 +1681,7 @@ class ModInfos(FileInfos):
     def bashed_patches(self):
         if self._bashed_patches is self.__calculate:
             self._bashed_patches = set(
-                mname for mname, minf in self.iteritems() if minf.isBP())
+                mname for mname, modinf in self.iteritems() if modinf.isBP())
         return self._bashed_patches
 
     # Load order API for the rest of Bash to use - if the load order or
@@ -1750,7 +1741,7 @@ class ModInfos(FileInfos):
     def cached_lo_last_esm(self):
         last_esm = self.masterName
         for mod in self._lo_wip[1:]:
-            if not self[mod].is_esml(): return last_esm
+            if not load_order.in_master_block(self[mod]): return last_esm
             last_esm = mod
         return last_esm
 
@@ -1768,7 +1759,7 @@ class ModInfos(FileInfos):
     def cached_lo_append_if_missing(self, mods):
         new = mods - set(self._lo_wip)
         if not new: return
-        esms = set(x for x in new if self[x].is_esml())
+        esms = set(x for x in new if load_order.in_master_block(self[x]))
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:

@@ -317,6 +317,10 @@ class Game(object):
             move.copyTo(self.plugins_txt_path)
             self.plugins_txt_path.mtime = time.time() # copy will not change mtime, bad
 
+    def in_master_block(self, minf): # minf is a master or mod info
+        """Return true for files that load in the masters' block."""
+        return minf.isEsm() # check flag
+
     # ABSTRACT ----------------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
         """:type cached_load_order: tuple[bolt.Path]
@@ -410,12 +414,12 @@ class Game(object):
         lord[:] = [x for x in lord if x not in fix_lo.lo_removed]
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
-        lord.sort(key=lambda m: not self.mod_infos[m].is_esml())
+        lord.sort(key=lambda m: not self.in_master_block(self.mod_infos[m]))
         fix_lo.lo_reordered |= ol != lord
         # Append new plugins to load order
         index_first_esp = self._index_of_first_esp(lord)
         for mod in fix_lo.lo_added:
-            if self.mod_infos[mod].is_esml():
+            if self.in_master_block(self.mod_infos[mod]):
                 if not mod == master_name:
                     lord.insert(index_first_esp, mod)
                 else:
@@ -485,8 +489,8 @@ class Game(object):
     # HELPERS -----------------------------------------------------------------
     def _index_of_first_esp(self, lord):
         index_of_first_esp = 0
-        while index_of_first_esp < len(lord) and self.mod_infos[
-            lord[index_of_first_esp]].is_esml():
+        while index_of_first_esp < len(lord) and self.in_master_block(
+            self.mod_infos[lord[index_of_first_esp]]):
             index_of_first_esp += 1
         return index_of_first_esp
 
@@ -544,7 +548,7 @@ class TimestampGame(Game):
         if mods is None: mods = self.mod_infos.keys()
         mods = sorted(mods) # sort case insensitive (for time conflicts)
         mods.sort(key=lambda x: self.mod_infos[x].mtime)
-        mods.sort(key=lambda x: not self.mod_infos[x].isEsm()) # no esls here
+        mods.sort(key=lambda x: not self.in_master_block(self.mod_infos[x]))
         return mods
 
     def _fetch_load_order(self, cached_load_order, cached_active):
@@ -739,6 +743,13 @@ class AsteriskGame(Game):
     def pinned_mods(self): return self.remove_from_plugins_txt
 
     def load_order_changed(self): return self._plugins_txt_modified()
+
+    def in_master_block(self, minf,
+                        __master_exts=frozenset((u'.esm', u'.esl'))):
+        """For esl games .esm and .esl files are set the master flag in
+        memory even if not set on the file on disk. For esps we must check
+        for the flag explicitly."""
+        return minf.name.cext in __master_exts or minf.isEsm()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # read the file once

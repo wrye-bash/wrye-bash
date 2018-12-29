@@ -273,7 +273,8 @@ class _ModsUIList(balt.UIList):
 
     def _sortEsmsFirst(self, items):
         if self.esmsFirst:
-            items.sort(key=lambda a: not self.data_store[a].is_esml())
+            items.sort(key=lambda a: not load_order.in_master_block(
+                self.data_store[a]))
 
     def _activeModsFirst(self, items):
         if self.selectedFirst: items.sort(key=lambda x: x not in
@@ -401,7 +402,7 @@ class MasterList(_ModsUIList):
         #--Font color
         fileBashTags = masterInfo.getBashTags()
         mouseText = u''
-        if masterInfo.isEsm():
+        if load_order.in_master_block(masterInfo):
             item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
         elif masters_name in bosh.modInfos.mergeable:
@@ -816,7 +817,7 @@ class ModList(_ModsUIList):
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
         if mod_name in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
-        if mod_info.isEsm():
+        if load_order.in_master_block(mod_info):
             item_format.text_key = 'mods.text.esm'
             mouseText += _(u"Master file. ")
         elif mod_name in bosh.modInfos.bashed_patches:
