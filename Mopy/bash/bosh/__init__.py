@@ -218,6 +218,13 @@ class MasterInfo:
         else:
             return self.name.cext == u'.esm'
 
+    def is_esl(self):
+        """Delegate to self.modInfo.is_esl if exists, else check extension."""
+        if self.modInfo:
+            return self.modInfo.is_esl()
+        else:
+            return self.name.cext == u'.esl'
+
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
         if self.modInfo:

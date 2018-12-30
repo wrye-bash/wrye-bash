@@ -41,6 +41,10 @@ colorInfo = {
         _(u'Tabs: Mods, Saves') + u'\n\n' +
         _(u'This is the text color used for ESMs in the Mods Tab, and in the '
           u'Masters info on both the Mods Tab and Saves Tab.'),),
+    'mods.text.esl': (_(u'ESL'),
+        _(u'Tabs: Mods, Saves') + u'\n\n' +
+        _(u'This is the text color used for ESLs in the Mods Tab, and in the '
+          u'Masters info on both the Mods Tab and Saves Tab.'),),
     'mods.text.mergeable': (_(u'Mergeable Plugin'),
         _(u'Tabs: Mods') + u'\n\n' +
         _(u'This is the text color used for mergeable plugins.'),
@@ -156,6 +160,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         'mods.bkgd.doubleTime.load':    (0xFF, 0x64, 0x64),
         'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
         'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
+        'mods.text.esl':                (226, 54, 197),
         'mods.text.bashedPatch':        (30, 157, 251),
         #--INI Edits Tab
         'ini.bkgd.invalid':             (0xDF, 0xDF, 0xDF),
