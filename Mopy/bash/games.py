@@ -38,8 +38,6 @@ import bolt
 import env
 import exception
 
-max_espms = 255
-
 def _write_plugins_txt_(path, lord, active, _star):
     try:
         with path.open('wb') as out:
@@ -189,6 +187,8 @@ class Game(object):
 
     allow_deactivate_master = False
     must_be_active_if_present = ()
+    max_espms = 255
+    max_esls = 0
 
     def __init__(self, mod_infos, plugins_txt_path):
         super(Game, self).__init__()
@@ -458,7 +458,12 @@ class Game(object):
         # Check for duplicates
         fix_active.act_duplicates = self._check_for_duplicates(acti_filtered)
         # check if we have more than 256 active mods
-        self._check_active_limit(acti, acti_filtered, fix_active)
+        drop_espms, drop_esls = self.check_active_limit(acti_filtered)
+        disable = drop_espms | drop_esls
+        if disable: # chop off extra, update acti in place
+            acti[:] = [x for x in acti_filtered if x not in disable]
+            self.mod_infos.selectedExtra = fix_active.selectedExtra = [
+                x for x in acti_filtered if x in disable]
         before_reorder = acti # with overflowed plugins removed
         if self._order_fixed(acti):
             fix_active.act_reordered = (before_reorder, acti)
@@ -472,11 +477,8 @@ class Game(object):
             return True # changes, saved if loading plugins.txt
         return False # no changes, not saved
 
-    def _check_active_limit(self, acti, acti_filtered, fix_active):
-        if len(acti_filtered) > max_espms:
-            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
-                acti_filtered[max_espms:]
-        acti[:] = acti_filtered[:max_espms] # chop off extra, update acti in place
+    def check_active_limit(self, acti_filtered):
+        return set(acti_filtered[self.max_espms:]), set()
 
     def _order_fixed(self, lord): return False
 
@@ -734,6 +736,8 @@ class TextfileGame(Game):
 
 class AsteriskGame(Game):
 
+    max_espms = 254
+    max_esls = 4096 # hard limit, game runs out of fds sooner, testing needed
     _ccc_filename = u''
 
     @property
@@ -815,15 +819,14 @@ class AsteriskGame(Game):
             return True
         return False
 
-    # esls
-    def _check_active_limit(self, acti, acti_filtered, fix_active):
-        acti_filtered_espm = [x for x in acti_filtered if x.cext != u'.esl']
-        if len(acti_filtered_espm) > max_espms:
-            self.mod_infos.selectedExtra = fix_active.selectedExtra = \
-                acti_filtered_espm[max_espms:]
-        disable = set(acti_filtered_espm[max_espms:])
-        # chop off extra, update acti in place
-        acti[:] = [x for x in acti_filtered if x not in disable]
+    def check_active_limit(self, acti_filtered):
+        acti_filtered_espm = []
+        acti_filtered_esl = []
+        for x in acti_filtered:
+            (acti_filtered_esl if self.mod_infos[
+                x].is_esl() else acti_filtered_espm).append(x)
+        return set(acti_filtered_espm[self.max_espms:]) , set(
+            acti_filtered_esl[self.max_esls:])
 
     # Asterisk game specific: plugins with fixed load order -------------------
     def _readd_in_lists(self, lo, active):

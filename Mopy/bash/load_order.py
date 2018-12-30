@@ -59,10 +59,14 @@ locked = False
 warn_locked = False
 _lords_pickle = None # type: bolt.PickleDict
 
-max_espms = games.max_espms
-
 def in_master_block(minf):
     return _game_handle.in_master_block(minf) # minf is a master or mod info
+
+def check_active_limit(mods):
+    return _game_handle.check_active_limit(mods)
+
+def max_plugins():
+    return _game_handle.max_espms, _game_handle.max_esls
 
 def initialize_load_order_files():
     if bass.dirs['saveBase'] == bass.dirs['app']:

@@ -441,8 +441,10 @@ class ModInfo(FileInfo):
         return int(self.header.flags1) & 1 == 1
 
     def is_esl(self):
-        # game seems not to care about the flag, at least for load order
-        return self.name.cext == u'.esl'
+        """Check if this is a light plugin - .esl files are automatically
+        set the light flag, for espms check the flag."""
+        return bush.game.has_esl and (
+                self.name.cext == u'.esl' or self.header.flags1.eslFile)
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
@@ -2166,13 +2168,15 @@ class ModInfos(FileInfos):
         """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
-            minfo = self[fileName]
-            if not minfo.is_esl(): # don't check limit if activating an esl
-                acti_filtered_espm = [x for x in self._active_wip if
-                                      x.cext != u'.esl']
-                if len(acti_filtered_espm) == load_order.max_espms:
-                    raise PluginsFullError(u'%s: Trying to activate more than '
-                        u'%d espms' % (fileName,load_order.max_espms))
+            espms_extra, esls_extra = load_order.check_active_limit(
+                self._active_wip + [fileName])
+            if espms_extra or esls_extra:
+                msg = u'%s: Trying to activate more than ' % fileName
+                if espms_extra:
+                    msg += u'%d espms' % load_order.max_plugins()[0]
+                else:
+                    msg += u'%d light plugins' % load_order.max_plugins()[1]
+                raise PluginsFullError(msg)
             _children = (_children or tuple()) + (fileName,)
             if fileName in _children[:-1]:
                 raise BoltError(u'Circular Masters: ' +u' >> '.join(x.s for x in _children))
@@ -2182,7 +2186,7 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
             ##    return
-            for master in minfo.header.masters:
+            for master in self[fileName].header.masters:
                 if master in _modSet: self.lo_activate(master, False, _modSet,
                                                        _children, _activated)
             #--Select in plugins
@@ -2264,11 +2268,12 @@ class ModInfos(FileInfos):
         missingSet = modsSet - all_mods
         toSelect = modsSet - missingSet
         listToSelect = load_order.get_ordered(toSelect)
-        acti_filtered_espm = [x for x in listToSelect if x.cext != u'.esl']
-        skipped = acti_filtered_espm[load_order.max_espms:]
+        skipped_esms, skipped_esls = load_order.check_active_limit(
+            listToSelect)
+        skipped = skipped_esls | skipped_esms
         #--Save
         if skipped:
-            listToSelect = [x for x in listToSelect if x not in set(skipped)]
+            listToSelect = [x for x in listToSelect if x not in skipped]
         self.cached_lo_save_active(active=listToSelect)
         #--Done/Error Message
         message = u''

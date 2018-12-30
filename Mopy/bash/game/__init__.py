@@ -78,6 +78,7 @@ class GameInfo(object):
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
+        self.has_esl = u'.esl' in self.espm_extensions
 
     # Construction Set information
     class cs(object):
