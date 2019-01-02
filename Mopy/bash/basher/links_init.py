@@ -520,7 +520,7 @@ def InitModLinks():
             exportMenu.links.append(Mod_EditorIds_Export())
             exportMenu.links.append(Mod_Factions_Export())
             exportMenu.links.append(Mod_FactionRelations_Export())
-            if bush.game.fsName in (u'Enderal', u'Skyrim'):
+            if bush.game.fsName in (u'Enderal', u'Skyrim', u'Skyrim Special Edition'):
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
             elif bush.game.fsName in (u'Fallout3', u'FalloutNV'):
@@ -546,7 +546,7 @@ def InitModLinks():
             importMenu.links.append(Mod_EditorIds_Import())
             importMenu.links.append(Mod_Factions_Import())
             importMenu.links.append(Mod_FactionRelations_Import())
-            if bush.game.fsName in (u'Enderal', u'Skyrim'):
+            if bush.game.fsName in (u'Enderal', u'Skyrim', u'Skyrim Special Edition'):
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
             elif bush.game.fsName in (u'Fallout3', u'FalloutNV'):
