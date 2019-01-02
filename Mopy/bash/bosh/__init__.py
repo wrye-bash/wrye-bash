@@ -38,7 +38,7 @@ import struct
 import sys
 import time
 import traceback
-from collections import OrderedDict
+from collections import OrderedDict, Iterable
 from functools import wraps, partial
 from itertools import imap
 #--Local
@@ -706,6 +706,7 @@ class ModInfo(FileInfo):
         return self.getPath().root.root + u'.ini' # chops off ghost if ghosted
 
     def _string_files_paths(self, lang):
+        # type: (basestring) -> Iterable[Path]
         sbody, ext = self.name.sbody, self.name.ext
         for join, format_str in bush.game.esp.stringsFiles:
             fname = format_str % {'body': sbody, 'ext': ext, 'language': lang}
