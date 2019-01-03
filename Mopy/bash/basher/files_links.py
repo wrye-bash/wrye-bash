@@ -163,11 +163,10 @@ class File_ListMasters(OneItemLink):
     """Copies list of masters to clipboard."""
     _text = _(u"List Masters...")
 
-    def _initData(self, window, selection):
-        super(File_ListMasters, self)._initData(window, selection)
-        self._help = _(
-            u"Copies list of %(filename)s's masters to the clipboard.") % (
-                        {'filename': selection[0]})
+    @property
+    def menu_help(self):
+        return _("Copies list of %(filename)s's masters to the clipboard.") % (
+                        {'filename': self.selected[0]})
 
     def Execute(self):
         list_of_mods = bosh.modInfos.getModList(fileInfo=self._selected_info)

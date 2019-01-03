@@ -2690,9 +2690,9 @@ class UIList_OpenStore(ItemLink):
     """Opens data directory in explorer."""
     _text = _(u'Open...')
 
-    def _initData(self, window, selection):
-        super(UIList_OpenStore, self)._initData(window, selection)
-        self._help = _(u"Open '%s'") % window.data_store.store_dir
+    @property
+    def menu_help(self):
+        return _(u"Open '%s'") % self.window.data_store.store_dir
 
     def Execute(self): self.window.open_data_store()
 

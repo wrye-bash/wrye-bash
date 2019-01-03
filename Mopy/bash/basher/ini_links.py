@@ -124,14 +124,14 @@ class INI_Apply(EnabledLink):
     """Apply an INI Tweak."""
     _text = _(u'Apply')
 
-    def _initData(self, window, selection):
-        super(INI_Apply, self)._initData(window, selection)
-        if len(selection) == 1:
-            tweak = selection[0]
-            self._help = _(u"Applies '%(tweak)s' to '%(ini)s'.") % {
+    @property
+    def menu_help(self):
+        if len(self.selected) == 1:
+            tweak = self.selected[0]
+            return _(u"Applies '%(tweak)s' to '%(ini)s'.") % {
                 'tweak': tweak, 'ini': self.window.current_ini_name}
         else:
-            self._help = _(u"Applies selected tweaks to '%(ini)s'.") % {
+            return _(u"Applies selected tweaks to '%(ini)s'.") % {
             'ini': self.window.current_ini_name}
 
     def _enable(self):
@@ -148,14 +148,14 @@ class INI_CreateNew(OneItemLink):
     but values from the target INI."""
     _text = _(u'Create Tweak with current settings...')
 
-    def _initData(self, window, selection):
-        super(INI_CreateNew, self)._initData(window, selection)
-        if not len(selection) == 1:
-            self._help = _(u'Please choose one Ini Tweak')
+    @property
+    def menu_help(self):
+        if not len(self.selected) == 1:
+            return _(u'Please choose one Ini Tweak')
         else:
-            self._help = _(u"Creates a new tweak based on '%(tweak)s' but with "
+            return _(u"Creates a new tweak based on '%(tweak)s' but with "
                           u"values from '%(ini)s'.") % {
-                'tweak': (selection[0]), 'ini': self.window.current_ini_name}
+                'tweak': (self.selected[0]), 'ini': self.window.current_ini_name}
 
     def _enable(self): return super(INI_CreateNew, self)._enable() and \
                               self._selected_info.tweak_status >= 0
