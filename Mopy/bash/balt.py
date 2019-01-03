@@ -2462,10 +2462,20 @@ class ItemLink(Link):
     """Create and append a wx menu item.
 
     Subclasses MUST define text (preferably class) attribute and should
-    override help. Registers the Execute() and ShowHelp methods on menu events.
+    override _help. Registers the Execute() and ShowHelp methods on menu events.
     """
     kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
-    help = None
+    _help = None           # the tooltip to show at the bottom of the GUI
+
+    @property
+    def menu_help(self):
+        """Returns a string that will be shown as a tooltip at the bottom
+        of the GUI.
+
+        Override this if you need to change the help text dynamically
+        depending on certain conditions (e.g. whether or not the link is
+        enabled)."""
+        return self._help or u''
 
     def AppendToMenu(self, menu, window, selection):
         """Append self as menu item and set callbacks to be executed when
@@ -2473,7 +2483,7 @@ class ItemLink(Link):
         super(ItemLink, self).AppendToMenu(menu, window, selection)
         Link.Frame.Bind(wx.EVT_MENU, self.__Execute, id=self._id)
         Link.Frame.Bind(wx.EVT_MENU_HIGHLIGHT_ALL, ItemLink.ShowHelp)
-        menuItem = wx.MenuItem(menu, self._id, self._text, self.help or u'',
+        menuItem = wx.MenuItem(menu, self._id, self._text, self.menu_help,
                                self.__class__.kind)
         menu.AppendItem(menuItem)
         return menuItem
@@ -2503,7 +2513,6 @@ class ItemLink(Link):
 
 class MenuLink(Link):
     """Defines a submenu. Generally used for submenus of large menus."""
-    help = u'UNUSED'
 
     def __init__(self, name=None, oneDatumOnly=False):
         """Initialize. Submenu items should append themselves to self.links."""
@@ -2617,7 +2626,7 @@ class OneItemLink(EnabledLink):
 
     To be used in Link subclasses where self.selected is a list instance.
     """
-    ##: maybe edit help to add _(u'. Select one item only')
+    ##: maybe edit _help to add _(u'. Select one item only')
     def _enable(self): return len(self.selected) == 1
 
     @property
@@ -2640,7 +2649,7 @@ class RadioLink(CheckLink):
 
 class BoolLink(CheckLink):
     """Simple link that just toggles a setting."""
-    _text, key, help = u'LINK TEXT', 'link.key', u'' # Override text and key !
+    _text, key, _help = u'LINK TEXT', 'link.key', u'' # Override text and key !
     opposite = False
 
     def _check(self):
@@ -2653,7 +2662,7 @@ class BoolLink(CheckLink):
 class UIList_Delete(ItemLink):
     """Delete selected item(s) from UIList."""
     _text = _(u'Delete')
-    help = _(u'Delete selected item(s)')
+    _help = _(u'Delete selected item(s)')
 
     def Execute(self):
         # event is a 'CommandEvent' and I can't check if shift is pressed - duh
@@ -2670,7 +2679,7 @@ class UIList_OpenItems(ItemLink):
     _text = _(u'Open...')
 
     @property
-    def help(self):
+    def menu_help(self):
         return _(u"Open '%s' with the system's default program.") % \
                self.selected[0] if len(self.selected) == 1 else _(
             u'Open the selected files.')
@@ -2683,7 +2692,7 @@ class UIList_OpenStore(ItemLink):
 
     def _initData(self, window, selection):
         super(UIList_OpenStore, self)._initData(window, selection)
-        self.help = _(u"Open '%s'") % window.data_store.store_dir
+        self._help = _(u"Open '%s'") % window.data_store.store_dir
 
     def Execute(self): self.window.open_data_store()
 
@@ -2694,7 +2703,7 @@ class UIList_Hide(ItemLink):
     def _initData(self, window, selection):
         super(UIList_Hide, self)._initData(window, selection)
         self.hidden_dir = self.window.data_store.hidden_dir
-        self.help = _(u"Move %(filename)s to %(hidden_dir)s") % (
+        self._help = _(u"Move %(filename)s to %(hidden_dir)s") % (
             {'filename': selection[0], 'hidden_dir': self.hidden_dir})
 
     @conversation

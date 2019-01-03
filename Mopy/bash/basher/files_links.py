@@ -41,7 +41,7 @@ class Files_SortBy(RadioLink):
         super(Files_SortBy, self).__init__()
         self.sortCol = sortCol
         self._text = bass.settings['bash.colNames'][sortCol]
-        self.help = _(u'Sort by %s') % self._text
+        self._help = _(u'Sort by %s') % self._text
 
     def _check(self): return self.window.sort_column == self.sortCol
 
@@ -53,7 +53,7 @@ class Files_Unhide(ItemLink):
 
     def __init__(self, files_type):
         super(Files_Unhide, self).__init__()
-        self.help = _(u"Unhides hidden %ss.") % files_type
+        self._help = _(u"Unhides hidden %ss.") % files_type
 
     @balt.conversation
     def Execute(self):
@@ -98,7 +98,7 @@ class File_Duplicate(ItemLink):
     def _initData(self, window, selection):
         super(File_Duplicate, self)._initData(window, selection)
         self._text = (_(u'Duplicate'), _(u'Duplicate...'))[len(selection) == 1]
-        self.help = _(u"Make a copy of '%s'") % (selection[0])
+        self._help = _(u"Make a copy of '%s'") % (selection[0])
 
     _bsaAndVoice = _(u"This mod has an associated archive (%s." +
                     bush.game.bsa_extension + u") and an "
@@ -165,7 +165,7 @@ class File_ListMasters(OneItemLink):
 
     def _initData(self, window, selection):
         super(File_ListMasters, self)._initData(window, selection)
-        self.help = _(
+        self._help = _(
             u"Copies list of %(filename)s's masters to the clipboard.") % (
                         {'filename': selection[0]})
 
@@ -177,7 +177,7 @@ class File_ListMasters(OneItemLink):
 
 class File_Snapshot(ItemLink):
     """Take a snapshot of the file."""
-    help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
+    _help = _(u"Creates a snapshot copy of the current mod in a subdirectory (Bash\Snapshots).")
 
     def _initData(self, window, selection):
         super(File_Snapshot, self)._initData(window, selection)
@@ -217,7 +217,7 @@ class File_Snapshot(ItemLink):
 class File_RevertToSnapshot(OneItemLink): # MODS LINK !
     """Revert to Snapshot."""
     _text = _(u'Revert to Snapshot...')
-    help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
+    _help = _(u"Revert to a previously created snapshot from the Bash/Snapshots dir.")
 
     @balt.conversation
     def Execute(self):
@@ -254,7 +254,7 @@ class File_RevertToSnapshot(OneItemLink): # MODS LINK !
 class File_Backup(ItemLink):
     """Backup file."""
     _text = _(u'Backup')
-    help = _(u"Create a backup of the selected file(s).")
+    _help = _(u"Create a backup of the selected file(s).")
 
     def Execute(self):
         for fileInfo in self.iselected_infos():
@@ -272,9 +272,9 @@ class _RevertBackup(OneItemLink):
         super(_RevertBackup, self)._initData(window, selection)
         self.backup_path = self._selected_info.backup_dir.join(
             self._selected_item) + (u'f' if self.first else u'')
-        self.help = _(u"Revert %(file)s to its first backup") if self.first \
+        self._help = _(u"Revert %(file)s to its first backup") if self.first \
             else _(u"Revert %(file)s to its last backup")
-        self.help %= {'file': self._selected_item}
+        self._help %= {'file': self._selected_item}
 
     def _enable(self):
         return super(_RevertBackup,

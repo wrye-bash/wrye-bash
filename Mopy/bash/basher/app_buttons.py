@@ -46,7 +46,7 @@ class _StatusBar_Hide(ItemLink):
         super(_StatusBar_Hide, self)._initData(window, selection)
         tip_ = window.GetToolTip().GetTip()
         self._text = _(u"Hide '%s'") % tip_
-        self.help = _(u"Hides %(buttonname)s's status bar button (can be"
+        self._help = _(u"Hides %(buttonname)s's status bar button (can be"
             u" restored through the settings menu).") % ({'buttonname': tip_})
 
     def Execute(self): Link.Frame.statusBar.HideButton(self.window)
@@ -410,14 +410,14 @@ class _Mods_BOSSDisableLockTimes(BoolLink):
     """Toggle Lock Load Order disabling when launching BOSS through Bash."""
     _text = _(u'BOSS Disable Lock Load Order')
     key = 'BOSS.ClearLockTimes'
-    help = _(u"If selected, will temporarily disable Bash's Lock Load Order"
+    _help = _(u"If selected, will temporarily disable Bash's Lock Load Order"
              u" when running BOSS through Bash.")
 
 #------------------------------------------------------------------------------
 class _Mods_BOSSLaunchGUI(BoolLink):
     """If BOSS.exe is available then boss_gui.exe should be too."""
-    _text, key, help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
-                       _(u"If selected, Bash will run BOSS's GUI.")
+    _text, key, _help = _(u'Launch using GUI'), 'BOSS.UseGUI', \
+                        _(u"If selected, Bash will run BOSS's GUI.")
 
 class App_BOSS(App_Button):
     """loads BOSS"""

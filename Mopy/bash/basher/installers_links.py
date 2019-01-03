@@ -54,7 +54,7 @@ __all__ = ['Installers_SortActive', 'Installers_SortProjects',
 class Installers_AddMarker(ItemLink):
     """Add an installer marker."""
     _text = _(u'Add Marker...')
-    help = _(u'Adds a Marker, a special type of package useful for separating'
+    _help = _(u'Adds a Marker, a special type of package useful for separating'
              u' and labelling your packages.')
 
     def Execute(self):
@@ -64,8 +64,8 @@ class Installers_AddMarker(ItemLink):
 class Installers_MonitorInstall(Installers_Link):
     """Monitors Data folder for external installation."""
     _text = _(u'Monitor External Installation...')
-    help = _(u'Monitors the Data folder during installation via manual install'
-             u' or 3rd party tools.')
+    _help = _(u'Monitors the Data folder during installation via manual '
+              u'install or 3rd party tools.')
 
     @balt.conversation
     def Execute(self):
@@ -166,8 +166,8 @@ class Installers_MonitorInstall(Installers_Link):
 class Installers_ListPackages(Installers_Link):
     """Copies list of Bain files to clipboard."""
     _text = _(u'List Packages...')
-    help = _(u'Displays a list of all packages.  Also copies that list to the '
-        u'clipboard.  Useful for posting your package order on forums.')
+    _help = _(u'Displays a list of all packages.  Also copies that list to '
+        u'the clipboard.  Useful for posting your package order on forums.')
 
     @balt.conversation
     def Execute(self):
@@ -182,7 +182,7 @@ class Installers_ListPackages(Installers_Link):
 class Installers_AnnealAll(Installers_Link):
     """Anneal all packages."""
     _text = _(u'Anneal All')
-    help = _(u'This will install any missing files (for active installers)'
+    _help = _(u'This will install any missing files (for active installers)'
              u' and correct all install order and reconfiguration errors.')
 
     @balt.conversation
@@ -198,7 +198,7 @@ class Installers_AnnealAll(Installers_Link):
 class Installers_UninstallAllPackages(Installers_Link):
     """Uninstall all packages."""
     _text = _(u'Uninstall All Packages')
-    help = _(u'This will uninstall all packages.')
+    _help = _(u'This will uninstall all packages.')
 
     @balt.conversation
     def Execute(self):
@@ -220,7 +220,7 @@ class Installers_Refresh(AppendableLink, Installers_Link):
         super(Installers_Refresh, self).__init__()
         self.full_refresh = full_refresh
         self._text = _(u'Full Refresh') if full_refresh else _(u'Refresh Data')
-        self.help = _(
+        self._help = _(
             u"Perform a full refresh of all data files, recalculating all "
             u"CRCs.  This can take 5-15 minutes.") if self.full_refresh else _(
             u"Rescan the Data directory and all project directories.")
@@ -240,9 +240,9 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
     files. For safety just moved to Game Mods\Bash Installers\Bash\Data
     Folder Contents (date/time)\."""
     _text = _(u'Clean Data')
-    help = _(u'This will remove all mod files that are not linked to an'
+    _help = _(u'This will remove all mod files that are not linked to an'
              u' active installer out of the Data folder.')
-    fullMessage = _(u"Clean Data directory?") + u"  " + help + u"  " + _(
+    fullMessage = _(u"Clean Data directory?") + u"  " + _help + u"  " + _(
         u'This includes files that were installed manually or by another '
         u'program.  Files will be moved to the "%s" directory instead of '
         u'being deleted so you can retrieve them later if necessary.  '
@@ -264,13 +264,13 @@ class Installers_UninstallAllUnknownFiles(Installers_Link):
 # Installers BoolLinks --------------------------------------------------------
 #------------------------------------------------------------------------------
 class Installers_AutoAnneal(BoolLink):
-    _text, key, help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
+    _text, key, _help = _(u'Auto-Anneal'), 'bash.installers.autoAnneal', _(
         u"Enable/Disable automatic annealing of packages.")
 
 class Installers_AutoWizard(BoolLink):
     _text = _(u'Auto-Anneal/Install Wizards')
     key = 'bash.installers.autoWizard'
-    help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
+    _help = _(u"Enable/Disable automatic installing or anneal (as applicable)"
              u" of packages after running its wizard.")
 
 class _Installers_BoolLink_Refresh(BoolLink):
@@ -282,7 +282,7 @@ class Installers_WizardOverlay(_Installers_BoolLink_Refresh):
     """Toggle using the wizard overlay icon"""
     _text  = _(u'Wizard Icon Overlay')
     key = 'bash.installers.wizardOverlay'
-    help =_(u"Enable/Disable the magic wand icon overlay for packages with"
+    _help =_(u"Enable/Disable the magic wand icon overlay for packages with"
             u" Wizards.")
 
 class Installers_AutoRefreshProjects(BoolLink):
@@ -294,7 +294,8 @@ class Installers_AutoApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""
     _text = _(u'Auto-Apply Embedded BCFs')
     key = 'bash.installers.autoApplyEmbeddedBCFs'
-    help = _(u'Automatically apply Embedded BCFs to their containing archives.')
+    _help = _(
+        u'Automatically apply Embedded BCFs to their containing archives.')
 
     @balt.conversation
     def Execute(self):
@@ -311,7 +312,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
     """Toggle refreshVanilla setting and update."""
     _text = _(u'Skip Bethsoft Content')
     key = 'bash.installers.autoRefreshBethsoft'
-    help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
+    _help = _(u'Skip installing Bethesda ESMs, ESPs, and BSAs')
     opposite = True
     message = _(u"Enable installation of Bethsoft Content?") + u'\n\n' + _(
         u"In order to support this, Bethesda ESPs, ESMs, and BSAs need to "
@@ -338,7 +339,7 @@ class Installers_AutoRefreshBethsoft(BoolLink, Installers_Link):
 
 class Installers_Enabled(BoolLink):
     """Flips installer state."""
-    _text, key, help = _(u'Enabled'), 'bash.installers.enabled', _(
+    _text, key, _help = _(u'Enabled'), 'bash.installers.enabled', _(
         u'Enable/Disable the Installers tab.')
     dialogTitle = _(u'Enable Installers')
     message = _(u"Do you want to enable Installers?") + u'\n\n\t' + _(
@@ -361,12 +362,12 @@ class Installers_Enabled(BoolLink):
 class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     """Toggle BSA Redirection."""
     _text, key = _(u'BSA Redirection'), 'bash.bsaRedirection'
-    help = _(u"Use Quarn's BSA redirection technique.")
+    _help = _(u"Use Quarn's BSA redirection technique.")
 
     def _initData(self, window, selection):
         super(Installers_BsaRedirection, self)._initData(window, selection)
         if not self._enable():
-            self.help += u'  ' + _(u'%(ini)s must exist') % {
+            self._help += u'  ' + _(u'%(ini)s must exist') % {
                 'ini': bush.game.iniFiles[0]}
 
     def _append(self, window):
@@ -389,27 +390,27 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
 class Installers_ConflictsReportShowsInactive(_Installers_BoolLink_Refresh):
     """Toggles option to show inactive on conflicts report."""
     _text = _(u'Show Inactive Conflicts')
-    help = _(u'In the conflicts tab also display conflicts with inactive (not '
-             u'installed) installers')
+    _help = _(u'In the conflicts tab also display conflicts with inactive '
+              u'(not installed) installers')
     key = 'bash.installers.conflictsReport.showInactive'
 
 class Installers_ConflictsReportShowsLower(_Installers_BoolLink_Refresh):
     """Toggles option to show lower on conflicts report."""
     _text = _(u'Show Lower Conflicts')
-    help = _(u'In the conflicts tab also display conflicts with lower order '
+    _help = _(u'In the conflicts tab also display conflicts with lower order '
              u'installers (or lower loading active bsas)')
     key = 'bash.installers.conflictsReport.showLower'
 
 class Installers_ConflictsReportShowBSAConflicts(_Installers_BoolLink_Refresh):
     """Toggles option to show files inside BSAs on conflicts report."""
     _text = _(u'Show Active BSA Conflicts')
-    help = _(u'In the conflicts tab also display same-name resources inside '
+    _help = _(u'In the conflicts tab also display same-name resources inside '
              u'installed *and* active bsas')
     key = 'bash.installers.conflictsReport.showBSAConflicts'
 
 class Installers_AvoidOnStart(BoolLink):
     """Ensures faster bash startup by preventing Installers from being startup tab."""
-    _text, key, help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
+    _text, key, _help = _(u'Avoid at Startup'), 'bash.installers.fastStart', _(
         u"Toggles Wrye Bash to avoid the Installers tab on startup,"
         u" avoiding unnecessary data scanning.")
 
@@ -425,13 +426,14 @@ class _Installer_Sort(ItemLink):
 
 class Installers_SortActive(_Installer_Sort, BoolLink):
     """Sort by type."""
-    _text, key, help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
-        u'If selected, active installers will be sorted to the top of the list.')
+    _text, key, _help = _(u'Sort by Active'), 'bash.installers.sortActive', _(
+        u'If selected, active installers will be sorted to the top of the '
+        u'list.')
 
 class Installers_SortProjects(_Installer_Sort, BoolLink):
     """Sort dirs to the top."""
-    _text, key, help = _(u'Projects First'), 'bash.installers.sortProjects', _(
-        u'If selected, projects will be sorted to the top of the list.')
+    _text, key, _help = _(u'Projects First'), 'bash.installers.sortProjects', \
+        _(u'If selected, projects will be sorted to the top of the list.')
 
 class Installers_SortStructure(_Installer_Sort, BoolLink):
     """Sort by type."""
@@ -532,7 +534,7 @@ class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
 class Installers_CreateNewProject(ItemLink):
     """Open the Create New Project Dialog"""
     _text = _(u'Create New Project...')
-    help = _(u'Create a new project...')
+    _help = _(u'Create a new project...')
 
     @balt.conversation
     def Execute(self): CreateNewProject.Display()

@@ -169,7 +169,7 @@ class _InstallLink(_InstallerLink):
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
-    help = _(u"Edit the wizard.txt associated with this project.")
+    _help = _(u"Edit the wizard.txt associated with this project.")
 
     def _initData(self, window, selection):
         super(Installer_EditWizard, self)._initData(window, selection)
@@ -185,7 +185,7 @@ class Installer_EditWizard(_SingleInstallable):
 class Installer_Wizard(OneItemLink, _InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
-    help = _(u"Run the install wizard.")
+    _help = _(u"Run the install wizard.")
 
     def __init__(self, bAuto):
         super(Installer_Wizard, self).__init__()
@@ -345,7 +345,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one."""
     _text = _(u'Open Readme')
-    help = _(u"Open the installer's readme if BAIN can find one")
+    _help = _(u"Open the installer's readme if BAIN can find one")
 
     def _enable(self):
         isSingle = super(Installer_OpenReadme, self)._enable()
@@ -357,7 +357,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
 class Installer_Anneal(_InstallLink):
     """Anneal all packages."""
     _text = _(u'Anneal')
-    help = _(u"Anneal all files in selected package(s).")
+    _help = _(u"Anneal all files in selected package(s).")
 
     def Execute(self):
         ui_refresh = [False, False]
@@ -376,7 +376,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
 
     def _initData(self, window, selection):
         super(Installer_Duplicate, self)._initData(window, selection)
-        self.help = _(u"Duplicate selected %(installername)s.") % (
+        self._help = _(u"Duplicate selected %(installername)s.") % (
             {'installername': self._selected_item})
 
     def _enable(self):
@@ -416,7 +416,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
 class Installer_Hide(_InstallerLink, UIList_Hide):
     """Hide selected Installers."""
     _text = _(u'Hide...')
-    help = _(
+    _help = _(
         u"Hide selected installer(s). No installer markers should be selected")
 
     def _enable(self):
@@ -425,7 +425,7 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
-    help = _(u"Rename selected installer(s).") + u'  ' + _(
+    _help = _(u"Rename selected installer(s).") + u'  ' + _(
         u'All selected installers must be of the same type')
 
     def _enable(self):
@@ -437,7 +437,7 @@ class Installer_Rename(UIList_Rename, _InstallerLink):
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
     _text = _(u'Has Extra Directories')
-    help = _(u"Allow installation of files in non-standard directories.")
+    _help = _(u"Allow installation of files in non-standard directories.")
 
     def _check(self):
         return self._enable() and self._selected_info.hasExtraData
@@ -453,7 +453,7 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
 
     def _initData(self, window, selection):
         super(Installer_OverrideSkips, self)._initData(window, selection)
-        self.help = _(
+        self._help = _(
             u"Override global file type skipping for %(installername)s.") % (
                 {'installername': self._selected_item}) + u'  '+ _(u'BETA!')
 
@@ -468,7 +468,7 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
 class Installer_SkipRefresh(CheckLink, _SingleProject):
     """Toggle skipRefresh flag on project."""
     _text = _(u"Don't Refresh")
-    help = _(u"Don't automatically refresh project.")
+    _help = _(u"Don't automatically refresh project.")
 
     def _check(self): return self._enable() and self._selected_info.skipRefresh
 
@@ -542,7 +542,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
     installer in this configuration."""
     _text = _(u"Export Achlist")
     _mode_info_dir = u'Mod Info Exports'
-    help = _(u'Create achlist file for use by the CK')
+    _help = _(u'Create achlist file for use by the CK')
 
     def _enable(self):
         isSingle = super(Installer_ExportAchlist, self)._enable()
@@ -659,7 +659,7 @@ class Installer_OpenTESA(_Installer_OpenAt):
 class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
     _text = _(u'Refresh')
-    help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
+    _help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
         u'Ignores skip refresh flag on projects')
 
     def __init__(self, calculate_projects_crc=True):
@@ -667,7 +667,7 @@ class Installer_Refresh(_InstallerLink):
         self.calculate_projects_crc = calculate_projects_crc
         if not calculate_projects_crc:
             self._text = _(u'Quick Refresh')
-            self.help = Installer_Refresh.help + u'.  ' + _(
+            self._help = Installer_Refresh._help + u'.  ' + _(
                 u'Will not recalculate cached crcs of files in a project')
 
     def _enable(self): return bool(self.idata.filterPackages(self.selected))
@@ -683,7 +683,7 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
 
     def _initData(self, window, selection):
         super(Installer_SkipVoices, self)._initData(window, selection)
-        self.help = _(u"Skip over any voice files in %(installername)s") % (
+        self._help = _(u"Skip over any voice files in %(installername)s") % (
                     {'installername': self._selected_item})
 
     def _check(self): return self._enable() and self._selected_info.skipVoices
@@ -695,7 +695,7 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
 class Installer_Uninstall(_InstallLink):
     """Uninstall selected Installers."""
     _text = _(u'Uninstall')
-    help = _(u'Uninstall selected Installer(s)')
+    _help = _(u'Uninstall selected Installer(s)')
 
     @balt.conversation
     def Execute(self):
@@ -713,7 +713,7 @@ class Installer_Uninstall(_InstallLink):
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
     _text = _(u'Copy Conflicts to Project')
-    help = _(u'Copy all files that conflict with the selected installer into a'
+    _help = _(u'Copy all files that conflict with the selected installer into a'
              u' new project') + u'.  ' + _(
         u'Conflicts with inactive installers are included')
 
@@ -936,7 +936,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     """Unpack installer package(s) to Project(s)."""
     _text = _(u'Unpack to Project(s)...')
-    help = _(u'Unpack installer package(s) to Project(s)')
+    _help = _(u'Unpack installer package(s) to Project(s)')
 
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
@@ -983,7 +983,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
 class InstallerProject_OmodConfig(_SingleProject):
     """Projects only. Allows you to read/write omod configuration info."""
     _text = _(u'Omod Info...')
-    help = _(u'Projects only. Allows you to read/write omod configuration info')
+    _help = _(u'Projects only. Allows you to read/write omod configuration info')
 
     def Execute(self):
         (InstallerProject_OmodConfigDialog(self.window, self.idata,
@@ -993,7 +993,7 @@ class InstallerProject_OmodConfig(_SingleProject):
 class InstallerProject_Sync(_SingleProject):
     """Synchronize the project with files from the Data directory."""
     _text = _(u'Sync from Data')
-    help = _(u'Synchronize the project with files from the Data directory') + \
+    _help = _(u'Synchronize the project with files from the Data directory') + \
         u'.  ' + _(u'Currently only for projects (not archives)')
 
     def _enable(self):
@@ -1021,7 +1021,7 @@ class InstallerProject_Sync(_SingleProject):
 class InstallerProject_Pack(_SingleProject):
     """Pack project to an archive."""
     _text = dialogTitle = _(u'Pack to Archive...')
-    help = _(u'Pack project to an archive')
+    _help = _(u'Pack project to an archive')
     release = False
 
     @balt.conversation
@@ -1040,7 +1040,7 @@ class InstallerProject_Pack(_SingleProject):
 class InstallerProject_ReleasePack(InstallerProject_Pack):
     """Pack project to an archive for release. Ignores dev files/folders."""
     _text = _(u'Package for Release...')
-    help = _(
+    _help = _(
         u'Pack project to an archive for release. Ignores dev files/folders')
     release = True
 
