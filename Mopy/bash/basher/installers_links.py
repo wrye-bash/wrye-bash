@@ -364,11 +364,12 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     _text, key = _(u'BSA Redirection'), 'bash.bsaRedirection'
     _help = _(u"Use Quarn's BSA redirection technique.")
 
-    def _initData(self, window, selection):
-        super(Installers_BsaRedirection, self)._initData(window, selection)
+    @property
+    def menu_help(self):
         if not self._enable():
-            self._help += u'  ' + _(u'%(ini)s must exist') % {
+            return self._help + u'  ' + _(u'%(ini)s must exist') % {
                 'ini': bush.game.iniFiles[0]}
+        else: return self._help
 
     def _append(self, window):
         section,key = bush.game.ini.bsaRedirection

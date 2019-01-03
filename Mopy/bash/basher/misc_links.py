@@ -41,18 +41,19 @@ __all__ = ['ColumnsMenu', 'Master_ChangeTo', 'Master_Disable',
 class Screens_NextScreenShot(EnabledLink):
     """Sets screenshot base name and number."""
     _text = _(u'Next Shot...')
+    _help = _(u'Set screenshot base name and number')
     rePattern = re.compile(ur'^(.+?)(\d*)$',re.I|re.U)
 
     def _enable(self):
         return not bosh.oblivionIni.isCorrupted \
                and bosh.oblivionIni.abs_path.exists()
 
-    def _initData(self, window, selection):
-        super(Screens_NextScreenShot, self)._initData(window, selection)
-        self._help = _(u'Set screenshot base name and number')
+    @property
+    def menu_help(self):
         if not self._enable():
-            self._help += u'.  ' + _(u'%(ini)s must exist') % {
+            return self._help + u'.  ' + _(u'%(ini)s must exist') % {
                 'ini': bush.game.iniFiles[0]}
+        else: return self._help
 
     def Execute(self):
         oblivionIni = bosh.oblivionIni
@@ -249,11 +250,11 @@ class _Master_EditList(OneItemLink): # one item cause _singleSelect = True
 
     def _enable(self): return self.window.allowEdit
 
-    def _initData(self, window, selection):
-        super(_Master_EditList, self)._initData(window, selection)
-        if not self._enable(): self._help = self.__class__._help + u'.  ' + _(
+    @property
+    def menu_help(self):
+        if not self._enable(): return self.__class__._help + u'.  ' + _(
                 u'You must first allow editing from the column menu')
-        else: self._help = self.__class__._help
+        else: return self.__class__._help
 
 class Master_ChangeTo(_Master_EditList):
     """Rename/replace master through file dialog."""

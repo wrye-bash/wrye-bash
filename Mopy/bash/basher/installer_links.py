@@ -374,9 +374,9 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
     _text = _(u'Duplicate...')
 
-    def _initData(self, window, selection):
-        super(Installer_Duplicate, self)._initData(window, selection)
-        self._help = _(u"Duplicate selected %(installername)s.") % (
+    @property
+    def menu_help(self):
+        return _(u"Duplicate selected %(installername)s.") % (
             {'installername': self._selected_item})
 
     def _enable(self):
@@ -451,9 +451,9 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
     """Toggle overrideSkips flag on installer."""
     _text = _(u'Override Skips')
 
-    def _initData(self, window, selection):
-        super(Installer_OverrideSkips, self)._initData(window, selection)
-        self._help = _(
+    @property
+    def menu_help(self):
+        return _(
             u"Override global file type skipping for %(installername)s.") % (
                 {'installername': self._selected_item}) + u'  '+ _(u'BETA!')
 
@@ -681,9 +681,9 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""
     _text = _(u'Skip Voices')
 
-    def _initData(self, window, selection):
-        super(Installer_SkipVoices, self)._initData(window, selection)
-        self._help = _(u"Skip over any voice files in %(installername)s") % (
+    @property
+    def menu_help(self):
+        return _(u"Skip over any voice files in %(installername)s") % (
                     {'installername': self._selected_item})
 
     def _check(self): return self._enable() and self._selected_info.skipVoices
