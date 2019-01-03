@@ -115,7 +115,7 @@ class Mods_LoadList(ChoiceLink):
             def Execute(self): self._selectExact([])
         class _Selected(__Activate):
             _text = _(u'Activate Selected')
-            _help = _(u'Activate only the mods selected in the list')
+            _help = _(u'Activate only the mods selected in the UI')
             def Execute(self):
                 self._selectExact(self.window.GetSelected())
         class _Edit(ItemLink):
@@ -149,6 +149,10 @@ class Mods_LoadList(ChoiceLink):
                 mods = set(Mods_LoadList.loadListsDict[self._text])
                 mods = [m for m in self.window.data_store.keys() if m in mods]
                 self._selectExact(mods)
+            @property
+            def menu_help(self):
+                return _(u'Activate mods in the %(list_name)s list' % {
+                    'list_name': self._text})
         self.__class__.choiceLinkType = _LoListLink
 
     @property
@@ -289,6 +293,8 @@ class Mods_CleanDummyMasters(EnabledLink):
 class Mods_AutoGhost(BoolLink):
     """Toggle Auto-ghosting."""
     _text, key = _(u'Auto-Ghost'), 'bash.mods.autoGhost'
+    _help = _(u'Toggles whether or not to automatically ghost all disabled '
+              u'mods.')
 
     def Execute(self):
         super(Mods_AutoGhost, self).Execute()

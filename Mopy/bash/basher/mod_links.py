@@ -73,6 +73,7 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
 class Mod_FullLoad(OneItemLink):
     """Tests all record definitions against a specific mod"""
     _text = _(u'Test Full Record Definitions...')
+    _help = _(u'Tests all record definitions against the selected mod')
 
     def Execute(self):
         with balt.Progress(_(u'Loading:') + u'\n%s'
@@ -349,6 +350,10 @@ class _Mod_Labels(ChoiceLink):
                 for fileName in self.selected:
                     fileLabels[fileName] = self._text
                 _self._refresh()
+            @property
+            def menu_help(self): return _(
+                u"Applies the label '%(lbl)s' to the selected mod(s).") % {
+                                            'lbl': self._text}
         self.__class__.choiceLinkType = _LabelLink
 
     @property
@@ -598,6 +603,8 @@ def _getUrl(fileName, installer, text):
 class Mod_CreateBOSSReport(EnabledLink):
     """Copies appropriate information for making a report in the BOSS thread."""
     _text = _(u"Create BOSS Report...")
+    _help = _(u'Gathers and displays information necessary for making a BOSS '
+              u'report.')
 
     def _enable(self):
         return len(self.selected) != 1 or (
@@ -1402,6 +1409,8 @@ class Mod_UndeleteRefs(EnabledLink):
 class Mod_AddMaster(OneItemLink):
     """Adds master."""
     _text = _(u'Add Master...')
+    _help = _(u'Adds a plugin as a master to this plugin without changing '
+              u'FormIDs. WARNING: DANGEROUS!')
 
     def Execute(self):
         message = _(u"WARNING! For advanced modders only! Adds specified "
@@ -1439,6 +1448,8 @@ class Mod_AddMaster(OneItemLink):
 #------------------------------------------------------------------------------
 class Mod_CopyToEsmp(EnabledLink):
     """Create an esp(esm) copy of selected esm(esp)."""
+    _help = _(u'Creates a copy of the selected plugin(s) with reversed '
+              u'.esp/.esm extension.')
 
     def _initData(self, window, selection):
         super(Mod_CopyToEsmp, self)._initData(window, selection)
@@ -1565,7 +1576,9 @@ class _Esm_Flip(EnabledLink):
         self.window.RefreshUI(redraw=updated, refreshSaves=True)
 
 class Mod_FlipSelf(_Esm_Flip):
-    """Flip an esp(esm) to an esm(esp)."""
+    """Flip an esp(esm) to an esm(esp). Extension must be esp."""
+    _help = _(u'Flips the ESM flag on the selected plugin, turning a master '
+              u'into a regular plugin and vice versa.')
 
     def _initData(self, window, selection):
         super(Mod_FlipSelf, self)._initData(window, selection)
@@ -1709,6 +1722,7 @@ class Mod_Fids_Replace(OneItemLink):
 class Mod_Face_Import(OneItemLink):
     """Imports a face from a save to an esp."""
     _text = _(u'Face...')
+    _help = _(u'Imports a face from a save to an ESP file.')
 
     def Execute(self):
         #--Select source face file

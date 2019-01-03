@@ -289,6 +289,8 @@ class Installers_AutoRefreshProjects(BoolLink):
     """Toggle autoRefreshProjects setting and update."""
     _text = _(u'Auto-Refresh Projects')
     key = 'bash.installers.autoRefreshProjects'
+    _help = _(u'Toggles whether or not Wrye Bash will automatically detect '
+              u'changes to projects in the installers directory.')
 
 class Installers_AutoApplyEmbeddedBCFs(ItemLink):
     """Automatically apply Embedded BCFs to archives that have one."""
@@ -418,6 +420,8 @@ class Installers_AvoidOnStart(BoolLink):
 class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
     _text, key = _(u'Clean Data Directory'), 'bash.installers.removeEmptyDirs'
+    _help = _(u'Toggles whether or not Wrye Bash will remove empty '
+              u'directories when scanning the Data folder.')
 
 # Sorting Links
 class _Installer_Sort(ItemLink):
@@ -445,6 +449,12 @@ class Installers_SortStructure(_Installer_Sort, BoolLink):
 #------------------------------------------------------------------------------
 class _Installers_Skip(Installers_Link, BoolLink):
     """Toggle global skip settings and update."""
+
+    @property
+    def menu_help(self):
+        # Slice off the starting 'Skip '
+        return _(u'Skips the installation of %(type)s.') % {
+            'type': self._text[5:]}
 
     @balt.conversation
     def Execute(self):
@@ -530,6 +540,11 @@ class Installers_RenameStrings(AppendableLink, _Installers_Process_Skip):
     _text = _(u'Auto-name String Translation Files')
     key = 'bash.installers.renameStrings'
     def _append(self, window): return bool(bush.game.esp.stringsFiles)
+
+    @property
+    def menu_help(self):
+        return _(u'If checked, Wrye Bash will rename all installed string '
+                 u'files so they match your current language.')
 
 #--New project dialog ---------------------------------------------------------
 class Installers_CreateNewProject(ItemLink):
