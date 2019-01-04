@@ -38,3 +38,5 @@ Mopy/bash/l10n/*NEW.txt
 
 # The LOOT API binaries
 Mopy/loot_api.*
+Mopy/loot_api_python.pdb
+Mopy/README.md
