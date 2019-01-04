@@ -1485,7 +1485,7 @@ class ModDetails(_SashDetailsPanel):
         # Toggle auto Bash tags
         class _TagsAuto(CheckLink):
             _text = _(u'Automatic')
-            help = _(
+            _help = _(
                 u"Use the tags from the description and masterlist/userlist.")
             def _check(self): return is_auto
             def Execute(self):
@@ -1511,9 +1511,9 @@ class ModDetails(_SashDetailsPanel):
                           u'leave enough room.'))
         # Tags links
         class _TagLink(CheckLink):
-            def _initData(self, window, selection):
-                super(_TagLink, self)._initData(window, selection)
-                self.help = _(u"Add %(tag)s to %(modname)s") % (
+            @property
+            def menu_help(self):
+                return _(u"Add %(tag)s to %(modname)s") % (
                     {'tag': self._text, 'modname': mod_info.name})
             def _check(self): return self._text in mod_tags
             def Execute(self):
@@ -3304,7 +3304,7 @@ class _Tab_Link(AppendableLink, CheckLink, EnabledLink):
         self.tabKey = tabKey
         self.enabled = canDisable
         className, self._text, item = tabInfo.get(self.tabKey,[None,None,None])
-        self.help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
+        self._help = _(u"Show/Hide the %(tabtitle)s Tab.") % (
             {'tabtitle': self._text})
 
     def _append(self, window): return self._text is not None

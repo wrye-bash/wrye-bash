@@ -169,7 +169,7 @@ class _InstallLink(_InstallerLink):
 #------------------------------------------------------------------------------
 class Installer_EditWizard(_SingleInstallable):
     """Edit the wizard.txt associated with this project"""
-    help = _(u"Edit the wizard.txt associated with this project.")
+    _help = _(u"Edit the wizard.txt associated with this project.")
 
     def _initData(self, window, selection):
         super(Installer_EditWizard, self)._initData(window, selection)
@@ -185,7 +185,7 @@ class Installer_EditWizard(_SingleInstallable):
 class Installer_Wizard(OneItemLink, _InstallerLink):
     """Runs the install wizard to select subpackages and esp/m filtering"""
     parentWindow = ''
-    help = _(u"Run the install wizard.")
+    _help = _(u"Run the install wizard.")
 
     def __init__(self, bAuto):
         super(Installer_Wizard, self).__init__()
@@ -345,7 +345,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
 class Installer_OpenReadme(OneItemLink, _InstallerLink):
     """Opens the installer's readme if BAIN can find one."""
     _text = _(u'Open Readme')
-    help = _(u"Open the installer's readme if BAIN can find one")
+    _help = _(u"Open the installer's readme if BAIN can find one")
 
     def _enable(self):
         isSingle = super(Installer_OpenReadme, self)._enable()
@@ -357,7 +357,7 @@ class Installer_OpenReadme(OneItemLink, _InstallerLink):
 class Installer_Anneal(_InstallLink):
     """Anneal all packages."""
     _text = _(u'Anneal')
-    help = _(u"Anneal all files in selected package(s).")
+    _help = _(u"Anneal all files in selected package(s).")
 
     def Execute(self):
         ui_refresh = [False, False]
@@ -374,9 +374,9 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
     """Duplicate selected Installer."""
     _text = _(u'Duplicate...')
 
-    def _initData(self, window, selection):
-        super(Installer_Duplicate, self)._initData(window, selection)
-        self.help = _(u"Duplicate selected %(installername)s.") % (
+    @property
+    def menu_help(self):
+        return _(u"Duplicate selected %(installername)s.") % (
             {'installername': self._selected_item})
 
     def _enable(self):
@@ -416,7 +416,7 @@ class Installer_Duplicate(OneItemLink, _InstallerLink):
 class Installer_Hide(_InstallerLink, UIList_Hide):
     """Hide selected Installers."""
     _text = _(u'Hide...')
-    help = _(
+    _help = _(
         u"Hide selected installer(s). No installer markers should be selected")
 
     def _enable(self):
@@ -425,7 +425,7 @@ class Installer_Hide(_InstallerLink, UIList_Hide):
 
 class Installer_Rename(UIList_Rename, _InstallerLink):
     """Renames files by pattern."""
-    help = _(u"Rename selected installer(s).") + u'  ' + _(
+    _help = _(u"Rename selected installer(s).") + u'  ' + _(
         u'All selected installers must be of the same type')
 
     def _enable(self):
@@ -437,7 +437,7 @@ class Installer_Rename(UIList_Rename, _InstallerLink):
 class Installer_HasExtraData(CheckLink, _RefreshingLink):
     """Toggle hasExtraData flag on installer."""
     _text = _(u'Has Extra Directories')
-    help = _(u"Allow installation of files in non-standard directories.")
+    _help = _(u"Allow installation of files in non-standard directories.")
 
     def _check(self):
         return self._enable() and self._selected_info.hasExtraData
@@ -451,9 +451,9 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
     """Toggle overrideSkips flag on installer."""
     _text = _(u'Override Skips')
 
-    def _initData(self, window, selection):
-        super(Installer_OverrideSkips, self)._initData(window, selection)
-        self.help = _(
+    @property
+    def menu_help(self):
+        return _(
             u"Override global file type skipping for %(installername)s.") % (
                 {'installername': self._selected_item}) + u'  '+ _(u'BETA!')
 
@@ -468,7 +468,7 @@ class Installer_OverrideSkips(CheckLink, _RefreshingLink):
 class Installer_SkipRefresh(CheckLink, _SingleProject):
     """Toggle skipRefresh flag on project."""
     _text = _(u"Don't Refresh")
-    help = _(u"Don't automatically refresh project.")
+    _help = _(u"Don't automatically refresh project.")
 
     def _check(self): return self._enable() and self._selected_info.skipRefresh
 
@@ -488,11 +488,17 @@ class Installer_Install(_InstallLink):
     """Install selected packages."""
     mode_title = {'DEFAULT': _(u'Install'), 'LAST': _(u'Install Last'),
                   'MISSING': _(u'Install Missing Files')}
+    mode_help = {'DEFAULT': _(u'Install selected installer(s)'),
+                 'LAST': _(u'Install the selected installer(s) at the last '
+                           u'position'),
+                 'MISSING': _(u'Install all missing files from the selected '
+                              u'installer(s)')}
 
     def __init__(self,mode='DEFAULT'):
         super(Installer_Install, self).__init__()
         self.mode = mode
         self._text = self.mode_title[self.mode]
+        self._help = self.mode_help[self.mode]
 
     @balt.conversation
     def Execute(self):
@@ -523,6 +529,8 @@ class Installer_Install(_InstallLink):
 class Installer_ListStructure(OneItemLink, _InstallerLink): # Provided by Waruddar
     """Copies folder structure of installer to clipboard."""
     _text = _(u"List Structure...")
+    _help = _(u'Displays the folder structure of the selected installer (and '
+              u'copies it to the system clipboard).')
 
     def _enable(self):
         isSingle = super(Installer_ListStructure, self)._enable()
@@ -542,7 +550,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
     installer in this configuration."""
     _text = _(u"Export Achlist")
     _mode_info_dir = u'Mod Info Exports'
-    help = _(u'Create achlist file for use by the CK')
+    _help = _(u'Create achlist file for use by the CK')
 
     def _enable(self):
         isSingle = super(Installer_ExportAchlist, self)._enable()
@@ -566,6 +574,7 @@ class Installer_ExportAchlist(OneItemLink, _InstallerLink):
 class Installer_Move(_InstallerLink):
     """Moves selected installers to desired spot."""
     _text = _(u'Move To...')
+    _help = _(u'Move the selected installer(s) to a position of your choice.')
 
     @balt.conversation
     def Execute(self):
@@ -618,6 +627,8 @@ class _Installer_OpenAt(_InstallerLink):
 class Installer_OpenNexus(AppendableLink, _Installer_OpenAt):
     regexp = bosh.reTesNexus
     _text = _(bush.game.nexusName)
+    _help = _(u"Opens this mod's page at the %(nexusName)s.") % \
+            {'nexusName': bush.game.nexusName}
     message = _(
         u"Attempt to open this as a mod at %(nexusName)s? This assumes that "
         u"the trailing digits in the package's name are actually the id "
@@ -634,6 +645,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
     group = 1
     regexp = bosh.reTesNexus
     _text = _(u'Google...')
+    _help = _(u"Searches for this mod's title on Google.")
     key = 'bash.installers.opensearch.continue'
     askTitle = _(u'Open a search')
     message = _(u"Open a search for this on Google?")
@@ -645,6 +657,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA
     _text = _(u'TES Alliance...')
+    _help = _(u"Opens this mod's page at TES Alliance.")
     key = 'bash.installers.openTESA.continue'
     askTitle = _(u'Open at TES Alliance')
     message = _(
@@ -659,7 +672,7 @@ class Installer_OpenTESA(_Installer_OpenAt):
 class Installer_Refresh(_InstallerLink):
     """Rescans selected Installers."""
     _text = _(u'Refresh')
-    help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
+    _help = _(u'Rescan selected Installer(s)') + u'.  ' + _(
         u'Ignores skip refresh flag on projects')
 
     def __init__(self, calculate_projects_crc=True):
@@ -667,7 +680,7 @@ class Installer_Refresh(_InstallerLink):
         self.calculate_projects_crc = calculate_projects_crc
         if not calculate_projects_crc:
             self._text = _(u'Quick Refresh')
-            self.help = Installer_Refresh.help + u'.  ' + _(
+            self._help = Installer_Refresh._help + u'.  ' + _(
                 u'Will not recalculate cached crcs of files in a project')
 
     def _enable(self): return bool(self.idata.filterPackages(self.selected))
@@ -681,9 +694,9 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
     """Toggle skipVoices flag on installer."""
     _text = _(u'Skip Voices')
 
-    def _initData(self, window, selection):
-        super(Installer_SkipVoices, self)._initData(window, selection)
-        self.help = _(u"Skip over any voice files in %(installername)s") % (
+    @property
+    def menu_help(self):
+        return _(u"Skip over any voice files in %(installername)s") % (
                     {'installername': self._selected_item})
 
     def _check(self): return self._enable() and self._selected_info.skipVoices
@@ -695,7 +708,7 @@ class Installer_SkipVoices(CheckLink, _RefreshingLink):
 class Installer_Uninstall(_InstallLink):
     """Uninstall selected Installers."""
     _text = _(u'Uninstall')
-    help = _(u'Uninstall selected Installer(s)')
+    _help = _(u'Uninstall selected Installer(s)')
 
     @balt.conversation
     def Execute(self):
@@ -713,7 +726,7 @@ class Installer_Uninstall(_InstallLink):
 class Installer_CopyConflicts(_SingleInstallable):
     """For Modders only - copy conflicts to a new project."""
     _text = _(u'Copy Conflicts to Project')
-    help = _(u'Copy all files that conflict with the selected installer into a'
+    _help = _(u'Copy all files that conflict with the selected installer into a'
              u' new project') + u'.  ' + _(
         u'Conflicts with inactive installers are included')
 
@@ -801,6 +814,7 @@ class _Installer_Details_Link(EnabledLink):
 class Installer_Espm_SelectAll(_Installer_Details_Link):
     """Select All Esp/ms in installer for installation."""
     _text = _(u'Select All')
+    _help = _(u'Selects all plugin files in the selected sub-packages.')
 
     def Execute(self):
         self._installer.espmNots = set()
@@ -811,6 +825,7 @@ class Installer_Espm_SelectAll(_Installer_Details_Link):
 class Installer_Espm_DeselectAll(_Installer_Details_Link):
     """Deselect All Esp/ms in installer for installation."""
     _text = _(u'Deselect All')
+    _help = _(u'Deselects all plugin files in the selected sub-packages.')
 
     def Execute(self):
         espmNots = self._installer.espmNots = set()
@@ -823,6 +838,7 @@ class Installer_Espm_DeselectAll(_Installer_Details_Link):
 class Installer_Espm_Rename(_Installer_Details_Link):
     """Changes the installed name for an Esp/m."""
     _text = _(u'Rename...')
+    _help = _(u'Changes the name under which this plugin will be installed.')
 
     def _enable(self): return self.selected != -1
 
@@ -842,6 +858,8 @@ class Installer_Espm_Rename(_Installer_Details_Link):
 class Installer_Espm_Reset(_Installer_Details_Link):
     """Resets the installed name for an Esp/m."""
     _text = _(u'Reset Name')
+    _help = _(u'Resets the name under which this plugin will be installed '
+              u'back to its default name.')
 
     def _enable(self):
         if self.selected == -1: return False
@@ -858,6 +876,8 @@ class Installer_Espm_Reset(_Installer_Details_Link):
 class Installer_Espm_ResetAll(_Installer_Details_Link):
     """Resets all renamed Esp/ms."""
     _text = _(u'Reset All Names')
+    _help = _(u'Resets all plugins with changed names back to their default '
+              u'ones.')
 
     def Execute(self):
         self._installer.resetAllEspmNames()
@@ -866,6 +886,8 @@ class Installer_Espm_ResetAll(_Installer_Details_Link):
 class Installer_Espm_List(_Installer_Details_Link):
     """Lists all Esp/ms in installer for user information/w/e."""
     _text = _(u'List Esp/ms')
+    _help = _(u'Displays a list of all plugin files in the selected '
+              u'sub-packages (and copies it to the system clipboard).')
 
     def Execute(self):
         subs = (_(u'Esp/m List for %s:') % self._installer.archive +
@@ -887,6 +909,7 @@ class _Installer_Subs(_Installer_Details_Link):
 class Installer_Subs_SelectAll(_Installer_Subs):
     """Select All sub-packages in installer for installation."""
     _text = _(u'Select All')
+    _help = _(u'Selects all sub-packages in this installer.')
 
     def Execute(self):
         for index in xrange(self.window.gSubList.GetCount()):
@@ -897,6 +920,7 @@ class Installer_Subs_SelectAll(_Installer_Subs):
 class Installer_Subs_DeselectAll(_Installer_Subs):
     """Deselect All sub-packages in installer for installation."""
     _text = _(u'Deselect All')
+    _help = _(u'Deselects all sub-packages in this installer.')
 
     def Execute(self):
         for index in xrange(self.window.gSubList.GetCount()):
@@ -908,6 +932,7 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
     """Toggles selection state of all sub-packages in installer for
     installation."""
     _text = _(u'Toggle Selection')
+    _help = _(u'Deselects all selected sub-packages and vice versa.')
 
     def Execute(self):
         for index in xrange(self.window.gSubList.GetCount()):
@@ -919,6 +944,8 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
 class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""
     _text = _(u'List Sub-packages')
+    _help = _(u'Displays a list of all sub-packages in this installer (and '
+              u'copies it to the system clipboard).')
 
     def Execute(self):
         subs = _(u'Sub-Packages List for %s:') % self._installer.archive
@@ -936,7 +963,7 @@ class Installer_Subs_ListSubPackages(_Installer_Subs):
 class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
     """Unpack installer package(s) to Project(s)."""
     _text = _(u'Unpack to Project(s)...')
-    help = _(u'Unpack installer package(s) to Project(s)')
+    _help = _(u'Unpack installer package(s) to Project(s)')
 
     def _append(self, window):
         self.selected = window.GetSelected() # append runs before _initData
@@ -983,7 +1010,7 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
 class InstallerProject_OmodConfig(_SingleProject):
     """Projects only. Allows you to read/write omod configuration info."""
     _text = _(u'Omod Info...')
-    help = _(u'Projects only. Allows you to read/write omod configuration info')
+    _help = _(u'Projects only. Allows you to read/write omod configuration info')
 
     def Execute(self):
         (InstallerProject_OmodConfigDialog(self.window, self.idata,
@@ -993,7 +1020,7 @@ class InstallerProject_OmodConfig(_SingleProject):
 class InstallerProject_Sync(_SingleProject):
     """Synchronize the project with files from the Data directory."""
     _text = _(u'Sync from Data')
-    help = _(u'Synchronize the project with files from the Data directory') + \
+    _help = _(u'Synchronize the project with files from the Data directory') + \
         u'.  ' + _(u'Currently only for projects (not archives)')
 
     def _enable(self):
@@ -1021,7 +1048,7 @@ class InstallerProject_Sync(_SingleProject):
 class InstallerProject_Pack(_SingleProject):
     """Pack project to an archive."""
     _text = dialogTitle = _(u'Pack to Archive...')
-    help = _(u'Pack project to an archive')
+    _help = _(u'Pack project to an archive')
     release = False
 
     @balt.conversation
@@ -1040,7 +1067,7 @@ class InstallerProject_Pack(_SingleProject):
 class InstallerProject_ReleasePack(InstallerProject_Pack):
     """Pack project to an archive for release. Ignores dev files/folders."""
     _text = _(u'Package for Release...')
-    help = _(
+    _help = _(
         u'Pack project to an archive for release. Ignores dev files/folders')
     release = True
 
@@ -1080,6 +1107,11 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
         self._text = self.dispName
         self._selected = selected
 
+    @property
+    def menu_help(self):
+        return _(u'Applies %(bcf)s to the selected installer(s).') % {
+            'bcf': self.dispName}
+
     @balt.conversation
     def Execute(self):
         if self._check_identical_content(
@@ -1115,6 +1147,8 @@ class InstallerConverter_Apply(_InstallerConverter_Link):
 #------------------------------------------------------------------------------
 class InstallerConverter_ApplyEmbedded(_InstallerLink):
     _text = _(u'Embedded BCF')
+    _help = _(u'Applies the BAIN converter files (BCFs) embedded in the '
+              u'selected installer(s).')
     dialogTitle = _(u'Apply BCF...')
 
     @balt.conversation
@@ -1133,6 +1167,7 @@ class InstallerConverter_Create(_InstallerConverter_Link):
     """Create BAIN conversion file."""
     dialogTitle = _(u'Create BCF...') # title used in dialog
     _text = _(u'Create...')
+    _help = _(u'Creates a new BAIN conversion file (BCF).')
 
     def Execute(self):
         if self._check_identical_content(

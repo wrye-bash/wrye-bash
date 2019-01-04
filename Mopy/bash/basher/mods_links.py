@@ -97,7 +97,7 @@ class Mods_LoadList(ChoiceLink):
                 if errorMessage: self._showError(errorMessage, self._text)
         class _All(__Activate):
             _text = _(u'Activate All')
-            help = _(u'Activate all mods')
+            _help = _(u'Activate all mods')
             def Execute(self):
                 """Select all mods."""
                 try:
@@ -111,16 +111,16 @@ class Mods_LoadList(ChoiceLink):
                 self._refresh()
         class _None(__Activate):
             _text = _(u'De-activate All')
-            help = _(u'De-activate all mods')
+            _help = _(u'De-activate all mods')
             def Execute(self): self._selectExact([])
         class _Selected(__Activate):
             _text = _(u'Activate Selected')
-            help = _(u'Activate only the mods selected in the list')
+            _help = _(u'Activate only the mods selected in the UI')
             def Execute(self):
                 self._selectExact(self.window.GetSelected())
         class _Edit(ItemLink):
             _text = _(u'Edit Active Mods Lists...')
-            help = _(u'Display a dialog to rename/remove active mods lists')
+            _help = _(u'Display a dialog to rename/remove active mods lists')
             def Execute(self):
                 editorData = _Mods_LoadListData(self.window,
                                                 Mods_LoadList.loadListsDict)
@@ -128,7 +128,7 @@ class Mods_LoadList(ChoiceLink):
                                         editorData)
         class _SaveLink(EnabledLink):
             _text = _(u'Save Active Mods List')
-            help = _(u'Save the currently active mods to a new active mods list')
+            _help = _(u'Save the currently active mods to a new active mods list')
             def _enable(self): return bool(load_order.cached_active_tuple())
             def Execute(self):
                 newItem = self._askText(
@@ -149,6 +149,10 @@ class Mods_LoadList(ChoiceLink):
                 mods = set(Mods_LoadList.loadListsDict[self._text])
                 mods = [m for m in self.window.data_store.keys() if m in mods]
                 self._selectExact(mods)
+            @property
+            def menu_help(self):
+                return _(u'Activate mods in the %(list_name)s list' % {
+                    'list_name': self._text})
         self.__class__.choiceLinkType = _LoListLink
 
     @property
@@ -158,7 +162,7 @@ class Mods_LoadList(ChoiceLink):
 # "Sort by" submenu -----------------------------------------------------------
 class Mods_EsmsFirst(CheckLink, EnabledLink):
     """Sort esms to the top."""
-    help = _(u'Sort masters by type. Always on if current sort is Load Order.')
+    _help = _(u'Sort masters by type. Always on if current sort is Load Order.')
     _text = _(u'Type')
 
     def _enable(self): return not self.window.forceEsmFirst()
@@ -170,7 +174,7 @@ class Mods_EsmsFirst(CheckLink, EnabledLink):
 
 class Mods_SelectedFirst(CheckLink):
     """Sort loaded mods to the top."""
-    help = _(u'Sort loaded mods to the top')
+    _help = _(u'Sort loaded mods to the top')
     _text = _(u'Selection')
 
     def _check(self): return self.window.selectedFirst
@@ -182,7 +186,7 @@ class Mods_SelectedFirst(CheckLink):
 # "Oblivion.esm" submenu ------------------------------------------------------
 class Mods_OblivionVersion(CheckLink, EnabledLink):
     """Specify/set Oblivion version."""
-    help = _(u'Specify/set Oblivion version')
+    _help = _(u'Specify/set Oblivion version')
 
     def __init__(self, key, setProfile=False):
         super(Mods_OblivionVersion, self).__init__()
@@ -207,7 +211,7 @@ class Mods_OblivionVersion(CheckLink, EnabledLink):
 # "File" submenu --------------------------------------------------------------
 class Mods_CreateBlankBashedPatch(ItemLink):
     """Create a new bashed patch."""
-    _text, help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
+    _text, _help = _(u'New Bashed Patch...'), _(u'Create a new bashed patch')
 
     def Execute(self):
         newPatchName = bosh.modInfos.generateNextBashedPatch(
@@ -221,14 +225,14 @@ class Mods_CreateBlankBashedPatch(ItemLink):
 
 class Mods_CreateBlank(ItemLink):
     """Create a new blank mod."""
-    _text, help = _(u'New Mod...'), _(u'Create a new blank mod')
+    _text, _help = _(u'New Mod...'), _(u'Create a new blank mod')
 
     def __init__(self, masterless=False):
         super(Mods_CreateBlank, self).__init__()
         self.masterless = masterless
         if masterless:
             self._text = _(u'New Mod (masterless)...')
-            self.help = _(u'Create a new blank mod with no masters')
+            self._help = _(u'Create a new blank mod with no masters')
 
     def Execute(self):
         newName = self.window.new_name(GPath(u'New Mod.esp'))
@@ -245,7 +249,7 @@ class Mods_CreateBlank(ItemLink):
 class Mods_ListMods(ItemLink):
     """Copies list of mod files to clipboard."""
     _text = _(u"List Mods...")
-    help = _(u"Copies list of active mod files to clipboard.")
+    _help = _(u"Copies list of active mod files to clipboard.")
 
     def Execute(self):
         #--Get masters list
@@ -257,7 +261,7 @@ class Mods_ListMods(ItemLink):
 class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
     """Copies list of bash tags to clipboard."""
     _text = _(u"List Bash Tags...")
-    help = _(u"Copies list of bash tags to clipboard.")
+    _help = _(u"Copies list of bash tags to clipboard.")
 
     def Execute(self):
         tags_text = bosh.modInfos.getTagList()
@@ -268,7 +272,7 @@ class Mods_ListBashTags(ItemLink): # duplicate of mod_links.Mod_ListBashTags
 class Mods_CleanDummyMasters(EnabledLink):
     """Clean up after using a 'Create Dummy Masters...' command."""
     _text = _(u'Remove Dummy Masters...')
-    help = _(u"Clean up after using a 'Create Dummy Masters...' command")
+    _help = _(u"Clean up after using a 'Create Dummy Masters...' command")
 
     def _enable(self):
         for fileInfo in bosh.modInfos.values():
@@ -289,6 +293,8 @@ class Mods_CleanDummyMasters(EnabledLink):
 class Mods_AutoGhost(BoolLink):
     """Toggle Auto-ghosting."""
     _text, key = _(u'Auto-Ghost'), 'bash.mods.autoGhost'
+    _help = _(u'Toggles whether or not to automatically ghost all disabled '
+              u'mods.')
 
     def Execute(self):
         super(Mods_AutoGhost, self).Execute()
@@ -299,7 +305,7 @@ class Mods_AutoGhost(BoolLink):
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     _text = _(u"Check mods against LOOT's dirty mod list")
-    help = _(u"Display a tooltip if mod is dirty and underline dirty mods - "
+    _help = _(u"Display a tooltip if mod is dirty and underline dirty mods - "
              u"checks are performed using bundled LOOT")
     key = 'bash.mods.scanDirty'
 
@@ -310,7 +316,7 @@ class Mods_ScanDirty(BoolLink):
 class Mods_LockLoadOrder(CheckLink):
     """Turn on Lock Load Order feature."""
     _text = _(u'Lock Load Order')
-    help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
+    _help = _(u"Will reset mod Load Order to whatever Wrye Bash has saved for"
              u" them whenever Wrye Bash refreshes data/starts up.")
 
     def _check(self): return load_order.locked
@@ -320,7 +326,7 @@ class Mods_LockLoadOrder(CheckLink):
 class Mods_CrcRefresh(ItemLink):
     """Recalculate crcs for all mods"""
     _text = _(u'Recalculate CRCs')
-    help = _(u'Clean stale CRCs from cache')
+    _help = _(u'Clean stale CRCs from cache')
 
     @balt.conversation
     def Execute(self):

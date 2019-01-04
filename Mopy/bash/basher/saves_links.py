@@ -156,7 +156,7 @@ class Saves_Profiles(ChoiceLink):
 
     class _ProfileLink(CheckLink, EnabledLink):
         @property
-        def help(self):
+        def menu_help(self):
             return _(u'Set profile to %(prof)s (My Games/Saves/%(prof)s)') % {
                                'prof': self._text}
         @property
@@ -180,15 +180,17 @@ class Saves_Profiles(ChoiceLink):
 
     class _Default(_ProfileLink):
         _text = _(u'Default')
+
         @property
-        def help(self):
+        def menu_help(self):
             return _(u'Set profile to the default (My Games/Saves)')
+
         @property
         def relativePath(self): return u'Saves\\'
 
     class _Edit(ItemLink):
         _text = _(u"Edit Profiles...")
-        help = _(u'Show save profiles editing dialog')
+        _help = _(u'Show save profiles editing dialog')
 
         def Execute(self):
             """Show save profiles editing dialog."""
@@ -205,7 +207,7 @@ class Saves_Profiles(ChoiceLink):
 class Save_LoadMasters(OneItemLink):
     """Sets the active mods to the save game's masters."""
     _text = _(u'Load Masters')
-    help = _(u"Set the active mods to the save game's masters")
+    _help = _(u"Set the active mods to the save game's masters")
 
     def Execute(self):
         errorMessage = bosh.modInfos.lo_activate_exact(
@@ -218,7 +220,7 @@ class Save_LoadMasters(OneItemLink):
 class Save_ImportFace(OneItemLink):
     """Imports a face from another save."""
     _text = _(u'Import Face...')
-    help = _(u'Import a face from another save')
+    _help = _(u'Import a face from another save')
 
     @balt.conversation
     def Execute(self):
@@ -265,7 +267,7 @@ class Save_ImportFace(OneItemLink):
 class Save_RenamePlayer(ItemLink):
     """Renames the Player character in a save game."""
     _text = _(u'Rename Player...')
-    help = _(u'Rename the Player character in a save game')
+    _help = _(u'Rename the Player character in a save game')
 
     def Execute(self):
         # get new player name - must not be empty
@@ -284,7 +286,7 @@ class Save_RenamePlayer(ItemLink):
 class Save_ExportScreenshot(OneItemLink):
     """Exports the saved screenshot from a save game."""
     _text = _(u'Export Screenshot...')
-    help = _(u'Export the saved screenshot from a save game')
+    _help = _(u'Export the saved screenshot from a save game')
 
     def Execute(self):
         imagePath = balt.askSave(Link.Frame, _(u'Save Screenshot as:'),
@@ -299,7 +301,7 @@ class Save_ExportScreenshot(OneItemLink):
 class Save_DiffMasters(EnabledLink):
     """Shows how saves masters differ from active mod list."""
     _text = _(u'Diff Masters...')
-    help = _(u"Show how the masters of a save differ from active mod list or"
+    _help = _(u"Show how the masters of a save differ from active mod list or"
              u" another save")
 
     def _enable(self): return len(self.selected) in (1,2)
@@ -336,13 +338,13 @@ class Save_DiffMasters(EnabledLink):
 #------------------------------------------------------------------------------
 class Save_Rename(UIList_Rename):
     """Renames Save File."""
-    help = _(u'Rename Save File')
+    _help = _(u'Rename Save File')
 
 #------------------------------------------------------------------------------
 class Save_Renumber(EnabledLink):
     """Renumbers a whole lot of save files."""
     _text = _(u'Re-number Save(s)...')
-    help = _(u'Renumber a whole lot of save files') + u'.  ' + _(
+    _help = _(u'Renumber a whole lot of save files') + u'.  ' + _(
         u'Savename must be "Save <some number><optional text>"')
     _re_numbered_save = re.compile(ur'^(save )(\d*)(.*)', re.I | re.U)
 
@@ -482,7 +484,7 @@ class Save_EditCreated(OneItemLink):
                  }
     rec_types = {'ENCH': {'ARMO', 'CLOT', 'WEAP'}, 'SPEL': {'SPEL'},
                  'ALCH': {'ALCH'}}
-    help = _(u'Allow user to rename custom items (spells, enchantments, etc)')
+    _help = _(u'Allow user to rename custom items (spells, enchantments, etc)')
 
     def __init__(self, save_rec_type):
         if save_rec_type not in Save_EditCreated.menuNames:
@@ -548,7 +550,7 @@ class Save_EditPCSpellsData(balt.ListEditorData):
 class Save_EditPCSpells(OneItemLink):
     """Save spell list editing dialog."""
     _text = _(u'Delete Spells...')
-    help = _(u'Delete unused spells from your spell list in the selected save.'
+    _help = _(u'Delete unused spells from your spell list in the selected save.'
              u' Warning: This cannot be undone')
 
     def Execute(self):
@@ -559,7 +561,7 @@ class Save_EditPCSpells(OneItemLink):
 class Save_EditCreatedEnchantmentCosts(OneItemLink):
     """Dialogue and Menu for setting number of uses for Cast When Used Enchantments."""
     _text = _(u'Set Number of Uses for Weapon Enchantments...')
-    help = _(u'Set number of uses for Cast When Used Enchantments')
+    _help = _(u'Set number of uses for Cast When Used Enchantments')
 
     def Execute(self):
         dialog = self._askNumber(
@@ -592,12 +594,12 @@ class Save_Move(ChoiceLink):
         _self = self
         class _Default(EnabledLink):
             _text = _(u'Default')
-            help = _self._help_str % bass.dirs['saveBase'].join(u'Saves')
+            _help = _self._help_str % bass.dirs['saveBase'].join(u'Saves')
             def _enable(self): return Save_Move.local != u'Saves\\'
             def Execute(self): _self.MoveFiles(_(u'Default'))
         class _SaveProfileLink(EnabledLink):
             @property
-            def help(self):
+            def menu_help(self):
                 return _self._help_str % bass.dirs['saveBase'].join(
                     u'Saves', self._text)
             def _enable(self):
@@ -656,7 +658,7 @@ class Save_RepairAbomb(OneItemLink):
     """Repairs animation slowing by resetting counter(?) at end of TesClass
     data."""
     _text = _(u'Repair Abomb')
-    help = _(u'Repair animation slowing')
+    _help = _(u'Repair animation slowing')
 
     def Execute(self):
         #--File Info
@@ -684,7 +686,7 @@ class Save_RepairAbomb(OneItemLink):
 class Save_RepairHair(OneItemLink):
     """Repairs hair that has been zeroed due to removal of a hair mod."""
     _text = _(u'Repair Hair')
-    help = _(u'Repair hair that has been zeroed due to removal of a hair mod.')
+    _help = _(u'Repair hair that has been zeroed due to removal of a hair mod.')
 
     def Execute(self):
         #--File Info
@@ -697,7 +699,7 @@ class Save_RepairHair(OneItemLink):
 class Save_ReweighPotions(OneItemLink):
     """Changes weight of all player potions to specified value."""
     _text = _(u'Reweigh Potions...')
-    help = _(u'Change weight of all player potions to specified value')
+    _help = _(u'Change weight of all player potions to specified value')
 
     def Execute(self):
         #--Query value
@@ -740,7 +742,7 @@ class Save_ReweighPotions(OneItemLink):
 class Save_Stats(OneItemLink):
     """Show savefile statistics."""
     _text = _(u'Statistics')
-    help = _(u'Show savefile statistics')
+    _help = _(u'Show savefile statistics')
 
     def Execute(self):
         saveFile = bosh._saves.SaveFile(self._selected_info)
@@ -757,7 +759,7 @@ class Save_Stats(OneItemLink):
 class Save_StatObse(AppendableLink, OneItemLink):
     """Dump .obse records."""
     _text = _(u'.%s Statistics') % bush.game.se.shortName.lower()
-    help = _(u'Dump .%s records') % bush.game.se.shortName.lower()
+    _help = _(u'Dump .%s records') % bush.game.se.shortName.lower()
 
     def _append(self, window): return bool(bush.game.se.shortName)
 
@@ -780,7 +782,7 @@ class Save_StatObse(AppendableLink, OneItemLink):
 class Save_Unbloat(OneItemLink):
     """Unbloats savegame."""
     _text = _(u'Remove Bloat...')
-    help = _(u'Unbloat savegame. Experimental ! Back up your saves before'
+    _help = _(u'Unbloat savegame. Experimental ! Back up your saves before'
              u' using it on them')
 
     def Execute(self):
@@ -819,7 +821,7 @@ class Save_Unbloat(OneItemLink):
 class Save_UpdateNPCLevels(EnabledLink):
     """Update NPC levels from active mods."""
     _text = _(u'Update NPC Levels...')
-    help = _(u'Update NPC levels from active mods')
+    _help = _(u'Update NPC levels from active mods')
 
     def _enable(self): return bool(load_order.cached_active_tuple())
 
