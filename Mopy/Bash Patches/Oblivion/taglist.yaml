@@ -4809,20 +4809,14 @@ plugins:
   - name: 'DLCBattlehornCastle.esp'
     dirty:
       - crc: 0x7048c609
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 13
-        udr: 74
-      - crc: 0xcadd3fd0
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 18
-        udr: 74
-      - crc: 0xf94b3393
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 13
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 10
         udr: 72
+      - crc: 0x991f07a3
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
   - name: 'DLCFrostcrag - Unofficial Patch.esp'
     tag:
       - Actors.ACBS
@@ -4849,34 +4843,15 @@ plugins:
       - C.Owner
       - Factions
     dirty:
-      - crc: 0x2a7665fb
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 71
-        udr: 94
-      - crc: 0x641c4ec0
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        udr: 184
-      - crc: 0x8c95f38d
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 22
-        udr: 94
-      - crc: 0x9b056616
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
+      - crc: 0x8f0d19f
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 3
-        udr: 184
-      - crc: 0xe3dacffd
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        udr: 131
-      - crc: 0xe91bc831
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 98
-        udr: 185
+      - crc: 0x2a7665fb
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 75
+        udr: 94
   - name: 'DLCHorseArmor - Unofficial Patch.esp'
     tag:
       - C.Owner
@@ -4903,15 +4878,13 @@ plugins:
       - Graphics
   - name: 'DLCHorseArmor.esp'
     tag:
+      - Actors.ACBS
+      - Actors.AIPackages
       - Scripts
     dirty:
-      - crc: 0x2a0ff245
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 3
       - crc: 0xbad48e5d
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 3
   - name: 'DLCHorseArmor_SlofBase.esp'
     tag:
@@ -4961,16 +4934,15 @@ plugins:
       - NoMerge
   - name: 'DLCMehrunesRazor.esp'
     dirty:
-      - crc: 0x78fdd06e
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 21
-        udr: 15
       - crc: 0xcb413740
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 21
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 23
         udr: 15
+      - crc: 0xd05d448b
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
   - name: 'DLCOrrery Rwalk.esp'
     tag:
       - Actors.Anims
@@ -4988,13 +4960,8 @@ plugins:
       - Actors.AIPackages
     dirty:
       - crc: 0x5bc59db4
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 11
-        udr: 2
-      - crc: 0x5ef0d503
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 11
         udr: 2
   - name: 'DLCShiveringIsles Rwalk DG_DS.esp'
@@ -5031,24 +4998,12 @@ plugins:
     tag:
       - Actors.Anims
       - NoMerge
-  - name: 'DLCShiveringIsles.esp'
-    dirty:
-      - crc: 0xdaf51407
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 2
   - name: 'DLCSpellTomes.esp'
-    tag:
-      - Relev
     dirty:
       - crc: 0x312156f8
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 40
-      - crc: 0x4abf2393
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 44
   - name: 'DLCThievesDen - Unofficial Patch.esp'
     tag:
       - Actors.ACBS
@@ -5092,34 +5047,21 @@ plugins:
       - C.Name
     dirty:
       - crc: 0x5db8ccc
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 5
-        udr: 135
-      - crc: 0x7bf882e1
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 5
         udr: 135
   - name: 'DLCVileLair - Unofficial Patch.esp'
     tag:
       - Graphics
   - name: 'DLCVileLair.esp'
+    tag:
+      - Sound
     dirty:
-      - crc: 0x2c59f2f0
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 16
-        udr: 1
-      - crc: 0x34afad8c
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 16
-        udr: 1
       - crc: 0x74d2ca6f
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 26
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 28
         udr: 1
   - name: 'DMAC Armor.esp'
     tag:
@@ -7861,20 +7803,21 @@ plugins:
       - NoMerge
   - name: 'Knights.esp'
     tag:
+      - Actors.ACBS
       - Actors.AIPackages
+      - Actors.Stats
       - Factions
-      - Relations
+      - Graphics
     dirty:
-      - crc: 0x71480b94
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 113
-        udr: 255
+      - crc: 0xa2d49f26
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
       - crc: 0xf1f478fa
-        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
-        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
-        itm: 121
-        udr: 257
+        util: '[TES4Edit v4.0.0](https://www.nexusmods.com/oblivion/mods/11536)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 115
+        udr: 255
   - name: 'Knights_DMRA.esp'
     tag:
       - Graphics
@@ -11164,6 +11107,11 @@ plugins:
   - name: 'Quest Award Leveller - Knights of the Nine.esp'
     tag:
       - Scripts
+    dirty:
+      - crc: 0xa80cd1a4
+        util: '[TES4Edit](http://www.nexusmods.com/oblivion/mods/11536/)'
+        info: 'A cleaning guide is available [here](http://cs.elderscrolls.com/index.php?title=TES4Edit_Cleaning_Guide).'
+        itm: 7
   - name: 'Quest For The Elements.esp'
     dirty:
       - crc: 0xd2e0b570

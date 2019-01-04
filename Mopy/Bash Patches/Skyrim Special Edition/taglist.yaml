@@ -3,31 +3,111 @@ plugins:
     tag:
       - Actors.ACBS
       - Actors.AIPackages
-      - C.Acoustic
-      - C.Climate
-      - C.Encounter
-      - C.Light
-      - C.Location
-      - C.Music
-      - C.Owner
-      - C.RecordFlags
-      - C.Regions
-      - C.Water
+      - Factions
       - Invent
+    dirty:
+      - crc: 0x56ebf1fc
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 328
   - name: '3rdEraWeapMoS-lvlList.esp'
     tag:
       - Delev
       - Relev
+  - name: 'AHZBetterDGEntranceSE.esp'
+    tag:
+      - C.Location
+      - C.RecordFlags
+      - C.Regions
   - name: 'Alternate Start - Live Another Life.esp'
     tag:
       - C.Location
+      - Names
+  - name: 'Alternate Start -- New Beginnings.esp'
+    tag:
+      - Scripts
+      - -Sound
+  - name: 'AmazingFollowerTweaks.esp'
+    dirty:
+      - crc: 0x3899f517
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+      - crc: 0x88f9c8b8
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 7
+      - crc: 0x8b1bc915
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+  - name: 'Andromeda - Unique Standing Stones of Skyrim.esp'
+    tag:
+      - -Names
+    dirty:
+      - crc: 0xaf52c3d7
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+  - name: 'AnotherSortingMod_2017-SSE.esp'
+    tag:
+      - Names
+    dirty:
+      - crc: 0x430ee235
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
   - name: 'Ars Metallica.esp'
     tag:
       - Invent
       - Relev
+  - name: 'ArtifactsOfBoethiah.esp'
+    dirty:
+      - crc: 0xbea0b2da
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
+  - name: 'Audio Overhaul Skyrim - Immersive Sounds Patch.esp'
+    tag:
+      - Sound
+    dirty:
+      - crc: 0x2071410c
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 37
+      - crc: 0xe92baf20
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 37
+  - name: 'AwesomePotions_CACO_Patch.esp'
+    tag:
+      - Graphics
   - name: 'AyleidCitadel.esp'
     tag:
       - C.Regions
+  - name: 'BandolierForNPC - Cloaks of Skyrim Patch.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'BandolierForNPC - Realistic Enchantements.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'BandolierForNPC - Winter is Coming and Cloaks of Skyrim Patch.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'BandolierForNPC - Winter is Coming Patch.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'BandolierForNPC.esp'
+    tag:
+      - Names
+      - Stats
+  - name: 'BDS - MM Patch.esp'
+    tag:
+      - Graphics
   - name: 'Beasts of Tamriel.esp'
     tag:
       - Actors.ACBS
@@ -38,18 +118,48 @@ plugins:
       - C.Water
       - Invent
       - Relev
+  - name: 'Better Dynamic Snow - NSUTR Patch.esp'
+    tag:
+      - Graphics
+  - name: 'Better Dynamic Snow.esp'
+    tag:
+      - Graphics
+  - name: 'Better Vampires.esp'
+    tag:
+      - Graphics
+      - Names
+      - Relev
+      - Sound
+      - Stats
   - name: 'Better_Male_Presets.esp'
     tag:
       - NoMerge
   - name: 'BetterQuestObjectives.esp'
     tag:
       - NoMerge
+  - name: 'BlackthornManor.esp'
+    dirty:
+      - crc: 0x7e530609
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 17
+  - name: 'BlendedRoads.esp'
+    tag:
+      - Graphics
   - name: 'Book Covers Skyrim - Lost Library.esp'
     tag:
       - Delev
   - name: 'Book Covers Skyrim.esp'
     tag:
       - Graphics
+      - Names
+      - Sound
+      - Stats
+  - name: 'Bring Out Your Dead.esp'
+    tag:
+      - C.Location
+  - name: 'BS_Campfire.esp'
+    tag:
       - Names
   - name: 'BS_DLC_patch.esp'
     tag:
@@ -59,6 +169,20 @@ plugins:
     tag:
       - C.Light
       - C.RecordFlags
+  - name: 'BSHeartland - Unofficial Patch.esp'
+    tag:
+      - C.Location
+      - C.Name
+      - Names
+    dirty:
+      - crc: 0x76842224
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 173
+      - crc: 0xb283d3e0
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 173
   - name: 'BSHeartland.esm'
     tag:
       - Actors.ACBS
@@ -75,15 +199,45 @@ plugins:
       - Names
     dirty:
       - crc: 0xb12b4e7
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 485
-        udr: 3
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 514
+  - name: 'Castle Volkihar Rebuilt.esp'
+    tag:
+      - C.Encounter
+      - C.Location
+  - name: 'ccQDRSSE001-SurvivalMode.esl'
+    dirty:
+      - crc: 0x611d6aa2
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+  - name: 'Circlets and Masks with all Robes and Hoods.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'Cloaks.esp'
+    tag:
+      - Invent
+  - name: 'CollegeOfWinterholdImmersive.esp'
+    tag:
+      - Factions
+      - Invent
+      - Names
+  - name: 'CosmeticVampireOverhaul.esp'
+    tag:
+      - NpcFaces
+      - R.Head
   - name: 'CraftingSupplies_AIO_ALL.esp'
     tag:
       - Invent
   - name: 'Cutting Room Floor.esp'
     tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.Stats
       - C.Location
       - C.Owner
       - C.RecordFlags
@@ -91,59 +245,56 @@ plugins:
       - Graphics
       - Invent
       - Names
+      - NPC.Class
       - Stats
+  - name: 'Darkend.esp'
+    dirty:
+      - crc: 0x616730b8
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 26
+  - name: 'Darkwater Crossing.esp'
+    tag:
+      - Names
   - name: 'Dawnguard.esm'
     tag:
+      - C.Location
+      - C.Regions
       - Delev
       - Invent
       - Relev
     dirty:
-      - crc: 0x51fcdc8
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 628
+      - crc: 0x252fada
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 759
         udr: 82
         nav: 57
-      - crc: 0x9ff5624
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 6
+      - crc: 0xa0cf8abf
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 7
         nav: 57
-      - crc: 0xd2cf128
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 6
-        nav: 57
-      - crc: 0xd694ec0
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 621
-        udr: 82
-        nav: 57
-      - crc: 0x1b95f26b
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 6
-        nav: 57
-      - crc: 0x81a481e8
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 621
-        udr: 82
-        nav: 57
-      - crc: 0xbfba5a40
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 621
-        udr: 82
-        nav: 57
+  - name: 'DBM_AOS_Patch.esp'
+    tag:
+      - Graphics
+      - Sound
   - name: 'DBM_CRF_Patch.esp'
     tag:
-      - Factions
+      - Actors.AIPackages
+      - Graphics
       - Names
+      - Stats
   - name: 'DBM_HelgenReborn_Patch.esp'
     tag:
-      - Factions
+      - C.Location
+      - -Factions
+  - name: 'DBM_ISC_Patch.esp'
+    tag:
+      - Sound
+  - name: 'DBM_OpenCities_Patch.esp'
+    tag:
+      - C.Location
   - name: 'DBM_SkyrimUnderground_Patch.esp'
     tag:
       - Invent
@@ -154,45 +305,157 @@ plugins:
   - name: 'Definitive Hearthfire Supllies.esp'
     tag:
       - Invent
+  - name: 'Distinct Interiors - Player Homes.esp'
+    dirty:
+      - crc: 0x289785cc
+        util: '[SSEEdit v3.3.4 BETA](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. A manual cleaning guide is available [here](https://cptmcsplody.github.io/xGuides/#-distinct-interiors-)'
+        nav: 1
+  - name: 'Distinct Interiors.esp'
+    dirty:
+      - crc: 0x6977340a
+        util: '[SSEEdit v3.3.4 BETA](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        udr: 1
+        nav: 1
+      - crc: 0xefc71875
+        util: '[SSEEdit v3.3.4 BETA](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. A manual cleaning guide is available [here](https://cptmcsplody.github.io/xGuides/#-distinct-interiors-)'
+        nav: 1
+  - name: 'DIVERSE SKYRIM.esp'
+    tag:
+      - Delev
+      - Relev
   - name: 'DLCIntegration.esp'
     tag:
       - Delev
       - Invent
       - Names
       - Relev
+  - name: 'Dragon Bridge.esp'
+    tag:
+      - Actors.AIPackages
+      - C.Location
+      - Invent
+      - NpcFaces
   - name: 'Dragonborn.esm'
     tag:
       - Invent
       - Relev
     dirty:
-      - crc: 0x1ad3b6f1
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 69
+      - crc: 0x3ac8fa72
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 81
         udr: 8
         nav: 1
-      - crc: 0x32e19c49
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 67
-        udr: 8
-        nav: 1
-      - crc: 0x64625bcd
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 69
-        udr: 8
-        nav: 1
-      - crc: 0xc7e30215
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 69
-        udr: 8
-        nav: 1
+  - name: 'DragonsKeep.esp'
+    dirty:
+      - crc: 0x43af2572
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        itm: 28
+        nav: 32
+      - crc: 0x59e1ad72
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        nav: 32
+  - name: 'Economy.esp'
+    tag:
+      - Relev
+  - name: 'EconomyOverhaulandScarcityPatch.esp'
+    tag:
+      - Delev
+      - Relev
   - name: 'ELE_SSE.esp'
     tag:
-      - -C.ImageSpace
-      - -C.Light
+      - C.ImageSpace
+      - C.Light
+  - name: 'ELFX - NoPlayerHomes.esp'
+    dirty:
+      - crc: 0x181ecd13
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        udr: 1
+  - name: 'Eli_Breezehome.esp'
+    dirty:
+      - crc: 0x4768b826
+        util: '[SSEEdit](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        itm: 39
+        nav: 2
+      - crc: 0xcba83065
+        util: '[SSEEdit](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        nav: 2
+  - name: 'Eli_Halla.esp'
+    dirty:
+      - crc: 0xa312951a
+        util: '[SSEEdit](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 9
+  - name: 'Eli_RiverwoodShack.esp'
+    dirty:
+      - crc: 0xf8fd2b2d
+        util: '[SSEEdit](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 9
+  - name: 'Eli_Routa.esp'
+    dirty:
+      - crc: 0x89c6605c
+        util: '[SSEEdit](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 10
+      - crc: 0xc5035942
+        util: '[SSEEdit](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 10
+  - name: 'Eli_Ruska.esp'
+    dirty:
+      - crc: 0xd1cc4a86
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 7
+  - name: 'EnhancedLightsandFX.esp'
+    dirty:
+      - crc: 0xdd00738b
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+  - name: 'ETaC - Complete.esp'
+    tag:
+      - C.Location
+  - name: 'ETaC - Darkwater Crossing.esp'
+    tag:
+      - C.Location
+  - name: 'ETaC - RESOURCES.esm'
+    tag:
+      - Graphics
+  - name: 'ETaC - Riverwood.esp'
+    tag:
+      - C.Location
+  - name: 'ForgottenCity.esp'
+    dirty:
+      - crc: 0xe6dc78c3
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 7
+  - name: 'frozenintime.esp'
+    dirty:
+      - crc: 0x264f55d5
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 4
+      - crc: 0xf73f2ac4
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 4
+  - name: 'HammetDungeons.esp'
+    dirty:
+      - crc: 0xdab9cdaa
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 30
   - name: 'HarvestOverhaul_Redone.esp'
     tag:
       - Invent
@@ -204,32 +467,18 @@ plugins:
       - Relev
   - name: 'Hearthfires.esm'
     tag:
+      - C.Location
       - Invent
     dirty:
-      - crc: 0xa631401b
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 178
+      - crc: 0xc5d99405
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 221
         udr: 11
         nav: 5
-      - crc: 0xeb21f448
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 178
-        udr: 11
-        nav: 5
-      - crc: 0xed949396
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 178
-        udr: 11
-        nav: 5
-      - crc: 0xfbd3fb4c
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 178
-        udr: 11
-        nav: 5
+  - name: 'Helarchen Creek.esp'
+    tag:
+      - C.Location
   - name: 'High Level Enemies - Dawnguard.esp'
     tag:
       - Relev
@@ -239,12 +488,58 @@ plugins:
   - name: 'High Level Enemies.esp'
     tag:
       - Relev
+  - name: 'Holds.esp'
+    dirty:
+      - crc: 0xcecbf47c
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 170
   - name: 'Hothtrooper44_ArmorCompilation.esp'
     tag:
       - Delev
       - Relev
+  - name: 'Immersive Citizens - AI Overhaul.esp'
+    tag:
+      - Actors.AIPackages
+      - C.Location
+      - C.LockList
+      - C.Owner
+  - name: 'Immersive Horses.esp'
+    tag:
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.Spells
+      - Actors.Stats
+      - Factions
+      - Graphics
+      - Invent
+      - Names
+      - Scripts
+      - SpellStats
+      - Stats
   - name: 'Immersive Jewelry.esp'
     tag:
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Stats
+  - name: 'Immersive Music.esp'
+    tag:
+      - C.Music
+    dirty:
+      - crc: 0x4ed7c6dc
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
+  - name: 'Immersive Sounds - Compendium.esp'
+    tag:
+      - Sound
+  - name: 'Immersive Weapons.esp'
+    tag:
+      - Delev
+      - Graphics
       - Invent
       - Relev
   - name: 'imp_helm_legend.esp'
@@ -252,8 +547,8 @@ plugins:
       - Graphics
     dirty:
       - crc: 0x8491d752
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 5
   - name: 'Imperious - Races of Skyrim.esp'
     tag:
@@ -262,6 +557,37 @@ plugins:
       - Names
       - R.Description
       - R.Skills
+  - name: 'Improved Traps.esp'
+    tag:
+      - Graphics
+      - Stats
+  - name: 'Inigo.esp'
+    dirty:
+      - crc: 0x9cce987c
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 34
+  - name: 'Inns and Taverns - Heartwood Inn.esp'
+    dirty:
+      - crc: 0x358fd05d
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 11
+  - name: 'Inns and Taverns - The Ghostly View.esp'
+    dirty:
+      - crc: 0x1eb28610
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 13
+  - name: 'Inns and Taverns.esp'
+    dirty:
+      - crc: 0xc354e06e
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 91
+  - name: 'InsanitySorrow Weapons Pack.esp'
+    tag:
+      - Relev
   - name: 'JK''s SkyHaven Forge.esp'
     tag:
       - C.Regions
@@ -269,18 +595,40 @@ plugins:
     tag:
       - C.Location
       - C.Water
+  - name: 'Joy of Perspective.esp'
+    dirty:
+      - crc: 0x292f204e
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+  - name: 'JRMoonpathtoElsweyrPatch.esp'
+    tag:
+      - Names
   - name: 'JS Armored Circlets SE.esp'
     tag:
       - Relev
   - name: 'Kayla_CharPreset.esp'
     tag:
       - NoMerge
+  - name: 'Keld-Nar.esp'
+    tag:
+      - C.Location
   - name: 'KrittaKittyHorsesForSSE.esp'
     dirty:
-      - crc: 0x6e242e9e
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+      - crc: 0x924ad45b
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 1
+  - name: 'KS Dragon Overhaul 2.esp'
+    tag:
+      - R.ChangeSpells
+      - Scripts
+      - SpellStats
+  - name: 'KS Dragon Overhaul.esp'
+    tag:
+      - R.ChangeSpells
+      - Scripts
+      - SpellStats
   - name: 'LADX_SSE.esp'
     tag:
       - Delev
@@ -289,13 +637,56 @@ plugins:
   - name: 'Lagertha_CharPreset.esp'
     tag:
       - NoMerge
-  - name: 'Lydia Face Preset 64bit.esp'
+  - name: 'LegacyoftheDragonborn.esm'
     tag:
-      - NoMerge
-  - name: 'MLU - Immersive Armors.esp'
+      - C.Location
+      - Delev
+      - Graphics
+      - Invent
+      - Names
+      - Relev
+      - Sound
+      - Stats
+  - name: 'Lore Weapon Expansion.esp'
     tag:
       - Delev
       - Relev
+  - name: 'Lucien.esp'
+    dirty:
+      - crc: 0xe539f0
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 13
+  - name: 'Luminosity - Lightweight Lighting.esp'
+    tag:
+      - C.Light
+  - name: 'Luminosity Lighting Overhaul.esp'
+    tag:
+      - C.Light
+  - name: 'Lydia Face Preset 64bit.esp'
+    tag:
+      - NoMerge
+  - name: 'MajesticMountains.esp'
+    tag:
+      - Graphics
+  - name: 'MajesticMountains_Moss.esp'
+    tag:
+      - Graphics
+    dirty:
+      - crc: 0x56db0788
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 5
+  - name: 'MLU - AAE Ultimate Edition.esp'
+    tag:
+      - Invent
+  - name: 'MLU - Immersive Armors.esp'
+    tag:
+      - Delev
+      - Invent
+      - Names
+      - Relev
+      - Stats
   - name: 'MLU - Improved Closefaced Helmets.esp'
     tag:
       - Stats
@@ -311,34 +702,196 @@ plugins:
       - Names
       - Relev
       - Stats
+  - name: 'MoonAndStar_ImmersionPatch.esp'
+    dirty:
+      - crc: 0x2d753507
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
   - name: 'MoonAndStar_MAS.esp'
     tag:
       - C.Location
     dirty:
       - crc: 0xeb5aefaf
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 1
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
   - name: 'Morrowloot.esp'
     tag:
       - Delev
       - Relev
+  - name: 'MrissiTailOfTroubles.esp'
+    dirty:
+      - crc: 0x8897007a
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 34
+  - name: 'NAT.esp'
+    tag:
+      - Graphics
+      - Sound
+      - Stats
+    dirty:
+      - crc: 0x8377d03c
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 19
+  - name: 'notice board - better solstheim quests.esp'
+    tag:
+      - C.Encounter
+      - C.Music
+    dirty:
+      - crc: 0x9985dff3
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+  - name: 'NSUTR_groundsnow_mesh_fixes.esp'
+    dirty:
+      - crc: 0x2ee577a0
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 33
+  - name: 'NSUTR_improvements.esp'
+    dirty:
+      - crc: 0xbe9e7f5f
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
+  - name: 'Obsidian Weathers for Vigilant.esp'
+    tag:
+      - Sound
+  - name: 'Obsidian Weathers.esp'
+    tag:
+      - Sound
+      - Stats
+  - name: 'OCW_ELFX_Patch.esp'
+    tag:
+      - C.Climate
+      - C.Light
+  - name: 'OCW_Obscure''s_CollegeofWinterhold.esp'
+    tag:
+      - C.Climate
+      - C.Light
+      - Invent
+      - Names
   - name: 'Open Cities Skyrim.esp'
     tag:
       - C.Location
+      - C.Regions
   - name: 'Ordinator - Perks of Skyrim.esp'
     tag:
-      - C.Regions
       - Graphics
       - Names
       - Sound
+  - name: 'Palaces Castles Enhanced.esp'
+    tag:
+      - C.Name
+    dirty:
+      - crc: 0xd291fef2
+        util: '[SSEEdit v3.3.0 BETA](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 18
+  - name: 'Particle Patch for ENB SSE.esp'
+    tag:
+      - C.Climate
+      - C.ImageSpace
+  - name: 'pmoutsideplanters.esp'
+    dirty:
+      - crc: 0xa46dfee0
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 21
+        udr: 18
   - name: 'Prometheus_No_snow_Under_the_roof.esp'
     dirty:
       - crc: 0x87d18f2b
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 59
         udr: 5
+  - name: 'proudspirebasementcrypt.esp'
+    dirty:
+      - crc: 0x64a2dd93
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        itm: 16
+        udr: 9
+        nav: 1
+      - crc: 0x8b514ae0
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        nav: 1
+  - name: 'ProudspiremanorTNFBP.esp'
+    dirty:
+      - crc: 0x2ae17dbf
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+  - name: 'ProudspireSmithingRoom.esp'
+    dirty:
+      - crc: 0x7aadcf10
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        itm: 4
+        udr: 14
+        nav: 1
+      - crc: 0x8033fa9d
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        nav: 1
+  - name: 'Proudspirexyz.esp'
+    dirty:
+      - crc: 0x79f28eb3
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        udr: 63
+  - name: 'Provincial Courier Service.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIPackages
+      - C.Location
+  - name: 'PrvtI_HeavyArmory.esp'
+    tag:
+      - Delev
+      - Invent
+      - Names
+      - Relev
+      - Stats
+  - name: 'Qw_DeadlySpellImpacts_AOS Patch.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'Qw_DeadlySpellImpacts_ISC Patch.esp'
+    tag:
+      - Graphics
+      - Sound
+  - name: 'Qw_ISC_USSEP Patch.esp'
+    tag:
+      - Sound
+  - name: 'Qw_TheOrdinaryWomen_CRF Patch.esp'
+    tag:
+      - NoMerge
+  - name: 'Qw_WACCF_AOS Patch.esp'
+    tag:
+      - Sound
+  - name: 'Qw_WACCF_CRF Patch.esp'
+    tag:
+      - Stats
+  - name: 'Qw_WACCF_ISC Patch.esp'
+    tag:
+      - Sound
+  - name: 'Randomized Word Walls.esp'
+    dirty:
+      - crc: 0x48a567ea
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 42
+  - name: 'Realistic Treeline.esp'
+    dirty:
+      - crc: 0xe7403486
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
   - name: 'RealisticWaterTwo.esp'
     tag:
       - C.Water
@@ -349,19 +902,122 @@ plugins:
       - Delev
       - Invent
       - Relev
+  - name: 'RelightingSkyrim_SSE.esp'
+    dirty:
+      - crc: 0x431cf3c5
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+  - name: 'Reverb and Ambiance Overhaul - Skyrim.esp'
+    tag:
+      - Sound
   - name: 'RichMerchantsSkyrim_x\d+.esp'
     tag:
       - Relev
+  - name: 'Rigmor.esp'
+    dirty:
+      - crc: 0xfeca474
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+      - crc: 0x216656ce
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 411
+      - crc: 0xe2d1c53f
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 413
+        udr: 1
+  - name: 'RUSTIC SOULGEMS - Unsorted.esp'
+    dirty:
+      - crc: 0x8b98ca15
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+      - crc: 0xe54891da
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
   - name: 'Sacrosanct - Vampires of Skyrim.esp'
     tag:
       - Graphics
       - Names
       - Sound
+  - name: 'SAFO.esp'
+    tag:
+      - Delev
+      - Invent
+      - Names
+      - Relev
+      - Stats
+  - name: 'ScopedBows.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+  - name: 'ScopedBows_MLU_ZIA Patch.esp'
+    tag:
+      - Graphics
+      - Names
+      - Stats
     dirty:
-      - crc: 0x93553bd1
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 20
+      - crc: 0x3f1501f1
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+      - crc: 0xfa9addf9
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+  - name: 'Settlements Expanded SE - Blackthorn Patch.esp'
+    dirty:
+      - crc: 0x2dc1b284
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 8
+  - name: 'Settlements Expanded SE - Inns and Taverns AIO Patch.esp'
+    dirty:
+      - crc: 0xd5b31444
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+  - name: 'Settlements Expanded SE - Inns and Taverns Patch - Heartwood Inn.esp'
+    dirty:
+      - crc: 0x71cc366b
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+  - name: 'Settlements Expanded SE - Legendary Cities Patch - AIO.esp'
+    dirty:
+      - crc: 0xdb357c8f
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 7
+  - name: 'Settlements Expanded SE - Legendary Cities Patch - Modular.esp'
+    dirty:
+      - crc: 0xf0d1abc6
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 7
+  - name: 'Settlements Expanded SE - Soljunds Sinkhole Patch.esp'
+    dirty:
+      - crc: 0xa6148aa2
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+  - name: 'Settlements Expanded SE - Whistling Mine Patch.esp'
+    dirty:
+      - crc: 0x18207371
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
+  - name: 'Settlements Expanded SE.esp'
+    dirty:
+      - crc: 0xf5d3581b
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 71
   - name: 'Severa_CharPreset.esp'
     tag:
       - NoMerge
@@ -369,26 +1025,264 @@ plugins:
     tag:
       - C.Climate
       - C.Water
+  - name: 'ShezrieOldHroldanVer2.esp'
+    tag:
+      - C.Light
+      - Graphics
+      - Invent
+      - -C.Acoustic
+      - -C.Regions
+      - -C.Water
+    dirty:
+      - crc: 0x9e66b431
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 6
+  - name: 'SkaalManor.esp'
+    dirty:
+      - crc: 0xc7128a38
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        itm: 53
+        nav: 3
+      - crc: 0xcfb38e04
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        nav: 3
   - name: 'Skyrim Alchemy Fixed - Ordinator.esp'
     tag:
       - Delev
   - name: 'Skyrim Alchemy Fixed.esp'
     tag:
       - Delev
-  - name: 'SMIM-SE.esp'
+  - name: 'Skyrim Immersive Creatures Special Edition.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+      - -C.Location
+  - name: 'Skyrim Revamped - Complete Enemy Overhaul.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.CombatStyle
+      - Actors.DeathItem
+      - Actors.Spells
+      - Actors.Stats
+      - Delev
+      - Invent
+      - NPC.Class
+      - NPC.Race
+      - Relev
+  - name: 'Skyrim Revamped - Skyrim Expanded Weaponry NPC Patch.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Skyrim Revamped - Summermyst Patch.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Skyrim Revamped - Unique Loot Patch.esp'
+    tag:
+      - Invent
+  - name: 'Skyrim Revamped.esp'
+    tag:
+      - Delev
+      - Invent
+      - Relev
+  - name: 'SkyrimSewers.esp'
+    dirty:
+      - crc: 0x78ab4e62
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 10
+  - name: 'SkyTEST-RealisticAnimals&Predators.esp'
+    tag:
+      - Actors.ACBS
+      - Actors.AIData
+      - Actors.AIPackages
+      - Actors.CombatStyle
+      - Actors.Stats
+      - Delev
+      - Factions
+      - NPC.Class
+      - NPC.Race
+      - R.ChangeSpells
+      - Relations
+      - Relev
+  - name: 'SL01AmuletsSkyrim.esp'
+    tag:
+      - Delev
+  - name: 'SMIM-SE?.*\.esp'
     tag:
       - Graphics
+  - name: 'SmoothShores.esp'
+    dirty:
+      - crc: 0x8a99cce9
+        util: '[SSEEdit v3.3.11 BETA](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 15
   - name: 'Solitude Expansion.esp'
     tag:
       - C.Location
       - C.Regions
+  - name: 'SoS - Civilization.esp'
+    tag:
+      - C.Acoustic
+      - Sound
+  - name: 'SoS - The Dungeons.esp'
+    tag:
+      - Sound
+  - name: 'SoS - The Wilds.esp'
+    tag:
+      - Sound
+  - name: 'SoundsofSkyrimComplete.esp'
+    tag:
+      - C.Acoustic
+      - Sound
+  - name: 'SR - InsanitySorrow Weapon''s Pack.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'SR - Lore Weapon Expansion Patch.esp'
+    tag:
+      - Delev
+      - Relev
   - name: 'SSEMerged.esp'
     tag:
       - NoMerge
+  - name: 'Sum_WACCF_Patch.esp'
+    tag:
+      - Delev
+      - Relev
+  - name: 'Summermyst - Enchantments of Skyrim.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Invent
+      - Relev
+  - name: 'Tainted_Blood.esp'
+    dirty:
+      - crc: 0xf7a45327
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+  - name: 'TCIY BCS Patch.esp'
+    tag:
+      - Graphics
+      - Names
+  - name: 'Tel_Nalta.esp'
+    dirty:
+      - crc: 0xdb9e70da
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 6
+  - name: 'Telengard.esp'
+    tag:
+      - C.Location
+  - name: 'Tes Arena - Skyrim Frontier Fortress.esp'
+    dirty:
+      - crc: 0x701adc3a
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 120
+  - name: 'TES Arena Amol.esp'
+    dirty:
+      - crc: 0x28f9dafa
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 13
+  - name: 'Tes Arena Nimalten.esp'
+    dirty:
+      - crc: 0xb34448cc
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 26
+  - name: 'Tes Arena NorthKeep.esp'
+    dirty:
+      - crc: 0xeee0e4b
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 15
+  - name: 'TES DunstadGrove.esp'
+    dirty:
+      - crc: 0x72fe5cb8
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 14
+  - name: 'Tes Granite Hall.esp'
+    dirty:
+      - crc: 0x69aac6dc
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 14
+  - name: 'Tes Pagran Village.esp'
+    dirty:
+      - crc: 0xf4ab0c61
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 19
+  - name: 'Tes Vernim Wood.esp'
+    dirty:
+      - crc: 0x5f6b48ae
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 19
+  - name: 'The Haven From The Cold And Dark.esp'
+    dirty:
+      - crc: 0xc53d3a5b
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        itm: 3996
+        nav: 3
+      - crc: 0xda83bb85
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'It is strongly recommended not to use mods that contain **Deleted navmeshes** as they''re known to cause crashes. **Deleted navmeshes** must be corrected manually. More information on **Deleted navmeshes** is provided [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-A).'
+        nav: 3
   - name: 'TheChoiceIsYours.esp'
     tag:
       - Actors.AIPackages
       - Names
+  - name: 'TheWulfPanda - City Teleport Spells Less Magicka Increase Cast Time.esp'
+    dirty:
+      - crc: 0x5ae957ab
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 19
+  - name: 'TheWulfPanda - City Teleport Spells.esp'
+    dirty:
+      - crc: 0xec89cad3
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 19
+  - name: 'TheWulfPanda - Faction Teleport Spells Less Magicka Increased Cast Time.esp'
+    dirty:
+      - crc: 0x3bedc8a5
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 30
+  - name: 'TheWulfPanda - Faction Teleport Spells.esp'
+    dirty:
+      - crc: 0x6da7bcf5
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 30
+  - name: 'TheWulfPanda - Teleport Spells Towns and Villages Less Magicka Increase Cast Time.esp'
+    dirty:
+      - crc: 0x2393970c
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 17
+  - name: 'TheWulfPanda - Teleport Spells Towns and Villages.esp'
+    dirty:
+      - crc: 0xe614f5d7
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 17
+  - name: 'Toccata as Elisif.esp'
+    tag:
+      - Actors.CombatStyle
+      - NpcFaces
   - name: 'TradeBarter.esp'
     tag:
       - Delev
@@ -402,63 +1296,136 @@ plugins:
   - name: 'TrueStormsSE.esp'
     tag:
       - Sound
+    dirty:
+      - crc: 0xd3211eb7
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
   - name: 'ULALPatch.esp'
     dirty:
       - crc: 0xdde49e20
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 4
         udr: 1
-  - name: 'ULRiverwoodForestJKPatch.esp'
-    tag:
-      - C.Water
+  - name: 'ULRiverwoodForestKatoPatch.esp'
+    dirty:
+      - crc: 0xe4f6773d
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 10
+        udr: 48
   - name: 'Undeath.esp'
     tag:
       - Graphics
       - Sound
     dirty:
       - crc: 0x6e988e26
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 17
-      - crc: 0xeb75a960
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 18
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 40
+  - name: 'Undriel_QuaintRavenRock.esp'
+    dirty:
+      - crc: 0xd0f9d3ba
+        util: '[SSEEdit v4.0.1](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 16
   - name: 'Unique Loot Compatibility Patch.esp'
     tag:
       - Delev
       - Invent
+      - Relev
+  - name: 'UniqueLocationsRiverwoodForest.esp'
+    dirty:
+      - crc: 0x91badf25
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 38
+  - name: 'Unofficial Skyrim Special Edition Patch.esp'
+    tag:
+      - C.Acoustic
+      - C.Regions
+      - Delev
       - Relev
   - name: 'unofficial skyrim survival patch.esp'
     tag:
       - Graphics
   - name: 'Update.esm'
     tag:
+      - C.Regions
+      - C.Water
       - Delev
     dirty:
-      - crc: 0x3f56d693
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 230
-        udr: 91
-      - crc: 0x4a01fea5
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 234
-        udr: 91
-      - crc: 0x8a234131
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 235
-        udr: 91
-      - crc: 0xfe610a99
-        util: '[SSEEdit](http://www.nexusmods.com/skyrimspecialedition/mods/164)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 239
+      - crc: 0xa3aeb4ca
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
+        nav: 2
+      - crc: 0xff60257a
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 291
         udr: 91
         nav: 2
+  - name: 'Vigilant.esp'
+    dirty:
+      - crc: 0x2e278ec6
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 52
+      - crc: 0x4469035f
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 52
+  - name: 'Vivid Weathers SE - Classic.esp'
+    dirty:
+      - crc: 0xf1a0b710
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 18
+  - name: 'Vivid WeathersSE.esp'
+    dirty:
+      - crc: 0x6065fd6c
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 6
   - name: 'WarmongerArmory_LeveledList.esp'
     tag:
       - Delev
       - Relev
+  - name: 'WGT.esp'
+    dirty:
+      - crc: 0x1735a889
+        util: 'SSEEdit v3.2.84 EXPERIMENTAL'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 22
+        udr: 9
+  - name: 'WhiterunHoldForest.esp'
+    dirty:
+      - crc: 0x68a235da
+        util: '[SSEEdit v3.3.0 BETA](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 6
+  - name: 'WhiterunValley.esp'
+    tag:
+      - Actors.AIPackages
+      - Factions
+      - Graphics
+      - Invent
+  - name: 'Winterhold Restored.esp'
+    tag:
+      - C.Location
+  - name: 'Wintermyst - Enchantments of Skyrim.esp'
+    tag:
+      - Delev
+      - Graphics
+      - Names
+      - Relev
+    dirty:
+      - crc: 0x24b9e639
+        util: '[SSEEdit v4.0.0](https://www.nexusmods.com/skyrimspecialedition/mods/164)'
+        info: 'Due to Improvements made to the cleaning process with the official release of xEdit 4.0.x+, any mods which were verified as clean with older versions of xEdit may now require additional cleaning. A guide for running xEdit 4.0.x+ in Quick Auto Clean mode can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 2
+  - name: 'Wintermyst - Increased Damage.esp'
+    tag:
+      - Names

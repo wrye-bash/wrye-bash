@@ -2,125 +2,174 @@ plugins:
   - name: 'AllSetsExtended.esp'
     dirty:
       - crc: 0x30c3276a
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 42
   - name: 'ArmorKeywords.esm'
     dirty:
+      - crc: 0x88b5c88
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 68
+      - crc: 0x2f5753ce
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 68
       - crc: 0x30156c76
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: 'FO4Edit v3.2'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
+      - crc: 0x7415ada9
+        util: 'FO4Edit v3.2.54'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 79
+      - crc: 0x898d5313
+        util: 'FO4Edit v3.2.63'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 79
+      - crc: 0xf2ec3f44
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 68
   - name: 'Armorsmith Extended.esp'
     dirty:
       - crc: 0x232590b7
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: 'FO4Edit v3.2'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 5
+      - crc: 0x837fe661
+        util: 'FO4Edit v3.2.63'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 1
+      - crc: 0xe7694ec1
+        util: 'FO4Edit v3.2.63'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 1
   - name: 'BetterSettlersCleanFacePack.esp'
     dirty:
       - crc: 0x7331d352
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 33
+  - name: 'BrahminPackMod.esp'
+    dirty:
+      - crc: 0x6b8c7589
+        util: 'FO4Edit v3.2.23'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 371
+        udr: 12
+      - crc: 0x97c9a7de
+        util: 'FO4Edit v3.2.23'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 372
+        udr: 12
   - name: 'BTInteriors_Project.esp'
     dirty:
       - crc: 0xd66fe314
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'BuildYourOwnVault.esp'
     dirty:
       - crc: 0xea39cbc4
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'CC''s Unique Vault Suit Boxes - Far Harbor Patch.esp'
     dirty:
       - crc: 0xb02466b0
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 2
   - name: 'CC''s Unique Vault Suit Boxes.esp'
     dirty:
       - crc: 0x8a219a39
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'CombatZoneRestored.esp'
     dirty:
       - crc: 0x86419c03
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 20
         udr: 20
         nav: 1
   - name: 'Companion_ShutUp.esp'
     dirty:
       - crc: 0x498d961c
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'Conquest.esp'
     dirty:
       - crc: 0x21243775
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 10
   - name: 'DiamondLighting.esp'
     dirty:
       - crc: 0x306fdd54
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
         udr: 4
   - name: 'Diverse Cats.esp'
     dirty:
       - crc: 0xea3b193f
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'DLCCoast.esm'
     dirty:
       - crc: 0xf1f28026
-        util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 75
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 85
         udr: 86
   - name: 'DLCNukaWorld.esm'
     dirty:
       - crc: 0x43d25c56
-        util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 193
         udr: 418
         nav: 7
   - name: 'DLCRobot.esm'
     dirty:
+      - crc: 0x950f94c8
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 1
+        nav: 1
       - crc: 0xd69027ea
-        util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 45
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 49
         udr: 38
         nav: 1
   - name: 'DLCworkshop01.esm'
     dirty:
       - crc: 0x47bae27e
-        util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 6
   - name: 'DLCworkshop02.esm'
     dirty:
       - crc: 0x83abc821
-        util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 2
   - name: 'DLCworkshop03.esm'
     dirty:
+      - crc: 0x9f6b3c8
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
       - crc: 0xe0089fbb
-        util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
-        itm: 18
+        util: '[FO4Edit v4.0.0](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 22
         udr: 10
   - name: 'FO4Merged.esp'
     tag:
@@ -129,78 +178,126 @@ plugins:
     dirty:
       - crc: 0xa5ee4658
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: 'Hot Sosig.esp'
     dirty:
       - crc: 0x967e4d12
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'MAGS.esp'
     dirty:
       - crc: 0xa9913693
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 12
         udr: 9
   - name: 'MakeYourOwnSynths.esp'
     dirty:
       - crc: 0xbc97890d
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 10
+  - name: 'Mechanist Lair Overhaul SEC.esp'
+    dirty:
+      - crc: 0x13978275
+        util: 'FO4Edit v3.2.3r'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        nav: 1
+  - name: 'Mechanist Lair Overhaul.esp'
+    dirty:
+      - crc: 0xb428de36
+        util: 'FO4Edit v3.2.3r'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        nav: 1
   - name: 'Northland Diggers New.esp'
     dirty:
       - crc: 0x3fef8e47
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 5
   - name: 'NukaRadBans.esp'
     dirty:
       - crc: 0x174f8132
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 1
       - crc: 0x717e7f08
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 1
   - name: 'nvvault1080.esp'
     dirty:
       - crc: 0xd6acc264
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         nav: 5
   - name: 'RailroadPerksCut.esp'
     dirty:
       - crc: 0x98ccfb8b
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: 'Rangergearnew.esp'
     dirty:
       - crc: 0x82272ac3
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
+  - name: 'RenLightMod.esp'
+    dirty:
+      - crc: 0x770b67b6
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 78
   - name: 'Sanctuary Terminals.esp'
     dirty:
       - crc: 0x6cfbe10e
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: 'SettlementAttacksBeyondFH.esp'
     dirty:
       - crc: 0xe0fb33f8
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
+  - name: 'SimSettlements.esm'
+    dirty:
+      - crc: 0x619aca1a
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 2
+      - crc: 0x9b2392b0
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 2
+      - crc: 0xd659f761
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 2
+      - crc: 0xe2a28496
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 2
+      - crc: 0xe42587b0
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 2
+      - crc: 0xe6df75e6
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 2
+      - crc: 0xf5dfc3e9
+        util: 'FO4Edit v3.2.67'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 2
   - name: 'slevins_chemVFX-Light.esp'
     dirty:
       - crc: 0xf46cb5c0
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'Smashed Patch.esp'
     tag:
@@ -208,26 +305,26 @@ plugins:
   - name: 'Some Assembly Required (Legendary Patch).esp'
     dirty:
       - crc: 0x1e1ce4d4
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 3
   - name: 'Some Assembly Required.esp'
     dirty:
       - crc: 0xae45ec68
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 15
   - name: 'StarlightLOD.esp'
     dirty:
       - crc: 0x31827654
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: 'starlightwingfix_v3.esp'
     dirty:
       - crc: 0xd8d7f936
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 10
         udr: 1
         nav: 1
@@ -235,37 +332,43 @@ plugins:
     dirty:
       - crc: 0x171964ce
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'tsuki no hana.esp'
     dirty:
       - crc: 0x1284f3e5
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 5
         udr: 2
   - name: 'UniqueUniques.esp'
     dirty:
       - crc: 0x1ac3385e
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 8
+  - name: 'Ushi.esp'
+    dirty:
+      - crc: 0x8240d505
+        util: 'FO4Edit v3.2.31'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
+        itm: 11
   - name: 'Vault Girl.esp'
     dirty:
       - crc: 0xe5ad59a1
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'Vault-Tec Historical Preservation Initiative.esp'
     dirty:
       - crc: 0xc8545353
-        util: '[FO4Edit](http://www.nexusmods.com/fallout4/mods/2737)'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        util: '[FO4Edit](https://www.nexusmods.com/fallout4/mods/2737)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
         udr: 9
   - name: 'Vault-Tec Workshop Overhaul.esp'
     dirty:
       - crc: 0x8fef7906
         util: 'FO4Edit v3.2.1'
-        info: 'A cleaning guide is available [here](http://www.creationkit.com/index.php?title=TES5Edit_Cleaning_Guide_-_TES5Edit).'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1

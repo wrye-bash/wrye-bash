@@ -23,8 +23,8 @@ plugins:
       - Invent
     dirty:
       - crc: 0x189a679d
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 11
   - name: '20th Century v4 ALIVE (Talon_Regulator).esp'
     tag:
@@ -34,8 +34,8 @@ plugins:
       - Invent
     dirty:
       - crc: 0xf569054a
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: '20th Century v4 ALIVE (Vendor).esp'
     tag:
@@ -70,8 +70,8 @@ plugins:
   - name: '20th Century v5 ALIVE (TEST Container).esp'
     dirty:
       - crc: 0x4f5ccd2c
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: '20th Century v5 ALIVE (Vault 101).esp'
     tag:
@@ -86,8 +86,8 @@ plugins:
       - Stats
     dirty:
       - crc: 0xdbf185aa
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 474
         udr: 1
   - name: '20th Century Weapons.esm'
@@ -105,8 +105,8 @@ plugins:
   - name: '3EFhelmlessstealthsuit.esp'
     dirty:
       - crc: 0xecf23f
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 9
         udr: 1
   - name: '3EFskewer.esp'
@@ -177,10 +177,14 @@ plugins:
       - Scripts
   - name: 'anchorage.esm'
     dirty:
+      - crc: 0x1bb2684e
+        util: '[FO3Edit v4.0.0](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
       - crc: 0xa4ba9d10
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
-        itm: 54
+        util: '[FO3Edit v4.0.0](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 55
         udr: 10
   - name: 'Angry Scientists.esp'
     tag:
@@ -217,20 +221,20 @@ plugins:
   - name: 'ArefuExpandedByAzar-FixMisc.esp'
     dirty:
       - crc: 0x283eaf75
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'ArefuExpandedByAzar-FixOptAddNew.esp'
     dirty:
       - crc: 0x9b1efe6b
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: 'ArefuExpandedByAzar-FixOptRemOld.esp'
     dirty:
       - crc: 0x675e86e8
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 39
   - name: 'ArefuExpandedByAzar.esm'
     tag:
@@ -238,22 +242,22 @@ plugins:
       - Invent
     dirty:
       - crc: 0x81581fca
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 209
         udr: 54
         nav: 16
   - name: 'ArlingtonRestoration.esp'
     dirty:
       - crc: 0x7644ffdb
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 11
         udr: 481
         nav: 7
       - crc: 0xbb8568ed
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         nav: 7
   - name: 'Arwen_Core.esm'
     tag:
@@ -347,29 +351,29 @@ plugins:
   - name: 'Big Town Overhaul [GangStore].esp'
     dirty:
       - crc: 0x563db400
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 53
         udr: 684
   - name: 'Big Town Overhaul.esp'
     dirty:
       - crc: 0x31e2d0e2
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 41
         udr: 684
   - name: 'Binoculars and Scopes.esp'
     dirty:
       - crc: 0x30f58333
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
         udr: 2
   - name: 'Binoculars.esp'
     dirty:
       - crc: 0x5a50fe32
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 15
         udr: 2
   - name: 'bittercup_6.esp'
@@ -395,8 +399,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0xd8bb74f2
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'BlackWidowBurkeFix.esp'
     tag:
@@ -423,8 +427,8 @@ plugins:
   - name: 'Bornagain Zeta Combat Armor Texture Patch.esp'
     dirty:
       - crc: 0xab095a45
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'BoS_DX.esp'
     tag:
@@ -448,8 +452,8 @@ plugins:
       - Relev
     dirty:
       - crc: 0xc01a90c2
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'BrokenSteel.esm'
     tag:
@@ -460,17 +464,22 @@ plugins:
       - Factions
       - Stats
     dirty:
+      - crc: 0x1ac4d764
+        util: '[FO3Edit v4.0.0](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 3
+        nav: 12
       - crc: 0x30011b79
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
-        itm: 275
+        util: '[FO3Edit v4.0.0](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 276
         udr: 34
         nav: 12
   - name: 'CALIBRv14 Ammunition Schematics for FWE-WMK-CRAFT-V1_3-18639.esp'
     dirty:
       - crc: 0x9ab2cf5e
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'CantaburyCommonsGuards - DTO.esp'
     tag:
@@ -484,8 +493,8 @@ plugins:
       - Relations
     dirty:
       - crc: 0x43e23b19
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 181
         udr: 20
         nav: 3
@@ -494,8 +503,8 @@ plugins:
       - Relations
     dirty:
       - crc: 0x3d8abed8
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 181
         udr: 20
         nav: 3
@@ -557,8 +566,8 @@ plugins:
   - name: 'Clarity.esp'
     dirty:
       - crc: 0xa9b7f199
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'Classic Fallout Weapons BETA.esp'
     tag:
@@ -588,14 +597,14 @@ plugins:
   - name: 'Companion Core DLC Addon.esp'
     dirty:
       - crc: 0x37145cc8
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'Companion Core.esm'
     dirty:
       - crc: 0x6f02e35
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'CompanionCherry.esp'
     tag:
@@ -866,8 +875,8 @@ plugins:
   - name: 'DCInteriors_ComboEdition.esm'
     dirty:
       - crc: 0xf85a5358
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 48
   - name: 'Delay ThePitt + Anchorage.esp'
     tag:
@@ -875,24 +884,24 @@ plugins:
   - name: 'delaypl.esp'
     dirty:
       - crc: 0xd5daf34e
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'delaysteel.esp'
     tag:
       - Scripts
     dirty:
       - crc: 0xe818b262
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'delayzeta.esp'
     tag:
       - Scripts
     dirty:
       - crc: 0x776851a3
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'Deputy Weld and Steel - Badges and Hats.esp'
     tag:
@@ -928,8 +937,8 @@ plugins:
   - name: 'DLC Enemies Freedom.esp'
     dirty:
       - crc: 0x971497c7
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 21
   - name: 'Dog lover''s mod NO ANCHORAGE.esp'
     tag:
@@ -954,8 +963,8 @@ plugins:
   - name: 'DriveableMotorCycle.esp'
     dirty:
       - crc: 0x949faf2c
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: 'Drone Cannon Fix.esp'
     tag:
@@ -967,8 +976,8 @@ plugins:
   - name: 'Elgar''s Extra Random Encounters.esp'
     dirty:
       - crc: 0x6fbcb8b4
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 218
   - name: 'Empty Nuka-Cola Quantum Bottles.esp'
     tag:
@@ -1057,8 +1066,8 @@ plugins:
   - name: 'Existence2.0.esp'
     dirty:
       - crc: 0xe5309da
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         nav: 1
   - name: 'EZCompanion_Type-N.esp'
     tag:
@@ -1118,14 +1127,14 @@ plugins:
   - name: 'FastTravelIndoors.esp'
     dirty:
       - crc: 0x42953e9a
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'Fellout-PointLookout.esp'
     dirty:
       - crc: 0xf33277f6
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'FelloutWithLightingOverhual-1.0.esp'
     tag:
@@ -1141,8 +1150,8 @@ plugins:
       - C.Light
     dirty:
       - crc: 0x482c04b2
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
         udr: 4
   - name: 'FireLightFix_rus.esp'
@@ -1150,8 +1159,8 @@ plugins:
       - C.Light
     dirty:
       - crc: 0xed54e353
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
         udr: 4
   - name: 'FNNsys - FWE.esp'
@@ -1163,8 +1172,8 @@ plugins:
   - name: 'FO3 Wanderers Edition - Alternate Travel.esp'
     dirty:
       - crc: 0x9876e38c
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
         udr: 1
   - name: 'FO3 Wanderers Edition - DLC Anchorage.esp'
@@ -1172,14 +1181,14 @@ plugins:
       - Deflst
     dirty:
       - crc: 0xd6aa0d05
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: 'FO3 Wanderers Edition - DLC Broken Steel.esp'
     dirty:
       - crc: 0x9226281c
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 14
   - name: 'FO3 Wanderers Edition - DLC Point Lookout.esp'
     tag:
@@ -1187,16 +1196,16 @@ plugins:
       - Relev
     dirty:
       - crc: 0xb63aaa64
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 23
   - name: 'FO3 Wanderers Edition - DLC The Pitt.esp'
     tag:
       - Names
     dirty:
       - crc: 0xbff37246
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'FO3 Wanderers Edition - Followers Enhanced (BrokenSteel).esp'
     tag:
@@ -1205,8 +1214,8 @@ plugins:
       - Actors.Stats
     dirty:
       - crc: 0x88f5a264
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'FO3 Wanderers Edition - Followers Enhanced.esp'
     tag:
@@ -1226,8 +1235,8 @@ plugins:
       - Stats
     dirty:
       - crc: 0x9c986068
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 13
   - name: 'FO3 Wanderers Edition - Main File.esp'
     tag:
@@ -1247,14 +1256,14 @@ plugins:
       - Stats
     dirty:
       - crc: 0x1982ec9
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 15
   - name: 'FO3 Wanderers Edition - Optional VATS Halftime.esp'
     dirty:
       - crc: 0x1b66e394
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'FO3 Wanderers Edition - Optional Worn Weapons.esp'
     tag:
@@ -1295,8 +1304,8 @@ plugins:
   - name: 'FortIndependenceRedesigned.esp'
     dirty:
       - crc: 0xe7bc4beb
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 20
         udr: 716
   - name: 'frederyck calibr fix-excalibrified.esp'
@@ -1430,8 +1439,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0xb633db19
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         nav: 1
   - name: 'IMCN - 5 DLC Merged.esp'
     tag:
@@ -1476,8 +1485,8 @@ plugins:
   - name: 'Imperfection.esm'
     dirty:
       - crc: 0x219ae3e2
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 24
         udr: 7
   - name: 'infiltrations.esp'
@@ -1488,8 +1497,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0x4d6ae42b
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 7
   - name: 'Item Descriptions Img.esp'
     tag:
@@ -1537,8 +1546,8 @@ plugins:
   - name: 'Laurens_Bathroom_poetry_V1.esp'
     dirty:
       - crc: 0xd8a75c40
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'Lawbringer Boutnies Ver1.1.esp'
     tag:
@@ -1588,8 +1597,8 @@ plugins:
   - name: 'Loki_HistoricSpeeches_v1.esp'
     dirty:
       - crc: 0x21340b32
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: 'Mannequin.esp'
     tag:
@@ -1607,8 +1616,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0x4489c0d6
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'Mart''s Mutant Mod - DLC Point Lookout.esp'
     tag:
@@ -1625,8 +1634,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0xcebfcdbc
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'Mart''s Mutant Mod - Feral Ghoul Rampage.esp'
     tag:
@@ -1720,8 +1729,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0xcb6a4b5f
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 9
   - name: 'Mart''s Mutant Mod.esm'
     tag:
@@ -1733,8 +1742,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0x9695f2a1
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 77
   - name: 'Mart''s Mutant Mod.esp'
     tag:
@@ -1746,8 +1755,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0xf2b3a052
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 41
   - name: 'MAXdog.esp'
     tag:
@@ -1836,8 +1845,8 @@ plugins:
   - name: 'MoreMapMarkers.esp'
     dirty:
       - crc: 0xb7f1fa75
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 289
         udr: 1
   - name: 'MP5ForFWE.esp'
@@ -1859,28 +1868,28 @@ plugins:
   - name: 'MTC Wasteland Travellers (Optional)- Crowded Cities less NPCs.esp'
     dirty:
       - crc: 0xe577ee9
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 19
   - name: 'MTC Wasteland Travellers (Optional)- Crowded Cities.esp'
     dirty:
       - crc: 0xe577ee9
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 23
   - name: 'MTC Wasteland Travellers.esp'
     dirty:
       - crc: 0xa7e3339
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 55
   - name: 'MyMegaton-AmmoPress-Calibr-Plus-Unlocked_v1_21_18605.esp'
     tag:
       - Names
     dirty:
       - crc: 0xc061b97b
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 8
   - name: 'Named Wasteland.esp'
     tag:
@@ -1896,8 +1905,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0xfff16d14
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 29
   - name: 'Nuka Cola Enhanced - FWE.esp'
     tag:
@@ -1925,8 +1934,8 @@ plugins:
   - name: 'People_Radio.esp'
     dirty:
       - crc: 0x839a113b
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: 'Phalanx-MainFollowerModule.esp'
     tag:
@@ -1974,8 +1983,8 @@ plugins:
       - Relev
     dirty:
       - crc: 0xe3ef4366
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
         udr: 56
   - name: 'PLweightadjust.esp'
@@ -1986,36 +1995,36 @@ plugins:
   - name: 'pointlookout.esm'
     dirty:
       - crc: 0xd92704d8
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit v4.0.0](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 21
   - name: 'PPA - FWE 2.esp'
     tag:
       - Stats
     dirty:
       - crc: 0x8b401d77
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'PPA - FWE Tougher NPC Power Armour.esp'
     tag:
       - Relev
     dirty:
       - crc: 0xd1635385
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'PPA - FWE.esp'
     dirty:
       - crc: 0xd43a04e
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'PPA - Mothership Zeta.esp'
     dirty:
       - crc: 0xbc734e8b
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'Project Beauty HD version [Hair Fix].esp'
     tag:
@@ -2089,14 +2098,14 @@ plugins:
   - name: 'RadioTenpenny.esp'
     dirty:
       - crc: 0xf7eca8bd
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 7
   - name: 'RadioTenpennyTower.esp'
     dirty:
       - crc: 0x813140d8
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: 'RagdollOverhaulFO3.esp'
     tag:
@@ -2137,40 +2146,40 @@ plugins:
   - name: 'RH_EVE_Bridge.esp'
     dirty:
       - crc: 0x6239eb2
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: 'RH_IRONSIGHTS.esm'
     tag:
       - Inven
     dirty:
       - crc: 0xba4abfe7
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 1
   - name: 'RH_IronSights_Basic_AnchoragePlugin.esp'
     dirty:
       - crc: 0x7ef88f51
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'RH_IronSights_Basic_BrokenSteelPlugin.esp'
     dirty:
       - crc: 0xa1feb067
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'RH_IronSights_Basic_PittPlugin.esp'
     dirty:
       - crc: 0xf4974e27
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'RH_IronSights_Basic_ZetaPlugin.esp'
     dirty:
       - crc: 0x9449eb44
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 5
   - name: 'RH_WMK_Bridge.esp'
     tag:
@@ -2185,8 +2194,8 @@ plugins:
   - name: 'RideableCreature.esp'
     dirty:
       - crc: 0xb59d8ade
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
         udr: 1
   - name: 'RoadWardens.esm'
@@ -2203,26 +2212,26 @@ plugins:
   - name: 'RobCo Certified v2 Zeta Addon.esp'
     dirty:
       - crc: 0x7e827a3
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'RobCo Certified v2.esm'
     dirty:
       - crc: 0xe363b7d7
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 9
   - name: 'RobcoCertified24SideMod.esp'
     dirty:
       - crc: 0x9c938fce
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
   - name: 'RockopolisRebuilt.esp'
     dirty:
       - crc: 0x51c3dd7a
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: 'royphilipsevil.esp'
     tag:
@@ -2350,8 +2359,8 @@ plugins:
   - name: 'StreetLights.esm'
     dirty:
       - crc: 0xc5690e8e
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 18
   - name: 'SuperSledgeBeatdown.esp'
     tag:
@@ -2375,8 +2384,8 @@ plugins:
   - name: 'Temple of the Union Overhaul.esp'
     dirty:
       - crc: 0xe4a3c388
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 34
         udr: 167
   - name: 'TenpennyGhoulsAtPeace.esp'
@@ -2393,20 +2402,20 @@ plugins:
       - Relev
     dirty:
       - crc: 0x663ddf02
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         udr: 11
   - name: 'The Mantis Imperative - Nasty Zeta.esp'
     dirty:
       - crc: 0xbc544f07
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 17
   - name: 'The Mantis Imperative - SkillBooks.esp'
     dirty:
       - crc: 0xdd2e48b1
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
   - name: 'The Pitt - Fixes.esp'
     tag:
@@ -2414,9 +2423,9 @@ plugins:
   - name: 'thepitt.esm'
     dirty:
       - crc: 0xb38b3e44
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
-        itm: 40
+        util: '[FO3Edit v4.0.0](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
+        itm: 53
         nav: 5
   - name: 'Towers Hill.esp'
     tag:
@@ -2436,8 +2445,8 @@ plugins:
       - Scripts
     dirty:
       - crc: 0x27bea633
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 336
         udr: 13
         nav: 7
@@ -2490,8 +2499,8 @@ plugins:
   - name: 'UrgeWashingtonBoS.esp'
     dirty:
       - crc: 0x98fd9bed
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 14
         udr: 16
   - name: 'URWL-Normal Color Saturation.esp'
@@ -2548,8 +2557,8 @@ plugins:
   - name: 'Vault 101 Revisited.esm'
     dirty:
       - crc: 0x848d8679
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 33
         udr: 9
         nav: 2
@@ -2589,8 +2598,8 @@ plugins:
       - Relev
     dirty:
       - crc: 0x25042115
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 82
   - name: 'WeaponModKits - FWE Optional Worn Weapons.esp'
     tag:
@@ -2631,12 +2640,12 @@ plugins:
       - Scripts
     dirty:
       - crc: 0x1d21bee9
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 1
       - crc: 0xb32fd263
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 3
   - name: 'WMKAA12Shotgun.esp'
     tag:
@@ -2655,8 +2664,8 @@ plugins:
   - name: 'X-1_Tales_of_Wonder!.esp'
     dirty:
       - crc: 0xc8b56e69
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 4
   - name: 'xCALIBR.esm'
     tag:
@@ -2678,8 +2687,8 @@ plugins:
   - name: 'xCALIBR_ammo_Override_v1_01_for_20th Century Weapons -Plus- Reborn FWE-WMK-Calibr14_V1_70RC_18668.esp'
     dirty:
       - crc: 0x32eac10d
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 351
         udr: 1
   - name: 'xCALIBR_FWE5_Override.esp'
@@ -2789,8 +2798,8 @@ plugins:
       - C.Climate
     dirty:
       - crc: 0x691323eb
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 13
   - name: 'Xepha''s Dynamic Weather - Main.esp'
     tag:
@@ -2804,8 +2813,8 @@ plugins:
   - name: 'Xepha''s Dynamic Weather - Weather Machine (Quest Added).esp'
     dirty:
       - crc: 0x21c258f6
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 2
         nav: 1
   - name: 'Xepha''s Dynamic Weather.esm'
@@ -2814,8 +2823,8 @@ plugins:
       - Sound
     dirty:
       - crc: 0x80acea99
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 13
   - name: 'YearlingBooks.esp'
     tag:
@@ -2823,48 +2832,48 @@ plugins:
   - name: 'zeta.esm'
     dirty:
       - crc: 0x1d017e23
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit v4.0.0](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A guide for running **Quick Auto Clean** can be found [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#quickautoclean).'
         itm: 15
   - name: 'ZL-ACR.esp'
     tag:
       - Stats
     dirty:
       - crc: 0xe4d428d7
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 7
       - crc: 0xe94ac8c2
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 7
   - name: 'ZL-MP5 Pack.esp'
     tag:
       - Stats
     dirty:
       - crc: 0xb7146642
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
       - crc: 0xcd453ee7
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 6
   - name: 'ZL-SVD-CALIBR.esp'
     tag:
       - Stats
     dirty:
       - crc: 0x1141ee84
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 11
   - name: 'ZL-SVD.esp'
     tag:
       - Stats
     dirty:
       - crc: 0x3b754c8b
-        util: '[FO3Edit](http://www.nexusmods.com/fallout3/mods/637)'
-        info: ''
+        util: '[FO3Edit](https://www.nexusmods.com/fallout3/mods/637)'
+        info: 'A cleaning guide is available [here](https://tes5edit.github.io/docs/5-mod-cleaning-and-error-checking.html#Apendix-B).'
         itm: 11
   - name: 'ZORTS - Custom HP - FOOK2.esp'
     tag:
