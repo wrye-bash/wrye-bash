@@ -21,8 +21,8 @@ tested on (previous versions or latest versions may or may not work):
 * Fallout 3 (patch 1.7.0.3)
 * Fallout New Vegas (patch 1.4.0.525)
 * Skyrim (patch 1.9.36.0)
-* Fallout 4 (patch 1.10.50.01)
-* Skyrim Special Edition (patch 1.5.23.08)
+* Fallout 4 (patch 1.10.120.0)
+* Skyrim Special Edition (patch 1.5.62.0)
 
 ### Download
 
