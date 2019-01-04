@@ -38,7 +38,7 @@ def CleanUpMockedGameInstall(gamePath):
     shutil.rmtree(gamePath)
 
 def DownloadMasterlist(repository, destinationPath):
-    url = u'https://raw.githubusercontent.com/loot/{}/v0.10/masterlist.yaml'.format(repository)
+    url = u'https://raw.githubusercontent.com/loot/{}/v0.13/masterlist.yaml'.format(repository)
     urllib.urlretrieve(url, destinationPath)
 
 print u'Loaded the LOOT API v{0} using wrapper version {1}'.format(
