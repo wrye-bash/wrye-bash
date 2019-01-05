@@ -849,7 +849,18 @@ class MobWorld(MobCells):
                 cell = recClass(header,ins,True)
                 if isFallout: cells[cell.fid] = cell
                 if block:
-                    if insTell() > endBlockPos or insTell() > endSubblockPos:
+                    if cell:
+                        cellBlock = MobCell(header, selfLoadFactory, cell)
+                        if block:
+                            cellBlocksAppend(cellBlock)
+                        else:
+                            if self.worldCellBlock:
+                                raise ModError(self.inName,
+                                               u'Extra exterior cell <%s> %s '
+                                               u'before block group.' % (
+                                                   hex(cell.fid), cell.eid))
+                            self.worldCellBlock = cellBlock
+                    elif insTell() > endBlockPos or insTell() > endSubblockPos:
                         raise ModError(self.inName,
                                        u'Exterior cell <%s> %s after block or'
                                        u' subblock.' % (
