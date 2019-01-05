@@ -818,7 +818,9 @@ class MobWorld(MobCells):
         insTell = ins.tell
         selfLoadFactory = self.loadFactory
         cellBlocksAppend = cellBlocks.append
-        isFallout = bush.game.fsName.lower() in (u'fallout3', u'falloutnv')
+        isFallout = bush.game.fsName.lower() in (
+            u'fallout3', u'falloutnv', u'skyrim', u'skyrim special edition',
+            u'fallout4')
         cells = {}
         while not insAtEnd(endPos,errLabel):
             curPos = insTell()
@@ -1035,7 +1037,9 @@ class MobWorlds(MobBase):
         insSeek = ins.seek
         selfLoadFactory = self.loadFactory
         worldBlocksAppend = worldBlocks.append
-        isFallout = bush.game.fsName.lower() in (u'fallout3', u'falloutnv')
+        isFallout = bush.game.fsName.lower() in (
+            u'fallout3', u'falloutnv', u'skyrim', u'skyrim special edition',
+            u'fallout4')
         worlds = {}
         while not insAtEnd(endPos,errLabel):
             #--Get record info and handle it
