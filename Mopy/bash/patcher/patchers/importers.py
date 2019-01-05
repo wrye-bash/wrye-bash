@@ -392,9 +392,14 @@ class CellImporter(_ACellImporter, ImportPatcher):
         def handlePatchCellBlock(patchCellBlock):
             modified=False
             for attr,value in cellData[patchCellBlock.cell.fid].iteritems():
-                if patchCellBlock.cell.__getattribute__(attr) != value:
-                    patchCellBlock.cell.__setattr__(attr, value)
-                    modified=True
+                if attr == 'regions':
+                    if set(value).difference(set(patchCellBlock.cell.__getattribute__(attr))):
+                        patchCellBlock.cell.__setattr__(attr, value)
+                        modified = True
+                else:
+                    if patchCellBlock.cell.__getattribute__(attr) != value:
+                        patchCellBlock.cell.__setattr__(attr, value)
+                        modified=True
             for flag, value in cellData[
                         patchCellBlock.cell.fid + ('flags',)].iteritems():
                 if patchCellBlock.cell.flags.__getattr__(flag) != value:
