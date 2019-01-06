@@ -211,6 +211,26 @@ class BSAFileRecord(_BsaHashedRecord):
             return self.file_size_flags & (~0xC0000000) # negate all flags
         return self.file_size_flags
 
+class BSAOblivionFileRecord(_BsaHashedRecord):
+    # Note: Here, we (ab)use the usage of zip() in _BsaHashedRecord.load_record
+    # to make sure that the last slot, file_pos, is not read from the BSA - we
+    # fill it manually in our load_record override. This is necessary to find
+    # the positions of hashes for undo_alterations().
+    __slots__ = ('file_size_flags', 'raw_file_data_offset', 'file_pos')
+    formats = ['I', 'I']
+    formats = list((f, struct.calcsize(f)) for f in formats)
+
+    def load_record(self, ins):
+        self.file_pos = ins.tell()
+        super(BSAOblivionFileRecord, self).load_record(ins)
+
+    def compression_toggle(self): return self.file_size_flags & 0x40000000
+
+    def raw_data_size(self):
+        if self.compression_toggle():
+            return self.file_size_flags & (~0xC0000000)  # negate all flags
+        return self.file_size_flags
+
 # BA2s
 class _B2aFileRecordCommon(_HashedRecord):
     __slots__ = ('file_extension', 'dir_hash', )
@@ -408,12 +428,12 @@ class BSA(ABsa):
                 names_record_index += 1
                 bsa_folder.folder_assets[filename] = rec
 
-    @staticmethod
-    def _read_file_records(file_records, bsa_file, folder_path,
+    @classmethod
+    def _read_file_records(cls, file_records, bsa_file, folder_path,
                            folder_record, folders=None):
         folders[folder_path] = BSAFolder(folder_record)
         for __ in xrange(folder_record.files_count):
-            rec = BSAFileRecord()
+            rec = cls.file_record_type()
             rec.load_record(bsa_file)
             file_records.append(rec)
 
@@ -556,6 +576,7 @@ class BA2(ABsa):
 
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader
+    file_record_type = BSAOblivionFileRecord
 
 class SkyrimBsa(BSA):
     header_type = SkyrimBsaHeader
