@@ -53,7 +53,9 @@ class PatchDialog(DialogWindow):
     :type _gui_patchers: list[basher.gui_patchers._PatcherPanel]
     """
 
-    def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
+    def __init__(self, parent, patchInfo, doCBash, importConfig,
+                 mods_to_reselect):
+        self.mods_to_reselect = mods_to_reselect
         self.parent = parent
         if (doCBash or doCBash is None) and bass.settings['bash.CBashEnabled']:
             doCBash = True
@@ -244,6 +246,11 @@ class PatchDialog(DialogWindow):
             balt.WryeLog(self.parent, readme, patch_name.s,
                          log_icons=Resources.bashBlue)
             #--Select?
+            if self.mods_to_reselect:
+                for mod in self.mods_to_reselect:
+                    bosh.modInfos.lo_activate(mod, doSave=False)
+                self.mods_to_reselect.clear()
+                bosh.modInfos.cached_lo_save_active() ##: also done below duh
             count, message = 0, _(u'Activate %s?') % patch_name.s
             if load_order.cached_is_active(patch_name) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
