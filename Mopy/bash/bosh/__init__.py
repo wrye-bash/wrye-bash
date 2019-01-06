@@ -2745,16 +2745,20 @@ class BSAInfos(FileInfos):
 
     @staticmethod
     def reset_oblivion_mtimes():
-        bsaTimes = (
-            (u'Oblivion - Meshes.bsa', 1138575220),
-            (u'Oblivion - Misc.bsa', 1139433736),
-            (u'Oblivion - Sounds.bsa', 1138660560), (
-            inisettings['OblivionTexturesBSAName'].stail, 1138162634),
-            (u'Oblivion - Voices1.bsa', 1138162934),
-            (u'Oblivion - Voices2.bsa', 1138166742),
-            )
-        for bsaFile,mtime in bsaTimes:
-            dirs['mods'].join(bsaFile).mtime = mtime
+        """Resets the mtimes of all Oblivion BSAs to a series of dates in 2006.
+
+        This is done to make sure they load in the correct order (that's why
+        the dates are all in incremental order) and so they load before any
+        mod-added content (that's why early 2006 is chosen)."""
+        bsa_times = ((1138162634, inisettings['OblivionTexturesBSAName']),
+                     (1138162934, u'Oblivion - Voices1.bsa'),
+                     (1138166742, u'Oblivion - Voices2.bsa'),
+                     (1138575220, u'Oblivion - Meshes.bsa'),
+                     (1138660560, u'Oblivion - Sounds.bsa'),
+                     (1139433736, u'Oblivion - Misc.bsa'))
+        for mtime, bsa_file in bsa_times:
+            dirs['mods'].join(bsa_file).mtime = mtime
+
 #------------------------------------------------------------------------------
 class PeopleData(DataStore):
     """Data for a People UIList. Built on a PickleDict."""

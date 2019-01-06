@@ -579,27 +579,33 @@ class OblivionBsa(BSA):
     file_record_type = BSAOblivionFileRecord
 
     @staticmethod
-    def calculate_hash(fileName):
-        """Returns tes4's two hash values for filename.
-        Based on Timeslips code with cleanup and pythonization."""
+    def calculate_hash(file_name):
+        """Calculates the hash used by Oblivion BSAs for the provided file
+        name.
+        Based on Timeslips code with cleanup and pythonization.
+
+        See here for more information:
+        https://en.uesp.net/wiki/Tes4Mod:Hash_Calculation"""
         #--NOTE: fileName is NOT a Path object!
-        root,ext = os.path.splitext(fileName.lower())
-        #--Hash1
-        chars = map(ord,root)
-        hash1 = chars[-1] | ((len(chars)>2 and chars[-2]) or 0)<<8 | len(chars)<<16 | chars[0]<<24
-        if   ext == u'.kf':  hash1 |= 0x80
-        elif ext == u'.nif': hash1 |= 0x8000
-        elif ext == u'.dds': hash1 |= 0x8080
-        elif ext == u'.wav': hash1 |= 0x80000000
-        #--Hash2
-        uintMask, hash2, hash3 = 0xFFFFFFFF, 0, 0
+        root, ext = os.path.splitext(file_name.lower())
+        chars = map(ord, root)
+        hash1 = chars[-1] | ((len(chars) > 2 and chars[-2]) or 0) << 8 | len(
+            chars) << 16 | chars[0] << 24
+        if ext == u'.kf':
+            hash1 |= 0x80
+        elif ext == u'.nif':
+            hash1 |= 0x8000
+        elif ext == u'.dds':
+            hash1 |= 0x8080
+        elif ext == u'.wav':
+            hash1 |= 0x80000000
+        uint_mask, hash2, hash3 = 0xFFFFFFFF, 0, 0
         for char in chars[1:-2]:
-            hash2 = ((hash2 * 0x1003F) + char ) & uintMask
-        for char in map(ord,ext):
-            hash3 = ((hash3 * 0x1003F) + char ) & uintMask
-        hash2 = (hash2 + hash3) & uintMask
-        #--Done
-        return (hash2<<32) + hash1
+            hash2 = ((hash2 * 0x1003F) + char) & uint_mask
+        for char in map(ord, ext):
+            hash3 = ((hash3 * 0x1003F) + char) & uint_mask
+        hash2 = (hash2 + hash3) & uint_mask
+        return (hash2 << 32) + hash1
 
     def undo_alterations(self):
         """Undoes any alterations that previously applied BSA Alteration may
