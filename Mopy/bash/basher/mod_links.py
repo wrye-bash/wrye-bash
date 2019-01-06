@@ -917,6 +917,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             u'Rebuild Patch...')
         self._help = _(u'Rebuild the Bashed Patch (CBash)') if doCBash else _(
                     u'Rebuild the Bashed Patch')
+        self.mods_to_reselect = []
 
     def _initData(self, window, selection):
         super(_Mod_Patch_Update, self)._initData(window, selection)
@@ -1015,6 +1016,10 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         with PatchDialog(self.window, self._selected_info, self.doCBash,
                          importConfig) as patchDialog:
             patchDialog.ShowModal()
+        for mod in self.mods_to_reselect:
+            bosh.modInfos.lo_activate(mod)
+        bosh.modInfos.cached_lo_save_active()
+        self.window.RefreshUI(refreshSaves=True)
         return self._selected_item
 
     def _ask_deactivate_mergeable(self, active_prior_to_patch):
@@ -1071,10 +1076,12 @@ class _Mod_Patch_Update(_Mod_BP_Link):
                                (noMerge, noMergeKey),
                                (deactivate, deactivateKey), ]:
                 deselect |= set(dialog.getChecked(key, lst))
-            if not deselect: return
+            if not deselect:
+                return
+            else:
+                self.mods_to_reselect = set(noMerge)
         with balt.BusyCursor():
-            bosh.modInfos.lo_deactivate(deselect, doSave=True)
-        self.window.RefreshUI(refreshSaves=True)
+            bosh.modInfos.lo_deactivate(deselect)
 
 class Mod_Patch_Update(TransLink, _Mod_Patch_Update):
 
