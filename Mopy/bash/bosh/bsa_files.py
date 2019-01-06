@@ -40,8 +40,8 @@ from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
-from ..bolt import deprint, struct_unpack, unpack_byte, unpack_string, \
-    unpack_int
+from ..bolt import deprint, struct_pack, struct_unpack, unpack_byte, \
+    unpack_string, unpack_int
 from ..exception import BSAError, BSADecodingError, BSAFlagError, \
     BSANotImplemented
 
@@ -577,6 +577,57 @@ class BA2(ABsa):
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader
     file_record_type = BSAOblivionFileRecord
+
+    @staticmethod
+    def calculate_hash(fileName):
+        """Returns tes4's two hash values for filename.
+        Based on Timeslips code with cleanup and pythonization."""
+        #--NOTE: fileName is NOT a Path object!
+        root,ext = os.path.splitext(fileName.lower())
+        #--Hash1
+        chars = map(ord,root)
+        hash1 = chars[-1] | ((len(chars)>2 and chars[-2]) or 0)<<8 | len(chars)<<16 | chars[0]<<24
+        if   ext == u'.kf':  hash1 |= 0x80
+        elif ext == u'.nif': hash1 |= 0x8000
+        elif ext == u'.dds': hash1 |= 0x8080
+        elif ext == u'.wav': hash1 |= 0x80000000
+        #--Hash2
+        uintMask, hash2, hash3 = 0xFFFFFFFF, 0, 0
+        for char in chars[1:-2]:
+            hash2 = ((hash2 * 0x1003F) + char ) & uintMask
+        for char in map(ord,ext):
+            hash3 = ((hash3 * 0x1003F) + char ) & uintMask
+        hash2 = (hash2 + hash3) & uintMask
+        #--Done
+        return (hash2<<32) + hash1
+
+    def undo_alterations(self):
+        """Undoes any alterations that previously applied BSA Alteration may
+        have done to this BSA by recalculating all mismatched hashes.
+
+        NOTE: In order for this method to do anything, the BSA must be fully
+        loaded - that means you must either pass load_cache=True and
+        names_only=False to the constructor, or call _load_bsa() (NOT
+        _load_bsa_light() !) before calling this method.
+
+        See this link for an in-depth overview of BSA Alteration and the
+        problem it tries to solve:
+        http://devnull.sweetdanger.com/archiveinvalidation.html"""
+        with open(self.abs_path.s, 'r+b') as bsa_file:
+            reset_count = 0
+            for folder_name, folder in self.bsa_folders.iteritems():
+                # TODO(inf) This was done only for the last element - why?
+                # Performance? This is plenty fast for me, and it's not like
+                # users will be constantly flipping between these two settings.
+                # If we keep it like this, we may want to throw it into a
+                # progress dialog though.
+                for file_name, file_info in folder.folder_assets.iteritems():
+                    rebuilt_hash = self.calculate_hash(file_name)
+                    if file_info.hash != rebuilt_hash:
+                        bsa_file.seek(file_info.file_pos)
+                        bsa_file.write(struct_pack('Q', rebuilt_hash))
+                        reset_count += 1
+        return reset_count
 
 class SkyrimBsa(BSA):
     header_type = SkyrimBsaHeader
