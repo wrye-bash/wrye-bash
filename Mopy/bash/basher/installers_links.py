@@ -387,7 +387,9 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
                     bass.inisettings['OblivionTexturesBSAName'])
             bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
                                                  names_only=False)
-            bsaFile.undo_alterations()
+            with balt.Progress(_(u'Enabling BSA Redirection...'),
+                               message=u'\n' + u' ' * 60) as progress:
+                bsaFile.undo_alterations(progress)
             # Reset modification time(s) and delete AI.txt, if it exists
             bosh.bsaInfos.reset_oblivion_mtimes()
             bosh.bsaInfos.remove_invalidation_file()
