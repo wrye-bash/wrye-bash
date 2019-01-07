@@ -52,7 +52,7 @@ def _is_mergeable_no_load(modInfo, verbose):
     if reasons: return reasons
     return True
 
-def pbash_mergeable_no_load(modInfo, verbose):
+def _pbash_mergeable_no_load(modInfo, verbose):
     reasons = _is_mergeable_no_load(modInfo, verbose)
     if isinstance(reasons, list):
         reasons = u''.join(reasons)
@@ -71,7 +71,7 @@ def pbash_mergeable_no_load(modInfo, verbose):
 
 def isPBashMergeable(modInfo, minfos, verbose):
     """Returns True or error message indicating whether specified mod is mergeable."""
-    reasons = pbash_mergeable_no_load(modInfo, verbose)
+    reasons = _pbash_mergeable_no_load(modInfo, verbose)
     if isinstance(reasons, unicode):
         pass
     elif not reasons:

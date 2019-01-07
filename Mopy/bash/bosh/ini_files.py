@@ -285,8 +285,7 @@ class IniFile(AFile):
         with self._open_for_writing(self.abs_path.temp.s) as tmpFile:
             tmpFileWrite = tmpFile.write
             def _add_remaining_new_items():
-                if not section: return
-                del ini_settings[section]
+                if section in ini_settings: del ini_settings[section]
                 if not sectionSettings: return
                 for sett, val in sectionSettings.iteritems():
                     tmpFileWrite(u'%s=%s\n' % (sett, val))
@@ -314,8 +313,8 @@ class IniFile(AFile):
             # This will occur for the last INI section in the ini file
             _add_remaining_new_items()
             # Add remaining new entries
-            for section in set(ini_settings):  # _add_remaining_new_items may modify ini_settings
-                sectionSettings = ini_settings[section]
+            for section, sectionSettings in ini_settings.items():
+                # _add_remaining_new_items may modify ini_settings
                 if sectionSettings:
                     tmpFileWrite(u'[%s]\n' % section)
                     _add_remaining_new_items()
