@@ -17088,7 +17088,7 @@ statsHeaders = (
     #--Armo
     (u'ARMO',
         (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),
-        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_('armorRating'))) + u'"\n')),
+        _(u'Editor Id'),_(u'Weight'),_(u'Value'),_(u'armorRating'))) + u'"\n')),
     #Books
     (u'BOOK',
         (u'"' + u'","'.join((_(u'Type'),_(u'Mod Name'),_(u'ObjectIndex'),

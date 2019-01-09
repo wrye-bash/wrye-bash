@@ -279,7 +279,7 @@ class MreLeveledList(MreLeveledListBase):
                        (FID,'listId',None),('count',1),('unused2',null2)),
         MelNull('DATA'),
         )
-    __slots__ = MreLeveledListBase.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 class MelOwnership(MelGroup):
     """Handles XOWN, XRNK, and XGLB for cells and cell children."""
@@ -339,7 +339,7 @@ class MreHeader(MreHeaderBase):
         MreHeaderBase.MelMasterName('MAST','masters'),
         MelNull('DATA'),
         )
-    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 class MreAchr(MelRecord): # Placed NPC
     classType = 'ACHR'

@@ -110,7 +110,7 @@ class MreHeader(MreHeaderBase):
         MelFidList('ONAM','overrides'),
         MelBase('SCRN', 'scrn_p'),
         )
-    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 class MreAchr(MelRecord):
     """Placed NPC"""

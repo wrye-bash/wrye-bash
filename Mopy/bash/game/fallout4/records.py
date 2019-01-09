@@ -54,7 +54,7 @@ class MreHeader(MreHeaderBase):
         ##  - check if SNAM is used at all
         ##  - check if SCRN is used at all
         )
-    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvli(MreLeveledList):
@@ -74,7 +74,7 @@ class MreLvli(MreLeveledList):
         MelFid('LVSG', 'epicLootChance'),
         MelLString('ONAM', 'overrideName')
         )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreLvln(MreLeveledList):
@@ -94,4 +94,4 @@ class MreLvln(MreLeveledList):
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
         )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()

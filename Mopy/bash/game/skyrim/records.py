@@ -1130,7 +1130,7 @@ class MreHeader(MreHeaderBase):
         MelBase('INTV','intv_p'),
         MelBase('INCC', 'incc_p'),
         )
-    __slots__ = MreHeaderBase.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 # MAST and DATA need to be grouped together like MAST DATA MAST DATA, are they that way already?
 #------------------------------------------------------------------------------
@@ -3945,7 +3945,7 @@ class MreLeveledList(MreLeveledListBase):
             out.packSub('LLCT','B',len(record.entries))
             MelGroups.dumpData(self,record,out)
 
-    __slots__ = MreLeveledListBase.__slots__
+    __slots__ = []
 
 # Verified Correct for Skyrim 1.8
 #------------------------------------------------------------------------------
@@ -3962,7 +3962,7 @@ class MreLvli(MreLeveledList):
         MelNull('LLCT'),
         MreLeveledList.MelLevListLvlo(),
         )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
 #------------------------------------------------------------------------------
@@ -3981,7 +3981,7 @@ class MreLvln(MreLeveledList):
         MelString('MODL','model'),
         MelBase('MODT','modt_p'),
         )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
 #------------------------------------------------------------------------------
@@ -3997,7 +3997,7 @@ class MreLvsp(MreLeveledList):
         MelNull('LLCT'),
         MreLeveledList.MelLevListLvlo(),
         )
-    __slots__ = MreLeveledList.__slots__ + melSet.getSlotsUsed()
+    __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
 #------------------------------------------------------------------------------

@@ -2639,37 +2639,33 @@ class ModInfos(FileInfos):
         is_new_info_active = load_order.cached_is_active(newName)
         # can't use ModInfos rename cause it will mess up the load order
         rename_operation = super(ModInfos, self)._rename_operation
-        first_try = True
-        while first_try or (werr.errno == errno.EACCES and
-                self._retry(baseInfo.getPath(), self.store_dir.join(oldName))):
-            first_try = False
+        while True:
             try:
                 rename_operation(self.masterName, oldName)
+                break
             except OSError as werr: # can only occur if SHFileOperation
                 # isn't called, yak - file operation API badly needed
-                continue
+                if werr.errno == errno.EACCES and self._retry(
+                        baseInfo.getPath(), self.store_dir.join(oldName)):
+                    continue
+                raise
             except CancelError:
                 return
-            break
-        else:
-            raise
-        first_try = True
-        while first_try or (werr.errno == errno.EACCES and
-                self._retry(newInfo.getPath(), baseInfo.getPath())):
-            first_try = False
+        while True:
             try:
                 rename_operation(newName, self.masterName)
+                break
             except OSError as werr:
-                continue
+                if werr.errno == errno.EACCES and self._retry(
+                        newInfo.getPath(), baseInfo.getPath()):
+                    continue
+                #Undo any changes
+                rename_operation(oldName, self.masterName)
+                raise
             except CancelError:
                 #Undo any changes
                 rename_operation(oldName, self.masterName)
                 return
-            break
-        else:
-            #Undo any changes
-            rename_operation(oldName, self.masterName)
-            raise
         # set mtimes to previous respective values
         self[self.masterName].setmtime(master_time)
         self[oldName].setmtime(new_info_time)
