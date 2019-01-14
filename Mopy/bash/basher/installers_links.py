@@ -453,8 +453,8 @@ class _Installers_Skip(Installers_Link, BoolLink):
     @property
     def menu_help(self):
         # Slice off the starting 'Skip '
-        return _(u'Skips the installation of %(type)s.') % {
-            'type': self._text[5:]}
+        return _(u'Skips the installation of %(files)s.') % {
+            'files': self._text[5:]}
 
     @balt.conversation
     def Execute(self):

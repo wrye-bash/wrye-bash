@@ -2461,15 +2461,15 @@ class Link(object):
 class ItemLink(Link):
     """Create and append a wx menu item.
 
-    Subclasses MUST define text (preferably class) attribute and should
-    override _help. Registers the Execute() and ShowHelp methods on menu events.
+    Subclasses MUST define _text (preferably class) attribute and should
+    override _help. Registers the Execute() and ShowHelp methods on menu events
     """
     kind = wx.ITEM_NORMAL  # the default in wx.MenuItem(... kind=...)
     _help = None           # the tooltip to show at the bottom of the GUI
 
     @property
     def menu_help(self):
-        """Returns a string that will be shown as a tooltip at the bottom
+        """Returns a string that will be shown as static text at the bottom
         of the GUI.
 
         Override this if you need to change the help text dynamically

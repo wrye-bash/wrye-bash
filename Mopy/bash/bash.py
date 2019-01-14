@@ -37,9 +37,8 @@ from ConfigParser import ConfigParser
 # Local
 import bass
 import exception
-import initialization
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
-basher = balt = bolt = None
+basher = balt = bolt = initialization = None
 _wx = None
 is_standalone = hasattr(sys, 'frozen')
 
@@ -228,6 +227,8 @@ def _main(opts):
     instance = _wx.SingleInstanceChecker('Wrye Bash') # must stay alive !
     assure_single_instance(instance)
 
+    global initialization
+    import initialization
     #--Bash installation directories, set on boot, not likely to change
     initialization.init_dirs_mopy_and_cd(is_standalone)
 
