@@ -380,7 +380,7 @@ class RoTextCtrl(TextCtrl):
         style = kwargs.get('style', 0)
         style |= wx.TE_READONLY
         special = kwargs.pop('special', False) # used in places
-        if special: style |= wx.TE_RICH2 | wx.SUNKEN_BORDER
+        if special: style |= wx.TE_RICH2 | wx.BORDER_SUNKEN
         if kwargs.pop('noborder', False): style |= wx.NO_BORDER
         if kwargs.pop('hscroll', False): style |= wx.HSCROLL
         kwargs['style'] = style
@@ -526,7 +526,7 @@ def listBox(parent, choices=None, **kwargs):
 def staticBitmap(parent, bitmap=None, size=(32, 32), special='warn'):
     """Tailored to current usages - IAW: do not use."""
     if bitmap is None:
-        bmp = wx.ArtProvider_GetBitmap
+        bmp = wx.ArtProvider.GetBitmap
         if special == 'warn':
             bitmap = bmp(wx.ART_WARNING,wx.ART_MESSAGE_BOX, size)
         elif special == 'undo':
@@ -1063,7 +1063,7 @@ class ListEditor(Dialog):
         if data.showInfo:
             self.gInfoBox = TextCtrl(self,size=(130,-1),
                 style=(self._listEditorData.infoReadOnly*wx.TE_READONLY) |
-                      wx.TE_MULTILINE | wx.SUNKEN_BORDER)
+                      wx.TE_MULTILINE | wx.BORDER_SUNKEN)
             if not self._listEditorData.infoReadOnly:
                 self.gInfoBox.Bind(wx.EVT_TEXT,
                                    lambda __event: self.OnInfoEdit())
@@ -1655,7 +1655,7 @@ class UIList(wx.Panel):
         #--gList
         ctrlStyle = wx.LC_REPORT
         if self.__class__._editLabels: ctrlStyle |= wx.LC_EDIT_LABELS
-        if self.__class__._sunkenBorder: ctrlStyle |= wx.SUNKEN_BORDER
+        if self.__class__._sunkenBorder: ctrlStyle |= wx.BORDER_SUNKEN
         if self.__class__._singleCell: ctrlStyle |= wx.LC_SINGLE_SEL
         self.__gList = ListCtrl(self, self.dndAllow,
                                 style=ctrlStyle,
@@ -1725,7 +1725,7 @@ class UIList(wx.Panel):
     def sort_column(self, val): _settings[self.keyPrefix + '.sort'] = val
 
     def OnItemSelected(self, event):
-        modName = self.GetItem(event.m_itemIndex)
+        modName = self.GetItem(event.GetIndex())
         self._select(modName)
     def _select(self, item): self.panel.SetDetails(item)
 
@@ -2780,7 +2780,7 @@ class ListBoxes(Dialog):
         self.itemMenu.append(_CheckList_SelectAll(False))
         self.SetIcons(Resources.bashBlue)
         minWidth = self.GetTextExtent(title)[0] * 1.2 + 64
-        sizer = wx.FlexGridSizer(len(lists) + 2, 1)
+        sizer = wx.FlexGridSizer(len(lists) + 2, 1, 0, 0)
         self.text = StaticText(self, message)
         self.text.Rewrap(minWidth) # otherwise self.text expands to max width
         sizer.AddGrowableRow(0) # needed so text fits - glitch on resize

@@ -278,15 +278,15 @@ class Settings_Languages(TransLink):
     """Menu for available Languages."""
     def _decide(self, window, selection):
         languages = []
-        for file in bass.dirs['l10n'].list():
-            if file.cext == u'.txt' and file.csbody[-3:] != u'new':
-                languages.append(file.body)
+        for f in bass.dirs['l10n'].list():
+            if f.cext == u'.txt' and f.csbody[-3:] != u'new':
+                languages.append(f.body)
         if languages:
             subMenu = MenuLink(_(u'Language'))
             for lang in languages:
-                subMenu.links.append(Settings_Language(lang.s))
+                subMenu.links.append(_Settings_Language(lang.s))
             if GPath('english') not in languages:
-                subMenu.links.append(Settings_Language('English'))
+                subMenu.links.append(_Settings_Language('English'))
             return subMenu
         else:
             class _NoLang(EnabledLink):
@@ -297,7 +297,7 @@ class Settings_Languages(TransLink):
             return _NoLang()
 
 #------------------------------------------------------------------------------
-class Settings_Language(RadioLink):
+class _Settings_Language(EnabledLink, RadioLink):
     """Specific language for Wrye Bash."""
     languageMap = {
         u'chinese (simplified)': _(u'Chinese (Simplified)') + u' (简体中文)',
@@ -310,7 +310,7 @@ class Settings_Language(RadioLink):
         }
 
     def __init__(self, lang):
-        super(Settings_Language, self).__init__()
+        super(_Settings_Language, self).__init__()
         self._lang = lang
         self._text = self.__class__.languageMap.get(self._lang.lower(),
                                                     self._lang)
@@ -328,8 +328,9 @@ class Settings_Language(RadioLink):
 
     def _check(self): return self.check
 
+    def _enable(self): return not self.check
+
     def Execute(self):
-        if self._lang == _bassLang(): return
         if balt.askYes(Link.Frame,
                 _(u'Wrye Bash needs to restart to change languages.  Do you '
                   u'want to restart?'), _(u'Restart Wrye Bash')):
@@ -337,7 +338,7 @@ class Settings_Language(RadioLink):
 
 #------------------------------------------------------------------------------
 class Settings_PluginEncodings(MenuLink):
-    encodings = {
+    _plugin_encodings = {
         'gbk': _(u'Chinese (Simplified)'),
         'big5': _(u'Chinese (Traditional)'),
         'cp1251': _(u'Russian'),
@@ -347,10 +348,9 @@ class Settings_PluginEncodings(MenuLink):
         }
     def __init__(self):
         super(Settings_PluginEncodings, self).__init__(_(u'Plugin Encoding'))
-        bolt.pluginEncoding = bass.settings['bash.pluginEncoding'] # TODO(ut): why is this init here ??
         self.links.append(Settings_PluginEncoding(_(u'Automatic'),None))
         # self.links.append(SeparatorLink())
-        enc_name = sorted(Settings_PluginEncodings.encodings.items(),key=lambda x: x[1])
+        enc_name = sorted(self._plugin_encodings.items(), key=lambda x: x[1])
         for encoding,name in enc_name:
             self.links.append(Settings_PluginEncoding(name,encoding))
 

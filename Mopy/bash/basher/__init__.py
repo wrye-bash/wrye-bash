@@ -501,7 +501,7 @@ class MasterList(_ModsUIList):
             super(MasterList, self).OnBeginEditLabel(event)
 
     def OnLabelEdited(self,event):
-        itemDex = event.m_itemIndex
+        itemDex = event.GetIndex()
         newName = GPath(event.GetText())
         #--No change?
         if newName in bosh.modInfos:
@@ -4131,6 +4131,8 @@ def InitSettings(): # this must run first !
     settings.loadDefaults(settingDefaults)
     bosh.bain.Installer.init_global_skips() # must be after loadDefaults - grr #178
     bosh.bain.Installer.init_attributes_process()
+    # Plugin encoding used to decode mod string fields
+    bolt.pluginEncoding = bass.settings['bash.pluginEncoding']
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')
