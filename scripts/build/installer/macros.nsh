@@ -568,7 +568,7 @@
         Delete "${Path}\scripts\Build Package.bat"
         Delete "${Path}\scripts\build\standalone\w9xpopen.exe"
         Delete "${Path}\scripts\build\Wrye Bash.nsi"
-        Delete "${Path}\scripts\mktaglist"
+        Delete "${Path}\scripts\built_taglist"
         Delete "${Path}\scripts\WBReleaseBuild.bat"
         Delete "${Path}\Wrye Bash.nsi"
         ; As of 307, the following are obsolete:

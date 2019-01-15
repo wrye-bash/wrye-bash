@@ -2,7 +2,7 @@
 Unicode true
 
 ;-------------------------------- Includes:
-    !addincludedir "scripts\build\installer"
+    !addincludedir "${__FILEDIR__}"
     !include "MUI2.nsh"
     !include "x64.nsh"
     !include "LogicLib.nsh"
@@ -18,6 +18,9 @@ Unicode true
     !ifndef WB_NAME
         !define WB_NAME "Wrye Bash (version unknown)"
     !endif
+    !ifndef WB_OUTPUT
+        !define WB_OUTPUT "dist"
+    !endif
     !ifndef WB_FILEVERSION
         !define WB_FILEVERSION "0.0.0.0"
     !endif
@@ -25,7 +28,7 @@ Unicode true
 
 ;-------------------------------- Basic Installer Info:
     Name "${WB_NAME}"
-    OutFile "scripts\dist\${WB_NAME} - Installer.exe"
+    OutFile "${WB_OUTPUT}\${WB_NAME} - Installer.exe"
     ; Request application privileges for Windows Vista
     RequestExecutionLevel admin
     VIProductVersion ${WB_FILEVERSION}

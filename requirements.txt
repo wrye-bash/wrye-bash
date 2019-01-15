@@ -1,6 +1,6 @@
 pywin32>=220
 scandir>=1.9.0
-gitpython>=2.1.11
+pygit2>=0.28.0
 https://github.com/wrye-bash/dev-tools/raw/master/wheels/comtypes-0.6.2-cp27-cp27m-win32.whl
 https://github.com/wrye-bash/dev-tools/raw/master/wheels/wxPython-2.8.12.1-cp27-cp27m-win32.whl
 https://github.com/wrye-bash/dev-tools/raw/master/wheels/py2exe-0.6.9-cp27-cp27m-win32.whl
