@@ -48,16 +48,16 @@ To run Wrye Bash from the latest `dev` code (download from [here][12])
 you need:
 
 * A game to manage from the supported games.
-* [Python 2.7](http://www.python.org/) (latest 2.7 is recommended)
-* [wxPython 2.8.12.1 Unicode][13] (do **not** get a newer version)
-* [pywin32 build 220 or newer](https://sourceforge.net/projects/pywin32/files/pywin32/)
-for your Python
-* [comtypes 0.6.2 or later](https://sourceforge.net/projects/comtypes/files/comtypes/)
-for your Python
-* Optionally [scandir](https://pypi.python.org/pypi/scandir) - recommended.
+* [Python 2.7 32-bit](http://www.python.org/) (latest 2.7 is recommended)
 
-**NB**: the 32-bit versions are required even if you are on a 64-bit
+**NB**: the 32-bit version is required even if you are on a 64-bit
 operating system.
+
+Once you have those, install the required packages by running:
+
+```python
+path/to/python.exe -m pip install -r requirements.txt
+```
 
 Refer to the readmes for [detailed instructions][12]. In short:
 

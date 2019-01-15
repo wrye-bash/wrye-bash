@@ -44,9 +44,16 @@ import shutil
 import sys
 import argparse
 import binascii
+import tempfile
 import textwrap
 import traceback
 import time
+import urllib
+import zipfile
+
+
+NSIS_VERSION = "3.04"
+
 
 class NON_REPO(object):
     __slots__= []
@@ -489,14 +496,50 @@ def RemoveTempRepoCopy():
         shutil.rmtree(temp_root)
 
 
+def get_nsis_root(cmd_arg):
+    """Finds and returns the nsis root folder"""
+    if cmd_arg is not None:
+        return cmd_arg
+
+    try:
+        if _winreg:
+            return _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, r"Software\NSIS")
+    except WindowsError:
+        pass
+
+    local_nsis_path = os.path.join(scriptDir, "build", "nsis")
+    if not os.path.isdir(local_nsis_path):
+        local_build_path = os.path.dirname(local_nsis_path)
+        nsis_url = (
+            "https://sourceforge.net/projects/nsis/files/"
+            "NSIS%203/{0}/nsis-{0}.zip/download".format(NSIS_VERSION)
+        )
+        dl_dir = tempfile.mkdtemp()
+        nsis_zip = os.path.join(dl_dir, "nsis.zip")
+        lprint(" Downloading NSIS {}...".format(NSIS_VERSION))
+        urllib.urlretrieve(nsis_url, nsis_zip)
+        with zipfile.ZipFile(nsis_zip) as fzip:
+            fzip.extractall(local_build_path)
+        os.remove(nsis_zip)
+        os.rename(
+            os.path.join(local_build_path, "nsis-{}".format(NSIS_VERSION)),
+            local_nsis_path
+        )
+
+        inetc_url = (
+            "https://nsis.sourceforge.io/mediawiki/images/c/c9/Inetc.zip"
+        )
+        inetc_zip = os.path.join(dl_dir, "inetc.zip")
+        lprint(" Downloading inetc plugin...")
+        urllib.urlretrieve(inetc_url, inetc_zip)
+        with zipfile.ZipFile(inetc_zip) as fzip:
+            fzip.extract("Plugins/x86-unicode/INetC.dll", local_nsis_path)
+        os.remove(inetc_zip)
+    return local_nsis_path
+
+
 def BuildInstallerVersion(args, all_files, file_version):
     """Compiles the NSIS script, creating the installer version"""
-    nsis = args.nsis
-    if not _winreg and nsis is None:
-        lprint(" Could not find python module '_winreg', aborting installer "
-               "creation.")
-        return
-
     rel_script = os.path.join(u'build', u'installer', u'main.nsi')
     script = os.path.join(scripts, rel_script)
     if not os.path.exists(script):
@@ -505,13 +548,9 @@ def BuildInstallerVersion(args, all_files, file_version):
         return
 
     try:
-        if nsis is None:
-            # Need NSIS version 3.0+, so we can use the Inetc plugin
-            # Older versions of NSIS 2.x key was located here:
-            nsis = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE,
-                                      r'Software\NSIS')
-        inetc = os.path.join(nsis, u'Plugins', u'x86-unicode', u'inetc.dll')
-        nsis = os.path.join(nsis, u'makensis.exe')
+        nsis_root = get_nsis_root(args.nsis)
+        nsis = os.path.join(nsis_root, "makensis.exe")
+        inetc = os.path.join(nsis_root, "Plugins", "x86-unicode", "inetc.dll")
         if not os.path.isfile(nsis):
             lprint(" Could not find 'makensis.exe', aborting installer "
                    "creation.")

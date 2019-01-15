@@ -27,6 +27,9 @@ desktop.ini
 # Release archives.
 scripts/dist/*.7z
 
+# Local NSIS
+scripts/build/nsis/
+
 # translation files
 Mopy/bash/l10n/*.mo
 Mopy/bash/l10n/*NEW.txt
