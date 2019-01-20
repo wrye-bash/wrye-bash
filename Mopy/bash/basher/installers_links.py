@@ -382,11 +382,17 @@ class Installers_BsaRedirection(AppendableLink, BoolLink, EnabledLink):
     def Execute(self):
         super(Installers_BsaRedirection, self).Execute()
         if bass.settings[self.key]:
+            # Undo any alterations done to the textures BSA
             bsaPath = bosh.modInfos.store_dir.join(
                     bass.inisettings['OblivionTexturesBSAName'])
-            bsaFile = bosh.BsaFile(bsaPath)
-            bsaFile.scan()
-            resetCount = bsaFile.reset()
+            bsaFile = bosh.bsa_files.OblivionBsa(bsaPath, load_cache=True,
+                                                 names_only=False)
+            with balt.Progress(_(u'Enabling BSA Redirection...'),
+                               message=u'\n' + u' ' * 60) as progress:
+                bsaFile.undo_alterations(progress)
+            # Reset modification time(s) and delete AI.txt, if it exists
+            bosh.bsaInfos.reset_oblivion_mtimes()
+            bosh.bsaInfos.remove_invalidation_file()
             #balt.showOk(self,_(u"BSA Hashes reset: %d") % (resetCount,))
         bosh.oblivionIni.setBsaRedirection(bass.settings[self.key])
 

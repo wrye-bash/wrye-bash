@@ -49,8 +49,8 @@ from .. import bass, bolt, balt, bush, env, load_order, archives, \
 from .. import patcher # for configIsCBash()
 from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
-from ..bolt import GPath, DataDict, cstrip, deprint, sio, Path, decode, \
-    unpack_many, unpack_byte, struct_pack, struct_unpack
+from ..bolt import GPath, DataDict, deprint, sio, Path, decode, struct_pack, \
+    struct_unpack
 from ..brec import MreRecord, ModReader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
@@ -141,126 +141,6 @@ class CoSaves:
         return zip(CoSaves.getPaths(old_path), CoSaves.getPaths(new_path))
 
 # File System -----------------------------------------------------------------
-#------------------------------------------------------------------------------
-class BsaFile:
-    """Represents a BSA archive file."""
-
-    @staticmethod
-    def getHash(fileName):
-        """Returns tes4's two hash values for filename.
-        Based on Timeslips code with cleanup and pythonization."""
-        #--NOTE: fileName is NOT a Path object!
-        root,ext = os.path.splitext(fileName.lower())
-        #--Hash1
-        chars = map(ord,root)
-        hash1 = chars[-1] | ((len(chars)>2 and chars[-2]) or 0)<<8 | len(chars)<<16 | chars[0]<<24
-        if   ext == u'.kf':  hash1 |= 0x80
-        elif ext == u'.nif': hash1 |= 0x8000
-        elif ext == u'.dds': hash1 |= 0x8080
-        elif ext == u'.wav': hash1 |= 0x80000000
-        #--Hash2
-        uintMask, hash2, hash3 = 0xFFFFFFFF, 0, 0
-        for char in chars[1:-2]:
-            hash2 = ((hash2 * 0x1003F) + char ) & uintMask
-        for char in map(ord,ext):
-            hash3 = ((hash3 * 0x1003F) + char ) & uintMask
-        hash2 = (hash2 + hash3) & uintMask
-        #--Done
-        return (hash2<<32) + hash1
-
-    #--Instance Methods ------------------------------------------------------
-    def __init__(self,path):
-        self.path = path
-        self.folderInfos = None
-
-    def scan(self):
-        """Reports on contents."""
-        with open(self.path.s,'rb') as ins:
-            #--Header
-            ins.seek(4*4)
-            (self.folderCount,self.fileCount,lenFolderNames,lenFileNames,fileFlags) = unpack_many(ins, '5I')
-            #--FolderInfos (Initial)
-            folderInfos = self.folderInfos = []
-            for index in range(self.folderCount):
-                hash,subFileCount,offset = unpack_many(ins, 'Q2I')
-                folderInfos.append([hash,subFileCount,offset])
-            #--Update folderInfos
-            for index,folderInfo in enumerate(folderInfos):
-                fileInfos = []
-                folderName = cstrip(ins.read(unpack_byte(ins)))
-                folderInfos[index].extend((folderName,fileInfos))
-                for index in range(folderInfo[1]):
-                    filePos = ins.tell()
-                    hash,size,offset = unpack_many(ins, 'Q2I')
-                    fileInfos.append([hash,size,offset,u'',filePos])
-            #--File Names
-            fileNames = [decode(x) for x in ins.read(lenFileNames).split('\x00')[:-1]]
-            namesIter = iter(fileNames)
-            for folderInfo in folderInfos:
-                fileInfos = folderInfo[-1]
-                for index,fileInfo in enumerate(fileInfos):
-                    fileInfo[3] = namesIter.next()
-        #--Done
-
-    def report(self,printAll=False):
-        """Report on contents."""
-        folderInfos = self.folderInfos
-        getHash = BsaFile.getHash
-        print self.folderCount,self.fileCount,sum(len(info[-1]) for info in folderInfos)
-        for folderInfo in folderInfos:
-            printOnce = folderInfo[-2]
-            for fileInfo in folderInfo[-1]:
-                hash,fileName = fileInfo[0],fileInfo[3]
-                trueHash = getHash(fileName)
-
-    @staticmethod
-    def updateAIText(files=None):
-        """Update aiText with specified files (or remove, if files == None)."""
-        aiPath = dirs['app'].join(u'ArchiveInvalidation.txt')
-        if not files:
-            aiPath.remove()
-            return
-        #--Archive invalidation
-        aiText = re.sub(ur'\\',u'/',u'\n'.join(files))
-        with aiPath.open('w') as f:
-            f.write(aiText)
-
-    @staticmethod
-    def resetOblivionBSAMTimes():
-        """Reset dates of bsa files to 'correct' values."""
-        #--Fix the data of a few archive files
-        bsaTimes = (
-            (u'Oblivion - Meshes.bsa',1138575220),
-            (u'Oblivion - Misc.bsa',1139433736),
-            (u'Oblivion - Sounds.bsa',1138660560),
-            (inisettings['OblivionTexturesBSAName'].stail, 1138162634),
-            (u'Oblivion - Voices1.bsa',1138162934),
-            (u'Oblivion - Voices2.bsa',1138166742),
-            )
-        for bsaFile,mtime in bsaTimes:
-            dirs['mods'].join(bsaFile).mtime = mtime
-
-    def reset(self):
-        """Resets BSA archive hashes to correct values."""
-        with open(self.path.s,'r+b') as ios:
-            #--Rehash
-            resetCount = 0
-            folderInfos = self.folderInfos
-            getHash = BsaFile.getHash
-            for folderInfo in folderInfos:
-                for fileInfo in folderInfo[-1]:
-                    hash,size,offset,fileName,filePos = fileInfo
-                    trueHash = getHash(fileName)
-                    if hash != trueHash:
-                        #print ' ',fileName,'\t',hex(hash-trueHash),hex(hash),hex(trueHash)
-                        ios.seek(filePos)
-                        ios.write(struct_pack('Q',trueHash))
-                        resetCount += 1
-        #--Done
-        self.resetOblivionBSAMTimes()
-        self.updateAIText()
-        return resetCount
-
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - alpha."""
@@ -2855,6 +2735,29 @@ class BSAInfos(FileInfos):
 
     @property
     def bash_dir(self): return dirs['modsBash'].join(u'BSA Data')
+
+    @staticmethod
+    def remove_invalidation_file():
+        """Removes ArchiveInvalidation.txt, if it exists in the game folder.
+        This is used when disabling other solutions to the Archive Invalidation
+        problem prior to enabling WB's BSA Redirection."""
+        dirs['app'].join(u'ArchiveInvalidation.txt').remove()
+
+    @staticmethod
+    def reset_oblivion_mtimes():
+        """Resets the mtimes of all Oblivion BSAs to a series of dates in 2006.
+
+        This is done to make sure they load in the correct order (that's why
+        the dates are all in incremental order) and so they load before any
+        mod-added content (that's why early 2006 is chosen)."""
+        bsa_times = ((1138162634, inisettings['OblivionTexturesBSAName']),
+                     (1138162934, u'Oblivion - Voices1.bsa'),
+                     (1138166742, u'Oblivion - Voices2.bsa'),
+                     (1138575220, u'Oblivion - Meshes.bsa'),
+                     (1138660560, u'Oblivion - Sounds.bsa'),
+                     (1139433736, u'Oblivion - Misc.bsa'))
+        for mtime, bsa_file in bsa_times:
+            dirs['mods'].join(bsa_file).mtime = mtime
 
 #------------------------------------------------------------------------------
 class PeopleData(DataStore):

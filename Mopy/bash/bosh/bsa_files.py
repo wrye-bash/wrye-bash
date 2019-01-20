@@ -40,8 +40,8 @@ from functools import partial
 from itertools import groupby, imap
 from operator import itemgetter
 from . import AFile
-from ..bolt import deprint, struct_unpack, unpack_byte, unpack_string, \
-    unpack_int
+from ..bolt import deprint, Progress, struct_pack, struct_unpack, \
+    unpack_byte, unpack_string, unpack_int
 from ..exception import BSAError, BSADecodingError, BSAFlagError, \
     BSANotImplemented
 
@@ -209,6 +209,26 @@ class BSAFileRecord(_BsaHashedRecord):
     def raw_data_size(self):
         if self.compression_toggle():
             return self.file_size_flags & (~0xC0000000) # negate all flags
+        return self.file_size_flags
+
+class BSAOblivionFileRecord(_BsaHashedRecord):
+    # Note: Here, we (ab)use the usage of zip() in _BsaHashedRecord.load_record
+    # to make sure that the last slot, file_pos, is not read from the BSA - we
+    # fill it manually in our load_record override. This is necessary to find
+    # the positions of hashes for undo_alterations().
+    __slots__ = ('file_size_flags', 'raw_file_data_offset', 'file_pos')
+    formats = ['I', 'I']
+    formats = list((f, struct.calcsize(f)) for f in formats)
+
+    def load_record(self, ins):
+        self.file_pos = ins.tell()
+        super(BSAOblivionFileRecord, self).load_record(ins)
+
+    def compression_toggle(self): return self.file_size_flags & 0x40000000
+
+    def raw_data_size(self):
+        if self.compression_toggle():
+            return self.file_size_flags & (~0xC0000000)  # negate all flags
         return self.file_size_flags
 
 # BA2s
@@ -408,12 +428,12 @@ class BSA(ABsa):
                 names_record_index += 1
                 bsa_folder.folder_assets[filename] = rec
 
-    @staticmethod
-    def _read_file_records(file_records, bsa_file, folder_path,
+    @classmethod
+    def _read_file_records(cls, file_records, bsa_file, folder_path,
                            folder_record, folders=None):
         folders[folder_path] = BSAFolder(folder_record)
         for __ in xrange(folder_record.files_count):
-            rec = BSAFileRecord()
+            rec = cls.file_record_type()
             rec.load_record(bsa_file)
             file_records.append(rec)
 
@@ -556,6 +576,63 @@ class BA2(ABsa):
 
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader
+    file_record_type = BSAOblivionFileRecord
+    # A dictionary mapping file extensions to hash components. Used by Oblivion
+    # when hashing file names for its BSAs.
+    _bsa_ext_lookup = collections.defaultdict(int)
+    for ext, hash in [('.kf', 0x80), ('.nif', 0x8000), ('.dds', 0x8080),
+                      ('.wav', 0x80000000)]:
+        _bsa_ext_lookup[ext] = hash
+
+    @staticmethod
+    def calculate_hash(file_name):
+        """Calculates the hash used by Oblivion BSAs for the provided file
+        name.
+        Based on Timeslips code with cleanup and pythonization.
+
+        See here for more information:
+        https://en.uesp.net/wiki/Tes4Mod:Hash_Calculation"""
+        #--NOTE: fileName is NOT a Path object!
+        root, ext = os.path.splitext(file_name.lower())
+        chars = map(ord, root)
+        hash1 = chars[-1] | ((len(chars) > 2 and chars[-2]) or 0) << 8 | len(
+            chars) << 16 | chars[0] << 24
+        hash1 |= OblivionBsa._bsa_ext_lookup[ext]
+        uint_mask, hash2, hash3 = 0xFFFFFFFF, 0, 0
+        for char in chars[1:-2]:
+            hash2 = ((hash2 * 0x1003F) + char) & uint_mask
+        for char in map(ord, ext):
+            hash3 = ((hash3 * 0x1003F) + char) & uint_mask
+        hash2 = (hash2 + hash3) & uint_mask
+        return (hash2 << 32) + hash1
+
+    def undo_alterations(self, progress=Progress()):
+        """Undoes any alterations that previously applied BSA Alteration may
+        have done to this BSA by recalculating all mismatched hashes.
+
+        NOTE: In order for this method to do anything, the BSA must be fully
+        loaded - that means you must either pass load_cache=True and
+        names_only=False to the constructor, or call _load_bsa() (NOT
+        _load_bsa_light() !) before calling this method.
+
+        See this link for an in-depth overview of BSA Alteration and the
+        problem it tries to solve:
+        http://devnull.sweetdanger.com/archiveinvalidation.html
+
+        :param progress: The progress indicator to use for this process."""
+        progress.setFull(self.bsa_header.folder_count)
+        with open(self.abs_path.s, 'r+b') as bsa_file:
+            reset_count = 0
+            for folder_name, folder in self.bsa_folders.iteritems():
+                for file_name, file_info in folder.folder_assets.iteritems():
+                    rebuilt_hash = self.calculate_hash(file_name)
+                    if file_info.hash != rebuilt_hash:
+                        bsa_file.seek(file_info.file_pos)
+                        bsa_file.write(struct_pack('Q', rebuilt_hash))
+                        reset_count += 1
+                progress(progress.state + 1, u'Rebuilding Hashes...\n' +
+                         folder_name)
+        return reset_count
 
 class SkyrimBsa(BSA):
     header_type = SkyrimBsaHeader
