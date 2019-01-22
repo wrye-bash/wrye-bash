@@ -79,8 +79,8 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     @classmethod
     def init(cls):
         # First import from skyrimse.records file
-        from .records import MreWthr, MreMato, MreLtex, MreMovt, MreWatr, \
-            MreWeap, MreStat, MreAmmo,  MreVoli, MreLens
+        from .records import MreWthr, MreMato, MreLtex, MreWatr, MreWeap, \
+            MreStat, MreAmmo, MreVoli, MreLens
         # then import rest of records from skyrim.records
         from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
             MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \

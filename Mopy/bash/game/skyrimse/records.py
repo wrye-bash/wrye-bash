@@ -146,33 +146,6 @@ class MreMato(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreMovt(MelRecord):
-    """Movt Item"""
-    classType = 'MOVT'
-    class MelMovtSped(MelStruct):
-        """Handle older truncated SPED for MOVT subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 44:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 40:
-                raise ModSizeError(record.inName, readId, 44, size_, True,
-                                   old_skyrim=True)
-            else:
-                raise ModSizeError(record.inName, readId, 44, size_, True)
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelString('MNAM','mnam_n'),
-        MelMovtSped('SPED','11f','leftWalk','leftRun','rightWalk','rightRun',
-                  'forwardWalk','forwardRun','backWalk','backRun',
-                  'rotateInPlaceWalk','rotateInPlaceRun',
-                  'rotateWhileMovingRun'),
-        MelOptStruct('INAM','3f','directional','movementSpeed','rotationSpeed'),
-        )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreStat(MelRecord):
     """Static model record."""
     classType = 'STAT'
