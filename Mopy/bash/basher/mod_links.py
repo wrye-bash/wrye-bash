@@ -872,7 +872,7 @@ class Mod_MarkMergeable(ItemLink):
     @balt.conversation
     def Execute(self):
         result, tagged_no_merge = bosh.modInfos.rescanMergeable(self.selected,
-            doCBash=self.doCBash, verbose=True)
+            doCBash=self.doCBash, return_results=True)
         yes = [x for x in self.selected if
                x not in tagged_no_merge and x in bosh.modInfos.mergeable]
         no = set(self.selected) - set(yes)
@@ -892,7 +892,7 @@ class Mod_MarkMergeable(ItemLink):
         if no:
             message += u'=== ' + (_(
                 u'ESL Incapable') if bush.game.check_esl else _(
-                u'Not Mergeable')) + u'\n* ' + '\n\n* '.join(no)
+                u'Not Mergeable')) + u'\n* ' + u'\n\n* '.join(no)
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
         if message != u'':
             title_ = _(u'Check ESL Qualifications') if \

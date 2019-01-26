@@ -1955,14 +1955,17 @@ class ModInfos(FileInfos):
                 newMods.append(mpath)
         return newMods
 
-    def rescanMergeable(self, names, prog=None, doCBash=None, verbose=False):
+    def rescanMergeable(self, names, prog=None, doCBash=None,
+                        return_results=False):
+        """Rescan specified mods. Return value is only meaningful when
+        return_results is set to True."""
         messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
             else _(u"Mark Mergeable")
         with prog or balt.Progress(_(messagetext) + u' ' * 30) as prog:
-            return self._rescanMergeable(names, prog, doCBash, verbose)
+            return self._rescanMergeable(names, prog, doCBash, return_results)
 
-    def _rescanMergeable(self, names, progress, doCBash, verbose):
-        """Will rescan specified mods."""
+    def _rescanMergeable(self, names, progress, doCBash, return_results):
+        reasons = None if not return_results else []
         if doCBash is None:
             doCBash = CBashApi.Enabled
         elif doCBash and not CBashApi.Enabled:
@@ -1985,13 +1988,14 @@ class ModInfos(FileInfos):
                 canMerge = False
             else:
                 try:
-                    canMerge = is_mergeable(fileInfo, self, verbose)
+                    canMerge = is_mergeable(fileInfo, self, reasons)
                 except Exception as e:
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
-            result[fileName] = canMerge
-            if not isinstance(canMerge, basestring) and canMerge: # True...
+            result[fileName] = reasons is not None and (
+                    u'\n.    ' + u'\n.    '.join(reasons))
+            if canMerge:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
             else:
@@ -1999,6 +2003,7 @@ class ModInfos(FileInfos):
                 self.mergeable.discard(fileName)
             if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
                 tagged_no_merge.add(fileName)
+            reasons = reasons if reasons is None else []
         return result, tagged_no_merge
 
     def reloadBashTags(self):
