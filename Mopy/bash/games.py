@@ -319,7 +319,7 @@ class Game(object):
 
     def in_master_block(self, minf): # minf is a master or mod info
         """Return true for files that load in the masters' block."""
-        return minf.isEsm() # check flag
+        return minf.has_esm_flag()
 
     # ABSTRACT ----------------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
@@ -753,7 +753,7 @@ class AsteriskGame(Game):
         """For esl games .esm and .esl files are set the master flag in
         memory even if not set on the file on disk. For esps we must check
         for the flag explicitly."""
-        return minf.name.cext in __master_exts or minf.isEsm()
+        return minf.name.cext in __master_exts or minf.has_esm_flag()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # read the file once

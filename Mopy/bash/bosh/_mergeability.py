@@ -32,7 +32,7 @@ from ..parsers import ModFile, LoadFactory
 
 def _is_mergeable_no_load(modInfo, verbose):
     reasons = []
-    if modInfo.isEsm():
+    if modInfo.has_esm_flag():
         if not verbose: return False
         reasons.append(u'\n.    '+_(u'Is esm.'))
     #--Bashed Patch

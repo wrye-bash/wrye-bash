@@ -212,9 +212,9 @@ class MasterInfo:
     def hasChanged(self):
         return self.name != self.oldName
 
-    def isEsm(self):
+    def has_esm_flag(self):
         if self.modInfo:
-            return self.modInfo.isEsm()
+            return self.modInfo.has_esm_flag()
         else:
             return self.name.cext == u'.esm'
 
@@ -442,7 +442,7 @@ class ModInfo(FileInfo):
 
     def getFileInfos(self): return modInfos
 
-    def isEsm(self):
+    def has_esm_flag(self):
         """Check if the mod info is a master file based on master flag -
         header must be set"""
         return int(self.header.flags1) & 1 == 1
@@ -1945,7 +1945,7 @@ class ModInfos(FileInfos):
                                      reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
             # if esm/esl bit was flipped size won't change, so check this first
-            if modInfo.is_esl() or modInfo.isEsm():
+            if modInfo.is_esl() or modInfo.has_esm_flag():
                 # esl don't mark as esl capable - modInfo must have its header set
                 name_mergeInfo[mpath] = (modInfo.size, False)
                 self.mergeable.discard(mpath)

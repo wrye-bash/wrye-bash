@@ -1471,14 +1471,14 @@ class Mod_CopyToEsmp(EnabledLink):
     def _initData(self, window, selection):
         super(Mod_CopyToEsmp, self)._initData(window, selection)
         minfo = bosh.modInfos[selection[0]]
-        self._is_esm = minfo.isEsm()
-        self._text = _(u'Copy to Esp') if self._is_esm else _(u'Copy to Esm')
+        self._is_esm = minfo.has_esm_flag()
+        self._text = _(u'Copy to .esp') if self._is_esm else _(u'Copy to .esm')
 
     def _enable(self):
         """Disable if selected are mixed esm/p's or inverted mods."""
         for minfo in self.iselected_infos():
-            if minfo.is_esl() or minfo.isInvertedMod() or minfo.isEsm() != \
-                    self._is_esm:
+            if minfo.is_esl() or minfo.isInvertedMod() or \
+                    minfo.has_esm_flag() != self._is_esm:
                 return False
         return True
 
@@ -1486,7 +1486,7 @@ class Mod_CopyToEsmp(EnabledLink):
         modInfos, added = bosh.modInfos, []
         save_lo = False
         for curName, minfo in self.iselected_pairs():
-            newType = (minfo.isEsm() and u'esp') or u'esm'
+            newType = (minfo.has_esm_flag() and u'esp') or u'esm'
             newName = curName.root + u'.' + newType # calls GPath internally
             #--Replace existing file?
             timeSource = None
@@ -1600,8 +1600,9 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
     def _initData(self, window, selection):
         super(Mod_FlipEsm, self)._initData(window, selection)
         minfo = bosh.modInfos[selection[0]]
-        self._is_esm = minfo.isEsm()
-        self._text = _(u'Espify Self') if self._is_esm else _(u'Esmify Self')
+        self._is_esm = minfo.has_esm_flag()
+        self._text = _(u'Remove ESM Flag') if self._is_esm else _(u'Add ESM '
+                                                                  u'Flag')
 
     def _enable(self):
         """For pre esl games check if all mods are of the same type (esm or
@@ -1609,7 +1610,7 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
         games the esp extension is even more important as esm and esl have
         the master flag set in memory no matter what."""
         for m, minfo in self.iselected_pairs():
-            if m.cext[-1] != u'p' or minfo.isEsm() != self._is_esm:
+            if m.cext[-1] != u'p' or minfo.has_esm_flag() != self._is_esm:
                 return False
         return True
 
@@ -1640,7 +1641,8 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
         super(Mod_FlipEsl, self)._initData(window, selection)
         minfo = bosh.modInfos[selection[0]]
         self._is_esl = minfo.is_esl()
-        self._text = _(u'Drop Esl Flag') if self._is_esl else _(u'Eslify Self')
+        self._text = _(u'Remove ESL Flag') if self._is_esl else _(u'Add ESL '
+                                                                  u'Flag')
 
     def _enable(self):
         """Allow if all selected mods are .espm files, have same esl flag and
@@ -1671,8 +1673,9 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
 #------------------------------------------------------------------------------
 class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     """Swaps masters between esp and esm versions."""
-    _help = _(
-        u"Flip esp/esm bit of esp masters to convert them to/from esm state")
+    _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
+              u'allowing you to load it in the %(csName)s.') % (
+              {'csName': bush.game.cs.longName})
 
     def _initData(self, window, selection,
                   __reEspExt=re.compile(ur'\.esp(.ghost)?$', re.I | re.U)):
@@ -1687,7 +1690,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
         for mastername in self.espMasters:
             masterInfo = bosh.modInfos.get(mastername, None)
             if masterInfo and masterInfo.isInvertedMod():
-                self._text = _(u'Espify Masters')
+                self._text = _(u'Add ESM Flag to Masters')
                 self.toEsm = False
                 break
         else:
