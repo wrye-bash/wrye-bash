@@ -402,18 +402,32 @@ class MasterList(_ModsUIList):
         #--Font color
         fileBashTags = masterInfo.getBashTags()
         mouseText = u''
-        if load_order.in_master_block(masterInfo):
-            item_format.text_key = 'mods.text.esm'
-            mouseText += _(u"Master file. ")
-        if masterInfo.is_esl():
-            item_format.text_key = 'mods.text.esl'
-            mouseText += _(u"ESL Flagged file. ")
+        if masters_name in bosh.modInfos.bashed_patches:
+            item_format.text_key = 'mods.text.bashedPatch'
         elif masters_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags and not bush.game.check_esl:
                 item_format.text_key = 'mods.text.noMerge'
                 mouseText += _(u"Technically mergeable but has NoMerge tag.  ")
             else:
                 item_format.text_key = 'mods.text.mergeable'
+                if bush.game.check_esl:
+                    mouseText += _(u"Qualifies to be ESL flagged.  ")
+                else:
+                    # Merged plugins won't be in master lists
+                    mouseText += _(u"Can be merged into Bashed Patch.  ")
+        else:
+            # NoMerge / Mergeable should take priority over ESL/ESM color
+            is_master = load_order.in_master_block(masterInfo)
+            is_esl = masterInfo.is_esl()
+            if is_master and is_esl:
+                item_format.text_key = 'mods.text.eslm'
+                mouseText += _(u'ESL Flagged file. Master file.')
+            elif is_master:
+                item_format.text_key = 'mods.text.esm'
+                mouseText += _(u"Master file. ")
+            elif is_esl:
+                item_format.text_key = 'mods.text.esl'
+                mouseText += _(u"ESL Flagged file. ")
         #--Text BG
         if bosh.modInfos.isBadFileName(masters_name.s):
             if load_order.cached_is_active(masters_name):
@@ -820,13 +834,7 @@ class ModList(_ModsUIList):
             mouseText += _(u'Plugin name incompatible, cannot be activated.  ')
         if mod_name in bosh.modInfos.missing_strings:
             mouseText += _(u'Plugin is missing String Localization files.  ')
-        if load_order.in_master_block(mod_info):
-            item_format.text_key = 'mods.text.esm'
-            mouseText += _(u"Master file. ")
-        if mod_info.is_esl():
-            item_format.text_key = 'mods.text.esl'
-            mouseText += _(u"ESL Flagged file. ")
-        elif mod_name in bosh.modInfos.bashed_patches:
+        if mod_name in bosh.modInfos.bashed_patches:
             item_format.text_key = 'mods.text.bashedPatch'
         elif mod_name in bosh.modInfos.mergeable:
             if u'NoMerge' in fileBashTags and not bush.game.check_esl:
@@ -841,6 +849,19 @@ class ModList(_ModsUIList):
                         mouseText += _(u"Merged into Bashed Patch.  ")
                     else:
                         mouseText += _(u"Can be merged into Bashed Patch.  ")
+        else:
+            # NoMerge / Mergeable should take priority over ESL/ESM color
+            is_master = load_order.in_master_block(mod_info)
+            is_esl = mod_info.is_esl()
+            if is_master and is_esl:
+                item_format.text_key = 'mods.text.eslm'
+                mouseText += _(u"ESL Flagged file. Master file. ")
+            elif is_master:
+                item_format.text_key = 'mods.text.esm'
+                mouseText += _(u"Master file. ")
+            elif is_esl:
+                item_format.text_key = 'mods.text.esl'
+                mouseText += _(u"ESL Flagged file. ")
         #--Image messages
         if status == 30:
             mouseText += _(u"One or more masters are missing.  ")

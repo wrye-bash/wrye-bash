@@ -45,6 +45,11 @@ colorInfo = {
         _(u'Tabs: Mods, Saves') + u'\n\n' +
         _(u'This is the text color used for ESLs in the Mods Tab, and in the '
           u'Masters info on both the Mods Tab and Saves Tab.'),),
+    'mods.text.eslm': (_(u'ESLM'),
+        _(u'Tabs: Mods, Saves') + u'\n\n' +
+        _(u'This is the text color used for ESLs with a master flag in the'
+          u'Mods Tab, and in the Masters info on both the Mods Tab and Saves'
+          u'Tab.'),),
     'mods.text.noMerge': (_(u"'NoMerge' Plugin"),
         _(u'Tabs: Mods') + u'\n\n' +
         _(u"This is the text color used for a mergeable plugin that is "
@@ -161,11 +166,12 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         #--Mods Tab
         'mods.text.esm':                'BLUE',
         'mods.text.mergeable':          (0x00, 0x99, 0x00),
-        'mods.text.noMerge':            (0x99, 0x00, 0x99),
+        'mods.text.noMerge':            (150, 130, 0),
         'mods.bkgd.doubleTime.exists':  (0xFF, 0xDC, 0xDC),
         'mods.bkgd.doubleTime.load':    (0xFF, 0x64, 0x64),
         'mods.bkgd.deactivate':         (0xFF, 0x64, 0x64),
         'mods.bkgd.ghosted':            (0xE8, 0xE8, 0xE8),
+        'mods.text.eslm':               (123, 29, 223),
         'mods.text.esl':                (226, 54, 197),
         'mods.text.bashedPatch':        (30, 157, 251),
         #--INI Edits Tab
