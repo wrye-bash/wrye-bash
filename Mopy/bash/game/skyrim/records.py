@@ -1904,8 +1904,10 @@ class MreCell(MelRecord):
                  'fogColorFarRed','fogColorFarGreen','fogColorFarBlue',('unused4',null1),
                  'fogMax','lightFadeBegin','lightFadeEnd',(CellInheritedFlags,'inherits',0L),
              ),
-        MelBase('TVDT','unknown_TVDT'),
-        MelBase('MHDT','unknown_MHDT'),
+        MelBase('TVDT','occlusionData'),
+        # Decoded in xEdit, but properly reading it is relatively slow - see
+        # 'Simple Records' option in xEdit - so we skip that for now
+        MelBase('MHDT','maxHeightData'),
         MelFid('LTMP','lightTemplate',),
         # leftover flags, they are now in XCLC
         MelBase('LNAM','unknown_LNAM'),
@@ -1914,8 +1916,8 @@ class MreCell(MelRecord):
         MelString('XNAM','waterNoiseTexture'),
         MelFidList('XCLR','regions'),
         MelFid('XLCN','location',),
-        MelBase('XWCN','unknown_XWCN'),
-        MelBase('XWCS','unknown_XWCS'),
+        MelBase('XWCN','unknown_XWCN'), # leftover
+        MelBase('XWCS','unknown_XWCS'), # leftover
         MelOptStruct('XWCU','3f4s3f','xOffset','yOffset','zOffset','unk1XWCU','xAngle',
                   'yAngle','zAngle',dumpExtra='unk2XWCU',),
         MelFid('XCWT','water'),
