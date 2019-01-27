@@ -1404,24 +1404,27 @@ class ModDetails(_SashDetailsPanel):
             self.descriptionStr = self.description.GetValue() ##: .replace('\n', 'r\n')
             self.SetEdited()
 
-    bsaAndVoice = _(u'This mod has an associated archive (%s.' +
-                    bush.game.bsa_extension + u') and an '
-        u'associated voice directory (Sound\\Voices\\%s), which will become '
-        u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that the '
-        u'BSA archive may also contain a voice directory (Sound\\Voices\\%s), '
-        u'which would remain detached even if the archive name is adjusted.')
+    bsaAndBlocking = _(u'This mod has an associated archive (%s.' +
+                       bush.game.bsa_extension + u') and an '
+        u'associated plugin-name-specific directory (e.g. Sound\\Voice\\%s),'
+        u' which will become detached when the mod is renamed.') + u'\n\n' + \
+        _(u'Note that the BSA archive may also contain a plugin-name-specific '
+        u'directory, which would remain detached even if the archive name is '
+        u'adjusted.')
     bsa = _(u'This mod has an associated archive (%s.' +
                     bush.game.bsa_extension + u'), which will become '
         u'detached when the mod is renamed.') + u'\n\n' + _(u'Note that this '
-        u'BSA archive may contain a voice directory (Sound\\Voices\\%s), which'
-        u' would remain detached even if the archive file name is adjusted.')
-    voice = _(u'This mod has an associated voice directory (Sound\\Voice\\%s),'
-        u' which will become detached when the mod is renamed.')
+        u'BSA archive may contain a plugin-name-specific directory (e.g. '
+        u'Sound\\Voice\\%s), which would remain detached even if the archive '
+        u'file name is adjusted.')
+    blocking = _(u'This mod has an associated plugin-name-specific directory, '
+        u'(e.g. Sound\\Voice\\%s) which will become detached when the mod is '
+        u'renamed.')
 
     def _askResourcesOk(self, fileInfo):
         msg = bosh.modInfos.askResourcesOk(fileInfo,
-                                           bsaAndVoice=self.bsaAndVoice,
-                                           bsa=self.bsa, voice=self.voice)
+                                           bsaAndBlocking=self.bsaAndBlocking,
+                                           bsa=self.bsa,blocking=self.blocking)
         if not msg: return True # resources ok
         return balt.askWarning(self, msg, _(u'Rename ') + fileInfo.name.s)
 

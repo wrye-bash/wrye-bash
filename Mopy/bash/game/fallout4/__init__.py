@@ -88,6 +88,12 @@ class Fallout4GameInfo(GameInfo):
     class ess(GameInfo.ess):
         ext = u'.fos'
 
+    class pnd(GameInfo.pnd):
+        facegen_dir_1 = [u'meshes', u'actors', u'character', u'facegendata',
+                         u'facegeom']
+        facegen_dir_2 = [u'meshes', u'actors', u'character',
+                         u'facecustomization']
+
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'interface',

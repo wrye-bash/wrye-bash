@@ -155,6 +155,21 @@ class GameInfo(object):
         canEditMore = False # Advanced editing
         ext = u'.ess'       # Save file extension
 
+    # Information about Plugin-Name-specific Directories supported by this game
+    # Some examples are sound\voices\PLUGIN_NAME.esp, or the facegendata ones.
+    # All paths are given as lists for future cross-platform support.
+    # An empty list means that the game does not have such a directory.
+    class pnd(object):
+        # The path to the first plugin-name-specific directory for facegen.
+        # Meshes in newer games, textures in older ones.
+        facegen_dir_1 = []
+        # The path to the second plugin-name-specific directory for facegen.
+        # Always contains textures.
+        facegen_dir_2 = []
+        # The path to the plugin-name-specific directory for voice files
+        # This is the same for every game released thus far (sound\\voice\\%s)
+        voice_dir = [u'sound', u'voice']
+
     # INI setting used to setup Save Profiles
     #  (section,key)
     saveProfilesKey = (u'General', u'SLocalSavePath')

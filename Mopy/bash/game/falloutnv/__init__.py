@@ -67,6 +67,10 @@ class FalloutNVGameInfo(GameInfo):
     class ess(GameInfo.ess):
         ext = u'.fos'
 
+    class pnd(GameInfo.pnd):
+        facegen_dir_1 = [u'textures', u'characters', u'BodyMods']
+        facegen_dir_2 = [u'textures', u'characters', u'FaceMods']
+
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'distantlod',

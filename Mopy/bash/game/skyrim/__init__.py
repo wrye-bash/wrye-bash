@@ -83,6 +83,12 @@ class SkyrimGameInfo(GameInfo):
         allowNewLines = True
         bsaRedirection = (u'', u'')
 
+    class pnd(GameInfo.pnd):
+        facegen_dir_1 = [u'meshes', u'actors', u'character', u'facegendata',
+                         u'facegeom']
+        facegen_dir_2 = [u'textures', u'actors', u'character', u'facegendata',
+                         u'facetint']
+
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
         u'dialogueviews',

@@ -38,18 +38,30 @@ def _is_mergeable_no_load(modInfo, reasons):
     if modInfo.isBP():
         if not verbose: return False
         reasons.append(_(u'Is Bashed Patch.'))
-    #--Bsa / voice?
+    #--Bsa / blocking resources?
     has_resources = modInfo.hasResources()
     if tuple(has_resources) != (False, False):
         if not verbose: return False
-        hasBsa, hasVoices = has_resources
+        hasBsa, has_blocking_resources = has_resources
         if hasBsa:
             reasons.append(_(u'Has BSA archive.'))
-        if hasVoices:
-            reasons.append(_(u'Has associated voice directory (Sound\\Voice\\%s).') % modInfo.name.s)
+        if has_blocking_resources:
+            facegen_dir_1 = _format_blocking_dir(bush.game.pnd.facegen_dir_1)
+            facegen_dir_2 = _format_blocking_dir(bush.game.pnd.facegen_dir_2)
+            voice_dir = _format_blocking_dir(bush.game.pnd.voice_dir)
+            bdirs = '\n'.join([facegen_dir_1, facegen_dir_2, voice_dir])
+            reasons.append(_(u'Has plugin-specific directory (one of\n' + bdirs
+                             + u').') % ({'plugin_name': modInfo.name.s}))
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True
+
+def _format_blocking_dir(blocking_dir):
+    """Formats a path with path separators. Returns u'' for empty paths."""
+    if blocking_dir:
+        return u'\\'.join(blocking_dir) + u'\\%(plugin_name)s'
+    else:
+        return u''
 
 def _pbash_mergeable_no_load(modInfo, reasons):
     verbose = reasons is not None

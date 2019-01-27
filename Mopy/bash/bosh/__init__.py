@@ -800,10 +800,22 @@ class ModInfo(FileInfo):
         return False
 
     def hasResources(self):
-        """Returns (hasBsa,hasVoices) booleans according to presence of
-        corresponding resources."""
-        voicesPath = self.dir.join(u'Sound',u'Voice',self.name)
-        return [self.hasBsa(),voicesPath.exists()]
+        """Returns (hasBsa, has_blocking_resources) booleans according to
+        presence of corresponding resources (a BSA with a matching name and one
+        or more plugin-name-specific folder, respectively)."""
+        return [self.hasBsa(),self._check_resources(bush.game.pnd.voice_dir) or
+                self._check_resources(bush.game.pnd.facegen_dir_1) or
+                self._check_resources(bush.game.pnd.facegen_dir_2)]
+
+    def _check_resources(self, resource_path):
+        """Returns True if the directory created by joining self.dir, the
+        specified path and self.name exists. Used to check for the existence
+        of plugin-name-specific directories, which prevent merging.
+
+        :param resource_path: The path to the plugin-name-specific directory,
+        as a list of path components.
+        """
+        return self.dir.join(*resource_path).join(self.name).exists()
 
 #------------------------------------------------------------------------------
 from .ini_files import IniFile, OBSEIniFile, DefaultIniFile, OblivionIni, \
@@ -2171,16 +2183,16 @@ class ModInfos(FileInfos):
         return tagList
 
     @staticmethod
-    def askResourcesOk(fileInfo, bsaAndVoice, bsa, voice):
+    def askResourcesOk(fileInfo, bsaAndBlocking, bsa, blocking):
         if not fileInfo.isMod():
             return u''
-        hasBsa, hasVoices = fileInfo.hasResources()
-        if (hasBsa, hasVoices) == (False,False):
+        hasBsa, hasBlocking = fileInfo.hasResources()
+        if (hasBsa, hasBlocking) == (False,False):
             return u''
         mPath, name = fileInfo.name, fileInfo.name.s
-        if hasBsa and hasVoices: msg = bsaAndVoice % (mPath.sroot, name, name)
+        if hasBsa and hasBlocking: msg = bsaAndBlocking % (mPath.sroot, name)
         elif hasBsa: msg = bsa % (mPath.sroot, name)
-        else: msg = voice % name # hasVoices
+        else: msg = blocking % name
         return msg
 
     #--Active mods management -------------------------------------------------

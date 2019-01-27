@@ -100,26 +100,29 @@ class File_Duplicate(ItemLink):
         self._text = (_(u'Duplicate'), _(u'Duplicate...'))[len(selection) == 1]
         self._help = _(u"Make a copy of '%s'") % (selection[0])
 
-    _bsaAndVoice = _(u"This mod has an associated archive (%s." +
-                    bush.game.bsa_extension + u") and an "
-        u"associated voice directory (Sound\\Voices\\%s), which will not be "
-        u"attached to the duplicate mod.") + u'\n\n' + _(u'Note that the BSA '
-        u'archive may also contain a voice directory (Sound\\Voices\\%s), '
-        u'which would remain detached even if a duplicate archive were also '
-        u'created.')
+    _bsaAndBlocking = _(u"This mod has an associated archive (%s." +
+                        bush.game.bsa_extension + u") and an "
+        u"associated plugin-name-specific directory (e.g. Sound\\Voice\\%s), "
+        u"which will not be attached to the duplicate mod.") + u'\n\n' + \
+        _(u'Note that the BSA archive may also contain a plugin-name-specific '
+        u'directory, which would remain detached even if a duplicate archive '
+        u'were also created.')
     _bsa = _(u'This mod has an associated archive (%s.' +
                     bush.game.bsa_extension + u'), which will not be '
         u'attached to the duplicate mod.') + u'\n\n' + _(u'Note that this BSA '
-        u'archive may contain a voice directory (Sound\\Voices\\%s), which '
-        u'would remain detached even if a duplicate archive were also created.'
+        u'archive may contain a plugin-name-specific directory'
+        u' (e.g. Sound\\Voice\\%s), which would remain detached even if a '
+        u'duplicate archive were also created.'
     )
-    _voice = _(ur'This mod has an associated voice directory (Sound\Voice\%s),'
-        u' which will not be attached to the duplicate mod.')
+    _blocking = _(u'This mod has an associated plugin-name-specific directory '
+                  u'(e.g. Sound\\Voice\\%s), which will not be attached to '
+                  u'the duplicate mod.')
 
     def _askResourcesOk(self, fileInfo):
         msg = bosh.modInfos.askResourcesOk(fileInfo,
-                                           bsaAndVoice=self._bsaAndVoice,
-                                           bsa=self._bsa, voice=self._voice)
+                                           bsaAndBlocking=self._bsaAndBlocking,
+                                           bsa=self._bsa,
+                                           blocking=self._blocking)
         if not msg: return True  # resources ok
         return balt.askWarning(self.window, msg,
                                _(u'Duplicate ') + fileInfo.name.s)
