@@ -54,7 +54,9 @@ class PatchDialog(balt.Dialog):
     :type patchers: list[basher.gui_patchers._PatcherPanel]
     """
 
-    def __init__(self,parent,patchInfo,doCBash=None,importConfig=True):
+    def __init__(self, parent, patchInfo, doCBash, importConfig,
+                 mods_to_reselect):
+        self.mods_to_reselect = mods_to_reselect
         self.parent = parent
         if (doCBash or doCBash is None) and bass.settings['bash.CBashEnabled']:
             doCBash = True
@@ -254,12 +256,18 @@ class PatchDialog(balt.Dialog):
             balt.WryeLog(self.parent, readme, patch_name.s,
                          log_icons=Resources.bashBlue)
             #--Select?
+            if self.mods_to_reselect:
+                for mod in self.mods_to_reselect:
+                    bosh.modInfos.lo_activate(mod, doSave=False)
+                self.mods_to_reselect.clear()
+                bosh.modInfos.cached_lo_save_active() ##: also done below duh
             count, message = 0, _(u'Activate %s?') % patch_name.s
             if load_order.cached_is_active(patch_name) or (
                         bass.inisettings['PromptActivateBashedPatch'] and
                         balt.askYes(self.parent, message, patch_name.s)):
                 try:
-                    changedFiles = bosh.modInfos.lo_activate(patch_name)
+                    changedFiles = bosh.modInfos.lo_activate(patch_name,
+                                                             doSave=True)
                     count = len(changedFiles)
                     if count > 1: Link.Frame.SetStatusInfo(
                             _(u'Masters Activated: ') + unicode(count - 1))
@@ -276,6 +284,7 @@ class PatchDialog(balt.Dialog):
                 # _reset_cache > calculate_crc() would not detect the crc
                 # change. That's a general problem with crc cache - API limits
                 info.calculate_crc(recalculate=True)
+            BashFrame.modList.RefreshUI(refreshSaves=bool(count))
         except FileEditError as error:
             balt.playSound(self.parent, bass.inisettings['SoundError'].s)
             balt.showError(self,u'%s'%error,_(u'File Edit Error'))
