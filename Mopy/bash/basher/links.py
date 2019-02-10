@@ -574,7 +574,9 @@ def InitModLinks():
         ModList.itemMenu.append(Mod_CopyToEsmp())
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_DecompileAll())
-        ModList.itemMenu.append(Mod_FlipSelf())
+        ModList.itemMenu.append(Mod_FlipEsm())
+        if bush.game.check_esl:
+            ModList.itemMenu.append(Mod_FlipEsl())
         ModList.itemMenu.append(Mod_FlipMasters())
         if bush.game.fsName == u'Oblivion':
             ModList.itemMenu.append(Mod_SetVersion())

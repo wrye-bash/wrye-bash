@@ -75,9 +75,13 @@ class GameInfo(object):
     using_txt_file = True
     # bethesda net export files
     has_achlist = False
+    # check if a plugin is convertible to a light master instead of checking
+    # mergeability
+    check_esl = False
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
+        self.has_esl = u'.esl' in self.espm_extensions
 
     # Construction Set information
     class cs(object):

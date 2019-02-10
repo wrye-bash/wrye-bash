@@ -64,8 +64,9 @@ __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
            'Mod_Face_Import', 'Mod_Fids_Replace', 'Mod_SkipDirtyCheck',
            'Mod_ScanDirty', 'Mod_RemoveWorldOrphans', 'Mod_FogFixer',
            'Mod_UndeleteRefs', 'Mod_AddMaster', 'Mod_CopyToEsmp',
-           'Mod_DecompileAll', 'Mod_FlipSelf', 'Mod_FlipMasters',
-           'Mod_SetVersion', 'Mod_ListDependent', 'Mod_JumpToInstaller']
+           'Mod_DecompileAll', 'Mod_FlipEsm', 'Mod_FlipEsl',
+           'Mod_FlipMasters', 'Mod_SetVersion', 'Mod_ListDependent',
+           'Mod_JumpToInstaller']
 
 #------------------------------------------------------------------------------
 # Mod Links -------------------------------------------------------------------
@@ -169,8 +170,8 @@ class Mod_OrderByName(EnabledLink):
                                  _(u'Sort Mods')): return
         #--Do it
         self.selected.sort()
-        self.selected.sort(
-            key=lambda m: not bosh.modInfos[m].is_esml()) # sort esmls first
+        self.selected.sort( # sort esmls first
+            key=lambda m: not load_order.in_master_block(bosh.modInfos[m]))
         if not load_order.using_txt_file():
             #--Get first time from first selected file.
             newTime = min(x.mtime for x in self.iselected_infos())
@@ -854,34 +855,49 @@ class Mod_MarkMergeable(ItemLink):
     def __init__(self,doCBash):
         Link.__init__(self)
         self.doCBash = doCBash
-        self._text = _(u'Mark Mergeable (CBash)...') if doCBash else _(
-            u'Mark Mergeable...')
-        self._help = _(u'Scans the selected plugin(s) to determine if they are '
-                      u'mergeable into the %(patch_type)s bashed patch, '
-                      u'reporting also the reason they are unmergeable') % {
-                        'patch_type': _(u'Cbash') if doCBash else _(u'Python')}
+        if bush.game.check_esl:
+            self._text = _(u'Check ESL Qualifications')
+            self._help = _(
+                u'Scans the selected plugin(s) to determine whether or not '
+                u'they can be assigned the esl flag')
+        else:
+            self._text = _(u'Mark Mergeable (CBash)...') if doCBash else _(
+                u'Mark Mergeable...')
+            self._help = _(
+                u'Scans the selected plugin(s) to determine if they are '
+                u'mergeable into the %(patch_type)s bashed patch, reporting '
+                u'also the reason they are unmergeable') % {
+                    'patch_type': _(u'Cbash') if doCBash else _(u'Python')}
 
     @balt.conversation
     def Execute(self):
         result, tagged_no_merge = bosh.modInfos.rescanMergeable(self.selected,
-            doCBash=self.doCBash, verbose=True)
+            doCBash=self.doCBash, return_results=True)
         yes = [x for x in self.selected if
                x not in tagged_no_merge and x in bosh.modInfos.mergeable]
         no = set(self.selected) - set(yes)
         no = [u"%s:%s" % (x, y) for x, y in result.iteritems() if x in no]
-        message = u'== %s ' % ([u'Python', u'CBash'][self.doCBash]) + _(
-            u'Mergeability') + u'\n\n'
+        if bush.game.check_esl:
+            message = u'== %s\n\n' % _(
+                u'Plugins that qualify for ESL flagging.')
+        else:
+            message = u'== %s ' % ([u'Python', u'CBash'][self.doCBash]) + _(
+                u'Mergeability') + u'\n\n'
         if yes:
-            message += u'=== ' + _(u'Mergeable') + u'\n* ' + u'\n\n* '.join(
-                x.s for x in yes)
+            message += u'=== ' + (
+                _(u'ESL Capable') if bush.game.check_esl else _(
+                    u'Mergeable')) + u'\n* ' + u'\n\n* '.join(x.s for x in yes)
         if yes and no:
             message += u'\n\n'
         if no:
-            message += u'=== ' + _(u'Not Mergeable') + u'\n* ' + '\n\n* '.join(
-                no)
+            message += u'=== ' + (_(
+                u'ESL Incapable') if bush.game.check_esl else _(
+                u'Not Mergeable')) + u'\n* ' + u'\n\n* '.join(no)
         self.window.RefreshUI(redraw=self.selected, refreshSaves=False)
         if message != u'':
-            self._showWryeLog(message, title=_(u'Mark Mergeable'))
+            title_ = _(u'Check ESL Qualifications') if \
+                bush.game.check_esl else _(u'Mark Mergeable')
+            self._showWryeLog(message, title=title_)
 
 #------------------------------------------------------------------------------
 class _Mod_BP_Link(OneItemLink):
@@ -952,7 +968,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
             if not self._askYes(msg, title=title): importConfig = False
         patch_files.executing_patch = self._selected_item
         mods_prior_to_patch = load_order.cached_lower_loading_espms(
-            self._selected_item, bosh.modInfos)
+            self._selected_item)
         if self.doCBash or bass.settings['bash.CBashEnabled']:
             # if doing a python patch but CBash is enabled, it's very likely
             # that the merge info currently is from a CBash mode scan, rescan
@@ -962,7 +978,8 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         #--Check if we should be deactivating some plugins
         active_prior_to_patch = [x for x in mods_prior_to_patch if
                                  load_order.cached_is_active(x)]
-        self._ask_deactivate_mergeable(active_prior_to_patch)
+        if not bush.game.check_esl:
+            self._ask_deactivate_mergeable(active_prior_to_patch)
         previousMods = set()
         missing = collections.defaultdict(list)
         delinquent = collections.defaultdict(list)
@@ -1454,14 +1471,14 @@ class Mod_CopyToEsmp(EnabledLink):
     def _initData(self, window, selection):
         super(Mod_CopyToEsmp, self)._initData(window, selection)
         minfo = bosh.modInfos[selection[0]]
-        self._is_esm = minfo.isEsm()
-        self._text = _(u'Copy to Esp') if self._is_esm else _(u'Copy to Esm')
+        self._is_esm = minfo.has_esm_flag()
+        self._text = _(u'Copy to .esp') if self._is_esm else _(u'Copy to .esm')
 
     def _enable(self):
         """Disable if selected are mixed esm/p's or inverted mods."""
         for minfo in self.iselected_infos():
-            if minfo.is_esl() or minfo.isInvertedMod() or minfo.isEsm() != \
-                    self._is_esm:
+            if minfo.is_esl() or minfo.isInvertedMod() or \
+                    minfo.has_esm_flag() != self._is_esm:
                 return False
         return True
 
@@ -1469,7 +1486,7 @@ class Mod_CopyToEsmp(EnabledLink):
         modInfos, added = bosh.modInfos, []
         save_lo = False
         for curName, minfo in self.iselected_pairs():
-            newType = (minfo.isEsm() and u'esp') or u'esm'
+            newType = (minfo.has_esm_flag() and u'esp') or u'esm'
             newName = curName.root + u'.' + newType # calls GPath internally
             #--Replace existing file?
             timeSource = None
@@ -1561,35 +1578,39 @@ class Mod_DecompileAll(EnabledLink):
                 self._showOk(_(u"No changes required."), fileName.s)
 
 #------------------------------------------------------------------------------
-class _Esm_Flip(EnabledLink):
+class _Esm_Esl_Flip(EnabledLink):
 
-    def _esm_flip_refresh(self, espify, updated):
+    def _esm_esl_flip_refresh(self, updated):
         with balt.BusyCursor():
             ##: HACK: forcing active refresh cause mods may be reordered and
             # we then need to sync order in skyrim's plugins.txt
             bosh.modInfos.refreshLoadOrder(forceRefresh=True, forceActive=True)
-            if espify: # converted to esps - rescan mergeable
-                bosh.modInfos.rescanMergeable(updated, bolt.Progress())
+            # converted to esps/esls - rescan mergeable
+            bosh.modInfos.rescanMergeable(updated, bolt.Progress())
             # will be moved to the top - note that modification times won't
             # change - so mods will revert to their original position once back
             # to esp from esm (Oblivion etc). Refresh saves due to esms move
         self.window.RefreshUI(redraw=updated, refreshSaves=True)
 
-class Mod_FlipSelf(_Esm_Flip):
-    """Flip an esp(esm) to an esm(esp). Extension must be esp."""
-    _help = _(u'Flips the ESM flag on the selected plugin, turning a master '
-              u'into a regular plugin and vice versa.')
+class Mod_FlipEsm(_Esm_Esl_Flip):
+    """Flip ESM flag. Extension must be esp."""
+    _help = _(u'Flips the ESM flag on the selected plugin(s), turning a master'
+              u' into a regular plugin and vice versa.')
 
     def _initData(self, window, selection):
-        super(Mod_FlipSelf, self)._initData(window, selection)
+        super(Mod_FlipEsm, self)._initData(window, selection)
         minfo = bosh.modInfos[selection[0]]
-        self._is_esm = minfo.isEsm()
-        self._text = _(u'Espify Self') if self._is_esm else _(u'Esmify Self')
+        self._is_esm = minfo.has_esm_flag()
+        self._text = _(u'Remove ESM Flag') if self._is_esm else _(u'Add ESM '
+                                                                  u'Flag')
 
     def _enable(self):
+        """For pre esl games check if all mods are of the same type (esm or
+        esp), based on the flag and if are all esp extension files. For esl
+        games the esp extension is even more important as esm and esl have
+        the master flag set in memory no matter what."""
         for m, minfo in self.iselected_pairs():
-            if minfo.is_esl() or \
-                    minfo.isEsm() != self._is_esm or not m.cext[-1] == u'p':
+            if m.cext[-1] != u'p' or minfo.has_esm_flag() != self._is_esm:
                 return False
         return True
 
@@ -1597,22 +1618,64 @@ class Mod_FlipSelf(_Esm_Flip):
     def Execute(self):
         message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
             _(u'This command flips an internal bit in the mod, converting an '
-              u'esp to an esm and vice versa.  Note that it is this bit and '
-              u'NOT the file extension that determines the esp/esm state of '
-              u'the mod.'))
+              u'ESP to an ESM and vice versa. For older games (Skyrim and '
+              u'earlier), only this bit determines whether or not a plugin is '
+              u'loaded as a master. In newer games (FO4 and later), files '
+              u'with the ".esm" and ".esl" extension are always forced to '
+              u'load as masters. Therefore, we disallow selecting those '
+              u'plugins for ESP/ESM conversion on newer games.'))
         if not self._askContinue(message, 'bash.flipToEsmp.continue',
-                                 _(u'Flip to Esm')): return
+                                 _(u'Flip to ESM')): return
         for modInfo in self.iselected_infos():
             header = modInfo.header
             header.flags1.esm = not header.flags1.esm
             modInfo.writeHeader()
-        self._esm_flip_refresh(self._is_esm, self.selected)
+        self._esm_esl_flip_refresh(self.selected)
+
+class Mod_FlipEsl(_Esm_Esl_Flip):
+    """Flip an esp(esl) to an esl(esp)."""
+    _help = _(u'Flips the ESL flag on the selected plugin(s), turning a light '
+              u'plugin into a regular one and vice versa.')
+
+    def _initData(self, window, selection):
+        super(Mod_FlipEsl, self)._initData(window, selection)
+        minfo = bosh.modInfos[selection[0]]
+        self._is_esl = minfo.is_esl()
+        self._text = _(u'Remove ESL Flag') if self._is_esl else _(u'Add ESL '
+                                                                  u'Flag')
+
+    def _enable(self):
+        """Allow if all selected mods are .espm files, have same esl flag and
+        are esl capable if converting to esl."""
+        for m, minfo in self.iselected_pairs():
+            if m.cext[-1] not in u'pm' or minfo.is_esl() != self._is_esl \
+                    or (not self._is_esl and not m in bosh.modInfos.mergeable):
+                return False
+        return True
+
+    @balt.conversation
+    def Execute(self):
+        message = (_(u'WARNING! For advanced modders only!') + u'\n\n' +
+            _(u'This command flips an internal bit in the mod, converting an '
+              u'ESP to an ESL and vice versa.  Note that it is this bit OR '
+              u'the ".esl" file extension that turns a mod into a light '
+              u'plugin. We therefore disallow selecting files with the .esl '
+              u'extension for converting into a light plugin (as they already'
+              u'are light plugins).'))
+        if not self._askContinue(message, 'bash.flipToEslp.continue',
+                                 _(u'Flip to ESL')): return
+        for modInfo in self.iselected_infos():
+            header = modInfo.header
+            header.flags1.eslFile = not header.flags1.eslFile
+            modInfo.writeHeader()
+        self._esm_esl_flip_refresh(self.selected)
 
 #------------------------------------------------------------------------------
-class Mod_FlipMasters(OneItemLink, _Esm_Flip):
+class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     """Swaps masters between esp and esm versions."""
-    _help = _(
-        u"Flip esp/esm bit of esp masters to convert them to/from esm state")
+    _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
+              u'allowing you to load it in the %(csName)s.') % (
+              {'csName': bush.game.cs.longName})
 
     def _initData(self, window, selection,
                   __reEspExt=re.compile(ur'\.esp(.ghost)?$', re.I | re.U)):
@@ -1627,7 +1690,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Flip):
         for mastername in self.espMasters:
             masterInfo = bosh.modInfos.get(mastername, None)
             if masterInfo and masterInfo.isInvertedMod():
-                self._text = _(u'Espify Masters')
+                self._text = _(u'Add ESM Flag to Masters')
                 self.toEsm = False
                 break
         else:
@@ -1637,9 +1700,10 @@ class Mod_FlipMasters(OneItemLink, _Esm_Flip):
 
     @balt.conversation
     def Execute(self):
-        message = _(u"WARNING! For advanced modders only! Flips esp/esm bit of"
-                    u" esp masters to convert them to/from esm state. Useful"
-                    u" for building/analyzing esp mastered mods.")
+        message = _(u"WARNING! For advanced modders only! Flips the ESM flag "
+                    u"of all ESP masters of the selected plugin. Useful for "
+                    u"loading ESP-mastered mods in the %(csName)s.") % (
+                    {'csName': bush.game.cs.longName})
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
         updated = [self._selected_item]
         for masterPath in self.espMasters:
@@ -1648,7 +1712,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Flip):
                 master_mod_info.header.flags1.esm = self.toEsm
                 master_mod_info.writeHeader()
                 updated.append(masterPath)
-        self._esm_flip_refresh(not self.toEsm, updated)
+        self._esm_esl_flip_refresh(updated)
 
 #------------------------------------------------------------------------------
 class Mod_SetVersion(OneItemLink):

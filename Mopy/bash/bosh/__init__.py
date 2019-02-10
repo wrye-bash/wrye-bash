@@ -42,7 +42,7 @@ from collections import OrderedDict, Iterable
 from functools import wraps, partial
 from itertools import imap
 #--Local
-from ._mergeability import isPBashMergeable, isCBashMergeable
+from ._mergeability import isPBashMergeable, isCBashMergeable, is_esl_capable
 from .mods_metadata import ConfigHelpers
 from .. import bass, bolt, balt, bush, env, load_order, archives, \
     initialization
@@ -212,17 +212,18 @@ class MasterInfo:
     def hasChanged(self):
         return self.name != self.oldName
 
-    def isEsm(self):
+    def has_esm_flag(self):
         if self.modInfo:
-            return self.modInfo.isEsm()
+            return self.modInfo.has_esm_flag()
         else:
             return self.name.cext == u'.esm'
 
-    def is_esml(self):
+    def is_esl(self):
+        """Delegate to self.modInfo.is_esl if exists, else check extension."""
         if self.modInfo:
-            return self.modInfo.is_esml()
+            return self.modInfo.is_esl()
         else:
-            return self.name.cext == u'.esm' or self.name.cext == u'.esl'
+            return self.name.cext == u'.esl'
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
@@ -441,17 +442,16 @@ class ModInfo(FileInfo):
 
     def getFileInfos(self): return modInfos
 
-    def isEsm(self):
+    def has_esm_flag(self):
         """Check if the mod info is a master file based on master flag -
         header must be set"""
         return int(self.header.flags1) & 1 == 1
 
     def is_esl(self):
-        # game seems not to care about the flag, at least for load order
-        return self.name.cext == u'.esl'
-
-    def is_esml(self):
-        return self.is_esl() or self.isEsm()
+        """Check if this is a light plugin - .esl files are automatically
+        set the light flag, for espms check the flag."""
+        return bush.game.has_esl and (
+                self.name.cext == u'.esl' or self.header.flags1.eslFile)
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
@@ -1690,7 +1690,7 @@ class ModInfos(FileInfos):
     def bashed_patches(self):
         if self._bashed_patches is self.__calculate:
             self._bashed_patches = set(
-                mname for mname, minf in self.iteritems() if minf.isBP())
+                mname for mname, modinf in self.iteritems() if modinf.isBP())
         return self._bashed_patches
 
     # Load order API for the rest of Bash to use - if the load order or
@@ -1750,7 +1750,7 @@ class ModInfos(FileInfos):
     def cached_lo_last_esm(self):
         last_esm = self.masterName
         for mod in self._lo_wip[1:]:
-            if not self[mod].is_esml(): return last_esm
+            if not load_order.in_master_block(self[mod]): return last_esm
             last_esm = mod
         return last_esm
 
@@ -1768,7 +1768,7 @@ class ModInfos(FileInfos):
     def cached_lo_append_if_missing(self, mods):
         new = mods - set(self._lo_wip)
         if not new: return
-        esms = set(x for x in new if self[x].is_esml())
+        esms = set(x for x in new if load_order.in_master_block(self[x]))
         if esms:
             last = self.cached_lo_last_esm()
             for esm in esms:
@@ -1944,8 +1944,9 @@ class ModInfos(FileInfos):
                 key=lambda tup: load_order.cached_lo_index(tup[0]),
                                      reverse=True):
             size, canMerge = name_mergeInfo.get(mpath, (None, None))
-            # if esm bit was flipped size won't change, so check this first
-            if modInfo.isEsm(): # modInfo must have its header set
+            # if esm/esl bit was flipped size won't change, so check this first
+            if modInfo.is_esl() or modInfo.has_esm_flag():
+                # esl don't mark as esl capable - modInfo must have its header set
                 name_mergeInfo[mpath] = (modInfo.size, False)
                 self.mergeable.discard(mpath)
             elif size == modInfo.size:
@@ -1954,17 +1955,27 @@ class ModInfos(FileInfos):
                 newMods.append(mpath)
         return newMods
 
-    def rescanMergeable(self, names, prog=None, doCBash=None, verbose=False):
-        with prog or balt.Progress(_(u"Mark Mergeable") + u' ' * 30) as prog:
-            return self._rescanMergeable(names, prog, doCBash, verbose)
+    def rescanMergeable(self, names, prog=None, doCBash=None,
+                        return_results=False):
+        """Rescan specified mods. Return value is only meaningful when
+        return_results is set to True."""
+        messagetext = _(u'Check ESL Qualifications') if bush.game.check_esl \
+            else _(u"Mark Mergeable")
+        with prog or balt.Progress(_(messagetext) + u' ' * 30) as prog:
+            return self._rescanMergeable(names, prog, doCBash, return_results)
 
-    def _rescanMergeable(self, names, progress, doCBash, verbose):
-        """Will rescan specified mods."""
+    def _rescanMergeable(self, names, progress, doCBash, return_results):
+        reasons = None if not return_results else []
         if doCBash is None:
             doCBash = CBashApi.Enabled
         elif doCBash and not CBashApi.Enabled:
             doCBash = False
-        is_mergeable = isCBashMergeable if doCBash else isPBashMergeable
+        if bush.game.check_esl:
+            is_mergeable = is_esl_capable
+        elif doCBash:
+            is_mergeable = isCBashMergeable
+        else:
+            is_mergeable = isPBashMergeable
         mod_mergeInfo = self.table.getColumn('mergeInfo')
         progress.setFull(max(len(names),1))
         result, tagged_no_merge = OrderedDict(), set()
@@ -1972,17 +1983,19 @@ class ModInfos(FileInfos):
             progress(i,fileName.s)
             if not doCBash and reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
-            if not bush.game.esp.canBash:
+            # do not mark esls as esl capable
+            if fileInfo.is_esl() or not bush.game.esp.canBash:
                 canMerge = False
             else:
                 try:
-                    canMerge = is_mergeable(fileInfo, self, verbose)
+                    canMerge = is_mergeable(fileInfo, self, reasons)
                 except Exception as e:
                     # deprint (_(u"Error scanning mod %s (%s)") % (fileName, e))
                     # canMerge = False #presume non-mergeable.
                     raise
-            result[fileName] = canMerge
-            if not isinstance(canMerge, basestring) and canMerge: # True...
+            result[fileName] = reasons is not None and (
+                    u'\n.    ' + u'\n.    '.join(reasons))
+            if canMerge:
                 self.mergeable.add(fileName)
                 mod_mergeInfo[fileName] = (fileInfo.size,True)
             else:
@@ -1990,6 +2003,7 @@ class ModInfos(FileInfos):
                 self.mergeable.discard(fileName)
             if fileName in self.mergeable and u'NoMerge' in fileInfo.getBashTags():
                 tagged_no_merge.add(fileName)
+            reasons = reasons if reasons is None else []
         return result, tagged_no_merge
 
     def reloadBashTags(self):
@@ -2175,13 +2189,15 @@ class ModInfos(FileInfos):
         """Mutate _active_wip cache then save if needed."""
         if _activated is None: _activated = set()
         try:
-            minfo = self[fileName]
-            if not minfo.is_esl(): # don't check limit if activating an esl
-                acti_filtered_espm = [x for x in self._active_wip if
-                                      x.cext != u'.esl']
-                if len(acti_filtered_espm) == load_order.max_espms:
-                    raise PluginsFullError(u'%s: Trying to activate more than '
-                        u'%d espms' % (fileName,load_order.max_espms))
+            espms_extra, esls_extra = load_order.check_active_limit(
+                self._active_wip + [fileName])
+            if espms_extra or esls_extra:
+                msg = u'%s: Trying to activate more than ' % fileName
+                if espms_extra:
+                    msg += u'%d espms' % load_order.max_plugins()[0]
+                else:
+                    msg += u'%d light plugins' % load_order.max_plugins()[1]
+                raise PluginsFullError(msg)
             _children = (_children or tuple()) + (fileName,)
             if fileName in _children[:-1]:
                 raise BoltError(u'Circular Masters: ' +u' >> '.join(x.s for x in _children))
@@ -2191,7 +2207,7 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
             ##    return
-            for master in minfo.header.masters:
+            for master in self[fileName].header.masters:
                 if master in _modSet: self.lo_activate(master, False, _modSet,
                                                        _children, _activated)
             #--Select in plugins
@@ -2273,11 +2289,12 @@ class ModInfos(FileInfos):
         missingSet = modsSet - all_mods
         toSelect = modsSet - missingSet
         listToSelect = load_order.get_ordered(toSelect)
-        acti_filtered_espm = [x for x in listToSelect if x.cext != u'.esl']
-        skipped = acti_filtered_espm[load_order.max_espms:]
+        skipped_esms, skipped_esls = load_order.check_active_limit(
+            listToSelect)
+        skipped = skipped_esls | skipped_esms
         #--Save
         if skipped:
-            listToSelect = [x for x in listToSelect if x not in set(skipped)]
+            listToSelect = [x for x in listToSelect if x not in skipped]
         self.cached_lo_save_active(active=listToSelect)
         #--Done/Error Message
         message = u''

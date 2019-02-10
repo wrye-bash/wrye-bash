@@ -62,6 +62,7 @@ class Fallout4GameInfo(GameInfo):
 
     espm_extensions = {u'.esp', u'.esm', u'.esl'}
     has_achlist = True
+    check_esl = True
 
     class cs(GameInfo.cs):
         # TODO:  When the Fallout 4 Creation Kit is actually released,
@@ -117,7 +118,7 @@ class Fallout4GameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.95,)
 
-    allTags = {u'Delev', u'NoMerge', u'Relev'}
+    allTags = {u'Delev', u'Relev'}
 
     patchers = (u'ListsMerger',)
 
