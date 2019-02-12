@@ -78,7 +78,7 @@ class Installer(object):
         ur'(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
-                u'.fomod', u'.tb2', u'.lzma', u'.manifest'}
+                u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm'}
     skipExts.update(set(readExts))
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
@@ -386,6 +386,9 @@ class Installer(object):
         Installer._global_skip_extensions.clear()
         if bass.settings['bash.installers.skipTESVBsl']:
             Installer._global_skip_extensions.add('.bsl')
+        if bass.settings['bash.installers.skipScriptSources']:
+            Installer._global_skip_extensions.update(
+                bush.game.script_extensions)
         # skips files starting with...
         if bass.settings['bash.installers.skipDistantLOD']:
             Installer._global_start_skips.append(u'distantlod')

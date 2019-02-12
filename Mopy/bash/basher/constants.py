@@ -281,6 +281,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.installers.autoRefreshProjects': True,
     'bash.installers.removeEmptyDirs':True,
     'bash.installers.skipScreenshots':False,
+    'bash.installers.skipScriptSources':False,
     'bash.installers.skipImages':False,
     'bash.installers.skipDocs':False,
     'bash.installers.skipDistantLOD':False,

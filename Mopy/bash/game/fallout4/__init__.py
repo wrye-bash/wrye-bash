@@ -61,6 +61,7 @@ class Fallout4GameInfo(GameInfo):
     )
 
     espm_extensions = {u'.esp', u'.esm', u'.esl'}
+    script_extensions = {u'.psc'}
     has_achlist = True
     check_esl = True
 

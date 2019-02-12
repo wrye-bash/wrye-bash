@@ -302,7 +302,7 @@
     <li>Archives &amp; executables. Executable files, apart from Script Extender plugins if the <a href="#bainSkipOBSEPlugins">Skip OBSE Plugins</a> option is disabled, and archives in
     packages will be skipped. Files skipped because of this will be listed in the <q>Skipped</q> panel on the right on the <i>== Skipped (Extension)</i> section. The complete list of
     extensions skipped is:
-    <code>.001, .7z, .7z.001, .ace, .bz2, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip</code>
+    <code>.001, .7z, .7z.001, .ace, .bz2, .ckm, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip</code>
     This includes BCFs (they have a .7z extension) - still BAIN will detect those.
     <li>Espm files that are not in top level of the package/subpackage. It makes no sense to have those files in a subfolder, so those are skipped.
 </ul>
@@ -328,7 +328,7 @@ tab. The directories skipped are:
             skip a screenshots directory in the package, whose contents would be currently installed in Data/Docs, not Data/Screenshots).
     <thead><tr><th colspan="3">Skipped file extensions
     <tbody>
-        <td colspan="3">.001, .7z, .7z.001, .ace, .bz2, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip
+        <td colspan="3">.001, .7z, .7z.001, .ace, .bz2, .ckm, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip
     <thead><tr><th colspan="3">Per game skipped Data subdirectories
     <thead><tr><th>Game<th>Skipped Data subdirectories<td>Script extender(s) directories
     <tbody>
@@ -338,6 +338,30 @@ tab. The directories skipped are:
         <tr><td>Skyrim<td>tes5edit backups<td>SKSE, SkyProc, Script Dragon
         <tr><td>Fallout 4<td>fo4edit backups<td>F4SE
         <tr><td>Skyrim SE<td>sseedit backups<td>SKSE
+    <thead>
+      <tr>
+        <th colspan="3">Per game skipped file extensions</th>
+      </tr>
+    </thead>
+    <thead>
+      <tr>
+        <th>Skipped file extension</th>
+        <th>Games</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>.bsl</td>
+        <td>Skyrim, Skyrim SE</td>
+        <td>If <a href="#bainSkipBSLFiles">Skip BSL Files</a> is checked</td>
+      </tr>
+      <tr>
+        <td>.psc</td>
+        <td>Skyrim, Skyrim SE, Fallout 4</td>
+        <td>If <a href="#bainSkipScriptSources">Skip Script Sources</a> is checked</td>
+      </tr>
+    </tbody>
 </table>
 
 <p>Skipping of Data subdirectories has some implications vis-à-vis uninstalling those skipped files. So say you turn Skip DistantLOD on, all packages
@@ -556,15 +580,19 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.
         <tr><td colspan="2" id="bainSkipOBSEPlugins">Skip OBSE Plugins<td>If this is checked, files to go in the Data\OBSE\Plugins folder will not be installed  (for other games replace OBSE with SKSE etc)
         <tr><td colspan="2">Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
-        <tr><td rowspan="9" id="bainGlobalSkips">Global Skips
+        <tr><td rowspan="10" id="bainGlobalSkips">Global Skips
         <tr><td id="bainSkipScreenshots">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
+        <tr>
+          <td id="bainSkipScriptSources">Skip Script Sources</td>
+          <td><em>Skyrim, Skyrim SE and Fallout 4 only.</em> If checked, loose script sources (.psc files) will be skipped.</td>
+        </tr>
         <tr><td id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
         <tr><td id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
         <tr><td id="bainSkipDistantLOD">Skip DistantLOD<td>If checked, then DistantLOD files in packages will be ignored. Useful if you're using Tes4LodGen to generate DistantLOD files.
         <tr><td id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
         <tr><td id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
         <tr><td id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
-        <tr><td id="bainSkipBSLFiles">Skip BSL Files<td><i>Skyrim only.</i> If checked, BSL Files will be skipped.
+        <tr><td id="bainSkipBSLFiles">Skip BSL Files<td><i>Skyrim and Skyrim SE only.</i> If checked, BSL Files will be skipped.
         <tr><td  colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><i>Skyrim only.</i> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
 </table>
 <table id="bainPackageCommands">

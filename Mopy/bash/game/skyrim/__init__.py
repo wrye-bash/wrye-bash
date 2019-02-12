@@ -45,6 +45,7 @@ class SkyrimGameInfo(GameInfo):
     nexusName = u'Skyrim Nexus'
     nexusKey = 'bash.installers.openSkyrimNexus.continue'
 
+    has_bsl = True
     vanilla_string_bsas = {
         u'skyrim.esm': [u'Skyrim - Interface.bsa'],
         u'update.esm': [u'Skyrim - Interface.bsa'],
@@ -53,6 +54,7 @@ class SkyrimGameInfo(GameInfo):
         u'dragonborn.esm': [u'Dragonborn.bsa'],
     }
     resource_archives_keys = (u'sResourceArchiveList', u'sResourceArchiveList2')
+    script_extensions = {u'.psc'}
 
     class cs(GameInfo.cs):
         shortName = u'CK'

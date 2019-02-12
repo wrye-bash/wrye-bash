@@ -477,6 +477,11 @@ class _Installers_SkipScreenshots(_Installers_Skip):
     """Toggle skipScreenshots setting and update."""
     _text, key = _(u'Skip Screenshots'), 'bash.installers.skipScreenshots'
 
+class _Installers_SkipScriptSources(AppendableLink, _Installers_Skip):
+    """Toggle skipScriptSources setting and update."""
+    _text, key = _(u'Skip Script Sources'), 'bash.installers.skipScriptSources'
+    def _append(self, window): return bool(bush.game.script_extensions)
+
 class _Installers_SkipImages(_Installers_Skip):
     """Toggle skipImages setting and update."""
     _text, key = _(u'Skip Images'), 'bash.installers.skipImages'
@@ -502,8 +507,8 @@ class _Installers_SkipLandscapeLODNormals(_Installers_Skip):
 
 class _Installers_SkipBsl(AppendableLink, _Installers_Skip):
     """Toggle skipTESVBsl setting and update."""
-    _text, key = _(u'Skip bsl Files'), 'bash.installers.skipTESVBsl'
-    def _append(self, window): return u'Skyrim' in bush.game.fsName
+    _text, key = _(u'Skip BSL Files'), 'bash.installers.skipTESVBsl'
+    def _append(self, window): return bush.game.has_bsl
 
 class Installers_GlobalSkips(balt.MenuLink):
     """Global Skips submenu."""
@@ -513,6 +518,7 @@ class Installers_GlobalSkips(balt.MenuLink):
         super(Installers_GlobalSkips, self).__init__()
         self.append(_Installers_SkipOBSEPlugins())
         self.append(_Installers_SkipScreenshots())
+        self.append(_Installers_SkipScriptSources())
         self.append(_Installers_SkipImages())
         self.append(_Installers_SkipDocs())
         self.append(_Installers_SkipDistantLOD())

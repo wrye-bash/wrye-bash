@@ -66,11 +66,15 @@ class GameInfo(object):
     # Bsa info
     allow_reset_bsa_timestamps = False
     bsa_extension = ur'bsa'
+    # Whether or not the Archive.exe tool for this game creates BSL files
+    has_bsl = False
     supports_mod_inis = True  # this game supports mod ini files aka ini fragments
     vanilla_string_bsas = {}
     resource_archives_keys = ()
     # plugin extensions
     espm_extensions = {u'.esp', u'.esm'}
+    # Extensions for external script files. Empty if this game doesn't have any
+    script_extensions = {}
     # Load order info
     using_txt_file = True
     # bethesda net export files
