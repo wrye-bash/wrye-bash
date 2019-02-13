@@ -1824,8 +1824,9 @@ class MreLeveledListBase(MelRecord):
             self.flags = other.flags()
         else:
             for attr in self.__class__.copyAttrs:
-                self.__setattr__(attr,other.__getattribute__(attr) or
-                                       self.__getattribute__(attr))
+                otherAttr = other.__getattribute__(attr)
+                if otherAttr is not None:
+                    self.__setattr__(attr, otherAttr)
             self.flags |= other.flags
         #--Remove items based on other.removes
         if other.delevs or other.relevs:
