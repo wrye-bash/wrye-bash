@@ -129,6 +129,9 @@ class Fallout4GameInfo(GameInfo):
 
     patchers = (u'ListsMerger',)
 
+    # ---------------------------------------------------------------------
+    # --Imported - MreGlob is special import, not in records.py
+    # ---------------------------------------------------------------------
     @classmethod
     def init(cls):
         # First import from fallout4.records file, so MelModel is set correctly
@@ -146,7 +149,11 @@ class Fallout4GameInfo(GameInfo):
         #
         #       MreAchr, MreDial, MreLctn, MreInfo, MreFact, MrePerk,
         # ---------------------------------------------------------------------
-
+        cls.mergeClasses = (
+            # -- Imported from Skyrim/SkyrimSE
+            # Added to records.py
+            MreLvli, MreLvln
+        )
         # Setting RecordHeader class variables --------------------------------
         brec.RecordHeader.topTypes = [
             'GMST', 'KYWD', 'LCRT', 'AACT', 'TRNS', 'CMPO', 'TXST', 'GLOB',
@@ -172,9 +179,10 @@ class Fallout4GameInfo(GameInfo):
                            'PMIS','DLBR','DIAL','INFO','SCEN'})
         brec.RecordHeader.plugin_form_version = 131
         brec.MreRecord.type_class = dict((x.classType,x) for x in (
-            MreLvli, MreLvln,
-            ####### for debug
-            MreHeader,
+            #--Always present
+            MreHeader, MreLvli, MreLvln,
+            # Imported from Skyrim or SkyrimSE
+            # Added to records.py
             ))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4',})

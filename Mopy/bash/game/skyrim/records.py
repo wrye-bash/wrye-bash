@@ -3904,7 +3904,8 @@ class MreLeveledList(MreLeveledListBase):
     class MelLevListLvlo(MelGroups):
         def __init__(self):
             MelGroups.__init__(self,'entries',
-                MelStruct('LVLO','=3I','level',(FID,'listId',None),('count',1)),
+                MelStruct('LVLO','=HHIHH','level',('unknown1',null2),
+                          (FID,'listId',None),('count',1),('unknown2',null2)),
                 MelCoed(),
                 )
         def dumpData(self,record,out):
