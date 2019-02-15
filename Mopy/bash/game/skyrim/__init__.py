@@ -156,6 +156,7 @@ class SkyrimGameInfo(GameInfo):
         u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
         u'NPC.Race', u'Relev', u'ObjectBounds', u'Sound', u'SpellStats',
         u'Stats', u'Text',
+        u'C.MaxHeight',
     }
 
     patchers = (u'PatchMerger', # PatchMerger must come first !
