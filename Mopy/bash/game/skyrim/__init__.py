@@ -182,7 +182,7 @@ class SkyrimGameInfo(PatchGame):
         u'Relations.Change', u'Relations.Remove', u'Relev', u'Sound',
         u'SpellStats', u'Stats', u'Text', u'R.Body-Size-F', u'R.Body-Size-M',
         u'R.Description', u'R.Skills', u'R.Voice-F', u'R.Voice-M',
-        u'R.AddSpells', u'R.ChangeSpells', u'R.Stats',
+        u'R.AddSpells', u'R.ChangeSpells', u'R.Stats', u'C.MaxHeight',
     }
 
     patchers = {
