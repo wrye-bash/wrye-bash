@@ -40,8 +40,6 @@ gameSpecificListPatchers = {
     # special
     "CoblExhaustion": pi(CoblExhaustion, 'CBash_CoblExhaustion'),
     "CBash_CoblExhaustion": pi(CBash_CoblExhaustion, 'CoblExhaustion'),
-    "MFactMarker": pi(MFactMarker, 'CBash_MFactMarker'),
-    "CBash_MFactMarker": pi(CBash_MFactMarker, 'MFactMarker'),
 }
 game_specific_import_patchers = {
     # importers
