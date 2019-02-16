@@ -65,6 +65,19 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     # MreScpt is Oblivion/FO3/FNV Only
     # MreMgef, has not been verified to be used here for Skyrim
 
+    # URL is the same as regular Skyrim
+    class se(SkyrimGameInfo.se):
+        shortName = u'SKSE64'
+        longName = u'Skyrim SE Script Extender'
+        exe = u'skse64_loader.exe'
+        steamExe = u'skse64_loader.exe'
+
+    # ScriptDragon doesn't exist for SSE
+    class sd(SkyrimGameInfo.sd):
+        shortName = u''
+        longName = u''
+        installDir = u''
+
     @classmethod
     def init(cls):
         from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, \

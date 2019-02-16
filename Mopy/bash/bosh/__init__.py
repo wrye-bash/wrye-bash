@@ -658,8 +658,8 @@ class ModInfo(FileInfo):
         self.writeHeader()
 
     #--Helpers ----------------------------------------------------------------
-    def isBP(self, __bp_authors={u'BASHED PATCH', u'BASHED LISTS'}):
-        return self.header.author in __bp_authors ##: drop BASHED LISTS
+    def isBP(self):
+        return self.header.author == u'BASHED PATCH'
 
     def txt_status(self):
         if load_order.cached_is_active(self.name): return _(u'Active')

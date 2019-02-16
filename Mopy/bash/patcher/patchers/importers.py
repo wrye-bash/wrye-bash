@@ -97,7 +97,7 @@ class _SimpleImporter(ImportPatcher):
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
                                      temp_id_data)
             for master in masters:
-                if not master in bosh.modInfos: continue # or break filter mods
+                if master not in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -356,8 +356,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
                     #     if worldBlock.world.mapPath:
                     #         tempCellData['Maps'][worldBlock.world.fid] = worldBlock.world.mapPath
             for master in masters:
-                if not master in bosh.modInfos: continue  # or break
-                # filter mods
+                if master not in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -830,7 +829,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
                                      temp_id_data)
             for master in masters:
-                if not master in bosh.modInfos: continue # or break filter mods
+                if master not in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -1090,7 +1089,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.aiPackages)
             for master in reversed(masters):
-                if not master in bosh.modInfos: continue # or break filter mods
+                if master not in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -1107,7 +1106,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                     for record in masterFile.tops[
                         block.classType].getActiveRecords():
                         fid = mapper(record.fid)
-                        if not fid in tempData: continue
+                        if fid not in tempData: continue
                         if record.aiPackages == tempData[fid] and not \
                             u'Actors.AIPackagesForceAdd' in bashTags:
                             # if subrecord is identical to the last master
@@ -1119,9 +1118,9 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                                 continue
                         recordData = {'deleted':[],'merged':tempData[fid]}
                         for pkg in list(record.aiPackages):
-                            if not pkg in tempData[fid]:
+                            if pkg not in tempData[fid]:
                                 recordData['deleted'].append(pkg)
-                        if not fid in mer_del:
+                        if fid not in mer_del:
                             mer_del[fid] = recordData
                         else:
                             for pkg in recordData['deleted']:
@@ -1136,7 +1135,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                                     mer_del[fid]['merged'].append(pkg)
                                 continue
                             for index, pkg in enumerate(recordData['merged']):
-                                if not pkg in mer_del[fid]['merged']:# so needs
+                                if pkg not in mer_del[fid]['merged']:# so needs
                                     #  to be added... (unless deleted that is)
                                     # find the correct position to add and add.
                                     if pkg in mer_del[fid]['deleted'] and not \
@@ -1175,7 +1174,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
             patchBlock = getattr(self.patchFile,rec_type)
             for record in getattr(modFile,rec_type).getActiveRecords():
                 fid = mapper(record.fid)
-                if not fid in merged_deleted: continue
+                if fid not in merged_deleted: continue
                 if list(record.aiPackages) != merged_deleted[fid]['merged']:
                     patchBlock.setRecord(record.getTypeCopy(mapper))
 
@@ -1188,7 +1187,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         for rec_type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
-                if not fid in merged_deleted: continue
+                if fid not in merged_deleted: continue
                 changed = False
                 if record.aiPackages != merged_deleted[fid]['merged']:
                     record.aiPackages = merged_deleted[fid]['merged']
@@ -1992,7 +1991,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                     fid = mapper(record.fid)
                     tempData[fid] = list(record.spells)
             for master in reversed(masters):
-                if not master in bosh.modInfos: continue # or break filter mods
+                if master not in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
@@ -2007,7 +2006,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                     if block.classType not in masterFile.tops: continue
                     for record in masterFile.tops[block.classType].getActiveRecords():
                         fid = mapper(record.fid)
-                        if not fid in tempData: continue
+                        if fid not in tempData: continue
                         if record.spells == tempData[fid] and not u'Actors.SpellsForceAdd' in bashTags:
                             # if subrecord is identical to the last master then we don't care about older masters.
                             del tempData[fid]
@@ -2016,9 +2015,9 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                             if tempData[fid] == mer_del[fid]['merged']: continue
                         recordData = {'deleted':[],'merged':tempData[fid]}
                         for spell in list(record.spells):
-                            if not spell in tempData[fid]:
+                            if spell not in tempData[fid]:
                                 recordData['deleted'].append(spell)
-                        if not fid in mer_del:
+                        if fid not in mer_del:
                             mer_del[fid] = recordData
                         else:
                             for spell in recordData['deleted']:
@@ -2031,7 +2030,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                                     mer_del[fid]['merged'].append(spell)
                                 continue
                             for index, spell in enumerate(recordData['merged']):
-                                if not spell in mer_del[fid]['merged']: # so needs to be added... (unless deleted that is)
+                                if spell not in mer_del[fid]['merged']: # so needs to be added... (unless deleted that is)
                                     # find the correct position to add and add.
                                     if spell in mer_del[fid]['deleted'] and not u'Actors.SpellsForceAdd' in bashTags: continue #previously deleted
                                     if index == 0:
@@ -2110,7 +2109,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         for rec_type in ('NPC_','CREA'):
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
-                if not fid in merged_deleted: continue
+                if fid not in merged_deleted: continue
                 changed = False
                 mergedSpells = sorted(merged_deleted[fid]['merged'])
                 if sorted(list(record.spells)) != mergedSpells:
@@ -2152,7 +2151,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
                     if spell not in curspells:
                         curData['deleted'].append(spell)
             curData['merged'] = curspells
-            if not record.fid in self.id_spells:
+            if record.fid not in self.id_spells:
                 self.id_spells[record.fid] = curData
             else:
                 id_spells = self.id_spells[record.fid]
@@ -2163,7 +2162,7 @@ class CBash_ImportActorsSpells(CBash_ImportPatcher, _AImportActorsSpells):
                 for spell in curData['merged']:
                     if spell in id_spells['merged']: continue  # don't want
                     # to add 20 copies of the spell afterall
-                    if not spell in id_spells[
+                    if spell not in id_spells[
                         'deleted'] or u'Actors.SpellsForceAdd' in bashTags:
                         id_spells['merged'].append(spell)
 
@@ -2411,7 +2410,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                     faceData[fid] = temp_faceData[fid]
             else:
                 for master in masters:
-                    if not master in bosh.modInfos: continue # or break filter mods
+                    if master not in bosh.modInfos: continue # or break filter mods
                     if master in cachedMasters:
                         masterFile = cachedMasters[master]
                     else:
@@ -3061,7 +3060,7 @@ class WeaponModsPatcher(_SimpleImporter):
                 self._init_data_loop(mapper, recClass, srcFile, srcMod,
                                      temp_id_data)
             for master in masters:
-                if not master in bosh.modInfos: continue # or break filter mods
+                if master not in bosh.modInfos: continue # or break filter mods
                 if master in cachedMasters:
                     masterFile = cachedMasters[master]
                 else:
