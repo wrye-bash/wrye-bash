@@ -61,6 +61,8 @@ class FalloutNVGameInfo(GameInfo):
         longName = u'Fallout Script Extender'
         exe = u'nvse_loader.exe'
         steamExe = u'nvse_loader.dll'
+        plugin_dir = u'NVSE'
+        cosave_ext = u'.nvse'
         url = u'http://nvse.silverlock.org/'
         urlTip = u'http://nvse.silverlock.org/'
 

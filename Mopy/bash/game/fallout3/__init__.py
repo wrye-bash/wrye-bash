@@ -62,6 +62,8 @@ class Fallout3GameInfo(GameInfo):
         longName = u'Fallout 3 Script Extender'
         exe = u'fose_loader.exe'
         steamExe = u'fose_loader.dll'
+        plugin_dir = u'FOSE'
+        cosave_ext = u'.fose'
         url = u'http://fose.silverlock.org/'
         urlTip = u'http://fose.silverlock.org/'
 

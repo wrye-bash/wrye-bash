@@ -97,10 +97,18 @@ class GameInfo(object):
 
     # Script Extender information
     class se(object):
-        shortName = u''   # Abbreviated name.  If this is empty, it signals that no SE is available
+        shortName = u''   # Abbreviated name. If this is empty, it signals that
+                          # no xSE is available for this game. Note that this
+                          # should NEVER be used to program other xSE
+                          # behavior - create new variables like plugin_dir and
+                          # cosave_ext instead.
         longName = u''    # Full name
         exe = u''         # Exe to run
         steamExe = u''    # Exe to run if a steam install
+        plugin_dir = u''  # One level above the directory in which xSE plugins
+                          # should be placed (e.g. when plugins should be in
+                          # Data\OBSE\Plugins, this should be u'OBSE')
+        cosave_ext = u''  # The extension that the cosaves use (e.g. u'.skse')
         url = u''         # URL to download from
         urlTip = u''      # Tooltip for mouse over the URL
 

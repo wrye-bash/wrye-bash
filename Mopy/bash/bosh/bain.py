@@ -414,7 +414,7 @@ class Installer(object):
         skipObse = not bass.settings['bash.installers.allowOBSEPlugins']
         if skipObse:
             Installer._global_start_skips.append(
-                bush.game.se.shortName.lower() + os_sep)
+                bush.game.se.plugin_dir.lower() + os_sep)
             Installer._global_skip_extensions |= Installer._executables_ext
         if bass.settings['bash.installers.skipImages']:
             Installer._global_skip_extensions |= imageExts
@@ -542,7 +542,7 @@ class Installer(object):
             _obse = partial(__skipExecutable,
                     desc=_(u'%s plugin DLL') % bush.game.se.shortName,
                     ext=(_(u'a dll')),
-                    exeDir=(bush.game.se.shortName.lower() + os_sep),
+                    exeDir=(bush.game.se.plugin_dir.lower() + os_sep),
                     dialogTitle=bush.game.se.shortName + _(u' DLL Warning'))
             Installer._executables_process[u'.dll'] = \
             Installer._executables_process[u'.dlx'] = _obse
@@ -2024,7 +2024,7 @@ class InstallersData(DataStore):
                 u'textures', u'landscapelod', u'generated'))
         if setSkipOBSE:
             newSDirs = (x for x in newSDirs if
-                        x.lower() != bush.game.se.shortName.lower())
+                        x.lower() != bush.game.se.plugin_dir.lower())
         if bush.game.sd.shortName and setSkipOBSE:
             newSDirs = (x for x in newSDirs if
                         x.lower() != bush.game.sd.installDir.lower())

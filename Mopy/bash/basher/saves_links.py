@@ -758,8 +758,8 @@ class Save_Stats(OneItemLink):
 #------------------------------------------------------------------------------
 class Save_StatObse(AppendableLink, OneItemLink):
     """Dump .obse records."""
-    _text = _(u'.%s Statistics') % bush.game.se.shortName.lower()
-    _help = _(u'Dump .%s records') % bush.game.se.shortName.lower()
+    _text = _(u'%s Statistics') % bush.game.se.cosave_ext.lower()
+    _help = _(u'Dump %s records') % bush.game.se.cosave_ext.lower()
 
     def _append(self, window): return bool(bush.game.se.shortName)
 

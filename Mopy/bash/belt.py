@@ -1092,7 +1092,7 @@ class WryeParser(ScriptParser.Parser):
             return 1
     def fnCompareGEVersion(self, geWant):
         if bush.game.ge.shortName != u'':
-            ret = self._TestVersion_OBGE(self._TestVersion_Want(geWant))
+            ret = self._TestVersion_GE(self._TestVersion_Want(geWant))
             return ret[0]
         else:
             # No graphics extender available for this game

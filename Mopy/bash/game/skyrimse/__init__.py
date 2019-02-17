@@ -65,7 +65,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     # MreScpt is Oblivion/FO3/FNV Only
     # MreMgef, has not been verified to be used here for Skyrim
 
-    # URL is the same as regular Skyrim
+    # Plugin dir, cosave extension and the URLs are unchanged
     class se(SkyrimGameInfo.se):
         shortName = u'SKSE64'
         longName = u'Skyrim SE Script Extender'

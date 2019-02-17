@@ -112,7 +112,7 @@ class CoSaves:
         if maSave: savePath = savePath.root
         first = maSave and maSave.group(1) or u''
         return tuple(savePath + ext + first for ext in
-                     (u'.pluggy', u'.' + bush.game.se.shortName.lower()))
+                     (u'.pluggy', bush.game.se.cosave_ext.lower()))
 
     def __init__(self,savePath,saveName=None):
         """Initialize with savePath."""
