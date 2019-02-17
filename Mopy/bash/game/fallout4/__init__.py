@@ -68,21 +68,21 @@ class Fallout4GameInfo(GameInfo):
     class cs(GameInfo.cs):
         # TODO:  When the Fallout 4 Creation Kit is actually released,
         # double check that the filename is correct, and create an actual icon
-        shortName = u'FO4CK'
-        longName = u'Creation Kit'
+        cs_abbrev = u'FO4CK'
+        long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
-        seArgs = None
-        imageName = u'creationkit%s.png'
+        se_args = None
+        image_name = u'creationkit%s.png'
 
     class se(GameInfo.se):
-        shortName = u'F4SE'
-        longName = u'Fallout 4 Script Extender'
+        se_abbrev = u'F4SE'
+        long_name = u'Fallout 4 Script Extender'
         exe = u'f4se_loader.exe'
-        steamExe = u'f4se_steam_loader.dll'
+        steam_exe = u'f4se_steam_loader.dll'
         plugin_dir = u'F4SE'
         cosave_ext = u'.f4se'
         url = u'http://f4se.silverlock.org/'
-        urlTip = u'http://f4se.silverlock.org/'
+        url_tip = u'http://f4se.silverlock.org/'
 
     class ini(GameInfo.ini):
         allowNewLines = True

@@ -538,27 +538,27 @@ class Installer(object):
             goodDlls[fileLower].append([archiveRoot,size,crc])
             bass.settings['bash.installers.goodDlls'] = Installer._goodDlls
             return False
-        if bush.game.se.shortName:
+        if bush.game.se.se_abbrev:
             _obse = partial(__skipExecutable,
-                    desc=_(u'%s plugin DLL') % bush.game.se.shortName,
+                    desc=_(u'%s plugin DLL') % bush.game.se.se_abbrev,
                     ext=(_(u'a dll')),
                     exeDir=(bush.game.se.plugin_dir.lower() + os_sep),
-                    dialogTitle=bush.game.se.shortName + _(u' DLL Warning'))
+                    dialogTitle=bush.game.se.se_abbrev + _(u' DLL Warning'))
             Installer._executables_process[u'.dll'] = \
             Installer._executables_process[u'.dlx'] = _obse
-        if bush.game.sd.shortName:
+        if bush.game.sd.sd_abbrev:
             _asi = partial(__skipExecutable,
-                   desc=_(u'%s plugin ASI') % bush.game.sd.longName,
+                   desc=_(u'%s plugin ASI') % bush.game.sd.long_name,
                    ext=(_(u'an asi')),
-                   exeDir=(bush.game.sd.installDir.lower() + os_sep),
-                   dialogTitle=bush.game.sd.longName + _(u' ASI Warning'))
+                   exeDir=(bush.game.sd.install_dir.lower() + os_sep),
+                   dialogTitle=bush.game.sd.long_name + _(u' ASI Warning'))
             Installer._executables_process[u'.asi'] = _asi
-        if bush.game.sp.shortName:
+        if bush.game.sp.sp_abbrev:
             _jar = partial(__skipExecutable,
-                   desc=_(u'%s patcher JAR') % bush.game.sp.longName,
+                   desc=_(u'%s patcher JAR') % bush.game.sp.long_name,
                    ext=(_(u'a jar')),
-                   exeDir=(bush.game.sp.installDir.lower() + os_sep),
-                   dialogTitle=bush.game.sp.longName + _(u' JAR Warning'))
+                   exeDir=(bush.game.sp.install_dir.lower() + os_sep),
+                   dialogTitle=bush.game.sp.long_name + _(u' JAR Warning'))
             Installer._executables_process[u'.jar'] = _jar
 
     @staticmethod
@@ -2025,9 +2025,9 @@ class InstallersData(DataStore):
         if setSkipOBSE:
             newSDirs = (x for x in newSDirs if
                         x.lower() != bush.game.se.plugin_dir.lower())
-        if bush.game.sd.shortName and setSkipOBSE:
+        if bush.game.sd.sd_abbrev and setSkipOBSE:
             newSDirs = (x for x in newSDirs if
-                        x.lower() != bush.game.sd.installDir.lower())
+                        x.lower() != bush.game.sd.install_dir.lower())
         if setSkipDocs and setSkipImages:
             newSDirs = (x for x in newSDirs if x.lower() != u'docs')
         newSDirs = (x for x in newSDirs if

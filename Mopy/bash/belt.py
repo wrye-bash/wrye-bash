@@ -548,20 +548,20 @@ class PageVersions(PageInstaller):
         sizerVersions.Add(balt.staticBitmap(self, bmp[bGameOk]))
 
         # Script Extender
-        if bush.game.se.shortName != u'':
-            linkSE = _hyperlink(bush.game.se.longName, bush.game.se.url)
+        if bush.game.se.se_abbrev != u'':
+            linkSE = _hyperlink(bush.game.se.long_name, bush.game.se.url)
             linkSE.SetVisitedColour(linkSE.GetNormalColour())
-            linkSE.SetToolTip(balt.tooltip(bush.game.se.urlTip))
+            linkSE.SetToolTip(balt.tooltip(bush.game.se.url_tip))
             sizerVersions.Add(linkSE)
             sizerVersions.Add(balt.StaticText(self, seNeed))
             sizerVersions.Add(balt.StaticText(self, seHave))
             sizerVersions.Add(balt.staticBitmap(self, bmp[bSEOk]))
 
         # Graphics extender
-        if bush.game.ge.shortName != u'':
-            linkGE = _hyperlink(bush.game.ge.longName, bush.game.ge.url)
+        if bush.game.ge.ge_abbrev != u'':
+            linkGE = _hyperlink(bush.game.ge.long_name, bush.game.ge.url)
             linkGE.SetVisitedColour(linkGE.GetNormalColour())
-            linkGE.SetToolTip(balt.tooltip(bush.game.ge.urlTip))
+            linkGE.SetToolTip(balt.tooltip(bush.game.ge.url_tip))
             sizerVersions.Add(linkGE)
             sizerVersions.Add(balt.StaticText(self, geNeed))
             sizerVersions.Add(balt.StaticText(self, geHave))
@@ -1080,9 +1080,9 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(self._TestVersion_Want(obWant), bass.dirs['app'].join(bush.game.exe))
         return ret[0]
     def fnCompareSEVersion(self, seWant):
-        if bush.game.se.shortName != u'':
+        if bush.game.se.se_abbrev != u'':
             if bass.inisettings['SteamInstall']:
-                se = bush.game.se.steamExe   # User may not have obse_loader.exe, since it's only required for the CS
+                se = bush.game.se.steam_exe   # User may not have obse_loader.exe, since it's only required for the CS
             else:
                 se = bush.game.se.exe
             ret = self._TestVersion(self._TestVersion_Want(seWant), bass.dirs['app'].join(se))
@@ -1091,7 +1091,7 @@ class WryeParser(ScriptParser.Parser):
             # No script extender available for this game
             return 1
     def fnCompareGEVersion(self, geWant):
-        if bush.game.ge.shortName != u'':
+        if bush.game.ge.ge_abbrev != u'':
             ret = self._TestVersion_GE(self._TestVersion_Want(geWant))
             return ret[0]
         else:
@@ -1560,9 +1560,9 @@ class WryeParser(ScriptParser.Parser):
         ret = self._TestVersion(gameWant, bass.dirs['app'].join(bush.game.exe))
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
-        if bush.game.se.shortName != u'':
+        if bush.game.se.se_abbrev != u'':
             if bass.inisettings['SteamInstall']:
-                seName = bush.game.se.steamExe
+                seName = bush.game.se.steam_exe
             else:
                 seName = bush.game.se.exe
             ret = self._TestVersion(seWant, bass.dirs['app'].join(seName))
@@ -1571,7 +1571,7 @@ class WryeParser(ScriptParser.Parser):
         else:
             bSEOk = True
             seHave = u'None'
-        if bush.game.ge.shortName != u'':
+        if bush.game.ge.ge_abbrev != u'':
             ret = self._TestVersion_GE(geWant)
             bGEOk = ret[0] >= 0
             geHave = ret[1]

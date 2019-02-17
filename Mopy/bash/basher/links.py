@@ -82,10 +82,10 @@ def InitStatusBar():
     BashStatusBar.buttons.append( #TESCS/CreationKit
         TESCS_Button(
             bass.dirs['app'].join(bush.game.cs.exe),
-            imageList(bush.game.cs.imageName),
-            u' '.join((_(u"Launch"),bush.game.cs.shortName)),
-            u' '.join((_(u"Launch"),bush.game.cs.shortName,u'%(version)s')),
-            bush.game.cs.seArgs,
+            imageList(bush.game.cs.image_name),
+            u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev)),
+            u' '.join((_(u"Launch"),bush.game.cs.cs_abbrev,u'%(version)s')),
+            bush.game.cs.se_args,
             uid=u'TESCS'))
     BashStatusBar.buttons.append( #OBMM
         App_Button(bass.dirs['app'].join(u'OblivionModManager.exe'),

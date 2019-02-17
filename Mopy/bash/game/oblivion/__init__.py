@@ -54,30 +54,30 @@ class OblivionGameInfo(GameInfo):
     using_txt_file = False
 
     class cs(GameInfo.cs):
-        shortName = u'TESCS'
-        longName = u'Construction Set'
+        cs_abbrev = u'TESCS'
+        long_name = u'Construction Set'
         exe = u'TESConstructionSet.exe'
-        seArgs = u'-editor'
-        imageName = u'tescs%s.png'
+        se_args = u'-editor'
+        image_name = u'tescs%s.png'
 
     class se(GameInfo.se):
-        shortName = u'OBSE'
-        longName = u'Oblivion Script Extender'
+        se_abbrev = u'OBSE'
+        long_name = u'Oblivion Script Extender'
         exe = u'obse_loader.exe'
-        steamExe = u'obse_1_2_416.dll'
+        steam_exe = u'obse_1_2_416.dll'
         plugin_dir = u'OBSE'
         cosave_ext = u'.obse'
         url = u'http://obse.silverlock.org/'
-        urlTip = u'http://obse.silverlock.org/'
+        url_tip = u'http://obse.silverlock.org/'
 
     class ge(GameInfo.ge):
-        shortName = u'OBGE'
-        longName = u'Oblivion Graphics Extender'
+        ge_abbrev = u'OBGE'
+        long_name = u'Oblivion Graphics Extender'
         exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
                (u'Data',u'obse',u'plugins',u'obgev2.dll'),
                ]
         url = u'http://oblivion.nexusmods.com/mods/30054'
-        urlTip = u'http://oblivion.nexusmods.com/'
+        url_tip = u'http://oblivion.nexusmods.com/'
 
     class ess(GameInfo.ess):
         canEditMore = True

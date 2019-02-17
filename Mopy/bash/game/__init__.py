@@ -43,7 +43,8 @@ class GameInfo(object):
     # INI files that should show up in the INI Edits tab
     #  Example: [u'Oblivion.ini']
     iniFiles = []
-    # The pickle file for this game.  Holds encoded GMST IDs from the big list below
+    # The pickle file for this game.  Holds encoded GMST IDs from the big list
+    # below
     pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
     # Registry keys to read to find the install location
     # These are relative to:
@@ -56,7 +57,8 @@ class GameInfo(object):
     # URL to the Nexus site for this game
     nexusUrl = u''   # URL
     nexusName = u''  # Long Name
-    nexusKey = u''   # Key for the "always ask this question" setting in settings.dat
+    nexusKey = u''   # Key for the "always ask this question" setting in
+                     # settings.dat
 
     # Additional game info - override as needed -------------------------------
     # URL to download patches for the main game.
@@ -68,7 +70,8 @@ class GameInfo(object):
     bsa_extension = ur'bsa'
     # Whether or not the Archive.exe tool for this game creates BSL files
     has_bsl = False
-    supports_mod_inis = True  # this game supports mod ini files aka ini fragments
+    supports_mod_inis = True  # this game supports mod ini files aka ini
+                              # fragments
     vanilla_string_bsas = {}
     resource_archives_keys = ()
     # plugin extensions
@@ -89,52 +92,57 @@ class GameInfo(object):
 
     # Construction Set information
     class cs(object):
-        imageName = u''   # Image name template for the status bar
-        longName = u''    # Full name
+        cs_abbrev = u''   # Abbreviated name
+        long_name = u''   # Full name
         exe = u'*DNE*'    # Executable to run
-        shortName = u''   # Abbreviated name
-        seArgs = u''      # Argument to pass to the SE to load the CS
+        se_args = u''     # Argument to pass to the SE to load the CS
+        image_name = u''  # Image name template for the status bar
 
     # Script Extender information
     class se(object):
-        shortName = u''   # Abbreviated name. If this is empty, it signals that
+        se_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # no xSE is available for this game. Note that this
                           # should NEVER be used to program other xSE
                           # behavior - create new variables like plugin_dir and
                           # cosave_ext instead.
-        longName = u''    # Full name
+        long_name = u''   # Full name
         exe = u''         # Exe to run
-        steamExe = u''    # Exe to run if a steam install
+        steam_exe = u''   # Exe to run if a steam install
         plugin_dir = u''  # One level above the directory in which xSE plugins
                           # should be placed (e.g. when plugins should be in
                           # Data\OBSE\Plugins, this should be u'OBSE')
         cosave_ext = u''  # The extension that the cosaves use (e.g. u'.skse')
         url = u''         # URL to download from
-        urlTip = u''      # Tooltip for mouse over the URL
+        url_tip = u''     # Tooltip for mouse over the URL
 
     # Script Dragon
     class sd(object):
-        shortName = u''
-        longName = u''
-        installDir = u''
+        sd_abbrev = u''   # Abbreviated name. If this is empty, it signals that
+                          # no Script Dragon is available for this game.
+        long_name = u''   # Full name
+        install_dir = u'' # The directory, relative to the Data folder, into
+                          # which Script Dragon plugins will be installed.
 
     # SkyProc Patchers
     class sp(object):
-        shortName = u''
-        longName = u''
-        installDir = u''
+        sp_abbrev = u''   # Abbreviated name. If this is empty, it signals that
+                          # this game does not support SkyProc patchers.
+        long_ame = u''    # Full name
+        install_dir = u'' # The directory, relative to the Data folder, into
+                          # which SkyProc patchers will be installed.
 
     # Quick shortcut for combining the SE and SD names
     @classmethod
     def se_sd(cls):
-        se_sd_ = cls.se.shortName
-        if cls.sd.longName: se_sd_ += u'/' + cls.sd.longName
+        se_sd_ = cls.se.se_abbrev
+        if cls.sd.long_name: se_sd_ += u'/' + cls.sd.long_name
         return se_sd_
 
     # Graphics Extender information
     class ge(object):
-        shortName = u''
-        longName = u''
+        ge_abbrev = u'' # Abbreviated name. If this is empty, it signals that no graphics
+                        # extender is available for this game.
+        long_name = u'' # Full name
         # exe is treated specially here.  If it is a string, then it should
         # be the path relative to the root directory of the game, if it is
         # a list, each list element should be an iterable to pass to Path.join
@@ -143,14 +151,15 @@ class GameInfo(object):
         # for Oblivion, as the newer OBGE has a different filename than the
         # older OBGE
         exe = u''
-        url = u''
-        urlTip = u''
+        url = u''       # URL to download from
+        url_tip = u''   # Tooltip for mouse over the URL
 
     # 4gb Launcher
     class laa(object):
         name = u''          # Display name of the launcher
         exe = u'*DNE*'      # Executable to run
-        launchesSE = False  # Whether the launcher will automatically launch the SE
+        launchesSE = False  # Whether the launcher will automatically launch the
+                            # SE
 
     # Some stuff dealing with INI files
     class ini(object):
@@ -245,8 +254,8 @@ class GameInfo(object):
     # Record information - set in cls.init ------------------------------------
     # Mergeable record types
     mergeClasses = ()
-    # Extra read classes: these record types will always be loaded, even if patchers
-    #  don't need them directly (for example, for MGEF info)
+    # Extra read classes: these record types will always be loaded, even if
+    # patchers don't need them directly (for example, for MGEF info)
     readClasses = ()
     writeClasses = ()
 

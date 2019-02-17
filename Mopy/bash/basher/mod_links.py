@@ -1675,7 +1675,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     """Swaps masters between esp and esm versions."""
     _help = _(u'Flips the ESM flag on all masters of the selected plugin, '
               u'allowing you to load it in the %(csName)s.') % (
-              {'csName': bush.game.cs.longName})
+              {'csName': bush.game.cs.long_name})
 
     def _initData(self, window, selection,
                   __reEspExt=re.compile(ur'\.esp(.ghost)?$', re.I | re.U)):
@@ -1703,7 +1703,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
         message = _(u"WARNING! For advanced modders only! Flips the ESM flag "
                     u"of all ESP masters of the selected plugin. Useful for "
                     u"loading ESP-mastered mods in the %(csName)s.") % (
-                    {'csName': bush.game.cs.longName})
+                    {'csName': bush.game.cs.long_name})
         if not self._askContinue(message, 'bash.flipMasters.continue'): return
         updated = [self._selected_item]
         for masterPath in self.espMasters:

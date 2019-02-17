@@ -103,7 +103,7 @@ class StatusBar_Button(ItemLink):
     @property
     def obseVersion(self):
         if bass.inisettings['SteamInstall']:
-            se_exe = bush.game.se.steamExe
+            se_exe = bush.game.se.steam_exe
         else:
             se_exe = bush.game.se.exe
         version = bass.dirs['app'].join(se_exe).strippedVersion
@@ -473,7 +473,7 @@ class Game_Button(App_Button):
         # Oblivion (version)
         tip_ = self._obseTip % (dict(version=self.version))
         # + OBSE
-        tip_ += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
+        tip_ += u' + %s %s' % (bush.game.se.se_abbrev, self.obseVersion)
         # + LAA
         if BashStatusBar.laaButton.button_state:
             tip_ += u' + ' + bush.game.laa.name
@@ -493,7 +493,7 @@ class TESCS_Button(App_Button):
         tip_ = self._obseTip % (dict(version=self.version))
         if not self.obseArg: return tip_
         # + OBSE
-        tip_ += u' + %s %s' % (bush.game.se.shortName, self.obseVersion)
+        tip_ += u' + %s %s' % (bush.game.se.se_abbrev, self.obseVersion)
         # + CSE
         cse_path = bass.dirs['mods'].join(u'obse', u'plugins',
                                           u'Construction Set Extender.dll')
@@ -569,7 +569,7 @@ class Obse_Button(_StatefulButton):
 
     @property
     def sb_button_tip(self): return ((_(u"%s %s Disabled"), _(u"%s %s Enabled"))[
-        self.button_state]) % (bush.game.se.shortName, self.obseVersion)
+        self.button_state]) % (bush.game.se.se_abbrev, self.obseVersion)
 
     def UpdateToolTips(self):
         tipAttr = ('sb_button_tip', 'obseTip')[self.button_state]

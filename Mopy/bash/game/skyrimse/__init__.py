@@ -67,16 +67,16 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
 
     # Plugin dir, cosave extension and the URLs are unchanged
     class se(SkyrimGameInfo.se):
-        shortName = u'SKSE64'
-        longName = u'Skyrim SE Script Extender'
+        se_abbrev = u'SKSE64'
+        long_name = u'Skyrim SE Script Extender'
         exe = u'skse64_loader.exe'
-        steamExe = u'skse64_loader.exe'
+        steam_exe = u'skse64_loader.exe'
 
     # ScriptDragon doesn't exist for SSE
     class sd(SkyrimGameInfo.sd):
-        shortName = u''
-        longName = u''
-        installDir = u''
+        sd_abbrev = u''
+        long_name = u''
+        install_dir = u''
 
     @classmethod
     def init(cls):

@@ -57,31 +57,31 @@ class SkyrimGameInfo(GameInfo):
     script_extensions = {u'.psc'}
 
     class cs(GameInfo.cs):
-        shortName = u'CK'
-        longName = u'Creation Kit'
+        cs_abbrev = u'CK'
+        long_name = u'Creation Kit'
         exe = u'CreationKit.exe'
-        seArgs = None  # u'-editor'
-        imageName = u'creationkit%s.png'
+        se_args = None  # u'-editor'
+        image_name = u'creationkit%s.png'
 
     class se(GameInfo.se):
-        shortName = u'SKSE'
-        longName = u'Skyrim Script Extender'
+        se_abbrev = u'SKSE'
+        long_name = u'Skyrim Script Extender'
         exe = u'skse_loader.exe'
-        steamExe = u'skse_loader.exe'
+        steam_exe = u'skse_loader.exe'
         plugin_dir = u'SKSE'
         cosave_ext = u'.skse'
         url = u'http://skse.silverlock.org/'
-        urlTip = u'http://skse.silverlock.org/'
+        url_tip = u'http://skse.silverlock.org/'
 
     class sd(GameInfo.sd):
-        shortName = u'SD'
-        longName = u'Script Dragon'
-        installDir = u'asi'
+        sd_abbrev = u'SD'
+        long_name = u'Script Dragon'
+        install_dir = u'asi'
 
     class sp(GameInfo.sp):
-        shortName = u'SP'
-        longName = u'SkyProc'
-        installDir = u'SkyProc Patchers'
+        sp_abbrev = u'SP'
+        long_name = u'SkyProc'
+        install_dir = u'SkyProc Patchers'
 
     class ini(GameInfo.ini):
         allowNewLines = True

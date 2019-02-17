@@ -761,7 +761,7 @@ class Save_StatObse(AppendableLink, OneItemLink):
     _text = _(u'%s Statistics') % bush.game.se.cosave_ext.lower()
     _help = _(u'Dump %s records') % bush.game.se.cosave_ext.lower()
 
-    def _append(self, window): return bool(bush.game.se.shortName)
+    def _append(self, window): return bool(bush.game.se.se_abbrev)
 
     def _enable(self):
         if not super(Save_StatObse, self)._enable(): return False

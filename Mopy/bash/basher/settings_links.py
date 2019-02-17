@@ -151,7 +151,7 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
         #--File dialog
         title = _(u'Export list of allowed/disallowed %s plugin dlls to:') % \
                 bush.game.se_sd()
-        file_ = bush.game.se.shortName + u' ' + _(u'dll permissions') + u'.txt'
+        file_ = bush.game.se.se_abbrev + u' ' + _(u'dll permissions') + u'.txt'
         textPath = self._askSave(title=title, defaultDir=textDir,
                                  defaultFile=file_, wildcard=u'*.txt')
         if not textPath: return
@@ -185,7 +185,7 @@ class Settings_ImportDllInfo(AppendableLink, ItemLink):
         textDir = bass.dirs['patches']
         textDir.makedirs()
         #--File dialog
-        defFile = bush.game.se.shortName + u' ' + _(
+        defFile = bush.game.se.se_abbrev + u' ' + _(
             u'dll permissions') + u'.txt'
         title = _(u'Import list of allowed/disallowed %s plugin dlls from:') \
                 % bush.game.se_sd()

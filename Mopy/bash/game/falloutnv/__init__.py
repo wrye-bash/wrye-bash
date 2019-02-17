@@ -50,21 +50,21 @@ class FalloutNVGameInfo(GameInfo):
     using_txt_file = False
 
     class cs(GameInfo.cs):
-        shortName = u'GECK'
-        longName = u'Garden of Eden Creation Kit'
+        cs_abbrev = u'GECK'
+        long_name = u'Garden of Eden Creation Kit'
         exe = u'GECK.exe'
-        seArgs = u'-editor'
-        imageName = u'geck%s.png'
+        se_args = u'-editor'
+        image_name = u'geck%s.png'
 
     class se(GameInfo.se):
-        shortName = u'NVSE'
-        longName = u'Fallout Script Extender'
+        se_abbrev = u'NVSE'
+        long_name = u'Fallout Script Extender'
         exe = u'nvse_loader.exe'
-        steamExe = u'nvse_loader.dll'
+        steam_exe = u'nvse_loader.dll'
         plugin_dir = u'NVSE'
         cosave_ext = u'.nvse'
         url = u'http://nvse.silverlock.org/'
-        urlTip = u'http://nvse.silverlock.org/'
+        url_tip = u'http://nvse.silverlock.org/'
 
     class ess(GameInfo.ess):
         ext = u'.fos'
