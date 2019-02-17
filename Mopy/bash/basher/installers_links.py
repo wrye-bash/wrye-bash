@@ -425,9 +425,10 @@ class Installers_AvoidOnStart(BoolLink):
 
 class Installers_RemoveEmptyDirs(BoolLink):
     """Toggles option to remove empty directories on file scan."""
-    _text, key = _(u'Clean Data Directory'), 'bash.installers.removeEmptyDirs'
+    _text = _(u'Remove Empty Directories')
     _help = _(u'Toggles whether or not Wrye Bash will remove empty '
               u'directories when scanning the Data folder.')
+    key = 'bash.installers.removeEmptyDirs'
 
 # Sorting Links
 class _Installer_Sort(ItemLink):

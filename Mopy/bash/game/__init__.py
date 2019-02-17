@@ -229,6 +229,10 @@ class GameInfo(object):
     ignoreDataFiles = set()
     ignoreDataFilePrefixes = set()
     ignoreDataDirs = set()
+    # Whether or not this game requires empty directories to be preserved. If
+    # this is true, BAIN's 'Remove Empty Directories' function is disabled and
+    # the toggle for it will not be shown.
+    needs_empty_dirs = False
 
     # Plugin format stuff
     class esp(object):
