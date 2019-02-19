@@ -429,12 +429,8 @@ class SkseCosave(ACoSaveFile):
     signature = 'SKSE'
     _xse_signature = 0x0
 
-class SkseSECosave(SkseCosave):
-    _espm_chunk_type = {'SDOM', 'DOML'}
-
 class F4seCosave(SkseCosave):
     signature = 'F4SE'
-    _espm_chunk_type = {'SDOM', 'DOML'}
 
 class NvseCosave(ACoSaveFile):
     signature = 'NVSE'
@@ -450,8 +446,10 @@ def get_cosave_type(game_fsName):
     elif game_fsName == u'Skyrim':
         return SkseCosave
     elif game_fsName == u'Skyrim Special Edition':
-        return SkseSECosave
+        _SEChunk._espm_chunk_type = {'SDOM', 'DOML'}
+        return SkseCosave
     elif game_fsName == u'Fallout4':
+        _SEChunk._espm_chunk_type = {'SDOM', 'DOML'}
         return F4seCosave
     elif game_fsName == u'Fallout3':
         return FoseCosave

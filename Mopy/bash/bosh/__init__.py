@@ -114,27 +114,24 @@ class CoSaves:
         return tuple(savePath + ext + first for ext in
                      (u'.pluggy', bush.game.se.cosave_ext.lower()))
 
-    def __init__(self,savePath,saveName=None):
-        """Initialize with savePath."""
-        if saveName: savePath = savePath.join(saveName)
-        self.savePath = savePath
-        self.paths = CoSaves.getPaths(savePath)
-
-    def _recopy(self, savePath, saveName, pathFunc):
+    @staticmethod
+    def _recopy(src_path, savePath, saveName, pathFunc):
         """Renames/copies cofiles depending on supplied pathFunc."""
         if saveName: savePath = savePath.join(saveName)
         newPaths = CoSaves.getPaths(savePath)
-        for oldPath,newPath in zip(self.paths,newPaths):
+        for oldPath,newPath in zip(CoSaves.getPaths(src_path), newPaths):
             if newPath.exists(): newPath.remove() ##: dont like it, investigate
             if oldPath.exists(): pathFunc(oldPath,newPath)
 
-    def copy(self,savePath,saveName=None):
+    @staticmethod
+    def copy(src_path, savePath, saveName=None):
         """Copies cofiles."""
-        self._recopy(savePath, saveName, bolt.Path.copyTo)
+        CoSaves._recopy(src_path, savePath, saveName, bolt.Path.copyTo)
 
-    def move(self,savePath,saveName=None):
+    @staticmethod
+    def move(src_path, savePath, saveName=None):
         """Renames cofiles."""
-        self._recopy(savePath, saveName, bolt.Path.moveTo)
+        CoSaves._recopy(src_path, savePath, saveName, bolt.Path.moveTo)
 
     @staticmethod
     def get_new_paths(old_path, new_path):
@@ -2654,14 +2651,14 @@ class SaveInfos(FileInfos):
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated cosaves file(s)."""
         super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
-        CoSaves(self.store_dir, fileName).copy(destDir, destName or fileName)
+        CoSaves.copy(self[fileName].abs_path, destDir, destName or fileName)
 
     def move_infos(self, sources, destinations, window, bash_frame):
         # CoSaves sucks - operations should be atomic
         moved = super(SaveInfos, self).move_infos(sources, destinations,
                                                   window, bash_frame)
         for s, d in zip(sources, destinations):
-            if d.tail in moved: CoSaves(s).move(d)
+            if d.tail in moved: CoSaves.move(s, d)
         for d in moved:
             try:
                 self.new_info(d, notify_bain=True)
@@ -2673,7 +2670,7 @@ class SaveInfos(FileInfos):
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite!"""
         FileInfos.move_info(self, fileName, destDir)
-        CoSaves(self.store_dir, fileName).move(destDir, fileName)
+        CoSaves.move(self[fileName].abs_path, destDir, fileName)
 
     #--Local Saves ------------------------------------------------------------
     def _refreshLocalSave(self):
