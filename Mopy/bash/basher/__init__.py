@@ -372,7 +372,7 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
-        for mi, masters_name in enumerate(fileInfo.header.masters):
+        for mi, masters_name in enumerate(fileInfo.get_masters()):
             masterInfo = bosh.MasterInfo(masters_name)
             self.data_store[mi] = masterInfo
         self._reList()

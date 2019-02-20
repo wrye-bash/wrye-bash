@@ -50,6 +50,7 @@ class OblivionGameInfo(GameInfo):
     supports_mod_inis = False
 
     using_txt_file = False
+    has_standalone_pluggy = True
 
     class cs(GameInfo.cs):
         cs_abbrev = u'TESCS'

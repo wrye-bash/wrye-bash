@@ -1643,6 +1643,7 @@ def unpack_str32(ins): return ins.read(struct_unpack('I', ins.read(4))[0])
 def unpack_int(ins): return struct_unpack('I', ins.read(4))[0]
 def unpack_short(ins): return struct_unpack('H', ins.read(2))[0]
 def unpack_float(ins): return struct_unpack('f', ins.read(4))[0]
+def unpack_double(ins): return struct_unpack('d', ins.read(8))[0]
 def unpack_byte(ins): return struct_unpack('B', ins.read(1))[0]
 def unpack_int_signed(ins): return struct_unpack('i', ins.read(4))[0]
 def unpack_int64_signed(ins): return struct_unpack('q', ins.read(8))[0]

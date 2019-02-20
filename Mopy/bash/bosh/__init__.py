@@ -273,7 +273,7 @@ class FileInfo(AFile):
 
     def _reset_masters(self):
         #--Master Names/Order
-        self.masterNames = tuple(self.header.masters)
+        self.masterNames = tuple(self.get_masters())
         self.masterOrder = tuple() #--Reset to empty for now
 
     def _file_changed(self, stat_tuple):
@@ -334,6 +334,18 @@ class FileInfo(AFile):
             return 20
         else:
             return status
+
+    def get_masters(self):
+        """
+        Returns the masters of this file as a list, if that operation makes any
+        sense. For example, the masters of a mod are its plugin masters, while
+        the masters of a save file are the plugins listed in its plugin list.
+        If this operation does not make sense (e.g. on an archive), an
+        AbstractError is raised.
+
+        :return: A list of the masters of this file, as paths.
+        """
+        raise AbstractError()
 
     # Backup stuff - beta, see #292 -------------------------------------------
     def getFileInfos(self):
@@ -507,6 +519,9 @@ class ModInfo(FileInfo):
             modInfos.table.setItem(self.name,'crc_mtime', set_time)
         else:
             self.calculate_crc(recalculate=True)
+
+    def get_masters(self):
+        return self.header.masters
 
     # Ghosting and ghosting related overrides ---------------------------------
     def do_update(self):
@@ -967,17 +982,14 @@ class INIInfo(IniFile):
 
 #------------------------------------------------------------------------------
 from .save_headers import get_save_header_type, SaveFileHeader
-from ._saves import PluggyFile
+from .cosaves import PluggyCosave
 from . import cosaves
 
 class SaveInfo(FileInfo):
-    _cosave_type = None  # type: cosaves.ACoSaveFile
+    # The xSE cosave that may come with this save file. Lazily initialized.
+    _xse_cosave = None
 
-    @property
-    def cosave_type(self):
-        if self._cosave_type is None:
-            SaveInfo._cosave_type = cosaves.get_cosave_type(bush.game.fsName)
-        return self._cosave_type
+    def cosave_type(self): return cosaves.get_cosave_type(bush.game.fsName)
 
     def getFileInfos(self): return saveInfos
 
@@ -1013,26 +1025,29 @@ class SaveInfo(FileInfo):
         oldMasters = [GPath(decode(x)) for x in oldMasters]
         self.abs_path.untemp()
         #--Cosaves
-        masterMap = dict(
-            (x, y) for x, y in zip(oldMasters, self.header.masters) if x != y)
-        #--Pluggy file?
-        pluggyPath = CoSaves.getPaths(self.abs_path)[0]
-        if masterMap and pluggyPath.exists():
-            pluggy = PluggyFile(pluggyPath)
-            pluggy.load()
-            pluggy.mapMasters(masterMap)
-            pluggy.safeSave()
-        #--OBSE/SKSE file?
-        cosave = self.get_cosave()
-        if cosave is not None:
-            cosave.map_masters(masterMap)
-            cosave.write_cosave_safe()
+        master_map = dict((x.s, y.s) for x, y in
+                          zip(oldMasters, self.header.masters) if x != y)
+        if master_map:
+            #--Pluggy cosave?
+            if bush.game.has_standalone_pluggy:
+                pluggy_path = self.get_pluggy_cosave_path()
+                if pluggy_path.isfile():
+                    pluggy_cosave = self.get_pluggy_cosave()
+                    pluggy_cosave.remap_plugins(master_map)
+                    pluggy_cosave.write_cosave_safe()
+            #--xSE cosave?
+            if bush.game.se.se_abbrev:
+                xse_path = self.get_xse_cosave_path()
+                if xse_path is not None and xse_path.isfile():
+                    xse_cosave = self.get_xse_cosave()
+                    xse_cosave.remap_plugins(master_map)
+                    xse_cosave.write_cosave_safe()
 
     def get_cosave_tags(self):
         """Return strings expressing whether cosaves exist and are correct."""
         cPluggy, cObse = (u'', u'')
         pluggy = self.name.root + u'.pluggy'
-        obse = self.get_se_cosave_path()
+        obse = self.get_xse_cosave_path()
         if pluggy.exists():
             cPluggy = u'XP'[abs(pluggy.mtime - self.mtime) < 10]
         if obse and obse.exists():
@@ -1044,21 +1059,52 @@ class SaveInfo(FileInfo):
         save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
         return save_paths
 
-    def get_cosave(self):
-        """:rtype: cosaves.ACoSaveFile"""
-        cosave_path = self.get_se_cosave_path()
-        if cosave_path is None: return None
-        try:
-            return self.cosave_type(cosave_path) # type: cosaves.ACoSaveFile
-        except (OSError, IOError, FileError) as e:
-            if isinstance(e, FileError) or (
-                isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
-                deprint(u'Failed to open %s' % cosave_path, traceback=True)
-            return None
+    # TODO(inf) Turn into a property?
+    def get_xse_cosave(self):
+        """:rtype: cosaves.xSECosave"""
+        if self._xse_cosave is None:
+            cosave_path = self.get_xse_cosave_path()
+            if cosave_path is None: return None
+            try:
+                cosave_constructor = self.cosave_type()
+                self._xse_cosave = cosave_constructor(cosave_path)
+            except (OSError, IOError, FileError) as e:
+                if isinstance(e, FileError) or (
+                    isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
+                    deprint(u'Failed to open %s' % cosave_path, traceback=True)
+                return None
+        return self._xse_cosave
 
-    def get_se_cosave_path(self):
+    def get_xse_cosave_path(self):
         if self.cosave_type is None: return None
-        return self.getPath().root + u'.' + self.cosave_type.signature.lower()
+        return self.getPath().root + bush.game.se.cosave_ext
+
+    def get_pluggy_cosave(self):
+        cosave_path = self.get_pluggy_cosave_path()
+        if cosave_path is not None:
+            try:
+                return PluggyCosave(cosave_path)
+            except (OSError, IOError, FileError) as e:
+                if isinstance(e, FileError) or (
+                    isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
+                    deprint(u'Failed to open %s' % cosave_path, traceback=True)
+        return None
+
+    def get_pluggy_cosave_path(self):
+        return self.getPath().root + u'.pluggy'
+
+    def get_masters(self):
+        if bush.game.has_esl:
+            xse_cosave_path = self.get_xse_cosave_path()
+            if xse_cosave_path is not None and xse_cosave_path.isfile():
+                # Make sure the cosave's masters are actually useful
+                xse_cosave = self.get_xse_cosave()
+                if xse_cosave.has_accurate_master_list(True):
+                    return [GPath(master) for master in
+                            xse_cosave.get_master_list()]
+        # Fall back on the regular masters - either the cosave is unnecessary,
+        # doesn't exist or isn't accurate
+        return self.header.masters
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):

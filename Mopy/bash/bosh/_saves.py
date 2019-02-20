@@ -35,7 +35,7 @@ from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
     unpack_short, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
     getFormIndices
-from ..exception import FileError, ModError, StateError
+from ..exception import ModError, StateError
 from ..parsers import LoadFactory, ModFile
 
 #------------------------------------------------------------------------------
@@ -216,102 +216,6 @@ class SreNPC(object):
                     u'security %3d\n  sneak %3d\n  speechcraft  %3d\n' % tuple(
                         self.skills))
             return buff.getvalue()
-
-#------------------------------------------------------------------------------
-class PluggyFile:
-    """Represents a .pluggy cofile for saves. Used for editing masters list."""
-    def __init__(self,path):
-        self.path = path
-        self.name = path.tail
-        self.tag = None
-        self.version = None
-        self._plugins = None
-        self.other = None
-        self.valid = False
-
-    def mapMasters(self,masterMap):
-        """Update plugin names according to masterMap."""
-        if not self.valid:
-            raise FileError(self.path.tail, u"File not initialized.")
-        self._plugins = [(x, y, masterMap.get(z,z)) for x,y,z in self._plugins]
-
-    def load(self):
-        """Read file."""
-        import binascii
-        path_size = self.path.size
-        with self.path.open('rb') as ins:
-            buff = ins.read(path_size-4)
-            crc32, = struct_unpack('=i', ins.read(4))
-        crcNew = binascii.crc32(buff)
-        if crc32 != crcNew:
-            raise FileError(self.path.tail,
-                            u'CRC32 file check failed. File: %X, Calc: %X' % (
-                                crc32, crcNew))
-        #--Header
-        with sio(buff) as ins:
-            def _unpack(fmt, fmt_siz):
-                return struct_unpack(fmt, ins.read(fmt_siz))
-            if ins.read(10) != 'PluggySave':
-                raise FileError(self.path.tail, u'File tag != "PluggySave"')
-            self.version, = _unpack('I',4)
-            #--Reject versions earlier than 1.02
-            if self.version < 0x01020000:
-                raise FileError(self.path.tail,
-                                u'Unsupported file version: %X' % self.version)
-            #--Plugins
-            self._plugins = []
-            type, = _unpack('=B',1)
-            if type != 0:
-                raise FileError(self.path.tail,
-                                u'Expected plugins record, but got %d.' % type)
-            count, = _unpack('=I',4)
-            for x in range(count):
-                espid,index,modLen = _unpack('=2BI',6)
-                modName = GPath(decode(ins.read(modLen)))
-                self._plugins.append((espid, index, modName))
-            #--Other
-            self.other = ins.getvalue()[ins.tell():]
-        deprint(struct_unpack('I', self.other[-4:]), self.path.size-8)
-        #--Done
-        self.valid = True
-
-    def save(self,path=None,mtime=0):
-        """Saves."""
-        import binascii
-        if not self.valid:
-            raise FileError(self.path.tail, u"File not initialized.")
-        #--Buffer
-        with sio() as buff:
-            #--Save
-            def _pack(fmt, *args):
-                buff.write(struct_pack(fmt, *args))
-            buff.write('PluggySave')
-            _pack('=I',self.version)
-            #--Plugins
-            _pack('=B',0)
-            _pack('=I', len(self._plugins))
-            for (espid,index,modName) in self._plugins:
-                modName = encode(modName.cs)
-                _pack('=2BI',espid,index,len(modName))
-                buff.write(modName)
-            #--Other
-            buff.write(self.other)
-            #--End control
-            buff.seek(-4,1)
-            _pack('=I',buff.tell())
-            #--Save
-            path = path or self.path
-            mtime = mtime or path.exists() and path.mtime
-            text = buff.getvalue()
-            with path.open('wb') as out:
-                out.write(text)
-                out.write(struct_pack('i', binascii.crc32(text)))
-        path.mtime = mtime
-
-    def safeSave(self):
-        """Save data to file safely."""
-        self.save(self.path.temp,self.path.mtime)
-        self.path.untemp()
 
 # Save File -------------------------------------------------------------------
 class SaveFile:

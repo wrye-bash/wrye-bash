@@ -649,6 +649,7 @@ def InitSaveLinks():
     if bush.game.ess.canEditMore:
         SaveList.itemMenu.append(Save_Stats())
     SaveList.itemMenu.append(Save_StatObse())
+    SaveList.itemMenu.append(Save_StatPluggy())
     if bush.game.ess.canEditMore:
         #--------------------------------------------
         SaveList.itemMenu.append(SeparatorLink())

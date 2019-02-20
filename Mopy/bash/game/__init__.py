@@ -94,6 +94,8 @@ class GameInfo(object):
     # check if a plugin is convertible to a light master instead of checking
     # mergeability
     check_esl = False
+    # Whether or not this game has standalone .pluggy cosaves
+    has_standalone_pluggy = False
 
     def __init__(self, gamePath):
         self.gamePath = gamePath # absolute bolt Path to the game directory
