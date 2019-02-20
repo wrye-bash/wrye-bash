@@ -1,112 +1,117 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<link rel="shortcut icon" href="../bash/images/bash_32.ico"/>
+<html lang="en">
+
+
+<head>
+  <meta charset="utf-8">
+  <link href="assets/bash_main.css" rel="stylesheet" type="text/css">
+  <link href="assets/bash_general.css" rel="stylesheet" type="text/css">
+  <link href="assets/bash.webmanifest" rel="manifest" type="application/manifest+json">
+  <link href="images/webicon/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" type="image/png">
+  <link href="images/webicon/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+  <link href="images/webicon/favicon-194x194.png" rel="icon" sizes="194x194" type="image/png">
+  <link href="images/webicon/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
+  <link href="images/webicon/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+  <link color="#cc0000" href="images/webicon/safari-pinned-tab.svg" rel="mask-icon" type="image/svg+xml">
+  <link href="images/webicon/favicon.ico" rel="shortcut icon" type="image/x-icon">
+  <meta content="Wrye Bash Docs" name="apple-mobile-web-app-title">
+  <meta content="Wrye Bash Docs" name="application-name">
+  <meta content="#ffc40d" name="msapplication-TileColor">
+  <meta content="images/webicon/mstile-144x144.png" name="msapplication-TileImage">
+  <meta content="Wrye Bash Documentation" name="msapplication-tooltip">
+  <meta content="assets/browserconfig.xml" name="msapplication-config">
+  <meta content="#ffffcc" name="theme-color">
+  <script src="assets/bashinit.js"></script>
+  <script src="assets/bashfunc.js" async defer></script>
 <title>Wrye Bash General Readme</title>
-<style>
-    html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
-    h1, h2 { background: #9ACD32; margin-left: -8px; margin-right: -8px; padding:0.6em; }
-    h1 { margin-top:-8px; padding-left:1.5em;margin-bottom:0;}
-    h2 { margin-top:5em; padding-left:2em;}
-    h3 { font-size:1.1em; margin-top:3em;}
-    a:link { text-decoration:none; }
-    a:hover { text-decoration:underline; }
-    li ul, li ol {margin-top:0.4em;}
-    li {margin-bottom:10px;}
-    ol ol {list-style:lower-alpha;}
- ol ol li {margin-bottom:0.2em;}
-    td, th {border:1px solid black; padding: 5px; vertical-align:top;}
-    table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
-    thead {font-weight:bold; background:#8af;}
-    img {border:0;}
-    a[href^="http"]:after {padding-left:2px; content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);}
-    q {font-style:italic;}
-    code {display:inline-block; padding:2px 5px; background:#DDD;}
-    code.box {line-height:20px; white-space:pre; margin:1em 0 0 3em; display:table; padding:5px 10px;}
-    blockquote {background:#E6E6FA; display:table; padding:5px 30px 5px 10px;}
-    figure {margin:0;}
-    figcaption {font-style:italic; margin-bottom:2em;}
- .missing {background:red; color:white; border:0.25em solid black;}
-    abbr {cursor:help;}
+</head>
+<body>
+<div id="header"><h1>Wrye Bash General Readme</h1> <a id="jstoggle" href="javascript:void(0)">(Javascript Toggle)</a></div>
 
-    .slideshow img {opacity:0;
-        position:absolute;
-        transition: opacity 1.5s;
-        -moz-transition: opacity 1.5s;
-        -webkit-transition: opacity 1.5s;
-        -o-transition: opacity 1.5s;}
-    .slideshow img:first-child {opacity:1;}
-</style>
+<div id="box">
+<!-- Scrolling content begin -->
 
-<h1>Wrye Bash General Readme</h1>
+<div id="fade"></div>
 
-<h2 style="margin-top:0;margin-bottom:1em;">Contents</h2>
-<ol style="float:left;margin:0;margin-right:4em;">
-    <li><a href="#intro">Introduction</a>
-    <ol>
-        <li><a href="#intro-glossary">Glossary</a>
-    </ol>
-    <li><a href="#install">Installation</a>
-    <li><a href="#uninstall">Uninstallation</a>
-    <li><a href="#bain">Installing Mods</a>
-    <ol>
-        <li><a href="#bain-overview">Overview</a>
-        <li><a href="#bain-structure">BAIN-Compatible installer layout</a>
-        <li><a href="#bain-convert">Restructuring Packages to be BAIN-Compatible</a>
-        <li><a href="#bain-install">Installing/Uninstalling Via BAIN</a>
-        <li><a href="#bain-order">BAIN Package Order</a>
-        <li><a href="#bain-symbols">What Symbols &amp; Colours Mean</a>
-        <li><a href="#bain-commands">Useful Context Menu Commands</a>
-    </ol>
-    <li><a href="#load">Setting Up Load Order</a>
-    <ol>
-        <li><a href="#load-overview">Overview</a>
-        <li><a href="#load-set">Setting The Load Order</a>
-        <li><a href="#load-undo">Undo and redo Load Order changes</a>
-        <li><a href="#load-symbols">What Symbols &amp; Colours Mean</a>
-        <li><a href="#load-commands">Useful Context Menu Commands</a>
-    </ol>
-    <li><a href="#patch">Setting Up A Bashed Patch</a>
-    <ol>
-        <li><a href="#patch-overview">Overview</a>
-        <li><a href="#patch-merging">Merging Plugins</a>
-        <li><a href="#patch-importing">Importing From Plugins</a>
-        <li><a href="#patch-tweaking">Applying Tweaks</a>
-        <li><a href="#patch-other">Other Bashed Patch Options</a>
-    </ol>
-</ol>
-<ol start="7" style="float:left;margin-top:0;">
-    <li><a href="#ini">Applying Ini File Edits</a>
-    <ol>
-        <li><a href="#ini-overview">Overview</a>
-        <li><a href="#ini-symbols">What Symbols &amp; Colours Mean</a>
-        <li><a href="#ini-commands">Buttons &amp; Context Menu Commands</a>
-    </ol>
-    <li><a href="#launchers">Launching Applications</a>
-    <ol>
-        <li><a href="#launchers-toggles">Toggle Buttons</a>
-        <li><a href="#launchers-game">Game &amp; Editor Launchers</a>
-        <li><a href="#launchers-utils">Game-Specific Utilities</a>
-        <li><a href="#launchers-apps">Other Applications</a>
-        <li><a href="#launchers-features">Wrye Bash Feature Launchers</a>
-        <li><a href="#manually-add">Manually adding tools to the Launcher Bar</a>
-    </ol>
-    <li><a href="#trouble">Troubleshooting</a>
-    <ol>
-        <li><a href="#trouble-dump">Generating A Bug Dump</a>
-        <li><a href="#trouble-permissions">File Permissions</a>
-        <li><a href="#trouble-backup">Backing Up &amp; Restoring Settings</a>
-        <li><a href="#trouble-report">How To Report Bugs Helpfully</a>
-        <li><a href="#trouble-known">Known Bugs</a>
-        <li><a href="#trouble-mistakes">Common Issues</a>
-    </ol>
-    <li><a href="#credits">Credits</a>
-    <li><a href="#contact">Contact</a>
-    <li><a href="#license">License</a>
-    <li><a href="#advanced">Advanced Readme Topics</a>
-</ol>
-<p style="clear:both;">
+<h2 id="contents">Contents</h2>
+<div id="navmenu" class="navboxrhrz">
+    <div id="navtab">M<br>E<br>N<br>U</div>
+    <div class="navcontbar">
+        <div class="navhead">
+            <a href="javascript:void(0)" class="clsx" id="closebutton">&larr;</a>
+            <h2>General Readme</h2>
+        </div>
+        <div class="navcontent">
+            <ol class="contentsmenu1 menu">
+                <li class="list"><a href="#intro">Introduction</a>
+                    <ol class="items">
+                        <li><a href="#intro-glossary">Glossary</a>
+                    </ol>
+                <li class="list"><a href="#install">Installation</a>
+                <li class="list"><a href="#uninstall">Uninstallation</a>
+                <li class="list"><a href="#bain">Installing Mods</a>
+                    <ol class="items">
+                        <li><a href="#bain-overview">Overview</a>
+                        <li><a href="#bain-structure">BAIN-Compatible installer layout</a>
+                        <li><a href="#bain-convert">Restructuring Packages to be BAIN-Compatible</a>
+                        <li><a href="#bain-install">Installing/Uninstalling Via BAIN</a>
+                        <li><a href="#bain-order">BAIN Package Order</a>
+                        <li><a href="#bain-symbols">What Symbols &amp; Colours Mean</a>
+                        <li><a href="#bain-commands">Useful Context Menu Commands</a>
+                    </ol>
+                <li class="list"><a href="#load">Setting Up Load Order</a>
+                    <ol class="items">
+                        <li><a href="#load-overview">Overview</a>
+                        <li><a href="#load-set">Setting The Load Order</a>
+                        <li><a href="#load-undo">Undo and redo Load Order changes</a>
+                        <li><a href="#load-symbols">What Symbols &amp; Colours Mean</a>
+                        <li><a href="#load-commands">Useful Context Menu Commands</a>
+                    </ol>
+                <li class="list"><a href="#patch">Setting Up A Bashed Patch</a>
+                    <ol class="items">
+                        <li><a href="#patch-overview">Overview</a>
+                        <li><a href="#patch-configuration">Bash Configuration</a>
+                        <li><a href="#patch-merging">Merging Plugins</a>
+                        <li><a href="#patch-importing">Importing From Plugins</a>
+                        <li><a href="#patch-tweaking">Applying Tweaks</a>
+                        <li><a href="#patch-other">Other Bashed Patch Options</a>
+                    </ol>
+            </ol>
+            <ol start="7" class="contentsmenu2 menu">
+                <li class="list"><a href="#ini">Applying Ini File Edits</a>
+                    <ol class="items">
+                        <li><a href="#ini-overview">Overview</a>
+                        <li><a href="#ini-symbols">What Symbols &amp; Colours Mean</a>
+                        <li><a href="#ini-commands">Buttons &amp; Context Menu Commands</a>
+                    </ol>
+                <li class="list"><a href="#launchers">Launching Applications</a>
+                    <ol class="items">
+                        <li><a href="#launchers-toggles">Toggle Buttons</a>
+                        <li><a href="#launchers-game">Game &amp; Editor Launchers</a>
+                        <li><a href="#launchers-utils">Game-Specific Utilities</a>
+                        <li><a href="#launchers-apps">Other Applications</a>
+                        <li><a href="#launchers-features">Wrye Bash Feature Launchers</a>
+                        <li><a href="#manually-add">Manually adding tools to the Launcher Bar</a>
+                    </ol>
+                <li class="list"><a href="#trouble">Troubleshooting</a>
+                    <ol class="items">
+                        <li><a href="#trouble-dump">Generating A Bug Dump</a>
+                        <li><a href="#trouble-permissions">File Permissions</a>
+                        <li><a href="#trouble-backup">Backing Up &amp; Restoring Settings</a>
+                        <li><a href="#trouble-report">How To Report Bugs Helpfully</a>
+                        <li><a href="#trouble-known">Known Bugs</a>
+                        <li><a href="#trouble-mistakes">Common Issues</a>
+                    </ol>
+                <li class="list"><a href="#credits">Credits</a>
+                <li class="list"><a href="#contact">Contact</a>
+                <li class="list"><a href="#license">License</a>
+                <li class="list"><a href="#advanced">Advanced Readme Topics</a>
+            </ol>
+        </div>
+    </div>
+</div>
 
-<h2 id="intro">Introduction</h2>
+<h2 id="intro">Introduction <a class="back2top" href="#contents">Back to top</a></h2>
 <p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, Fallout 3, Fallout New Vegas, TES V: Skyrim, Fallout 4 and SSE: Skyrim Special Edition. Its features include:
 <ul>
     <li>A mod installation and conflict manager
@@ -118,35 +123,35 @@
     <li>Many, many more features
 </ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
-<p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.
+<p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
 
-<h3 id="intro-glossary">Glossary</h3>
+<h3 id="intro-glossary">Glossary <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Modding for Oblivion and Skyrim has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
 <ul>
-    <li><b>The game</b> is the game that Wrye Bash is running for, either Oblivion, Fallout3, FalloutNV, Skyrim, Fallout4 or Skyrim SE.
-    <li><b>CTD</b> is an acronym for Crash To Desktop. Used to describe the game crashing.
-    <li><b>DLC</b> refers to any of the official downloadable content for the game.
-    <li><b>Mod</b> refers to any unofficial user-made modification to the game.
-    <li><b>Mod author</b> refers to a person that makes modifications to the game. It can also refer to those who are involved in the creation of utilities that are used by mod authors and/or users.
-    <li><b>ESP</b> (case-insensitive) refers to any file with a <code>.esp</code> extension. It is an acronym for Elder Scrolls Plugin.
-    <li><b>ESM</b> (case-insensitive) refers to any file with a <code>.esm</code> extension. It is an acronym for Elder Scrolls Master.
-    <li><b>Plugin</b> refers to any ESP <u>or</u> ESM file.
-    <li><b>Master</b> refers to any plugins that another plugin is dependent on to function. (It can also refer to an ESM file, as it used to be that only ESMs could be masters, until mod authors developed methods of using ESP files as masters too. The latter definition will not be used in this documentation.)
-    <li><b>The game's master file</b> refers to the ESM that must be loaded for the game to function. For Oblivion, this is <code>Oblivion.esm</code>, for Skyrim this is <code>Skyrim.esm</code>, and for Fallout 4 this is <code>Fallout4.esm</code>.
-    <li><b>Conflicts</b> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.
-    <li><b>Resource Conflicts</b> occur when two mods contain two different files that go in the same place, so one mod's file overwrites the others's file. This type of conflict can be managed by altering the install order of mods.
-    <li><b>Data Conflicts</b> occur when two mod plugins alter the same game data. This type of conflict can be managed by altering the load order of plugins.
-    <li><b>BSAs</b> are Bethesda Softwork Archives, with <code>.bsa</code> file extensions. They can be used to store resource files such as textures and meshes.
-    <li><b>ITMs</b> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.
-    <li><b>UDRs</b> are Undeleted and Disabled References. Deleted References can cause crashing, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. This acronym is generally misused - the UDR acronym is frequently used to refer to the deleted references, rather than their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.
+    <li><strong>The game</strong> is the game that Wrye Bash is running for, either Oblivion, Fallout3, FalloutNV, Skyrim, Fallout4 or Skyrim SE.
+    <li><strong>CTD</strong> is an acronym for Crash To Desktop. Used to describe the game crashing.
+    <li><strong>DLC</strong> refers to any of the official downloadable content for the game.
+    <li><strong>Mod</strong> refers to any unofficial user-made modification to the game.
+    <li><strong>Mod author</strong> refers to a person that makes modifications to the game. It can also refer to those who are involved in the creation of utilities that are used by mod authors and/or users.
+    <li><strong>ESP</strong> (case-insensitive) refers to any file with a <code>.esp</code> extension. It is an acronym for Elder Scrolls Plugin.
+    <li><strong>ESM</strong> (case-insensitive) refers to any file with a <code>.esm</code> extension. It is an acronym for Elder Scrolls Master.
+    <li><strong>Plugin</strong> refers to any ESP <u>or</u> ESM file.
+    <li><strong>Master</strong> refers to any plugins that another plugin is dependent on to function. (It can also refer to an ESM file, as it used to be that only ESMs could be masters, until mod authors developed methods of using ESP files as masters too. The latter definition will not be used in this documentation.)
+    <li><strong>The game's master file</strong> refers to the ESM that must be loaded for the game to function. For Oblivion, this is <code>Oblivion.esm</code>, for Skyrim this is <code>Skyrim.esm</code>, and for Fallout 4 this is <code>Fallout4.esm</code>.
+    <li><strong>Conflicts</strong> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.
+    <li><strong>Resource Conflicts</strong> occur when two mods contain two different files that go in the same place, so one mod's file overwrites the others's file. This type of conflict can be managed by altering the install order of mods.
+    <li><strong>Data Conflicts</strong> occur when two mod plugins alter the same game data. This type of conflict can be managed by altering the load order of plugins.
+    <li><strong>BSAs</strong> are Bethesda Softwork Archives, with <code>.bsa</code> file extensions. They can be used to store resource files such as textures and meshes.
+    <li><strong>ITMs</strong> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.
+    <li><strong>UDRs</strong> are Undeleted and Disabled References. Deleted References can cause crashing, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. This acronym is generally misused - the UDR acronym is frequently used to refer to the deleted references, rather than their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS/LOOT will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.
 </ul>
-<p>This readme will also use the placeholder <b>[Game]</b>. Replace this with <q>Oblivion</q>, <q>Fallout 3</q>, <q>Fallout NV</q>, <q>Skyrim</q>, <q>Fallout 4</q> or <q>Skyrim SE</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII='/> go to pages that are not part of the Wrye Bash documentation.
+<p>This readme will also use the placeholder <strong>[Game]</strong>. Replace this with <q>Oblivion</q>, <q>Fallout 3</q>, <q>Fallout NV</q>, <q>Skyrim</q>, <q>Fallout 4</q> or <q>Skyrim SE</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img alt="External Link Icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII="/> go to pages that are not part of the Wrye Bash documentation.</p>
 
 
-<h2 id="install">Installation</h2>
+<h2 id="install">Installation <a class="back2top" href="#contents">Back to top</a></h2>
 <p>The simplest way to install Wrye Bash is using the installer, as it installs Wrye Bash and its dependencies automatically. However, the instructions below are provided if a manual install method is preferred.
-<p><b>Note:</b> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people.
-<p><b>Windows Vista, 7, 8 &amp; 10 users:</b> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
+<p><strong>Note:</strong> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people.
+<p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
 <p>Manual Standalone Version Install:
 <ol>
     <li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
@@ -167,7 +172,7 @@
     <li>Navigate to the Mopy directory and run Wrye Bash by double-clicking <q>Wrye Bash Launcher.pyw</q>.
 </ol>
 
-<h2 id="uninstall">Uninstallation</h2>
+<h2 id="uninstall">Uninstallation <a class="back2top" href="#contents">Back to top</a></h2>
 <p>The ease with which Wrye Bash can be removed is dependent on how much you use it to manage your modded game.
 <ul>
     <li>If you use a Bashed Patch, you will need to remove any dependencies on it from your saves before uninstalling Wrye Bash in order to avoid in-game issues. This may be near-impossible to do, depending on what is in your Bashed Patch.
@@ -185,33 +190,33 @@
     <li><code>[Game] Mods</code> (in the same folder as [Game]) - The <code>Bash Installers</code> folder stores the mods you've installed via BAIN.
 </ul>
 
-<h2 id="bain">Installing Mods</h2>
+<h2 id="bain">Installing Mods <a class="back2top" href="#contents">Back to top</a></h2>
+<h3 id="bain-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
 <figure class="slideshow">
-<img src="../bash/images/readme/installers-1.png" alt="Installers Tab"/>
-<img src="../bash/images/readme/installers-2.png" alt="Installers Tab"/>
-<img src="../bash/images/readme/installers-3.png" alt="Installers Tab"/>
-<img src="../bash/images/readme/installers-4.png" alt="Installers Tab"/>
-<img src="../bash/images/readme/installers-5.png" alt="Installers Tab"/>
-<img src="../bash/images/readme/installers-6.png" alt="Installers Tab"/>
-<img src="../bash/images/readme/installers-7.png" alt="Installers Tab"/>
-<img src="../bash/images/readme/installers-8.png" alt="Installers Tab"/>
-<figcaption style="padding-top:650px;">Wrye Bash's Installers tab.</figcaption>
+<img alt="Installers Tab" src="../bash/images/readme/installers-1.png"/>
+<img alt="Installers Tab" src="../bash/images/readme/installers-2.png"/>
+<img alt="Installers Tab" src="../bash/images/readme/installers-3.png"/>
+<img alt="Installers Tab" src="../bash/images/readme/installers-4.png"/>
+<img alt="Installers Tab" src="../bash/images/readme/installers-5.png"/>
+<img alt="Installers Tab" src="../bash/images/readme/installers-6.png"/>
+<img alt="Installers Tab" src="../bash/images/readme/installers-7.png"/>
+<img alt="Installers Tab" src="../bash/images/readme/installers-8.png"/>
+<figcaption class="bain-overview-figcap">Wrye Bash's Installers tab.</figcaption>
 </figure>
 
-<h3 id="bain-overview">Overview</h3>
-<p>Wrye Bash mod installer are known as <abbr title="Bash Installers">BAIN</abbr> (BAsh INstallers), and are presented on the Installers
+<p>Wrye Bash mod installer are known as <strong><abbr title="Bash Installers">BAIN</abbr></strong> (<strong>BA</strong>sh <strong>IN</strong>stallers), and are presented on the Installers Tab. The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>, BAIN will be initialised, which can take some time. After that, the information refresh performed when the Installers tab is opened is much faster.</p>
     Tab. The first time the Installers tab is opened, a dialog will appear asking if BAIN should be initialized. If you click <q>Yes</q>,
     BAIN will be initialised, which can take some time. After that, the information refresh performed when the Installers tab is opened is
     much faster.
-<p>BAIN's primary function is to install mod packages. <b>BAIN Packages</b> can be <code>.zip</code>,
-    <code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <b>Projects</b> while archives are usually called
-    <b>packages</b>, abusing terminology. When we refer to projects and packages together we will be also using the collective term <b>installers</b>.
+<p>BAIN's primary function is to install mod packages. <strong>BAIN Packages</strong> can be <code>.zip</code>,
+    <code>.7z</code> or <code>.rar</code> archives or uncompressed directories. Uncompressed directories are called <strong>Projects</strong> while archives are usually called
+    <strong>packages</strong>, abusing terminology. When we refer to projects and packages together we will be also using the collective term <strong>installers</strong>.
 <p>If BAIN is disabled, ie. if you clicked <q>No</q> on the dialog that was displayed the first time you selected the Installers tab, it can be re-enabled by right clicking on a column header in the Installers tab and selecting <a href="Wrye%20Bash%20Advanced%20Readme.html#bainEnabled">Enabled</a>.
 
 <p>Installers need to be placed in the <code>Bash Installers</code> directory which is created the first time Bash runs inside the <code>"Game" Mods</code> directory. This directory is by default
-    created on the same level as your game directory (that is if your game exe is located in "C:\GAMES\TESIV\Oblivion" then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
-    directory on first run, but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
-    <i>not</i> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance deterioration, mods thrashing.
+    created on the same level as your game directory (that is, if your game exe is located in "C:\GAMES\TESIV\Oblivion", then by default Bash will create the "C:\GAMES\TESIV\Oblivion Mods\"
+    directory on first run), but you can point Bash to create this "Game" Mods directory wherever you want (or point it to an existing one) via the <code>sOblivionMods</code> ini setting. Do
+    <em>not</em> however put it inside the game Data directory, as the game may well be confused and scan it adding to performance deterioration, mods thrashing.
 <p>To add an installer to Wrye Bash Installers, you can either manually copy and paste the zip to the Bash Installers Directory, or just drag and drop the zip onto the Installers tab.
 <p>Bash will scan the Bash Installers directory and pick up all subfolders and all <code>.zip</code>, <code>.7z</code> or <code>.rar</code> archives - except for:
 
@@ -223,9 +228,9 @@
 </ol>
 
 <p>Now BAIN will try to classify the packages it detected in Bash Installers into its package formats - if it fails the package will display as unrecognized and will have to
-be restructured.
+be restructured.</p>
 
-<h3 id="bain-structure">BAIN-Compatible installer layout</h3>
+<h3 id="bain-structure">BAIN-Compatible installer layout <a class="back2top" href="#contents">Back to top</a></h3>
 
 <p>When scanning an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. BAIN
  will search for specific directories and file extensions (espml, bsa/ba2, ini). The directories BAIN is aware of, independently of the game,
@@ -236,14 +241,14 @@ are:
     <tbody>
         <tr><td>bash patches<td>Bash will install files in this folder from packages, usually in the form of .csv files
         <tr><td>docs<td>Its contents will be copied inside Data/Docs
-        <tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ and appear on the INI Tab - do <b>not</b> include subfolders in ini tweaks/
+        <tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ and appear on the INI Tab - do <strong>not</strong> include subfolders in ini tweaks/
         <tr><td>screenshots<td>its contents will be copied inside Data/Docs
-    <thead><tr><th colspan="2">Vanilla game directories present on all games
+        <tr class="tabttl"><th colspan="2">Vanilla game directories present on all games
     <tbody>
-        <tr><td colspan="2"><div style="text-align: center;">meshes, music, sound, textures, video</div>
+        <tr><td colspan="2"><div class="bain-structure-txtcnt">meshes, music, sound, textures, video</div>
 </table>
 
-but there are game specific directories as well (all directory detection is <i>case insensitive</i>):
+but there are game specific directories as well (all directory detection is <em>case insensitive</em>):
 
 <table>
     <thead><tr><th>Game<th>Extra Game Directories<th>Bonus Directories (tools or modders)
@@ -256,7 +261,7 @@ but there are game specific directories as well (all directory detection is <i>c
         <tr><td>Skyrim SE<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (BodySlide, FNIS), dyndolod
 </table>
 
-All these directories (either in the Global or Extra and Bonus Game directories) constitute the <b>standard game directories</b> for this game. If
+All these directories (either in the Global or Extra and Bonus Game directories) constitute the <strong>standard game directories</strong> for this game. If
 <a href="Wrye%20Bash%20Advanced%20Readme.html#bainHasExtraDirectories">Has Extra Directories</a> is not on for the package, any other top level directory in the (sub)package
 will be skipped (and their content listed in Skipped tab). There are also some directories and files that will be always skipped (for all the gory details see
 <a href="Wrye%20Bash%20Advanced%20Readme.html#bain-skipped">Skipped Files</a>).
@@ -268,14 +273,14 @@ will be skipped (and their content listed in Skipped tab). There are also some d
     <tbody>
         <tr><td>Simple<td>Installer has .esp, .esm and/or .bsa files, and/or any of the standard game subdirectories at the top level of the package/project.
         <tr><td>Complex<td>Installer has top-level subdirectories that each have a simple structure (as defined above). The top level
-			subdirectories (known as subpackages) <b>must NOT have the same name as any of the standard game directories for this game</b>
-			(like docs, or meshes). Otherwise BAIN thinks this is a simple package and will skip subpackages.<br>
+            subdirectories (known as subpackages) <strong>must NOT have the same name as any of the standard game directories for this game</strong>
+            (like docs, or meshes). Otherwise BAIN thinks this is a simple package and will skip subpackages.<br>
             Each top-level subdirectory will be treated as a sub-package, and can be independently activated or deactivated as desired.
         <tr><td>Complex/Simple<td>A complex installer with only one top-level subdirectory. It is treated as a simple installer, starting at this
             top level subdirectory. Examples include mods packaged with a top-level Data directory.
 </table>
 
-<h3 id="bain-convert">Restructuring Packages to be BAIN-Compatible</h3>
+<h3 id="bain-convert">Restructuring Packages to be BAIN-Compatible <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The easiest way to tell if a package needs manual converting to be compatible with BAIN is to try installing it. If it is listed in the Package list with a grey checkbox and name, then BAIN cannot install it. Due to BAIN's flexibility, many mods are already packaged in ways that are compatible, but for those that are not, there are a few possible cases:
 <ul>
     <li>The mod has a <abbr title="BAIN Conversion File">BCF</abbr>. BCFs are special packages that tell BAIN how to restructure the mod to be compatible with BAIN without the user having to do any work.
@@ -287,16 +292,16 @@ will be skipped (and their content listed in Skipped tab). There are also some d
 <ol>
     <li>Ensure that the BCF is installed in the correct location, <code>[Game] Mods\Bash Installers\Bain Converters</code>. Also ensure that the archive(s) it converts is/are in <code>[Game] Mods\Bash Installers</code>.
     <li>From the BAIN installers list, select the archive(s) to be converted (i.e., the <q>source</q> packages) and right click on the selected file(s) to bring up the context menu, and select <a href="Wrye%20Bash%20Advanced%20Readme.html#bainConversion">Conversions</a> to open the sub-menu.
-    <li>Click on <i>Apply</i> to open a second sub-menu and select the BCF from it. There may be more than one BCF listed if multiple installed BCFs can convert the selected package(s).
+    <li>Click on <em>Apply</em> to open a second sub-menu and select the BCF from it. There may be more than one BCF listed if multiple installed BCFs can convert the selected package(s).
     An asterisk ('*') is added to the end of a BCF's name for every archive it converts that isn't selected.
     <li>Optionally choose a name for the converted archive(s).
     <li>Once Wrye Bash has finished the conversion, the converted archive(s) will appear in the BAIN package list ready for install. You can now delete the original archive(s).
 </ol>
-<p>If a package is unrecognised by BAIN and has no associated BCF, its contents will have to be rearranged so that the structure matches one of the three types of BAIN-compatible package structures.
+<p>If a package is unrecognised by BAIN and has no associated BCF, its contents will have to be rearranged so that the structure matches one of the three types of BAIN-compatible package structures.</p>
 
-<h3 id="bain-install">Installing/Uninstalling Via BAIN</h3>
+<h3 id="bain-install">Installing/Uninstalling Via BAIN <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Packages must first be placed in the <code>[Game] Mods\Bash Installers</code> directory. This can either be done via Windows Explorer, or by dragging and dropping the package into the Wrye Bash window when the Installers tab is open. If you drag and drop, you will be asked whether you want to copy the package or move it.
-<p>If a package contains a Wizard (ie. there is <img src="../bash/images/wizard.png" alt="a wand icon"/> overlaid on its checkbox):
+<p>If a package contains a Wizard (ie. there is <img alt="a wand icon" src="../bash/images/wizard.png"/> overlaid on its checkbox):
 <ol>
     <li>Right-click the package and select <a href="#bainWizard">Wizard</a>. You can also choose to install using the Wizard's default options by selecting <a href="#bainAutoWizard">Auto Wizard</a>.
     <li>If you chose <a href="#bainWizard">Wizard</a>, navigate through the steps of the Wizard to install the package. Otherwise, you will be skipped to the Wizard finish screen.
@@ -349,9 +354,9 @@ listed lower in the installation order will not uninstall the lower
 mod's files. See the next section, BAIN Package Order for more on
 this. However, if the Auto-Anneal option is enabled (the default), then files
 from other packages previously overridden by the uninstalled package's
- files will be automatically restored.
+ files will be automatically restored.</p>
 
-<h3 id="bain-order">BAIN Package Order</h3>
+<h3 id="bain-order">BAIN Package Order <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The Install Order of packages in BAIN is important as this decides which package gets its files installed in the case of resource
     conflicts.Packages may be listed in Install Order by left-clicking on the <q>Order</q> column header. If two packages try to install the
     same file, then the package installing later in the list will have its file overwrite the file of the package installing earlier in the
@@ -366,38 +371,38 @@ from other packages previously overridden by the uninstalled package's
 <p>BAIN allows you to easily adjust the conflict status of packages by moving their order around. This can be done by dragging and dropping
     packages within the list, or by right-clicking packages and selecting the <a href="#bainMoveTo">Move To...</a> option. You can also
     select multiple packages and move them, in which case they will be moved as a group, retaining their order relative to one another in
-    their new location. A third option is to select the package(s) and use Ctrl-Up or Ctrl-Down to move them up or down respectively.
+    their new location. A third option is to select the package(s) and use Ctrl-Up or Ctrl-Down to move them up or down respectively.</p>
 
-<h3 id="bain-symbols">What Symbols &amp; Colours Mean</h3>
+<h3 id="bain-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <p>BAIN uses the colours of packages in the package list and the state of their checkboxes to convey information about their status to the user. A checkbox state may be combined with any checkbox or text colour, and the possible states and colours are described in the tables below.
-<p><b>Note:</b> Installed packages are marked with a plus, eg. <img src="../bash/images/checkbox_green_inc.png" width="16" height="16" alt="+"/>. Corrupt or incomplete packages are marked with a cross, eg. <img src="../bash/images/checkbox_red_x.png" width="16" height="16" alt="a cross"/>. Packages that begin and end with <q>==</q>, eg. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
+<p><strong>Note:</strong> Installed packages are marked with a plus, eg. <img alt="Green Plus" src="../bash/images/checkbox_green_inc.png" width="16" height="16"/>. Corrupt or incomplete packages are marked with a cross, eg. <img alt="Red X" src="../bash/images/checkbox_red_x.png" width="16" height="16"/>. Packages that begin and end with <q>==</q>, eg. <q>==Last==</q>, are marker packages. They don't represent an archive or folder and so contain no files, but may be used to organise the package list.
 <table>
     <thead><tr><th>Checkbox Shape<th>Meaning
     <tbody>
-        <tr><td><img src="../bash/images/diamond_white_off.png" width="16" height="16" alt="diamond"/><td>The package is a Project, ie. a directory rather than an archive.
-        <tr><td><img src="../bash/images/checkbox_white_off.png" width="16" height="16" alt="checkbox"/><td>The package is an archive.
+        <tr><td><img alt="diamond" src="../bash/images/diamond_white_off.png" width="16" height="16"/><td>The package is a Project, ie. a directory rather than an archive.
+        <tr><td><img alt="checkbox" src="../bash/images/checkbox_white_off.png" width="16" height="16"/><td>The package is an archive.
 </table>
 <table>
     <thead><tr><th>Checkbox Colour<th>Meaning
     <tbody>
-        <tr><td><img src="../bash/images/checkbox_green_off.png" width="16" height="16" alt="green"/><td>All the files in the package are installed as configured.
-        <tr><td><img src="../bash/images/checkbox_red_off.png" width="16" height="16" alt="red"/><td>Some or all of the files in the package are not installed as configured.
-        <tr><td><img src="../bash/images/checkbox_orange_off.png" width="16" height="16" alt="orange"/><td>All the package files are installed, but the .esp/.esm plugins are not identical (eg. another package has overwritten them with another version of the plugins).
-        <tr><td><img src="../bash/images/checkbox_yellow_off.png" width="16" height="16" alt="yellow"/><td>All the package files are installed, but some resource (ie. non-plugin) files are not identical (eg. another package has overwritten them with another version of the files)
-        <tr><td><img src="../bash/images/checkbox_white_off.png" width="16" height="16" alt="white"/><td>The package, as configured, has no files to install. This can happen for complex packages where none of the sub-packages are selected for installation.
-        <tr><td><img src="../bash/images/checkbox_grey_off.png" width="16" height="16" alt="grey"/><td>BAIN does not recognise the structure of this package so cannot install it.
+        <tr><td><img alt="green" src="../bash/images/checkbox_green_off.png" width="16" height="16"/><td>All the files in the package are installed as configured.
+        <tr><td><img alt="red" src="../bash/images/checkbox_red_off.png" width="16" height="16"/><td>Some or all of the files in the package are not installed as configured.
+        <tr><td><img alt="orange" src="../bash/images/checkbox_orange_off.png" width="16" height="16"/><td>All the package files are installed, but the .esp/.esm plugins are not identical (eg. another package has overwritten them with another version of the plugins).
+        <tr><td><img alt="yellow" src="../bash/images/checkbox_yellow_off.png" width="16" height="16"/><td>All the package files are installed, but some resource (ie. non-plugin) files are not identical (eg. another package has overwritten them with another version of the files)
+        <tr><td><img alt="white" src="../bash/images/checkbox_white_off.png" width="16" height="16"/><td>The package, as configured, has no files to install. This can happen for complex packages where none of the sub-packages are selected for installation.
+        <tr><td><img alt="grey" src="../bash/images/checkbox_grey_off.png" width="16" height="16"/><td>BAIN does not recognise the structure of this package so cannot install it.
 </table>
 <table>
     <thead><tr><th>Text Formatting<th>Meaning
     <tbody>
-        <tr><td style="color:#000080;">Navy Blue<td>The package contains sub-packages.
-        <tr><td style="color:#BEBEBE;">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
-        <tr><td style="background:#FFBB33;">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-        <tr><td style="background:yellow;">Yellow Background<td>The package has "underrides" i.e. some of its installed files <i>should</i> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
-        <tr><td style="background:#E0E0E0;">Grey Background<td>Some files present in the package will <i><b>not</b></i> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package <a href="#bainHasExtraDirectories">Has Extra Directories</a> by ticking that option in the right-click menu.
+        <tr><td class="bain-symbols-blutxt">Navy Blue<td>The package contains sub-packages.
+        <tr><td class="bain-symbols-grytxt">Grey<td>BAIN does not recognise the structure of this package so cannot install it.
+        <tr><td class="bain-symbols-orgbg">Orange Background<td>The install is dirty. This will occur for packages for which the configuration has been altered (either by altering active sub-packages and esmps, or by altering the package itself). This can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
+        <tr><td class="bain-symbols-ylwbg">Yellow Background<td>The package has "underrides" i.e. some of its installed files <em>should</em> be overridden by higher order packages. This may happen after reordering mods that have already been installed. It can be repaired by running <a href="#bainAnneal">Anneal</a> or <a href="#bainAnnealAll">Anneal All</a>.
+        <tr><td class="bain-symbols-grybg">Grey Background<td>Some files present in the package will <em><strong>not</strong></em> be installed. This can be due to having a complex structure only partially handled by BAIN, or having file types that BAIN skips. This can sometimes be fixed by telling BAIN that the package <a href="#bainHasExtraDirectories">Has Extra Directories</a> by ticking that option in the right-click menu.
 </table>
 
-<h3 id="bain-commands">Useful Context Menu Commands</h3>
+<h3 id="bain-commands">Useful Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The following commands found in the package and column header context (ie. right-click) menus are often useful for many users.
 <table>
     <thead>
@@ -419,8 +424,8 @@ from other packages previously overridden by the uninstalled package's
         The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
         <tr><td id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
         <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
-        <tr><td>Skip OBSE Plugins<td><i>Oblivion only.</i> If this is checked, files in the Data\OBSE\Plugins folder will not be installed.
-        <tr><td>Skip SKSE/Script Dragon Plugins<td><i>Skyrim only.</i> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
+        <tr><td>Skip OBSE Plugins<td><em>Oblivion only.</em> If this is checked, files in the Data\OBSE\Plugins folder will not be installed.
+        <tr><td>Skip SKSE/Script Dragon Plugins<td><em>Skyrim only.</em> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
 </table>
 <table>
     <thead>
@@ -429,7 +434,7 @@ from other packages previously overridden by the uninstalled package's
     <tbody>
         <tr><td colspan="2">Open...<td>Opens the selected package(s) in the file system.
         <tr><td colspan="2">Duplicate...<td>Makes a duplicate of the selected package(s).
-        <tr><td colspan="2">Delete<td>Deletes the selected package(s). Deleted packages are <b>not</b> sent to the Recycling Bin, they are permanently deleted.
+        <tr><td colspan="2">Delete<td>Deletes the selected package(s). Deleted packages are <strong>not</strong> sent to the Recycling Bin, they are permanently deleted.
         <tr><td colspan="2">Open At...<td>Attempts to open the selected package's page on the selected site. If Google is selected, performs a Google search for the package name. For the other three sites, this command assumes that the trailing digits in a package's name is the package ID at the sites. If this assumption is wrong, a random page, or an error page, will be opened.
         <tr><td colspan="2">Hide<td>Hides the selected package in the list, and moves it to the <code>[Game] Mods/Bash Mod Data/Hidden</code> folder.
         <tr><td colspan="2">Rename<td>Renames the selected package or marker.
@@ -447,18 +452,18 @@ from other packages previously overridden by the uninstalled package's
 </table>
 
 
-<h2 id="load">Setting Up Load Order</h2>
+<h2 id="load">Setting Up Load Order <a class="back2top" href="#contents">Back to top</a></h2>
 <figure>
-<img src="../bash/images/readme/mods-1.png" alt="Mods Tab"/>
+<img alt="Mods Tab" src="../bash/images/readme/mods-1.png"/>
 <figcaption>Wrye Bash's Mods tab.</figcaption>
 </figure>
-<h3 id="load-overview">Overview</h3>
+<h3 id="load-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash displays your installed plugins in its <q>Mods</q> tab. Your load order of active installed plugins, which Wrye Bash marks with a
     ticked checkbox, is important as it decides what plugin 'wins' any conflict between plugins, with later loading plugins overriding those
     that change the same thing. A mod loading later in the list will have a greater number in the Load Order column, and will "win"
-    if there's a conflict with a mod loading earlier (which will have a lower number). <b>Load order is not the same thing as BAIN install
-        order!</b> Install order determines which package's files overwrite other packages files when they conflict.
-<p>Although in general "Load Order" stands for the load order of the <i>active</i> plugins, all installed plugins have a load order assigned
+    if there's a conflict with a mod loading earlier (which will have a lower number). <strong>Load order is not the same thing as BAIN install
+        order!</strong> Install order determines which package's files overwrite other packages files when they conflict.
+<p>Although in general "Load Order" stands for the load order of the <em>active</em> plugins, all installed plugins have a load order assigned
     to them. In Oblivion this is based on the modification time of the plugin, in Skyrim based to an agreed upon text-file based standard,
     while Fallout 4 finally dumps all installed plugins in its plugins.txt, marking active ones with an asterisk. Bash needs plugins load
     order even for inactive plugins to correctly merge inactive mods in the bashed patch, for instance.
@@ -469,81 +474,81 @@ from other packages previously overridden by the uninstalled package's
 <p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FE, which is 0 to 254 in decimal. (This number also forms the first two digits of a record's Form ID.)
 <p>Note that you can only have a maximum of 255 plugins active at any one time, including your game's master file (eg. Oblivion.esm, Skyrim.esm).
     Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
-<p>With the advent of <b>esl files</b> the load order system was modified - exactly how it is still unclear. Bash makes two assumptions when
+<p>With the advent of <strong>esl files</strong> the load order system was modified - exactly how it is still unclear. Bash makes two assumptions when
     calculating load order of esl files:
 <ol>
     <li> esls load among esms in the order of the plugins txt.
     <li> only extension matters - Bash does not look at the esl flag. Name your esls esls.
 </ol>
- Special cc** esls are read from Fallout4/Skyrim.ccc file
+<p>Special cc** esls are read from Fallout4/Skyrim.ccc file</p>
 
-<h3 id="load-set">Setting The Load Order</h3>
+<h3 id="load-set">Setting The Load Order <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Setting up a correct load order that minimises detrimental conflicts that could cause issues in-game can be a difficult and time-consuming process. Effective load-ordering often requires a knowledge of what each plugin in your load order contains so that you can position the plugins to minimise these conflicts. For simple mods, the description in the mod's readme will usually be sufficient to determine the records it contains, but to be sure a utility such as TES4Edit is required.
-<p><a href="http://boss-developers.github.io">BOSS</a> can be used to greatly simplify the process of setting the load order, as it can correctly position thousands of plugins automatically. However, you may still need to order some plugins manually.
+<p><a href="https://loot.github.io/">LOOT</a> can be used to greatly simplify the process of setting the load order, as it can correctly position thousands of plugins automatically. However, you may still need to order some plugins manually.
 <p>Wrye Bash provides a number of ways for you to set up your load order:
 <ul>
-    <li>Alphabetical sorting by selecting a group of plugins and choosing File->Sort from the right-click menu.
+    <li>Alphabetical sorting by selecting a group of plugins and choosing File-&gt;Sort from the right-click menu.
     <li>Moving plugins up or down the load order by selecting them and using Ctrl-Up or Ctrl-Down respectively. This also works with groups of plugins and preserves the group's internal order.
     <li>Dragging and dropping plugins will also change the load order if the plugins are being sorted by Load Order.
-    <li><i>Oblivion only.</i> Selecting a group of plugins and choosing File->Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
-    <li><i>Oblivion only.</i> Editing plugin modification dates in the right-hand details panel.
+    <li><em>Oblivion only.</em> Selecting a group of plugins and choosing File-&gt;Redate from the right-click menu. This will move the first plugin to the specified date/time and position the others at one minute intervals after it.
+    <li><em>Oblivion only.</em> Editing plugin modification dates in the right-hand details panel.
 </ul>
 <p>When running Wrye Bash, you can also lock your load order in place to prevent unintended changes to it by selecting the <a href="#modsLockLoadOrder">Lock Load Order</a>
     option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a
-    utility to set your load order. If you use BOSS to manage your load order and you also use Lock Load Order, ensure
-    <a href="#launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS to function correctly.
+    utility to set your load order. If you use BOSS/LOOT to manage your load order and you also use Lock Load Order, ensure
+    <a href="#launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS/LOOT to function correctly.
 <p>Note that for Skyrim Wrye Bash will automatically undo any changes to load order done made by the Skyrim launcher or any utility that does not follow the textfile-based
     load order standard in order to maintain a fully coherent load order. This effectively means that unintended changes are prevented.
 <figure>
-<img src="../bash/images/readme/toolbar-12-rclick-hide-boss.png" alt="toolbar hide launcher"/>
+<img alt="toolbar hide launcher" src="../bash/images/readme/toolbar-12-rclick-hide-boss.png"/>
 <figcaption>BOSS's Launch Using GUI option.</figcaption>
 </figure>
-<p>The <q>Launch Using GUI</q> toggles the use of the command line interface for BOSS with the BOSS GUI. Giving quick and easy access to the additional features the GUI provides such as the <q>Edit User Rules</q> option.
+<p>The <q>Launch Using GUI</q> toggles the use of the command line interface for BOSS with the BOSS GUI. Giving quick and easy access to the additional features the GUI provides such as the <q>Edit User Rules</q> option.</p>
 
-<h3 id="load-undo">Undo and redo Load Order changes</h3>
-<p>Bash features a sophisticated undo/redo load order feature, comprising both load order changes <i>of active <b>or</b> inactive
-    plugins</i> and activating/de-activating plugins. Whether you activate a plugin, drag and drop it in another position, deactivate a
-    plugin (having its children deactivated too) etc, you can always hit <code>Ctrl+Z</code> <i>while the list of mods has focus</i> to undo
-    the operation or <code>Ctrl+Y</code> to redo it. Bash keeps the load orders (meaning total load order of <i>all</i> installed plugins
+<h3 id="load-undo">Undo and redo Load Order changes <a class="back2top" href="#contents">Back to top</a></h3>
+<p>Bash features a sophisticated undo/redo load order feature, comprising both load order changes <em>of active <strong>or</strong> inactive
+    plugins</em> and activating/de-activating plugins. Whether you activate a plugin, drag and drop it in another position, deactivate a
+    plugin (having its children deactivated too) etc, you can always hit <code>Ctrl+Z</code> <em>while the list of mods has focus</em> to undo
+    the operation or <code>Ctrl+Y</code> to redo it. Bash keeps the load orders (meaning total load order of <em>all</em> installed plugins
     and active state of the plugins) in its internal structures and will persist those on disc on shutting down,
-    in <code>My Games\&lt;Game>\BashLoadOrders.dat</code>, so you can undo/redo on restarting Bash.
+    in <code>My Games\&lt;Game&gt;\BashLoadOrders.dat</code>, so you can undo/redo on restarting Bash.
 <p>The undo/redo feature will try to preserve as many load orders as possible - so unlike undo/redo in other applications if you have an
     initial load order state A then change it to B, then hit undo (so you are back on state A), then change it to C Bash will keep in its
     internal structures the load order states A C B while most other applications would end up with A C. Undo/redo load order state is a
-    relatively new feature (available in 307 beta) so it may have rough edges.
+    relatively new feature (available in 307 beta) so it may have rough edges.</p>
 
-<h3 id="load-symbols">What Symbols &amp; Colours Mean</h3>
+<h3 id="load-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Like in the Installers tab, Wrye Bash uses colour-coding and other formatting effects to convey information about the state of plugins. The different types of formatting used and their meanings are explained here.
 <table>
     <thead><tr><th>Checkbox Type<th>Meaning
     <tbody>
-        <tr><td><img src="../bash/images/checkbox_green_on.png" width="16" height="16" alt="Active" /><td>Plugin is active.
-        <tr><td><img src="../bash/images/checkbox_green_inc.png" width="16" height="16" alt="Merged" /><td>Plugin is merged into an active <a href="#patch">Bashed Patch</a>.
-        <tr><td><img src="../bash/images/checkbox_green_imp.png" width="16" height="16" alt="Imported" /><td>Plugin is imported into an active <a href="#patch">Bashed Patch</a>.
-        <tr><td><img src="../bash/images/checkbox_green_off.png" width="16" height="16" alt="Inactive" /><td>Plugin is not active, merged or imported.
+        <tr><td><img alt="Active" src="../bash/images/checkbox_green_on.png" width="16" height="16"/><td>Plugin is active.
+        <tr><td><img alt="Merged" src="../bash/images/checkbox_green_inc.png" width="16" height="16"/><td>Plugin is merged into an active <a href="#patch">Bashed Patch</a>.
+        <tr><td><img alt="Imported" src="../bash/images/checkbox_green_imp.png" width="16" height="16"/><td>Plugin is imported into an active <a href="#patch">Bashed Patch</a>.
+        <tr><td><img alt="Inactive" src="../bash/images/checkbox_green_off.png" width="16" height="16"/><td>Plugin is not active, merged or imported.
 </table>
 <table>
     <thead><tr><th>Checkbox Colours<th>Meaning
     <tbody>
-        <tr><td><img src="../bash/images/checkbox_blue_on.png" width="16" height="16" alt="Blue" /><td>The plugin's masters are all in exactly the same order as is specified in the plugin.
-        <tr><td><img src="../bash/images/checkbox_green_on.png" width="16" height="16" alt="Green" /><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (ie. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
-        <tr><td><img src="../bash/images/checkbox_orange_on.png" width="16" height="16" alt="Orange" /><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will generally be handled automatically by the game, but it may result in changes in-game.
-        <tr><td><img src="../bash/images/checkbox_red_on.png" width="16" height="16" alt="Red" /><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.
+        <tr><td><img alt="Blue" src="../bash/images/checkbox_blue_on.png" width="16" height="16"/><td>The plugin's masters are all in exactly the same order as is specified in the plugin.
+        <tr><td><img alt="Green" src="../bash/images/checkbox_green_on.png" width="16" height="16"/><td>The plugin's masters are in the same order as is specified in the plugin, but their precise positions are different (ie. there are other mods between them). This is not an issue, and can be considered to be just as good as having a blue checkbox.
+        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_on.png" width="16" height="16"/><td>Some of the plugin's masters are in a different order than what is specified in the plugin. This will generally be handled automatically by the game, but it may result in changes in-game.
+        <tr><td><img alt="Red" src="../bash/images/checkbox_red_on.png" width="16" height="16"/><td>One or more of the plugin's masters is missing. This will generally cause the game to crash on startup, and must be corrected.
 </table>
 <table>
     <thead><tr><th>Text Formatting<th>Meaning
     <tbody>
-        <tr><td style="color:blue;">Blue text<td>A .esm plugin.
-        <tr><td style="color:green;">Green text<td>A mergeable plugin.
-        <tr><td style="color:purple;">Purple text<td>A plugin that should not be merged (ie. tagged with NoMerge).
-        <tr><td style="background:#FFDCDC;">Pink background<td><i>Oblivion only.</i> A plugin that shares its modification date with another plugin. Not a problem unless both plugins are active.
-        <tr><td style="background:#FF6464;">Red background<td>An active plugin that should remain deactivated (ie. tagged with Deactivate) or, for Oblivion only, an active plugin that shares its modification date with another active plugin. This must be corrected so that they have different modification dates or else it may break your load order.
-        <tr><td style="background:#E8E8E8;">Grey background<td>A <a href="#modsAutoGhost">ghosted</a> plugin.
-        <tr><td style="font-style:italic;">Slanted text<td>A plugin that is recommended to be imported and deactivated (ie. tagged with Deactivate).
-        <tr><td style="text-decoration:underline;">Underlined text<td>A plugin identified as having dirty edits (Identical to Master, Deleted References, or otherwise necessary cleaning).
+        <tr><td class="load-symbols-blutxt">Blue text<td>A .esm plugin.
+        <tr><td class="load-symbols-grntxt">Green text<td>A mergeable plugin.
+        <tr><td class="load-symbols-prptxt">Purple text<td>A plugin that should not be merged (ie. tagged with NoMerge).
+        <tr><td class="load-symbols-pnkbg">Pink background<td><em>Oblivion only.</em> A plugin that shares its modification date with another plugin. Not a problem unless both plugins are active.
+        <tr><td class="load-symbols-redkbg">Red background<td>An active plugin that should remain deactivated (ie. tagged with Deactivate) or, for Oblivion only, an active plugin that shares its modification date with another active plugin. This must be corrected so that they have different modification dates or else it may break your load order.
+        <tr><td class="load-symbols-grybg">Grey background<td>A <a href="#modsAutoGhost">ghosted</a> plugin.
+        <tr><td class="load-symbols-ittxt">Slanted text<td>A plugin that is recommended to be imported and deactivated (ie. tagged with Deactivate).
+        <tr><td class="load-symbols-ultxt">Underlined text<td>A plugin identified as having dirty edits (Identical to Master, Deleted References, or otherwise necessary cleaning).
 </table>
 
-<h3 id="load-commands">Useful Context Menu Commands</h3>
+<h3 id="load-commands">Useful Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The context menus for the column headers and plugins contain a large number of commands, most of which are unlikely to be of use to the average user so are not detailed here.
 <table>
     <thead>
@@ -556,7 +561,7 @@ from other packages previously overridden by the uninstalled package's
         <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The Oblivion game engine has a bug where it reads all the plugins in the Data folder,
             and this can affect performance when the number of plugins is around 300+. In Skyrim there is a different problem, namely if you have over
             508 mod files in your data directory, the engine just plain refuses to load any of them, active or not (see here:
-            http://forums.bethsoft.com/topic/1369136-thrashing-thread-1/?hl=+508). Auto-Ghosting adds a <q>.ghost</q> extension to all
+            <a href="https://web.archive.org/web/20190307225426/https://forums.bethsoft.com/topic/1369136-thrashing-thread-1/?hl=+508">Thrashing, thread #1, post #1</a>). Auto-Ghosting adds a <q>.ghost</q> extension to all
             inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted
             plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that most other utilities will not
             recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
@@ -571,34 +576,39 @@ from other packages previously overridden by the uninstalled package's
     <tbody>
         <tr><td>List Masters...<td>Outputs a list of the selected plugin's masters.
         <tr><td>List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
-        <tr><td>Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official BOSS thread.
+        <tr><td>Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official LOOT thread.
         <tr><td>Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
         <tr><td>Don't Ghost<td>Don't ghost this plugin when it is inactive, even if <a href="#modsAutoGhost">Auto-Ghost</a> is enabled.
         <tr><td>Ghost<td>Ghost this plugin when it is inactive even if <a href="#modsAutoGhost">Auto-Ghost</a> is disabled.
         <tr><td id="modsRebuildPatch">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
-        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...<td><i>Oblivion only.</i> Rebuild the selected Bashed Patch using the CBash patcher.
+        <tr><td id="modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...<td><em>Oblivion only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
 </table>
 
 
-<h2 id="patch">Setting Up A Bashed Patch</h2>
-<figure class="slideshow">
-<img src="../bash/images/readme/bashed-patch-dialogue-1.png" alt="Bashed Patch"/>
-<img src="../bash/images/readme/bashed-patch-dialogue-2.png" alt="Bashed Patch"/>
-<img src="../bash/images/readme/bashed-patch-dialogue-3.png" alt="Bashed Patch"/>
-<img src="../bash/images/readme/bashed-patch-dialogue-4.png" alt="Bashed Patch"/>
-<figcaption style="padding-top:620px;">Wrye Bash's Bashed Patch configuration dialog.</figcaption>
-</figure>
-<h3 id="patch-overview">Overview</h3>
+<h2 id="patch">Setting Up A Bashed Patch <a class="back2top" href="#contents">Back to top</a></h2>
+<h3 id="patch-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
+<div class="prlflex tap clearf">
+    <figure class="slideshow" style="width:657px; min-height:610px;">
+    <img alt="Bashed Patch" src="../bash/images/readme/bashed-patch-dialogue-1.png"/>
+    <img alt="Bashed Patch" src="../bash/images/readme/bashed-patch-dialogue-2.png"/>
+    <img alt="Bashed Patch" src="../bash/images/readme/bashed-patch-dialogue-3.png"/>
+    <img alt="Bashed Patch" src="../bash/images/readme/bashed-patch-dialogue-4.png"/>
+    <figcaption class="patch-overview-figcap">Wrye Bash's Bashed Patch configuration dialog.</figcaption>
+    </figure>
+<div class="patch-overview-txtbox">
 <p>A Bashed Patch is a configurable plugin with three main functions:
 <ul>
     <li>Merging plugins into itself. Merged plugins can be deactivated, avoiding the 255 plugin limit.
     <li>Importing specific types of data records from plugins. This can be used to avoid compatibility issues.
     <li>Applying tweaks to the game. This avoids the need to use other mods to apply the same tweaks.
 </ul>
-<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><b>Bashed Patch, 0.esp</b></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
+</div>
+</div>
+<h3 id="patch-configuration">Bash Configuration <a class="back2top" href="#contents">Back to top</a></h3>
+<p>A Bashed Patch is created by Wrye Bash the first time you run it, with the plugin being called <q><strong>Bashed Patch, 0.esp</strong></q>. It is configured using the plugin context menu commands <a href="#modsRebuildPatch">Rebuild Patch...</a> or <a href="#modsRebuildPatchCBash">Rebuild Patch (CBash *Beta*)...</a>. <strong>You should rebuild your Bashed Patch every time you change your load order, before playing the game.</strong> The Bashed Patch should be last in your load order, unless you have plugins that explicitly state that they must load last.
 <p>The configuration dialog consists of a list of major sections to the left, and the contents of the selected section to the right, with the build and save buttons at the bottom. The sections and their items have checkboxes: checking a section will include all its checked items in the Bashed Patch. Unchecked sections and items will not be included. Some sections don't have any items, and so just need the section checkbox checked.
 <p>A short description of each section and some items is displayed near the bottom of the window if the section/item is hovered over. Bolded items are new since the last time the Bashed Patch was built. Wrye Bash will try to auto-configure most sections, but some will still need tweaking.
-<p><b>Note:</b> There are currently two methods of building a Bashed Patch. One uses Python, and the other uses CBash, which is a software library written to speed up the reading of plugins. Both methods offer the same options. The CBash method is faster and allows more types of plugin to be merged, but contains some bugs as CBash is still a work in progress. CBash will become the default in the near future, once its bugs have been fixed. For now, it is probably safer to use the Python method.
+<p><strong>Note:</strong> There are currently two methods of building a Bashed Patch. One uses Python, and the other uses CBash, which is a software library written to speed up the reading of plugins. Both methods offer the same options. The CBash method is faster and allows more types of plugin to be merged, but contains some bugs as CBash is still a work in progress. CBash will become the default in the near future, once its bugs have been fixed. For now, it is probably safer to use the Python method.
 <table>
     <thead>
         <tr><th colspan="2">Bashed Patch Configuration Buttons
@@ -615,100 +625,100 @@ from other packages previously overridden by the uninstalled package's
         <tr><td>Import<td>Restores your Bashed Patch's configuration from an exported patch configuration.
 </table>
 
-<h3 id="patch-merging">Merging Plugins</h3>
+<h3 id="patch-merging">Merging Plugins <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Plugins that contain only certain types of data records can be merged into the Bashed Patch. This then allows these plugins to be deactivated, freeing up space in your load order.
 <p>If you're merging plugins in, you do not need the plugins active to do so.  In fact, trying to merge them in Bash will 1 - ask you to deactivate them
     before hand, and 2 - deactivate them even if you refused that prompt after the Bashed Patch has been created.
     So if you're merging plugins, leave them inactive before building, then select to merge them in the Bashed Patch build dialog.  Don't worry,
     all the algorithms for the rest of the patchers still work as you'd expect on plugins merged this way.
 <p>You should check the checkboxes of all the plugins listed in the <q>Merge Patches</q> section, and ensure the section is checked too.
-<p><b>Do not remove merged mods from your Data folder.</b> They will need to be present when you next rebuild your Bashed Patch.
+<p><strong>Do not remove merged mods from your Data folder.</strong> They will need to be present when you next rebuild your Bashed Patch.</p>
 
-<h3 id="patch-importing">Importing From Plugins</h3>
+<h3 id="patch-importing">Importing From Plugins <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Plugins can be tagged with Bash Tags that tell Wrye Bash that they contain certain changes that should be preserved even if another mod also changes the same things. This is usually because the changes are important to the functionality of the mod. Wrye Bash then allows you to choose which plugins should have which types of changes preserved, by selecting from the various Import sections when building a Bashed Patch.
 <p>If a section's description in the table below begins with <q>Preserves</q> and two or more mods in its list change the same thing, then the later-loading plugin will override the other plugin(s). Otherwise changes are merged.
 <table>
     <thead><tr><th>Section<th>Description<th>When You Should Use It
     <tbody>
-        <tr><td>Import Actors<td><i>Oblivion only.</i> Preserves changes made to actors (ie. NPCs and creatures) by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportActorsAIPackages">Import Actors: AIPackages<td><i>Oblivion only.</i> Merges the changes made to actor AI packages by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Actors: Animations<td><i>Oblivion only.</i> Merges the changes made to actor animations by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Actors: Death Items<td><i>Oblivion only.</i> Preserves the changes made to the items added to an actor when it dies by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportActorsSpells">Import Actors: Spells<td><i>Oblivion only.</i> Preserves the changes made to the spells actors have by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportCells">Import Cells<td><i>All but Fallout 4.</i> Preserves the changes made by the mods selected to cell settings such as lighting, climate, music, name, owner, water and more.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Factions<td><i>Oblivion, Fallout 3 and Fallout NV only.</i> Preserves the changes made to the factions an actor belongs to by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportGraphics">Import Graphics<td><i>All but Fallout 4.</i> Preserves the changes made by the mods selected to various textures and models throughout the game.<td>The decision is entirely based on user preference. Choose whichever mods' graphics you prefer.
-        <tr><td id="patchImportInventory">Import Inventory<td><i>All but Fallout 4.</i> Merges the changes made to the items in an actor's inventory by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportNPCFaces">Import NPC Faces<td><i>Oblivion only.</i> Preserves the changes made to NPC faces by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.
-        <tr><td id="patchImportNames">Import Names<td><i>All but Fallout 4.</i> Preserves the changes made to various names throughout the game by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' names you prefer.
-        <tr><td id="patchImportRelations">Import Relations<td><i>Oblivion, Fallout 3 and Fallout NV only.</i> Preserves the changes made by the mods selected to how factions interact.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Roads<td><i>Oblivion only.</i> Preserves the changes made by the mods selected to the landscape's roads.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Scripts<td><i>Oblivion only.</i> Preserves the changes made by the mods selected to the scripts attached to things in the game.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td id="patchImportSounds">Import Sounds<td><i>All but Fallout 4.</i> Preserves the changes made by the mods selected to various sounds in the game.<td>The decision is entirely based on user preference. Choose whichever mods' sounds you prefer.
-        <tr><td id="patchImportSpellStats">Import Spell Stats<td><i>Oblivion only.</i> Preserves the changes made by the mods selected to items in order to fix bugs or rebalance them.<td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul spell stats. In such cases, choose whichever mods' stats you prefer.
-        <tr><td>Import Stats<td><i>All but Fallout 4.</i> Preserves the changes made by the mods selected to spells in order to fix bugs or rebalance them.<td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul item stats. In such cases, choose whichever mods' stats you prefer.
+        <tr><td>Import Actors<td><em>Oblivion only.</em> Preserves changes made to actors (ie. NPCs and creatures) by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td id="patchImportActorsAIPackages">Import Actors: AIPackages<td><em>Oblivion only.</em> Merges the changes made to actor AI packages by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Actors: Animations<td><em>Oblivion only.</em> Merges the changes made to actor animations by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Actors: Death Items<td><em>Oblivion only.</em> Preserves the changes made to the items added to an actor when it dies by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td id="patchImportActorsSpells">Import Actors: Spells<td><em>Oblivion only.</em> Preserves the changes made to the spells actors have by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td id="patchImportCells">Import Cells<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to cell settings such as lighting, climate, music, name, owner, water and more.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Factions<td><em>Oblivion, Fallout 3 and Fallout NV only.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td id="patchImportGraphics">Import Graphics<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various textures and models throughout the game.<td>The decision is entirely based on user preference. Choose whichever mods' graphics you prefer.
+        <tr><td id="patchImportInventory">Import Inventory<td><em>All but Fallout 4.</em> Merges the changes made to the items in an actor's inventory by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td id="patchImportNPCFaces">Import NPC Faces<td><em>Oblivion only.</em> Preserves the changes made to NPC faces by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.
+        <tr><td id="patchImportNames">Import Names<td><em>All but Fallout 4.</em> Preserves the changes made to various names throughout the game by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' names you prefer.
+        <tr><td id="patchImportRelations">Import Relations<td><em>Oblivion, Fallout 3 and Fallout NV only.</em> Preserves the changes made by the mods selected to how factions interact.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Roads<td><em>Oblivion only.</em> Preserves the changes made by the mods selected to the landscape's roads.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Scripts<td><em>Oblivion only.</em> Preserves the changes made by the mods selected to the scripts attached to things in the game.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td id="patchImportSounds">Import Sounds<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various sounds in the game.<td>The decision is entirely based on user preference. Choose whichever mods' sounds you prefer.
+        <tr><td id="patchImportSpellStats">Import Spell Stats<td><em>Oblivion only.</em> Preserves the changes made by the mods selected to items in order to fix bugs or rebalance them.<td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul spell stats. In such cases, choose whichever mods' stats you prefer.
+        <tr><td>Import Stats<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to spells in order to fix bugs or rebalance them.<td>Always, unless you are told otherwise by a mod's readme. There is an element of user preference, for instance if you are using several mods that overhaul item stats. In such cases, choose whichever mods' stats you prefer.
 </table>
 
-<h3 id="patch-tweaking">Applying Tweaks</h3>
+<h3 id="patch-tweaking">Applying Tweaks <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The Bashed Patch lets you independently tweak a large number of game settings. Each tweak has a description that is visible when you select it. Some tweaks have several possible values, with the current value given in [square brackets] in the tweak name. Right-clicking these tweaks will display a menu from which you can selected a different value. The tweaks are catagorised into different sections.
 <table>
     <thead><tr><th>Section<th>Description<th>When You Should Use It
     <tbody>
-        <tr><td id="patchTweakActors">Tweak Actors<td><i>Oblivion only.</i> Allows you to change a number of the game's settings relating to actors (ie. NPCs).<td>The decision is entirely based on user preference.
-        <tr><td id="patchTweakAssorted">Tweak Assorted<td><i>Oblivion only.</i> Contains a set of miscellaneous tweaks to the game.<td>The <b>Bow Reach Fix</b> and <b>Nvidia Fog Fix</b> are recommended for all users, as they fix bugs that may be uncovered by mods. The <b>DarNified Books</b> option is recommended for users of DarNified UI. Other than those, the decision is entirely based on user preference.
-        <tr><td id="patchTweakClothes">Tweak Clothes<td><i>Oblivion only.</i> Contains a set of tweaks that changes settings relating to the game's clothing.<td>The decision is entirely based on user preference.
-        <tr><td id="patchTweakNames">Tweak Names<td><i>Oblivion only.</i> Contains a set of tweaks that changes the names of things in the game. Most change the names to change how they are sorted in your inventory.<td>The decision is entirely based on user preference.
-        <tr><td id="patchTweakSettings">Tweak Settings<td><i>All but Fallout 4.</i> Contains a set of tweaks that changes various global and non-global game settings. <td>In Oblivion, the <b>UOP Vampire Aging and Face Fix.esp</b> tweak is recommended for all users. Beyond that, the decision is entirely based on user preference.
+        <tr><td id="patchTweakActors">Tweak Actors<td><em>Oblivion only.</em> Allows you to change a number of the game's settings relating to actors (ie. NPCs).<td>The decision is entirely based on user preference.
+        <tr><td id="patchTweakAssorted">Tweak Assorted<td><em>Oblivion only.</em> Contains a set of miscellaneous tweaks to the game.<td>The <strong>Bow Reach Fix</strong> and <strong>Nvidia Fog Fix</strong> are recommended for all users, as they fix bugs that may be uncovered by mods. The <strong>DarNified Books</strong> option is recommended for users of DarNified UI. Other than those, the decision is entirely based on user preference.
+        <tr><td id="patchTweakClothes">Tweak Clothes<td><em>Oblivion only.</em> Contains a set of tweaks that changes settings relating to the game's clothing.<td>The decision is entirely based on user preference.
+        <tr><td id="patchTweakNames">Tweak Names<td><em>Oblivion only.</em> Contains a set of tweaks that changes the names of things in the game. Most change the names to change how they are sorted in your inventory.<td>The decision is entirely based on user preference.
+        <tr><td id="patchTweakSettings">Tweak Settings<td><em>All but Fallout 4.</em> Contains a set of tweaks that changes various global and non-global game settings. <td>In Oblivion, the <strong>UOP Vampire Aging and Face Fix.esp</strong> tweak is recommended for all users. Beyond that, the decision is entirely based on user preference.
 </table>
 
-<h3 id="patch-other">Other Bashed Patch Options</h3>
+<h3 id="patch-other">Other Bashed Patch Options <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The Bashed Patch also gives you a number of other sections providing additional functionality besides the above merging, importing and tweaking. These options are described below.
 <table>
     <thead><tr><th>Section<th>Description<th>When You Should Use It
     <tbody>
-        <tr><td id="patchAliasModNames">Alias Mod Names<td><i>Oblivion, Fallout 3 and Fallout NV only.</i> Allows Wrye Bash to recognise some common renamings of plugins that are referenced in .csv data files that it imports as part of some Bashed Patch sections. Renamings should be listed in the text box for this section. The format is <code>Old.esp => New.esp</code>.<td>If you have renamed a plugin that is referenced in a CSV file you have selected in the Bashed Patch's configuration. It is recommended that you refrain from renaming plugins, as it can break parts of Wrye Bash and other utilities.
-        <tr><td id="patchReplaceFormIDs">Replace Form IDs<td><i>Oblivion only.</i> Replaces a set of formIDs with another set of formIDs defined by a .csv file.<td>If you use a mod that tells you to use it.
-        <tr><td id="patchCoblCatalogs">Cobl Catalogs<td><i>Oblivion only.</i> Updates Cobl's ingredient and effect catalogs to take into account those added by mods you use.<td>If you use Cobl (a.k.a. Common Oblivion).
-        <tr><td>Cobl Exhaustion<td><i>Oblivion only.</i> Updates greater powers added by the mods that are listed in the selected .csv file options so that they're compatible with Cobl's Exhaustion feature.<td>If you use Cobl's Exhaustion feature.
-        <tr><td>Contents Checker<td><i>Oblivion only.</i> Checks that leveled lists and inventories contain the correct types of entries, and removes any incorrect entries.<td>Always.
+        <tr><td id="patchAliasModNames">Alias Mod Names<td><em>Oblivion, Fallout 3 and Fallout NV only.</em> Allows Wrye Bash to recognise some common renamings of plugins that are referenced in .csv data files that it imports as part of some Bashed Patch sections. Renamings should be listed in the text box for this section. The format is <code>Old.esp =&gt; New.esp</code>.<td>If you have renamed a plugin that is referenced in a CSV file you have selected in the Bashed Patch's configuration. It is recommended that you refrain from renaming plugins, as it can break parts of Wrye Bash and other utilities.
+        <tr><td id="patchReplaceFormIDs">Replace Form IDs<td><em>Oblivion only.</em> Replaces a set of formIDs with another set of formIDs defined by a .csv file.<td>If you use a mod that tells you to use it.
+        <tr><td id="patchCoblCatalogs">Cobl Catalogs<td><em>Oblivion only.</em> Updates Cobl's ingredient and effect catalogs to take into account those added by mods you use.<td>If you use Cobl (a.k.a. Common Oblivion).
+        <tr><td>Cobl Exhaustion<td><em>Oblivion only.</em> Updates greater powers added by the mods that are listed in the selected .csv file options so that they're compatible with Cobl's Exhaustion feature.<td>If you use Cobl's Exhaustion feature.
+        <tr><td>Contents Checker<td><em>Oblivion only.</em> Checks that leveled lists and inventories contain the correct types of entries, and removes any incorrect entries.<td>Always.
         <tr><td id="patchLeveledLists">Leveled Lists<td>Merges changes made to leveled lists by mods to increase compatibility between them.<td>Always. If you don't have any mods that alter leveled lists, the option won't do anything, in which case it doesn't hurt to have it enabled.
-        <tr><td id="patchMorphFactions">Morph Factions<td><i>Oblivion only.</i> Updates factions so that they are more likely to work with Wrye Morph.<td>If you use Cobl and Wrye Morph.
-        <tr><td id="patchRaceRecords">Race Records<td><i>Oblivion only.</i> Some mods make changes to races and want those changes to be preserved even if another mod changes the same race. This ensures that those changes are kept. It also checks for and fixes various errors such as googly eyes and missing hair or eyes. It also has a section of race tweaks which the user can select as desired.<td>Always, even if there are no mods listed on the right.
-        <tr><td id="patchSEWorldTests">SEWorld Tests<td><i>Oblivion only.</i> Fixes quests that aren't suspended while your character is in the Shivering Isles. This doesn't apply to mod-added quests, it only restores suspension to vanilla quests where mods have removed it.<td>Always. If you don't have Shivering Isles, the option won't do anything, in which case it doesn't hurt to have it enabled.
+        <tr><td id="patchMorphFactions">Morph Factions<td><em>Oblivion only.</em> Updates factions so that they are more likely to work with Wrye Morph.<td>If you use Cobl and Wrye Morph.
+        <tr><td id="patchRaceRecords">Race Records<td><em>Oblivion only.</em> Some mods make changes to races and want those changes to be preserved even if another mod changes the same race. This ensures that those changes are kept. It also checks for and fixes various errors such as googly eyes and missing hair or eyes. It also has a section of race tweaks which the user can select as desired.<td>Always, even if there are no mods listed on the right.
+        <tr><td id="patchSEWorldTests">SEWorld Tests<td><em>Oblivion only.</em> Fixes quests that aren't suspended while your character is in the Shivering Isles. This doesn't apply to mod-added quests, it only restores suspension to vanilla quests where mods have removed it.<td>Always. If you don't have Shivering Isles, the option won't do anything, in which case it doesn't hurt to have it enabled.
 </table>
 
-<h2 id="ini">Applying Ini File Edits</h2>
+<h2 id="ini">Applying Ini File Edits <a class="back2top" href="#contents">Back to top</a></h2>
+<h3 id="ini-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
 <figure class="slideshow">
-<img src="../bash/images/readme/ini-edits-1.png" alt="INI Edits Tab" />
-<img src="../bash/images/readme/ini-oblivion.png" alt="INI Edits Tab" />
-<img src="../bash/images/readme/ini-all_natural.png" alt="INI Edits Tab" />
-<figcaption style="padding-top:650px;">Wrye Bash's INI Edits tab, editing Oblivion.ini, Oblivion's configuration file, and All Natural.ini, a mod's configuration file. (Animated slideshow.)</figcaption>
+<img alt="INI Edits Tab" src="../bash/images/readme/ini-edits-1.png"/>
+<img alt="INI Edits Tab" src="../bash/images/readme/ini-oblivion.png"/>
+<img alt="INI Edits Tab" src="../bash/images/readme/ini-all_natural.png"/>
+<figcaption class="ini-overview-figcap">Wrye Bash's INI Edits tab, editing Oblivion.ini, Oblivion's configuration file, and All Natural.ini, a mod's configuration file. (Animated slideshow.)</figcaption>
 </figure>
 
-<h3 id="ini-overview">Overview</h3>
 <p>The Ini Edits tab allows the user to quickly apply edits to Oblivion.ini, Skyrim.ini or Fallout4Custom.ini, depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
 <p>The drop-down box allows you to select the current ini file. The <q>Browse...</q> option in the drop-down box can be used to select an ini file not listed.
 <p>Selecting a tweak will display its contents in the middle column, and highlights the changes it applies to the current ini file in the right column. To apply a tweak, right click it and select <a href="#tweakApply">Apply</a>.
-<p><b>Warning:</b> Incorrect Oblivion.ini or Skyrim.ini settings can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.
+<p><strong>Warning:</strong> Incorrect Oblivion.ini or Skyrim.ini settings can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.</p>
 
-<h3 id="ini-symbols">What Symbols &amp; Colours Mean</h3>
+<h3 id="ini-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead><tr><th>Checkbox Style<th>Meaning
     <tbody>
-        <tr><td><img src="../bash/images/checkbox_orange_off.png" alt="Orange"/><td>Some or all the variables the tweak sets do not exist in the current ini file.
-        <tr><td><img src="../bash/images/checkbox_green_off.png" alt="Green"/><td>The variable values in the current ini file do not match the values set by the tweak.
-        <tr><td><img src="../bash/images/checkbox_yellow_imp.png" alt="Yellow with Dot"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak.
-        <tr><td><img src="../bash/images/checkbox_green_imp.png" alt="Green with Dot"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak. The values that don't match another tweak from the same installer.
-        <tr><td><img src="../bash/images/checkbox_green_on.png" alt="Green with Check"/><td>Tweak is applied.
+        <tr><td><img alt="Orange" src="../bash/images/checkbox_orange_off.png"/><td>Some or all the variables the tweak sets do not exist in the current ini file.
+        <tr><td><img alt="Green" src="../bash/images/checkbox_green_off.png"/><td>The variable values in the current ini file do not match the values set by the tweak.
+        <tr><td><img alt="Yellow with Dot" src="../bash/images/checkbox_yellow_imp.png"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak.
+        <tr><td><img alt="Green with Dot" src="../bash/images/checkbox_green_imp.png"/><td>Some, but not all, of the variable values in the current ini file do not match the values set by the tweak. The values that don't match another tweak from the same installer.
+        <tr><td><img alt="Green with Check" src="../bash/images/checkbox_green_on.png"/><td>Tweak is applied.
 </table>
 <table>
     <thead><tr><th>Text Formatting<th>Meaning
     <tbody>
-        <tr><td style="background-color:#FFD5AA;">Orange Background<td>The specific heading or tweak is invalid for the current ini file.
-        <tr><td style="background-color:#FFFFBF;">Yellow Background<td>The specific variable value does not match the value in the current ini file.
-        <tr><td style="background-color:#C1FFC1;">Green Background<td>The specific variable value matches the value in the current ini file.
+        <tr><td class="ini-symbols-orgbg">Orange Background<td>The specific heading or tweak is invalid for the current ini file.
+        <tr><td class="ini-symbols-ylwbg">Yellow Background<td>The specific variable value does not match the value in the current ini file.
+        <tr><td class="ini-symbols-grnbg">Green Background<td>The specific variable value matches the value in the current ini file.
 </table>
-<h3 id="ini-commands">Buttons &amp; Context Menu Commands</h3>
+<h3 id="ini-commands">Buttons &amp; Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead>
         <tr><th colspan="2">Ini Edits Tab
@@ -745,250 +755,265 @@ from other packages previously overridden by the uninstalled package's
         <tr><td>Delete<td>Delete the tweak. Default (hardcoded) Bash ini tweaks can't be deleted.
 </table>
 
-<h2 id="launchers">Launching Applications</h2>
+<h2 id="launchers">Launching Applications <a class="back2top" href="#contents">Back to top</a></h2>
 <figure class="slideshow">
-<img src="../bash/images/readme/toolbar-10-hover-obse-toggle.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-9-hover-autoquit.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-8-hover-launchgameviaobse.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-7-hover-launchgame.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-6-hover-launchboss.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-4-hover-docbrowser.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-3-hover-modchecker.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-2-hover-settings.png" alt="launcher"/>
-<img src="../bash/images/readme/toolbar-1-hover-helpfile.png" alt="launcher"/>
-<figcaption style="padding-top:80px;">Wrye Bash's launcher bar, at the bottom of its main window.</figcaption>
+<img alt="launcher" src="../bash/images/readme/toolbar-10-hover-obse-toggle.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-9-hover-autoquit.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-8-hover-launchgameviaobse.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-7-hover-launchgame.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-6-hover-launchboss.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-4-hover-docbrowser.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-3-hover-modchecker.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-2-hover-settings.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-1-hover-helpfile.png"/>
+<figcaption class="launchers-figcap">Wrye Bash's launcher bar, at the bottom of its main window.</figcaption>
 </figure>
 <p>At the bottom left of Bash's main window you'll find launch buttons for your game and other applications if they're installed. You'll also find a few toggle buttons and some Wrye Bash feature buttons. Each of the application buttons will be present if the corresponding application is present in the game install directory, or in their default install location if the application is not game-specific.
-<p>Clicking an application's icon will launch it, and clicking a toggle button will change the state of the toggle. Clicking a Wrye Bash feature button will open that feature's window.
-<h3 id="launchers-toggles">Toggle Buttons</h3>
+<p>Clicking an application's icon will launch it, and clicking a toggle button will change the state of the toggle. Clicking a Wrye Bash feature button will open that feature's window.</p>
+<h3 id="launchers-toggles">Toggle Buttons <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead><tr><th>Icon (On)<th>Icon (Off)<th>Toggles<th>Behaviour
     <tbody>
-        <tr><td><img src="../bash/images/checkbox_green_on_32.png" width="32" height="32" alt="checked green checkbox"/><td><img src="../bash/images/checkbox_green_off_32.png" width="32" height="32" alt="unchecked green checkbox"/><td>Script Extender<td>When checked this will launch the game's Script Extender when either the game or game's editor (Construction Set or Creation Kit) buttons are clicked. If the LAA Launcher also launches the game's Script Extender, then unchecking this toggle will also uncheck the LAA Launcher toggle.
-        <tr><td><img src="../bash/images/checkbox_blue_on_32.png" width="32" height="32" alt="checked blue checkbox"/><td><img src="../bash/images/checkbox_blue_off_32.png" width="32" height="32" alt="unchecked blue checkbox"/><td>LAA Launcher<td>When checked this will launch the LAA Launcher when the game button is clicked. If the LAA Launcher also launches the game's Script Extender, checking this will also check the Script Extender toggle.
-        <tr><td><img src="../bash/images/checkbox_red_x_32.png" width="32" height="32" alt="checked red checkbox"/><td><img src="../bash/images/checkbox_red_off_32.png" width="32" height="32" alt="unchecked red checkbox"/><td>Auto-Quit<td>If checked this will cause Bash to quit when launching the game. This is useful if you're concerned about memory usage.
+        <tr><td><img alt="checked green checkbox" src="../bash/images/checkbox_green_on_32.png" width="32" height="32"/>
+            <td><img alt="unchecked green checkbox" src="../bash/images/checkbox_green_off_32.png" width="32" height="32"/>
+            <td>Script Extender
+            <td>When checked this will launch the game's Script Extender when either the game or game's editor (Construction Set or Creation Kit) buttons are clicked. If the LAA Launcher also launches the game's Script Extender, then unchecking this toggle will also uncheck the LAA Launcher toggle.
+        <tr><td><img alt="checked blue checkbox" src="../bash/images/checkbox_blue_on_32.png" width="32" height="32"/>
+            <td><img alt="unchecked blue checkbox" src="../bash/images/checkbox_blue_off_32.png" width="32" height="32"/>
+            <td>LAA Launcher
+            <td>When checked this will launch the LAA Launcher when the game button is clicked. If the LAA Launcher also launches the game's Script Extender, checking this will also check the Script Extender toggle.
+        <tr><td><img alt="checked red checkbox" src="../bash/images/checkbox_red_x_32.png" width="32" height="32"/>
+            <td><img alt="unchecked red checkbox" src="../bash/images/checkbox_red_off_32.png" width="32" height="32"/>
+            <td>Auto-Quit
+            <td>If checked this will cause Bash to quit when launching the game. This is useful if you're concerned about memory usage.
 </table>
-<h3 id="launchers-game">Game &amp; Editor Launchers</h3>
+<h3 id="launchers-game">Game &amp; Editor Launchers <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The game and editor icons displayed will depend on which supported game you have Wrye Bash installed for. Using Wrye Bash's game launcher opens the game itself, rather than the game's launcher.
 <table>
     <thead>
         <tr><th colspan="2">Oblivion<th colspan="2">Skyrim
         <tr><th>Icon<th>Application<th>Icon<th>Application
     <tbody>
-        <tr><td><img src="../bash/images/oblivion32.png" width="32" height="32" alt="Oblivion icon"/><td>Oblivion
-            <td><img src="../bash/images/skyrim32.png" width="32" height="32" alt="Skyrim icon"/><td>Skyrim
-        <tr><td><img src="../bash/images/tescs32.png" width="32" height="32" alt="Oblivion CS icon"/><td><a href="http://cs.elderscrolls.com/constwiki/index.php/The_Elder_Scrolls_Construction_Set">TES Construction Set</a>
-            <td><img src="../bash/images/creationkit32.png" width="32" height="32" alt="Creation Kit icon"/><td><a href="http://www.creationkit.com/">Skyrim Creation Kit</a>
+        <tr><td><img alt="Oblivion icon" src="../bash/images/oblivion32.png" width="32" height="32"/><td>Oblivion
+            <td><img alt="Skyrim icon" src="../bash/images/skyrim32.png" width="32" height="32"/><td>Skyrim
+        <tr><td><img alt="Oblivion CS icon" src="../bash/images/tescs32.png" width="32" height="32"/><td><a href="https://cs.elderscrolls.com/index.php?title=The_Elder_Scrolls_Construction_Set">TES Construction Set</a>
+            <td><img alt="Creation Kit icon" src="../bash/images/creationkit32.png" width="32" height="32"/><td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a>
 </table>
-<h3 id="launchers-utils">Game-Specific Utilities</h3>
+<h3 id="launchers-utils">Game-Specific Utilities <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available. Tes4Gecko &amp; Oblivion Book Creator will be available if the windows path variable <code>JAVA_HOME</code> points to a valid java install (or the javaw.exe is present in Windows\System32) and their .jar file is present in Oblivion install directory or for OBC in the data directory (you can override those default paths in bash.ini). The BOSS launcher has some options if BOSS v2 is installed:
 <ul>
  <li>Right-clicking the BOSS icon and selecting <q id="launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</q> will cause Wrye Bash to temporarily disable Lock Load Order
      when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order, re-enabling it after BOSS has finished running. It has no effect when BOSS
      is run from outside Wrye Bash, or when Wrye Bash is running for Skyrim.
  <li>Right-clicking the BOSS icon and selecting the <q>Launch BOSS GUI</q> will cause Wrye Bash to launch BOSS's GUI instead of its command line interface.
-    <li>If <b>V</b> is pressed, it will disable version parsing.
-    <li>If <b>R</b> is pressed, it will do a level 1 revert (to the state just prior to the last sort).
-    <li>If <b>Shift-R</b> is pressed, it will do a level 2 revert (to the state just prior to the 2nd last sort).
-    <li>If <b>S</b> is pressed, it will run BOSS in its silent mode, so that the BOSS Log does not automatically open once it has finished running.
-    <li>If <b>C</b> is pressed, it will run BOSS with its Display File CRCs option enabled, so that plugin CRCs are displayed in the BOSS Log.
+    <li>If <strong>V</strong> is pressed, it will disable version parsing.
+    <li>If <strong>R</strong> is pressed, it will do a level 1 revert (to the state just prior to the last sort).
+    <li>If <strong>Shift-R</strong> is pressed, it will do a level 2 revert (to the state just prior to the 2nd last sort).
+    <li>If <strong>S</strong> is pressed, it will run BOSS in its silent mode, so that the BOSS Log does not automatically open once it has finished running.
+    <li>If <strong>C</strong> is pressed, it will run BOSS with its Display File CRCs option enabled, so that plugin CRCs are displayed in the BOSS Log.
 </ul>
 <table>
     <thead>
         <tr><th colspan="2">Oblivion<th colspan="2">Skyrim
         <tr><th>Icon<th>Application<th>Icon<th>Application
     <tbody>
-        <tr><td><img src="../bash/images/obmm32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/2097">Oblivion Mod Manager</a>
-            <td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://boss-developers.github.io">BOSS</a>
-        <tr><td><img src="../bash/images/tools/isobl32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher</a>
+        <tr><td><img alt="tool image" src="../bash/images/boss32.png" width="32" height="32"></td><td><a href="http://boss-developers.github.io">BOSS</a>
+            <td><img alt="tool image" src="../bash/images/boss32.png" width="32" height="32"></td><td><a href="http://boss-developers.github.io">BOSS</a>
+        <tr><td><img alt="tool image" src="../bash/images/loot32.png" width="32" height="32"/><td><a href="https://loot.github.io/">LOOT</a>
+            <td><img alt="tool image" src="../bash/images/loot32.png" width="32" height="32"/><td><a href="https://loot.github.io/">LOOT</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/tes4edit32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/11536">TES4Edit</a>
+            <td><img alt="tool image" src="../bash/images/tools/tes4edit32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/skyrim/mods/25859">TES5Edit</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/tes4lodgen32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/15781">TES4LODGen</a>
+            <td><img alt="tool image" src="../bash/images/tools/tes4lodgen32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/skyrim/mods/62698/">TES5LODGen</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/bsacommander32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/3311">BSA Commander</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/insanity'sreadmegenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/interactivemapofcyrodiil32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/insanity'srng32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/oblivionbookcreator32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/42132">Oblivion Book Creator</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/randomnpc32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/oblivionfaceexchangerlite32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/7808">Oblivion Face Exchange Lite</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/oblivionfaceexchangerlite32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/7808">Oblivion Face Exchange Lite</a>
+        <tr><td><img alt="tool image" src="../bash/images/obmm32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/2097">Oblivion Mod Manager</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/modlistgenerator32.png" width="32" height="32" alt="tool image"/><td><a href="http://tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Oblivion Mod List Generator</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/tabula32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/33486">Tabula</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/oblivionbookcreator32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/42132">Oblivion Book Creator</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/tes4files32.png" width="32" height="32"/><td><a href="http://modsreloaded.com/tes4files">TES4Files</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/bsacommander32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/3311">BSA Commander</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/tes4gecko32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/8665">TES4Gecko</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/tabula32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/33486">Tabula</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/isobl32.png" width="32" height="32"/><td><a href="https://web.archive.org/web/20121102053259/https://tesalliance.org/forums/index.php?/files/file/132-insanitys-oblivion-launcher/">Insanity Sorrow's Oblivion Launcher (offline)</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/tes4files32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/8489">Tes4Files</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/modlistgenerator32.png" width="32" height="32"/><td><a href="https://web.archive.org/web/20121108015410/https://tesalliance.org/forums/index.php?/files/file/280-oblivion-mod-list-generator/">Insanity Sorrow's Oblivion Mod List Generator (offline)</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/tes4gecko32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/8665">Tes4Gecko</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/insanity'srng32.png" width="32" height="32"/><td><a href="https://web.archive.org/web/20120618163702/https://tesalliance.org/forums/index.php?/files/file/131-random-name-generator/">Insanity Sorrow's Random Name Generator (offline)</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/tes4view32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/11536">Tes4View</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/randomnpc32.png" width="32" height="32"/><td><a href="https://web.archive.org/web/20121105223820/https://tesalliance.org/forums/index.php?/files/file/128-random-npc/">Insanity Sorrow's Random NPC Generator (offline)</a>
             <td><td>
-        <tr><td><img src="../bash/images/tools/tes4edit32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/11536">Tes4Edit</a>
-            <td><td>
-        <tr><td><img src="../bash/images/tools/tes4trans32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/11536">Tes4Trans</a>
-            <td><td>
-        <tr><td><img src="../bash/images/tools/tes4lodgen32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/15781">Tes4LodGen</a>
-            <td><td>
-        <tr><td><img src="../bash/images/boss32.png" width="32" height="32" alt="tool image"/><td><a href="http://boss-developers.github.io">BOSS</a>
-            <td><td>
-        <tr><td><img src="../bash/images/tools/interactivemapofcyrodiil32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/3961">Interactive Map of Cyrodiil and Shivering Isles</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/insanity'sreadmegenerator32.png" width="32" height="32"/><td><a href="https://web.archive.org/web/20120603032215/https://tesalliance.org/forums/index.php?/files/file/130-insanitys-readme-generator/">Insanity Sorrow's Readme Generator (offline)</a>
             <td><td>
 </table>
-<h3 id="launchers-apps">Other Applications</h3>
+<h3 id="launchers-apps">Other Applications <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead>
         <tr><th colspan="2">Model Tools<th colspan="2">Texture Tools<th colspan="2">Audio Tools<th colspan="2">Misc
         <tr><th>Icon<th>Application<th>Icon<th>Application<th>Icon<th>Application<th>Icon<th>Application
     <tbody>
-        <tr><td><img src="../bash/images/tools/artofillusion32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artofillusion.org/">Art of Illusion</a>
-            <td><img src="../bash/images/tools/anifx32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/anifx/index.html">AniFX</a>
-                <td><img src="../bash/images/tools/audacity32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.audacityteam.org/">Audacity</a>
-                    <td><img src="../bash/images/tools/fraps32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.fraps.com/download.php">Fraps</a>
-        <tr><td><img src="../bash/images/tools/autocad32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13799652">AutoCad</a>
-            <td><img src="../bash/images/tools/artweaver32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.artweaver.de/">Artweaver</a>
-                <td><img src="../bash/images/tools/abcamberaudioconverter32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.processtext.com/abcmp3wav.html">ABC Amber Audio Converter</a>
-                    <td><img src="../bash/images/tools/logitechkeyboard32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.logitech.com/index.cfm/434/285&amp;cl=za">Logitech G11 Keyboard Profiler</a>
-        <tr><td><img src="../bash/images/tools/blender32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.blender.org">Blender</a>
-            <td><img src="../bash/images/tools/crazybump32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.crazybump.com/">CrazyBump</a>
-                <td><img src="../bash/images/tools/switch32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.nch.com.au/switch/index.html">Switch</a>
-                    <td><img src="../bash/images/tools/mediamonkey32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediamonkey.com/">Media Monkey</a>
-        <tr><td><img src="../bash/images/tools/gmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.turbosquid.com/gmax">GMax</a>
-            <td><img src="../bash/images/tools/ddsconverter32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.nexusmods.com/oblivion/mods/8698/">DDSConverter2</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/artofillusion32.png" width="32" height="32"/><td><a href="http://www.artofillusion.org/">Art of Illusion</a>
+            <td><img alt="tool image" src="../bash/images/tools/anifx32.png" width="32" height="32"/><td><a href="https://icofx.ro/">AniFX (now icofx)</a>
+                <td><img alt="tool image" src="../bash/images/tools/abcamberaudioconverter32.png" width="32" height="32"/><td><a href="https://archive.org/details/tucows_372588_ABC_Amber_Audio_Converter">ABC Amber Audio Converter</a>
+                    <td><img alt="tool image" src="../bash/images/tools/eggtranslator32.png" width="32" height="32"/><td><a href="https://www.ei-der-zeit.com/forum/filebase/index.php?entry/325-egg-translator/">Egg Translator</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/autocad32.png" width="32" height="32"/><td><a href="https://www.autodesk.com/products/autocad/overview">AutoCad</a>
+            <td><img alt="tool image" src="../bash/images/tools/artweaver32.png" width="32" height="32"/><td><a href="https://www.artweaver.de/en">Artweaver</a>
+                <td><img alt="tool image" src="../bash/images/tools/audacity32.png" width="32" height="32"/><td><a href="https://www.audacityteam.org/">Audacity</a>
+                    <td><img alt="tool image" src="../bash/images/tools/evgaprecision32.png" width="32" height="32"/><td><a href="https://www.evga.com/">EVGA Precision</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/blender32.png" width="32" height="32"/><td><a href="https://www.blender.org">Blender</a>
+            <td><img alt="tool image" src="../bash/images/tools/crazybump32.png" width="32" height="32"/><td><a href="https://www.crazybump.com/">CrazyBump</a>
+                <td><img alt="tool image" src="../bash/images/tools/switch32.png" width="32" height="32"/><td><a href="https://www.nch.com.au/switch/index.html">Switch</a>
+                    <td><img alt="tool image" src="../bash/images/tools/fraps32.png" width="32" height="32"/><td><a href="http://www.fraps.com/">Fraps</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/gmax32.png" width="32" height="32"/><td><a href="https://www.turbosquid.com/gmax">GMax</a>
+            <td><img alt="tool image" src="../bash/images/tools/ddsconverter32.png" width="32" height="32"/><td><a href="https://www.nexusmods.com/oblivion/mods/8698/">DDSConverter2</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/notepad++32.png" width="32" height="32" alt="tool image"/><td><a href="https://notepad-plus-plus.org/">Notepad++</a>
-        <tr><td><img src="../bash/images/tools/maya32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13577897">Maya</a>
-            <td><img src="../bash/images/tools/deeppaint32.png" width="32" height="32" alt="tool image"/><td><a href="http://download.chip.eu/en/Deep-Paint-2.0_132831.html">DeepPaint</a>
+                    <td><img alt="tool image" src="../bash/images/tools/freemind32.png" width="32" height="32"/><td><a href="http://freemind.sourceforge.net/wiki/index.php/Main_Page">FreeMind</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/maya32.png" width="32" height="32"/><td><a href="https://www.autodesk.com/products/maya/overview">Maya</a>
+            <td><img alt="tool image" src="../bash/images/tools/deeppaint32.png" width="32" height="32"/><td><a href="https://www.chip.de/downloads/Deep-Paint_16395518.html">DeepPaint</a>
                 <td><td>
-                    <td><img src="../bash/images/steam32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.steampowered.com/">Steam</a>
-        <tr><td><img src="../bash/images/tools/3dsmax32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13567410">3ds Max</a>
-            <td><img src="../bash/images/tools/dogwaffle32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.thebest3d.com/dogwaffle/free/">Dogwaffle</a>
+                    <td><img alt="tool image" src="../bash/images/tools/freeplane32.png" width="32" height="32"/><td><a href="https://freeplane.sourceforge.io/wiki/index.php/Home">Freeplane</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/3dsmax32.png" width="32" height="32"/><td><a href="https://www.autodesk.com/products/3ds-max/overview">3ds Max</a>
+            <td><img alt="tool image" src="../bash/images/tools/dogwaffle32.png" width="32" height="32"/><td><a href="https://www.thebest3d.com/dogwaffle/free/">Dogwaffle</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/evgaprecision32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.evga.com/">EVGA Precision</a>
-        <tr><td><img src="../bash/images/tools/milkshape3d32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.milkshape3d.com/">MilkShape 3D</a>
-            <td><img src="../bash/images/tools/genetica32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/genetica.htm">Genetica</a>
+                    <td><img alt="tool image" src="../bash/images/tools/filezilla32.png" width="32" height="32"/><td><a href="https://filezilla-project.org/">Filezilla</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/milkshape3d32.png" width="32" height="32"/><td><a href="http://www.milkshape3d.com/">MilkShape 3D</a>
+            <td><img alt="tool image" src="../bash/images/tools/faststoneimageviewer32.png" width="32" height="32"/><td><a href="https://www.faststone.org/">FastStone Image Viewer</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/winmerge32.png" width="32" height="32" alt="tool image"/><td><a href="http://winmerge.org/">WinMerge</a>
-        <tr><td><img src="../bash/images/tools/mudbox32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/index?siteID=123112&amp;id=13565063">Mudbox</a>
-            <td><img src="../bash/images/tools/geneticaviewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.spiralgraphics.biz/viewer/">Genetica Viewer</a>
+                    <td><img alt="tool image" src="../bash/images/tools/logitechkeyboard32.png" width="32" height="32"/><td><a href="https://support.logitech.com/en_ca/product/g11-gaming-keyboard">Logitech G11 Keyboard Profiler</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/mudbox32.png" width="32" height="32"/><td><a href="https://www.autodesk.com/products/mudbox/overview">Mudbox</a>
+            <td><img alt="tool image" src="../bash/images/tools/genetica32.png" width="32" height="32"/><td><a href="http://spiralgraphics.biz/genetica.htm">Genetica</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/freemind32.png" width="32" height="32" alt="tool image"/><td><a href="http://freemind.sourceforge.net/wiki/index.php/Main_Page">FreeMind</a>
-        <tr><td><img src="../bash/images/tools/sculptris32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.sculptris.com">Sculptris</a>
-            <td><img src="../bash/images/tools/gimp32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.gimp.org/">GIMP</a>
+                    <td><img alt="tool image" src="../bash/images/tools/mediamonkey32.png" width="32" height="32"/><td><a href="https://www.mediamonkey.com/">Media Monkey</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/nifskope32.png" width="32" height="32"/><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
+            <td><img alt="tool image" src="../bash/images/tools/geneticaviewer32.png" width="32" height="32"/><td><a href="http://spiralgraphics.biz/viewer/">Genetica Viewer</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/freeplane32.png" width="32" height="32" alt="tool image"/><td><a href="http://freeplane.sourceforge.net/wiki/index.php/Main_Page">Freeplane</a>
-        <tr><td><img src="../bash/images/tools/softimagemodtool32.png" width="32" height="32" alt="tool image"/><td><a href="http://usa.autodesk.com/adsk/servlet/pc/item?id=13571257&amp;siteID=123112">Softimage Mod Tool</a>
-			<td><img src="../bash/images/tools/krita32.png" width="32" height="32" alt="tool image"/><td><a href="https://krita.org/">Krita</a>
+                     <td><img alt="tool image" src="../bash/images/tools/notepad++32.png" width="32" height="32"/><td><a href="https://notepad-plus-plus.org/">Notepad++</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/sculptris32.png" width="32" height="32"/><td><a href="https://pixologic.com/sculptris/">Sculptris</a>
+            <td><img alt="tool image" src="../bash/images/tools/gimp32.png" width="32" height="32"/><td><a href="https://www.gimp.org/">GIMP</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/filezilla32.png" width="32" height="32" alt="tool image"/><td><a href="http://filezilla-project.org/">Filezilla</a>
-        <tr><td><img src="../bash/images/tools/speedtree32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.speedtree.com/">SpeedTree</a>
-            <td><img src="../bash/images/tools/icofx32.png" width="32" height="32" alt="tool image"/><td><a href="http://icofx.ro/index.html">IcoFX</a>
+                    <td><img alt="tool image" src="../bash/images/tools/radvideotools32.png" width="32" height="32"/><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/softimagemodtool32.png" width="32" height="32"/><td><a href="https://developer.valvesoftware.com/wiki/Softimage_Mod_Tool">Softimage Mod Tool</a>
+            <td><img alt="tool image" src="../bash/images/tools/krita32.png" width="32" height="32"/><td><a href="https://krita.org/">Krita</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/eggtranslator32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.egg-of-time.us/portal/index.php?option=com_content&amp;view=article&amp;id=1825">Egg Translator</a>
-        <tr><td><img src="../bash/images/tools/treed32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.frecle.net/index.php?show=treed.about">Treed</a>
-            <td><img src="../bash/images/tools/inkscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.inkscape.org/">Inkscape</a>
+                     <td><img alt="tool image" src="../bash/images/steam32.png" width="32" height="32"/><td><a href="https://www.steampowered.com/">Steam</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/speedtree32.png" width="32" height="32"/><td><a href="https://store.speedtree.com/">SpeedTree</a>
+            <td><img alt="tool image" src="../bash/images/tools/icofx32.png" width="32" height="32"/><td><a href="http://icofx.ro/index.html">icoFX</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/radvideotools32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.radgametools.com/bnkdown.htm">RAD Video Tools</a>
-        <tr><td><img src="../bash/images/tools/wings3d32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.wings3d.com/">Wings3D</a>
-            <td><img src="../bash/images/tools/irfanview32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.irfanview.com/">Irfan View</a>
+                    <td><img alt="tool image" src="../bash/images/tools/winmerge32.png" width="32" height="32"/><td><a href="http://winmerge.org/">WinMerge</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/treed32.png" width="32" height="32"/><td><a href="https://web.archive.org/web/20130915030534/http://www.frecle.net:80/index.php?show=treed.about">tree[d]</a>
+            <td><img alt="tool image" src="../bash/images/tools/inkscape32.png" width="32" height="32"/><td><a href="https://www.inkscape.org/">Inkscape</a>
                 <td><td>
-                    <td><img src="../bash/images/tools/winsnap32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.filehippo.com/download_winsnap/">WinSnap</a>
-        <tr><td><img src="../bash/images/tools/nifskope32.png" width="32" height="32" alt="tool image"/><td><a href="http://niftools.sourceforge.net/wiki/NifTools">Nifskope</a>
-            <td><img src="../bash/images/tools/faststoneimageviewer32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.faststone.org/">FastStone Image Viewer</a>
-                <td><td>
-                    <td><td>
-        <tr><td><td>
-            <td><img src="../bash/images/tools/nvidiamelody32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.nvidia.com/object/melody_home.html">NVIDIAMelody</a>
+                    <td><img alt="tool image" src="../bash/images/tools/winsnap32.png" width="32" height="32"/><td><a href="https://www.majorgeeks.com/files/details/winsnap.html">WinSnap</a>
+        <tr><td><img alt="tool image" src="../bash/images/tools/wings3d32.png" width="32" height="32"/><td><a href="http://www.wings3d.com/">Wings3D</a>
+            <td><img alt="tool image" src="../bash/images/tools/irfanview32.png" width="32" height="32"/><td><a href="https://www.irfanview.com/">Irfan View</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/paint.net32.png" width="32" height="32" alt="tool image"/><td><a href="https://www.getpaint.net/index.html">Paint.NET</a>
+            <td><img alt="tool image" src="../bash/images/tools/nvidiamelody32.png" width="32" height="32"/><td><a href="https://www.nvidia.com/object/melody_home.html">NVIDIAMelody</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/paintshopprox332.png" width="32" height="32" alt="tool image"/><td><a href="http://www.corel.com/servlet/Satellite/us/en/Product/1184951547051">PaintShop Photo Pro</a>
+            <td><img alt="tool image" src="../bash/images/tools/paint.net32.png" width="32" height="32"/><td><a href="https://www.getpaint.net/index.html">Paint.NET</a>
+                <td><td>
+                    <td><td>
+        <tr><td><td>
+            <td><img alt="tool image" src="../bash/images/tools/paintshopprox332.png" width="32" height="32"/><td><a href="https://www.paintshoppro.com/en/products/paintshop-pro/standard/?pid=prod4220093&storeKey=us">PaintShop Photo Pro</a>
                 <td><td>
                     <td><td>
             <tr><td><td>
-            <td><img src="../bash/images/tools/photobie32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photobie.com/">Photobie Design Studio</a>
+            <td><img alt="tool image" src="../bash/images/tools/photobie32.png" width="32" height="32"/><td><a href="https://www.majorgeeks.com/files/details/photobie.html">Photobie Design Studio</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/photofiltre32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photofiltre.com/">PhotoFiltre</a>
+            <td><img alt="tool image" src="../bash/images/tools/photofiltre32.png" width="32" height="32"/><td><a href="http://www.photofiltre.com/">PhotoFiltre</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/photoscape32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.photoscape.org/ps/main/index.php">PhotoScape</a>
+            <td><img alt="tool image" src="../bash/images/tools/photoscape32.png" width="32" height="32"/><td><a href="http://www.photoscape.org/ps/main/index.php">PhotoScape</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/photoseam32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.mediachance.com/pseam/">PhotoSEAM</a>
+            <td><img alt="tool image" src="../bash/images/tools/photoseam32.png" width="32" height="32"/><td><a href="https://www.mediachance.com/pseam/">PhotoSEAM</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/photoshop32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.adobe.com/">Photoshop</a>
+            <td><img alt="tool image" src="../bash/images/tools/photoshop32.png" width="32" height="32"/><td><a href="https://www.adobe.com/ca/products/photoshop.html">Photoshop</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/pixelstudiopro32.png" width="32" height="32" alt="tool image"/><td><a href="http://pixelstudiopro.com/">Pixel Studio Pro</a>
+            <td><img alt="tool image" src="../bash/images/tools/pixelstudiopro32.png" width="32" height="32"/><td><a href="https://www.softpedia.com/get/Multimedia/Graphic/Graphic-Editors/Pixel32.shtml">Pixel Studio Pro</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/pixia32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.ne.jp/asahi/mighty/knight/index.html">Pixia</a>
+            <td><img alt="tool image" src="../bash/images/tools/pixia32.png" width="32" height="32"/><td><a href="https://www.ne.jp/asahi/mighty/knight/index.html">Pixia</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/texturemaker32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.texturemaker.com/download.php">TextureMaker</a>
+            <td><img alt="tool image" src="../bash/images/tools/texturemaker32.png" width="32" height="32"/><td><a href="http://www.texturemaker.com/download.php">TextureMaker</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/twistedbrush32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.pixarra.com/">Twisted Brush</a>
+            <td><img alt="tool image" src="../bash/images/tools/twistedbrush32.png" width="32" height="32"/><td><a href="http://www.pixarra.com/pro_studio.html">Twisted Brush</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/wtv32.png" width="32" height="32" alt="tool image"/><td><a href="http://developer.nvidia.com/object/windows_texture_viewer.html">Windows Texture Viewer</a>
+            <td><img alt="tool image" src="../bash/images/tools/wtv32.png" width="32" height="32"/><td><a href="https://developer.nvidia.com/sites/default/files/akamai/tools/files/Windows_Texture_Viewer_v089b.rar">Windows Texture Viewer</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/xnormal32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnormal.net/">xNormal</a>
+            <td><img alt="tool image" src="../bash/images/tools/xnormal32.png" width="32" height="32"/><td><a href="https://www.xnormal.net/">xNormal</a>
                 <td><td>
                     <td><td>
         <tr><td><td>
-            <td><img src="../bash/images/tools/xnview32.png" width="32" height="32" alt="tool image"/><td><a href="http://www.xnview.com/">XnView</a>
+            <td><img alt="tool image" src="../bash/images/tools/xnview32.png" width="32" height="32"/><td><a href="https://www.xnview.com/en/xnview/">XnView</a>
                 <td><td>
                     <td><td>
 </table>
-<h3 id="launchers-features">Wrye Bash Feature Launchers</h3>
+<h3 id="launchers-features">Wrye Bash Feature Launchers <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead><tr><th>Icon<th>Feature<th>Description
     <tbody>
-        <tr><td><img src="../bash/images/docbrowser32.png" width="32" height="32" alt="tool image"/><td>Doc Browser<td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-docs">Doc Browser</a>. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
-        <tr><td id="launchersModChecker"><img src="../bash/images/modchecker32.png" width="32" height="32" alt="tool image"/><td>Mod Checker<td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Mod Checker</a>.
-        <tr><td id="launchersSettingsMenu"><img src="../bash/images/settingsbutton32.png" width="32" height="32" alt="tool image"/><td>Settings<td>Brings up the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings Menu</a>.
-        <tr><td><img src="../bash/images/help32.png" width="32" height="32" alt="tool image"/><td>Help<td>Show this help file in the default web browser.
+        <tr><td><img alt="tool image" src="../bash/images/docbrowser32.png" width="32" height="32"/>
+            <td>Doc Browser
+            <td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-docs">Doc Browser</a>. (You can also view the doc browser by double clicking on any mod file in the Mods tab.)
+        <tr><td id="launchersModChecker"><img alt="tool image" src="../bash/images/modchecker32.png" width="32" height="32"/>
+            <td>Mod Checker
+            <td>Show the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-checker">Mod Checker</a>.
+        <tr><td id="launchersSettingsMenu"><img alt="tool image" src="../bash/images/settingsbutton32.png" width="32" height="32"/>
+            <td>Settings
+            <td>Brings up the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings Menu</a>.
+        <tr><td><img alt="tool image" src="../bash/images/help32.png" width="32" height="32"/>
+            <td>Help
+            <td>Show this help file in the default web browser.
 </table>
 
-<h3 id="manually-add">Manually adding tools to the Launcher Bar</h3>
+<h3 id="manually-add">Manually adding tools to the Launcher Bar <a class="back2top" href="#contents">Back to top</a></h3>
 <p>To do this find and Right Click on a tools .exe file, and choose send to desktop
 <p>Copy this Icon from the desktop and paste it into the Mopy \ Apps \ folder ( The temporary desktop icon copy can now be deleted )
 <p>When you next run Wrye Bash the icon will be in the Launcher Bar, and you can Drag and drop the new icon to a desired position
-<p>Be careful not to use up all the available space and prevent tooltip messages appearing next to the Launcher Bar
+<p>Be careful not to use up all the available space and prevent tooltip messages appearing next to the Launcher Bar</p>
 
-<h2 id="trouble">Troubleshooting</h2>
-<h3 id="trouble-dump">Generating A Bug Dump</h3>
+<h2 id="trouble">Troubleshooting <a class="back2top" href="#contents">Back to top</a></h2>
+<h3 id="trouble-dump">Generating A Bug Dump <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If Wrye Bash encounters an issue, it will generate a bug dump that will appear in a popup window. If an issue is encountered during startup, Wrye Bash may be unable to create the popup window, and so the bug dump will be saved to a log file, either <code>bash.log</code> or <code>Wrye Bash.exe.log</code> depending on the version of Wrye Bash you use. If no log file is present, then you will have to generate it yourself, using the steps below.
 <ol>
-    <li>Open a command prompt. This can be done by selecting Start->Programs->Accessories->Command Prompt.
+    <li>Open a command prompt. This can be done by selecting Start-&gt;Programs-&gt;Accessories-&gt;Command Prompt.
     <li>Change the working directory to the <code>Mopy</code> directory. E.g. <code>cd /D "C:\Program Files\Bethesda Softworks\Oblivion\Mopy"</code> if Wrye Bash is installed for Oblivion.
-    <li>If using the Python version of Wrye Bash: Run <code>"Wrye Bash Debug.py" -d > bash.log</code>.
+    <li>If using the Python version of Wrye Bash: Run <code>"Wrye Bash Debug.py" -d &gt; bash.log</code>.
     <ul>
         <li>If that does not work, try <code>"C:\python27\python.exe" "Wrye Bash Debug.py" -d</code>. This assumes that you have Python 2.7 installed to the default directory. Adjust the above to reference the correct path if not.
     </ul>
     If using the Standalone version of Wrye Bash: Run <code>"Wrye Bash.exe" -d</code>.
 </ol>
-<p>The log file will detail the cause of the problem that is stopping Wrye Bash from starting. Read it and the rest of this section to see if the problem is something you can fix yourself. If not, report it to an official Wrye Bash thread for support.
+<p>The log file will detail the cause of the problem that is stopping Wrye Bash from starting. Read it and the rest of this section to see if the problem is something you can fix yourself. If not, report it to an official Wrye Bash thread for support.</p>
 
-<h3 id="trouble-permissions">File Permissions</h3>
+<h3 id="trouble-permissions">File Permissions <a class="back2top" href="#contents">Back to top</a></h3>
 <p>If you are running Windows Vista or later, Wrye Bash (and other modding programs) may be prevented from working correctly by the UAC security feature.  There are four common workarounds to this problem:
 <ol>
     <li>Install the game outside <q>Program Files</q> or <q>Program Files (x86)</q>. UAC prevents unauthorised edits to these folders, so by installing the game outside of them, you remove it from UAC's reach, allowing you to use mods more easily. Steam users can move their Steam installation and games using <a href="https://support.steampowered.com/kb_article.php?ref=7418-YUBN-8129">these instructions</a>.
@@ -1032,7 +1057,7 @@ from other packages previously overridden by the uninstalled package's
     <li>In the <q>Properties</q> window, select OK to exit. You should now have Full Control permissions over your chosen folder.
 </ol>
 
-<h3 id="trouble-backup">Backing Up &amp; Restoring Settings</h3>
+<h3 id="trouble-backup">Backing Up &amp; Restoring Settings <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The easiest method is to just run the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Backup Settings</a> and/or <a href="Wrye%20Bash%20Advanced%20Readme.html#tools">Restore Settings</a> commands, which are available in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>. These commands do not backup/restore any mod files or saves, just the Wrye Bash settings/data. When run, the commands ask you for the location you wish to back up to or restore from.
 <p>If you wish to manually back up your settings, the directories Wrye Bash stores files in are below.
 <table>
@@ -1046,7 +1071,7 @@ from other packages previously overridden by the uninstalled package's
         <tr><td>[Game] Mods (in the same folder as [Game])<td>Contains BAIN packages and other Wrye Bash settings. it is important to back this up.
 </table>
 
-<h3 id="trouble-report">How To Report Bugs Helpfully</h3>
+<h3 id="trouble-report">How To Report Bugs Helpfully <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Bugs should be reported in an official Wrye Bash thread (links can be found in the <a href="#contact">Contact</a> section of this document). In order to best help you, the following information is required.
 <ul>
     <li>Your Wrye Bash version. This includes whether it's the Python or Standalone install, the version number and the SVN number (the latter only if using the SVN).
@@ -1063,12 +1088,12 @@ from other packages previously overridden by the uninstalled package's
     </ul>
 </ul>
 
-<h3 id="trouble-known">Known Bugs</h3>
+<h3 id="trouble-known">Known Bugs <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash, being a complex program, has its share of bugs.
     Visit our <a href="https://github.com/wrye-bash/wrye-bash/issues">issue tracker</a> for know bugs and enhancement requests.
 Respect developer's time - keep discussions there short, sweet and technical. No walls of text or forum chit chat.
 
-<h3 id="trouble-mistakes">Common Issues</h3>
+<h3 id="trouble-mistakes">Common Issues <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
     <thead><tr><th>Issue<th>Cause<th>Solution
     <tbody>
@@ -1076,7 +1101,7 @@ Respect developer's time - keep discussions there short, sweet and technical. No
         <tr><td>Can't Find User Directory<td>The PyWin32 Python module is not installed correctly.<td>Install the Wrye Python package correctly.
         <tr><td>Can't Find wxversion<td>Unknown<td>Uninstall then reinstall Python and wxPython (in that order).
         <tr><td>No module named wx<td>You haven't installed wxPython successfully or you haven't installed it in the right place.<td>Install the Wrye Python package correctly.
-        <tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="http://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download">download PyWin32 separately</a> and install it after installing Wrye Bash.
+        <tr><td>The NTVDM CPU has encountered an illegal instruction.<td>This is a Python issue that causes the installation of PyWin32 (part of the Wrye Python bundle) to fail.<td> One workaround is to use the Standalone version of Wrye Bash. The alternative is to <a href="https://sourceforge.net/projects/pywin32/files/pywin32/Build%20219/pywin32-219.win32-py2.7.exe/download">download PyWin32 separately</a> and install it after installing Wrye Bash.
         <tr><td>Generating comtypes<td>Launching Wrye Bash for the first time after installing ComTypes (part of the Wrye Python bundle).<td>Not an error. Close the popup produced.
         <tr><td>Memory Error. This causes a debug output like the following to appear.
             <code class="box">Traceback (most recent call last):
@@ -1106,160 +1131,194 @@ MemoryError</code>
 </table>
 
 
-<h2 id="credits">Credits</h2>
-<img alt="Monkey God of Modding" src="../bash/images/wrye_monkey_87.jpg">
-<h3>Current Maintainer</h3>
-<ul>
-    <li>Utumno: Complete refactoring of the codebase, performance.
+<h2 id="credits">Credits <a class="back2top" href="#contents">Back to top</a></h2>
+<h3>Creator <a class="back2top" href="#contents">Back to top</a></h3>
+<ul class="nodot">
+  <li><img alt="Monkey God's Icon" class="monkeygod" src="../bash/images/wrye_monkey_64.jpg" width="64" height="64"><span><a href="http://wryemusings.com"><strong>Wrye</strong>:</a> Monkey God of Modding!</span></li>
 </ul>
-
-<h3>Past Authors</h3>
-<ul>
-    <li><b>Wrye</b>: Monkey God of Modding!
-    <li>Ralgor: Cell support and Import Cells.
-    <li>Raziel23x: new tweaks etc.
-    <li>Haama: OBSE cofile definitions, various fixes, improvements etc
-    <li>Badhair: OBSE cofile reading code, various optimizations etc.
-    <li>Breeze582000: Bashmon
-    <li>Pacific Morrowind: New imports, exports, tweaks, etc.
-    <li>Lojack: Wizard based install system, Ini tab, etc.
-    <li>myk002: Project management, Asynchronous installer tab, etc.
-    <li>Waruddar: Extensive additions/improvements/fixes, primary author of CBash
+<h3>Current Maintainer <a class="back2top" href="#contents">Back to top</a></h3>
+<ul class="nodot">
+  <li><img alt="Utumno's Icon" class="bigcred" src="../bash/images/people/utmnavi32.jpg" width="32" height="32"><span><a href="https://github.com/Utumno">Utumno:</a> Complete refactoring of the codebase, performance.</span></li>
 </ul>
-
-<h3>Additional Credits</h3>
-<ul>
-    <li><b>Translators</b>
-    <ul>
-        <li>German: DWS
-        <li>Italian: Abot
-        <li>Portuguese: Hadoki
-        <li>Russian: DJ_Kovrik
-    </ul>
-    <li><b>Mod and Save File Gurus</b>
-    <ul>
-        <li>GhostWheel
-        <li>Dave Humphreys
-        <li>ElminsterEU
-        <li>Rick
-        <li>Resetgun
-        <li>ScripterRon
-        <li>Wrye
-    </ul>
-    <li><b>Python Kings</b>
-    <ul>
-        <li>Guido van Rossum and many, many others.
-    </ul>
-    <li><b>Special Thanks</b>
-    <ul>
-        <li>dev_akm: Archive Invalidation, etc.
-        <li>ElminsterEU: Tes4View etc. Crucial for adding/checking new record types.
-        <li>Quarn: BSA-Redirection, Black Screen Fix
-        <li>Timeslip: BSA editing code, OBMM integration, etc.
-        <li>Veritas_Secreto: Tamriel NPCs Revamped
-    </ul>
-    <li><b>Additional Thanks</b>
-    <ul>
-        <li>ElminsterEU: Bug catching, technical suggestions.
-        <li><img width="32" height="32" alt="Metallicow's Icon" style="align: AbsMiddle;" src="../bash/images/mcowavi32.png"> Metallicow: Shiny new tool launcher icons, Graphics, Mooo, & the WizBAIN Editor.
-        <li>Tom Suprgan: Several well researched suggestions.
-        <li>Sativarg: Proofreading.
-        <li>Kmacg94: Additional power exhaustion coverage.
-        <li>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.
-        <li>WrinklyNinja: The LOOT API, libloadorder and libbsa, and the rewritten documentation included in v297 and later.
-  <li>Alt3rn1ty: For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim SE, and being an all-round bon oeuf.
-  <li>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, trira, WrinklyNinja, and many others.
-    </ul>
-    <li><b>Misc. Resources</b>
-    <ul>
-        <li><a href="http://www.famfamfam.com/lab/icons/silk/">FamFamFam Icons</a>
-        <li><a href="http://www.bluebison.net/">Python and Chameleon images</a>
-    </ul>
+<h3>Authors and Contributors <a class="back2top" href="#contents">Back to top</a></h3>
+<ul class="nodot">
+  <li><img alt="BeermotorWB's Icon" src="../bash/images/people/brmtavi32.png"><span><a href="https://github.com/BeermotorWB">BeermotorWB:</a> Installer directory refinement</span></li>
+  <li><img alt="Badhair's Icon" src="../bash/images/people/gencavi32.png"><span><a href="https://github.com/Badhair">Badhair:</a> OBSE cofile reading code, various optimizations etc.</span></li>
+  <li><img alt="Breeze582000's Icon" src="../bash/images/people/brezavi32.gif"><span><a href="https://www.nexusmods.com/users/245234">Breeze582000:</a> brzMonitor, which inspired Bashmon</span></li>
+  <li><img alt="CptMcSplody's Icon" src="../bash/images/people/cptmavi32.jpg"><span><a href="https://github.com/CptMcSplody">CptMcSplody:</a> Patcher refinement, updating LOOT integration, cell handling</span></li>
+  <li><img alt="Daidalos' Icon" src="../bash/images/people/dlosavi32.png"><span><a href="https://github.com/D4id4los">Daidalos:</a> LOOT API updates, obscure crash and typo corrections</span></li>
+  <li><img alt="FelesNoctis' Icon" src="../bash/images/people/flsnavi32.jpg"><span><a href="https://github.com/FelesNoctis">FelesNoctis:</a> Documentation editor for v307+, image updates</span></li>
+  <li><img alt="GandaG's Icon" src="../bash/images/people/gndaavi32.jpg"><span><a href="https://github.com/GandaG">GandaG:</a> Refactoring and data clean tuneups</span></li>
+  <li><img alt="Haama's Icon" src="../bash/images/people/genravi32.png"><span><a href="https://github.com/Haama">Haama:</a> OBSE cofile definitions, various fixes, improvements etc</span></li>
+  <li><img alt="Infernio's Icon" src="../bash/images/people/ifniavi32.png"><span><a href="https://github.com/Infernio">Infernio:</a> BSA handling updates and refactoring</span></li>
+  <li><img alt="Jfpelland's Icon" src="../bash/images/people/genbavi32.png"><span><a href="https://github.com/jfpelland">jfpelland:</a> Patcher updates, bug fixes, corrected GMST checks</span></li>
+  <li><img alt="Leandor's Icon" src="../bash/images/people/lndravi32.jpg"><span><a href="https://github.com/leandor">Leandor:</a> CBash and CBashAPI updates</span></li>
+  <li><img alt="Lojack's Icon" src="../bash/images/people/lojkavi32.png"><span><a href="https://github.com/lojack5">Lojack:</a> Wizard based install system, Ini tab, etc.</span></li>
+  <li><img alt="Myktaylor's Icon" src="../bash/images/people/myk2avi32.png"><span><a href="https://github.com/myk002">myktaylor:</a> Project management, Asynchronous installer tab, etc</span></li>
+  <li><img alt="Nycz's Icon" src="../bash/images/people/nyczavi32.jpg"><span><a href="https://github.com/nycz">nycz:</a> Linux compatibility, LZ4 and SSE save handling, error handling updates</span></li>
+  <li><img alt="Ortham's Icon" src="../bash/images/people/orthavi32.png"><span><a href="https://github.com/Ortham">Ortham:</a> Refactoring, initial integrations and updates of LOOT API, documentation, libloadorder and libbsa, and the rewritten documentation included in v297 to v306</span></li>
+  <li><img alt="Pacific Morrowind's Icon" src="../bash/images/people/pcmwavi32.jpg"><span><a href="https://github.com/NickWilde1990">Pacific Morrowind:</a> New imports, exports, tweaks, etc</span></li>
+  <li><img alt="Ralgor's Icon" src="../bash/images/people/genpavi32.png"><span><a href="https://github.com/Ralgor">Ralgor:</a> Cell support and Import Cells</span></li>
+  <li><img alt="Raziel23x's Icon" src="../bash/images/people/raziavi32.png"><span><a href="https://github.com/Raziel23x">Raziel23x:</a> new tweaks etc.</span></li>
+  <li><img alt="Sharlikran's Icon" src="../bash/images/people/sharavi32.jpg"><span><a href="https://github.com/Sharlikran">Sharlikran:</a> Fallout 3/NVsupport, initial ESL support, save game/module header restructuring, form version recognition, patcher updates, heavyweight contender of the community</span></li>
+  <li><img alt="Waruddar's Icon" src="../bash/images/people/waruavi32.gif"><span><a href="https://www.nexusmods.com/users/456936">Waruddar:</a> Extensive additions/improvements/fixes, primary author of CBash</span></li>
+  <li><img alt="Valda's Icon" src="../bash/images/people/vldaavi32.jpg"><span><a href="https://github.com/valda">Valda:</a> Assisted with Fallout 3/New Vegas support, including new patchers</span></li>
 </ul>
-
-<h3>Homage Credits</h3>
-<p>Aka. ideas/stuff stolen from other people.
-<ul>
-    <li><b>Names Files</b>
+<h3>Additional Credits <a class="back2top" href="#contents">Back to top</a></h3>
+<ul class="nodot">
+  <li>
+    <strong>Translators</strong>
     <ul>
-        <li>Flak: <a href="http://planetelderscrolls.gamespy.com/View.php?view=OblivionMods.Detail&amp;id=123">Flak's Complete Names Project</a>
+      <li><img alt="Flag of Germany" src="../bash/images/Flag_of_Germany_32.png"><span>German:</span><img alt="DWS's Icon" src="../bash/images/bash_32_2.png"><span><a href="http://mw.modhistory.com/search-au-DWS">DWS</a></span></li>
+      <li><img alt="Flag of Italy" src="../bash/images/Flag_of_Italy_32.png"><span>Italian:</span><img alt="Abot's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/38047">Abot</a></span></li>
+      <li><img alt="Flag of Portugal" src="../bash/images/Flag_of_Brazil_32.png"><span>Portuguese:</span><img alt="Hadoki's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/323588">Hadoki</a></span></li>
+      <li><img alt="Flag of Russia" src="../bash/images/Flag_of_Russia_32.png"><span>Russian:</span><img alt="DJ Kovrik's Icon" src="../bash/images/people/djkvavi32.jpg"><span><a href="https://www.nexusmods.com/users/100354">DJ_Kovrik</a></span></li>
     </ul>
-    <li><b>Bash Features</b>
+  </li>
+  <li>
+    <strong>Mod and Save File Gurus</strong>
     <ul>
-        <li>Kyorisu: Tes IV Save Manager (Save Profiles)
-        <li>No Light Flicker: Crypton's No Light Flicker mods
+      <li><img alt="Dave Humphrey's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://en.uesp.net/wiki/User:Daveh">Dave Humphrey</a></span></li>
+      <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterEU</a></span></li>
+      <li><img alt="GhostWheel's Icon" src="../bash/images/people/uespavi32.png"><span><a href="http://mw.modhistory.com/search-au-Ghostwheel">GhostWheel</a></span></li>
+      <li><img alt="Resetgun's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://www.nexusmods.com/users/99351">Resetgun</a>, aka mpuonti</span></li>
+      <li><img alt="Rick's Icon" src="../bash/images/people/uespavi32.png"><span><a href="https://en.uesp.net/wiki/User:Rick">Rick</a></span></li>
+      <li><img alt="Scripter Ron's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/users/123768">ScripterRon</a></span></li>
+      <li><img alt="Monkey God's Icon" src="../bash/images/wrye_monkey_64.jpg"><span><a href="http://wryemusings.com"><strong>Wrye</strong></a></span></li>
     </ul>
-    <li><b>GMST Tweaks</b>
+  </li>
+  <li>
+    <strong>Python Kings</strong>
     <ul>
-        <li>Aelius: Arrow Litter, Essential NPC Unconsciousness
-        <li>David Moyer: PC Death Camera
-        <li>dbolivar, Acleacius: Horse Turning Speed
-        <li>demuerte: Chameleon: No Refraction
-        <li>Ravida: Fatigue from Running/Encumbrance
-        <li>timmypod: Unlimited Amulets and Rings
-        <li>Woodman: Chase Camera
-        <li>KseAli: POI Visibility
-        <li>Tom Supergan: Chase Camera Distance
-        <li>showler: AI: Max Dead Actors
-        <li>??: Compass Disable
-        <li>??: Compass: POI Recognition
+      <li><img alt="Python Kings' Icon" src="../bash/images/bash_32_2.png"><span>Guido van Rossum and many, many others.</span></li>
     </ul>
+  </li>
+  <li>
+    <strong>Special Thanks</strong>
+    <ul>
+      <li><img alt="dev_akm's Icon" src="../bash/images/people/dakmavi32.jpg"><span><a href="http://devakm.urikslargda.com">dev_akm:</a> Archive Invalidation, etc.</span></li>
+      <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterEU:</a> <a href="https://tes5edit.github.io/">xEdit</a> etc. Crucial for adding/checking new record types.</span></li>
+      <li><img alt="Quarn's Icon" src="../bash/images/people/qurnavi32.png"><span><a href="https://www.nexusmods.com/users/75927">Quarn:</a> BSA-Redirection, Black Screen Fix</span></li>
+      <li><img alt="Timeslip's Icon" src="../bash/images/people/tslpavi32.png"><span><a href="http://timeslip.chorrol.com">Timeslip:</a> BSA editing code, OBMM integration, etc.</span></li>
+      <li><img alt="Veritas Secreto's Icon" src="../bash/images/bash_32_2.png"><span>Veritas_Secreto: <a href="https://www.nexusmods.com/oblivion/mods/39872">Tamriel NPCs Revamped</a></span></li>
+    </ul>
+  </li>
+  <li>
+    <strong>Additional Thanks</strong>
+    <ul>
+      <li><img alt="Alternity's Icon" src="../bash/images/people/altyavi32.gif"><span><a href="https://afkmods.iguanadons.net/index.php?/profile/1652-alt3rn1ty/">Alt3rn1ty:</a> For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim SE, and being an all-round bon oeuf.</span></li>
+      <li><img alt="Arthmoor's Icon" src="../bash/images/people/armravi32.png"><span><a href="https://github.com/Arthmoor">Arthmoor:</a> All-round support of the project including pushing code snippets from anonymous contributors, assisting with issue tracking, and generally high activity in and around the project.</span></li>
+      <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU:</a> Bug catching, technical suggestions.</span></li>
+      <li><img alt="Fireundubh's Icon" src="../bash/images/people/fireavi32.png"><span><a href="https://github.com/fireundubh">fireundubh:</a> Bug catching and fixes, and readability formatting.</span></li>
+      <li><img alt="Kmacg94's Icon" src="../bash/images/bash_32_2.png"><span>Kmacg94: Additional power exhaustion coverage.</span></li>
+      <li><img alt="Llde's Icon" src="../bash/images/people/lldeavi32.png"><span><a href="https://github.com/llde">llde:</a> Fixup for parsing archives that have attribute-less files.</span></li>
+      <li><img alt="Mator's Icon" src="../bash/images/people/matravi32.jpg"><span><a href="https://github.com/matortheeternal">MatorTheEternal:</a> Assisted with porting xEdit definitions in a format usable for Wrye Bash.</span></li>
+      <li><img alt="Metallicow's Icon" src="../bash/images/people/mcowavi32.png"><span><a href="https://github.com/Metallicow">Metallicow:</a> Shiny new tool launcher icons, Graphics, Mooo, &amp; the WizBAIN Editor.</span></li>
+      <li><img alt="Preacui's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://sourceforge.net/u/preacui/profile/">preacui:</a> <a href="https://3d.xkcd.com/353/">Existed.</a></span></li>
+      <li><img alt="Ross Allan's Icon" src="../bash/images/people/ralnavi32.png"><span><a href="https://github.com/nallar">Ross Allan:</a> Contributed towards SVR support.</span></li>
+      <li><img alt="Sativarg's Icon" src="../bash/images/people/genyavi32.png"><span><a href="https://github.com/Sativarg">Sativarg:</a> Proofreading.</span></li>
+      <li><img alt="Saebel's Icon" src="../bash/images/people/genoavi32.png"><span><a href="https://github.com/saebel">saebel:</a> Caught and added a missing OBSE INI setting.</span></li>
+      <li><img alt="Tom Suprgan's Icon" src="../bash/images/bash_32_2.png"><span>Tom Suprgan: Several well researched suggestions.</span></li>
+      <li><img alt="Warmfrost85's Icon" src="../bash/images/people/wrmfavi32.jpg"><span><a href="https://github.com/warmfrost85">Warmfrost85:</a> Implemented case-insensitive BASH keyword recognition.</span></li>
+      <li><img alt="Testers' Icon" src="../bash/images/bash_32_2.png"><span>To the testers/bug finders/helpful people on the forum when others have trouble: Arthmoor, Corepc, Daemondarque, TommyH, Surazal and many others.</span></li>
+      <li><img alt="Helpers' Icon" src="../bash/images/bash_32_2.png"><span>To those members of the community that contributed to the upkeep of Wrye Bash while its developers were absent (May/June 2012): Alt3rn1ty, Arthmoor, Daidalos, Ortham, Trira, and many others.</span></li>
+    </ul>
+  </li>
+  <li>
+    <strong>Misc. Resources</strong>
+    <ul>
+      <li><img alt="FamFamFam's Icon" src="../bash/images/people/fffmavi32.png"><span><a href="http://www.famfamfam.com/lab/icons/silk/">FamFamFam Icons</a></span></li>
+      <li><img alt="Blue Bison in Rapids' Icon" src="../bash/images/people/blbiavi32.png"><span><a href="http://www.bluebison.net/">Python and Chameleon images</a></span></li>
+    </ul>
+  </li>
 </ul>
-
-
-<h2 id="contact">Contact</h2>
+<h3>Homage Credits <a class="back2top" href="#contents">Back to top</a></h3>
+<p>AKA ideas and stuff stolen from other people.</p>
+<ul class="nodot">
+  <li>
+    <strong>Names Files</strong>
+    <ul>
+      <li><img alt="Flak's Icon" src="../bash/images/bash_32_2.png"><span>Flak: <a href="https://www.nexusmods.com/oblivion/mods/2326">Flak's Complete Names Project</a></span></li>
+    </ul>
+  </li>
+  <li>
+    <strong>Bash Features</strong>
+    <ul>
+      <li><img alt="Crypton's Icon" src="../bash/images/people/crypavi32.png"><span>No Light Flicker: <a href="https://www.nexusmods.com/oblivion/mods/6150">No Light Flicker</a> (<a href="https://www.nexusmods.com/users/23266">Crypton</a>)</span></li>
+      <li><img alt="Kyorisu's Icon" src="../bash/images/bash_32_2.png"><span>Save Profiles: <a href="https://www.nexusmods.com/oblivion/mods/2342">Tes IV Save Manager</a> (Kyorisu)</span></li>
+    </ul>
+  </li>
+  <li>
+    <strong>GMST Tweaks</strong>
+    <ul>
+      <li><img alt="Showler's Icon" src="../bash/images/bash_32_2.png"><span>AI: Max Dead Actors (<a href="https://www.nexusmods.com/users/38829">showler</a>)</span></li>
+      <li><img alt="Aelius's Icon" src="../bash/images/bash_32_2.png"><span>Arrow Litter, Essential NPC Unconsciousness (Aelius)</span></li>
+      <li><img alt="Demuerte's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2411">Chameleon: No Refraction</a> (demuerte)</span></li>
+      <li><img alt="Woodman's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/1840">Chase Camera</a> (<a href="https://www.nexusmods.com/users/85866">Woodman</a>)</span></li>
+      <li><img alt="Tom Supergan's Icon" src="../bash/images/people/tomsavi32.png"><span>Chase Camera Distance (<a href="https://www.nexusmods.com/users/77237">Tom Supergan</a>)</span></li>
+      <li><img alt="Compass Disable Icon" src="../bash/images/bash_32_2.png"><span>Compass Disable (??)</span></li>
+      <li><img alt="Compass POI Recognition Icon" src="../bash/images/bash_32_2.png"><span>Compass POI Recognition (??)</span></li>
+      <li><img alt="Ravida's Icon" src="../bash/images/bash_32_2.png"><span>Fatigue from Running/Encumbrance (Ravida)</span></li>
+      <li><img alt="Horse Turning Speed Icon" src="../bash/images/bash_32_2.png"><span>Horse Turning Speed (Acleacius, dbolivar)</span></li>
+      <li><img alt="David Moyer's Icon" src="../bash/images/bash_32_2.png"><span>PC Death Camera (David Moyer)</span></li>
+      <li><img alt="KseAli's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/4882">POI Visibility</a> (<a href="https://www.nexusmods.com/users/114786">KseAli</a>)</span></li>
+      <li><img alt="Timmypod's Icon" src="../bash/images/bash_32_2.png"><span><a href="https://www.nexusmods.com/oblivion/mods/2246">Unlimited Amulets and Rings</a> (timmypod)</span></li>
+    </ul>
+  </li>
+</ul>
+<h2 id="contact">Contact <a class="back2top" href="#contents">Back to top</a></h2>
 <p>If you have a question/comment about Wrye Bash, it's best to post it on the <a
-		href="https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/">current Wrye Bash topic</a> on the
-	AFK Mods forum.
+        href="https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/">current Wrye Bash topic</a> on the
+    AFK Mods forum.</p>
 
 
-<h2 id="license">License</h2>
-<p>Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed <a href="license.txt">license.txt</a> file for license details, or visit the <a href="http://www.gnu.org/copyleft/gpl.html">GNU Website</a> for information on all their licenses.
+<h2 id="license">License <a class="back2top" href="#contents">Back to top</a></h2>
+<p>Wrye Bash is released under Version 2 of the GNU General Public License. See enclosed <a href="license.txt">license.txt</a> file for license details, or visit the <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU Website</a> for information on all their licenses.</p>
 
-<h3>Packaged Programs</h3>
+<h3>Packaged Programs <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Additionally, Wrye Bash comes packaged with the following programs:
 <ul>
     <li>Mozilla's chardet library.
     <ul>
-        <li>Website: <a href="http://pypi.python.org/pypi/chardet">Python.org</a>
-        <li>License: <a href="http://www.gnu.org/licenses/lgpl.html">LGPL 2.1</a>
+        <li>Website: <a href="https://pypi.org/project/chardet/">PyPI.org</a>
+        <li>License: <a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html">LGPL 2.1</a>
         <li>Usage: Wrye Bash uses this library to help in detecting character encodings use when reading and writing encoded Unicode strings.
         <li>Modifications: Minor modifications to bring chardet in line with Python 2.7 - removed the EUCTWProber, from the MBCSGroupProber class.
     </ul>
     <li>LOOT API Python Module
     <ul>
         <li>Website: <a href="https://github.com/loot/loot-api-python">GitHub</a>
-        <li>License: <a href="http://www.gnu.org/licenses/gpl.html">GPL 3.0</a>
+        <li>License: <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL 3.0</a>
         <li>Usage: Wrye Bash uses this library to retrieve Bash Tag suggestions and Dirty mod information from LOOT's plugin databases.
     </ul>
     <li>CBash
     <ul>
         <li>Website: <a href="https://github.com/wrye-bash/CBash">GITHUB</a>
-        <li>License: Triple-license <a href="http://www.mozilla.org/MPL/">MPL 1.1</a>/<a href="http://www.gnu.org/copyleft/gpl.html">GPL 2.0</a>/<a href="http://www.gnu.org/licenses/lgpl.html">LGPL 2.1</a>
+        <li>License: Triple-license <a href="https://www.mozilla.org/en-US/MPL/1.1/">MPL 1.1</a>/<a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GPL 2.0</a>/<a href="https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html">LGPL 2.1</a>
         <li>Details:
         <ul>
             <li>cint.py - For v0.7.0, cint.py is in sync between Wrye Bash vs CBash repos, at the time of writing this.
             <li>C/C++ Source Code: Version 0.7.x of CBash is built off directly from the GITHUB source code, which can be found in the CBash github repository, <a href="https://github.com/wrye-bash/CBash">here</a>.
             <li>The code is for all intents and purposes the same as the old v0.6.x CBash version, just with a few minor fixes and an updated runtime dependence on <a href="https://www.microsoft.com/en-us/download/details.aspx?id=48234">Microsoft's Universal C Runtime</a> which should be already installed on any Windows 7 PC that's normally updated through the Windows Update system.</li>
-            <li>Original CBash project was hosted in <a href="http://sourceforge.net/projects/cbash/">SourceForge</a>, but now the code that is present there is for the old v0.6.x version, minus some changes contributed by <a href="https://github.com/Ethatron/CBash">Ethathron</a>, and later forked by <a href="https://github.com/lojack5/CBash">Lojack5</a> (which, in turn, was the ancestor of the <a href="https://github.com/wrye-bash/CBash">current development repository</a>.)</li>
+            <li>Original CBash project was hosted in <a href="https://sourceforge.net/projects/cbash/">SourceForge</a>, but now the code that is present there is for the old v0.6.x version, minus some changes contributed by <a href="https://github.com/Ethatron/CBash">Ethathron</a>, and later forked by <a href="https://github.com/lojack5/CBash">Lojack5</a> (which, in turn, was the ancestor of the <a href="https://github.com/wrye-bash/CBash">current development repository</a>.)</li>
             <li>The state of that old SourceForge repository was imported to <a href="https://github.com/leandor/CBashSF.git">this</a> GITHUB read-only mirror, for easier sharing and branching, and history keeping reasons.</li>
         </ul>
     </ul>
     <li>7zip:
     <ul>
-        <li>Website: <a href="http://www.7-zip.org/">7zip.org</a>
-        <li>License: <a href="http://www.gnu.org/licenses/lgpl.html">LGPL</a>
+        <li>Website: <a href="https://www.7-zip.org/">7zip.org</a>
+        <li>License: <a href="https://www.gnu.org/licenses/lgpl.html">LGPL</a>
         <li>Usage: Wrye Bash uses 7z to pack and unpack archives.
     </ul>
     <li>LZMA SDK:
     <ul>
-        <li>Website: <a href="http://www.7-zip.org/sdk.html">7zip.org</a>
+        <li>Website: <a href="https://www.7-zip.org/sdk.html">7zip.org</a>
         <li>License: Public Domain
         <li>Usage: Wrye Bash uses lzma.exe from the SDK to unpack OBMM compressed data streams.
     </ul>
 </ul>
 
-<h2 id="advanced">Advanced Readme Topics</h2>
+<h2 id="advanced">Advanced Readme Topics <a class="back2top" href="#contents">Back to top</a></h2>
 <p>This final section gives a brief summary of what may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Some of the topics covered are:
 <ul>
     <li>Installers:
@@ -1309,32 +1368,15 @@ MemoryError</code>
     <li>What Wrye Bash's keyboard shortcuts are.
     <li>How to translate Wrye Bash into other languages.
 </ul>
-<p>The Advanced Readme is a more technical document aimed more towards mod authors and advanced users of Wrye Bash than the average user. If you find yourself wanting to know more, or not understanding why something in Wrye Bash behaves the way it does, then the answer you seek may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>.
-<script>
-function nextImage(imgs){
-    for(var i=0;i<imgs.length;i++){
-        if(imgs[i].style.opacity=='1' || imgs[i].style.opacity==''){
-            imgs[i].style.opacity='0';
-            if(i+1<imgs.length){
-                imgs[i+1].style.opacity='1';
-            }else{
-                imgs[0].style.opacity='1';
-            }
-            break;
-        }
-    }
-    setTimeout(nextImage, 5000, imgs);
-}
+<p>The Advanced Readme is a more technical document aimed more towards mod authors and advanced users of Wrye Bash than the average user. If you find yourself wanting to know more, or not understanding why something in Wrye Bash behaves the way it does, then the answer you seek may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>.</p>
 
-var figures = document.getElementsByTagName('figure');
-if(figures!=null){
-    for (var i=0; i < figures.length; i++) {
-        if (figures[i].className == 'slideshow'){
-   var wrapper = function(i){
-    return function(){nextImage(figures[i].getElementsByTagName('img'));}
-   }
-            setTimeout(wrapper(i),5000);
-        }
-    }
-}
-</script>
+<!-- Scrolling content end -->
+</div>
+
+<div id="footer">
+	<div id="version">Wrye Bash v307</div>
+    General&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;<a href="Wrye Bash Technical Readme.html">Technical</a>&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
+    <div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
+</div>
+</body>
+</html>

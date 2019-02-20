@@ -1,0 +1,59 @@
+/********************
+* Extracted Inlines
+********************/
+
+/* Figures */
+.mods-details-figure {
+  min-height: 34.4375rem;			/* 551px */
+  width: 19.875rem;				/* 318px */
+}
+.tools-checker-figure {
+  width: 29.6875rem;				/* 475px */
+}
+
+/* Figure Captions */
+.screenshots-overview-figcap, .people-overview-figcap {
+  padding-top: 40rem;				/* 640px */
+}
+.launchers-hide-figcap {
+  padding-top: 5.9375rem;			/* 95px */
+}
+.tools-settings-figcap {
+  padding-top: 25rem;				/* 400px */
+}
+.tools-docs-figcap {
+  padding-top: 32.5rem;			/* 520px */
+}
+
+/* Tables */
+.people-tables {
+  margin-top: 1.875rem;			/* 30px */
+  min-width: 17.1875rem;			/* 275px */
+}
+#people-commands {
+  margin-right: -100%;
+  padding-left: 1.0625rem;		/* 17px */
+}
+#people-symbols {
+  margin-left: -12.5rem;			/* -200px */
+  padding-left: 13.5625rem;		/* 217px */
+}
+.tools-colors-table {
+  max-width: 98%;
+}
+
+/* Consistency Formatting */
+.people-tabpad {
+  margin: 0;
+  margin-bottom: 1rem;			/* 16px */
+}
+.international-format-cdebox {
+  width: 25rem;					/* 400px */
+}
+code.box {
+  display: table;
+  line-height: 1.25rem;			/* 20px */
+  margin: 0.875rem 0 0 1.125rem;	/* T:14px R:0 B:0 L:18px */
+  padding: 0.3125rem 0.625rem;	/* TB:5px RL:10px */
+  white-space: pre;
+}

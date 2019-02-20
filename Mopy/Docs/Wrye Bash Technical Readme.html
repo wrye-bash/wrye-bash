@@ -1,62 +1,78 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<link rel="shortcut icon" href="../bash/images/bash_32.ico"/>
+<html lang="en">
+
+
+<head>
+  <meta charset="utf-8">
+  <link href="assets/bash_main.css" rel="stylesheet" type="text/css">
+  <link href="assets/bash_technical.css" rel="stylesheet" type="text/css">
+  <link href="assets/bash.webmanifest" rel="manifest" type="application/manifest+json">
+  <link href="images/webicon/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" type="image/png">
+  <link href="images/webicon/favicon-32x32.png" rel="icon" sizes="32x32" type="image/png">
+  <link href="images/webicon/favicon-194x194.png" rel="icon" sizes="194x194" type="image/png">
+  <link href="images/webicon/android-chrome-192x192.png" rel="icon" sizes="192x192" type="image/png">
+  <link href="images/webicon/favicon-16x16.png" rel="icon" sizes="16x16" type="image/png">
+  <link color="#cc0000" href="images/webicon/safari-pinned-tab.svg" rel="mask-icon" type="image/svg+xml">
+  <link href="images/webicon/favicon.ico" rel="shortcut icon" type="image/x-icon">
+  <meta content="Wrye Bash Docs" name="apple-mobile-web-app-title">
+  <meta content="Wrye Bash Docs" name="application-name">
+  <meta content="#ffc40d" name="msapplication-TileColor">
+  <meta content="images/webicon/mstile-144x144.png" name="msapplication-TileImage">
+  <meta content="Wrye Bash Documentation" name="msapplication-tooltip">
+  <meta content="assets/browserconfig.xml" name="msapplication-config">
+  <meta content="#ffffcc" name="theme-color">
+  <script src="assets/bashinit.js"></script>
+  <script src="assets/bashfunc.js" async defer></script>
 <title>Wrye Bash Technical Readme</title>
-<style>
-	html {font-family:Arial,sans-serif; background:#ffffcc; font-size:0.9em;}
-	h1, h2 { background: #9ACD32; margin-left: -8px; margin-right: -8px; padding:0.6em; }
-	h1 { margin-top:-8px; padding-left:1.5em;margin-bottom:0;}
-	h2 { margin-top:5em; padding-left:2em;}
-	h3 { font-size:1.1em; margin-top:3em;}
-	a:link { text-decoration:none; }
-	a:hover { text-decoration:underline; }
-	li ul, li ol {margin-top:0.4em;}
-	li {margin-bottom:10px;}
-	ol ol {list-style:lower-alpha;}
-	ol ol li {margin-bottom:0.2em;}
-	td, th {border:1px solid black; padding: 5px; vertical-align:top;}
-	table {margin:1em; background:#fdfdfd; border-collapse:collapse;}
-	thead {font-weight:bold; background:#8af;}
-	img {border:0;}
-	a[href^="http"]:after {padding-left:2px; content: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII=);}
-	q {font-style:italic;}
-	code {display:inline-block; padding:2px 5px; background:#DDD;}
-	code.box {line-height:20px; white-space:pre; margin:1em 0 0 3em; display:table; padding:5px 10px;}
-	blockquote {background:#E6E6FA; display:table; padding:5px 30px 5px 10px;}
-	figure {margin:0;}
-	figcaption {font-style:italic; margin-bottom:2em;}
-	.missing {background:red; color:white; border:0.25em solid black;}
-	abbr {cursor:help;}
-	.indent {margin-left:2em;}
-	td > code.box {margin:0;}
-</style>
+</head>
 
-<h1>Wrye Bash Technical Readme</h1>
 
-<h2 style="margin-top:0;">Contents</h2>
-<ol>
-	<li><a href="#intro">Introduction</a>
-	<li><a href="#wizards">BAIN Wizards</a>
-	<ol>
-		<li><a href="#wizards-overview">Overview</a>
-		<li><a href="#wizards-dialog">Dialogues</a>
-		<li><a href="#wizards-language">Language Structure</a>
-		<li><a href="#wizards-functions">Functions</a>
-		<li><a href="#wizards-keywords">Keywords</a>
-		<li><a href="#wizards-operators">Operators</a>
-		<li><a href="#wizards-constants">Standard Constants</a>
-		<li><a href="#wizards-escape">Escape Sequences</a>
-		<li><a href="#wizards-examples">Examples</a>
-		<li><a href="#wizards-obmm">Wizards vs. OBMM Scripts</a>
-	</ol>
-	<li><a href="#rulesets">Mod Checker Rulesets</a>
-	<ol>
-		<li><a href="#rulesets-overview">Overview</a>
-		<li><a href="#rulesets-syntax">Syntax</a>
-		<li><a href="#rulesets-example">Example</a>
-	</ol>
-</ol>
+<body>
+<div id="header"><h1>Wrye Bash Technical Readme</h1> <a id="jstoggle" href="javascript:void(0)">(Javascript Toggle)</a></div>
 
+<div id="box">
+<!-- Scrolling content begin -->
+
+<div id="fade"></div>
+
+<h2 id="contents">Contents</h2>
+<div id="navmenu" class="navboxrhrz">
+    <div id="navtab">M<br>E<br>N<br>U</div>
+    <div class="navcontbar">
+        <div class="navhead">
+            <a href="javascript:void(0)" class="clsx" id="closebutton">&larr;</a>
+            <h2>Technical Readme</h2>
+        </div>
+        <div class="navcontent">
+            <ol class="contentsmenu1 menu">
+                <li class="list"><a href="#intro">Introduction</a>
+                    <ol class="items">
+                        <li><a href="#intro-glossary">Glossary</a>
+                    </ol>
+                <li class="list"><a href="#darn">DarNified Formatting</a>
+                <li class="list"><a href="#wizards">BAIN Wizards</a>
+                    <ol class="items">
+                        <li><a href="#wizards-overview">Overview</a>
+                        <li><a href="#wizards-dialog">Dialogues</a>
+                        <li><a href="#wizards-language">Language Structure</a>
+                        <li><a href="#wizards-functions">Functions</a>
+                        <li><a href="#wizards-keywords">Keywords</a>
+                        <li><a href="#wizards-operators">Operators</a>
+                        <li><a href="#wizards-constants">Standard Constants</a>
+                        <li><a href="#wizards-escape">Escape Sequences</a>
+                        <li><a href="#wizards-examples">Examples</a>
+                        <li><a href="#wizards-obmm">Wizards vs. OBMM Scripts</a>
+                    </ol>
+                <li class="list"><a href="#rulesets">Mod Checker Rulesets</a>
+                    <ol class="items">
+                        <li><a href="#rulesets-overview">Overview</a>
+                        <li><a href="#rulesets-syntax">Syntax</a>
+                        <li><a href="#rulesets-example">Example</a>
+                    </ol>
+            </ol>
+        </div>
+    </div>
+</div>
 
 <h2 id="intro">Introduction</h2>
 <p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, Fallout 3, Fallout New Vegas, TES V: Skyrim, Fallout 4 and SSE: Skyrim Special Edition. Its features include:
@@ -202,10 +218,10 @@
 <p class="indent">Return values:
 <ul class="indent">
 	<li><code>-1</code> - The esp/m does not exist.
-	<li><code>0</code> - The esp/m is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_off.png" alt="Inactive"/>.
-	<li><code>1</code> - The esp/m is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_imp.png" alt="Imported"/>.
-	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_on.png" alt="Active"/>.
-	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img src="../bash/images/checkbox_green_inc.png" alt="Merged"/>.
+	<li><code>0</code> - The esp/m is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img alt="Inactive" src="../bash/images/checkbox_green_off.png"/>.
+	<li><code>1</code> - The esp/m is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Imported" src="../bash/images/checkbox_green_imp.png"/>.
+	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img alt="Active" src="../bash/images/checkbox_green_on.png"/>.
+	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Merged" src="../bash/images/checkbox_green_inc.png"/>.
 </ul>
 <p><dfn id="wizardsEditINI">EditINI</dfn> - Tells Wrye Bash to create an ini tweak file with some tweaks in it. If the file that you tell Wrye Bash to apply the tweak to is from the current installer or is the game's ini file, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
 <code class="box">EditINI(file_name, section, setting, value [,comment])</code>
@@ -560,7 +576,7 @@ variable ^= value
 <h4>Boolean Operators</h4>
 <p>Boolean operators can be used to test the logical truth of values.
 <p><dfn>And</dfn>: <code>&amp;</code>, <code>and</code>. Returns <code>True</code> if both sides of the expression are true and <code>False</code> otherwise.
-<code class="box">var1 & var2</code>
+<code class="box">var1 &amp; var2</code>
 <code class="box">var1 and var2</code>
 <p><dfn>Or</dfn>: <code>|</code>, <code>or</code>. Returns <code>True</code> if either side of the expression is true and <code>False</code> otherwise.
 <code class="box">var1 | var2</code>
@@ -681,7 +697,7 @@ EndIf
 </code>
 <h4>Use New BAIN Wizard Features Safely</h4>
 <p>Useful for when you use features available only in recent versions of Wrye Bash but want to retain support for users with older versions.
-<code class="box">If CompareWBVersion('292') >= 0
+<code class="box">If CompareWBVersion('292') &gt;= 0
     ; User is running 292+
     ; Do some 292+ only stuff here, like...
     EditINI('Oblivion.ini', 'Display', 'bAllowScreenShot', 1)
@@ -754,10 +770,10 @@ If GreaterEqual &lt;arg1&gt; &lt;arg2&gt;
 If fGreaterThan &lt;arg1&gt; &lt;arg2&gt;
 If fGreaterEqual &lt;arg1&gt; &lt;arg2&gt;</code>
 			<td><code class="box">If statement == statement
-If statement > statement
-If statement >= statement
-If statement > statement
-If statement >= statement</code>
+If statement &gt; statement
+If statement &gt;= statement
+If statement &gt; statement
+If statement &gt;= statement</code>
 		<tr><td><code class="box">Select &lt;Title&gt; &lt;Option1&gt; [Option2] [...]
 SelectWithPreview &lt;Title&gt; &lt;Option1&gt; &lt;ImagePath1&gt; [Option2] [ImagePath2] [...]
 SelectWithDescriptions &lt;Title&gt; &lt;Option1&gt; &lt;Description1&gt; [Option2] [Description2] [...]
@@ -972,8 +988,8 @@ o Plugin2.esp  //[comment]
 <p>The <code>SUGGEST</code> command is intended as a way of providing non-critical suggestions. Its syntax is similar to that of the <code>CONFIG</code> command, but it has different rule types available for usage. The rule types are:
 <ul>
 	<li><code>x</code>: <q>Inclusion</q> rule type. The specified plugin must be active. If the plugin is not active, the Mod Checker will output a message.
-	<li><code>-</code>: <q>Exclusion</q> rule type. The specified plugin must <b>not</b> be active. If the plugin is active, the Mod Checker will output a message.
-	<li><code>+</code>: <q>Merge Only</q> rule type. The specified plugin must be merged but <b>not</b> active. If the plugin is active or inactive and not merged, the Mod Checker will output a message.
+	<li><code>-</code>: <q>Exclusion</q> rule type. The specified plugin must <strong>not</strong> be active. If the plugin is active, the Mod Checker will output a message.
+	<li><code>+</code>: <q>Merge Only</q> rule type. The specified plugin must be merged but <strong>not</strong> active. If the plugin is active or inactive and not merged, the Mod Checker will output a message.
 	<li><code>e</code>: <q>Existence</q> rule type. The specified file must exist. The file can be any file type, with the file path being given relative to the Data folder. If the file does not exist, the Mod Checker will output a message.
 </ul>
 <code class="box ruleset">&gt;&gt; SUGGEST
@@ -994,7 +1010,7 @@ e Plugin4.esp  //[comment]
 <p>The <code>ASSUME</code> command inserts the assumption that the given plugin exists into any <code>IF</code> statements following the command.
 <ul>
 	<li><code>ASSUME</code> commands last until the next <code>ASSUME</code> command or until the end of the file, whichever occurs first.
-	<li><code>ASSUME</code> commands are <b>not</b> additive: each <code>ASSUME</code> command completely replaces the previous one.
+	<li><code>ASSUME</code> commands are <strong>not</strong> additive: each <code>ASSUME</code> command completely replaces the previous one.
 	<li>To cancel the effect of an <code>ASSUME</code> command, use an <code>ASSUME</code> command with no mod listed for it.
 	<li>To assume the existence of multiple plugins, list them on separate lines after the <code>ASSUME</code> command, like how is done for the <code>IF</code> command.
 </ul>
@@ -1072,4 +1088,14 @@ x DLCShiveringIsles.esp // **Activate.** Required.
 x FF_REAL_Thirst, Cob.esp // Patch FF Real Thirst to work with Cobl water wells.
 </code>
 
+<!-- Scrolling content end -->
+</div>
 
+<div id="footer">
+	<div id="version">Wrye Bash v307</div>
+	<a href="Wrye Bash General Readme.html">General</a>&#160;&#x2726;&#160;<a href="Wrye Bash Advanced Readme.html">Advanced</a>&#160;&#x2726;&#160;Technical&#160;&#x2726;&#160;<a href="Wrye Bash Version History.html">Versions</a>
+	<div id="oldie">Javascript disabled, menu and slideshows nonfunctional.</div>
+</div>
+</body>
+
+</html>

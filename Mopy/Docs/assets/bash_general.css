@@ -1,0 +1,112 @@
+/********************
+* Credits Styling Block
+********************/
+
+ul li img {
+  margin-left: 0.375rem;			/* 6px */
+  margin-right: 0.375rem;			/* 6px */
+  max-height: 0.8125rem;			/* 13px */
+  max-width: 0.8125rem;			/* 13px */
+}
+ul li, ul li img, ul li span {
+  vertical-align: middle;
+}
+ul.nodot li {
+  list-style: none;
+  margin-left: -1.25rem;			/* 20px */
+}
+img.bigcred {
+  max-height: 2rem;				/* 32px */
+  max-width: 2rem;				/* 32px */
+}
+img.monkeygod {
+  max-height: 4rem;				/* 64px */
+  max-width: 4rem;				/* 64px */
+}
+
+
+/********************
+*Main Overrides
+********************/
+.prlflex.tap figure, .prlflex.tap img {
+  max-width: 99%;
+}
+.prlflex.tap {
+  justify-content: center;
+}
+
+/********************
+* Extracted inlines from General Readme are listed below
+********************/
+
+/* Figure Captions */
+.bain-overview-figcap, .ini-overview-figcap {
+  padding-top: 39.6875rem;		/* 635px */
+}
+.patch-overview-figcap {
+  padding-top: 38.3125rem;		/* 613px */
+}
+.launchers-figcap {
+  padding-top: 5rem;				/* 80px */
+}
+
+/* Consistency Formatting */
+.patch-overview-txtbox {
+  margin-left: 1rem;				/* 16px */
+  margin-top: -0.875rem;			/* -14px */
+}
+
+/* Text Formatting */
+.bain-structure-txtcnt {
+  text-align: center;
+}
+.bain-symbols-blutxt {
+  color: rgba(0, 0, 128, 1);
+}
+.bain-symbols-grytxt {
+  color: rgba(190, 190, 190, 1);
+}
+.load-symbols-blutxt {
+  color: rgba(0, 0, 255, 1);
+}
+.load-symbols-grntxt {
+  color: rgba(0, 128, 0, 1);
+}
+.load-symbols-prptxt {
+  color: rgba(128, 0, 128, 1);
+}
+.load-symbols-ittxt {
+  font-style: italic;
+}
+.load-symbols-ultxt {
+  text-decoration: underline;
+}
+
+/* Background Formatting */
+.bain-symbols-orgbg {
+  background: rgba(255, 187, 51, 1);
+}
+.bain-symbols-ylwbg {
+  background: rgba(255, 255, 0, 1);
+}
+.bain-symbols-grybg {
+  background: rgba(224, 224, 224, 1);
+}
+.load-symbols-pnkbg {
+  background: rgba(255, 220, 220, 1);
+}
+.load-symbols-redkbg {
+  background: rgba(255, 100, 100, 1);
+}
+.load-symbols-grybg {
+  background: rgba(232, 232, 232, 1);
+}
+.ini-symbols-orgbg {
+  background-color: rgba(255, 213, 170, 1);
+}
+.ini-symbols-ylwbg {
+  background-color: rgba(255, 255, 191, 1);
+}
+.ini-symbols-grnbg {
+  background-color: rgba(193, 255, 193, 1);
+}
