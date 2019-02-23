@@ -21,9 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This modules defines static data for use by bush, when
-   TES IV: Oblivion is set at the active game."""
+"""GameInfo override for TES IV: Oblivion."""
 
 from .constants import *
 from .default_tweaks import default_tweaks
@@ -127,10 +125,10 @@ class OblivionGameInfo(GameInfo):
 
     allTags = {u'Body-F', u'Body-M', u'Body-Size-M', u'Body-Size-F',
                u'C.Climate', u'C.Light', u'C.Music', u'C.Name',
-               u'C.RecordFlags', u'C.Owner', u'C.Water', u'Deactivate',
-               u'Delev', u'Eyes', u'Factions', u'Relations', u'Filter',
-               u'Graphics', u'Hair', u'IIM', u'Invent', u'Names', u'NoMerge',
-               u'NpcFaces', u'R.Relations', u'Relev', u'Scripts',
+               u'C.Owner', u'C.RecordFlags', u'C.Regions', u'C.Water',
+               u'Deactivate', u'Delev', u'Eyes', u'Factions', u'Relations',
+               u'Filter', u'Graphics', u'Hair', u'IIM', u'Invent', u'Names',
+               u'NoMerge', u'NpcFaces', u'R.Relations', u'Relev', u'Scripts',
                u'ScriptContents', u'Sound', u'SpellStats', u'Stats',
                u'Voice-F', u'Voice-M', u'R.Teeth', u'R.Mouth', u'R.Ears',
                u'R.Head', u'R.Attributes-F', u'R.Attributes-M', u'R.Skills',

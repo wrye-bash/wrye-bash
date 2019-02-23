@@ -21,15 +21,13 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This modules defines static data for use by bush, when TES V:
-   Skyrim Special Edition is set at the active game."""
+"""GameInfo override for TES V: Skyrim Special Edition."""
 
 from .constants import *
 from .default_tweaks import default_tweaks
+from ..skyrim import SkyrimGameInfo
 from ... import brec
 from ...brec import MreGlob
-from ..skyrim import SkyrimGameInfo
 
 class SkyrimSEGameInfo(SkyrimGameInfo):
     displayName = u'Skyrim Special Edition'
@@ -58,9 +56,13 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     has_achlist = True
     check_esl = True
 
-    allTags = {u'Deactivate', u'Delev', u'Invent', u'Relev'}
+    allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
 
-    patchers = (u'GmstTweaker', u'ImportInventory', u'ListsMerger',)
+    patchers = (
+        u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
+        u'ImportInventory', u'ListsMerger', u'SoundPatcher', u'StatsPatcher',
+        u'NamesPatcher',
+        )
 
     # MreScpt is Oblivion/FO3/FNV Only
     # MreMgef, has not been verified to be used here for Skyrim
@@ -80,22 +82,25 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
 
     @classmethod
     def init(cls):
-        from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, \
-            MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
-            MreLvsp, MreEnch, MreProj, MreDlbr, MreRfct, MreMisc, MreActi, \
-            MreEqup, MreCpth, MreDoor, MreAnio, MreHazd, MreIdlm, MreEczn, \
-            MreIdle, MreLtex, MreQust, MreMstt, MreNpc, MreFlst, MreIpds, \
-            MreGmst, MreRevb, MreClmt, MreDebr, MreSmbn, MreLvli, MreSpel, \
-            MreKywd, MreLvln, MreAact, MreSlgm, MreRegn, MreFurn, MreGras, \
-            MreAstp, MreWoop, MreMovt, MreCobj, MreShou, MreSmen, MreColl, \
-            MreArto, MreAddn, MreSopm, MreCsty, MreAppa, MreArma, MreArmo, \
-            MreKeym, MreTxst, MreHdpt, MreHeader, MreAlch, MreBook, MreSpgd, \
-            MreSndr, MreImgs, MreScrl, MreMust, MreFstp, MreFsts, MreMgef, \
-            MreLgtm, MreMusc, MreClas, MreLctn, MreTact, MreBptd, MreDobj, \
-            MreLscr, MreDlvw, MreTree, MreWatr, MreFlor, MreEyes, MreWeap, \
-            MreIngr, MreClfm, MreMesg, MreLigh, MreExpl, MreLcrt, MreStat, \
-            MreAmmo, MreSmqn, MreImad, MreSoun, MreAvif, MreCont, MreIpct, \
-            MreAspc, MreRela, MreEfsh, MreSnct, MreOtft, MreVoli, MreLens
+        # First import from skyrimse.records file
+        from .records import MreWthr, MreMato, MreLtex, MreWatr, MreWeap, \
+            MreStat, MreAmmo, MreVoli, MreLens
+        # then import rest of records from skyrim.records
+        from ..skyrim.records import MreAact, MreAchr, MreActi, MreAddn, \
+            MreAlch, MreAnio, MreAppa, MreArma, MreArmo, MreArto, MreAspc, \
+            MreAstp, MreAvif, MreBook, MreBptd, MreCams, MreCell, MreClas, \
+            MreClfm, MreClmt, MreCobj, MreColl, MreCont, MreCpth, MreCsty, \
+            MreDebr, MreDial, MreDlbr, MreDlvw, MreDobj, MreDoor, MreDual, \
+            MreEczn, MreEfsh, MreEnch, MreEqup, MreExpl, MreEyes, MreFact, \
+            MreFlor, MreFlst, MreFstp, MreFsts, MreFurn, MreGmst, MreGras, \
+            MreHazd, MreHdpt, MreHeader, MreIdle, MreIdlm, MreImad, MreImgs, \
+            MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
+            MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \
+            MreMatt, MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, \
+            MreMust, MreNpc, MreOtft, MreProj, MreQust, MreRegn, MreRela, \
+            MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, \
+            MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, \
+            MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld
         cls.mergeClasses = (
             # MreAchr, MreDial, MreInfo, MreFact,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
@@ -112,7 +117,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
             MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn,
             MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel,
             MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr,
-            MreWeap, MreWoop, MreWthr, MreVoli,
+            MreWeap, MreWoop, MreWthr, MreVoli, MreLens,
             ####### for debug
             MreQust,
         )

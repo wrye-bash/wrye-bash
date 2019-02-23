@@ -21,9 +21,19 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This module contains the skyrim SE record classes imported from skyrim"""
-from ..skyrim.records import *
+"""This module contains the skyrim SE record classes. The great majority are
+imported from skyrim."""
+# Set MelModel in brec, in this case it's identical to the skyrim one
+from ..skyrim.records import MelBounds, MelDestructible, MelVmad
+from ...bass import null1, null2, null3, null4
+from ...bolt import Flags, DataDict
+from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
+from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
+    FID, MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
+    MelStructA, MelLString, MelCountedFidList
+from ...exception import ModSizeError
+# Those are unused here, but need be in this file as are accessed via it
+from ..skyrim.records import MreHeader, MreGmst
 
 #------------------------------------------------------------------------------
 # Updated for SSE -------------------------------------------------------------
@@ -114,10 +124,15 @@ class MreMato(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 48: # old skyrim record
-                raise ModSizeError(record.inName, readId, 52, size_, True,
-                                   old_skyrim=True)
+                unpacked = ins.unpack('11fI', size_, readId)
             else:
                 raise ModSizeError(record.inName, readId, 52, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -136,33 +151,6 @@ class MreMato(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreMovt(MelRecord):
-    """Movt Item"""
-    classType = 'MOVT'
-    class MelMovtSped(MelStruct):
-        """Handle older truncated SPED for MOVT subrecord."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if size_ == 44:
-                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
-                return
-            elif size_ == 40:
-                raise ModSizeError(record.inName, readId, 44, size_, True,
-                                   old_skyrim=True)
-            else:
-                raise ModSizeError(record.inName, readId, 44, size_, True)
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelString('MNAM','mnam_n'),
-        MelMovtSped('SPED','11f','leftWalk','leftRun','rightWalk','rightRun',
-                  'forwardWalk','forwardRun','backWalk','backRun',
-                  'rotateInPlaceWalk','rotateInPlaceRun',
-                  'rotateWhileMovingRun'),
-        MelOptStruct('INAM','3f','directional','movementSpeed','rotationSpeed'),
-        )
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreStat(MelRecord):
     """Static model record."""
     classType = 'STAT'
@@ -178,10 +166,15 @@ class MreStat(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 8: # old skyrim record
-                raise ModSizeError(record.inName, readId, 12, size_, True,
-                                   old_skyrim=True)
+                unpacked = ins.unpack('fI', size_, readId)
             else:
                 raise ModSizeError(record.inName, readId, 12, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -211,10 +204,15 @@ class MreWatr(MelRecord):
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
             elif size_ == 228: # old skyrim record
-                raise ModSizeError(record.inName, readId, 232, size_, True,
-                                   old_skyrim=True)
+                unpacked = ins.unpack('7f4s2f3Bs3Bs3Bs4s43f', size_, readId)
             else:
                 raise ModSizeError(record.inName, readId, 232, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -348,16 +346,29 @@ class MreWeap(MelRecord):
         ))
 
     class MelWeapCrdt(MelStruct):
-        """Handle older truncated CRDT for WEAP subrecord."""
+        """Handle older truncated CRDT for WEAP subrecord.
+
+           Old Skyrim format H2sfB3sI FormID is the last integer.
+
+           New Format H2sfB3s4sI4s FormID is the integer priot to the
+           last 4S. Bethesda did not append the record they inserted bytes
+           which shifts the FormID 4 bytes. """
         def loadData(self, record, ins, sub_type, size_, readId):
             if size_ == 24:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
                 return
-            elif size_ == 16: # old skyrim record
-                raise ModSizeError(record.inName, readId, 24, size_, True,
-                                   old_skyrim=True)
+            elif size_ == 16: # old skyrim record, do not change unpacked
+                var1, var2, var3, var4, var5, formID = ins.unpack('H2sfB3sI', size_, readId)
+                unpacked = (var1, var2, var3, var4, null3, null4, formID, null4)
             else:
                 raise ModSizeError(record.inName, readId, 24, size_, True)
+            unpacked += self.defaults[len(unpacked):]
+            setter = record.__setattr__
+            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+                if callable(action): value = action(value)
+                setter(attr,value)
+            if self._debug: print unpacked, record.flags.getTrueAttrs()
+
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -399,10 +410,10 @@ class MreWeap(MelRecord):
                   'rumbleLeftMotorStrength','rumbleRightMotorStrength',
                   'rumbleDuration',('dnamUnk5',null4+null4+null4),'skill',
                   ('dnamUnk6',null4+null4),'resist',('dnamUnk7',null4),'stagger',),
-        MelWeapCrdt('CRDT','H2sfB3s4sI4s','critDamage',('crdtUnk1',null2),
-                  'criticalMultiplier',(WeapFlags3,'criticalFlags',0L),
-                  ('crdtUnk2',null3),('crdtUnk3',null4),
-                  (FID,'criticalEffect',None),('crdtUnk4',null4),),
+        MelWeapCrdt('CRDT','H2sfB3s4sI4s',('critDamage',0),('crdtUnk1',null2),
+                    ('criticalMultiplier',1.0),(WeapFlags3,'criticalFlags',0L),
+                    ('crdtUnk2',null3),('crdtUnk3',null4),
+                    (FID,'criticalEffect',None),('crdtUnk4',null4),),
         MelStruct('VNAM','I','detectionSoundLevel'),
         MelFid('CNAM','template',),
         )
@@ -605,6 +616,21 @@ class MreLens(MelRecord):
             (1, 'shrinksWhenOccluded'),
         ))
 
+    #--DNAM loader
+    class MelDnamLoaders(DataDict):
+        """Since DNAM subrecords occur in two different places, we need
+        to replace ordinary 'loaders' dictionary with a 'dictionary' that will
+        return the correct element to handle the CNAM subrecord. 'Correct'
+        element is determined by which other subrecords have been encountered."""
+        def __init__(self,loaders,lensinfo,sprites):
+            self.data = loaders
+            self.type_dnam = {'EDID':lensinfo, 'LFSP':sprites}
+            self.dnam = lensinfo #--Which dnam element loader to use next.
+        def __getitem__(self,key):
+            if key == 'DNAM': return self.dnam
+            self.dnam = self.type_dnam.get(key, self.dnam)
+            return self.data[key]
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('CNAM','f','colorInfluence'),
@@ -618,4 +644,6 @@ class MreLens(MelRecord):
                 (LensFlareFlags, 'lensFlags', 0L), ),
             )
         )
+    melSet.loaders = MelDnamLoaders(melSet.loaders, melSet.elements[2],
+                                    melSet.elements[4])
     __slots__ = melSet.getSlotsUsed()

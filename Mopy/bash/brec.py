@@ -1143,27 +1143,8 @@ class MelFull0(MelString):
         MelString.__init__(self,'FULL','full')
 
 #------------------------------------------------------------------------------
-class MelModel(MelGroup):
-    """Represents a model record."""
-    typeSets = (
-        ('MODL','MODB','MODT'),
-        ('MOD2','MO2B','MO2T'),
-        ('MOD3','MO3B','MO3T'),
-        ('MOD4','MO4B','MO4T'),)
-
-    def __init__(self,attr='model',index=0):
-        """Initialize. Index is 0,2,3,4 for corresponding type id."""
-        types = self.__class__.typeSets[(0,index-1)[index>0]]
-        MelGroup.__init__(self,attr,
-            MelString(types[0],'modPath'),
-            MelStruct(types[1],'f','modb'), ### Bound Radius, Float
-            MelBase(types[2],'modt_p'),) ###Texture Files Hashes, Byte Array
-
-    def debug(self,on=True):
-        """Sets debug flag on self."""
-        for element in self.elements[:2]: element.debug(on)
-        return self
-
+# Hack for allowing record imports from parent games - set per game
+MelModel = None # type: type
 #------------------------------------------------------------------------------
 class MelOptStruct(MelStruct):
     """Represents an optional structure, where if values are null, is skipped."""
@@ -1181,22 +1162,6 @@ class MelOptStruct(MelStruct):
                 break
 
 #------------------------------------------------------------------------------
-class MelOptStructA(MelStructA):
-    """Represents an optional array of repeating structured elements,
-    where if the values are null, is skipped."""
-
-    def dumpData(self,record,out):
-        """Dumps data from record to outstream."""
-        # TODO: Unfortunately, checking if the attribute is None is not
-        # really effective.  Checking it to be 0,empty,etc isn't effective either.
-        # It really just needs to check it against the default.
-        recordGetAttr = record.__getattribute__
-        for attr,default in zip(self.attrs,self.defaults):
-            oldValue=recordGetAttr(attr)
-            if oldValue is not None and oldValue is not default:
-                MelStruct.dumpData(self,record,out)
-                break
-
 # Mod Element Sets ------------------------------------------------------------
 #------------------------------------------------------------------------------
 class MelSet:
@@ -1678,6 +1643,10 @@ class MreRecord(object):
         #--Return it
         return decode(value)
 
+    def loadInfos(self,ins,endPos,infoClass):
+        """Load infos from ins. Called from MobDials."""
+        pass
+
 #------------------------------------------------------------------------------
 class MelRecord(MreRecord):
     """Mod record built from mod record elements."""
@@ -1820,7 +1789,12 @@ class MreLeveledListBase(MelRecord):
           chanceNone
           flags
     """
-    _flags = bolt.Flags(0L,bolt.Flags.getNames('calcFromAllLevels','calcForEachItem','useAllSpells'))
+    _flags = bolt.Flags(0L,bolt.Flags.getNames(
+        (0, 'calcFromAllLevels'),
+        (1, 'calcForEachItem'),
+        (2, 'useAllSpells'),
+        (3, 'specialLoot'),
+        ))
     copyAttrs = ()
     __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'delevs', 'relevs']
 
@@ -1850,8 +1824,9 @@ class MreLeveledListBase(MelRecord):
             self.flags = other.flags()
         else:
             for attr in self.__class__.copyAttrs:
-                self.__setattr__(attr,other.__getattribute__(attr) or
-                                       self.__getattribute__(attr))
+                otherAttr = other.__getattribute__(attr)
+                if otherAttr is not None:
+                    self.__setattr__(attr, otherAttr)
             self.flags |= other.flags
         #--Remove items based on other.removes
         if other.delevs or other.relevs:
@@ -1897,3 +1872,51 @@ class MreLeveledListBase(MelRecord):
             self.mergeSources = [otherMod]
         #--Done
         self.setChanged(self.mergeOverLast)
+
+#------------------------------------------------------------------------------
+# Skyrim and Fallout ----------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelMODS(MelBase):
+    """MODS/MO2S/etc/DMDS subrecord"""
+    def hasFids(self,formElements):
+        """Include self if has fids."""
+        formElements.add(self)
+
+    def setDefault(self,record):
+        """Sets default value for record instance."""
+        record.__setattr__(self.attr,None)
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        """Reads data from ins into record attribute."""
+        insUnpack = ins.unpack
+        insRead32 = ins.readString32
+        count, = insUnpack('I',4,readId)
+        data = []
+        dataAppend = data.append
+        for x in xrange(count):
+            string = insRead32(readId)
+            fid = ins.unpackRef()
+            index, = insUnpack('I',4,readId)
+            dataAppend((string,fid,index))
+        record.__setattr__(self.attr,data)
+
+    def dumpData(self,record,out):
+        """Dumps data from record to outstream."""
+        data = record.__getattribute__(self.attr)
+        if data is not None:
+            data = record.__getattribute__(self.attr)
+            outData = struct_pack('I', len(data))
+            for (string,fid,index) in data:
+                outData += struct_pack('I', len(string))
+                outData += encode(string)
+                outData += struct_pack('=2I', fid, index)
+            out.packSub(self.subType,outData)
+
+    def mapFids(self,record,function,save=False):
+        """Applies function to fids.  If save is true, then fid is set
+           to result of function."""
+        attr = self.attr
+        data = record.__getattribute__(attr)
+        if data is not None:
+            data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
+            if save: record.__setattr__(attr,data)

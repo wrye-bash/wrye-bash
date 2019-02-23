@@ -21,9 +21,7 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
-"""This modules defines static data for use by bush, when
-   Fallout NV is set at the active game."""
+"""GameInfo override for Fallout NV."""
 from .constants import *
 from .default_tweaks import default_tweaks
 from .. import GameInfo
@@ -265,22 +263,25 @@ class FalloutNVGameInfo(GameInfo):
         # MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTes4, MreTree,
         # MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreCell, MreWrld,
         # MreNavm,
+        # First import from our record file
         from .records import MreActi, MreAloc, MreAmef, MreAmmo, MreArma, \
             MreArmo, MreAspc, MreCcrd, MreCdck, MreChal, MreChip, MreCmny, \
-            MreCont, MreCpth, MreCsno, MreCsty, MreDehy, MreDobj, MreEnch, \
-            MreFact, MreHdpt, MreHung, MreIdle, MreImad, MreImod, MreIpct, \
-            MreKeym, MreLigh, MreLscr, MreLsct, MreMesg, MreMisc, MreMset, \
-            MreMusc, MrePack, MrePerk, MreProj, MreQust, MreRace, MreRcct, \
-            MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreSpel, MreStat, \
-            MreTact, MreTerm, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, \
-            MreDial, MreGmst, MreInfo, MrePgre, MrePmis, MreRefr, MreHeader, \
-            MreNpc, MreAddn, MreAnio, MreAvif, MreBook, MreBptd, MreCams, \
-            MreClas, MreClmt, MreCobj, MreCrea, MreDebr, MreDoor, MreEczn, \
-            MreEfsh, MreExpl, MreEyes, MreFlst, MreFurn, MreGras, MreHair, \
-            MreIdlm, MreImgs, MreIngr, MreIpds, MreLgtm, MreLtex, MreLvlc, \
-            MreLvli, MreLvln, MreMgef, MreMicn, MreMstt, MreNavi, MreNavm, \
-            MreNote, MrePwat, MreRads, MreRgdl, MreScol, MreScpt, MreTree, \
-            MreTxst, MreVtyp, MreWatr, MreWrld, MreAlch
+            MreCont, MreCsno, MreCsty, MreDehy, MreDobj, MreEnch, MreFact, \
+            MreHdpt, MreHung, MreImad, MreImod, MreIpct, MreKeym, MreLigh, \
+            MreLscr, MreLsct, MreMisc, MreMset, MreMusc, MreProj, MreRace, \
+            MreRcct, MreRcpe, MreRegn, MreRepu, MreSlpd, MreSoun, MreStat, \
+            MreTact, MreWeap, MreWthr, MreAchr, MreAcre, MreCell, MreDial, \
+            MreGmst, MreInfo, MrePgre, MrePmis, MreRefr, MreHeader
+        # then from fallout3.records
+        from ..fallout3.records import MreCpth, MreIdle, MreMesg, MrePack, \
+            MrePerk, MreQust, MreRegn, MreSpel, MreTerm, MreNpc, MreAddn, \
+            MreAnio, MreAvif, MreBook, MreBptd, MreCams, MreClas, MreClmt, \
+            MreCobj, MreCrea, MreDebr, MreDoor, MreEczn, MreEfsh, MreExpl, \
+            MreEyes, MreFlst, MreFurn, MreGras, MreHair, MreIdlm, MreImgs, \
+            MreIngr, MreIpds, MreLgtm, MreLtex, MreLvlc, MreLvli, MreLvln, \
+            MreMgef, MreMicn, MreMstt, MreNavi, MreNavm, MreNote, MrePwat, \
+            MreRads, MreRgdl, MreScol, MreScpt, MreTree, MreTxst, MreVtyp, \
+            MreWatr, MreWrld, MreAlch
         # Old Mergeable from Valda's version
         # MreActi, MreAlch, MreAloc, MreAmef, MreAmmo, MreAnio, MreAppa,
         # MreArma, MreArmo, MreAspc, MreAvif, MreBook, MreBptd, MreBsgn,
