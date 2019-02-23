@@ -52,22 +52,14 @@ if brec.MelModel is None:
                     'MOD5': ('MOD5', 'MO5T', 'MO5S'),
                     'DMDL': ('DMDL', 'DMDT', 'DMDS'), }
 
-        class MelModelHash(MelBase):
-            """TextureHashes are not used for loose files and there is never a
-            Bashed Patch.bsa. So we read the record if present and then
-            discard it."""
-            def loadData(self, record, ins, sub_type, size_, readId):
-                MelBase.loadData(self, record, ins, sub_type, size_, readId)
-            def getSlotsUsed(self):
-                return ()
-            def setDefault(self, record): return
-            def dumpData(self, record, out): return
-
         def __init__(self, attr='model', subType='MODL'):
             """Initialize."""
             types = self.__class__.typeSets[subType]
             MelGroup.__init__(self, attr, MelString(types[0], 'modPath'),
-                              self.MelModelHash(types[1], 'textureHashes'),
+                              # Ignore texture hashes - they're only an
+                              # optimization, plenty of records in Skyrim.esm
+                              # are missing them
+                              MelNull(types[1]),
                               MelMODS(types[2], 'alternateTextures'), )
 
         def debug(self, on=True):
@@ -1695,7 +1687,9 @@ class MreBptd(MelRecord):
                       'limbReplacementScale'),
             MelString('NAM1','limbReplacementModel'),
             MelString('NAM4','goreEffectsTargetBone'),
-            MelBase('NAM5','textureFilesHashes'),
+            # Ignore texture hashes - they're only an optimization, plenty of
+            # records in Skyrim.esm are missing them
+            MelNull('NAM5'),
             ),
         )
     __slots__ = melSet.getSlotsUsed()
@@ -5108,7 +5102,9 @@ class MreProj(MelRecord):
                   ),
         MelGroup('models',
             MelString('NAM1','muzzleFlashPath'),
-            MelBase('NAM2','nam2_p'),
+            # Ignore texture hashes - they're only an optimization, plenty of
+            # records in Skyrim.esm are missing them
+            MelNull('NAM2'),
         ),
         MelStruct('VNAM','I','soundLevel',),
         )

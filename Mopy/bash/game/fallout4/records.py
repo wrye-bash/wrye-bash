@@ -40,21 +40,14 @@ if brec.MelModel is None:
                     # Destructible
                     'DMDL': ('DMDL', 'DMDT', 'DMDC', 'DMDS'), }
 
-        class MelModelHash(MelBase):
-            """See game.skyrim.records._MelModel.MelModelHash"""
-            def loadData(self, record, ins, sub_type, size_, readId):
-                MelBase.loadData(self, record, ins, sub_type, size_, readId)
-            def getSlotsUsed(self):
-                return ()
-            def setDefault(self,record): return
-            def dumpData(self,record,out): return
-
         def __init__(self, attr='model', subType='MODL'):
             """Initialize."""
             types = self.__class__.typeSets[subType]
             MelGroup.__init__(
                 self, attr, MelString(types[0], 'modPath'),
-                self.MelModelHash(types[1], 'textureHashes'),
+                # Ignore texture hashes - they're only an optimization, plenty
+                # of records in Skyrim.esm are missing them
+                MelNull(types[1]),
                 MelOptStruct(types[2], 'f', 'colorRemappingIndex'),
                 MelOptStruct(types[3], 'I', (FID,'materialSwap')),
                 MelBase(types[3], 'modf_p'),
