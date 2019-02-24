@@ -150,11 +150,11 @@ testing very latest features/fixes.
   [15]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Running-Wrye-Bash-on-WINE-%28Arch-Linux%29
   [16]: https://github.com/wrye-bash/wrye-bash/issues/240
   [17]: https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4
-  [18]: https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games
+  [18]: https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games
   [19]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug
   [20]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug#the-bashbugdumplog
   [21]: https://bethesda.net/community/post/200780
-  [22]: https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games/&do=findComment&comment=166863
+  [22]: https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games/&do=findComment&comment=166863
   [23]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository
   [24]: https://github.com/wrye-bash/wrye-bash/issues?utf8=%E2%9C%93&q=sort%3Aupdated-desc%20is%3Aopen
   [25]: https://github.com/wrye-bash/wrye-bash/issues/200

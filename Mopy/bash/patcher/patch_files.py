@@ -465,7 +465,7 @@ class CBash_PatchFile(_PFile, ObModFile):
             print (u'\n'.join(
                 (_(u"Please copy this entire message and report it on the "
                    u"current official thread at "
-                   u"https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games."),
+                   u"https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games."),
                  _(u'Also with:'),
                  _(u'1. Your OS:'),
                  _(u'2. Your installed MS Visual C++ redistributable '
