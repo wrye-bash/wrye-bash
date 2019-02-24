@@ -39,7 +39,7 @@ class Fallout3GameInfo(GameInfo):
     pklfile = ur'bash\db\Fallout3_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
 
-    nexusUrl = u'http://www.nexusmods.com/fallout3/'
+    nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus'
 

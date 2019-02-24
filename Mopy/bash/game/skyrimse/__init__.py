@@ -40,7 +40,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         u'Installed Path'
     )
 
-    nexusUrl = u'http://www.nexusmods.com/skyrimspecialedition/'
+    nexusUrl = u'https://www.nexusmods.com/skyrimspecialedition/'
     nexusName = u'Skyrim SE Nexus'
     nexusKey = 'bash.installers.openSkyrimSeNexus.continue'
 

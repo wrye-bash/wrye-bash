@@ -39,7 +39,7 @@ class SkyrimGameInfo(GameInfo):
     iniFiles = [u'Skyrim.ini', u'SkyrimPrefs.ini']
     pklfile = r'bash\db\Skyrim_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Skyrim', u'Installed Path')
-    nexusUrl = u'http://www.nexusmods.com/skyrim/'
+    nexusUrl = u'https://www.nexusmods.com/skyrim/'
     nexusName = u'Skyrim Nexus'
     nexusKey = 'bash.installers.openSkyrimNexus.continue'
 

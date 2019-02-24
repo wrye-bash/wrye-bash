@@ -135,12 +135,12 @@ testing very latest features/fixes.
 
 
   [1]: http://sourceforge.net/p/oblivionworks/code/3177/tree/
-  [2]: http://www.nexusmods.com/oblivion/mods/22368
+  [2]: https://www.nexusmods.com/oblivion/mods/22368
   [3]: https://www.nexusmods.com/fallout3/mods/22934
   [4]: https://www.nexusmods.com/newvegas/mods/64580
-  [5]: http://www.nexusmods.com/skyrim/mods/1840
-  [6]: http://www.nexusmods.com/fallout4/mods/20032
-  [7]: http://www.nexusmods.com/skyrimspecialedition/mods/6837
+  [5]: https://www.nexusmods.com/skyrim/mods/1840
+  [6]: https://www.nexusmods.com/fallout4/mods/20032
+  [7]: https://www.nexusmods.com/skyrimspecialedition/mods/6837
   [8]: https://github.com/wrye-bash/wrye-bash/releases
   [9]: http://wrye-bash.github.io/
   [10]: http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html#install
