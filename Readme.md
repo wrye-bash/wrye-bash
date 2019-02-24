@@ -90,17 +90,18 @@ Wine issue: [#240][16]
 
 ### Questions ? Feedback ?
 
-We are currently monitoring [this thread][17] at the Bethesda.net SSE forums,
-for all supported games - or alternatively [this thread][18], at AFK mods.
+We are currently monitoring [this thread][17] at the AFK Mods forum and
+[the Wrye Bash Discord][18].
 Please be sure to ask there first before reporting an issue here. If asking for
 help please provide the info detailed in our [Reporting a bug][19] wiki page.
 In particular it is _essential_ you produce a [bashbugdump.log][20].
 
 #### Latest betas
 
-In the [second post][21] of the Bethesda or [AFK][22] threads there are links to latest
-python and standalone (exe) builds. Be sure to check those out for bleeding
-edge bugfixes and enhancements. Feedback appreciated!
+In the [second post][21] of the AFK Mods thread, as well as in the
+`#wip-builds` channel on [Discord][22], there are links to the latest python
+and standalone (exe) builds. Be sure to check those out for bleeding edge
+bugfixes and enhancements. Feedback appreciated!
 
 ### Contributing
 
@@ -149,12 +150,12 @@ testing very latest features/fixes.
   [14]: https://github.com/wrye-bash/wrye-bash/blob/0a47238de9e7f46f55fe755f2744e2cea521f514/Mopy/bash/balt.py#L678
   [15]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Running-Wrye-Bash-on-WINE-%28Arch-Linux%29
   [16]: https://github.com/wrye-bash/wrye-bash/issues/240
-  [17]: https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4
-  [18]: https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games
+  [17]: https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games
+  [18]: https://discord.gg/NwWvAFR
   [19]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug
   [20]: https://github.com/wrye-bash/wrye-bash/wiki/[github]-Reporting-a-bug#the-bashbugdumplog
-  [21]: https://bethesda.net/community/post/200780
-  [22]: https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games/&do=findComment&comment=166863
+  [21]: https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games/&do=findComment&comment=166863
+  [22]: https://discord.gg/NwWvAFR
   [23]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgit%5D-Syncing-a-Fork-with-the-main-repository
   [24]: https://github.com/wrye-bash/wrye-bash/issues?utf8=%E2%9C%93&q=sort%3Aupdated-desc%20is%3Aopen
   [25]: https://github.com/wrye-bash/wrye-bash/issues/200

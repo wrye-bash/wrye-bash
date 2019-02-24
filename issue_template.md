@@ -3,9 +3,10 @@ for guidelines on reporting issues. In particular, you must provide the info/ste
 
 ### Link to the forum thread you reported the issue
 
-**IMPORTANT**: Before posting an issue, be sure to ask at the official threads:
+**IMPORTANT**: Before posting an issue, be sure to ask at the official thread on
 [AFK Mods](https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games/&do=getNewComment)
-(or [Bethesda](https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4/) )
+(or on [Discord](https://discord.gg/NwWvAFR)).
+
 **POST AN ISSUE ON GITHUB _ONLY_ AFTER DOING SO**.
 
 Add the link to your post here:
