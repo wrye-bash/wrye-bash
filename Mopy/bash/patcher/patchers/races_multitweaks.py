@@ -1498,8 +1498,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 u"the patch. This will likely succeed if you restart Wrye "
                 u"Bash and try again. If it fails repeatedly, please report "
                 u"it at the current official Wrye Bash thread at "
-                u"http://forums.bethsoft.com/index.php?/forum/25-mods/. We "
-                u"apologize for the inconvenience.")
+                u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/"
+                u"We apologize for the inconvenience.")
             return
         try:
             argonianEyeMeshes = eye_meshes[self.argonianEye]
@@ -1509,8 +1509,8 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 u"the patch. This will likely succeed if you restart Wrye "
                 u"Bash and try again. If it fails repeatedly, please report "
                 u"it at the current official Wrye Bash thread at "
-                u"http://forums.bethsoft.com/index.php?/forum/25-mods/. We "
-                u"apologize for the inconvenience.")
+                u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/"
+                u"We apologize for the inconvenience.")
             return
         fixedRaces = set()
         fixedNPCs = {
