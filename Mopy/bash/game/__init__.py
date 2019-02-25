@@ -206,6 +206,7 @@ class GameInfo(object):
     # INI setting used to setup Save Profiles
     #  (section,key)
     saveProfilesKey = (u'General', u'SLocalSavePath')
+    save_prefix = u'Saves' # base dir for save files
 
     # BAIN:
     #  These are the allowed default data directories that BAIN can install to

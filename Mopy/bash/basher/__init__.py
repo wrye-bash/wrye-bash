@@ -3739,9 +3739,10 @@ class BashFrame(BaltFrame):
             title += u', CBash %s: ' % (CBashApi.VersionText,)
         else:
             title += u': '
-        maProfile = re.match(ur'Saves\\(.+)\\$',bosh.saveInfos.localSave,re.U)
+        # chop off save prefix - +1 for the path separator
+        maProfile = bosh.saveInfos.localSave[len(bush.game.save_prefix) + 1:]
         if maProfile:
-            title += maProfile.group(1)
+            title += maProfile
         else:
             title += _(u'Default')
         if bosh.modInfos.voCurrent:

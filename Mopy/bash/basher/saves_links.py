@@ -30,10 +30,12 @@ import re
 import shutil
 from . import BashFrame
 from .dialogs import ImportFaceDialog
-from .. import bass, bosh, bolt, balt, bush, parsers, load_order, initialization
+from .. import bass, bosh, bolt, balt, bush, parsers, load_order, \
+    initialization
 from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
-from ..bolt import GPath, SubProgress, formatInteger, struct_pack, struct_unpack
+from ..bolt import GPath, SubProgress, formatInteger, struct_pack, \
+    struct_unpack
 from ..bosh import faces
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 
@@ -48,6 +50,12 @@ __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
 #------------------------------------------------------------------------------
 # Saves Links -----------------------------------------------------------------
 #------------------------------------------------------------------------------
+def _win_join(saves_subdir):
+    """Join base (default) save dir with subdir using the windows path
+    separator. Needed as we want to write this separator to the game ini
+    file."""
+    return u'\\'.join([bush.game.save_prefix, saves_subdir])
+
 class Saves_ProfilesData(balt.ListEditorData):
     """Data capsule for save profiles editing dialog."""
     def __init__(self,parent):
@@ -72,11 +80,12 @@ class Saves_ProfilesData(balt.ListEditorData):
     #--Info box
     def getInfo(self,item):
         """Returns string info on specified item."""
-        profileSaves = u'Saves\\'+item+u'\\'
-        return bosh.saveInfos.profiles.getItem(profileSaves,'info',_(u'About %s:') % item)
+        profileSaves = _win_join(item)
+        return bosh.saveInfos.profiles.getItem(profileSaves, 'info',
+                                               _(u'About %s:') % item)
     def setInfo(self,item,text):
         """Sets string info on specified item."""
-        profileSaves = u'Saves\\'+item+u'\\'
+        profileSaves = _win_join(item)
         bosh.saveInfos.profiles.setItem(profileSaves,'info',text)
 
     def add(self):
@@ -97,7 +106,7 @@ class Saves_ProfilesData(balt.ListEditorData):
                 _(u'Name must be encodable in Windows Codepage 1252 (Western European), due to limitations of %(gameIni)s.') % {'gameIni':bush.game.iniFiles[0]})
             return False
         self.baseSaves.join(newName).makedirs()
-        newSaves = u'Saves\\'+newName+u'\\'
+        newSaves = _win_join(newName)
         bosh.saveInfos.profiles.setItem(newSaves,'vOblivion',bosh.modInfos.voCurrent)
         return newName
 
@@ -117,7 +126,7 @@ class Saves_ProfilesData(balt.ListEditorData):
         oldDir, newDir = (self.baseSaves.join(subdir) for subdir in
                           (oldName, newName))
         oldDir.moveTo(newDir)
-        oldSaves,newSaves = ((u'Saves\\'+name+u'\\') for name in (oldName,newName))
+        oldSaves, newSaves = (_win_join(name_) for name_ in (oldName, newName))
         if bosh.saveInfos.localSave == oldSaves:
             bosh.saveInfos.setLocalSave(newSaves)
             Link.Frame.SetTitle()
@@ -126,7 +135,7 @@ class Saves_ProfilesData(balt.ListEditorData):
 
     def remove(self,profile):
         """Removes load list."""
-        profileSaves = u'Saves\\'+profile+u'\\'
+        profileSaves = _win_join(profile)
         #--Can't remove active or Default directory.
         if bosh.saveInfos.localSave == profileSaves:
             balt.showError(self.parent,_(u'Active profile cannot be removed.'))
@@ -150,6 +159,10 @@ class Saves_ProfilesData(balt.ListEditorData):
 class Saves_Profiles(ChoiceLink):
     """Select a save set profile -- i.e., the saves directory."""
     local = None
+    # relative path to save base dir as in My Games/Oblivion
+    _my_games = bass.dirs['saveBase'].s[
+                bass.dirs['saveBase'].cs.find(u'my games'):]
+    _my_games = GPath(_my_games)
 
     @property
     def _choices(self): return [x.s for x in initialization.getLocalSaveDirs()]
@@ -157,10 +170,10 @@ class Saves_Profiles(ChoiceLink):
     class _ProfileLink(CheckLink, EnabledLink):
         @property
         def menu_help(self):
-            return _(u'Set profile to %(prof)s (My Games/Saves/%(prof)s)') % {
-                               'prof': self._text}
+            profile_dir = Saves_Profiles._my_games.join(self._text)
+            return _(u'Set profile to %s (%s)') % (self._text, profile_dir)
         @property
-        def relativePath(self): return u'Saves\\' + self._text + u'\\'
+        def relativePath(self): return _win_join(self._text)
         def _check(self): return Saves_Profiles.local == self.relativePath
         def _enable(self): return not self._check()
         def Execute(self):
@@ -183,10 +196,11 @@ class Saves_Profiles(ChoiceLink):
 
         @property
         def menu_help(self):
-            return _(u'Set profile to the default (My Games/Saves)')
+            profile_dir = Saves_Profiles._my_games.join(bush.game.save_prefix)
+            return _(u'Set profile to the default (%s)' % profile_dir)
 
         @property
-        def relativePath(self): return u'Saves\\'
+        def relativePath(self): return bush.game.save_prefix
 
     class _Edit(ItemLink):
         _text = _(u"Edit Profiles...")
@@ -594,16 +608,18 @@ class Save_Move(ChoiceLink):
         _self = self
         class _Default(EnabledLink):
             _text = _(u'Default')
-            _help = _self._help_str % bass.dirs['saveBase'].join(u'Saves')
-            def _enable(self): return Save_Move.local != u'Saves\\'
+            _help = _self._help_str % bass.dirs['saveBase'].join(
+                bush.game.save_prefix)
+            def _enable(self):
+                return Save_Move.local != bush.game.save_prefix
             def Execute(self): _self.MoveFiles(_(u'Default'))
         class _SaveProfileLink(EnabledLink):
             @property
             def menu_help(self):
                 return _self._help_str % bass.dirs['saveBase'].join(
-                    u'Saves', self._text)
+                    bush.game.save_prefix, self._text)
             def _enable(self):
-                return Save_Move.local != (u'Saves\\' + self._text + u'\\')
+                return Save_Move.local != _win_join(self._text)
             def Execute(self): _self.MoveFiles(self._text)
         self.__class__.choiceLinkType = _SaveProfileLink
         self.extraItems = [_Default()]
