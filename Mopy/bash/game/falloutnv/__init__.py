@@ -38,7 +38,7 @@ class FalloutNVGameInfo(GameInfo):
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = ur'bash\db\FalloutNV_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
-    nexusUrl = u'http://www.nexusmods.com/newvegas/'
+    nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'
     nexusKey = u'bash.installers.openNewVegasNexus'
 

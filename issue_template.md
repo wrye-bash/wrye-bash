@@ -3,16 +3,17 @@ for guidelines on reporting issues. In particular, you must provide the info/ste
 
 ### Link to the forum thread you reported the issue
 
-**IMPORTANT**: Before posting an issue, be sure to ask at the official threads:
-[AFK mods](https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games/&do=getNewComment)
-(or [Bethesda](https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4/) )
+**IMPORTANT**: Before posting an issue, be sure to ask at the official thread on
+[AFK Mods](https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games/&do=getNewComment)
+(or on [Discord](https://discord.gg/NwWvAFR)).
+
 **POST AN ISSUE ON GITHUB _ONLY_ AFTER DOING SO**.
 
 Add the link to your post here:
 
 ### Try the latest nightly build:
 
-Download from the [second post in AFK mods thread](https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games/&do=findComment&comment=166863)
+Download from the [second post in AFK mods thread](https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games/&do=findComment&comment=166863)
 
 ### Info on your installation
 

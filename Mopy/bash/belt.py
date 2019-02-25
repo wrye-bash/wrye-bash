@@ -568,9 +568,9 @@ class PageVersions(PageInstaller):
             sizerVersions.Add(balt.staticBitmap(self, bmp[bGEOk]))
 
         linkWB = _hyperlink(u'Wrye Bash',
-                            u'http://oblivion.nexusmods.com/mods/22368')
+                            u'https://www.nexusmods.com/oblivion/mods/22368')
         linkWB.SetVisitedColour(linkWB.GetNormalColour())
-        linkWB.SetToolTip(balt.tooltip(u'http://oblivion.nexusmods.com/'))
+        linkWB.SetToolTip(balt.tooltip(u'https://www.nexusmods.com/oblivion'))
         sizerVersions.Add(linkWB)
         sizerVersions.Add(balt.StaticText(self, wbNeed))
         sizerVersions.Add(balt.StaticText(self, wbHave))

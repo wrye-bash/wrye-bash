@@ -185,9 +185,10 @@ def main(opts):
     except Exception as e:
         msg = u'\n'.join([
             _(u'Wrye Bash encountered an error.'),
-            _(u'Please post the information below to the official thread at:'),
-            _(u'https://afkmods.iguanadons.net/index.php?/topic/4966-wrye-bash-all-games/& or '),
-            _(u'https://bethesda.net/community/topic/38798/relz-wrye-bash-oblivion-skyrim-skyrim-se-fallout-4/'),
+            _(u'Please post the information below to the official thread at'),
+            _(u'https://afkmods.com/index.php?/topic/4966-wrye-bash-all-games'),
+            _(u'or to the Wrye Bash Discord at'),
+            _(u'https://discord.gg/NwWvAFR'),
             u'',
             traceback.format_exc(e)
         ])

@@ -38,7 +38,7 @@ class Fallout4GameInfo(GameInfo):
     iniFiles = [u'Fallout4.ini', u'Fallout4Prefs.ini', u'Fallout4Custom.ini', ]
     pklfile = ur'bash\db\Fallout4_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
-    nexusUrl = u'http://www.nexusmods.com/fallout4/'
+    nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
     nexusKey = 'bash.installers.openFallout4Nexus.continue'
 

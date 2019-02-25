@@ -39,7 +39,7 @@ class OblivionGameInfo(GameInfo):
     iniFiles = [u'Oblivion.ini']
     pklfile = ur'bash\db\Oblivion_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
-    nexusUrl = u'http://www.nexusmods.com/oblivion/'
+    nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'TES Nexus'
     nexusKey = 'bash.installers.openTesNexus.continue'
 
@@ -74,8 +74,8 @@ class OblivionGameInfo(GameInfo):
         exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
                (u'Data',u'obse',u'plugins',u'obgev2.dll'),
                ]
-        url = u'http://oblivion.nexusmods.com/mods/30054'
-        url_tip = u'http://oblivion.nexusmods.com/'
+        url = u'https://www.nexusmods.com/oblivion/mods/30054'
+        url_tip = u'https://www.nexusmods.com/oblivion'
 
     class ess(GameInfo.ess):
         canEditMore = True

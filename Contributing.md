@@ -165,4 +165,4 @@ Last but not least you can make a difference to Wrye Bash by offering a small do
 Your donation will motivate the expert software developers behind this project to keep
 working on the complex and time consuming job of keeping Wrye Bash alive. You can
 donate via paypal on the
-[nexus sites](http://www.nexusmods.com/skyrimspecialedition/users/donate/?mode=straight&id=482689)
+[nexus sites](https://www.nexusmods.com/skyrimspecialedition/users/donate/?mode=straight&id=482689)
