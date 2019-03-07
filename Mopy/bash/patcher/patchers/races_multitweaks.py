@@ -1498,7 +1498,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 u"the patch. This will likely succeed if you restart Wrye "
                 u"Bash and try again. If it fails repeatedly, please report "
                 u"it at the current official Wrye Bash thread at "
-                u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/"
+                u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/. "
                 u"We apologize for the inconvenience.")
             return
         try:
@@ -1509,7 +1509,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 u"the patch. This will likely succeed if you restart Wrye "
                 u"Bash and try again. If it fails repeatedly, please report "
                 u"it at the current official Wrye Bash thread at "
-                u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/"
+                u"https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/. "
                 u"We apologize for the inconvenience.")
             return
         fixedRaces = set()

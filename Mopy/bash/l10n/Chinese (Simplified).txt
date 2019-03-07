@@ -7052,8 +7052,8 @@ msgid "Is a master of non-mergeable mod(s): %s."
 msgstr "是不可整合 mod（%s）的 master 。"
 
 #: bash\bosh.py:10879
-msgid "Please copy this entire message and report it on the current official thread at http://forums.bethsoft.com/index.php?/forum/25-mods/."
-msgstr "请复制下面信息并在http://forums.bethsoft.com/index.php?/forum/25-mods/中的最新官方讨论帖中报告。"
+msgid "Please copy this entire message and report it on the current official thread at https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/."
+msgstr "请复制下面信息并在https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/中的最新官方讨论帖中报告。"
 
 #: bash\bosh.py:10881
 msgid "Also with:"
@@ -8616,8 +8616,8 @@ msgid "Eyes/Hair Assigned for NPCs"
 msgstr "已修改 NPC 眼睛/发型"
 
 #: bash\bosh.py:23392 bash\bosh.py:23397
-msgid "Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at http://forums.bethsoft.com/index.php?/forum/25-mods/. We apologize for the inconvenience."
-msgstr "Wrye Bash 可用内存不过，导致无法完成补丁重建。您可以尝试重启 Wrye Bash 再运行操作。如果老是出错，请到 http://forums.bethsoft.com/index.php?/forum/25-mods/ 找到 Wrye Bash 的发布贴并上报。对此给您带来的不便我们深表歉意。"
+msgid "Wrye Bash is low on memory and cannot complete building the patch. This will likely succeed if you restart Wrye Bash and try again. If it fails repeatedly, please report it at the current official Wrye Bash thread at https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/. We apologize for the inconvenience."
+msgstr "Wrye Bash 可用内存不过，导致无法完成补丁重建。您可以尝试重启 Wrye Bash 再运行操作。如果老是出错，请到 https://www.afkmods.com/index.php?/topic/4966-wrye-bash-all-games/ 找到 Wrye Bash 的发布贴并上报。对此给您带来的不便我们深表歉意。"
 
 #: bash\bosh.py:23417
 msgid "Filtering eyes..."
