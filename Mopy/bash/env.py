@@ -339,6 +339,11 @@ def get_file_version(filename):
     :param filename: The file from which the version should be read.
     :return A 4-int tuple, for example (1, 9, 32, 0).
     """
+    # If it's a symbolic link (i.e. a user-added app), resolve it first
+    if win32client and filename.endswith(u'.lnk'):
+        sh = win32client.Dispatch(u'WScript.Shell')
+        shortcut = sh.CreateShortCut(filename)
+        filename = shortcut.TargetPath
     if win32api is None:
         # TODO(inf) The linux method needs support for string fields
         return _linux_get_file_version_info(filename)
@@ -381,7 +386,11 @@ def _query_string_field_version(file_name, version_prefix):
     # We need to ask for language and copepage first, before we can
     # query the actual version.
     l_query = u'\\VarFileInfo\\Translation'
-    lang, codepage = win32api.GetFileVersionInfo(file_name, l_query)[0]
+    try:
+        lang, codepage = win32api.GetFileVersionInfo(file_name, l_query)[0]
+    except win32api.error:
+        # File does not have a string field section
+        return (0, 0, 0, 0)
     ver_query = u'\\StringFileInfo\\%04X%04X\\%s' % (lang, codepage,
                                                      version_prefix)
     full_ver = win32api.GetFileVersionInfo(file_name, ver_query)
@@ -403,7 +412,11 @@ def _query_fixed_field_version(file_name, version_prefix):
     ProductVersion.
     :return: A 4-tuple of integers containing the version of the file.
     """
-    info = win32api.GetFileVersionInfo(file_name, u'\\')
+    try:
+        info = win32api.GetFileVersionInfo(file_name, u'\\')
+    except win32api.error:
+        # File does not have a fixed field section
+        return (0, 0, 0, 0)
     ms = info[u'%sMS' % version_prefix]
     ls = info[u'%sLS' % version_prefix]
     return win32api.HIWORD(ms), win32api.LOWORD(ms), win32api.HIWORD(ls), \
