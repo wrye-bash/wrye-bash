@@ -69,7 +69,7 @@ def get_registry_path(subkey, entry, exe):
 def get_registry_game_path(submod):
     """Check registry supplied game paths for the game.exe."""
     subkey, entry = submod.regInstallKeys
-    return get_registry_path(subkey, entry, submod.exe)
+    return get_registry_path(subkey, entry, submod.launch_exe)
 
 try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon

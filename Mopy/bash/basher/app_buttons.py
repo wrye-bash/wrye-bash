@@ -249,7 +249,7 @@ class App_Button(StatusBar_Button):
             exeObse = bass.dirs['app'].join(bush.game.se.exe)
             exeLaa = bass.dirs['app'].join(bush.game.laa.exe)
             if BashStatusBar.laaButton.button_state and \
-                            self.exePath.tail == bush.game.exe:
+                            self.exePath.tail == bush.game.launch_exe:
                 # Should use the LAA Launcher
                 exePath = exeLaa
                 args = [exePath.s]

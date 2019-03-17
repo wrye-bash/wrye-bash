@@ -34,7 +34,8 @@ class OblivionGameInfo(GameInfo):
     fsName = u'Oblivion'
     altName = u'Wrye Bash'
     defaultIniFile = u'Oblivion_default.ini'
-    exe = u'Oblivion.exe'
+    game_detect_file = [u'Oblivion.exe']
+    launch_exe = u'Oblivion.exe'
     masterFiles = [u'Oblivion.esm', u'Nehrim.esm']
     iniFiles = [u'Oblivion.ini']
     pklfile = ur'bash\db\Oblivion_ids.pkl'

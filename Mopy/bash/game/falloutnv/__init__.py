@@ -33,7 +33,8 @@ class FalloutNVGameInfo(GameInfo):
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
     defaultIniFile = u'Fallout_default.ini'
-    exe = u'FalloutNV.exe'
+    game_detect_file = [u'FalloutNV.exe']
+    launch_exe = u'FalloutNV.exe'
     masterFiles = [u'FalloutNV.esm']
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = ur'bash\db\FalloutNV_ids.pkl'

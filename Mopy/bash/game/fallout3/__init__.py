@@ -33,7 +33,8 @@ class Fallout3GameInfo(GameInfo):
     fsName = u'Fallout3'
     altName = u'Wrye Flash'
     defaultIniFile = u'Fallout_default.ini'
-    exe = u'Fallout3.exe'
+    game_detect_file = [u'Fallout3.exe']
+    launch_exe = u'Fallout3.exe'
     masterFiles = [u'Fallout3.esm']
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = ur'bash\db\Fallout3_ids.pkl'
