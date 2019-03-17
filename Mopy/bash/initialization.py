@@ -151,23 +151,19 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     # actually matter.
     # Utumno: not sure how/if this applies to other games
     data_oblivion_ini = dirs['app'].join(game_info.iniFiles[0])
-    use_data_dir = False
+    game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
+    dirs['mods'] = dirs['app'].join(u'Data')
     if data_oblivion_ini.exists():
         oblivionIni = ConfigParser()
         oblivionIni.read(data_oblivion_ini.s)
         # is bUseMyGamesDirectory set to 0?
-        use_data_dir = get_ini_option(oblivionIni,
-                                      u'bUseMyGamesDirectory') == u'0'
-    if use_data_dir:
-        game_ini_path = data_oblivion_ini
-        # Set the save game folder to the Oblivion directory
-        dirs['saveBase'] = dirs['app']
-        # Set the data folder to sLocalMasterPath
-        dirs['mods'] = dirs['app'].join(get_ini_option(oblivionIni,
-            u'SLocalMasterPath') or u'Data')
-    else:
-        game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
-        dirs['mods'] = dirs['app'].join(u'Data')
+        if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
+            game_ini_path = data_oblivion_ini
+            # Set the save game folder to the Oblivion directory
+            dirs['saveBase'] = dirs['app']
+            # Set the data folder to sLocalMasterPath
+            dirs['mods'] = dirs['app'].join(get_ini_option(oblivionIni,
+                u'SLocalMasterPath') or u'Data')
     # these are relative to the mods path so they must be set here
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
