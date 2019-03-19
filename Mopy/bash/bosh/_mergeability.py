@@ -49,9 +49,13 @@ def _is_mergeable_no_load(modInfo, reasons):
             facegen_dir_1 = _format_blocking_dir(bush.game.pnd.facegen_dir_1)
             facegen_dir_2 = _format_blocking_dir(bush.game.pnd.facegen_dir_2)
             voice_dir = _format_blocking_dir(bush.game.pnd.voice_dir)
-            bdirs = '\n'.join([facegen_dir_1, facegen_dir_2, voice_dir])
-            reasons.append(_(u'Has plugin-specific directory (one of\n' + bdirs
-                             + u').') % ({'plugin_name': modInfo.name.s}))
+            dir_list = u''
+            for blocking_dir in (facegen_dir_1, facegen_dir_2, voice_dir):
+                if blocking_dir:
+                    dir_list += u'\n  - ' + blocking_dir
+            reasons.append(_(u'Has plugin-specific directory - one of the '
+                             u'following:' + dir_list) %
+                           ({'plugin_name': modInfo.name.s}))
     # Client must make sure NoMerge tag not in tags - if in tags
     # don't show up as mergeable.
     return False if reasons else True

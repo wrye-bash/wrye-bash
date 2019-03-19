@@ -812,6 +812,10 @@ class ModInfo(FileInfo):
         :param resource_path: The path to the plugin-name-specific directory,
         as a list of path components.
         """
+        # If resource_path is empty, then we would effectively query
+        # self.dir.join(self.name), which always exists - that's the mod file!
+        if not resource_path:
+            return False
         return self.dir.join(*resource_path).join(self.name).exists()
 
 #------------------------------------------------------------------------------

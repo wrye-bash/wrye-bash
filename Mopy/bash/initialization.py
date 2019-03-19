@@ -153,7 +153,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     data_oblivion_ini = dirs['app'].join(game_info.iniFiles[0])
     use_data_dir = False
     if data_oblivion_ini.exists():
-        oblivionIni = ConfigParser(data_oblivion_ini.s)
+        oblivionIni = ConfigParser()
+        oblivionIni.read(data_oblivion_ini.s)
         # is bUseMyGamesDirectory set to 0?
         use_data_dir = get_ini_option(oblivionIni,
                                       u'bUseMyGamesDirectory') == u'0'

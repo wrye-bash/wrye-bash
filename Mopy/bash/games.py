@@ -460,8 +460,10 @@ class Game(object):
         # check if we have more than 256 active mods
         drop_espms, drop_esls = self.check_active_limit(acti_filtered)
         disable = drop_espms | drop_esls
-        if disable: # chop off extra, update acti in place
-            acti[:] = [x for x in acti_filtered if x not in disable]
+        # update acti in place - this must always be done, since acti may
+        # contain files that are no longer on disk (i.e. not in acti_filtered)
+        acti[:] = [x for x in acti_filtered if x not in disable]
+        if disable: # chop off extra
             self.mod_infos.selectedExtra = fix_active.selectedExtra = [
                 x for x in acti_filtered if x in disable]
         before_reorder = acti # with overflowed plugins removed
