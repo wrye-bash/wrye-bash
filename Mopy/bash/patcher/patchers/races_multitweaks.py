@@ -718,7 +718,7 @@ class RacePatcher(_ARacePatcher, ListPatcher):
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
             srcFile.load(True)
-            masters = srcInfo.header.masters
+            masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             if 'RACE' not in srcFile.tops: continue
             srcFile.convertToLongFids(('RACE',))

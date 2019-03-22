@@ -112,7 +112,7 @@ def isPBashMergeable(modInfo, minfos, reasons):
                 break
     if newblocks: reasons.append(_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.')
     dependent = [name.s for name, info in minfos.iteritems()
-                 if not info.isBP() and modInfo.name in info.header.masters]
+                 if not info.isBP() and modInfo.name in info.get_masters()]
     if dependent:
         if not verbose: return False
         reasons.append(_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.')
@@ -205,7 +205,7 @@ def _modIsMergeableLoad(modInfo, minfos, reasons):
                     reasons.append(_(u'New record(s) in block(s): %s.') % u', '.join(sorted(newblocks)))
         # dependent mods mergeability should be determined BEFORE their masters
         dependent = [name.s for name, info in minfos.iteritems() if
-                     not info.isBP() and modInfo.name in info.header.masters
+                     not info.isBP() and modInfo.name in info.get_masters()
                      and name not in minfos.mergeable]
         if dependent:
             if not verbose: return False

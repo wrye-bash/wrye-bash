@@ -690,7 +690,7 @@ class ModInfo(FileInfo):
     def hasBadMasterNames(self):
         """True if has a master with un unencodable name in cp1252."""
         try:
-            for x in self.header.masters: x.s.encode('cp1252')
+            for x in self.get_masters(): x.s.encode('cp1252')
             return False
         except UnicodeEncodeError:
             return True
@@ -1026,7 +1026,7 @@ class SaveInfo(FileInfo):
         self.abs_path.untemp()
         #--Cosaves
         master_map = dict((x.s, y.s) for x, y in
-                          zip(oldMasters, self.header.masters) if x != y)
+                          zip(oldMasters, self.get_masters()) if x != y)
         if master_map:
             #--Pluggy cosave?
             if bush.game.has_standalone_pluggy:
@@ -2144,7 +2144,7 @@ class ModInfos(FileInfos):
                 _(u'----> Delinquent MASTER: '),
                 u'**')
             if fileInfo:
-                masters = set(fileInfo.header.masters)
+                masters = set(fileInfo.get_masters())
                 missing = sorted([x for x in masters if x not in self])
                 log.setHeader(head+_(u'Missing Masters for %s: ') % fileInfo.name.s)
                 for mod in missing:
@@ -2179,7 +2179,7 @@ class ModInfos(FileInfos):
                     text +=_(u'  [CRC: %s]') % (self[name].crc_string())
                 log(text)
                 if name in masters:
-                    for master2 in self[name].header.masters:
+                    for master2 in self[name].get_masters():
                         if master2 not in self:
                             log(sMissing+master2.s)
                         elif load_order.get_ordered((name, master2))[1] == master2:
@@ -2270,7 +2270,7 @@ class ModInfos(FileInfos):
             #  Disabled for now
             ##if self[fileName].hasBadMasterNames():
             ##    return
-            for master in self[fileName].header.masters:
+            for master in self[fileName].get_masters():
                 if master in _modSet: self.lo_activate(master, False, _modSet,
                                                        _children, _activated)
             #--Select in plugins
@@ -2297,7 +2297,7 @@ class ModInfos(FileInfos):
         def _children(parent):
             for selFile in sel:
                 if selFile in children: continue # if no more => no more in sel
-                for master in self[selFile].header.masters:
+                for master in self[selFile].get_masters():
                     if master == parent:
                         children.add(selFile)
                         break

@@ -126,7 +126,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
                              leveler in self.patchFile.allSet]
             self.delevMasters = set()
             for leveler in self.levelers:
-                self.delevMasters.update(bosh.modInfos[leveler].header.masters)
+                self.delevMasters.update(bosh.modInfos[leveler].get_masters())
         #--Begin regular scan
         modName = modFile.fileInfo.name
         modFile.convertToLongFids(self.listTypes)
@@ -536,7 +536,7 @@ class FidListsMerger(_AListsMerger,ListPatcher):
                              leveler in self.patchFile.allSet]
             self.deflstMasters = set()
             for leveler in self.levelers:
-                self.deflstMasters.update(bosh.modInfos[leveler].header.masters)
+                self.deflstMasters.update(bosh.modInfos[leveler].get_masters())
         #--Begin regular scan
         modName = modFile.fileInfo.name
         modFile.convertToLongFids(self.listTypes)

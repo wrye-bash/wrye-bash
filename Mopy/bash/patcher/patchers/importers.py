@@ -85,7 +85,7 @@ class _SimpleImporter(ImportPatcher):
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
+            masters = srcInfo.get_masters()
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -333,7 +333,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
             srcFile.load(True)
             srcFile.convertToLongFids(('CELL','WRLD'))
             cachedMasters[srcMod] = srcFile
-            masters = srcInfo.header.masters
+            masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             # print bashTags
             tags = bashTags & set(self.recAttrs)
@@ -817,7 +817,7 @@ class ActorImporter(_SimpleImporter, _AActorImporter):
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
+            masters = srcInfo.get_masters()
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()
@@ -1076,7 +1076,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
+            masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -1745,7 +1745,7 @@ class ImportInventory(ImportPatcher, _AImportInventory):
         self.isActive = bool(self.srcs)
         self.masters = set()
         for srcMod in self.srcs:
-            self.masters |= set(bosh.modInfos[srcMod].header.masters)
+            self.masters |= set(bosh.modInfos[srcMod].get_masters())
         self.allMods = self.masters | set(self.srcs)
         self.mod_id_entries = {}
         self.touched = set()
@@ -1972,7 +1972,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
+            masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
@@ -2362,7 +2362,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
             temp_faceData = {}
             faceInfo = bosh.modInfos[faceMod]
             faceFile = ModFile(faceInfo,loadFactory)
-            masters = faceInfo.header.masters
+            masters = faceInfo.get_masters()
             bashTags = faceInfo.getBashTags()
             faceFile.load(True)
             faceFile.convertToLongFids(('NPC_',))
@@ -3041,7 +3041,7 @@ class WeaponModsPatcher(_SimpleImporter):
             if srcMod not in bosh.modInfos: continue
             srcInfo = bosh.modInfos[srcMod]
             srcFile = ModFile(srcInfo,loadFactory)
-            masters = srcInfo.header.masters
+            masters = srcInfo.get_masters()
             srcFile.load(True)
             srcFile.convertToLongFids(longTypes)
             mapper = srcFile.getLongMapper()

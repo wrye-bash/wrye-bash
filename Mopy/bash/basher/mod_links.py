@@ -114,7 +114,7 @@ class Mod_CreateDummyMasters(OneItemLink):
         to_refresh = []
         # creates esp files - so place them correctly after the last esm
         previous_master = bosh.modInfos.cached_lo_last_esm()
-        for master in self._selected_info.header.masters:
+        for master in self._selected_info.get_masters():
             if master in bosh.modInfos:
                 continue
             # Missing master, create a dummy plugin for it
@@ -713,7 +713,7 @@ class Mod_ListDependent(OneItemLink):
             loOrder =  lambda tup: load_order.cached_lo_index_or_max(tup[0])
             text_list = u''
             for mod, info in sorted(modInfos.items(), key=loOrder):
-                if self._selected_item in info.header.masters:
+                if self._selected_item in info.get_masters():
                     hexIndex = modInfos.hexIndexString(mod)
                     if hexIndex:
                         prefix = bul + hexIndex
@@ -985,7 +985,7 @@ class _Mod_Patch_Update(_Mod_BP_Link):
         delinquent = collections.defaultdict(list)
         for mod in load_order.cached_active_tuple():
             if mod == self._selected_item: break
-            for master in bosh.modInfos[mod].header.masters:
+            for master in bosh.modInfos[mod].get_masters():
                 if not load_order.cached_is_active(master):
                     missing[mod].append(master)
                 elif master not in previousMods:
@@ -1448,7 +1448,7 @@ class Mod_AddMaster(OneItemLink):
                 return self._showError(_(
                     u"File must be selected from %s Data Files directory.")
                                        % bush.game.fsName)
-            if name in self._selected_info.header.masters:
+            if name in self._selected_info.get_masters():
                 return self._showError(_(u"%s is already a master!") % name.s)
             names.append(name)
         # actually do the modification
@@ -1681,7 +1681,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
                   __reEspExt=re.compile(ur'\.esp(.ghost)?$', re.I | re.U)):
         super(Mod_FlipMasters, self)._initData(window, selection)
         self._text = _(u'Add ESM Flag To Masters')
-        masters = self._selected_info.header.masters
+        masters = self._selected_info.get_masters()
         enable = len(selection) == 1 and len(masters) > 1
         self.espMasters = [master for master in masters
             if __reEspExt.search(master.s)] if enable else []
@@ -2620,7 +2620,7 @@ class MasterList_AddMasters(ItemLink): # CRUFT
                 return self._showError(_(
                     u"File must be selected from %s Data Files directory.")
                                        % bush.game.fsName)
-            if name in modInfo.header.masters:
+            if name in modInfo.get_masters():
                 return self._showError(
                     name.s + u' ' + _(u"is already a master."))
             names.append(name)
