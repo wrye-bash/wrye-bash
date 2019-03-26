@@ -1760,8 +1760,17 @@ class ModPanel(BashTab):
         super(ModPanel, self).__init__(parent)
         BashFrame.modList = self.uiList
 
-    def _sbCount(self): return _(u'Mods:') + u' %d/%d' % (
-        len(load_order.cached_active_tuple()), len(bosh.modInfos))
+    def _sbCount(self):
+        all_mods = load_order.cached_active_tuple()
+        total_str = _(u'Mods:') + u' %u/%u' % (len(all_mods),
+                                               len(bosh.modInfos))
+        if not bush.game.has_esl:
+            return total_str
+        else:
+            regular_mods_count = reduce(lambda accum, mod_path: accum + 1 if
+            not bosh.modInfos[mod_path].is_esl() else accum, all_mods, 0)
+            return total_str + _(u' (ESP/M: %u, ESL: %u)') % (
+                regular_mods_count, len(all_mods) - regular_mods_count)
 
     def ClosePanel(self, destroy=False):
         load_order.persist_orders()
@@ -3570,11 +3579,7 @@ class BashStatusBar(DnDStatusBar):
         # Update settings
         if orderChanged: settings.setChanged('bash.statusbar.order')
         if hideChanged: settings.setChanged('bash.statusbar.hide')
-        # Refresh
-        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, 130])
-        self.SetSize((-1, self.iconsSize))
-        self.GetParent().SendSizeEvent()
-        self.OnSize()
+        self._do_refresh(refresh_icon_size=True)
 
     def HideButton(self,button):
         if button in self.buttons:
@@ -3585,11 +3590,7 @@ class BashStatusBar(DnDStatusBar):
                 self.buttons.remove(button)
                 settings['bash.statusbar.hide'].add(link.uid)
                 settings.setChanged('bash.statusbar.hide')
-                # Refresh
-                self.SetStatusWidths(
-                    [self.iconsSize * len(self.buttons), -1, 130])
-                self.GetParent().SendSizeEvent()
-                self.OnSize()
+                self._do_refresh()
 
     def UnhideButton(self,link):
         uid = link.uid
@@ -3614,10 +3615,7 @@ class BashStatusBar(DnDStatusBar):
                     insertBefore = i
                     break
             self.buttons.insert(insertBefore,button)
-        # Refresh
-        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, 130])
-        self.GetParent().SendSizeEvent()
-        self.OnSize()
+        self._do_refresh()
 
     def GetLink(self,uid=None,index=None,button=None):
         """Get the Link object with a specific uid,
@@ -3633,6 +3631,17 @@ class BashStatusBar(DnDStatusBar):
                 if link.gButton is button:
                     return link
         return None
+
+    def _do_refresh(self, refresh_icon_size=False):
+        """Updates status widths and the icon sizes, if refresh_icon_size is
+        True. Also propagates resizing events.
+
+        :param refresh_icon_size: Whether or not to update icon sizes too."""
+        txt_len = 280 if bush.game.has_esl else 130
+        self.SetStatusWidths([self.iconsSize * len(self.buttons), -1, txt_len])
+        if refresh_icon_size: self.SetSize((-1, self.iconsSize))
+        self.GetParent().SendSizeEvent()
+        self.OnSize()
 
 #------------------------------------------------------------------------------
 class BashFrame(BaltFrame):
