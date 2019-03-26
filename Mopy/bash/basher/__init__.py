@@ -260,7 +260,7 @@ class BashTab(_DetailsViewMixin, SashUIListPanel):
 #------------------------------------------------------------------------------
 class _ModsUIList(balt.UIList):
 
-    _esmsFirstCols = balt.UIList.nonReversibleCols
+    _esmsFirstCols = {u'Load Order', u'Current Order'}
     @property
     def esmsFirst(self): return settings.get(self.keyPrefix + '.esmsFirst',
                             True) or self.sort_column in self._esmsFirstCols
@@ -799,6 +799,7 @@ class ModList(_ModsUIList):
         'Group'     : lambda self, a: self._get(a)('group', u''),
         'Installer' : lambda self, a: self._get(a)('installer', u''),
         'Load Order': lambda self, a: load_order.cached_lo_index_or_max(a),
+        u'Indices'  : lambda self, a: self.data_store[a].real_index(),
         'Modified'  : lambda self, a: self.data_store[a].mtime,
         'Size'      : lambda self, a: self.data_store[a].size,
         'Status'    : lambda self, a: self.data_store[a].getStatus(),
@@ -813,6 +814,7 @@ class ModList(_ModsUIList):
     labels = OrderedDict([
         ('File',       lambda self, p: self.data_store.masterWithVersion(p.s)),
         ('Load Order', lambda self, p: self.data_store.hexIndexString(p)),
+        (u'Indices',   lambda self, p: self.data_store[p].real_index_string()),
         ('Rating',     lambda self, p: self._get(p)('rating', u'')),
         ('Group',      lambda self, p: self._get(p)('group', u'')),
         ('Installer',  lambda self, p: self._get(p)('installer', u'')),

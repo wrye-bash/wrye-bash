@@ -426,9 +426,28 @@ class ModInfo(FileInfo):
 
     def crc_string(self):
         try:
-            return u'%08X' % modInfos.table.getItem(self.name, 'crc')
+            return u'%08X' % self.cached_mod_crc()
         except TypeError: # None, should not happen so let it show
             return u'UNKNOWN!'
+
+    def real_index(self):
+        """Returns the 'real index' for this plugin, which is the one the game
+        will assign it. ESLs will land in the 0xFE spot, while inactive plugins
+        don't get any - so we sort them last."""
+        return modInfos.real_indices[self.name]
+
+    def real_index_string(self):
+        """Returns a string-based version of real_index for displaying in the
+        Indices column."""
+        cr_index = self.real_index()
+        if cr_index == sys.maxsize:
+            return u''
+        elif self.is_esl():
+            # Need to undo the offset we applied to sort ESLs after regulars
+            sort_offset = load_order.max_plugins()[0] - 1
+            return u'FE %03X' % (cr_index - sort_offset)
+        else:
+            return u'%02X' % cr_index
 
     def setmtime(self, set_time=0, crc_changed=False):
         """Set mtime and if crc_changed is True recalculate the crc."""
@@ -1750,6 +1769,10 @@ def _lo_cache(lord_func):
             #if lo changed (including additions/removals) let refresh handle it
             if active_set_changed or (set(lo) - set(old_lo)): # new mods, ghost
                 self.autoGhost(force=False)
+            # Always recalculate the real indices - any LO change requires us
+            # to do this. We could technically be smarter, but this takes <1ms
+            # even with hundreds of plugins
+            self._recalc_real_indices()
             new_active = set(active) - set(old_active)
             for neu in new_active: # new active mods, unghost
                 self[neu].setGhost(False)
@@ -1778,6 +1801,8 @@ class ModInfos(FileInfos):
         else:
             raise FileError(game_master, u'File is required, but could not be '
                                          u'found')
+        # Maps plugins to 'real indices', i.e. the ones the game will assign.
+        self.real_indices = collections.defaultdict(lambda: sys.maxsize)
         self.mergeable = set() #--Set of all mods which can be merged.
         self.bad_names = set() #--Set of all mods with names that can't be saved to plugins.txt
         self.missing_strings = set() #--Set of all mods with missing .STRINGS files
@@ -2778,6 +2803,25 @@ class ModInfos(FileInfos):
         """Checks if the specified plugin exists and, if so, if its size
         does not match the specified value (in bytes)."""
         return plugin_name in self and plugin_size != self[plugin_name].size
+
+    def _recalc_real_indices(self):
+        """Recalculates the real indices cache. See ModInfo.real_index for more
+        info on these."""
+        # Note that inactive plugins/ones with missing LO are handled by our
+        # defaultdict factory
+        regular_index = 0
+        esl_index = 0
+        esl_offset = load_order.max_plugins()[0] - 1
+        self.real_indices.clear()
+        for p in load_order.cached_active_tuple():
+            if self[p].is_esl():
+                # sort ESLs after all regular plugins
+                r_index = esl_offset + esl_index
+                esl_index += 1
+            else:
+                r_index = regular_index
+                regular_index += 1
+            self.real_indices[p] = r_index
 
 #------------------------------------------------------------------------------
 class SaveInfos(FileInfos):
