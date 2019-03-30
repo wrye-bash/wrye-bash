@@ -1188,7 +1188,7 @@ class Flags(object):
             index = names[name]
             return (object.__getattribute__(self,'_field') >> index) & 1 == 1
         except KeyError:
-            raise exception.AttributeError(name)
+            raise AttributeError(name)
 
     def __setattr__(self,name,value):
         """Set value by flag name. E.g., flags.isQuestItem = False"""

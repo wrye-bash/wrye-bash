@@ -116,13 +116,13 @@ def wrapPopenOut(command, wrapper, errorMsg):
         raise StateError(errorMsg + u'\nPopen return value: %d' + returncode)
 
 #  WIP: http://sevenzip.osdn.jp/chm/cmdline/switches/method.htm
-def compressionSettings(archive, blockSize, isSolid):
-    archiveType = writeExts.get(archive.cext)
+def compressionSettings(archive_path, blockSize, isSolid):
+    archiveType = writeExts.get(archive_path.cext)
     if not archiveType:
         #--Always fall back to using the defaultExt
-        archive = GPath(archive.sbody + defaultExt).tail
-        archiveType = writeExts.get(archive.cext)
-    if archive.cext in noSolidExts: # zip
+        archive_path = GPath(archive_path.sbody + defaultExt).tail
+        archiveType = writeExts.get(archive_path.cext)
+    if archive_path.cext in noSolidExts: # zip
         solid = u''
     else:
         if isSolid:
@@ -138,13 +138,13 @@ def compressionSettings(archive, blockSize, isSolid):
             if not solid: # zip, will blow if ms=XXX is passed in
                 old = userArgs
                 userArgs = reSolid.sub(u'', userArgs).strip()
-                if old != userArgs: deprint(
-                    archive.s + u': 7zExtraCompressionArguments ini option '
-                                u'"' + old + u'" -> "' + userArgs + u'"')
+                if old != userArgs: deprint(archive_path.s +
+                    u': 7zExtraCompressionArguments ini option "' + old +
+                    u'" -> "' + userArgs + u'"')
             solid = userArgs
         else:
             solid += userArgs
-    return archive, archiveType, solid
+    return archive_path, archiveType, solid
 
 def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
                     archiveType=u'7z'): # WIP - note solid on by default (7z)
@@ -162,10 +162,10 @@ def _extract_command(archivePath, outDirPath, recursive, filelist_to_extract):
     if filelist_to_extract: command += (u' @"%s"' % filelist_to_extract)
     return command
 
-def list_archive(archive, parse_archive_line, __reList=reListArchive):
+def list_archive(archive_path, parse_archive_line, __reList=reListArchive):
     """Client is responsible for closing the file ! See uses for
     _parse_archive_line examples."""
-    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, archive.s)
+    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, archive_path.s)
     ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 stdin=subprocess.PIPE,

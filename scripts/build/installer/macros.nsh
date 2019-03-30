@@ -197,6 +197,9 @@
         Delete "${Path}\Mopy\bash\images\gimp16.png"
         Delete "${Path}\Mopy\bash\images\gimp24.png"
         Delete "${Path}\Mopy\bash\images\gimp32.png"
+        Delete "${Path}\Mopy\bash\images\gimpshop16.png"
+        Delete "${Path}\Mopy\bash\images\gimpshop24.png"
+        Delete "${Path}\Mopy\bash\images\gimpshop32.png"
         Delete "${Path}\Mopy\bash\images\gmax16.png"
         Delete "${Path}\Mopy\bash\images\gmax24.png"
         Delete "${Path}\Mopy\bash\images\gmax32.png"
@@ -542,6 +545,9 @@
         Delete "${Path}\Mopy\bash\patcher\utilities.p*"
         ; As of 307, the following are obsolete:
         Delete "${Path}\Mopy\bash\compiled\loot32.dll"
+        Delete "${Path}\Mopy\bash\images\tools\gimpshop16.png"
+        Delete "${Path}\Mopy\bash\images\tools\gimpshop24.png"
+        Delete "${Path}\Mopy\bash\images\tools\gimpshop32.png"
         Delete "${Path}\Mopy\bash\loot.py"
         ; And some leftovers from various releases, some of them only appeared on dev:
         Delete "${Path}\Mopy\INI Tweaks\Skyrim\Archery, NavMeshMove 4096 -Default [Skyrim].ini"

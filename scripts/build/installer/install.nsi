@@ -379,11 +379,11 @@
                 ${If} $CheckState_FalloutNV_Py == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash Launcher.pyw" "" "$Path_FalloutNV\Mopy\bash\images\bash_32.ico" 0
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash Debug.bat" "" "$Path_FalloutNV\Mopy\bash\images\bash_32.ico" 0
-                    ${If} $CheckState_Fallout4_Exe == ${BST_CHECKED}
+                    ${If} $CheckState_FalloutNV_Exe == ${BST_CHECKED}
                         CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
                         CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe" "-d"
                     ${EndIf}
-                ${ElseIf} $CheckState_Fallout4_Exe == ${BST_CHECKED}
+                ${ElseIf} $CheckState_FalloutNV_Exe == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe" "-d"
                 ${EndIf}

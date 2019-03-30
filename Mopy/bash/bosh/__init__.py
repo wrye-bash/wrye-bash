@@ -1062,7 +1062,8 @@ class SaveInfo(FileInfo):
 
 #------------------------------------------------------------------------------
 class DataStore(DataDict):
-    store_dir = empty_path # where the datas sit, static except for SaveInfos
+    """Base class for the singleton collections of infos."""
+    store_dir = empty_path # where the data sit, static except for SaveInfos
 
     def delete(self, delete_keys, **kwargs):
         """Deletes member file(s)."""
