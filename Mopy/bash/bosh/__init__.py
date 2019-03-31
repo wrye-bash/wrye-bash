@@ -1997,7 +1997,10 @@ class ModInfos(FileInfos):
             if not doCBash and reOblivion.match(fileName.s): continue
             fileInfo = self[fileName]
             # do not mark esls as esl capable
-            if fileInfo.is_esl() or not bush.game.esp.canBash:
+            if fileInfo.is_esl():
+                if return_results: reasons.append(u'Already ESL-flagged.')
+                canMerge = False
+            elif not bush.game.esp.canBash:
                 canMerge = False
             else:
                 try:

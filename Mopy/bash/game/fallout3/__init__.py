@@ -88,9 +88,7 @@ class Fallout3GameInfo(GameInfo):
         u'ini',
         u'fose',
         }
-    SkipBAINRefresh = {
-        u'fo3edit backups',
-    }
+    SkipBAINRefresh = {u'fo3edit backups', u'fo3edit cache'}
     wryeBashDataFiles = {
         ur'ArchiveInvalidationInvalidated!.bsa'
         ur'Fallout - AI!.bsa'

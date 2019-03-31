@@ -119,7 +119,7 @@ class Fallout4GameInfo(GameInfo):
         # This rule is to allow mods with string translation enabled.
         'interface\\translations':['.txt']
     }
-    SkipBAINRefresh = {u'fo4edit backups'}
+    SkipBAINRefresh = {u'fo4edit backups', u'fo4edit cache'}
 
     class esp(GameInfo.esp):
         canBash = True

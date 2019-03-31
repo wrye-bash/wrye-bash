@@ -100,6 +100,7 @@ class OblivionGameInfo(GameInfo):
     }
     SkipBAINRefresh = {
         u'tes4edit backups',
+        u'tes4edit cache',
         u'bgsee',
         u'conscribe logs',
     }

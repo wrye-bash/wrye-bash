@@ -87,7 +87,7 @@ class FalloutNVGameInfo(GameInfo):
         u'nvse',
         u'scripts',
         }
-    SkipBAINRefresh = {u'fnvedit backups'}
+    SkipBAINRefresh = {u'fnvedit backups', u'fnvedit cache'}
     wryeBashDataFiles = {
         ur'ArchiveInvalidationInvalidated!.bsa'
         ur'Fallout - AI!.bsa'

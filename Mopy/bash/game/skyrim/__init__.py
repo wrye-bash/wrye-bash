@@ -134,7 +134,7 @@ class SkyrimGameInfo(GameInfo):
         # This rule is to allow mods with string translation enabled.
         'interface\\translations':['.txt']
     }
-    SkipBAINRefresh = {u'tes5edit backups'}
+    SkipBAINRefresh = {u'tes5edit backups', u'tes5edit cache'}
     ignoreDataDirs = {u'LSData'}
 
     class esp(GameInfo.esp):
