@@ -251,7 +251,7 @@ def init_dirs_mopy_and_cd(is_standalone):
             unicode(sys.argv[0], Path.sys_fs_enc))
     if pathToProg:
         os.chdir(pathToProg)
-    dirs['mopy'] = Path.getcwd().root
+    dirs['mopy'] = Path.getcwd()
     dirs['bash'] = dirs['mopy'].join(u'bash')
     dirs['compiled'] = dirs['bash'].join(u'compiled')
     dirs['l10n'] = dirs['bash'].join(u'l10n')
