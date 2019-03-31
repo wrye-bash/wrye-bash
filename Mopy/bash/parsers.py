@@ -1470,10 +1470,10 @@ class ItemStats:
         loadFactory = LoadFactory(False,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
+        modFile.convertToLongFids()
         for group, attrs in self.class_attrs.iteritems():
             for record in getattr(modFile,group).getActiveRecords():
-                self.class_fid_attr_value[group][mapper(record.fid)].update(
+                self.class_fid_attr_value[group][record.fid].update(
                     zip(attrs, map(record.__getattribute__, attrs)))
 
     def writeToMod(self,modInfo):
@@ -1482,12 +1482,12 @@ class ItemStats:
         loadFactory = LoadFactory(True,*typeClasses)
         modFile = ModFile(modInfo,loadFactory)
         modFile.load(True)
-        mapper = modFile.getLongMapper()
+        modFile.convertToLongFids()
         changed = defaultdict(int) #--changed[modName] = numChanged
         for group, fid_attr_value in self.class_fid_attr_value.iteritems():
             attrs = self.class_attrs[group]
             for record in getattr(modFile,group).getActiveRecords():
-                longid = mapper(record.fid)
+                longid = record.fid
                 itemStats = fid_attr_value.get(longid,None)
                 if not itemStats: continue
                 oldValues = dict(zip(attrs,map(record.__getattribute__,attrs)))
