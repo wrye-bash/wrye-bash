@@ -1867,7 +1867,7 @@ class SaveList(balt.UIList):
                   bush.game.ess.ext[1:-1] + u'r' + u'))' # add bak !!!
     def validate_filename(self, event, name_new=None, has_digits=False,
                           ext=u'', is_filename=True, _old_path=None):
-        if _old_path and bosh.saveInfos.bak_file_pattern.match(_old_path.s): ##: YAK add cosave support for bak
+        if _old_path and bosh.bak_file_pattern.match(_old_path.s): ##: YAK add cosave support for bak
             balt.showError(self, _(u'Renaming bak files is not supported.'))
             return None, None, None
         return super(SaveList, self).validate_filename(event, name_new,
@@ -1880,7 +1880,7 @@ class SaveList(balt.UIList):
         if not root: return
         item_edited = [self.panel.detailsPanel.displayed_item]
         selected = [s for s in self.GetSelected() if
-                    not bosh.saveInfos.bak_file_pattern.match(s.s)] # YAK !
+                    not bosh.bak_file_pattern.match(s.s)] # YAK !
         to_select = set()
         to_del = set()
         for save_key in selected:
@@ -2005,7 +2005,7 @@ class SaveDetails(_SashDetailsPanel):
             self.gameDays = saveInfo.header.gameDays
             self.playMinutes = saveInfo.header.gameTicks/60000
             self.playerLevel = saveInfo.header.pcLevel
-            self.coSaves = u'%s\n%s' % saveInfo.get_cosave_tags()
+            self.coSaves = saveInfo.get_cosave_tags()
         #--Set Fields
         self.file.SetValue(self.fileStr)
         self._set_player_info_label()

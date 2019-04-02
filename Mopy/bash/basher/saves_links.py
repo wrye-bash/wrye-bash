@@ -36,7 +36,7 @@ from ..balt import EnabledLink, AppendableLink, Link, CheckLink, ChoiceLink, \
     ItemLink, SeparatorLink, OneItemLink, Image, UIList_Rename
 from ..bolt import GPath, SubProgress, formatInteger, struct_pack, \
     struct_unpack
-from ..bosh import faces
+from ..bosh import faces, SaveInfo
 from ..exception import ArgumentError, BoltError, CancelError, ModError
 
 __all__ = ['Saves_Profiles', 'Save_Rename', 'Save_Renumber', 'Save_Move',
@@ -772,7 +772,25 @@ class Save_Stats(OneItemLink):
             self._showLog(text, title=self._selected_item.s, fixedFont=False)
 
 #------------------------------------------------------------------------------
-class Save_StatObse(AppendableLink, OneItemLink):
+class _Save_StatCosave(AppendableLink, OneItemLink):
+    """Base for xSE and pluggy cosaves stats menus"""
+    _cosave_get = SaveInfo.get_xse_cosave
+
+    def _enable(self):
+        if not super(_Save_StatCosave, self)._enable(): return False
+        self._cosave = self._cosave_get(self._selected_info)
+        return bool(self._cosave)
+
+    def Execute(self):
+        with balt.BusyCursor(), bolt.sio() as out:
+            log = bolt.LogFile(out)
+            self._cosave.dump_to_log(log, self._selected_info.header.masters)
+            text = log.out.getvalue()
+        self._showLog(text, title=self._cosave.abs_path.tail.s,
+                      fixedFont=False)
+
+#------------------------------------------------------------------------------
+class Save_StatObse(_Save_StatCosave):
     """Dump .obse records."""
     _text = _(u'Dump %s Contents') % bush.game.se.cosave_ext.lower()
     _help = _(u'Dumps contents of associated %s cosave into a log.') % \
@@ -780,45 +798,14 @@ class Save_StatObse(AppendableLink, OneItemLink):
 
     def _append(self, window): return bool(bush.game.se.se_abbrev)
 
-    def _enable(self):
-        if not super(Save_StatObse, self)._enable(): return False
-        return self._selected_info.get_xse_cosave_path().exists()
-
-    def Execute(self):
-        with balt.BusyCursor():
-            log = bolt.LogFile(StringIO.StringIO())
-            cosave = self._selected_info.get_xse_cosave()
-            if cosave is not None:
-                cosave.dump_to_log(log, self._selected_info.header.masters)
-        text = log.out.getvalue()
-        log.out.close()
-        if cosave is not None:
-            self._showLog(text, title=cosave.cosave_path.tail.s,
-                          fixedFont=False)
-
 #------------------------------------------------------------------------------
-class Save_StatPluggy(AppendableLink, OneItemLink):
+class Save_StatPluggy(_Save_StatCosave):
     """Dump Pluggy blocks from .pluggy files."""
     _text = _(u'Dump .pluggy Contents')
     _help = _(u'Dumps contents of associated Pluggy cosave into a log.')
+    _cosave_get = SaveInfo.get_pluggy_cosave
 
     def _append(self, window): return bush.game.has_standalone_pluggy
-
-    def _enable(self):
-        if not super(Save_StatPluggy, self)._enable(): return False
-        return self._selected_info.get_pluggy_cosave_path().exists()
-
-    def Execute(self):
-        with balt.BusyCursor():
-            log = bolt.LogFile(StringIO.StringIO())
-            cosave = self._selected_info.get_pluggy_cosave()
-            if cosave is not None:
-                cosave.dump_to_log(log, self._selected_info.header.masters)
-        text = log.out.getvalue()
-        log.out.close()
-        if cosave is not None:
-            self._showLog(text, title=cosave.cosave_path.tail.s,
-                          fixedFont=False)
 
 #------------------------------------------------------------------------------
 class Save_Unbloat(OneItemLink):
