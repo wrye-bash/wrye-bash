@@ -30,13 +30,14 @@ renaming of the masters of the xSE plugin chunk itself and of the Pluggy chunk.
 __author__ = 'Infernio'
 
 import binascii
-from itertools import imap
+import re
 import string
+from itertools import imap
+from . import AFile, bak_file_pattern
 from ..bolt import sio, decode, encode, struct_pack, struct_unpack, \
     unpack_string, unpack_int, unpack_short, unpack_4s, unpack_byte, \
-    unpack_str16, unpack_float, unpack_double, unpack_int_signed, \
-    unpack_str32
-from ..exception import AbstractError, FileError
+    unpack_str16, unpack_float, unpack_double, unpack_int_signed, unpack_str32
+from ..exception import AbstractError, FileError, BoltError
 
 #------------------------------------------------------------------------------
 # Utilities
@@ -1181,11 +1182,13 @@ class _PluggyHudTBlock(_PluggyBlock):
 
 #------------------------------------------------------------------------------
 # Files
-class _ACosave(_Dumpable, _Remappable):
+class ACosave(_Dumpable, _Remappable, AFile):
     """The abstract base class for all cosave files."""
     header_type = _AHeader
-    __slots__ = ('cosave_path', 'cosave_header', 'cosave_chunks',
-                 'remappable_chunks', 'loading_state')
+    cosave_ext = u''
+    re_save = re.compile(u'') # parse savename to extract root component
+    __slots__ = ('cosave_header', 'cosave_chunks', 'remappable_chunks',
+                 'loading_state',)
     # loading_state is one of (0, 1, 2), where:
     #  0 means not loaded
     #  1 means the first cosave chunk (and the first chunk of that one, if
@@ -1193,7 +1196,7 @@ class _ACosave(_Dumpable, _Remappable):
     #  2 means the full cosave has been loaded
 
     def __init__(self, cosave_path):
-        self.cosave_path = cosave_path
+        super(ACosave, self).__init__(cosave_path, raise_on_error=True)
         self.cosave_chunks = []
         self.remappable_chunks = []
         self.loading_state = 0 # cosaves are lazily initialized
@@ -1212,17 +1215,23 @@ class _ACosave(_Dumpable, _Remappable):
             # Need to reset these to avoid adding duplicates
             self.cosave_chunks = []
             self.remappable_chunks = []
-            with self.cosave_path.open('rb') as ins:
+            with self.abs_path.open('rb') as ins:
                 self._read_cosave_header(ins)
                 self._read_cosave_body(ins, light)
             self.loading_state = target_state
+
+    def _reset_cache(self, stat_tuple, load_cache):
+        # Reset our loading state to 'unloaded', which will discard everything
+        # when the next request is made to the cosave (see read_cosave above)
+        self.loading_state = 0
+        super(ACosave, self)._reset_cache(stat_tuple, load_cache)
 
     def _read_cosave_header(self, ins):
         """Reads and assigns the header of this cosave. You probably don't need
         to override this method.
 
         :param ins: The input stream to read from."""
-        self.cosave_header = self.header_type(ins, self.cosave_path)
+        self.cosave_header = self.header_type(ins, self.abs_path)
 
     def _read_cosave_body(self, ins, light=False):
         """Reads the body of this cosave. The header is already read and
@@ -1231,9 +1240,9 @@ class _ACosave(_Dumpable, _Remappable):
         Pluggy cosaves, these are the 'record blocks'.
 
         The way to implement this method is to read and instantiate each chunk,
-        and to then call add_chunk() with the newly created chunk as the
-        argument. This will properly set up the remappable_chunks list as well,
-        allowing efficient remapping at runtime.
+        and to then call _add_cosave_chunk() with the newly created chunk. This
+        will properly set up the remappable_chunks list as well, allowing
+        efficient remapping at runtime.
 
         :param ins: The input stream to read from.
         :param light: Whether or not to only load the first chunk of the file
@@ -1264,9 +1273,8 @@ class _ACosave(_Dumpable, _Remappable):
         overwriting the original file if something goes wrong.
 
         :param out_path: The path to write to. If empty or None, this cosave's
-            own path is used instead.
-        """
-        out_path = out_path or self.cosave_path
+            own path is used instead."""
+        out_path = out_path or self.abs_path
         self.write_cosave(out_path.temp)
         out_path.untemp()
 
@@ -1298,11 +1306,33 @@ class _ACosave(_Dumpable, _Remappable):
         for cosave_chunk in self.remappable_chunks:
             cosave_chunk.remap_plugins(plugin_renames)
 
-class xSECosave(_ACosave):
+    @classmethod
+    def get_cosave_path(cls, save_path):
+        """Return the cosave path corresponding to save_path. The save_path
+        may be located in the backup directory and so it may end with an 'f'
+        (for first backup) which should be appended to the cosave path also.
+
+        :param save_path: The path to the save file that a cosave could belong
+            to.
+        :return: The path at which the cosave could exist.
+        :rtype: bolt.Path"""
+        maSave = cls.re_save.search(save_path.s)
+        if maSave:
+            first = maSave.group(2) or u''
+            return save_path.root + cls.cosave_ext + first
+        ma_bak = bak_file_pattern.search(save_path.s)
+        if ma_bak:
+            first = ma_bak.group(4) or u''
+            return save_path.head.join(ma_bak.group(1) + ma_bak.group(
+                2) + cls.cosave_ext + ma_bak.group(3) + first)
+        raise BoltError(u'Invalid save path %s' % save_path)
+
+class xSECosave(ACosave):
     """Represents an xSE cosave, with a .**se extension."""
     header_type = _xSEHeader
     _pluggy_signature = None # signature (aka opcodeBase) of Pluggy plugin
     _xse_signature = 0x1400 # signature (aka opcodeBase) of xSE plugin itself
+    cosave_ext = u'' # set in the factory function
     __slots__ = ()
 
     def _read_cosave_body(self, ins, light=False):
@@ -1315,7 +1345,7 @@ class xSECosave(_ACosave):
 
     def write_cosave(self, out_path):
         super(xSECosave, self).write_cosave(out_path)
-        prev_mtime = self.cosave_path.mtime
+        prev_mtime = self.abs_path.mtime
         with sio() as buff:
             # We have to update the number of chunks in the header here, since
             # that can't be done automatically
@@ -1340,9 +1370,9 @@ class xSECosave(_ACosave):
                     first_chunk.mod_entries]
         elif first_chunk.chunk_type == u'MODS':
             return first_chunk.mod_names
-        raise FileError(self.cosave_path.tail, u"Invalid or unsupported "
-                                               u"cosave: First chunk was not "
-                                               u"PLGN or MODS chunk.")
+        raise FileError(self.abs_path.tail, u'Invalid or unsupported cosave: '
+                                            u'First chunk was not PLGN or '
+                                            u'MODS chunk.')
 
     def has_accurate_master_list(self, has_esl):
         if not has_esl:
@@ -1415,12 +1445,13 @@ class xSECosave(_ACosave):
             if plugin_chunk.plugin_signature == self._xse_signature:
                 return plugin_chunk
         # Something has gone seriously wrong, the xSE chunk _must_ be present
-        raise FileError(self.cosave_path.tail, u"Invalid cosave: xSE plugin "
-                                               u"chunk is missing.")
+        raise FileError(self.abs_path.tail, u'Invalid cosave: xSE plugin '
+                                            u'chunk is missing.')
 
-class PluggyCosave(_ACosave):
+class PluggyCosave(ACosave):
     """Represents a Pluggy cosave, with a .pluggy extension."""
     header_type = _PluggyHeader
+    cosave_ext = u'.pluggy'
     # Used to convert from block type int to block class
     # See pluggy file format specification for how these map
     _block_types = [_PluggyPluginBlock, _PluggyStringBlock, _PluggyArrayBlock,
@@ -1441,8 +1472,8 @@ class PluggyCosave(_ACosave):
             # The Pluggy file format requires reading a file twice: once all
             # but the last 12 bytes, which is used for reading the header and
             # chunks, and once all but the last 4 bytes, for a CRC check.
-            total_size = self.cosave_path.size
-            with self.cosave_path.open('rb') as ins:
+            total_size = self.abs_path.size
+            with self.abs_path.open('rb') as ins:
                 # This is what we'll read the header and chunks from later.
                 buffered_data = ins.read(total_size - 12)
                 # These are compared by Pluggy to the ones in the matching .ess
@@ -1454,7 +1485,7 @@ class PluggyCosave(_ACosave):
                 actual_position = ins.tell()
                 expected_position = unpack_int(ins)
                 if actual_position != expected_position:
-                    raise FileError(self.cosave_path.tail,
+                    raise FileError(self.abs_path.tail,
                                     u'Invalid cosave: End control position was'
                                     u' incorrect (expected %u, but  got %u).' %
                                     (expected_position, actual_position))
@@ -1465,7 +1496,7 @@ class PluggyCosave(_ACosave):
                 expected_crc = unpack_int_signed(ins)
             actual_crc = binascii.crc32(checksum_data)
             if actual_crc != expected_crc:
-                raise FileError(self.cosave_path.tail,
+                raise FileError(self.abs_path.tail,
                                 u'Invalid cosave: Checksum does not match '
                                 u'(expected %X, but got %X).' %
                                 (expected_crc, actual_crc))
@@ -1488,14 +1519,12 @@ class PluggyCosave(_ACosave):
         """Returns the matching block type for the specified record type or
         raises an informative error if the record type is not known.
 
-        :param record_type: An integer representing the read record type.
-        """
-        if record_type < len(self._block_types):
+        :param record_type: An integer representing the read record type."""
+        try:
             return self._block_types[record_type]
-        else:
-            raise FileError(self.cosave_path.tail, u'Unknown pluggy record'
-                                                   u'block type %u.' %
-                            record_type)
+        except IndexError:
+            raise FileError(self.abs_path.tail, u'Unknown pluggy record block '
+                                                u'type %u.' % record_type)
 
     def write_cosave(self, out_path):
         super(PluggyCosave, self).write_cosave(out_path)
@@ -1508,7 +1537,7 @@ class PluggyCosave(_ACosave):
             _pack(out, '=I', self.save_game_ticks)
             _pack(out, '=I', out.tell())
             final_data = out.getvalue()
-        prev_mtime = self.cosave_path.mtime
+        prev_mtime = self.abs_path.mtime
         with out_path.open('wb') as out:
             out.write(final_data)
             _pack(out, '=i', binascii.crc32(final_data))
@@ -1519,9 +1548,9 @@ class PluggyCosave(_ACosave):
         self.read_cosave(light=True)
         first_block = self.cosave_chunks[0] # type: _PluggyPluginBlock
         if first_block.record_type != 0:
-            raise FileError(self.cosave_path.tail, u'Invalid cosave: First '
-                                                   u'Pluggy block is not the '
-                                                   u'plugin block.')
+            raise FileError(self.abs_path.tail, u'Invalid cosave: First '
+                                                u'Pluggy block is not the '
+                                                u'plugin block.')
         return [plugin.plugin_name for plugin in first_block.plugins]
 
     def has_accurate_master_list(self, has_esl):
@@ -1537,19 +1566,29 @@ class PluggyCosave(_ACosave):
             pluggy_block.dump_to_log(log, save_masters)
 
 # Factory
-def get_cosave_type(game_fsName):
-    """:rtype: type"""
+def get_cosave_types(game_fsName, save_regex, cosave_tag, cosave_ext):
+    """Factory method for retrieving the cosave types for the current game.
+    Also sets up some class variables for xSE and Pluggy signatures.
+
+    :param game_fsName: bush.game.fsName, the name of the current game.
+    :param save_regex: SaveInfos.file_pattern.
+    :param cosave_tag: bush.game.se.cosave_tag, the magic tag used to mark the
+        cosave. Empty string if this game doesn't have cosaves.
+    :param cosave_ext: bush.game.se.cosave_ext, the extension for cosaves.
+    :return: A list of types of cosaves supported by this game.
+    :rtype: list[type[ACosave]]"""
+    # Check if the game even has a script extender
+    if not cosave_tag: return []
+    # Assign things that concern all games with script extenders
+    _xSEHeader.savefile_tag = cosave_tag
+    xSECosave.cosave_ext = cosave_ext
+    ACosave.re_save = save_regex
+    cosave_types = [xSECosave]
+    # Handle game-specific special cases
     if game_fsName == u'Oblivion':
         xSECosave._pluggy_signature = 0x2330
-        _xSEHeader.savefile_tag = u'OBSE'
-    elif game_fsName in (u'Enderal', u'Skyrim', u'Skyrim Special Edition'):
+        cosave_types.append(PluggyCosave)
+    elif game_fsName not in (u'Fallout3', u'FalloutNV'):
+        # Games >= Skyrim have 0 as the xSE signature
         xSECosave._xse_signature = 0x0
-        _xSEHeader.savefile_tag = u'SKSE'
-    elif game_fsName == u'Fallout4':
-        xSECosave._xse_signature = 0x0
-        _xSEHeader.savefile_tag = u'F4SE'
-    elif game_fsName == u'Fallout3':
-        _xSEHeader.savefile_tag = u'FOSE'
-    elif game_fsName == u'FalloutNV':
-        _xSEHeader.savefile_tag = u'NVSE'
-    return xSECosave
+    return cosave_types

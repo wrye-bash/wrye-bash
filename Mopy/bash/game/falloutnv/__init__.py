@@ -49,6 +49,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         exe = u'nvse_loader.exe'
         ver_files = [u'nvse_loader.exe', u'nvse_steam_loader.dll']
         plugin_dir = u'NVSE'
+        cosave_tag = u'NVSE'
         cosave_ext = u'.nvse'
         url = u'http://nvse.silverlock.org/'
         url_tip = u'http://nvse.silverlock.org/'

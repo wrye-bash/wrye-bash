@@ -79,6 +79,7 @@ class Fallout4GameInfo(GameInfo):
         exe = u'f4se_loader.exe'
         ver_files = [u'f4se_loader.exe', u'f4se_steam_loader.dll']
         plugin_dir = u'F4SE'
+        cosave_tag = u'F4SE'
         cosave_ext = u'.f4se'
         url = u'http://f4se.silverlock.org/'
         url_tip = u'http://f4se.silverlock.org/'

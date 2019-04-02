@@ -64,6 +64,9 @@ oldTags = sorted((u'Merge',))
 oldTagsSet = set(oldTags)
 reOblivion = re.compile(
     u'^(Oblivion|Nehrim)(|_SI|_1.1|_1.1b|_1.5.0.8|_GOTY non-SI).esm$', re.U)
+# quick or auto save.bak(.bak...)
+bak_file_pattern = re.compile(u'' r'(quick|auto)(save)(\.bak)+(f?)$',
+                              re.I | re.U)
 
 undefinedPath = GPath(u'C:\\not\\a\\valid\\path.exe')
 empty_path = GPath(u'') # evaluates to False in boolean expressions
@@ -98,59 +101,22 @@ del __exts
 imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
 
 #------------------------------------------------------------------------------
-class CoSaves:
-    """Handles co-files (.pluggy, .obse, .skse) for saves."""
-    reSave = None
-
-    @staticmethod
-    def getPaths(savePath):
-        """Returns cofile paths."""
-        if CoSaves.reSave is None:
-            CoSaves.reSave = re.compile(re.escape(bush.game.ess.ext) + '(f?)$',
-                                        re.I | re.U)
-        maSave = CoSaves.reSave.search(savePath.s)
-        if maSave: savePath = savePath.root
-        first = maSave and maSave.group(1) or u''
-        return tuple(savePath + ext + first for ext in
-                     (u'.pluggy', bush.game.se.cosave_ext.lower()))
-
-    @staticmethod
-    def _recopy(src_path, savePath, saveName, pathFunc):
-        """Renames/copies cofiles depending on supplied pathFunc."""
-        if saveName: savePath = savePath.join(saveName)
-        newPaths = CoSaves.getPaths(savePath)
-        for oldPath,newPath in zip(CoSaves.getPaths(src_path), newPaths):
-            if newPath.exists(): newPath.remove() ##: dont like it, investigate
-            if oldPath.exists(): pathFunc(oldPath,newPath)
-
-    @staticmethod
-    def copy(src_path, savePath, saveName=None):
-        """Copies cofiles."""
-        CoSaves._recopy(src_path, savePath, saveName, bolt.Path.copyTo)
-
-    @staticmethod
-    def move(src_path, savePath, saveName=None):
-        """Renames cofiles."""
-        CoSaves._recopy(src_path, savePath, saveName, bolt.Path.moveTo)
-
-    @staticmethod
-    def get_new_paths(old_path, new_path):
-        return zip(CoSaves.getPaths(old_path), CoSaves.getPaths(new_path))
-
 # File System -----------------------------------------------------------------
 #------------------------------------------------------------------------------
 class AFile(object):
     """Abstract file, supports caching - alpha."""
     _null_stat = (-1, None)
+    __slots__ = ('_abs_path', '_file_size', '_file_mod_time')
 
     def _stat_tuple(self): return self.abs_path.size_mtime()
 
-    def __init__(self, fullpath, load_cache=False):
+    def __init__(self, fullpath, load_cache=False, raise_on_error=False):
         self._abs_path = GPath(fullpath)
         #Set cache info (mtime, size[, ctime]) and reload if load_cache is True
         try:
             self._reset_cache(self._stat_tuple(), load_cache)
         except OSError:
+            if raise_on_error: raise
             self._reset_cache(self._null_stat, load_cache=False)
 
     @property
@@ -360,17 +326,34 @@ class FileInfo(AFile):
         #--Done
         self.madeBackup = True
 
-    def backup_paths(self, first=False):
-        """Return a list of tuples with backup paths and their restore
-        destinations
-        :rtype: list[tuple]""" ##: drop tuples use lists !
-        return [(self.backup_dir.join(self.name) + (u'f' if first else u''),
-                 self.getPath())]
+    def backup_restore_paths(self, first=False, fname=None):
+        """Return a list of tuples, mapping backup paths to their restore
+        destinations. If fname is not given returns the (first) backup
+        filename corresponding to self.abs_path, else the backup filename
+        for fname mapped to its restore location in data_store.store_dir
+        :rtype: list[tuple]
+        """
+        restore_path = (fname and self.getFileInfos().store_dir.join(
+            fname)) or self.getPath()
+        fname = fname or self.name
+        return [(self.backup_dir.join(fname) + (u'f' if first else u''),
+                 restore_path)]
+
+    def all_backup_paths(self, fname=None):
+        """Return the list of all possible paths a backup operation may create.
+        __path does not really matter and is not necessarily correct when fname
+        is passed in
+        """
+        return [backPath for first in (True, False) for backPath, __path in
+                self.backup_restore_paths(first, fname)]
 
     def revert_backup(self, first=False):
-        backup_paths = self.backup_paths(first)
+        backup_paths = self.backup_restore_paths(first)
         for tup in backup_paths[1:]: # if cosaves do not exist shellMove fails!
-            if not tup[0].exists(): backup_paths.remove(tup)
+            if not tup[0].exists():
+                # if cosave exists while its backup not, delete it on restoring
+                tup[1].remove()
+                backup_paths.remove(tup)
         env.shellCopy(*zip(*backup_paths))
         # do not change load order for timestamp games - rest works ok
         self.setmtime(self._file_mod_time, crc_changed=True)
@@ -981,14 +964,15 @@ class INIInfo(IniFile):
 
 #------------------------------------------------------------------------------
 from .save_headers import get_save_header_type, SaveFileHeader
-from .cosaves import PluggyCosave
+from .cosaves import PluggyCosave, xSECosave
 from . import cosaves
 
 class SaveInfo(FileInfo):
-    # The xSE cosave that may come with this save file. Lazily initialized.
-    _xse_cosave = None
-
-    def cosave_type(self): return cosaves.get_cosave_type(bush.game.fsName)
+    cosave_types = () # cosave types for this game - set once in SaveInfos
+    _cosave_ui_string = {PluggyCosave: 'XP', xSECosave: 'XO'} # ui strings
+    __empty = {} # sentinel for _co_saves cache
+    # Dict of cosaves that may come with this save file. Lazily initialized.
+    _co_saves = __empty
 
     def getFileInfos(self): return saveInfos
 
@@ -1016,6 +1000,31 @@ class SaveInfo(FileInfo):
             raise SaveFileError, (self.name, e.message), sys.exc_info()[2]
         self._reset_masters()
 
+    def do_update(self):
+        # Check for new and deleted cosaves and do_update old, surviving ones
+        cosaves_changed = False
+        for co_type in SaveInfo.cosave_types:
+            co_path = co_type.get_cosave_path(self.abs_path)
+            if co_path.isfile():
+                if co_type in self._co_saves:
+                    # Existing cosave could have changed, check if it did
+                    cosaves_changed |= self._co_saves[co_type].do_update()
+                else:
+                    # New cosave attached, add it to cache
+                    self._co_saves[co_type] = self.make_cosave(co_type,
+                                                               co_path)
+                    cosaves_changed = True
+            elif co_type in self._co_saves:
+                # Old cosave deleted, remove it from cache
+                del self._co_saves[co_type]
+                cosaves_changed = True
+        # If the cosaves have changed, the cached masters can no longer be
+        # trusted since they may have been retrieved from the cosaves
+        if cosaves_changed:
+            self._reset_masters()
+        # Delegate the call first, but also take the cosaves into account
+        return super(SaveInfo, self).do_update() or cosaves_changed
+
     def write_masters(self):
         """Rewrites masters of existing save file."""
         if not self.abs_path.exists():
@@ -1029,78 +1038,81 @@ class SaveInfo(FileInfo):
         master_map = dict((x.s, y.s) for x, y in
                           zip(oldMasters, self.get_masters()) if x != y)
         if master_map:
-            #--Pluggy cosave?
-            if bush.game.has_standalone_pluggy:
-                pluggy_path = self.get_pluggy_cosave_path()
-                if pluggy_path.isfile():
-                    pluggy_cosave = self.get_pluggy_cosave()
-                    pluggy_cosave.remap_plugins(master_map)
-                    pluggy_cosave.write_cosave_safe()
-            #--xSE cosave?
-            if bush.game.se.se_abbrev:
-                xse_path = self.get_xse_cosave_path()
-                if xse_path is not None and xse_path.isfile():
-                    xse_cosave = self.get_xse_cosave()
-                    xse_cosave.remap_plugins(master_map)
-                    xse_cosave.write_cosave_safe()
+            for co_file in self.get_cosave_instances().values():
+                co_file.remap_plugins(master_map)
+                co_file.write_cosave_safe()
 
     def get_cosave_tags(self):
-        """Return strings expressing whether cosaves exist and are correct."""
-        cPluggy, cObse = (u'', u'')
-        pluggy = self.name.root + u'.pluggy'
-        obse = self.get_xse_cosave_path()
-        if pluggy.exists():
-            cPluggy = u'XP'[abs(pluggy.mtime - self.mtime) < 10]
-        if obse and obse.exists():
-            cObse = u'XO'[abs(obse.mtime - self.mtime) < 10]
-        return cObse, cPluggy
+        """Return strings expressing whether cosaves exist and are correct.
+        Correct means not in more that 10 seconds difference from the save."""
+        co_ui_strings = [u'', u'']
+        instances = self.get_cosave_instances()
+        # last string corresponds to xse plugin so used reversed
+        for j, co_typ in enumerate(reversed(self.cosave_types)):
+            inst = instances.get(co_typ, None)
+            if inst and inst.abs_path.exists():
+                co_ui_strings[j] = self._cosave_ui_string[co_typ][
+                    abs(inst.abs_path.mtime - self.mtime) < 10]
+        return '\n'.join(co_ui_strings)
 
-    def backup_paths(self, first=False):
-        save_paths = super(SaveInfo, self).backup_paths(first)
-        save_paths.extend(CoSaves.get_new_paths(*save_paths[0]))
-        return save_paths
+    def backup_restore_paths(self, first=False, fname=None):
+        """Return as parent and in addition back up paths for the cosaves."""
+        back_to_dest = super(SaveInfo, self).backup_restore_paths(first, fname)
+        # see if we have cosave backups - we must delete cosaves when restoring
+        # if the backup does not have a cosave
+        for co_type in self.cosave_types:
+            co_paths = tuple(map(co_type.get_cosave_path, back_to_dest[0]))
+            back_to_dest.append(co_paths)
+        return back_to_dest
 
-    # TODO(inf) Turn into a property?
+    def get_cosave_instances(self):
+        """As bosh.SaveInfo#get_cosaves_for_path - also populate self._co_saves
+        """
+        if self._co_saves is self.__empty:
+            self._co_saves = self.get_cosaves_for_path(self.abs_path)
+        return self._co_saves
+
+    @staticmethod
+    def make_cosave(co_type, co_path):
+        """Attempts to create a cosave of the specified type at the specified
+        path and logs any resulting error.
+
+        :rtype: cosaves.ACosave | None"""
+        try:
+            return co_type(co_path)
+        except (OSError, IOError, FileError) as e: #PY3: FileNotFoundError
+            if isinstance(e, FileError) or (isinstance(e, (
+                    OSError, IOError)) and e.errno != errno.ENOENT):
+                deprint(u'Failed to open %s' % co_path, traceback=True)
+            return None
+
+    @staticmethod
+    def get_cosaves_for_path(save_path):
+        """Get ACosave instances for save_path if those paths exist.
+        Return a dict of those instances keyed by their type.
+
+        :rtype: dict[type, cosaves.ACosave]"""
+        result = {}
+        for co_type in SaveInfo.cosave_types:
+            new_cosave = SaveInfo.make_cosave(
+                co_type, co_type.get_cosave_path(save_path))
+            if new_cosave: result[co_type] = new_cosave
+        return result
+
     def get_xse_cosave(self):
-        """:rtype: cosaves.xSECosave"""
-        if self._xse_cosave is None:
-            cosave_path = self.get_xse_cosave_path()
-            if cosave_path is None: return None
-            try:
-                cosave_constructor = self.cosave_type()
-                self._xse_cosave = cosave_constructor(cosave_path)
-            except (OSError, IOError, FileError) as e:
-                if isinstance(e, FileError) or (
-                    isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
-                    deprint(u'Failed to open %s' % cosave_path, traceback=True)
-                return None
-        return self._xse_cosave
-
-    def get_xse_cosave_path(self):
-        if self.cosave_type is None: return None
-        return self.getPath().root + bush.game.se.cosave_ext
+        """:rtype: xSECosave | None"""
+        return self.get_cosave_instances().get(xSECosave, None)
 
     def get_pluggy_cosave(self):
-        cosave_path = self.get_pluggy_cosave_path()
-        if cosave_path is not None:
-            try:
-                return PluggyCosave(cosave_path)
-            except (OSError, IOError, FileError) as e:
-                if isinstance(e, FileError) or (
-                    isinstance(e, (OSError, IOError)) and e.errno != errno.ENOENT):
-                    deprint(u'Failed to open %s' % cosave_path, traceback=True)
-        return None
-
-    def get_pluggy_cosave_path(self):
-        return self.getPath().root + u'.pluggy'
+        """:rtype: PluggyCosave | None"""
+        return self.get_cosave_instances().get(PluggyCosave, None)
 
     def get_masters(self):
         if bush.game.has_esl:
-            xse_cosave_path = self.get_xse_cosave_path()
-            if xse_cosave_path is not None and xse_cosave_path.isfile():
+            xse_cosave = self.get_xse_cosave()
+            if xse_cosave is not None: # the cached cosave should be valid
                 # Make sure the cosave's masters are actually useful
-                xse_cosave = self.get_xse_cosave()
-                if xse_cosave.has_accurate_master_list(True):
+                if xse_cosave.has_accurate_master_list(has_esl=True):
                     return [GPath(master) for master in
                             xse_cosave.get_master_list()]
         # Fall back on the regular masters - either the cosave is unnecessary,
@@ -1161,12 +1173,15 @@ class DataStore(DataDict):
 
     def _rename_operation(self, oldName, newName):
         rename_paths = self._get_rename_paths(oldName, newName)
-        for tup in rename_paths[1:]: # if cosaves do not exist shellMove fails!
+        for tup in rename_paths[1:]: # first rename path must always exist
+            # if cosaves or backups do not exist shellMove fails!
             if not tup[0].exists(): rename_paths.remove(tup)
         env.shellMove(*zip(*rename_paths))
 
     def _get_rename_paths(self, oldName, newName):
-        return [tuple(map(self.store_dir.join, (oldName, newName)))]
+        """Return possible paths this file's renaming might affect (possibly
+        omitting some that do not exist)."""
+        return [(self.store_dir.join(oldName), self.store_dir.join(newName))]
 
     @property
     def bash_dir(self):
@@ -1352,13 +1367,20 @@ class FileInfos(TableFileInfos):
             self.table.pop(name, None)
         return deleted
 
-    def _get_rename_paths(self, oldName, newName): # FIXME(ut): rename backups
-        return [(self[oldName].getPath(), self.store_dir.join(newName))]
+    def _get_rename_paths(self, oldName, newName):
+        old_new_paths = super(FileInfos, self)._get_rename_paths(oldName, newName)
+        info_backup_paths = self[oldName].all_backup_paths
+        # all_backup_paths will return the backup paths for this file and its
+        # satellites (like cosaves). Passing newName in it returns the rename
+        # destinations of the backup paths. Backup paths may not exist.
+        for b_path, new_b_path in zip(info_backup_paths(),
+                                      info_backup_paths(newName)):
+            old_new_paths.append((b_path, new_b_path))
+        return old_new_paths
 
     def _additional_deletes(self, fileInfo, toDelete):
         #--Backups
-        for backPath, __path in fileInfo.backup_paths():
-            toDelete.extend([backPath, backPath + u'f'])
+        toDelete.extend(fileInfo.all_backup_paths()) # will include cosave ones
 
     #--Rename
     def _rename_operation(self, oldName, newName):
@@ -1375,8 +1397,6 @@ class FileInfos(TableFileInfos):
         del self[oldName]
         self.table.moveRow(oldName,newName)
         # self[newName].mark_unchanged() # not needed with shellMove !
-        #--Done
-        fileInfo.madeBackup = False ##: #292 - backups are left behind
 
     #--Move
     def move_info(self, fileName, destDir):
@@ -2496,7 +2516,7 @@ class ModInfos(FileInfos):
     def _get_rename_paths(self, oldName, newName):
         renames = super(ModInfos, self)._get_rename_paths(oldName, newName)
         if self[oldName].isGhost:
-            renames[0] = (renames[0][0], renames[0][1] + u'.ghost')
+            renames[0] = (self[oldName].abs_path, renames[0][1] + u'.ghost')
         return renames
 
     #--Delete
@@ -2529,7 +2549,10 @@ class ModInfos(FileInfos):
     def _additional_deletes(self, fileInfo, toDelete):
         super(ModInfos, self)._additional_deletes(fileInfo, toDelete)
         # Add ghosts - the file may exist in both states (bug, or user mistake)
-        toDelete.append(self.store_dir.join(fileInfo.name + u'.ghost'))
+        # if both versions exist file should be marked as normal
+        if not fileInfo.isGhost: # add ghost if not added
+            ghost_version = self.store_dir.join(fileInfo.name + u'.ghost')
+            if ghost_version.exists(): toDelete.append(ghost_version)
 
     def move_info(self, fileName, destDir):
         """Moves member file to destDir."""
@@ -2686,7 +2709,6 @@ class ModInfos(FileInfos):
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = False
-    bak_file_pattern = re.compile(u'' r'(quick|auto)save(\.bak)+', re.I | re.U)
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
@@ -2700,10 +2722,8 @@ class SaveInfos(FileInfos):
 
     def __init__(self):
         _ext = re.escape(bush.game.ess.ext)
-        self.__class__.file_pattern = re.compile(
-            r'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...)
-            _ext + u'|' + _ext[:-1] + u'r' + u'))$', # enabled/disabled save
-            re.I | re.U)
+        patt = u'(%s|%sr)(f?)$' % (_ext, _ext[:-1]) # enabled/disabled save
+        self.__class__.file_pattern = re.compile(patt, re.I | re.U)
         self.localSave = bush.game.save_prefix
         self._setLocalSaveFromIni()
         super(SaveInfos, self).__init__(dirs['saveBase'].join(self.localSave),
@@ -2715,6 +2735,16 @@ class SaveInfos(FileInfos):
         for row in self.profiles.keys():
             if row.endswith(u'\\'):
                 self.profiles.moveRow(row, row[:-1])
+        SaveInfo.cosave_types = cosaves.get_cosave_types(
+            bush.game.fsName, self.__class__.file_pattern,
+            bush.game.se.cosave_tag, bush.game.se.cosave_ext)
+
+    @classmethod
+    def rightFileType(cls, fileName):
+        """Saves come into quick/auto bak format and regular ones that might be
+        disabled"""
+        return cls.file_pattern.search(
+            u'%s' % fileName) or bak_file_pattern.match(u'%s' % fileName)
 
     @property
     def bash_dir(self): return self.store_dir.join(u'Bash')
@@ -2723,27 +2753,54 @@ class SaveInfos(FileInfos):
         self._refreshLocalSave()
         return refresh_infos and FileInfos.refresh(self, booting=booting)
 
+    def _rename_operation(self, oldName, newName):
+        """Renames member file from oldName to newName, update also cosave
+        instance names."""
+        super(SaveInfos, self)._rename_operation(oldName, newName)
+        for co_type, co_file in self[newName].get_cosave_instances().items():
+            co_file.abs_path = co_type.get_cosave_path(self[newName].abs_path)
+
     def _additional_deletes(self, fileInfo, toDelete):
-        toDelete.extend(CoSaves.getPaths(fileInfo.getPath()))
+        # type: (SaveInfo, list) -> None
+        toDelete.extend(
+            x.abs_path for x in fileInfo.get_cosave_instances().values())
         # now add backups and cosaves backups
         super(SaveInfos, self)._additional_deletes(fileInfo, toDelete)
 
     def _get_rename_paths(self, oldName, newName):
-        renames = [tuple(map(self.store_dir.join, (oldName, newName)))]
-        renames.extend(CoSaves.get_new_paths(*renames[0]))
+        renames = super(SaveInfos, self)._get_rename_paths(oldName, newName)
+        # super call added the backup paths but not the actual rename cosave
+        # paths inside the store_dir - add those only if they exist
+        old, new = renames[0] # HACK: (oldName.ess, newName.ess) abs paths
+        for co_type, co_file in self[oldName].get_cosave_instances().items():
+            renames.append((co_file.abs_path, co_type.get_cosave_path(new)))
         return renames
 
     def copy_info(self, fileName, destDir, destName=empty_path, set_mtime=None):
         """Copies savefile and associated cosaves file(s)."""
         super(SaveInfos, self).copy_info(fileName, destDir, destName, set_mtime)
-        CoSaves.copy(self[fileName].abs_path, destDir, destName or fileName)
+        self._co_copy_or_move(fileName, destDir, destName or fileName)
+
+    def _co_copy_or_move(self, fileName, destDir, destName=None,
+                         pathFunc=Path.copyTo):
+        dest_path = destDir.join(destName) if destName else destDir
+        try:
+            co_instances = self[fileName].get_cosave_instances()
+        except KeyError: # fileName is outside self.store_dir
+            co_instances = SaveInfo.get_cosaves_for_path(fileName)
+        for co_type, co_file in co_instances.items():
+            newPath = co_type.get_cosave_path(dest_path)
+            if newPath.exists(): newPath.remove() ##: dont like it, investigate
+            if co_file.abs_path.exists(): pathFunc(co_file.abs_path, newPath)
 
     def move_infos(self, sources, destinations, window, bash_frame):
-        # CoSaves sucks - operations should be atomic
+        # operations should be atomic - we should construct a list of filenames
+        # to unhide and pass that in
         moved = super(SaveInfos, self).move_infos(sources, destinations,
                                                   window, bash_frame)
         for s, d in zip(sources, destinations):
-            if d.tail in moved: CoSaves.move(s, d)
+            if d.tail in moved:
+                self._co_copy_or_move(s, d, pathFunc=Path.moveTo)
         for d in moved:
             try:
                 self.new_info(d, notify_bain=True)
@@ -2755,7 +2812,7 @@ class SaveInfos(FileInfos):
     def move_info(self, fileName, destDir):
         """Moves member file to destDir. Will overwrite!"""
         FileInfos.move_info(self, fileName, destDir)
-        CoSaves.move(self[fileName].abs_path, destDir, fileName)
+        self._co_copy_or_move(fileName, destDir, fileName, pathFunc=Path.moveTo)
 
     #--Local Saves ------------------------------------------------------------
     def _refreshLocalSave(self):

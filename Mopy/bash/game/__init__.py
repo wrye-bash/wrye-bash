@@ -132,6 +132,9 @@ class GameInfo(object):
         plugin_dir = u''  # One level above the directory in which xSE plugins
                           # should be placed (e.g. when plugins should be in
                           # Data\OBSE\Plugins, this should be u'OBSE')
+        cosave_tag = u''  # The magic tag that the cosaves use (e.g. u'SKSE').
+                          # If this is empty, it signals that this script
+                          # extender has no cosaves.
         cosave_ext = u''  # The extension that the cosaves use (e.g. u'.skse')
         url = u''         # URL to download from
         url_tip = u''     # Tooltip for mouse over the URL
