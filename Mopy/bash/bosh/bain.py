@@ -644,7 +644,7 @@ class Installer(object):
         skipExtFilesAdd = self.skipExtFiles.add
         commonlyEditedExts = Installer.commonlyEditedExts
         espmMap = self.espmMap = bolt.DefaultLowerDict(list)
-        reModExtMatch = ModInfos.file_pattern.match
+        plugin_extensions = bush.game.espm_extensions
         reReadMeMatch = Installer.reReadMe.match
         #--Scan over fileSizeCrcs
         root_path = self.extras_dict.get('root_path', u'')
@@ -697,7 +697,7 @@ class Installer(object):
                         skipDirFilesDiscard(file_relative)
                         skipDirFilesAdd(_(u'[Bethesda Content]') + u' ' + file_relative)
                         continue
-                    elif not rootLower and reModExtMatch(fileExt):
+                    elif not rootLower and fileExt in plugin_extensions:
                         #--Remap espms as defined by the user
                         if file_relative in self.remaps:
                             file_relative = self.remaps[file_relative]
