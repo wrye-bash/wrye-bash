@@ -32,8 +32,8 @@ from ...bolt import Flags, GPath
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
-    MelBase, MelFidList, MelStructA, MreRecord, MreGmstBase, MelFull0, \
-    MreHeaderBase, MelUnicode
+    MelBase, MelFidList, MelStructA, MreGmstBase, MelFull0, MreHeaderBase, \
+    MelUnicode, MreDial
 from ...exception import ModError, ModSizeError
 
 # Those are unused here, but need be in this file as are accessed via it
@@ -719,9 +719,8 @@ class MreDehy(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDial(MelRecord):
+class MreDial(MreDial):
     """Dialog record."""
-    classType = 'DIAL'
     _flags = Flags(0,Flags.getNames('rumors','toplevel',))
     class MelDialData(MelStruct):
         """Handle older truncated DATA for DIAL subrecord."""
@@ -785,52 +784,6 @@ class MreDial(MelRecord):
     melSet.elements[-1].setMelSet(melSet)
 
     __slots__ = melSet.getSlotsUsed() + ['infoStamp', 'infoStamp2', 'infos']
-
-    def __init__(self, header, ins=None, do_unpack=False):
-        """Initialize."""
-        MelRecord.__init__(self, header, ins, do_unpack)
-        self.infoStamp = 0 #--Stamp for info GRUP
-        self.infoStamp2 = 0 #--Stamp for info GRUP
-        self.infos = []
-
-    def loadInfos(self,ins,endPos,infoClass):
-        """Load infos from ins. Called from MobDials."""
-        infos = self.infos
-        recHead = ins.unpackRecHeader
-        infosAppend = infos.append
-        while not ins.atEnd(endPos,'INFO Block'):
-            #--Get record info and handle it
-            header = recHead()
-            recType = header[0]
-            if recType == 'INFO':
-                info = infoClass(header,ins,True)
-                infosAppend(info)
-            else:
-                raise ModError(ins.inName, _('Unexpected %s record in %s group.')
-                    % (recType,"INFO"))
-
-    def dump(self,out):
-        """Dumps self., then group header and then records."""
-        MreRecord.dump(self,out)
-        if not self.infos: return
-        # Magic number '24': size of Fallout New Vegas's record header
-        # Magic format '4sIIIII': format for Fallout New Vegas's GRUP record
-        size = 24 + sum([24 + info.getSize() for info in self.infos])
-        out.pack('4sIIIII','GRUP',size,self.fid,7,self.infoStamp,self.infoStamp2)
-        for info in self.infos: info.dump(out)
-
-    def updateMasters(self,masters):
-        """Updates set of master names according to masters actually used."""
-        MelRecord.updateMasters(self,masters)
-        for info in self.infos:
-            info.updateMasters(masters)
-
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        MelRecord.convertFids(self,mapper,toLong)
-        for info in self.infos:
-            info.convertFids(mapper,toLong)
 
 #------------------------------------------------------------------------------
 class MreDobj(MelRecord):

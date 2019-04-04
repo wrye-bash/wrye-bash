@@ -194,8 +194,8 @@ class MelBounds(MelStruct):
 #------------------------------------------------------------------------------
 class MelCoed(MelOptStruct):
     """Needs custom unpacker to look at FormID type of owner.  If owner is an
-	NPC then it is followed by a FormID.  If owner is a faction then it is
-	followed by an signed integer or '=Iif' instead of '=IIf' """ # see #282
+    NPC then it is followed by a FormID.  If owner is a faction then it is
+    followed by an signed integer or '=Iif' instead of '=IIf' """ # see #282
     def __init__(self):
         MelOptStruct.__init__(self,'COED','=IIf',(FID,'owner'),(FID,'glob'),
                               'itemCondition')
@@ -431,9 +431,9 @@ class MelIcons2(MelGroup):
 class MelKeywords(MelCountedFidList):
     """Wraps MelCountedFidList for the common task of defining a list of
     keywords"""
-    def __init__(self, counted_type='KWDA', attr='keywords',
-                 counter_type='KSIZ'):
-        MelCountedFidList.__init__(self, counted_type, attr, counter_type)
+    def __init__(self):
+        MelCountedFidList.__init__(self, countedType='KWDA', attr='keywords',
+                                   counterType='KSIZ')
 
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
@@ -503,7 +503,7 @@ class MelString16(MelString):
         if value is not None:
             if self.maxSize:
                 value = winNewLines(value.rstrip())
-                size = min(self.maxSize,len(value))
+                str_size = min(self.maxSize,len(value))
                 test,encoding_ = encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
@@ -512,8 +512,8 @@ class MelString16(MelString):
                     while total < extra_encoded:
                         total += len(value[i].encode(encoding_))
                         i -= 1
-                    size += i + 1
-                    value = value[:size]
+                    str_size += i + 1
+                    value = value[:str_size]
                     value = encode(value,firstEncoding=encoding_)
                 else:
                     value = test
@@ -538,7 +538,7 @@ class MelString32(MelString):
         if value is not None:
             if self.maxSize:
                 value = winNewLines(value.rstrip())
-                size = min(self.maxSize,len(value))
+                str_size = min(self.maxSize,len(value))
                 test,encoding_ = encode(value,returnEncoding=True)
                 extra_encoded = len(test) - self.maxSize
                 if extra_encoded > 0:
@@ -547,8 +547,8 @@ class MelString32(MelString):
                     while total < extra_encoded:
                         total += len(value[i].encode(encoding_))
                         i -= 1
-                    size += i + 1
-                    value = value[:size]
+                    str_size += i + 1
+                    value = value[:str_size]
                     value = encode(value,firstEncoding=encoding_)
                 else:
                     value = test
@@ -924,9 +924,9 @@ class MelVmad(MelBase):
             self.fragments = None
             self.aliases = None
 
-        def loadData(self,record,ins,size,readId):
+        def loadData(self, record, ins, size_, readId):
             insTell = ins.tell
-            endOfField = insTell() + size
+            endOfField = insTell() + size_
             self.scripts = []
             scriptsAppend = self.scripts.append
             Script = MelVmad.Script
@@ -2161,9 +2161,8 @@ class MreDebr(MelRecord):
 
 # Verified for 305
 #------------------------------------------------------------------------------
-class MreDial(MelRecord):
+class MreDial(brec.MreDial):
     """Dialogue Records"""
-    classType = 'DIAL'
 
     # DATA has wbEnum in TES5Edit
     # Assigned to 'subtype' for WB
@@ -2198,52 +2197,6 @@ class MreDial(MelRecord):
         MelStruct('TIFC','I','infoCount',),
         )
     __slots__ = melSet.getSlotsUsed() + ['infoStamp','infoStamp2','infos']
-
-    def __init__(self, header, ins=None, do_unpack=False):
-        """Initialize."""
-        MelRecord.__init__(self, header, ins, do_unpack)
-        self.infoStamp = 0 #--Stamp for info GRUP
-        self.infoStamp2 = 0 #--Stamp for info GRUP
-        self.infos = []
-
-    def loadInfos(self,ins,endPos,infoClass):
-        """Load infos from ins. Called from MobDials."""
-        infos = self.infos
-        recHead = ins.unpackRecHeader
-        infosAppend = infos.append
-        while not ins.atEnd(endPos,'INFO Block'):
-            #--Get record info and handle it
-            header = recHead()
-            recType = header[0]
-            if recType == 'INFO':
-                info = infoClass(header,ins,True)
-                infosAppend(info)
-            else:
-                raise ModError(ins.inName, _('Unexpected %s record in %s group.')
-                    % (recType,"INFO"))
-
-    def dump(self,out):
-        """Dumps self., then group header and then records."""
-        MreRecord.dump(self,out)
-        if not self.infos: return
-        # Magic number '24': size of Skyrim's record header
-        # Magic format '4sIIIII': format for Skyrim's GRUP record
-        size = 24 + sum([24 + info.getSize() for info in self.infos])
-        out.pack('4sIIIII','GRUP',size,self.fid,7,self.infoStamp,self.infoStamp2)
-        for info in self.infos: info.dump(out)
-
-    def updateMasters(self,masters):
-        """Updates set of master names according to masters actually used."""
-        MelRecord.updateMasters(self,masters)
-        for info in self.infos:
-            info.updateMasters(masters)
-
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if converting to short format."""
-        MelRecord.convertFids(self,mapper,toLong)
-        for info in self.infos:
-            info.convertFids(mapper,toLong)
 
 # Verified for 305
 #------------------------------------------------------------------------------

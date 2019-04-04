@@ -785,9 +785,8 @@ class MreCsty(MelRecord):
         )
     __slots__ = melSet.getSlotsUsed()
 
-class MreDial(MelRecord):
+class MreDial(brec.MreDial):
     """Dialog record."""
-    classType = 'DIAL'
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFids('QSTI','quests'), ### QSTRs?
@@ -824,23 +823,9 @@ class MreDial(MelRecord):
         if not self.infos: return
         # Magic number '20': size of Oblivion's record header
         # Magic format '4sIIII': format for Oblivion's GRUP record
-        size = 20 + sum([20 + info.getSize() for info in self.infos])
-        out.pack('4sIIII','GRUP',size,self.fid,7,self.infoStamp)
+        dial_size = 20 + sum([20 + info.getSize() for info in self.infos])
+        out.pack('4sIIII', 'GRUP', dial_size, self.fid, 7, self.infoStamp)
         for info in self.infos: info.dump(out)
-
-    def updateMasters(self,masters):
-        """Updates set of master names according to masters actually used."""
-        MelRecord.updateMasters(self,masters)
-        for info in self.infos:
-            info.updateMasters(masters)
-
-    def convertFids(self,mapper,toLong):
-        """Converts fids between formats according to mapper.
-        toLong should be True if converting to long format or False if
-        converting to short format."""
-        MelRecord.convertFids(self,mapper,toLong)
-        for info in self.infos:
-            info.convertFids(mapper,toLong)
 
 class MreDoor(MelRecord):
     """Container record."""

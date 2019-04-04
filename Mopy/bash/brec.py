@@ -1692,7 +1692,6 @@ class MelRecord(MreRecord):
 
 #------------------------------------------------------------------------------
 #-- Common Records
-
 #------------------------------------------------------------------------------
 class MreHeaderBase(MelRecord):
     """File header.  Base class for all 'TES4' like records"""
@@ -1879,6 +1878,59 @@ class MreLeveledListBase(MelRecord):
             self.mergeSources = [otherMod]
         #--Done
         self.setChanged(self.mergeOverLast)
+
+class MreDial(MelRecord):
+    """Dialog record."""
+    classType = 'DIAL'
+    __slots__ = []
+
+    def __init__(self, header, ins=None, do_unpack=False):
+        """Initialize."""
+        MelRecord.__init__(self, header, ins, do_unpack)
+        self.infoStamp = 0 #--Stamp for info GRUP
+        self.infoStamp2 = 0 #--Stamp for info GRUP
+        self.infos = []
+
+    def loadInfos(self,ins,endPos,infoClass):
+        """Load infos from ins. Called from MobDials."""
+        infos = self.infos
+        recHead = ins.unpackRecHeader
+        infosAppend = infos.append
+        while not ins.atEnd(endPos,'INFO Block'):
+            #--Get record info and handle it
+            header = recHead()
+            recType = header[0]
+            if recType == 'INFO':
+                info = infoClass(header,ins,True)
+                infosAppend(info)
+            else:
+                raise exception.ModError(ins.inName,
+                  _(u'Unexpected %s record in %s group.') % (recType, "INFO"))
+
+    def dump(self,out):
+        """Dumps self., then group header and then records."""
+        MreRecord.dump(self,out)
+        if not self.infos: return
+        # Magic number '24': size of game's record header - override for Oblivion
+        # Magic format '4sIIIII': format for game's GRUP record - override for Oblivion
+        dial_size = 24 + sum([24 + info.getSize() for info in self.infos])
+        out.pack('4sIIIII', 'GRUP', dial_size, self.fid, 7, self.infoStamp,
+                 self.infoStamp2)
+        for info in self.infos: info.dump(out)
+
+    def updateMasters(self,masters):
+        """Updates set of master names according to masters actually used."""
+        MelRecord.updateMasters(self,masters)
+        for info in self.infos:
+            info.updateMasters(masters)
+
+    def convertFids(self,mapper,toLong):
+        """Converts fids between formats according to mapper.
+        toLong should be True if converting to long format or False if
+        converting to short format."""
+        MelRecord.convertFids(self,mapper,toLong)
+        for info in self.infos:
+            info.convertFids(mapper,toLong)
 
 #------------------------------------------------------------------------------
 # Skyrim and Fallout ----------------------------------------------------------
