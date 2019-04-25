@@ -2009,12 +2009,14 @@ class MreSpel(MelRecord,MreHasEffects):
             setter(self,index,value)
             if index == 1:
                 setter(self,3,value)
-    flags = SpellFlags(0L,Flags.getNames('noAutoCalc', 'immuneToSilence',
-        'startSpell', None,'ignoreLOS','scriptEffectAlwaysApplies','disallowAbsorbReflect','touchExplodesWOTarget'))
+    _SpellFlags = SpellFlags(0L, Flags.getNames('noAutoCalc','immuneToSilence',
+        'startSpell', None, 'ignoreLOS', 'scriptEffectAlwaysApplies',
+        'disallowAbsorbReflect', 'touchExplodesWOTarget'))
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFull0(),
-        MelStruct('SPIT','3IB3s','spellType','cost','level',(flags,'flags',0L),('unused1',null3)),
+        MelStruct('SPIT', '3IB3s', 'spellType', 'cost', 'level',
+                  (_SpellFlags, 'flags', 0L), ('unused1', null3)),
         # spellType = 0: Spell, 1: Disease, 3: Lesser Power, 4: Ability, 5: Poison
         MelEffects(),
         )

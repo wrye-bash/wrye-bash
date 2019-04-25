@@ -26,7 +26,7 @@
 # Python imports
 from operator import itemgetter
 # Wrye Bash imports
-from brec import ModReader
+from brec import ModReader, RecordHeader
 from bolt import sio, struct_pack, struct_unpack
 import bosh # for modInfos
 import bush # for fallout3/nv fsName
@@ -203,21 +203,21 @@ class MobObjects(MobBase):
         if not self.changed:
             return self.size
         else:
-            hsize = ModReader.recHeader.rec_header_size
+            hsize = RecordHeader.rec_header_size
             return hsize + sum(
                 (hsize + record.getSize()) for record in self.records)
 
     def dump(self,out):
         """Dumps group header and then records."""
         if not self.changed:
-            out.write(ModReader.recHeader('GRUP',self.size,self.label,0,
-                                          self.stamp).pack())
+            out.write(RecordHeader('GRUP',self.size, self.label, 0,
+                                   self.stamp).pack())
             out.write(self.data)
         else:
             size = self.getSize()
-            if size == ModReader.recHeader.rec_header_size: return
-            out.write(ModReader.recHeader('GRUP',size,self.label,0,
-                                          self.stamp).pack())
+            if size == RecordHeader.rec_header_size: return
+            out.write(
+                RecordHeader('GRUP', size, self.label, 0, self.stamp).pack())
             for record in self.records:
                 record.dump(out)
 
@@ -344,7 +344,7 @@ class MobDials(MobObjects):
         """Returns size of records plus group and record headers."""
         if not self.changed:
             return self.size
-        hsize = ModReader.recHeader.rec_header_size
+        hsize = RecordHeader.rec_header_size
         size = hsize
         for record in self.records:
             size += hsize + record.getSize()
@@ -427,7 +427,7 @@ class MobCell(MobBase):
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        return ModReader.recHeader.rec_header_size + self.cell.getSize() + \
+        return RecordHeader.rec_header_size + self.cell.getSize() + \
                self.getChildrenSize()
 
     def getChildrenSize(self):
@@ -435,19 +435,19 @@ class MobCell(MobBase):
         does not include the cell itself."""
         size = self.getPersistentSize() + self.getTempSize() + \
                self.getDistantSize()
-        return size + ModReader.recHeader.rec_header_size * bool(size)
+        return size + RecordHeader.rec_header_size * bool(size)
 
     def getPersistentSize(self):
         """Returns size of all persistent children, including the persistent
         children group."""
-        hsize = ModReader.recHeader.rec_header_size
+        hsize = RecordHeader.rec_header_size
         size = sum(hsize + x.getSize() for x in self.persistent)
         return size + hsize * bool(size)
 
     def getTempSize(self):
         """Returns size of all temporary children, including the temporary
         children group."""
-        hsize = ModReader.recHeader.rec_header_size
+        hsize = RecordHeader.rec_header_size
         size = sum(hsize + x.getSize() for x in self.temp)
         if self.pgrd: size += hsize + self.pgrd.getSize()
         if self.land: size += hsize + self.land.getSize()
@@ -456,7 +456,7 @@ class MobCell(MobBase):
     def getDistantSize(self):
         """Returns size of all distant children, including the distant
         children group."""
-        hsize = ModReader.recHeader.rec_header_size
+        hsize = RecordHeader.rec_header_size
         size = sum(hsize + x.getSize() for x in self.distant)
         return size + hsize * bool(size)
 
@@ -613,8 +613,8 @@ class MobCells(MobBase):
         if fid in self.id_cellBlock:
             self.id_cellBlock[fid].cell = cell
         else:
-            cellBlock = MobCell(ModReader.recHeader('GRUP',0,0,6,self.stamp),
-                                self.loadFactory,cell)
+            cellBlock = MobCell(RecordHeader('GRUP', 0, 0, 6, self.stamp),
+                                self.loadFactory, cell)
             cellBlock.setChanged()
             self.cellBlocks.append(cellBlock)
             self.id_cellBlock[fid] = cellBlock
@@ -634,7 +634,7 @@ class MobCells(MobBase):
         bsbCellBlocks.sort(key = lambda y: y[1].cell.fid)
         bsbCellBlocks.sort(key = itemgetter(0))
         bsb_size = {}
-        hsize = ModReader.recHeader.rec_header_size
+        hsize = RecordHeader.rec_header_size
         totalSize = hsize
         bsb_setDefault = bsb_size.setdefault
         for bsb,cellBlock in bsbCellBlocks:
@@ -662,12 +662,12 @@ class MobCells(MobBase):
             bsb0 = (block,None)
             if block != curBlock:
                 curBlock,curSubblock = bsb0
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb0],block,
-                                             blockGroupType,stamp).pack())
+                outWrite(RecordHeader('GRUP',bsb_size[bsb0],block,
+                                      blockGroupType,stamp).pack())
             if subblock != curSubblock:
                 curSubblock = subblock
-                outWrite(ModReader.recHeader('GRUP',bsb_size[bsb],subblock,
-                                             subBlockGroupType,stamp).pack())
+                outWrite(RecordHeader('GRUP',bsb_size[bsb],subblock,
+                                      subBlockGroupType,stamp).pack())
             cellBlock.dump(out)
 
     def getNumRecords(self,includeGroups=1):
@@ -930,7 +930,7 @@ class MobWorld(MobCells):
     def dump(self,out):
         """Dumps group header and then records.  Returns the total size of
         the world block."""
-        hsize = ModReader.recHeader.rec_header_size
+        hsize = RecordHeader.rec_header_size
         worldSize = self.world.getSize() + hsize
         self.world.dump(out)
         if not self.changed:
@@ -1073,7 +1073,7 @@ class MobWorlds(MobBase):
 
     def getSize(self):
         """Returns size (including size of any group headers)."""
-        return ModReader.recHeader.rec_header_size + sum(
+        return RecordHeader.rec_header_size + sum(
             x.getSize() for x in self.worldBlocks)
 
     def dump(self,out):
@@ -1084,7 +1084,7 @@ class MobWorlds(MobBase):
         else:
             if not self.worldBlocks: return
             worldHeaderPos = out.tell()
-            header = ModReader.recHeader('GRUP',0,self.label,0,self.stamp)
+            header = RecordHeader('GRUP', 0, self.label, 0, self.stamp)
             out.write(header.pack())
             totalSize = header.__class__.rec_header_size + sum(
                 x.dump(out) for x in self.worldBlocks)
@@ -1133,7 +1133,7 @@ class MobWorlds(MobBase):
             self.id_worldBlocks[fid].world = world
             self.id_worldBlocks[fid].worldCellBlock = worldcellblock
         else:
-            worldBlock = MobWorld(ModReader.recHeader('GRUP',0,0,1,self.stamp),
+            worldBlock = MobWorld(RecordHeader('GRUP',0,0,1,self.stamp),
                                   self.loadFactory,world)
             worldBlock.setChanged()
             self.worldBlocks.append(worldBlock)

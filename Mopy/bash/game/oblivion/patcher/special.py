@@ -27,9 +27,9 @@ import re
 from ....bolt import GPath, sio, SubProgress, CsvReader
 from ....patcher import getPatchesPath
 from ....parsers import LoadFactory, ModFile
-from ....brec import MreRecord, ModReader
+from ....brec import MreRecord, RecordHeader
 from ....bass import null4
-from .... import brec, bush, bosh, load_order
+from .... import brec, bosh, load_order
 from ....cint import MGEFCode, FormID
 from ....exception import StateError
 from ....patcher.base import Patcher, CBash_Patcher
@@ -104,7 +104,7 @@ class AlchemicalCatalogs(_AAlchemicalCatalogs,Patcher):
         #--Book generatator
         def getBook(objectId,eid,full,value,iconPath,modelPath,modb_p):
             book = MreRecord.type_class['BOOK'](
-                ModReader.recHeader('BOOK', 0, 0, 0, 0))
+                RecordHeader('BOOK', 0, 0, 0, 0))
             book.longFids = True
             book.changed = True
             book.eid = eid

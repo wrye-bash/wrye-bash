@@ -51,7 +51,7 @@ from ..archives import readExts
 from ..bass import dirs, inisettings, tooldirs
 from ..bolt import GPath, DataDict, deprint, sio, Path, decode, struct_pack, \
     struct_unpack
-from ..brec import MreRecord, ModReader
+from ..brec import MreRecord, ModReader, RecordHeader
 from ..cint import CBashApi
 from ..exception import AbstractError, ArgumentError, BoltError, BSAError, \
     CancelError, FileError, ModError, PluginsFullError, SaveFileError, \
@@ -639,7 +639,8 @@ class ModInfo(FileInfo):
             except struct.error as rex:
                 raise ModError(self.name,u'Struct.error: %s' % rex)
         if bush.game.fsName == u'Skyrim Special Edition':
-            if tes4_rec_header.form_version != ModReader.recHeader.plugin_form_version:
+            if tes4_rec_header.form_version != \
+                    RecordHeader.plugin_form_version:
                 modInfos.sse_form43.add(self.name)
         self._reset_masters()
 

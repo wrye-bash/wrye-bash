@@ -1777,7 +1777,7 @@ class ScriptText(_ScriptText):
                 newText, longid = data
                 scriptFid = genFid(len(tes4.masters),tes4.getNextObject())
                 newScript = MreRecord.type_class['SCPT'](
-                    ModReader.recHeader('SCPT',0,0x40000,scriptFid,0))
+                    RecordHeader('SCPT', 0, 0x40000, scriptFid, 0))
                 newScript.eid = eid
                 newScript.scriptText = newText
                 newScript.setChanged()
@@ -3924,7 +3924,7 @@ class ModFile(object):
         self.fileInfo = fileInfo
         self.loadFactory = loadFactory or LoadFactory(True)
         #--Variables to load
-        self.tes4 = bush.game_mod.records.MreHeader(ModReader.recHeader())
+        self.tes4 = bush.game_mod.records.MreHeader(RecordHeader())
         self.tes4.setChanged()
         self.strings = bolt.StringTable()
         self.tops = {} #--Top groups.
@@ -3941,7 +3941,8 @@ class ModFile(object):
             return self.tops[topType]
         elif topType in RecordHeader.topTypes:
             topClass = self.loadFactory.getTopClass(topType)
-            self.tops[topType] = topClass(ModReader.recHeader('GRUP',0,topType,0,0),self.loadFactory)
+            self.tops[topType] = topClass(
+                RecordHeader('GRUP', 0, topType, 0, 0), self.loadFactory)
             self.tops[topType].setChanged()
             return self.tops[topType]
         elif topType == '__repr__':

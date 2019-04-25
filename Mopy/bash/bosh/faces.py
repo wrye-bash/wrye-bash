@@ -28,7 +28,7 @@ from ..exception import SaveFileError, StateError
 from . import SaveInfo
 from ._saves import SreNPC, SaveFile
 from ..parsers import LoadFactory, ModFile, MasterMap
-from ..brec import getModIndex, MreRecord, genFid, ModReader
+from ..brec import getModIndex, MreRecord, genFid, RecordHeader
 
 class PCFaces:
     """Package: Objects and functions for working with face data."""
@@ -456,7 +456,8 @@ class PCFaces:
             eid = eidForm % count
         #--NPC
         npcid = genFid(len(tes4.masters),tes4.getNextObject())
-        npc = MreRecord.type_class['NPC_'](ModReader.recHeader('NPC_',0,0x40000,npcid,0))
+        npc = MreRecord.type_class['NPC_'](
+            RecordHeader('NPC_', 0, 0x40000, npcid, 0))
         npc.eid = eid
         npc.full = face.pcName
         npc.flags.female = face.gender

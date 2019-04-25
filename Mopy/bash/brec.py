@@ -208,11 +208,7 @@ class RecordHeader(object):
 class ModReader:
     """Wrapper around a TES4 file in read mode.
     Will throw a ModReaderror if read operation fails to return correct size.
-
-    **ModReader.recHeader must be set to the game's specific RecordHeader
-      class type, for ModReader to use.**
     """
-    recHeader = RecordHeader
 
     def __init__(self,inName,ins):
         """Initialize."""
@@ -322,7 +318,7 @@ class ModReader:
         """Read a ref (fid)."""
         return self.unpack('I',4)[0]
 
-    def unpackRecHeader(self): return ModReader.recHeader.unpack(self)
+    def unpackRecHeader(self): return RecordHeader.unpack(self)
 
     def unpackSubHeader(self,recType='----',expType=None,expSize=0):
         """Unpack a subrecord header.  Optionally checks for match with expected
@@ -494,6 +490,7 @@ class MelBase:
 
     @staticmethod
     def parseElements(*elements):
+        # type: (list[None|unicode|tuple]) -> list[tuple]
         """Parses elements and returns attrs,defaults,actions,formAttrs where:
         * attrs is tuple of attributes (names)
         * formAttrs is tuple of attributes that have fids,
@@ -1885,6 +1882,7 @@ class MreLeveledListBase(MelRecord):
         ))
     copyAttrs = ()
     __slots__ = ['mergeOverLast', 'mergeSources', 'items', 'delevs', 'relevs']
+                # + ['flags', 'entries'] # define those in the subclasses
 
     def __init__(self, header, ins=None, do_unpack=False):
         """Initialize"""
@@ -2338,9 +2336,9 @@ actorValues = [
     ]
 
 #------------------------------------------------------------------------------
-class MreHasEffects: #(object): # this alone doesn't break MreSpel
+class MreHasEffects(object):
     """Mixin class for magic items."""
-    ##: __slots__ = [] # MreSpel.flags should be renamed to _flags
+    __slots__ = []
 
     def getEffects(self):
         """Returns a summary of effects. Useful for alchemical catalog."""

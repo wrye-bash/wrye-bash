@@ -34,7 +34,7 @@ from ..bolt import Flags, sio, GPath, decode, deprint, encode, cstrip, \
     SubProgress, unpack_byte, unpack_str8, unpack_many, unpack_int, \
     unpack_short, struct_pack, struct_unpack
 from ..brec import ModReader, MreRecord, ModWriter, getObjectIndex, \
-    getFormIndices
+    getFormIndices, RecordHeader
 from ..exception import ModError, StateError
 from ..parsers import LoadFactory, ModFile
 
@@ -301,7 +301,7 @@ class SaveFile:
             for count in xrange(createdNum):
                 progress(ins.tell(),_(u'Reading created...'))
                 header = unpack_many(ins, '4s4I')
-                self.created.append(MreRecord(ModReader.recHeader(*header),modReader))
+                self.created.append(MreRecord(RecordHeader(*header),modReader))
             #--Pre-records: Quickkeys, reticule, interface, regions
             with sio() as buff:
                 for count in range(4):

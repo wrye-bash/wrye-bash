@@ -21,13 +21,12 @@
 #  https://github.com/wrye-bash
 #
 # =============================================================================
-
 """This module contains oblivion multitweak item patcher classes that belong
 to the Gmst Multitweaker - as well as the GmstTweaker itself. Gmst stands
 for game settings."""
 from ... import bush # for game
 from ...bolt import SubProgress, deprint
-from ...brec import MreRecord, ModReader
+from ...brec import MreRecord, RecordHeader
 from ...exception import StateError
 from ...patcher.patchers.base import MultiTweakItem, CBash_MultiTweakItem
 from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
@@ -98,7 +97,7 @@ class GmstTweak(MultiTweakItem):
                     break
             else:
                 gmst = MreRecord.type_class['GMST'](
-                    ModReader.recHeader('GMST', 0, 0, 0, 0))
+                    RecordHeader('GMST', 0, 0, 0, 0))
                 gmst.eid,gmst.value,gmst.longFids = eid,value,True
                 fid = gmst.fid = keep(gmst.getGMSTFid())
                 patchFile.GMST.setRecord(gmst)

@@ -28,7 +28,7 @@ import re
 from ._mergeability import is_esl_capable
 from .. import balt, bolt, bush, bass, load_order
 from ..bolt import GPath, deprint, sio, struct_pack, struct_unpack
-from ..brec import ModReader, MreRecord
+from ..brec import ModReader, MreRecord, RecordHeader
 from ..cint import ObBaseRecord, ObCollection
 from ..exception import BoltError, CancelError, ModError
 from ..patcher import getPatchesPath, getPatchesList
@@ -853,7 +853,7 @@ class ModCleaner:
                         insUnpackSubHeader = ins.unpackSubHeader
                         insRead = ins.read
                         insUnpack = ins.unpack
-                        headerSize = ins.recHeader.rec_header_size
+                        headerSize = RecordHeader.rec_header_size
                         while not insAtEnd():
                             subprogress(insTell())
                             header = insUnpackRecHeader()
