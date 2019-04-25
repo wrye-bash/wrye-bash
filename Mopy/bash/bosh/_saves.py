@@ -46,7 +46,7 @@ from ..parsers import LoadFactory, ModFile
 class SreNPC(object):
     """NPC change record."""
     __slots__ = ('form','health','unused2','attributes','acbs','spells','factions','full','ai','skills','modifiers')
-    flags = Flags(0L,Flags.getNames(
+    sre_flags = Flags(0L, Flags.getNames(
         (0,'form'),
         (2,'health'),
         (3,'attributes'),
@@ -62,10 +62,10 @@ class SreNPC(object):
     class ACBS(object):
         __slots__ = ['flags','baseSpell','fatigue','barterGold','level','calcMin','calcMax']
 
-    def __init__(self,flags=0,data=None):
+    def __init__(self, sre_flags=0, data=None):
         for attr in self.__slots__:
             self.__setattr__(attr,None)
-        if data: self.load(flags,data)
+        if data: self.load(sre_flags, data)
 
     def getDefault(self,attr):
         """Returns a default version. Only supports acbs."""
@@ -76,48 +76,48 @@ class SreNPC(object):
         acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
         return acbs
 
-    def load(self,flags,data):
+    def load(self, sr_flags, data):
         """Loads variables from data."""
         with sio(data) as ins:
             def _unpack(fmt, fmt_siz):
                 return struct_unpack(fmt, ins.read(fmt_siz))
-            flags = SreNPC.flags(flags)
-            if flags.form:
+            sr_flags = SreNPC.sre_flags(sr_flags)
+            if sr_flags.form:
                 self.form, = _unpack('I',4)
-            if flags.attributes:
+            if sr_flags.attributes:
                 self.attributes = list(_unpack('8B',8))
-            if flags.acbs:
+            if sr_flags.acbs:
                 acbs = self.acbs = SreNPC.ACBS()
                 (acbs.flags, acbs.baseSpell, acbs.fatigue, acbs.barterGold,
                  acbs.level, acbs.calcMin, acbs.calcMax) = _unpack('=I3Hh2H',16)
                 acbs.flags = bush.game_mod.records.MreNpc._flags(acbs.flags)
-            if flags.factions:
+            if sr_flags.factions:
                 num, = _unpack('H',2)
                 self.factions = list(starmap(_unpack, repeat(('=Ib', 5), num)))
-            if flags.spells:
+            if sr_flags.spells:
                 num, = _unpack('H',2)
                 self.spells = list(_unpack('%dI' % num,4*num))
-            if flags.ai:
+            if sr_flags.ai:
                 self.ai = ins.read(4)
-            if flags.health:
+            if sr_flags.health:
                 self.health, self.unused2 = _unpack('H2s',4)
-            if flags.modifiers:
+            if sr_flags.modifiers:
                 num, = _unpack('H',2)
                 self.modifiers = list(starmap(_unpack, repeat(('=Bf', 5), num)))
-            if flags.full:
+            if sr_flags.full:
                 size, = _unpack('B',1)
                 self.full = ins.read(size)
-            if flags.skills:
+            if sr_flags.skills:
                 self.skills = list(_unpack('21B',21))
         #--Done
 
     def getFlags(self):
         """Returns current flags set."""
-        flags = SreNPC.flags()
+        sr_flags = SreNPC.sre_flags()
         for attr in SreNPC.__slots__:
             if attr != 'unused2':
-                flags.__setattr__(attr,self.__getattribute__(attr) is not None)
-        return int(flags)
+                sr_flags.__setattr__(attr,self.__getattribute__(attr) is not None)
+        return int(sr_flags)
 
     def getData(self):
         """Returns self.data."""

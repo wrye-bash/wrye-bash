@@ -274,12 +274,13 @@ class ImportFaceDialog(balt.Dialog):
                                     onSelect=self.EvtListBox)
         self.listBox.SetSizeHints(175,150)
         #--Name,Race,Gender Checkboxes
-        flags = bosh.faces.PCFaces.flags(bass.settings.get('bash.faceImport.flags', 0x4))
-        self.nameCheck = checkBox(self, _(u'Name'), checked=flags.name)
-        self.raceCheck = checkBox(self, _(u'Race'), checked=flags.race)
-        self.genderCheck = checkBox(self, _(u'Gender'), checked=flags.gender)
-        self.statsCheck = checkBox(self, _(u'Stats'), checked=flags.stats)
-        self.classCheck = checkBox(self, _(u'Class'), checked=flags.iclass)
+        fi_flgs = bosh.faces.PCFaces.pcf_flags(
+            bass.settings.get('bash.faceImport.flags', 0x4))
+        self.nameCheck = checkBox(self, _(u'Name'), checked=fi_flgs.name)
+        self.raceCheck = checkBox(self, _(u'Race'), checked=fi_flgs.race)
+        self.genderCheck = checkBox(self, _(u'Gender'), checked=fi_flgs.gender)
+        self.statsCheck = checkBox(self, _(u'Stats'), checked=fi_flgs.stats)
+        self.classCheck = checkBox(self, _(u'Class'), checked=fi_flgs.iclass)
         #--Name,Race,Gender Text
         self.nameText  = StaticText(self,u'-----------------------------')
         self.raceText  = StaticText(self,u'')
@@ -350,16 +351,16 @@ class ImportFaceDialog(balt.Dialog):
         itemDex = selections[0]
         item = self.list_items[itemDex]
         #--Do import
-        flags = bosh.faces.PCFaces.flags()
-        flags.hair = flags.eye = True
-        flags.name = self.nameCheck.GetValue()
-        flags.race = self.raceCheck.GetValue()
-        flags.gender = self.genderCheck.GetValue()
-        flags.stats = self.statsCheck.GetValue()
-        flags.iclass = self.classCheck.GetValue()
+        pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
+        pc_flags.hair = pc_flags.eye = True
+        pc_flags.name = self.nameCheck.GetValue()
+        pc_flags.race = self.raceCheck.GetValue()
+        pc_flags.gender = self.genderCheck.GetValue()
+        pc_flags.stats = self.statsCheck.GetValue()
+        pc_flags.iclass = self.classCheck.GetValue()
         #deprint(flags.getTrueAttrs())
-        bass.settings['bash.faceImport.flags'] = int(flags)
-        bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],flags)
+        bass.settings['bash.faceImport.flags'] = int(pc_flags)
+        bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],pc_flags)
         balt.showOk(self,_(u'Face imported.'),self.fileInfo.name.s)
         self.EndModalOK()
 

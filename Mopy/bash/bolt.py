@@ -1121,6 +1121,7 @@ class Flags(object):
     @staticmethod
     def getNames(*names):
         """Returns dictionary mapping names to indices.
+        Indices range may not be contiguous.
         Names are either strings or (index,name) tuples.
         E.g., Flags.getNames('isQuest','isHidden',None,(4,'isDark'),(7,'hasWater'))"""
         namesDict = {}

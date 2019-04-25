@@ -32,7 +32,9 @@ from ..brec import getModIndex, MreRecord, genFid, ModReader
 
 class PCFaces:
     """Package: Objects and functions for working with face data."""
-    flags = Flags(0L,Flags.getNames('name','race','gender','hair','eye','iclass','stats','factions','modifiers','spells'))
+    pcf_flags = Flags(0L, Flags.getNames(
+        'name', 'race', 'gender', 'hair', 'eye', 'iclass', 'stats', 'factions',
+        'modifiers', 'spells'))
 
     class PCFace(object):
         """Represents a face."""
@@ -191,11 +193,11 @@ class PCFaces:
 
     # Save Set ----------------------------------------------------------------
     @staticmethod
-    def save_setFace(saveInfo,face,flags=0L):
+    def save_setFace(saveInfo, face, pcf_flags=0L):
         """DEPRECATED. Write a pcFace to a save file."""
         saveFile = SaveFile(saveInfo)
         saveFile.load()
-        PCFaces.save_setPlayerFace(saveFile,face,flags)
+        PCFaces.save_setPlayerFace(saveFile, face, pcf_flags)
         saveFile.safeSave()
 
     @staticmethod
@@ -266,9 +268,9 @@ class PCFaces:
         saveFile.setRecord(npc.getTuple(fid,version))
 
     @staticmethod
-    def save_setPlayerFace(saveFile,face,flags=0L,morphFacts=None):
+    def save_setPlayerFace(saveFile, face, pcf_flags=0L, morphFacts=None):
         """Write a pcFace to a save file."""
-        flags = PCFaces.flags(flags)
+        pcf_flags = PCFaces.pcf_flags(pcf_flags)
         #--Update masters
         for fid in (face.race, face.eye, face.hair, face.iclass):
             if not fid: continue
@@ -299,21 +301,21 @@ class PCFaces:
         buff.seek(namePos-542)
         buffPack('=200s120s200s',face.fggs_p, face.fgga_p, face.fgts_p)
         #--Race?
-        buffPackRef(face.race,flags.race)
+        buffPackRef(face.race, pcf_flags.race)
         #--Hair, Eyes?
-        buffPackRef(face.hair,flags.hair)
-        buffPackRef(face.eye,flags.eye)
-        if flags.hair:
+        buffPackRef(face.hair, pcf_flags.hair)
+        buffPackRef(face.eye, pcf_flags.eye)
+        if pcf_flags.hair:
             buffPack('=f3Bs',face.hairLength,face.hairRed,face.hairBlue,face.hairGreen,face.unused3)
         else:
             buff.seek(8,1)
         #--Gender?
-        if flags.gender:
+        if pcf_flags.gender:
             buffPack('B',face.gender)
         else:
             buff.seek(1,1)
         #--Name?
-        if flags.name:
+        if pcf_flags.name:
             postName = buff.getvalue()[buff.tell()+len(saveFile.pcName)+2:]
             buffPack('B',len(face.pcName)+1)
             buff.write(
@@ -324,7 +326,7 @@ class PCFaces:
         else:
             buff.seek(len(saveFile.pcName)+2,1)
         #--Class?
-        if flags.iclass and face.iclass:
+        if pcf_flags.iclass and face.iclass:
             pos = buff.tell()
             newClass = masterMap(face.iclass)
             oldClass = saveFile.fids[struct_unpack('I', buff.read(4))[0]]
@@ -340,10 +342,10 @@ class PCFaces:
         (fid,recType,recFlags,version,data) = saveFile.getRecord(7)
         npc = SreNPC(recFlags,data)
         #--Gender
-        if flags.gender and npc.acbs:
+        if pcf_flags.gender and npc.acbs:
             npc.acbs.flags.female = face.gender
         #--Stats
-        if flags.stats and npc.acbs:
+        if pcf_flags.stats and npc.acbs:
             npc.acbs.level = face.level
             npc.acbs.baseSpell = face.baseSpell
             npc.acbs.fatigue = face.fatigue
@@ -353,8 +355,8 @@ class PCFaces:
             npc.unused2 = face.unused2
         #--Factions: Faction assignment doesn't work. (Probably stored in achr.)
         #--Modifiers, Spells, Name
-        if flags.modifiers: npc.modifiers = face.modifiers[:]
-        if flags.spells:
+        if pcf_flags.modifiers: npc.modifiers = face.modifiers[:]
+        if pcf_flags.spells:
             #delist('Set PC Spells:',face.spells)
             npc.spells = [saveFile.getIref(x) for x in face.spells]
         npc.full = None

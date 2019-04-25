@@ -463,12 +463,16 @@ class MelBase:
     @staticmethod
     def parseElements(*elements):
         """Parses elements and returns attrs,defaults,actions,formAttrs where:
-        * attrs is tuple of attibute (names)
+        * attrs is tuple of attributes (names)
         * formAttrs is tuple of attributes that have fids,
         * defaults is tuple of default values for attributes
         * actions is tuple of callables to be used when loading data
         Note that each element of defaults and actions matches corresponding attr element.
         Used by struct subclasses.
+
+        Example call:
+        parseElements('level', ('unused1', null2), (FID, 'listId', None),
+                      ('count', 1), ('unused2', null2))
         """
         formAttrs = []
         lenEls = len(elements)
@@ -476,15 +480,17 @@ class MelBase:
         formAttrsAppend = formAttrs.append
         for index,element in enumerate(elements):
             if not isinstance(element,tuple): element = (element,)
-            if element[0] == FID:
+            el_0 = element[0]
+            attrIndex = el_0 == 0
+            if el_0 == FID:
                 formAttrsAppend(element[1])
-            elif callable(element[0]):
-                actions[index] = element[0]
-            attrIndex = (1 if callable(element[0]) or element[0] in (FID,0)
-                         else 0)
+                attrIndex = 1
+            elif callable(el_0):
+                actions[index] = el_0
+                attrIndex = 1
             attrs[index] = element[attrIndex]
-            defaults[index] = (element[-1] if len(element)-attrIndex == 2
-                               else 0)
+            if len(element) - attrIndex == 2:
+                defaults[index] = element[-1] # else leave to 0
         return map(tuple,(attrs,defaults,actions,formAttrs))
 
     def getDefaulters(self,defaulters,base):

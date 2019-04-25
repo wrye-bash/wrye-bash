@@ -312,7 +312,7 @@ class ActorLevels:
             for record in modFile.NPC_.getActiveRecords():
                 id_levels = mod_id_levels.setdefault(modName,{})
                 id_levels[mapper(record.fid)] = (
-                    record.eid,record.flags.pcLevelOffset and 1 or 0,
+                    record.eid, bool(record.flags.pcLevelOffset),
                     record.level,record.calcMin,record.calcMax)
             gotLevels.add(modName)
 

@@ -34,7 +34,7 @@ from ...patcher.patchers.base import MultiTweaker, CBash_MultiTweaker
 
 # Patchers: 30 ----------------------------------------------------------------
 class AClothesTweak(AMultiTweakItem):
-    flags = {
+    clothes_flags = {
         u'hoods':    0x00000002,
         u'shirts':   0x00000004,
         u'pants':    0x00000008,
@@ -54,7 +54,7 @@ class AClothesTweak(AMultiTweakItem):
         super(AClothesTweak,self).__init__(label,tip,key,*choices)
         typeKey = key[:key.find(u'.')]
         self.orTypeFlags = typeKey == u'rings'
-        self.typeFlags = self.__class__.flags[typeKey]
+        self.typeFlags = self.__class__.clothes_flags[typeKey]
 
     def isMyType(self,record):
         """Returns true to save record for late processing."""
@@ -143,7 +143,8 @@ class ClothesTweak_Unblock(ClothesTweak):
     #--Config Phase -----------------------------------------------------------
     def __init__(self,label,tip,key,*choices):
         super(ClothesTweak_Unblock,self).__init__(label,tip,key,*choices)
-        self.unblockFlags = self.__class__.flags[key[key.rfind('.')+1:]]
+        self.unblockFlags = self.__class__.clothes_flags[
+            key[key.rfind('.') + 1:]]
 
     #--Patch Phase ------------------------------------------------------------
     def buildPatch(self,patchFile,keep,log):
