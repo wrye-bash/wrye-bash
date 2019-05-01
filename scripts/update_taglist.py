@@ -42,7 +42,7 @@ import utils
 
 LOGGER = logging.getLogger(__name__)
 
-MASTERLIST_VERSION = "0.13"
+MASTERLIST_VERSION = "0.14"
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(SCRIPTS_PATH, "taglist.log")

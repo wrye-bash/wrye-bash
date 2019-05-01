@@ -42,6 +42,7 @@ Mopy/bash/l10n/*NEW.txt
 .vscode
 
 # The LOOT API binaries
-Mopy/loot_api.*
+Mopy/loot.dll
+Mopy/loot_api.pyd
 Mopy/loot_api_python.pdb
 Mopy/README.md

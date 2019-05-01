@@ -25,7 +25,7 @@
 
 """
 Downloads and installs the LOOT Python API in the 'Mopy/' folder.
-If necessary, will also download and install MSVC 2015.
+If necessary, will also download and install MSVC 2017.
 """
 
 import argparse
@@ -40,8 +40,8 @@ import utils
 
 LOGGER = logging.getLogger(__name__)
 
-LOOT_API_VERSION = "3.1.1"
-LOOT_API_REVISION = "f97de90"
+LOOT_API_VERSION = "4.0.2"
+LOOT_API_REVISION = "d356ac2"
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(SCRIPTS_PATH, "loot.log")
@@ -109,8 +109,8 @@ def is_msvc_redist_installed(major, minor, build):
 def install_msvc_redist(dl_dir, url=None):
     if url is None:
         url = (
-            "https://download.microsoft.com/download/6/A/A/"
-            "6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe"
+            "https://download.visualstudio.microsoft.com/download/pr/749aa419-f9e4-45"
+            "78-a417-a43786af205e/d59197078cc425377be301faba7dd87a/vc_redist.x86.exe"
         )
     LOGGER.info("Downloading MSVC Redist...")
     LOGGER.debug("Download url: {}".format(url))
@@ -133,18 +133,18 @@ def is_loot_api_installed(version, revision):
 
 def install_loot_api(version, revision, dl_dir, destination_path):
     url = (
-        "https://github.com/loot/loot-api-python/releases/"
-        "download/{0}/loot_api_python-{0}-0-g{1}_master-win32.7z".format(
+        "https://github.com/loot/loot-api-python/releases/download/"
+        "{0}/loot_api_python-{0}-0-g{1}_master-python2.7-win32.7z".format(
             version, revision
         )
     )
     archive_path = os.path.join(dl_dir, "loot_api.7z")
     seven_zip_folder = os.path.join(MOPY_PATH, "bash", "compiled")
     seven_zip_path = os.path.join(seven_zip_folder, "7z.exe")
-    loot_api_dll = os.path.join(destination_path, "loot_api.dll")
+    loot_dll = os.path.join(destination_path, "loot.dll")
     loot_api_pyd = os.path.join(destination_path, "loot_api.pyd")
-    if os.path.exists(loot_api_dll):
-        os.remove(loot_api_dll)
+    if os.path.exists(loot_dll):
+        os.remove(loot_dll)
     if os.path.exists(loot_api_pyd):
         os.remove(loot_api_pyd)
     LOGGER.info("Downloading LOOT API Python wrapper...")
@@ -160,7 +160,7 @@ def install_loot_api(version, revision, dl_dir, destination_path):
         archive_path,
         "-y",
         "-o" + destination_path,
-        "*/loot_api.dll",
+        "*/loot.dll",
         "*/loot_api.pyd",
     ]
     utils.run_subprocess(command, LOGGER)
@@ -171,7 +171,7 @@ def main(args):
     utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=args.logfile)
     download_dir = tempfile.mkdtemp()
     # if url is given in command line, always dl and install
-    if not is_msvc_redist_installed(14, 0, 24215) or args.loot_msvc is not None:
+    if not is_msvc_redist_installed(14, 14, 26429) or args.loot_msvc is not None:
         install_msvc_redist(download_dir, args.loot_msvc)
     if is_loot_api_installed(args.loot_version, args.loot_revision):
         LOGGER.info(

@@ -45,7 +45,7 @@
             ; Install the standalone only files
             SetOutPath "${GameDir}\Mopy"
             File "${WB_CLEAN_MOPY}\Wrye Bash.exe"
-            File "${WB_CLEAN_MOPY}\loot_api.dll"
+            File "${WB_CLEAN_MOPY}\loot.dll"
             ; Write the installation path into the registry
             WriteRegStr HKLM "SOFTWARE\Wrye Bash" "${GameName} Standalone Version" "True"
         ${ElseIf} ${RegValueExe} == $Empty

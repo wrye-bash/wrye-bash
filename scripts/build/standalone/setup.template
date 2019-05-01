@@ -66,7 +66,7 @@ setup(
                 'api-ms-win-crt-time-l1-1-0.dll',
                 'MSVCP140.dll',
                 'VCRUNTIME140.dll',
-                'loot_api.dll',
+                'loot.dll',
                 ],
             'packages': [%(packages)s],
             'excludes': [
