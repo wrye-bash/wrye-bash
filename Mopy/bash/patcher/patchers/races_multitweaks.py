@@ -665,7 +665,7 @@ class _ARacePatcher(SpecialPatcher, AListPatcher):
               u" npcs that are otherwise missing them.")
             )
     tip = _(u"Merge race eyes, hair, body, voice from mods.")
-    autoKey = {u'R.Head', u'Eyes-R', u'R.Ears', u'Eyes-E', u'Eyes-D', u'Eyes',
+    autoKey = {u'R.Head', u'R.Ears', u'Eyes',
                u'Voice-F', u'R.ChangeSpells', u'R.Teeth', u'Voice-M',
                u'R.Attributes-M', u'R.Attributes-F', u'Body-F', u'Body-M',
                u'R.Mouth', u'R.Description', u'R.AddSpells', u'Body-Size-F',
@@ -703,7 +703,7 @@ class RacePatcher(_ARacePatcher, ListPatcher):
                            'skill3', 'skill3Boost', 'skill4', 'skill4Boost',
                            'skill5', 'skill5Boost', 'skill6', 'skill6Boost',
                            'skill7', 'skill7Boost'}
-        self.eyeKeys = {u'Eyes-D', u'Eyes-R', u'Eyes-E', u'Eyes'}
+        self.eyeKeys = {u'Eyes'}
         self.eye_mesh = {}
         self.scanTypes = {'RACE', 'EYES', 'HAIR', 'NPC_'}
 
@@ -1353,7 +1353,7 @@ class CBash_RacePatcher_Spells(SpecialPatcher):
 
 class CBash_RacePatcher_Eyes(SpecialPatcher):
     """Merges and filters changes to race eyes."""
-    autoKey = {'Eyes-D', 'Eyes-R', 'Eyes-E', 'Eyes'}
+    autoKey = {'Eyes'}
     blueEye = FormID(GPath(u'Oblivion.esm'),0x27308)
     argonianEye = FormID(GPath(u'Oblivion.esm'),0x3e91e)
     dremoraRace = FormID(GPath(u'Oblivion.esm'),0x038010)
