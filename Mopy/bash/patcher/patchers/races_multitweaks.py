@@ -704,9 +704,6 @@ class RacePatcher(_ARacePatcher, ListPatcher):
                            'skill5', 'skill5Boost', 'skill6', 'skill6Boost',
                            'skill7', 'skill7Boost'}
         self.eyeKeys = {u'Eyes-D', u'Eyes-R', u'Eyes-E', u'Eyes'}
-        #--Mesh tuple for each defined eye. Derived from race records.
-        defaultMesh = (u'characters\\imperial\\eyerighthuman.nif',
-                       u'characters\\imperial\\eyelefthuman.nif')
         self.eye_mesh = {}
         self.scanTypes = {'RACE', 'EYES', 'HAIR', 'NPC_'}
 
@@ -1360,8 +1357,6 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
     blueEye = FormID(GPath(u'Oblivion.esm'),0x27308)
     argonianEye = FormID(GPath(u'Oblivion.esm'),0x3e91e)
     dremoraRace = FormID(GPath(u'Oblivion.esm'),0x038010)
-##    defaultMesh = (r'characters\imperial\eyerighthuman.nif',
-#  r'characters\imperial\eyelefthuman.nif')
     reX117 = re.compile(u'^117[a-z]',re.I|re.U)
     iiMode = False
     allowUnloaded = True
