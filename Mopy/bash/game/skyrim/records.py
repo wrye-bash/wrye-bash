@@ -167,6 +167,25 @@ class MelBipedObjectData(MelStruct):
             # BOD2 - new style, MelStruct can handle it
             MelStruct.loadData(self, record, ins, sub_type, size_, readId)
 
+class MelAttackData(MelStructs):
+    """Wrapper around MelStructs to share some code between the NPC_ and RACE
+    definitions."""
+    DataFlags = Flags(0L, Flags.getNames('ignoreWeapon', 'bashAttack',
+                                         'powerAttack', 'leftAttack',
+                                         'rotatingAttack', 'unknown6',
+                                         'unknown7', 'unknown8', 'unknown9',
+                                         'unknown10', 'unknown11', 'unknown12',
+                                         'unknown13', 'unknown14', 'unknown15',
+                                         'unknown16',))
+
+    def __init__(self):
+        MelStructs.__init__(self, 'ATKD', '2f2I3fI3f', 'attackData',
+                           'damageMult', 'attackChance', (FID, 'attackSpell'),
+                           (MelAttackData.DataFlags, 'attackDataFlags', 0L),
+                           'attackAngle', 'strikeAngle', 'stagger',
+                           (FID, 'attackType'), 'knockdown', 'recoveryTime',
+                           'staminaMult')
+
 #------------------------------------------------------------------------------
 class MelBounds(MelStruct):
     def __init__(self):
@@ -4388,41 +4407,6 @@ class MreNpc(MelRecord):
     """Npc"""
     classType = 'NPC_'
 
-    # {0x00000001}'Ignore Weapon',
-    # {0x00000002}'Bash Attack',
-    # {0x00000004}'Power Attack',
-    # {0x00000008}'Left Attack',
-    # {0x00000010}'Rotating Attack',
-    # {0x00000020}'Unknown 6',
-    # {0x00000040}'Unknown 7',
-    # {0x00000080}'Unknown 8',
-    # {0x00000100}'Unknown 9',
-    # {0x00000200}'Unknown 10',
-    # {0x00000400}'Unknown 11',
-    # {0x00000800}'Unknown 12',
-    # {0x00001000}'Unknown 13',
-    # {0x00002000}'Unknown 14',
-    # {0x00004000}'Unknown 15',
-    # {0x00008000}'Unknown 16'
-    NpcFlags3 = Flags(0L,Flags.getNames(
-            (0, 'ignoreWeapon'),
-            (1, 'bashAttack'),
-            (2, 'powerAttack'),
-            (3, 'leftAttack'),
-            (4, 'rotatingAttack'),
-            (5, 'unknown6'),
-            (6, 'unknown7'),
-            (7, 'unknown8'),
-            (8, 'unknown9'),
-            (9, 'unknown10'),
-            (10, 'unknown11'),
-            (11, 'unknown12'),
-            (12, 'unknown13'),
-            (13, 'unknown14'),
-            (14, 'unknown15'),
-            (15, 'unknown16'),
-        ))
-
     # {0x0001} 'Use Traits',
     # {0x0002} 'Use Stats',
     # {0x0004} 'Use Factions',
@@ -4539,11 +4523,7 @@ class MreNpc(MelRecord):
         MelOptStruct('WNAM','I',(FID, 'wormArmor')),
         MelOptStruct('ANAM','I',(FID, 'farawaymodel')),
         MelOptStruct('ATKR','I',(FID, 'attackRace')),
-        MelStructs('ATKD', 'ffIIfffIfff', 'attackData',
-                   'damageMult','attackChance',(FID, 'attackSpell'),
-                   (NpcFlags3,'flags3',0L),'attackAngle','strikeAngle',
-                   'stagger',(FID,'attackType'),'knockdown',
-                   'recoveryTime', 'staminaMult'),
+        MelAttackData(),
         MelString('ATKE', 'attackEvents'),
         MelOptStruct('SPOR', 'I', (FID, 'spectator')),
         MelOptStruct('OCOR', 'I', (FID, 'observe')),
