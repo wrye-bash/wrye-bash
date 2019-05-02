@@ -467,14 +467,12 @@ class MelIcons2(MelGroup):
             MelGroup.dumpData(self,record,out)
 
 #------------------------------------------------------------------------------
-class MelKeywords(MelFidList):
-    """Handle writing out the KSIZ subrecord for the KWDA subrecord"""
-    def dumpData(self,record,out):
-        keywords = record.__getattribute__(self.attr)
-        if keywords:
-            # Only write the KSIZ/KWDA subrecords if count > 0
-            out.packSub('KSIZ','I',len(keywords))
-            MelFidList.dumpData(self,record,out)
+class MelKeywords(MelCountedFidList):
+    """Wraps MelCountedFidList for the common task of defining a list of
+    keywords"""
+    def __init__(self, counted_type='KWDA', attr='keywords',
+                 counter_type='KSIZ'):
+        MelCountedFidList.__init__(self, counted_type, attr, counter_type)
 
 #------------------------------------------------------------------------------
 class MelOwnership(MelGroup):
@@ -1228,7 +1226,7 @@ class MreActi(MelRecord):
         MelLString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelStruct('PNAM','=4B','red','green','blue','unused'),
         MelOptStruct('SNAM','I',(FID,'dropSound')),
         MelOptStruct('VNAM','I',(FID,'pickupSound')),
@@ -1289,7 +1287,7 @@ class MreAlch(MelRecord,MreHasEffects):
         MelString('EDID','eid'),
         MelBounds(),
         MelLString('FULL','full'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelLString('DESC','description'),
         MelModel(),
         MelDestructible(),
@@ -1328,7 +1326,7 @@ class MreAmmo(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelStruct('DATA','IIfI',(FID,'projectile'),(AmmoTypeFlags,'flags',0L),'damage','value'),
         MelString('ONAM','onam_n'),
         )
@@ -1440,7 +1438,7 @@ class MreArmo(MelRecord):
         MelOptStruct('BIDS','I',(FID,'bashImpact')),
         MelOptStruct('BAMT','I',(FID,'material')),
         MelOptStruct('RNAM','I',(FID,'race')),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelLString('DESC','description'),
         MelFids('MODL','addons'),
         MelStruct('DATA','=if','value','weight'),
@@ -1620,7 +1618,7 @@ class MreBook(MelRecord):
         MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelBookData(),
         MelFid('INAM','inventoryArt'),
         MelLString('CNAM','text'),
@@ -2810,7 +2808,7 @@ class MreFlor(MelRecord):
         MelLString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelBase('PNAM','unknown01'),
         MelLString('RNAM','activateTextOverride'),
         MelBase('FNAM','unknown02'),
@@ -3047,7 +3045,7 @@ class MreFurn(MelRecord):
         MelLString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelBase('PNAM','pnam_p'),
         MelStruct('FNAM','H',(FurnGeneralFlags,'general_f',None),),
         MelFid('KNAM','interactionKeyword'),
@@ -3530,7 +3528,7 @@ class MreIngr(MelRecord,MreHasEffects):
         MelVmad(),
         MelBounds(),
         MelLString('FULL','full'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelModel(),
         MelString('ICON','iconPath'),
         MelString('MICO','smallIconPath'),
@@ -3638,7 +3636,7 @@ class MreKeym(MelRecord):
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelStruct('DATA','if','value','weight'),
         )
     __slots__ = melSet.getSlotsUsed()
@@ -3739,7 +3737,7 @@ class MreLctn(MelRecord):
                      (FID,'actor'),(FID,'ref'),'gridX','gridY',),
 
         MelLString('FULL','full'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelFid('PNAM','parentLocation',),
         MelFid('NAM1','music',),
         MelFid('FNAM','unreportedCrimeFaction',),
@@ -4107,7 +4105,7 @@ class MreMgef(MelRecord):
         MelVmad(),
         MelLString('FULL','full'),
         MelFid('MDOB','harvestIngredient'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelStruct('DATA','IfIiiH2sIfIIIIffffIiIIIIiIIIfIfI4s4sIIIIff',
             (MgefGeneralFlags,'flags',0L),'baseCost',(FID,'assocItem'),
             'magicSkill','resistValue',
@@ -4151,7 +4149,7 @@ class MreMisc(MelRecord):
         MelDestructible(),
         MelOptStruct('YNAM','I',(FID,'pickupSound')),
         MelOptStruct('ZNAM','I',(FID,'dropSound')),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelStruct('DATA','=If','value','weight'),
         )
     __slots__ = melSet.getSlotsUsed()
@@ -4536,7 +4534,7 @@ class MreNpc(MelRecord):
         MelOptStruct('VTCK', 'I', (FID, 'voice')),
         MelOptStruct('TPLT', 'I', (FID, 'template')),
         MelFid('RNAM','race'),
-        MelCountedFids('SPLO', 'spells', 'SPCT', '<I'),
+        MelCountedFids('SPLO', 'spells', 'SPCT'),
         MelDestructible(),
         MelOptStruct('WNAM','I',(FID, 'wormArmor')),
         MelOptStruct('ANAM','I',(FID, 'farawaymodel')),
@@ -4562,7 +4560,7 @@ class MreNpc(MelRecord):
                   'aggroRadiusBehavior',
                   'aidtUnknown', 'warn', 'warnAttack', 'attack'),
         MelFids('PKID', 'packages',),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelFid('CNAM', 'class'),
         MelLString('FULL','full'),
         MelLString('SHRT', 'shortName'),
@@ -5306,7 +5304,7 @@ class MreQust(MelRecord):
                 MelStruct('ALFD','4s',('eventData',null4)),
                 ),
             MelConditions(),
-            MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+            MelKeywords(),
             MelItems(),
             MelFid('SPOR','spectatorOverridePackageList'),
             MelFid('OCOR','observeDeadBodyOverridePackageList'),
@@ -5985,7 +5983,7 @@ class MreScrl(MelRecord,MreHasEffects):
         MelString('EDID','eid'),
         MelBounds(),
         MelLString('FULL','full'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelFids('MDOB','menuDisplayObject'),
         MelFid('ETYP','equipmentType',),
         MelLString('DESC','description'),
@@ -6043,7 +6041,7 @@ class MreSlgm(MelRecord):
         MelDestructible(),
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelStruct('DATA','If','value','weight'),
         MelStruct('SOUL','B',('soul',0),),
         MelStruct('SLCP','B',('capacity',1),),
@@ -6313,7 +6311,7 @@ class MreSpel(MelRecord,MreHasEffects):
         MelString('EDID','eid'),
         MelBounds(),
         MelLString('FULL','full'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelFid('MDOB', 'menuDisplayObject'),
         MelFid('ETYP', 'equipmentType'),
         MelLString('DESC','description'),
@@ -6401,7 +6399,7 @@ class MreTact(MelRecord):
         MelLString('FULL','full'),
         MelModel(),
         MelDestructible(),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelBase('PNAM','pnam_p'),
         MelOptStruct('SNAM','I',(FID,'soundLoop')),
         MelBase('FNAM','fnam_p'),
@@ -6637,7 +6635,7 @@ class MreWeap(MelRecord):
         MelFid('BAMT','alternateBlockMaterial',),
         MelFid('YNAM','pickupSound',),
         MelFid('ZNAM','dropSound',),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelLString('DESC','description'),
         MelModel('model2','MOD3'),
         MelBase('NNAM','unused1'),

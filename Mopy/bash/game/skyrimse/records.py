@@ -24,7 +24,7 @@
 """This module contains the skyrim SE record classes. The great majority are
 imported from skyrim."""
 # Set MelModel in brec, in this case it's identical to the skyrim one
-from ..skyrim.records import MelBounds, MelDestructible, MelVmad
+from ..skyrim.records import MelBounds, MelDestructible, MelKeywords, MelVmad
 from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, DataDict
 from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
@@ -76,7 +76,7 @@ class MreAmmo(MelRecord):
         MelFid('YNAM','pickupSound'),
         MelFid('ZNAM','dropSound'),
         MelLString('DESC','description'),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelAmmoData('DATA', 'IIfIf', (FID, 'projectile'),
             (AmmoTypeFlags, 'flags', 0L), ('damage', 1.0), ('value', 0),
             ('weight', 0.1)),
@@ -386,7 +386,7 @@ class MreWeap(MelRecord):
         MelFid('BAMT','alternateBlockMaterial',),
         MelFid('YNAM','pickupSound',),
         MelFid('ZNAM','dropSound',),
-        MelCountedFidList('KWDA', 'keywords', 'KSIZ', '<I'),
+        MelKeywords(),
         MelLString('DESC','description'),
         MelModel('model2','MOD3'),
         MelBase('NNAM','unused1'),
