@@ -167,8 +167,8 @@ class MelBipedObjectData(MelStruct):
             # BOD2 - new style, MelStruct can handle it
             MelStruct.loadData(self, record, ins, sub_type, size_, readId)
 
-class MelAttackData(MelStructs):
-    """Wrapper around MelStructs to share some code between the NPC_ and RACE
+class MelAttackData(MelStruct):
+    """Wrapper around MelStruct to share some code between the NPC_ and RACE
     definitions."""
     DataFlags = Flags(0L, Flags.getNames('ignoreWeapon', 'bashAttack',
                                          'powerAttack', 'leftAttack',
@@ -179,8 +179,8 @@ class MelAttackData(MelStructs):
                                          'unknown16',))
 
     def __init__(self):
-        MelStructs.__init__(self, 'ATKD', '2f2I3fI3f', 'attackData',
-                           'damageMult', 'attackChance', (FID, 'attackSpell'),
+        MelStruct.__init__(self, 'ATKD', '2f2I3fI3f', 'damageMult',
+                           'attackChance', (FID, 'attackSpell'),
                            (MelAttackData.DataFlags, 'attackDataFlags', 0L),
                            'attackAngle', 'strikeAngle', 'stagger',
                            (FID, 'attackType'), 'knockdown', 'recoveryTime',
@@ -4523,8 +4523,10 @@ class MreNpc(MelRecord):
         MelOptStruct('WNAM','I',(FID, 'wormArmor')),
         MelOptStruct('ANAM','I',(FID, 'farawaymodel')),
         MelOptStruct('ATKR','I',(FID, 'attackRace')),
-        MelAttackData(),
-        MelString('ATKE', 'attackEvents'),
+        MelGroups('attacks',
+            MelAttackData(),
+            MelString('ATKE', 'attackEvents')
+        ),
         MelOptStruct('SPOR', 'I', (FID, 'spectator')),
         MelOptStruct('OCOR', 'I', (FID, 'observe')),
         MelOptStruct('GWOR', 'I', (FID, 'guardWarn')),
