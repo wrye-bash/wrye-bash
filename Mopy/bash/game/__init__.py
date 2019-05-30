@@ -136,7 +136,7 @@ class GameInfo(object):
     class sp(object):
         sp_abbrev = u''   # Abbreviated name. If this is empty, it signals that
                           # this game does not support SkyProc patchers.
-        long_ame = u''    # Full name
+        long_name = u''   # Full name
         install_dir = u'' # The directory, relative to the Data folder, into
                           # which SkyProc patchers will be installed.
 

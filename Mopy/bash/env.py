@@ -571,13 +571,13 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
     _source = source; _target = target
     if __shell and shell is not None:
         # flags
-        flags = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
-        flags |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
-        flags |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
-        if allowUndo: flags |= shellcon.FOF_ALLOWUNDO
-        if not confirm: flags |= shellcon.FOF_NOCONFIRMATION
-        if renameOnCollision: flags |= shellcon.FOF_RENAMEONCOLLISION
-        if silent: flags |= shellcon.FOF_SILENT
+        flgs = shellcon.FOF_WANTMAPPINGHANDLE # enables mapping return value !
+        flgs |= FOF_NOCONFIRMMKDIR # never ask user for creating dirs
+        flgs |= (len(target) > 1) * shellcon.FOF_MULTIDESTFILES
+        if allowUndo: flgs |= shellcon.FOF_ALLOWUNDO
+        if not confirm: flgs |= shellcon.FOF_NOCONFIRMATION
+        if renameOnCollision: flgs |= shellcon.FOF_RENAMEONCOLLISION
+        if silent: flgs |= shellcon.FOF_SILENT
         # null terminated strings
         source = u'\x00'.join(source) # nope: + u'\x00'
         target = u'\x00'.join(target)
@@ -588,7 +588,7 @@ def _fileOperation(operation, source, target=None, allowUndo=True,
         # aborted: True if any operations aborted, False otherwise
         # mapping: maps the old and new names of the renamed files
         result, aborted, mapping = shell.SHFileOperation(
-                (parent, operation, source, target, flags, None, None))
+                (parent, operation, source, target, flgs, None, None))
         if result == 0:
             if aborted: raise SkipError()
             return dict(mapping)

@@ -642,7 +642,7 @@ class SaveFile:
         objRefNullBases = 0
         fids = self.fids
         for record in self.records:
-            fid,type,flags,version,data = record
+            fid,type,rec_flgs,version,data = record
             if fid ==0xFEFFFFFF: continue #--Ignore intentional(?) extra fid added by patch.
             mod = fid >> 24
             if type not in typeModHisto:
@@ -661,7 +661,7 @@ class SaveFile:
                     print type,hex(fid),id_created[fid].recType
                     knownTypes.add(type)
             #--Obj ref parents
-            if type == 49 and mod == 255 and (flags & 2):
+            if type == 49 and mod == 255 and (rec_flgs & 2):
                 iref, = struct_unpack('I', data[4:8])
                 count,cumSize = objRefBases.get(iref,(0,0))
                 count += 1
@@ -730,8 +730,8 @@ class SaveFile:
         progress(len(self.created),_(u'Scanning change records.'))
         fids = self.fids
         for record in self.records:
-            fid,recType,flags,version,data = record
-            if recType == 49 and fid >> 24 == 0xFF and (flags & 2):
+            fid,recType,rec_flgs,version,data = record
+            if recType == 49 and fid >> 24 == 0xFF and (rec_flgs & 2):
                 iref, = struct_unpack('I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     nullRefCount += 1
@@ -765,10 +765,10 @@ class SaveFile:
         fids = self.fids
         kept = []
         for record in self.records:
-            fid,recType,flags,version,data = record
+            fid,recType,rec_flgs,version,data = record
             if fid in uncreated:
                 numUnCreChanged += 1
-            elif removeNullRefs and recType == 49 and fid >> 24 == 0xFF and (flags & 2):
+            elif removeNullRefs and recType == 49 and fid >> 24 == 0xFF and (rec_flgs & 2):
                 iref, = struct_unpack('I', data[4:8])
                 if iref >> 24 != 0xFF and fids[iref] == 0:
                     numUnNulled += 1

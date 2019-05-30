@@ -1441,7 +1441,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
 
     def OnDragging(self,x,y,dragResult):
         # We're dragging, see if we need to scroll the list
-        index, flags = self.HitTest((x, y))
+        index, _hit_flags = self.HitTest((x, y))
         if index == wx.NOT_FOUND:   # Didn't drop it on an item
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:
@@ -1503,8 +1503,7 @@ class ListCtrl(wx.ListCtrl, ListCtrlAutoWidthMixin):
     def _OnDropList(self, x, y, indexes):
         start = indexes[0]
         stop = indexes[-1]
-
-        index, flags = self.HitTest((x, y))
+        index, _hit_flags = self.HitTest((x, y))
         if index == wx.NOT_FOUND:   # Didn't drop it on an item
             if self.GetItemCount() > 0:
                 if y <= self.GetItemRect(0).y:

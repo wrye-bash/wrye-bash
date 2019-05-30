@@ -294,9 +294,9 @@ class CellImporter(_ACellImporter, ImportPatcher):
                 for attr in attrs:
                     tempCellData[fid][attr] = cellBlock.cell.__getattribute__(
                         attr)
-                for flag in flags:
+                for flg_ in flgs_:
                     tempCellData[fid + ('flags',)][
-                        flag] = cellBlock.cell.flags.__getattr__(flag)
+                        flg_] = cellBlock.cell.flags.__getattr__(flg_)
         def checkMasterCellBlockData(cellBlock):
             """
             Add attribute values from record(s) in master file(s).
@@ -312,11 +312,11 @@ class CellImporter(_ACellImporter, ImportPatcher):
                     master_attr = cellBlock.cell.__getattribute__(attr)
                     if tempCellData[fid][attr] != master_attr:
                         cellData[fid][attr] = tempCellData[fid][attr]
-                for flag in flags:
-                    master_flag = cellBlock.cell.flags.__getattr__(flag)
-                    if tempCellData[fid + ('flags',)][flag] != master_flag:
-                        cellData[fid + ('flags',)][flag] = \
-                            tempCellData[fid + ('flags',)][flag]
+                for flg_ in flgs_:
+                    master_flag = cellBlock.cell.flags.__getattr__(flg_)
+                    if tempCellData[fid + ('flags',)][flg_] != master_flag:
+                        cellData[fid + ('flags',)][flg_] = \
+                            tempCellData[fid + ('flags',)][flg_]
         loadFactory = LoadFactory(False,MreRecord.type_class['CELL'],
                                         MreRecord.type_class['WRLD'])
         progress.setFull(len(self.srcs))
@@ -341,7 +341,7 @@ class CellImporter(_ACellImporter, ImportPatcher):
             if not tags: continue
             attrs = set(reduce(# adds tuples together, then takes the set
                 operator.concat, (self.recAttrs[bashKey] for bashKey in tags)))
-            flags = tuple(self.recFlags[bashKey] for bashKey in tags if
+            flgs_ = tuple(self.recFlags[bashKey] for bashKey in tags if
                           self.recFlags[bashKey] != u'')
             if 'CELL' in srcFile.tops:
                 for cellBlock in srcFile.CELL.cellBlocks:

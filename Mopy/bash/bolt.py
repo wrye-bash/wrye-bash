@@ -891,15 +891,15 @@ class Path(object):
             try:
                 clearReadOnly(self)
             except UnicodeError:
-                flags = stat.S_IWUSR|stat.S_IWOTH
+                stat_flags = stat.S_IWUSR|stat.S_IWOTH
                 chmod = os.chmod
                 for root_dir,dirs,files in _walk(self._s):
                     rootJoin = root_dir.join
                     for directory in dirs:
-                        try: chmod(rootJoin(directory),flags)
+                        try: chmod(rootJoin(directory),stat_flags)
                         except: pass
                     for filename in files:
-                        try: chmod(rootJoin(filename),flags)
+                        try: chmod(rootJoin(filename),stat_flags)
                         except: pass
 
     def open(self,*args,**kwdargs):

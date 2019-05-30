@@ -248,38 +248,6 @@ class SHSTOCKICONINFO(Structure):
                 ('szPath',c_wchar*MAX_PATH)]
 
 
-try:
-    stockiconinfo = windll.shell32.SHGetStockIconInfo
-    stockiconinfo.argtypes = [c_uint,c_uint,POINTER(SHSTOCKICONINFO)]
-    stockiconinfo.restype = c_uint32
-    STOCK_ICON_AVAILABLE = True
-
-    def GetStockIcon(id_,flags=0):
-        flags = ~(~flags|SHGSI_ICONLOCATION)|SHGSI_ICON
-        info = SHSTOCKICONINFO()
-        info.cbSize = sizeof(info)
-        result = stockiconinfo(id_,flags,byref(info))
-        if result != 0:
-            raise Exception(result)
-        return info.hIcon
-
-    def GetStockIconLocation(id_,flags=0):
-        flags = ~(~flags|SHGSI_ICON)|SHGSI_ICONLOCATION
-        info = SHSTOCKICONINFO()
-        info.cbSize = sizeof(info)
-        result = stockiconinfo(id_,flags,byref(info))
-        if result != 0:
-            raise Exception(result)
-        return info.szPath,info.iIcon
-except AttributeError:
-    STOCK_ICON_AVAILABLE = False
-
-    def GetStockIcon(id_,flags=0):
-        return None
-
-    def GetStockIconLocation(id_,flags=0):
-        return u'',0
-
 #--Start a webpage with an anchor ---------------------------------------------
 # Need to do this specially, because doing it via os.startfile, ShellExecute,
 # etc drops off the anchor part of the url
@@ -498,19 +466,20 @@ class TaskDialog(object):
     ###############################
     # Windows windll.user32 calls #
     ###############################
-    def __configure(self, c_links, centered, close, minimize, h_links, flags):
+    def __configure(self, c_links, centered, close, minimize, h_links,
+                    additional_flags):
         conf = TASKDIALOGCONFIG()
 
         if c_links and len(getattr(self, '_buttons', [])) > 0:
-            flags |= USE_COMMAND_LINKS
+            additional_flags |= USE_COMMAND_LINKS
         if centered:
-            flags |= POSITION_RELATIVE_TO_WINDOW
+            additional_flags |= POSITION_RELATIVE_TO_WINDOW
         if close:
-            flags |= ALLOW_DIALOG_CANCELLATION
+            additional_flags |= ALLOW_DIALOG_CANCELLATION
         if minimize:
-            flags |= CAN_BE_MINIMIZED
+            additional_flags |= CAN_BE_MINIMIZED
         if h_links:
-            flags |= ENABLE_HYPERLINKS
+            additional_flags |= ENABLE_HYPERLINKS
 
         conf.cbSize = sizeof(TASKDIALOGCONFIG)
         conf.hwndParent = self._parent
@@ -530,13 +499,13 @@ class TaskDialog(object):
                 conf.uFooterIcon.pszFooterIcon = self._footer_icon
             else:
                 conf.uFooterIcon.hFooterIcon = self._footer_icon
-                flags |= USE_HICON_FOOTER
+                additional_flags |= USE_HICON_FOOTER
         if self._main_icon is not None:
             if self._main_is_stock:
                 conf.uMainIcon.pszMainIcon = self._main_icon
             else:
                 conf.uMainIcon.hMainIcon = self._main_icon
-                flags |= USE_HICON_MAIN
+                additional_flags |= USE_HICON_MAIN
 
         if '_buttons' in attributes:
             custom_buttons = []
@@ -579,7 +548,7 @@ class TaskDialog(object):
             conf.pRadioButtons = c_array
 
             if self._default_radio is None:
-                flags |= NO_DEFAULT_RADIO_BUTTON
+                additional_flags |= NO_DEFAULT_RADIO_BUTTON
             else:
                 conf.nDefaultRadioButton = self._default_radio
 
@@ -589,24 +558,24 @@ class TaskDialog(object):
             conf.pszExpandedInformation = self._expander_data[2]
 
             if self._expander_expanded:
-                flags |= EXPANDED_BY_DEFAULT
+                additional_flags |= EXPANDED_BY_DEFAULT
             if self._expands_at_footer:
-                flags |= EXPAND_FOOTER_AREA
+                additional_flags |= EXPAND_FOOTER_AREA
 
         if '_cbox_label' in attributes:
             conf.pszVerificationText = self._cbox_label
             if self._cbox_checked:
-                flags |= VERIFICATION_FLAG_CHECKED
+                additional_flags |= VERIFICATION_FLAG_CHECKED
 
         if '_marquee_progress_bar' in attributes:
-            flags |= SHOW_MARQUEE_PROGRESS_BAR
-            flags |= CALLBACK_TIMER
+            additional_flags |= SHOW_MARQUEE_PROGRESS_BAR
+            additional_flags |= CALLBACK_TIMER
 
         if '_progress_bar' in attributes:
-            flags |= SHOW_PROGRESS_BAR
-            flags |= CALLBACK_TIMER
+            additional_flags |= SHOW_PROGRESS_BAR
+            additional_flags |= CALLBACK_TIMER
 
-        conf.dwFlags = flags
+        conf.dwFlags = additional_flags
         conf.pfCallback = PFTASKDIALOGCALLBACK(self.__callback)
         return conf
 

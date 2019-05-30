@@ -101,17 +101,17 @@ class NamesTweak_Body(_AMultiTweakItem_Names):
         for record in getattr(patchFile,self.key).records:
             if not record.full: continue
             if record.full[0] in u'+-=.()[]': continue
-            flags = record.flags
-            if flags.head or flags.hair: type_ = head
-            elif flags.rightRing or flags.leftRing: type_ = ring
-            elif flags.amulet: type_ = amulet
-            elif flags.upperBody and flags.lowerBody: type_ = robe
-            elif flags.upperBody: type_ = chest
-            elif flags.lowerBody: type_ = pants
-            elif flags.hand: type_ = gloves
-            elif flags.foot: type_ = shoes
-            elif flags.tail: type_ = tail
-            elif flags.shield: type_ = shield
+            rec_flgs = record.flags
+            if rec_flgs.head or rec_flgs.hair: type_ = head
+            elif rec_flgs.rightRing or rec_flgs.leftRing: type_ = ring
+            elif rec_flgs.amulet: type_ = amulet
+            elif rec_flgs.upperBody and rec_flgs.lowerBody: type_ = robe
+            elif rec_flgs.upperBody: type_ = chest
+            elif rec_flgs.lowerBody: type_ = pants
+            elif rec_flgs.hand: type_ = gloves
+            elif rec_flgs.foot: type_ = shoes
+            elif rec_flgs.tail: type_ = tail
+            elif rec_flgs.shield: type_ = shield
             else: continue
             if record.recType == 'ARMO':
                 type_ += 'LH'[record.flags.heavyArmor]
