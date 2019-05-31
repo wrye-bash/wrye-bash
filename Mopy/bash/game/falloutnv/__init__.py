@@ -23,11 +23,11 @@
 # =============================================================================
 """GameInfo override for Fallout NV."""
 from .default_tweaks import default_tweaks
-from .. import GameInfo
+from ..fallout3 import Fallout3GameInfo
 from ... import brec
 from ...brec import MreGlob
 
-class FalloutNVGameInfo(GameInfo):
+class FalloutNVGameInfo(Fallout3GameInfo):
     displayName = u'Fallout New Vegas'
     fsName = u'FalloutNV'
     altName = u'Wrye Flash NV'
@@ -42,19 +42,7 @@ class FalloutNVGameInfo(GameInfo):
     nexusName = u'New Vegas Nexus'
     nexusKey = u'bash.installers.openNewVegasNexus'
 
-    allow_reset_bsa_timestamps = True
-    supports_mod_inis = False
-
-    using_txt_file = False
-
-    class cs(GameInfo.cs):
-        cs_abbrev = u'GECK'
-        long_name = u'Garden of Eden Creation Kit'
-        exe = u'GECK.exe'
-        se_args = u'-editor'
-        image_name = u'geck%s.png'
-
-    class se(GameInfo.se):
+    class se(Fallout3GameInfo.se):
         se_abbrev = u'NVSE'
         long_name = u'Fallout Script Extender'
         exe = u'nvse_loader.exe'
@@ -64,45 +52,22 @@ class FalloutNVGameInfo(GameInfo):
         url = u'http://nvse.silverlock.org/'
         url_tip = u'http://nvse.silverlock.org/'
 
-    class ess(GameInfo.ess):
-        ext = u'.fos'
-
-    class pnd(GameInfo.pnd):
-        facegen_dir_1 = [u'textures', u'characters', u'BodyMods']
-        facegen_dir_2 = [u'textures', u'characters', u'FaceMods']
-
     # BAIN:
-    dataDirs = GameInfo.dataDirs | {
-        u'distantlod',
-        u'docs',
-        u'facegen',
-        u'fonts',
-        u'menus',
-        u'shaders',
-        u'trees',
-        }
     dataDirsPlus = {
         u'ini',
         u'nvse',
         u'scripts',
         }
     SkipBAINRefresh = {u'fnvedit backups', u'fnvedit cache'}
-    wryeBashDataFiles = {
-        ur'ArchiveInvalidationInvalidated!.bsa'
-        ur'Fallout - AI!.bsa'
-    }
     ignoreDataFiles = {
         #    ur'NVSE\Plugins\Construction Set Extender.dll',
         #    ur'NVSE\Plugins\Construction Set Extender.ini'
     }
     ignoreDataDirs = {ur'LSData'} #    ur'NVSE\Plugins\ComponentDLLs\CSE',
 
-    class esp(GameInfo.esp):
-        canBash = True
-        canCBash = False
-        canEditHeader = True
+    class esp(Fallout3GameInfo.esp):
+        canCBash = False # True?
         validHeaderVersions = (0.94, 1.32, 1.33, 1.34)
-        stringsFiles = []
 
     #--Bash Tags supported by this game
     # 'Body-F', 'Body-M', 'Body-Size-M', 'Body-Size-F', 'C.Climate', 'C.Light',
@@ -117,12 +82,7 @@ class FalloutNVGameInfo(GameInfo):
     # 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton',
     # 'NpcFacesForceFullImport', 'MustBeActiveIfImported', 'Deflst',
     # 'Destructible', 'WeaponMods'
-    allTags = {u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace',
-               u'C.Light', u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
-               u'C.Water', u'Deactivate', u'Deflst', u'Delev', u'Destructible',
-               u'Factions', u'Filter', u'Graphics', u'Invent', u'Names',
-               u'NoMerge', u'Relations', u'Relev', u'Sound', u'Stats',
-               u'WeaponMods'}
+    allTags = Fallout3GameInfo.allTags | {u'WeaponMods'}
 
     # ActorImporter, AliasesPatcher, AssortedTweaker, CellImporter, ContentsChecker,
     # DeathItemPatcher, DestructiblePatcher, FidListsMerger, GlobalsTweaker,
@@ -131,118 +91,7 @@ class FalloutNVGameInfo(GameInfo):
     # NamesTweaker, NPCAIPackagePatcher, NpcFacePatcher, PatchMerger, RacePatcher,
     # RoadImporter, SoundPatcher, StatsPatcher, UpdateReferences, WeaponModsPatcher,
     #--Patcher available when building a Bashed Patch (referenced by class name)
-    patchers = (
-        u'AliasesPatcher', u'CellImporter', u'DestructiblePatcher',
-        u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportFactions', u'ImportInventory', u'ImportRelations',
-        u'ListsMerger', u'NamesPatcher', u'PatchMerger', u'SoundPatcher',
-        u'StatsPatcher', u'WeaponModsPatcher',)
-
-    weaponTypes = (
-        _(u'Big gun'),
-        _(u'Energy'),
-        _(u'Small gun'),
-        _(u'Melee'),
-        _(u'Unarmed'),
-        _(u'Thrown'),
-        _(u'Mine'),
-        )
-
-    raceNames = {
-        0x000019 : _(u'Caucasian'),
-        0x0038e5 : _(u'Hispanic'),
-        0x0038e6 : _(u'Asian'),
-        0x003b3e : _(u'Ghoul'),
-        0x00424a : _(u'AfricanAmerican'),
-        0x0042be : _(u'AfricanAmerican Child'),
-        0x0042bf : _(u'AfricanAmerican Old'),
-        0x0042c0 : _(u'Asian Child'),
-        0x0042c1 : _(u'Asian Old'),
-        0x0042c2 : _(u'Caucasian Child'),
-        0x0042c3 : _(u'Caucasian Old'),
-        0x0042c4 : _(u'Hispanic Child'),
-        0x0042c5 : _(u'Hispanic Old'),
-        0x04bb8d : _(u'Caucasian Raider'),
-        0x04bf70 : _(u'Hispanic Raider'),
-        0x04bf71 : _(u'Asian Raider'),
-        0x04bf72 : _(u'AfricanAmerican Raider'),
-        0x0987dc : _(u'Hispanic Old Aged'),
-        0x0987dd : _(u'Asian Old Aged'),
-        0x0987de : _(u'AfricanAmerican Old Aged'),
-        0x0987df : _(u'Caucasian Old Aged'),
-        }
-
-    raceShortNames = {
-        0x000019 : u'Cau',
-        0x0038e5 : u'His',
-        0x0038e6 : u'Asi',
-        0x003b3e : u'Gho',
-        0x00424a : u'Afr',
-        0x0042be : u'AfC',
-        0x0042bf : u'AfO',
-        0x0042c0 : u'AsC',
-        0x0042c1 : u'AsO',
-        0x0042c2 : u'CaC',
-        0x0042c3 : u'CaO',
-        0x0042c4 : u'HiC',
-        0x0042c5 : u'HiO',
-        0x04bb8d : u'CaR',
-        0x04bf70 : u'HiR',
-        0x04bf71 : u'AsR',
-        0x04bf72 : u'AfR',
-        0x0987dc : u'HOA',
-        0x0987dd : u'AOA',
-        0x0987de : u'FOA',
-        0x0987df : u'COA',
-        }
-
-    raceHairMale = {
-        0x000019 : 0x014b90, #--Cau
-        0x0038e5 : 0x0a9d6f, #--His
-        0x0038e6 : 0x014b90, #--Asi
-        0x003b3e : None, #--Gho
-        0x00424a : 0x0306be, #--Afr
-        0x0042be : 0x060232, #--AfC
-        0x0042bf : 0x0306be, #--AfO
-        0x0042c0 : 0x060232, #--AsC
-        0x0042c1 : 0x014b90, #--AsO
-        0x0042c2 : 0x060232, #--CaC
-        0x0042c3 : 0x02bfdb, #--CaO
-        0x0042c4 : 0x060232, #--HiC
-        0x0042c5 : 0x02ddee, #--HiO
-        0x04bb8d : 0x02bfdb, #--CaR
-        0x04bf70 : 0x02bfdb, #--HiR
-        0x04bf71 : 0x02bfdb, #--AsR
-        0x04bf72 : 0x0306be, #--AfR
-        0x0987dc : 0x0987da, #--HOA
-        0x0987dd : 0x0987da, #--AOA
-        0x0987de : 0x0987d9, #--FOA
-        0x0987df : 0x0987da, #--COA
-        }
-
-    raceHairFemale = {
-        0x000019 : 0x05dc6b, #--Cau
-        0x0038e5 : 0x05dc76, #--His
-        0x0038e6 : 0x022e50, #--Asi
-        0x003b3e : None, #--Gho
-        0x00424a : 0x05dc78, #--Afr
-        0x0042be : 0x05a59e, #--AfC
-        0x0042bf : 0x072e39, #--AfO
-        0x0042c0 : 0x05a5a3, #--AsC
-        0x0042c1 : 0x072e39, #--AsO
-        0x0042c2 : 0x05a59e, #--CaC
-        0x0042c3 : 0x072e39, #--CaO
-        0x0042c4 : 0x05a59e, #--HiC
-        0x0042c5 : 0x072e39, #--HiO
-        0x04bb8d : 0x072e39, #--CaR
-        0x04bf70 : 0x072e39, #--HiR
-        0x04bf71 : 0x072e39, #--AsR
-        0x04bf72 : 0x072e39, #--AfR
-        0x0987dc : 0x044529, #--HOA
-        0x0987dd : 0x044529, #--AOA
-        0x0987de : 0x044529, #--FOA
-        0x0987df : 0x044529, #--COA
-        }
+    patchers = Fallout3GameInfo.patchers + (u'WeaponModsPatcher',)
 
     @classmethod
     def init(cls):

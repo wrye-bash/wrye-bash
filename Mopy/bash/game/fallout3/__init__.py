@@ -38,7 +38,6 @@ class Fallout3GameInfo(GameInfo):
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = ur'bash\db\Fallout3_ids.pkl'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
-
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
     nexusName = u'Fallout 3 Nexus'
     nexusKey = u'bash.installers.openFallout3Nexus'
@@ -88,7 +87,7 @@ class Fallout3GameInfo(GameInfo):
         u'fose',
         }
     SkipBAINRefresh = {u'fo3edit backups', u'fo3edit cache'}
-    wryeBashDataFiles = {
+    wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
         ur'ArchiveInvalidationInvalidated!.bsa'
         ur'Fallout - AI!.bsa'
     }
