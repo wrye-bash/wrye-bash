@@ -27,6 +27,7 @@ from __future__ import print_function
 import collections
 import copy
 import errno
+import gc
 import os
 import re
 import sys
@@ -1366,6 +1367,7 @@ class InstallerProject(Installer):
                                pending_size, progress, recalculate_all_crcs,
                                rootName)
         #--Done
+
         return int(max_mtime)
 
     def size_or_mtime_changed(self, apath, _lstat=os.lstat):
@@ -1619,7 +1621,13 @@ class InstallersData(DataStore):
 
     def __load(self, progress):
         progress(0, _(u"Loading Data..."))
-        self.dictFile.load()
+        start = time.time()
+        try:
+            # gc.disable()
+            self.dictFile.load()
+        finally:
+            deprint(u'Loading took %s' % (time.time() - start))
+            # gc.enable()
         self.converters_data.load()
         data = self.dictFile.data
         self.data = data.get('installers', {})
