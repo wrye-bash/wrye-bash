@@ -28,6 +28,7 @@ import collections
 import copy
 import errno
 import io
+import gc
 import os
 import re
 import sys
@@ -1751,7 +1752,13 @@ class InstallersData(DataStore):
 
     def __load(self, progress):
         progress(0, _(u'Loading Data...'))
-        self.dictFile.load()
+        start = time.time()
+        try:
+            # gc.disable()
+            self.dictFile.load()
+        finally:
+            deprint(u'Loading took %s' % (time.time() - start))
+            # gc.enable()
         self.converters_data.load()
         pickl_data = self.dictFile.pickled_data
         self._data = pickl_data.get(u'installers', {}) or pickl_data.get(b'installers', {})
