@@ -1773,7 +1773,7 @@ class LogFile(Log):
         if appendNewline: self.out.write(u'\n')
 
 #------------------------------------------------------------------------------
-class Progress:
+class Progress(object):
     """Progress Callable: Shows progress when called."""
     def __init__(self,full=1.0):
         if (1.0*full) == 0: raise exception.ArgumentError(u'Full must be non-zero!')

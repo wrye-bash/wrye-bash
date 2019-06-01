@@ -1752,6 +1752,7 @@ class InstallersData(DataStore):
         if _index is not None:
             progress = SubProgress(progress, _index, _index + 1)
         installer.refreshBasic(progress, recalculate_project_crc=_fullRefresh)
+        progress(1.0, _(u'Done'))
         if do_refresh:
             self.irefresh(what='NS')
         return installer

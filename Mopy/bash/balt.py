@@ -1565,6 +1565,7 @@ class Progress(bolt.Progress):
 
     def Destroy(self):
         if self.dialog:
+            # self._do_progress(self.full, _(u'Done'))
             self.dialog.Destroy()
             self.dialog = None
 
