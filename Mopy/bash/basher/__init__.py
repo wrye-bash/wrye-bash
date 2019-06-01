@@ -2918,6 +2918,10 @@ class InstallersPanel(BashTab):
         self._data_dir_scanned = False
         self.refreshing = False
         self.frameActivated = False
+        # if user cancels the refresh in wx 3 because progress is an OS
+        # window Bash effectively regains focus and keeps trying to refresh
+        # FIXME(ut) hack we must rewrite Progress for wx 3
+        self._user_cancelled = False
 
     @balt.conversation
     def _first_run_set_enabled(self):
@@ -2937,7 +2941,9 @@ class InstallersPanel(BashTab):
                   **kwargs):
         """Panel is shown. Update self.data."""
         self._first_run_set_enabled() # must run _before_ if below
-        if not settings['bash.installers.enabled'] or self.refreshing: return
+        if not settings['bash.installers.enabled'] or self.refreshing or self._user_cancelled:
+            self._user_cancelled = False
+            return
         try:
             self.refreshing = True
             self._refresh_installers_if_needed(canCancel, fullRefresh,
@@ -2974,7 +2980,7 @@ class InstallersPanel(BashTab):
                                                         refresh_info)
                     self.frameActivated = False
                 except CancelError:
-                    pass # User canceled the refresh
+                    self._user_cancelled = True # User canceled the refresh
                 finally:
                     self._data_dir_scanned = True
         elif self.frameActivated and self.listData.refreshConvertersNeeded():
