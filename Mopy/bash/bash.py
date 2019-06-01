@@ -80,11 +80,15 @@ def _import_wx():
     global _wx
     try:
         import wx as _wx
-    except ImportError:
+        # Hacky fix for loading older settings that pickled classes from
+        # moved/deleted wx modules
+        from wx import _core
+        sys.modules['wx._gdi'] = _core
+    except Exception as e:
         but_kwargs = {'text': _(u"QUIT"),
                       'fg': 'red'}  # foreground button color
-        msg = u'\n'.join([dump_environment(), u'',
-            _(u'Unable to locate wxpython installation. Exiting.')])
+        msg = u'\n'.join([dump_environment(), u'', u'Unable to load wx:',
+                          traceback.format_exc(e), u'Exiting.'])
         _tkinter_error_dial(msg, but_kwargs)
         sys.exit(1)
 
