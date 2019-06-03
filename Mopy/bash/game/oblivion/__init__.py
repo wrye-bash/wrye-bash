@@ -38,6 +38,7 @@ class OblivionGameInfo(GameInfo):
     masterFiles = [u'Oblivion.esm', u'Nehrim.esm']
     iniFiles = [u'Oblivion.ini']
     pklfile = ur'bash\db\Oblivion_ids.pkl'
+    masterlist_dir = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
     nexusName = u'TES Nexus'

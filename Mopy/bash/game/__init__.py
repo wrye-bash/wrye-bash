@@ -55,6 +55,9 @@ class GameInfo(object):
     # The pickle file for this game.  Holds encoded GMST IDs from the big list
     # below
     pklfile = ur'bash\db\*GAMENAME*_ids.pkl'
+    # The directory containing the masterlist for this game, relative to
+    # 'Mopy/Bash Patches'
+    masterlist_dir = u''
     # Registry keys to read to find the install location
     # These are relative to:
     #  HKLM\Software

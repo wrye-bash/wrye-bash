@@ -37,6 +37,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     masterFiles = [u'FalloutNV.esm']
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
     pklfile = ur'bash\db\FalloutNV_ids.pkl'
+    masterlist_dir = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
     nexusName = u'New Vegas Nexus'

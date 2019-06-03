@@ -131,7 +131,8 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
         raise BoltError(u'init_dirs: Mopy dirs uninitialized')
     #--Oblivion (Application) Directories
     dirs['app'] = game_info.gamePath
-    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches', game_info.fsName)
+    dirs['defaultPatches'] = dirs['mopy'].join(u'Bash Patches',
+                                               game_info.masterlist_dir)
 
     #  Personal
     personal = getPersonalPath(bashIni_, personal)
