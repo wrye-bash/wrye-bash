@@ -1084,14 +1084,14 @@ tab. The directories skipped are:
             you should be using xEdit.
         <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
         <tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
-        <tr><td colspan="2" id="modsEsmifySelf">Esmify/Espify Self<td>The distinction between esp and esm plugins is not dependent on their file
+        <tr><td colspan="2" id="modsEsmifySelf">Add/Remove ESM Flag<td>The distinction between esp and esm plugins is not dependent on their file
             extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
             useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise.
             Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. NB: the file extension won't change
             and this is used by Bash so do not mess with it. <b>Warning:</b> Make sure to toggle any plugins back before playing the game, otherwise
             savegames will get confused, possibly causing bugs and corruption. To toggle the masters back use the same command on the plugin which
-            should now be named Espify Self.
-        <tr><td colspan="2" id="modsEsmifyMasters">Esmify/Espify Masters<td>This works as <a href="#modsEsmifySelf">Esmify/Espify Self</a> does,
+            should now be named Remove ESM Flag.
+        <tr><td colspan="2" id="modsEsmifyMasters">Add/Remove ESM Flag To/From Masters<td>This works as <a href="#modsEsmifySelf">Add/Remove ESM Flag</a> does,
             but toggles a plugin's masters rather than the plugin itself. The load order of plugins will change to reflect their new status but
             since the modification time won't change they will revert back to their original positions for modification time based load orders.
             Be sure to backup your load order for Skyrim.
@@ -1130,7 +1130,7 @@ tab. The directories skipped are:
 <h2 id="patch">Advanced Bashed Patch</h2>
 <p>You can have multiple Bashed Patches, though one is generally enough per <a href="#saves-profiles">save profile</a> or character. The only requirement for Wrye Bash recognising a plugin as a Bashed Patch is that its <q>Author</q> field is set to <q>BASHED PATCH</q>, so you can name a Bashed Patch whatever you want.
 <h3 id="patch-view">Viewing &amp; Editing The Bashed Patch</h3>
-<p>As the Bashed Patch commonly has .esp files as masters, viewing and editing it can be more complicated than for the average plugin. If you wish to view its contents, it is easiest to use <a href="https://www.nexusmods.com/oblivion/mods/11536">TES4Edit</a>, which can also be used to edit most types of data in plugins. To edit it using the Construction Set or Creation Kit (required when editing scripts), you'll need to first use the <a href="#modsEsmifyMasters">Esmify Masters</a> command on it. Be sure to use <q>Espify Masters</q> before attempting to play the game.
+<p>As the Bashed Patch commonly has .esp files as masters, viewing and editing it can be more complicated than for the average plugin. If you wish to view its contents, it is easiest to use <a href="https://www.nexusmods.com/oblivion/mods/11536">TES4Edit</a>, which can also be used to edit most types of data in plugins. To edit it using the Construction Set or Creation Kit (required when editing scripts), you'll need to first use the <a href="#modsEsmifyMasters">Add ESM Flag To Masters</a> command on it. Be sure to use <q>Remove ESM Flag From Masters</q> before attempting to play the game.
 
 <h3 id="patch-tags">Bash Tags</h3>
 <p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, or are applied using data from LOOT's masterlist and userlist files.

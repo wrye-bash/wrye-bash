@@ -1680,7 +1680,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
     def _initData(self, window, selection,
                   __reEspExt=re.compile(ur'\.esp(.ghost)?$', re.I | re.U)):
         super(Mod_FlipMasters, self)._initData(window, selection)
-        self._text = _(u'Esmify Masters')
+        self._text = _(u'Add ESM Flag To Masters')
         masters = self._selected_info.header.masters
         enable = len(selection) == 1 and len(masters) > 1
         self.espMasters = [master for master in masters
@@ -1690,7 +1690,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
         for mastername in self.espMasters:
             masterInfo = bosh.modInfos.get(mastername, None)
             if masterInfo and masterInfo.isInvertedMod():
-                self._text = _(u'Add ESM Flag to Masters')
+                self._text = _(u'Remove ESM Flag From Masters')
                 self.toEsm = False
                 break
         else:
