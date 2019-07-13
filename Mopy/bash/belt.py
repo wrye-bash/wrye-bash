@@ -23,6 +23,7 @@
 # =============================================================================
 
 """Specific parser for Wrye Bash."""
+from collections import OrderedDict
 from functools import partial
 
 import ScriptParser         # generic parser class
@@ -1409,33 +1410,28 @@ class WryeParser(ScriptParser.Parser):
         if len(args) % 3:
             error(MISSING_ARGS % name)
         images = []
-        titles = []
+        titles = OrderedDict()
         descs = []
-        defaultMap = []
         image_paths = []
         while len(args):
             title = args.pop(0)
-            if title[0] == u'|':
-                defaultMap.append(True)
-                titles.append(title[1:])
-            else:
-                defaultMap.append(False)
-                titles.append(title)
+            is_default = title[0] == u'|'
+            if is_default:
+                title = title[1:]
+            titles[title] = is_default
             descs.append(args.pop(0))
             images.append(args.pop(0))
         if self.bAuto:
-            #If there are no defaults specified, show the dialog anyway
-            default = False
-            for i in defaultMap:
-                if defaultMap[i]:
-                    temp = []
-                    for index in range(len(titles)):
-                        if defaultMap[index]:
-                            temp.append(titles[index])
-                            if not bMany:
-                                break
-                    self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'Case', u'Default', u'EndSelect'], values=temp, hitCase=False)
-                    return
+            # auto wizard will resolve SelectOne/SelectMany only if default(s)
+            # were specified.
+            defaults = [t for t, default in titles.items() if default]
+            if not bMany: defaults = defaults[:1]
+            if defaults:
+                self.PushFlow(u'Select', False,
+                              [u'SelectOne', u'SelectMany', u'Case',
+                               u'Default', u'EndSelect'], values=defaults,
+                              hitCase=False)
+                return
         self.choiceIdex += 1
         if self.reversing:
             # We're using the 'Back' button
@@ -1452,7 +1448,9 @@ class WryeParser(ScriptParser.Parser):
             if not path.exists() and bass.dirs['mopy'].join(i).exists():
                 path = bass.dirs['mopy'].join(i)
             image_paths.append(path)
-        self.page = PageSelect(self.parent, bMany, _(u'Installer Wizard'), main_desc, titles, descs, image_paths, defaultMap)
+        self.page = PageSelect(self.parent, bMany, _(u'Installer Wizard'),
+                               main_desc, titles.keys(), descs, image_paths,
+                               titles.values())
     def kwdCase(self, value):
         if self.LenFlow() == 0 or self.PeekFlow().type != u'Select':
             error(UNEXPECTED % u'Case')
@@ -1466,17 +1464,16 @@ class WryeParser(ScriptParser.Parser):
             return
         self.PeekFlow().active = True
         self.PeekFlow().hitCase = True
+
     def kwdBreak(self):
         if self.LenFlow() > 0 and self.PeekFlow().type == u'Select':
             # Break for SelectOne/SelectMany
             self.PeekFlow().active = False
         else:
             # Test for a While/For statement earlier
-            index = self.LenFlow()-1
-            iType = None
-            while index >=0:
-                iType = self.PeekFlow(index).type
-                if iType in [u'While',u'For']:
+            index = self.LenFlow() - 1
+            while index >= 0:
+                if self.PeekFlow(index).type in (u'While', u'For'):
                     break
                 index -= 1
             if index < 0:
@@ -1484,11 +1481,12 @@ class WryeParser(ScriptParser.Parser):
                 error(UNEXPECTED % u'Break')
             self.PeekFlow(index).active = False
 
-            #We're going to jump to the EndWhile/EndFor, so discard
-            #any flow control structs on top of the While/For one
-            while self.LenFlow() > index+1:
-                flow = self.PopFlow()
-            flow.active = False
+            # We're going to jump to the EndWhile/EndFor, so discard
+            # any flow control structs on top of the While/For one
+            while self.LenFlow() > index + 1:
+                self.PopFlow()
+            self.PeekFlow().active = False
+
     def kwdEndSelect(self):
         if self.LenFlow() == 0 or self.PeekFlow().type != u'Select':
             error(UNEXPECTED % u'EndSelect')
