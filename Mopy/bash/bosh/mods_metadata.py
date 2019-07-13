@@ -990,15 +990,15 @@ class ModCleaner:
                     while not ins.atEnd():
                         subprogress(ins.tell())
                         header = ins.unpackRecHeader()
-                        type,size = header.recType,header.size
-                        #(type,size,flags,fid,uint2) = ins.unpackRecHeader()
-                        if type == 'GRUP':
+                        rec_type,rec_size = header.recType,header.size
+                        #(rec_type,rec_size,flags,fid,uint2) = ins.unpackRecHeader()
+                        if rec_type == 'GRUP':
                             if header.groupType != 0:
                                 pass
                             elif header.label not in ('CELL','WRLD'):
-                                copy(size-header.__class__.rec_header_size)
+                                copy(rec_size-header.__class__.rec_header_size)
                         else:
-                            if doUDR and header.flags1 & 0x20 and type in {
+                            if doUDR and header.flags1 & 0x20 and rec_type in {
                                 'ACRE',               #--Oblivion only
                                 'ACHR','REFR',        #--Both
                                 'NAVM','PGRE','PHZD', #--Skyrim only
@@ -1007,8 +1007,8 @@ class ModCleaner:
                                 out.seek(-header.__class__.rec_header_size,1)
                                 out.write(header.pack())
                                 changed = True
-                            if doFog and type == 'CELL':
-                                nextRecord = ins.tell() + size
+                            if doFog and rec_type == 'CELL':
+                                nextRecord = ins.tell() + rec_size
                                 while ins.tell() < nextRecord:
                                     subprogress(ins.tell())
                                     (nextType,nextSize) = ins.unpackSubHeader()
@@ -1016,13 +1016,13 @@ class ModCleaner:
                                     if nextType != 'XCLL':
                                         copy(nextSize)
                                     else:
-                                        color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',size,'CELL.XCLL')
+                                        color,near,far,rotXY,rotZ,fade,clip = ins.unpack('=12s2f2l2f',rec_size,'CELL.XCLL')
                                         if not (near or far or clip):
                                             near = 0.0001
                                             changed = True
                                         out.write(struct_pack('=12s2f2l2f', color, near, far, rotXY, rotZ, fade, clip))
                             else:
-                                copy(size)
+                                copy(rec_size)
             #--Save
             retry = _(u'Bash encountered an error when saving %s.') + u'\n\n' \
                 + _(u'The file is in use by another process such as TES4Edit.'

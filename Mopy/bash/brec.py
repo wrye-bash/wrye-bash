@@ -375,9 +375,10 @@ class ModWriter:
     def pack(self,format,*data):
         self.out.write(struct_pack(format, *data))
 
-    def packSub(self,type,data,*values):
+    def packSub(self, sub_rec_type, data, *values):
         """Write subrecord header and data to output stream.
-        Call using either packSub(type,data) or packSub(type,format,values).
+        Call using either packSub(sub_rec_type,data) or
+        packSub(sub_rec_type,format,values).
         Will automatically add a prefacing XXXX size subrecord to handle data
         with size > 0xFFFF."""
         try:
@@ -386,17 +387,16 @@ class ModWriter:
             outWrite = self.out.write
             lenData = len(data)
             if lenData <= 0xFFFF:
-                outWrite(struct_pack('=4sH', type, lenData))
-                outWrite(data)
+                outWrite(struct_pack('=4sH', sub_rec_type, lenData))
             else:
                 outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-                outWrite(struct_pack('=4sH', type, 0))
-                outWrite(data)
+                outWrite(struct_pack('=4sH', sub_rec_type, 0))
+            outWrite(data)
         except Exception as e:
             print e
-            print self,type,data,values
+            print self,sub_rec_type,data,values
 
-    def packSub0(self,type,data):
+    def packSub0(self, sub_rec_type, data):
         """Write subrecord header plus zero terminated string to output
         stream."""
         if data is None: return
@@ -405,16 +405,17 @@ class ModWriter:
         lenData = len(data) + 1
         outWrite = self.out.write
         if lenData < 0xFFFF:
-            outWrite(struct_pack('=4sH', type, lenData))
+            outWrite(struct_pack('=4sH', sub_rec_type, lenData))
         else:
             outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-            outWrite(struct_pack('=4sH', type, 0))
+            outWrite(struct_pack('=4sH', sub_rec_type, 0))
         outWrite(data)
         outWrite('\x00')
 
-    def packRef(self,type,fid):
+    def packRef(self, sub_rec_type, fid):
         """Write subrecord header and fid reference."""
-        if fid is not None: self.out.write(struct_pack('=4sHI', type, 4, fid))
+        if fid is not None:
+            self.out.write(struct_pack('=4sHI', sub_rec_type, 4, fid))
 
     def writeGroup(self,size,label,groupType,stamp):
         if type(label) is str:

@@ -103,12 +103,12 @@ def isPBashMergeable(modInfo, minfos, reasons):
     #--New record
     lenMasters = len(modFile.tes4.masters)
     newblocks = []
-    for type,block in modFile.tops.iteritems():
+    for top_type,block in modFile.tops.iteritems():
         for record in block.getActiveRecords():
             if record.fid >> 24 >= lenMasters:
                 if record.flags1.deleted: continue #if new records exist but are deleted just skip em.
                 if not verbose: return False
-                newblocks.append(type)
+                newblocks.append(top_type)
                 break
     if newblocks: reasons.append(_(u'New record(s) in block(s): ')+u', '.join(sorted(newblocks))+u'.')
     dependent = [name.s for name, info in minfos.iteritems()

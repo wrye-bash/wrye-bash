@@ -796,17 +796,20 @@ class Save_Unbloat(OneItemLink):
         if not createdCounts and not nullRefCount:
             self._showOk(_(u'No bloating found.'), self._selected_item.s)
             return
-        message = u''
+        message = [_(u'Remove savegame bloating?')]
         if createdCounts:
-            for type,name in sorted(createdCounts):
-                message += u'  %s %s: %s\n' % (type,name,formatInteger(createdCounts[(type,name)]))
+            for (created_item_rec_type, name), count_ in sorted(
+                    createdCounts.items()):
+                message.append(u'  %s %s: %s' % (
+                    created_item_rec_type, name, formatInteger(count_)))
         if nullRefCount:
-            message += u'  '+_(u'Null Ref Objects:')+ u' %s\n' % formatInteger(nullRefCount)
-        message = (_(u'Remove savegame bloating?')
-                   + u'\n'+message+u'\n' +
-                   _(u'WARNING: This is a risky procedure that may corrupt your savegame!  Use only if necessary!')
-                   )
-        if not self._askYes(message, _(u'Remove bloating?')): return
+            message.append(u'  ' + _(u'Null Ref Objects:') +
+                           u' %s' % formatInteger(nullRefCount))
+        message.extend([u'', _(
+            u'WARNING: This is a risky procedure that may corrupt your '
+            u'savegame!  Use only if necessary!')])
+        if not self._askYes(u'\n'.join(message), _(u'Remove bloating?')):
+            return
         #--Remove bloating
         with balt.Progress(_(u'Removing Bloat')) as progress:
             nums = saveFile.removeBloating(createdCounts.keys(),True,SubProgress(progress,0,0.9))

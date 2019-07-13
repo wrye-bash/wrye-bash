@@ -25,6 +25,7 @@
 Oblivion only . We need this split into cosaves and proper saves module and
 coded for rest of the games."""
 # TODO: Oblivion only - we need to support rest of games - help needed
+from collections import Counter
 from itertools import starmap, repeat
 from operator import attrgetter
 
@@ -706,7 +707,7 @@ class SaveFile:
     def findBloating(self,progress=None):
         """Analyzes file for bloating. Returns (createdCounts,nullRefCount)."""
         nullRefCount = 0
-        createdCounts = {}
+        createdCounts = Counter()
         progress = progress or bolt.Progress()
         progress.setFull(len(self.created)+len(self.records))
         #--Created objects
@@ -718,9 +719,7 @@ class SaveFile:
             else:
                 full = citem.getSubString('FULL')
             if full:
-                typeFull = (citem.recType,full)
-                count = createdCounts.get(typeFull,0)
-                createdCounts[typeFull] = count + 1
+                createdCounts[(citem.recType, full)] += 1
             progress.plus()
         for key in createdCounts.keys()[:]:
             minCount = (50,100)[key[0] == 'ALCH']
