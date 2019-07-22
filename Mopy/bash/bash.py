@@ -396,12 +396,12 @@ def _import_bush_and_set_game(opts, bashIni):
                 u"-o command line argument to specify the game path")
         else:
             msgtext = _(
-                u"Wrye Bash could not determine which game to manage.  "
+                u"Wrye Bash could not determine which game to manage.\n"
                 u"The following games have been detected, please select "
                 u"one to manage.")
             msgtext += u'\n\n'
             msgtext += _(
-                u'To prevent this message in the future, use the -o command '
+                u'To prevent this message in the future, use the -o command\n'
                 u'line argument or the bash.ini to specify the game path')
         retCode = _wxSelectGame(ret, msgtext)
         if retCode is None:
@@ -500,22 +500,21 @@ class _AppReturnCode(object):
 def _wxSelectGame(ret, msgtext):
 
     class GameSelect(_wx.Frame):
-        def __init__(self, gameNames, callback):
+        def __init__(self, game_names, callback):
             _wx.Frame.__init__(self, None, title=u'Wrye Bash')
             self.callback = callback
-            self.panel = panel = _wx.Panel(self)
+            panel = _wx.ScrolledWindow(self, style=_wx.TAB_TRAVERSAL)
+            panel.SetScrollbars(20, 20, 50, 50)
             sizer = _wx.BoxSizer(_wx.VERTICAL)
-            sizer.Add(_wx.TextCtrl(panel, value=msgtext,
-                                   style=_wx.TE_MULTILINE | _wx.TE_READONLY |
-                                         _wx.TE_BESTWRAP),
-                      1, _wx.GROW | _wx.ALL, 5)
-            for gameName in gameNames:
-                gameName = gameName.title()
-                sizer.Add(_wx.Button(panel, label=gameName), 0,
-                          _wx.GROW | _wx.ALL ^ _wx.TOP, 5)
-            button = _wx.Button(panel, _wx.ID_CANCEL, _(u'Quit'))
-            button.SetDefault()
-            sizer.Add(button, 0, _wx.GROW | _wx.ALL ^ _wx.TOP, 5)
+            sizer.Add(_wx.StaticText(panel, label=msgtext,
+                                     style=_wx.ALIGN_CENTRE_HORIZONTAL),
+                      1, _wx.EXPAND | _wx.ALL, 5)
+            for game_name in game_names:
+                sizer.Add(_wx.Button(panel, label=game_name.title()), 0,
+                          _wx.EXPAND | _wx.ALL ^ _wx.TOP, 5)
+            quit_button = _wx.Button(panel, _wx.ID_CANCEL, _(u'Quit'))
+            quit_button.SetDefault()
+            sizer.Add(quit_button, 0, _wx.EXPAND | _wx.ALL ^ _wx.TOP, 5)
             self.Bind(_wx.EVT_BUTTON, self.OnButton)
             panel.SetSizer(sizer)
 
@@ -526,6 +525,8 @@ def _wxSelectGame(ret, msgtext):
 
     _app = _wx.App(False)
     retCode = _AppReturnCode()
+    # Sort before we pass these on - this is purely visual
+    ret.sort()
     frame = GameSelect(ret, retCode.set)
     frame.Show()
     frame.Center()
