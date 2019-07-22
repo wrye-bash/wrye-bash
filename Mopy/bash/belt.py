@@ -1251,11 +1251,13 @@ class WryeParser(ScriptParser.Parser):
 
     def kwdWhile(self, bActive):
         if self.LenFlow() > 0 and self.PeekFlow().type == u'While' and not self.PeekFlow().active:
-            #Within an un-true while statement, but we hit a new While, so we need to ignore the
-            #next 'EndWhile' towards THIS one
-            self.PushFlow('While', False, [u'While', u'EndWhile'])
+            # Within an un-true while statement, but we hit a new While, so we
+            # need to ignore the next 'EndWhile' towards THIS one
+            self.PushFlow(u'While', False, [u'While', u'EndWhile'])
             return
-        self.PushFlow(u'While', bActive, [u'While', u'EndWhile'], cLine=self.cLine-1)
+        self.PushFlow(u'While', bActive, [u'While', u'EndWhile'],
+                      cLine=self.cLine - 1)
+
     def kwdContinue(self):
         #Find the next up While or For statement to continue from
         index = self.LenFlow()-1

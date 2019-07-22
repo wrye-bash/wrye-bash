@@ -182,7 +182,7 @@ class SashPanel(NotebookPanel):
         self.isVertical = isVertical
         self.sashPosKey = self.__class__.keyPrefix + '.sashPos'
         # Don't allow unsplitting
-        splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda self_, event: event.Veto())
+        splitter.Bind(wx.EVT_SPLITTER_DCLICK, lambda event: event.Veto())
         splitter.SetMinimumPaneSize(self.__class__.minimumSize)
         sizer = vSizer(
             (splitter,1,wx.EXPAND),
