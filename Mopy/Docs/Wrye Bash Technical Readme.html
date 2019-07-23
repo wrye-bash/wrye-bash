@@ -170,7 +170,7 @@
 <p><dfn id="wizardsCompareGEVersion">CompareGEVersion</dfn> - Used to test the installed version of the Graphics Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareGEVersion(version_string)</code>
 <ul>
-	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"0.0.20.1"</code>.
+	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"3.0.1"</code>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -181,7 +181,7 @@
 <p><dfn>CompareWBVersion</dfn> - Used to test the installed version of Wrye Bash against the one you specify.
 <code class="box">CompareWBVersion(version_string)</code>
 <ul>
-	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"0.0.20.1"</code>.
+	<li><var>version_string</var> - A string formatted to hold a file version number, eg. <code>"307"</code>.
 </ul>
 <p class="indent">Return values:
 <ul class="indent">
@@ -223,19 +223,31 @@
 	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img alt="Active" src="../bash/images/checkbox_green_on.png"/>.
 	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Merged" src="../bash/images/checkbox_green_inc.png"/>.
 </ul>
-<p><dfn id="wizardsEditINI">EditINI</dfn> - Tells Wrye Bash to create an ini tweak file with some tweaks in it. If the file that you tell Wrye Bash to apply the tweak to is from the current installer or is the game's ini file, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
-<code class="box">EditINI(file_name, section, setting, value [,comment])</code>
+<p><dfn id="wizardsDisableINILine">DisableINILine</dfn> - Tells Wrye Bash to create an ini tweak file that disables the specified setting by commenting it out. Otherwise, behaves identically to <a href="#wizardsEditINI">EditINI</a>.</p>
+<code class="box">DisableINILine(file_name, section, setting)</code>
 <ul>
-	<li><var>file_name</var> - The name of the ini file you wish to edit, relative to the Data directory.
-	<li><var>section</var> - The section in the ini where <var>setting</var> resides, or 'set' or 'setGS' or 'SetNumericGameSetting' (see examples below).
-	<li><var>setting</var> - The setting you wish to change.
-	<li><var>value</var> - The value to set the setting to.
-	<li><var>comment</var> - Optional comment to include with this tweak.
+	<li><var>file_name</var> - String: the name of the ini file you wish to edit, relative to the Data directory.</li>
+	<li><var>section</var> - String: the section in the ini where <var>setting</var> resides.</li>
+	<li><var>setting</var> - String: the setting you wish to disable.</li>
+</ul>
+<p><dfn id="wizardsEditINI">EditINI</dfn> - Tells Wrye Bash to create an ini tweak file with some tweaks in it. If the file that you tell Wrye Bash to apply the tweak to is from the current installer or is the game's ini file, then Wrye Bash will also automatically apply the tweak, otherwise, it will just be generated for the user to apply manually.
+<code class="box">EditINI(file_name, section, setting, value [, comment])</code>
+<ul>
+	<li><var>file_name</var> - String: the name of the ini file you wish to edit, relative to the Data directory.
+	<li><var>section</var> - String: the section in the ini where <var>setting</var> resides, or 'set' or 'setGS' or 'SetNumericGameSetting' (see examples below).
+	<li><var>setting</var> - String: the setting you wish to change.
+	<li><var>value</var> - Any value: the value to set the setting to.
+	<li><var>comment</var> - String: Optional. A comment to include with this tweak.
 </ul>
 <p><dfn id="wizardsExec">Exec</dfn> - This will cause the Wizard to execute lines that are passed to it. This is useful for creating dynamically generated menus.
 <code class="box">Exec(lines)</code>
 <ul>
 	<li><var>lines</var> - A string containing lines to execute, separated by newline characters, or a variable containing such a string. Any backslashes that are to be outputted must be written as triple backslashes. Eg. <code>\'</code> should be written <code>\\\'</code>.
+</ul>
+<p><dfn id="wizardsEndExec">EndExec</dfn> - Internal function used to mark the end of the lines executed by an <a href="wizardsExec">Exec</a> statement. Attempting to explicitly call it will result in an error.</p>
+<code class="box">EndExec(line_count)</code>
+<ul>
+	<li><var>line_count</var> - The number of lines that the matching <a href="wizardsExec">Exec</a> statement contained.</li>
 </ul>
 <p><dfn>str</dfn> - Used to convert a value into a string, for example when trying to concantenate a integer or decimal to a string.
 <code class="box">str(value)</code>
@@ -550,29 +562,71 @@ Case 'option n'
 EndSelect</code>
 
 <h3 id="wizards-operators">Operators</h3>
+<h4>Mathematical Operators</h4>
+<p>Note: For any of these operators, you can mix decimals and integers. In such a case, the integer will simply be promoted to a decimal, and the result will be a decimal as well.</p>
+<p><dfn>Addition</dfn>: <code>+</code>. Adds one integer or decimal to another, or concatenates two strings.
+<code class="box">1 + 1          ; == 2
+1 + 1.0        ; == 2.0
+1.0 + 1        ; == 2.0
+1.0 + 1.0      ; == 2.0
+"foo" + "bar"  ; == "foobar"</code>
+<p><dfn>Subtraction</dfn>: <code>-</code>. Substracts one integer or decimal from another.
+<code class="box">1 - 1      ; == 0
+1 - 1.0    ; == 0.0
+1.0 - 1    ; == 0.0
+1.0 - 1.0  ; == 0.0</code>
+<p><dfn>Multiplication</dfn>: <code>*</code>. Multiplies one integer or decimal with another, or copies a string multiple times (see example).
+<code class="box">1 * 1       ; == 1
+1 * 1.0     ; == 1.0
+1.0 * 1     ; == 1.0
+1.0 * 1.0   ; == 1.0
+; Multiplying a string by
+; an integer just concatenates
+; several copies of it:
+"foo" * 2   ; == "foofoo"
+3 * "h"     ; == "hhh"
+; Note: the other type _must_
+; be an integer, decimals
+; are not allowed:
+2.0 * "a"   ; error</code>
+<p><dfn>Division</dfn>: <code>/</code>. Divides one integer or decimal by another. Division by zero causes an error.
+<code class="box">1 / 1      ; == 1
+1 / 1.0    ; == 1.0
+1.0 / 1    ; == 1.0
+1.0 / 1.0  ; == 1.0
+1 / 0      ; error
+1.0 / 0.0  ; error</code>
+<p><dfn>Exponentiation</dfn>: <code>^</code>. Raises one integer or decimal to the power of another.
+<code class="box">2 ^ 2      ; == 4
+2 ^ 2.0    ; == 4.0
+2.0 ^ 2    ; == 4.0
+2.0 ^ 2.0  ; == 4.0</code>
 <h4>Assignment Operators</h4>
 <p>Assignment operators are used to assign values to variables. Compound assignment operators are a combination of assignment operator and mathematical operator, performing the operation and assigning it to a variable in one step.
 <p><dfn>Assignment</dfn>: <code>=</code>
-<code class="box">variable = value</code>
+<code class="box">test = 3     ; test now has value 3
+foo = "bar"  ; foo now has value "bar"</code>
 <p><dfn>Compound Assignment</dfn>: <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>^=</code>
-<code class="box">variable += value
-variable -= value
-variable *= value
-variable /= value
-variable ^= value
-</code>
-<h4>Mathematical Operators</h4>
-<p>Mathematical operators allow you to add, subtract, multiply, divide and exponentiate integers and decimals. The addition and multiplication operators can also be used on strings.
-<p><dfn>Addition</dfn>: <code>+</code>
-<code class="box">var1 + var2</code>
-<p><dfn>Subtraction</dfn>: <code>-</code>
-<code class="box">var1 - var2</code>
-<p><dfn>Multiplication</dfn>: <code>*</code>
-<code class="box">var1 * var2</code>
-<p><dfn>Division</dfn>: <code>/</code>
-<code class="box">var1 / var2</code>
-<p><dfn>Exponentiation</dfn>: <code>^</code>.
-<code class="box">var1 ^ var2</code>
+<ul>
+	<li>Addition (<code>var += expr</code>): Assigns the result of <code>var + expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var + expr</code>. May also be used to concatenate two strings, just like <code>+</code>.</li>
+	<li>Subtraction (<code>var -= expr</code>): Assigns the result of <code>var - expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var - expr</code>.</li>
+	<li>Multiplication (<code>var *= expr</code>): Assigns the result of <code>var * expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var * expr</code>. May also be used to repeat a string using an integer, just like <code>*</code>.</li>
+	<li>Division (<code>var /= expr</code>): Assigns the result of <code>var / expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var / expr</code>.</li>
+	<li>Exponentiation (<code>var ^= expr</code>): Assigns the result of <code>var ^ expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var ^ expr</code>.</li>
+</ul>
+<h4>Increment And Decrement Operators</h4>
+<p>These operators increase or decrease a variable containing an integer or decimal by 1 and then return the changed value. They can be placed them before or after the variable that should be changed.</p>
+<p><em>Warning:</em> If you are familiar with other programming languages, you may expect <code>++var</code> and <code>var++</code> to behave differently. However, in wizards they both behave the same way, returning the new value (<code>var + 1</code>) in both cases. In other words, wizards only support <em>pre-increment</em> and <em>pre-decrement</em> operators.</p>
+<ul>
+	<li><dfn>Increment</dfn>: <code>++</code>. Increases a variable by <code>1</code> and returns the new value.
+	<code class="box">foo = 1      ; foo == 1
+bar = foo++  ; foo == 2, bar == 2
+++bar        ; foo == 2, bar == 3</code></li>
+	<li><dfn>Decrement</dfn>: <code>--</code>. Decreases a variable by <code>1</code> and returns the new value.
+	<code class="box">foo = 3      ; foo == 3
+bar = foo--  ; foo == 2, bar == 2
+--bar        ; foo == 2, bar == 1</code></li>
+</ul>
 <h4>Boolean Operators</h4>
 <p>Boolean operators can be used to test the logical truth of values.
 <p><dfn>And</dfn>: <code>&amp;</code>, <code>and</code>. Returns <code>True</code> if both sides of the expression are true and <code>False</code> otherwise.
@@ -585,7 +639,9 @@ variable ^= value
 <code class="box">!value</code>
 <code class="box">not value</code>
 <p><dfn>In</dfn>: <code>in</code>. Returns <code>True</code> if the left hand side of the expression is contained in the right hand side, and <code>False</code> otherwise.
-<code class="box">var1 in var2</code>
+<code class="box">If value in SubPackages
+    ; do something here
+EndIf</code>
 <h4>Comparison Operators</h4>
 <p>Comparison operators are used to compare two values or variables with one another.
 <p><dfn>Equal</dfn>: <code>==</code>. Returns <code>True</code> if the left hand side of the expression is equal to the right hand side of the expression, and <code>False</code> otherwise.
@@ -612,8 +668,10 @@ variable ^= value
 	<li><code>in:</code>
 </ul>
 <h4 id="wizards-operators-dot">Dot Operator</h4>
-<p>The dot operator can be used to call a function on a variable without having to specify the variable in the function's arguments. This functionality will be familiar to anyone with experience in Object-Orientated programming. The syntax is:
-<code class="box">variable.function</code>
+<p>The dot operator can be used to call a function on a variable without having to specify the variable in the function's arguments. This functionality will be familiar to anyone with experience in object-oriented programming:
+<code class="box">; These two are equivalent
+myStr.startswith("foo")
+startswith(myStr, "foo")</code>
 <p>The following functions can be used with the dot operator:
 <ul>
 	<li><code>len</code>
@@ -623,30 +681,37 @@ variable ^= value
 	<li><code>find</code>
 	<li><code>rfind</code>
 </ul>
-<h4>Indexing</h4>
-<p>Indexing is used to access a specific location in a sequence. Currently only strings and string variables can be indexed. The syntax used is similar to Python's indexing syntax.
-<code class="box">string[start:stop:step]</code>
-<p>Arguments:
+<h4>Indexing and Slicing</h4>
+<p>Indexing is used to access a specific location in a sequence. Slicing is an extension of indexing that returns a part of the sequence. Currently only strings and string variables can be indexed / sliced. The syntax used is identical to Python's syntax.</p>
+<p><dfn>Indexing</dfn>:</p>
+<code class="box">string[index]</code>
 <ul>
-	<li><var>start</var>: The index to start at. The first item in a sequence has an index of 0. If not specified, indexing will begin at 0.
-	<li><var>stop</var>: The index to stop at. If not specified but a colon <code>:</code> is supplied, indexing will continue to the end of the sequence. If not specified and no colon is supplied, only one character will be indexed.
-	<li><var>step</var>: How much to increment by when indexing. For example, a value of <code>2</code> would return every second item in the sequence. If not specified, a value of <code>1</code> will be used.
+	<li><var>index</var>: The index to retrieve an item from. The first item in a sequence has an index of 0.</li>
 </ul>
-<p>Negative values for <var>start</var> and <var>stop</var> will be relative to the end of the sequence. For example, <code>-1</code> would mean the first character from the end of the sequence.
-<p>Examples:
-<code class="box">"Hello"[0]   ;returns "H"
-"Hello"[0:]  ;returns "Hello"
-"Hello"[:]   ;returns "Hello"
-"Hello"[0:2] ;returns "He"
-"Hello"[-1]  ;returns "o"
-"Hello"[1:3] ;returns "el"
-"Hello"[-2:] ;returns "lo"
+<p><dfn>Slicing</dfn>:</p>
+<code class="box">string[start:stop:step]</code>
+<ul>
+	<li><var>start</var>: The index to start at. The first item in a sequence has an index of 0. If not specified, indexing will begin at 0.</li>
+	<li><var>stop</var>: The index to stop at. If not specified but a colon <code>:</code> is supplied, indexing will continue to the end of the sequence. If not specified and no colon is supplied, only one character will be indexed.</li>
+	<li><var>step</var>: How much to increment by when indexing. For example, a value of <code>2</code> would return every second item in the sequence. If not specified, a value of <code>1</code> will be used.</li>
+</ul>
+<p>Negative values for <var>index</var>, <var>start</var> and <var>stop</var> will be relative to the end of the sequence. For example, <code>-1</code> would mean the first character from the end of the sequence.</p>
+<p>Examples:</p>
+<code class="box">"Hello"[0]    ; returns "H"
+"Hello"[2]    ; returns "l"
+"Hello"[0:]   ; returns "Hello"
+"Hello"[:]    ; returns "Hello"
+"Hello"[0:2]  ; returns "He"
+"Hello"[-1]   ; returns "o"
+"Hello"[1:3]  ; returns "el"
+"Hello"[-2:]  ; returns "lo"
 </code>
 
 <h3 id="wizards-constants">Standard Constants</h3>
-<p>Only two constants are defined in BAIN Wizards.
-<p><dfn>True</dfn> - <code>True</code>. Equal to boolean <code>true</code> (text representation) or <code>1</code> (binary representation).
-<p><dfn>False</dfn> - <code>False</code>. Equal to boolean <code>false</code> (text representation) or <code>0</code> (binary representation).
+<p>Only three constants are defined in BAIN Wizards:
+<p><dfn>True</dfn> - <code>True</code>. Equal to boolean <code>true</code> (text representation) or <code>1</code> (binary representation).</p>
+<p><dfn>False</dfn> - <code>False</code>. Equal to boolean <code>false</code> (text representation) or <code>0</code> (binary representation).</p>
+<p><dfn>SubPackages</dfn> - A list of strings. Contains the names of the subpackages of the installer that this wizard belongs to. Can be iterated over with a <code>For</code> statement or used with the <code>in</code> operator.</p>
 
 <h3 id="wizards-escape">Escape Sequences</h3>
 <p>Escape sequences are special sequences of characters you can use to get a different character outputted. The escape sequences allowed are:
@@ -900,6 +965,7 @@ EditXMLReplace &lt;file&gt; &lt;text to find&gt; &lt;text to replace&gt;
 <h4>Functions in Wizards without equivalent methods in OBMM</h4>
 <code class="box">CompareWBVersion(version)
 GetEspmStatus(plugin)
+DisableINILine(file_name, section, setting)
 str(value)
 int(value)
 float(value)
