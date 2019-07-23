@@ -823,7 +823,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator(u'or', self.opOr, ScriptParser.OP.OR)
         self.SetOperator(u'!', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
         self.SetOperator(u'not', self.opNot, ScriptParser.OP.NOT, ScriptParser.RIGHT)
-        #Post-fix increment/decrement
+        #Pre-increment/decrement
         self.SetOperator(u'++', self.opInc, ScriptParser.OP.UNA)
         self.SetOperator(u'--', self.opDec, ScriptParser.OP.UNA)
         #Math
@@ -1051,24 +1051,29 @@ class WryeParser(ScriptParser.Parser):
     def opIn(self, l, r): return l in r
     def opInCase(self, l, r):
         try:
-            l.lower() in r.lower()
+            return l.lower() in r.lower()
         except:
             return l in r
     # Boolean operators
     def opAnd(self, l, r): return l and r
     def opOr(self, l, r): return l or r
     def opNot(self, l): return not l
-    # Postfix inc/dec
+
+    # Pre-increment/decrement
     def opInc(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
             error(_(u'Cannot increment %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
-        self.variables[l.text] = l.tkn+1
-        return l.tkn
+        new_val = l.tkn + 1
+        self.variables[l.text] = new_val
+        return new_val
+
     def opDec(self, l):
         if l.type not in [ScriptParser.VARIABLE,ScriptParser.NAME]:
             error(_(u'Cannot decrement %s, type is %s.') % (l.text, ScriptParser.Types[l.type]))
-        self.variables[l.text] = l.tkn-1
-        return l.tkn
+        new_val = l.tkn - 1
+        self.variables[l.text] = new_val
+        return new_val
+
     # Math operators
     def opAdd(self, l, r): return l + r
     def opMin(self, l, r): return l - r
@@ -1118,39 +1123,57 @@ class WryeParser(ScriptParser.Parser):
         if file in bosh.modInfos.imported: return 1 # Imported (not active/merged)
         if file in bosh.modInfos: return 0          # Inactive
         return -1                                   # Not found
-    def fnEditINI(self, iniName, section, setting, value, comment=None):
-        iniPath = bolt.GPath(iniName)
-        #--Section
-        section = section.strip()
-        realSection = OBSEIniFile.ci_pseudosections.get(section, section)
-        #--Comment
-        if comment:
-            if comment.strip().startswith(u';'):
-                pass
-            else:
-                comment = u';'+comment
-        else: comment = u''
-        self.iniedits.setdefault(iniPath, bolt.LowerDict()).setdefault(realSection, [section, bolt.LowerDict()])
-        self.iniedits[iniPath][realSection][0] = section
-        self.iniedits[iniPath][realSection][1][setting.strip()] = (
-            setting, value, comment, False)
 
-    def fnDisableINILine(self, iniName, section, setting):
-        iniPath = bolt.GPath(iniName)
-        #--Section:
+    def fnEditINI(self, ini_name, section, setting, value, comment=u''):
+        self._handleINIEdit(ini_name, section, setting, value, comment, False)
+
+    def fnDisableINILine(self, ini_name, section, setting):
+        self._handleINIEdit(ini_name, section, setting, u'', u'', True)
+
+    def _handleINIEdit(self, ini_name, section, setting, value, comment,
+                       disable):
+        """
+        Common implementation for the EditINI and DisableINILine wizard
+        functions.
+
+        :param ini_name: The name of the INI file to edit. If it's not one of
+            the game's default INIs (e.g. Skyrim.ini), it's treated as relative
+            to the Data folder.
+        :param section: The section of the INI file to edit.
+        :param setting: The name of the setting to edit.
+        :param value: The value to assign. If disabling a line, this is
+            ignored.
+        :param comment: The comment to place with the edit. Pass an empty
+            string if no comment should be placed.
+        :param disable: Whether or not this edit should disable the setting in
+            question.
+        """
+        ini_path = bolt.GPath(ini_name)
         section = section.strip()
-        realSection = OBSEIniFile.ci_pseudosections.get(section, section)
-        #--Setting
         setting = setting.strip()
-        self.iniedits.setdefault(iniPath, bolt.LowerDict()).setdefault(realSection,[section,bolt.LowerDict()])
-        self.iniedits[iniPath][realSection][0] = section
-        self.iniedits[iniPath][realSection][1][setting] = (setting,u'',u'',True)
+        comment = comment.strip()
+        real_section = OBSEIniFile.ci_pseudosections.get(section, section)
+        if comment and not comment.startswith(u';'):
+            comment = u';' + comment
+        self.iniedits.setdefault(ini_path, bolt.LowerDict()).setdefault(
+            real_section, [section, bolt.LowerDict()])
+        self.iniedits[ini_path][real_section][0] = section
+        self.iniedits[ini_path][real_section][1][setting] = (setting, value,
+                                                             comment, disable)
 
     def fnExec(self, strLines):
         lines = strLines.split(u'\n')
+        # Manual EndExec calls are illegal - if we don't check here, a wizard
+        # could exploit this by doing something like this:
+        #   Exec("EndExec(1)\nAnythingHere\nReturn")
+        # ... which doesn't really cause harm, but is pretty strange and
+        # inconsistent
+        if any([l.strip().startswith(u'EndExec(') for l in lines]):
+            error(UNEXPECTED % u'EndExec')
         lines.append(u'EndExec(%i)' % (len(lines)+1))
         self.lines[self.cLine:self.cLine] = lines
         self.ExecCount += 1
+
     def fnEndExec(self, numLines):
         if self.ExecCount == 0:
             error(UNEXPECTED % u'EndExec')
