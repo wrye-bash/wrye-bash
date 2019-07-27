@@ -738,7 +738,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator(u'-=', self.AssMin, ScriptParser.OP.ASS, ScriptParser.RIGHT)
         self.SetOperator(u'*=', self.AssMul, ScriptParser.OP.ASS, ScriptParser.RIGHT)
         self.SetOperator(u'/=', self.AssDiv, ScriptParser.OP.ASS, ScriptParser.RIGHT)
-        #self.SetOperator(u'%=', self.AssMod, ScriptParser.OP.ASS, ScriptParser.RIGHT)
+        self.SetOperator(u'%=', self.AssMod, ScriptParser.OP.ASS, ScriptParser.RIGHT)
         self.SetOperator(u'^=', self.AssExp, ScriptParser.OP.ASS, ScriptParser.RIGHT)
         #Comparison
         self.SetOperator(u'==', self.opE, ScriptParser.OP.CO2)
@@ -771,7 +771,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetOperator(u'-', self.opMin, ScriptParser.OP.ADD)
         self.SetOperator(u'*', self.opMul, ScriptParser.OP.MUL)
         self.SetOperator(u'/', self.opDiv, ScriptParser.OP.MUL)
-        #self.SetOperator(u'%', self.opMod, ScriptParser.OP.MUL)
+        self.SetOperator(u'%', self.opMod, ScriptParser.OP.MUL)
         self.SetOperator(u'^', self.opExp, ScriptParser.OP.EXP, ScriptParser.RIGHT)
         #--Functions
         self.SetFunction(u'CompareObVersion', self.fnCompareGameVersion, 1)      # Retained for compatibility

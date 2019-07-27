@@ -566,18 +566,18 @@ EndSelect</code>
 <h3 id="wizards-operators">Operators</h3>
 <h4>Mathematical Operators</h4>
 <p>Note: For any of these operators, you can mix decimals and integers. In such a case, the integer will simply be promoted to a decimal, and the result will be a decimal as well.</p>
-<p><dfn>Addition</dfn>: <code>+</code>. Adds one integer or decimal to another, or concatenates two strings.
+<p><dfn>Addition</dfn>: <code>+</code>. Adds one integer or decimal to another, or concatenates two strings.</p>
 <code class="box">1 + 1          ; == 2
 1 + 1.0        ; == 2.0
 1.0 + 1        ; == 2.0
 1.0 + 1.0      ; == 2.0
 "foo" + "bar"  ; == "foobar"</code>
-<p><dfn>Subtraction</dfn>: <code>-</code>. Substracts one integer or decimal from another.
+<p><dfn>Subtraction</dfn>: <code>-</code>. Substracts one integer or decimal from another.</p>
 <code class="box">1 - 1      ; == 0
 1 - 1.0    ; == 0.0
 1.0 - 1    ; == 0.0
 1.0 - 1.0  ; == 0.0</code>
-<p><dfn>Multiplication</dfn>: <code>*</code>. Multiplies one integer or decimal with another, or copies a string multiple times (see example).
+<p><dfn>Multiplication</dfn>: <code>*</code>. Multiplies one integer or decimal with another, or copies a string multiple times (see example).</p>
 <code class="box">1 * 1       ; == 1
 1 * 1.0     ; == 1.0
 1.0 * 1     ; == 1.0
@@ -591,29 +591,38 @@ EndSelect</code>
 ; be an integer, decimals
 ; are not allowed:
 2.0 * "a"   ; error</code>
-<p><dfn>Division</dfn>: <code>/</code>. Divides one integer or decimal by another. Division by zero causes an error.
+<p><dfn>Division</dfn>: <code>/</code>. Divides one integer or decimal by another. Division by zero causes an error.</p>
 <code class="box">1 / 1      ; == 1
 1 / 1.0    ; == 1.0
 1.0 / 1    ; == 1.0
 1.0 / 1.0  ; == 1.0
 1 / 0      ; error
 1.0 / 0.0  ; error</code>
-<p><dfn>Exponentiation</dfn>: <code>^</code>. Raises one integer or decimal to the power of another.
+<p><dfn>Modulo</dfn>: <code>%</code>. Returns the remainder of dividing one integer or decimal by another. If the second argument is 0, an error is raised.</p>
+<code class="box">5 % 2      ; == 1
+4 % 2      ; == 0
+5 % 5      ; == 0
+5.0 % 2.5  ; == 0.0
+-7 % 4     ; == -3
+1 % 0      ; error
+1.0 % 0.0  ; error</code>
+<p><dfn>Exponentiation</dfn>: <code>^</code>. Raises one integer or decimal to the power of another.</p>
 <code class="box">2 ^ 2      ; == 4
 2 ^ 2.0    ; == 4.0
 2.0 ^ 2    ; == 4.0
 2.0 ^ 2.0  ; == 4.0</code>
 <h4>Assignment Operators</h4>
-<p>Assignment operators are used to assign values to variables. Compound assignment operators are a combination of assignment operator and mathematical operator, performing the operation and assigning it to a variable in one step.
-<p><dfn>Assignment</dfn>: <code>=</code>
+<p>Assignment operators are used to assign values to variables. Compound assignment operators are a combination of assignment operator and mathematical operator, performing the operation and assigning it to a variable in one step.</p>
+<p><dfn>Assignment</dfn>: <code>=</code></p>
 <code class="box">test = 3     ; test now has value 3
 foo = "bar"  ; foo now has value "bar"</code>
-<p><dfn>Compound Assignment</dfn>: <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>^=</code>
+<p><dfn>Compound Assignment</dfn>: <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>^=</code></p>
 <ul>
 	<li>Addition (<code>var += expr</code>): Assigns the result of <code>var + expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var + expr</code>. May also be used to concatenate two strings, just like <code>+</code>.</li>
 	<li>Subtraction (<code>var -= expr</code>): Assigns the result of <code>var - expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var - expr</code>.</li>
 	<li>Multiplication (<code>var *= expr</code>): Assigns the result of <code>var * expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var * expr</code>. May also be used to repeat a string using an integer, just like <code>*</code>.</li>
 	<li>Division (<code>var /= expr</code>): Assigns the result of <code>var / expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var / expr</code>.</li>
+	<li>Modulo (<code>var %= expr</code>): Assigns the result of <code>var % expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var % expr</code>.</li>
 	<li>Exponentiation (<code>var ^= expr</code>): Assigns the result of <code>var ^ expr</code> to <var>var</var>. In other words, this is equivalent to <code>var = var ^ expr</code>.</li>
 </ul>
 <h4>Increment And Decrement Operators</h4>

@@ -361,6 +361,7 @@ class Parser(object):
         def __sub__(self, other): return Parser.Token(self.tkn - other.tkn)
         def __mul__(self, other): return Parser.Token(self.tkn * other.tkn)
         def __div__(self, other): return Parser.Token(self.tkn / other.tkn)
+        def __mod__(self, other): return Parser.Token(self.tkn % other.tkn)
         def __truediv__(self, other): return Parser.Token(self.tkn / other.tkn)
         def __floordiv__(self, other): return Parser.Token(self.tkn // other.tkn)
         def __divmod__(self, other): return Parser.Token(divmod(self.tkn, other.tkn))
