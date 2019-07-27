@@ -2563,7 +2563,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(self.checkListSplitter)
-        espmsLabel = StaticText(espmsPanel, _(u'Esp/m Filter'))
+        espmsLabel = StaticText(espmsPanel, _(u'Plugin Filter'))
         self.espms = []
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
                                       kind='checklist',

@@ -243,7 +243,7 @@
         <tr><th colspan="2">Information Tabs
         <tr><th>Tab<th>Description
     <tbody>
-        <tr><td>General<td>Shows summary info and the files to be installed, as determined by sub-package, esp/m, voice filtering, etc.
+        <tr><td>General<td>Shows summary info and the files to be installed, as determined by sub-package, plugin, voice filtering, etc.
         <tr><td>Matched<td>Shows files which are identical to current Data directory files.
         <tr><td>Missing<td>Files which are missing from the Data directory.
         <tr><td>Mismatched<td>Files which are present in the data directory, but which aren't identical to the selected package's version of those files.
@@ -275,7 +275,7 @@
 </ol>
 
 <p>This is because, as already mentioned, the refresh of the game <em>Data</em> directory is performed once on boot, so modifying/deleting/adding files in the game directory will not be detected
-    afterwards, except in some few scenarios - notably, deleting an espm from inside Bash will notify BAIN (add more actions is in the TODOs).
+    afterwards, except in some few scenarios - notably, deleting a plugin from inside Bash will notify BAIN (add more actions is in the TODOs).
 <p>BAIN provides several menu items for manually refreshing for the scenarios above (and others). What you most likely need is <a href="#bainQuickRefresh">Quick Refresh</a>. See also
     <a href="#bainFullRefresh">Full Refresh</a>, <a href="#bainRefreshData">Refresh Data</a> and <a href="#bainRefresh">Refresh</a>.
 <p>Technical: This situation is a limitation of our refresh model which is basically polling the directories for changes. We should switch to an event based refresh but the code is not yet
@@ -293,7 +293,7 @@
             <li>the <code>wizard images</code> directory (again if on the top level of package or subpackage)
             <li>Developer files. Any file or directory that begins with <code>'--'</code> and is at the top level of a package or a subpackage will be silently skipped. This is so that mod
                 authors can include files related to a mod that are not required for it to work (eg. screenshots) in packages.
-            <li>Bash will also skip voices for espms that are not installed from complex installers
+            <li>Bash will also skip voices for plugins that are not installed from complex installers
             <li>Specified skips. There are a few options in BAIN to skip the installation of certain file types, namely the ones on the <a href="#bainGlobalSkips">Global Skips</a> submenu for
             all installers and <a href="#bainSkipVoices">Skip Voices</a> (on a per installer basis). If any such options are enabled, the file type(s) in question will be <em>silently</em>
             skipped.
@@ -309,7 +309,7 @@
     extensions skipped is:
     <code>.001, .7z, .7z.001, .ace, .bz2, .ckm, .db, .exe, .fomod, .gz, .lzma, .manifest, .omod, .py, .pyc, .rar, .tar, .tb2, .tgz, .zip</code>
     This includes BCFs (they have a .7z extension) - still BAIN will detect those.
-    <li>Espm files that are not in top level of the package/subpackage. It makes no sense to have those files in a subfolder, so those are skipped.
+    <li>Plugin files that are not in top level of the package/subpackage. It makes no sense to have those files in a subfolder, so those are skipped.
 </ul>
 
 
@@ -789,7 +789,7 @@ tab. The directories skipped are:
                 <a href="Wrye%20Bash%20General%20Readme.html#bain-structure">standard game directories</a>), and skips any unrecognised subdirectories. Checking this option will cause BAIN to install unrecognised subdirectories (Unless the files within are on the list of files which are always skipped such as .exe files, see
                 <a href="#bain-skipped">Skipped Files</a>)
                 <br>
-                <strong>NB:</strong> extra directories will not be taken into account at all when calculating package structure. There must be at least some standard game directory or a data file (espml, bsa/ba2, ini) in the package for BAIN to recognise its structure.</td>
+                <strong>NB:</strong> extra directories will not be taken into account at all when calculating package structure. There must be at least some standard game directory or a data file (plugin, bsa/ba2, ini) in the package for BAIN to recognise its structure.</td>
         </tr>
         <tr>
             <td colspan="2" id="bainOverrideSkips">Override Skips</td>
@@ -822,16 +822,16 @@ tab. The directories skipped are:
         <tr><td>Select All<td>Selects all the sub-packages in the list.
         <tr><td>Deselect All<td>Deselects all the sub-packages in the list.
         <tr><td>Toggle Selection<td>Deselects currently selected sub-packages, and selects currently deselected subpackages.
-        <tr><td>List Sub-packages<td>Generates a forum-formatted list of sub-packages in the package, highlighting checked packages with <code>***</code>.
+        <tr><td>List Sub-Packages<td>Generates a forum-formatted list of sub-packages in the package, highlighting checked packages with <code>***</code>.
 </table>
 <table>
     <thead>
-        <tr><th colspan="2">Esp/m Filter Context Menu
+        <tr><th colspan="2">Plugin Filter Context Menu
         <tr><th>Command<th>Description
     <tbody>
         <tr><td>Select All<td>Selects all the plugins in the Filter list.
         <tr><td>Deselect All<td>Deselects all the plugins in the Filter list.
-        <tr><td>List Esp/ms<td>Generates a forum-formatted list of plugins in the Filter list, highlighting checked plugins with <code>***</code>.
+        <tr><td>List Plugins<td>Generates a forum-formatted list of plugins in the Filter list, highlighting checked plugins with <code>***</code>.
         <tr><td>Rename...<td>Rename the selected plugin. Renamed plugins are displayed in the Filter list with a <code>*</code> before their name and are displayed in the information tabs as <code>original name -&gt; new name</code>. Renaming a plugin before installing it is preferable to renaming a BAIN-installed plugin through other means, as the former allows BAIN to keep track of it, whereas the latter does not.
         <tr><td>Reset Name<td>Resets the selected plugin's name to its default name.
         <tr><td>Reset All Names<td>Resets all renamed plugins to their default names.

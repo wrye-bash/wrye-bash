@@ -185,7 +185,7 @@ class Installer(object):
         self.group = u'' #--Default from abstract. Else set by user.
         self.order = -1 #--Set by user/interface.
         self.isActive = False
-        self.espmNots = set() #--Lowercase esp/m file names that user has decided not to install.
+        self.espmNots = set() #--Lowercase plugin file names that user has decided not to install.
         self.remaps = {}
         #--Volatiles (not pickled values)
         #--Volatiles: directory specific

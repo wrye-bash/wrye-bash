@@ -419,7 +419,7 @@ class PageFinish(PageInstaller):
                 self.listSubs.Check(index, True)
                 self.parent.ret.SelectSubPackages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
-        espmSizer = balt.vSizer(balt.StaticText(self, _(u'Esp/ms')), vspace(2))
+        espmSizer = balt.vSizer(balt.StaticText(self, _(u'Plugins')), vspace(2))
         self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist',
                                       onCheck=self.OnSelectEspms)
         for index,key in enumerate(espms):

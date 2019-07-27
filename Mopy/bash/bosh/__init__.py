@@ -422,7 +422,7 @@ class FileInfo(AFile):
 reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
 
 class ModInfo(FileInfo):
-    """An esp/m/l file."""
+    """A plugin file. Currently, these are .esp, .esm and .esl files."""
 
     def __init__(self, fullpath, load_cache=False):
         self.isGhost = endsInGhost = (fullpath.cs[-6:] == u'.ghost')

@@ -25,7 +25,7 @@
 """Installer*: Menu items for the __item__ menu of the installer tab. Their
 window attribute points to the InstallersList singleton. Check before using
 BashFrame.iniList - can be None (ini panel not shown).
-Installer_Espm_*: Menu items for the Esp/m Filter list in the installer tab.
+Installer_Espm_*: Menu items for the Plugin Filter list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
 Installer_Subs_*: Menu items for the Sub-Packages list in the installer tab.
 Their window attribute points to the InstallersPanel singleton.
@@ -183,7 +183,7 @@ class Installer_EditWizard(_SingleInstallable):
     def Execute(self): self._selected_info.open_wizard()
 
 class Installer_Wizard(OneItemLink, _InstallerLink):
-    """Runs the install wizard to select subpackages and esp/m filtering"""
+    """Runs the install wizard to select subpackages and plugin filtering"""
     parentWindow = ''
 
     def __init__(self, bAuto):
@@ -813,7 +813,7 @@ class _Installer_Details_Link(EnabledLink):
         self._installer = self.window.file_info
 
 class Installer_Espm_SelectAll(_Installer_Details_Link):
-    """Select All Esp/ms in installer for installation."""
+    """Select all plugins in installer for installation."""
     _text = _(u'Select All')
     _help = _(u'Selects all plugin files in the selected sub-packages.')
 
@@ -824,7 +824,7 @@ class Installer_Espm_SelectAll(_Installer_Details_Link):
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_DeselectAll(_Installer_Details_Link):
-    """Deselect All Esp/ms in installer for installation."""
+    """Deselect all plugins in installer for installation."""
     _text = _(u'Deselect All')
     _help = _(u'Deselects all plugin files in the selected sub-packages.')
 
@@ -837,7 +837,7 @@ class Installer_Espm_DeselectAll(_Installer_Details_Link):
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_Rename(_Installer_Details_Link):
-    """Changes the installed name for an Esp/m."""
+    """Changes the installed name for a plugin."""
     _text = _(u'Rename...')
     _help = _(u'Changes the name under which this plugin will be installed.')
 
@@ -850,14 +850,14 @@ class Installer_Espm_Rename(_Installer_Details_Link):
             curName = curName[1:]
         _file = GPath(curName)
         newName = self._askText(_(u"Enter new name (without the extension):"),
-                                title=_(u"Rename Esp/m"), default=_file.sbody)
+                                title=_(u"Rename Plugin"), default=_file.sbody)
         if not newName: return
         if newName in self.window.espms: return
         self._installer.setEspmName(curName, newName + _file.cext)
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_Reset(_Installer_Details_Link):
-    """Resets the installed name for an Esp/m."""
+    """Resets the installed name for a plugin."""
     _text = _(u'Reset Name')
     _help = _(u'Resets the name under which this plugin will be installed '
               u'back to its default name.')
@@ -875,7 +875,7 @@ class Installer_Espm_Reset(_Installer_Details_Link):
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_ResetAll(_Installer_Details_Link):
-    """Resets all renamed Esp/ms."""
+    """Resets all renamed plugins."""
     _text = _(u'Reset All Names')
     _help = _(u'Resets all plugins with changed names back to their default '
               u'ones.')
@@ -885,13 +885,13 @@ class Installer_Espm_ResetAll(_Installer_Details_Link):
         self.window.refreshCurrent(self._installer)
 
 class Installer_Espm_List(_Installer_Details_Link):
-    """Lists all Esp/ms in installer for user information/w/e."""
-    _text = _(u'List Esp/ms')
+    """Lists all plugins in installer for user information."""
+    _text = _(u'List Plugins')
     _help = _(u'Displays a list of all plugin files in the selected '
               u'sub-packages (and copies it to the system clipboard).')
 
     def Execute(self):
-        subs = (_(u'Esp/m List for %s:') % self._installer.archive +
+        subs = (_(u'Plugin List for %s:') % self._installer.archive +
                 u'\n[spoiler]\n')
         espm_list = self.window.gEspmList
         for index in range(espm_list.GetCount()):
@@ -899,7 +899,7 @@ class Installer_Espm_List(_Installer_Details_Link):
                     espm_list.GetString(index) + '\n'
         subs += u'[/spoiler]'
         balt.copyToClipboard(subs)
-        self._showLog(subs, title=_(u'Esp/m List'), fixedFont=False)
+        self._showLog(subs, title=_(u'Plugin List'), fixedFont=False)
 
 #------------------------------------------------------------------------------
 # InstallerDetails Subpackage Links -------------------------------------------
@@ -944,7 +944,7 @@ class Installer_Subs_ToggleSelection(_Installer_Subs):
 
 class Installer_Subs_ListSubPackages(_Installer_Subs):
     """Lists all sub-packages in installer for user information/w/e."""
-    _text = _(u'List Sub-packages')
+    _text = _(u'List Sub-Packages')
     _help = _(u'Displays a list of all sub-packages in this installer (and '
               u'copies it to the system clipboard).')
 
