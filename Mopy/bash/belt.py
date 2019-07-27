@@ -38,7 +38,6 @@ from balt import vspace, hspace
 from env import get_file_version
 import StringIO
 import traceback
-#---------------------------------------------------
 
 #Translateable strings
 from bosh import OBSEIniFile
@@ -77,11 +76,10 @@ class WizardReturn(object):
         self.PageSize = balt.defSize
         self.Pos = balt.defPos
 
-# InstallerWizard ----------------------------------
-#  Class used by Wrye Bash, creates a wx Wizard that
-#  dynamically creates pages based on a script
-#---------------------------------------------------
 class InstallerWizard(wiz.Wizard):
+    """Class used by Wrye Bash, creates a wx Wizard that dynamically creates
+    pages based on a script."""
+
     def __init__(self, parentWindow, installer, bAuto, subs, pageSize, pos):
         wiz.Wizard.__init__(self, parentWindow, title=_(u'Installer Wizard'),
                             pos=pos, style=wx.DEFAULT_DIALOG_STYLE |
@@ -166,13 +164,10 @@ class InstallerWizard(wiz.Wizard):
         if self.parser.bArchive:
             bass.rmTempDir()
         return self.ret
-#End of Installer Wizard
 
-# PageInstaller ----------------------------------------------
-#  base class for all the parser wizard pages, just to handle
-#  a couple simple things here
-#-------------------------------------------------------------
 class PageInstaller(wiz.PyWizardPage):
+    """Base class for all the parser wizard pages, just to handle a couple
+    simple things here."""
 
     def __init__(self, parent):
         wiz.PyWizardPage.__init__(self, parent)
@@ -194,13 +189,11 @@ class PageInstaller(wiz.PyWizardPage):
         #this is where flow control objects etc should be
         #created
         pass
-# End PageInstaller ------------------------------------------
 
-# PageError --------------------------------------------------
-#  Page that shows an error message, has only a "Cancel"
-#  button enabled, and cancels any changes made
-#-------------------------------------------------------------
 class PageError(PageInstaller):
+    """Page that shows an error message, has only a "Cancel" button enabled,
+    and cancels any changes made."""
+
     def __init__(self, parent, title, errorMsg):
         PageInstaller.__init__(self, parent)
         #Disable the "Finish"/"Next" button
@@ -218,15 +211,11 @@ class PageError(PageInstaller):
     def GetNext(self): return None
 
     def GetPrev(self): return None
-# End PageError ----------------------------------------------
 
-# PageSelect -------------------------------------------------
-#  A Page that shows a message up top, with a selection box on
-#  the left (multi- or single- selection), with an optional
-#  associated image and description for each option, shown when
-#  that item is selected
-#-------------------------------------------------------------
 class PageSelect(PageInstaller):
+    """A page that shows a message up top, with a selection box on the left
+    (multi- or single- selection), with an optional associated image and
+    description for each option, shown when that item is selected."""
     def __init__(self, parent, bMany, title, desc, listItems, listDescs, listImages, defaultMap):
         PageInstaller.__init__(self, parent)
         self.listItems = listItems
@@ -327,7 +316,7 @@ class PageSelect(PageInstaller):
         else:
             self.parent.parser.choices.append(temp)
         self.parent.parser.PushFlow('Select', False, ['SelectOne', 'SelectMany', 'Case', 'Default', 'EndSelect'], values=temp, hitCase=False)
-# End PageSelect -----------------------------------------
+
 _obse_mod_formats = bolt.LowerDict(
     {u']set[': u' %(setting)s to %(value)s%(comment)s',
      u']setGS[': u' %(setting)s %(value)s%(comment)s',
@@ -359,12 +348,10 @@ def generateTweakLines(wizardEdits, target):
                                      comment=comment)))
     return lines
 
-# PageFinish ---------------------------------------------
-#  Page displayed at the end of a wizard, showing which
-#  sub-packages and which esps and espms will be
-#  selected.  Also displays some notes for the user
-#---------------------------------------------------------
 class PageFinish(PageInstaller):
+    """Page displayed at the end of a wizard, showing which sub-packages and
+    which plugins will be selected. Also displays some notes for the user."""
+
     def __init__(self, parent, subsList, espmsList, espmRenames, bAuto, notes, iniedits):
         PageInstaller.__init__(self, parent)
         subs = subsList.keys()
@@ -478,14 +465,10 @@ class PageFinish(PageInstaller):
         lines = generateTweakLines(self.parent.ret.IniEdits[ini_path],ini_path)
         self.listTweaks.Set(lines)
         self.listInis.SetSelection(index)
-# End PageFinish -------------------------------------
 
-# PageVersions ---------------------------------------
-#  Page for displaying what versions an installer
-#  requires/recommends and what you have installed
-#  for Game, *SE, *GE, and Wrye Bash
-#-----------------------------------------------------
 class PageVersions(PageInstaller):
+    """Page for displaying what versions an installer requires/recommends and
+    what you have installed for Game, *SE, *GE, and Wrye Bash."""
     def __init__(self, parent, bGameOk, gameHave, gameNeed, bSEOk, seHave,
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
@@ -565,13 +548,9 @@ class PageVersions(PageInstaller):
 
     def OnCheck(self):
         self._enableForward(self.checkOk.IsChecked())
-# END PageVersions -----------------------------------------------
 
-# WryeParser -----------------------------------------------------
-#  a derived class of Parser, for handling BAIN install
-#  wizards
-#-----------------------------------------------------------------
 class WryeParser(ScriptParser.Parser):
+    """A derived class of Parser, for handling BAIN install wizards."""
     codeboxRemaps = {
         'Link': {
             # These are links that have different names than their text
@@ -1642,5 +1621,5 @@ class WryeParser(ScriptParser.Parser):
 
     def kwdCancel(self, msg=_(u"No reason given")):
         self.page = PageError(self.parent, _(u'The installer wizard was canceled:'), msg)
-# END -------------------------------------------------------------------------
+
 bolt.codebox = WryeParser.codebox
