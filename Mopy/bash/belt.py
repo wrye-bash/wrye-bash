@@ -25,6 +25,7 @@
 """Specific parser for Wrye Bash."""
 from collections import OrderedDict
 from functools import partial
+import os
 
 import ScriptParser         # generic parser class
 import bass
@@ -169,10 +170,7 @@ class InstallerWizard(wiz.Wizard):
             self.ret.Canceled = not self.RunWizard(page)
         # Clean up temp files
         if self.parser.bArchive:
-            try:
-                bass.rmTempDir()
-            except:
-                pass
+            bass.rmTempDir()
         return self.ret
 #End of Installer Wizard
 
@@ -294,13 +292,13 @@ class PageSelect(PageInstaller):
         self.listOptions.SetSelection(index) # event.Skip() won't do
         self.Selection(index)
 
-    def OnDoubleClick(self, event):
-        try:
-            img = self.images[self.index]
-            if img.isfile():
+    def OnDoubleClick(self, _event):
+        img = self.images[self.index]
+        if img.isfile():
+            try:
                 img.start()
-        except:
-            pass
+            except OSError:
+                bolt.deprint(u'Failed to open %s.' % img, traceback=True)
 
     def Selection(self, index):
         self._enableForward(True)
@@ -1013,46 +1011,46 @@ class WryeParser(ScriptParser.Parser):
     # Comparison operators
     def opE(self, l, r): return l == r
     def opEc(self, l, r):
-        try:
+        if isinstance(l, basestring) and isinstance(r, basestring):
             return l.lower() == r.lower()
-        except:
+        else:
             return l == r
     def opNE(self, l, r): return l != r
     def opNEc(self, l, r):
-        try:
+        if isinstance(l, basestring) and isinstance(r, basestring):
             return l.lower() != r.lower()
-        except:
+        else:
             return l != r
     def opGE(self, l, r): return l >= r
     def opGEc(self, l, r):
-        try:
+        if isinstance(l, basestring) and isinstance(r, basestring):
             return l.lower() >= r.lower()
-        except:
+        else:
             return l >= r
     def opG(self, l, r): return l > r
     def opGc(self, l, r):
-        try:
+        if isinstance(l, basestring) and isinstance(r, basestring):
             return l.lower() > r.lower()
-        except:
+        else:
             return l > r
     def opLE(self, l, r): return l <= r
     def opLEc(self, l, r):
-        try:
+        if isinstance(l, basestring) and isinstance(r, basestring):
             return l.lower() <= r.lower()
-        except:
+        else:
             return l <= r
     def opL(self, l, r): return l < r
     def opLc(self, l, r):
-        try:
+        if isinstance(l, basestring) and isinstance(r, basestring):
             return l.lower() < r.lower()
-        except:
+        else:
             return l < r
     # Membership tests
     def opIn(self, l, r): return l in r
     def opInCase(self, l, r):
-        try:
+        if isinstance(l, basestring) and isinstance(r, basestring):
             return l.lower() in r.lower()
-        except:
+        else:
             return l in r
     # Boolean operators
     def opAnd(self, l, r): return l and r
@@ -1185,32 +1183,26 @@ class WryeParser(ScriptParser.Parser):
     def fnInt(self, data):
         try:
             return int(data)
-        except:
+        except ValueError:
             return 0
     def fnFloat(self, data):
         try:
             return float(data)
-        except:
+        except ValueError:
             return 0.0
     def fnLen(self, data):
         try:
             return len(data)
-        except:
+        except TypeError:
             return 0
     def fnEndsWith(self, String, *args):
         if not isinstance(String, basestring):
             error(_(u"Function 'endswith' only operates on string types."))
-        try:
-            return String.endswith(args)
-        except:
-            return False
+        return String.endswith(args)
     def fnStartsWith(self, String, *args):
         if not isinstance(String, basestring):
             error(_(u"Function 'startswith' only operates on string types."))
-        try:
-            return String.startswith(args)
-        except:
-            return False
+        return String.startswith(args)
     def fnLower(self, String):
         if not isinstance(String, basestring):
             error(_(u"Function 'lower' only operates on string types."))
@@ -1226,17 +1218,9 @@ class WryeParser(ScriptParser.Parser):
         if end < 0: end += len(String) + 1
         return String.rfind(sub, start, end)
     def fnGetFilename(self, String):
-        try:
-            abspath = bolt.GPath(String)
-            return abspath.stail
-        except:
-            return u''
+        return os.path.basename(String)
     def fnGetFolder(self, String):
-        try:
-            abspath = bolt.GPath(String)
-            return abspath.shead
-        except:
-            return u''
+        return os.path.dirname(String)
 
     # Dummy keyword, for reserving a keyword, but handled by other keywords (like from, to, and by)
     def kwdDummy(self):
@@ -1606,7 +1590,7 @@ class WryeParser(ScriptParser.Parser):
             geHave = u'None'
         try:
             bWBOk = float(wbHave) >= float(wbWant)
-        except:
+        except ValueError:
             # Error converting to float, just assume it's OK
             bWBOk = True
 
@@ -1617,6 +1601,7 @@ class WryeParser(ScriptParser.Parser):
             files = [bass.dirs['mods'].join(bush.game.ge.exe)]
         else:
             files = [bass.dirs['mods'].join(*x) for x in bush.game.ge.exe]
+        ret = [-1, u'None']
         for file in reversed(files):
             ret = self._TestVersion(want, file)
             if ret[1] != u'None':
@@ -1625,7 +1610,7 @@ class WryeParser(ScriptParser.Parser):
     def _TestVersion_Want(self, want):
         try:
             need = [int(i) for i in want.split(u'.')]
-        except:
+        except ValueError:
             need = u'None'
         return need
     def _TestVersion(self, need, file_):
