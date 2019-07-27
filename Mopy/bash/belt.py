@@ -47,34 +47,37 @@ MISSING_ARGS = _(u"Missing arguments to '%s'.")
 UNEXPECTED =   _(u"Unexpected '%s'.")
 
 class WizardReturn(object):
-    __slots__ = ('Canceled', 'SelectEspms', 'RenameEspms', 'SelectSubPackages', 'Install',
-                 'IniEdits', 'PageSize', 'Pos',
-                 )
-    # Canceled: Set to true if the user canceled the wizard, or if an error occurred
-    # SelectEspms: List of ESP's/ESM's to 'select' for install
-    # RenameEspms: Dictionary of renames for ESP/M's.  In the format of:
+    __slots__ = ('canceled', 'select_plugins', 'rename_plugins',
+                 'select_sub_packages', 'ini_edits', 'should_install',
+                 'wizard_size', 'wizard_pos',)
+    # canceled: Set to true if the user canceled the wizard, or if an error
+    # occurred
+    # select_plugins: List of plugins to 'select' for install
+    # rename_plugins: Dictionary of renames for plugins.  In the format of:
     #   'original name':'new name'
-    # SelectSubPackages: List of Subpackages to 'select' for install
-    # IniEdits: Dictionary of INI edits to apply/create.  In the format of:
+    # select_sub_packages: List of Subpackages to 'select' for install
+    # ini_edits: Dictionary of INI edits to apply/create.  In the format of:
     #   'ini file': {
     #      'section': {
     #         'key': value
     #         }
     #      }
-    #    For BatchScript type ini's, the 'section' will either be 'set' or 'setGS' or 'SetNumericGameSetting'
-    # Install: Set to True if after configuring this package, it should also be installed.
-    # PageSize: Tuple/wxSize of the saved size of the Wizard
-    # Pos: Tuple/wxPoint of the saved position of the Wizard
+    #    For BatchScript type ini's, the 'section' will either be 'set',
+    #    'setGS' or 'SetNumericGameSetting'
+    # should_install: Set to True if after configuring this package, it should
+    # also be installed.
+    # wizard_size: Tuple/wxSize of the saved size of the Wizard
+    # wizard_pos: Tuple/wxPoint of the saved position of the Wizard
 
     def __init__(self):
-        self.Canceled = False
-        self.SelectEspms = []
-        self.RenameEspms = {}
-        self.SelectSubPackages = []
-        self.IniEdits = {}
-        self.Install = False
-        self.PageSize = balt.defSize
-        self.Pos = balt.defPos
+        self.canceled = False
+        self.select_plugins = []
+        self.rename_plugins = {}
+        self.select_sub_packages = []
+        self.ini_edits = {}
+        self.should_install = False
+        self.wizard_size = balt.defSize
+        self.wizard_pos = balt.defPos
 
 class InstallerWizard(wiz.Wizard):
     """Class used by Wrye Bash, creates a wx Wizard that dynamically creates
@@ -100,7 +103,7 @@ class InstallerWizard(wiz.Wizard):
         #Intercept the changing event so we can implement 'blockChange'
         self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnChange)
         self.ret = WizardReturn()
-        self.ret.PageSize = pageSize
+        self.ret.wizard_size = pageSize
         # So we can save window size
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -114,21 +117,21 @@ class InstallerWizard(wiz.Wizard):
     def OnClose(self, event):
         if not self.IsMaximized():
             # Only save the current size if the page isn't maximized
-            self.ret.PageSize = self.GetSize()
-            self.ret.Pos = self.GetPosition()
+            self.ret.wizard_size = self.GetSize()
+            self.ret.wizard_pos = self.GetPosition()
         event.Skip()
 
     def OnSize(self, event):
         if self.firstPage:
             # On the first page, resize it to the saved size
             self.firstPage = False
-            self.SetSize(self.ret.PageSize)
+            self.SetSize(self.ret.wizard_size)
         else:
             # Otherwise, regular resize, save the size if we're not
             # maximized
             if not self.IsMaximized():
-                self.ret.PageSize = self.GetSize()
-                self.Pos = self.GetPosition()
+                self.ret.wizard_size = self.GetSize()
+                self.ret.wizard_pos = self.GetPosition()
             event.Skip()
 
     def OnChange(self, event):
@@ -159,7 +162,7 @@ class InstallerWizard(wiz.Wizard):
     def Run(self):
         page = self.parser.Begin(self.wizard_file)
         if page:
-            self.ret.Canceled = not self.RunWizard(page)
+            self.ret.canceled = not self.RunWizard(page)
         # Clean up temp files
         if self.parser.bArchive:
             bass.rmTempDir()
@@ -384,7 +387,7 @@ class PageFinish(PageInstaller):
             key = key.replace(u'&&',u'&')
             if subsList[key]:
                 self.listSubs.Check(index, True)
-                self.parent.ret.SelectSubPackages.append(key)
+                self.parent.ret.select_sub_packages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
         espmSizer = balt.vSizer(balt.StaticText(self, _(u'Plugins')), vspace(2))
         self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist',
@@ -392,9 +395,9 @@ class PageFinish(PageInstaller):
         for index,key in enumerate(espms):
             if espmsList[key]:
                 self.listEspms.Check(index, True)
-                self.parent.ret.SelectEspms.append(key)
+                self.parent.ret.select_plugins.append(key)
         espmSizer.Add(self.listEspms,1,wx.EXPAND)
-        self.parent.ret.RenameEspms = espmRenames
+        self.parent.ret.rename_plugins = espmRenames
         sizerSubsEspms = balt.hSizer((subPackageSizer, 1, wx.EXPAND),
             hspace(5), (espmSizer, 1, wx.EXPAND))
         sizerMain.Add(*vspace(5))
@@ -413,7 +416,7 @@ class PageFinish(PageInstaller):
             hspace(5), (sizerContents, 1, wx.EXPAND))
         sizerMain.Add(sizerIniTweaks, 2, wx.EXPAND)
         sizerMain.Add(*vspace(5))
-        self.parent.ret.IniEdits = iniedits
+        self.parent.ret.ini_edits = iniedits
         #--Notes
         sizerMain.Add(balt.StaticText(self, _(u'Notes:')))
         sizerMain.Add(*vspace(2))
@@ -432,7 +435,7 @@ class PageFinish(PageInstaller):
         self.checkInstall = balt.checkBox(self, _(u'Install this package'),
                                           onCheck=self.OnCheckInstall,
                                           checked=auto)
-        self.parent.ret.Install = auto
+        self.parent.ret.should_install = auto
         checkSubSizer.Add(self.checkInstall)
         checkSizer.Add(checkSubSizer,0,wx.EXPAND)
         sizerMain.Add(checkSizer,0,wx.TOP|wx.RIGHT|wx.EXPAND,5)
@@ -446,7 +449,7 @@ class PageFinish(PageInstaller):
         self._enableForward(self.checkApply.IsChecked())
 
     def OnCheckInstall(self):
-        self.parent.ret.Install = self.checkInstall.IsChecked()
+        self.parent.ret.should_install = self.checkInstall.IsChecked()
 
     def GetNext(self): return None
 
@@ -462,7 +465,8 @@ class PageFinish(PageInstaller):
     def OnSelectIni(self, event):
         index = event.GetSelection()
         ini_path = bolt.GPath(self.listInis.GetString(index))
-        lines = generateTweakLines(self.parent.ret.IniEdits[ini_path],ini_path)
+        lines = generateTweakLines(self.parent.ret.ini_edits[ini_path],
+                                   ini_path)
         self.listTweaks.Set(lines)
         self.listInis.SetSelection(index)
 

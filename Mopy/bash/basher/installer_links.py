@@ -217,14 +217,14 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             balt.ensureDisplayed(wizard)
         ret = wizard.Run()
         self._save_size_pos(default, ret)
-        if ret.Canceled:
+        if ret.canceled:
             installer.remaps = oldRemaps
             idetails.refreshCurrent(installer)
             return
         #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
         for index in xrange(idetails.gSubList.GetCount()):
-            select = installer.subNames[index + 1] in ret.SelectSubPackages
+            select = installer.subNames[index + 1] in ret.select_sub_packages
             idetails.gSubList.Check(index, select)
             installer.subActives[index + 1] = select
         idetails.refreshCurrent(installer)
@@ -233,20 +233,20 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         espms = [x.replace(u'&&',u'&') for x in espms]
         installer.espmNots = set()
         for index, espm in enumerate(idetails.espms):
-            if espms[index] in ret.SelectEspms:
+            if espms[index] in ret.select_plugins:
                 idetails.gEspmList.Check(index, True)
             else:
                 idetails.gEspmList.Check(index, False)
                 installer.espmNots.add(espm)
         idetails.refreshCurrent(installer)
         #Rename the espms that need renaming
-        for oldName in ret.RenameEspms:
-            installer.setEspmName(oldName, ret.RenameEspms[oldName])
+        for oldName in ret.rename_plugins:
+            installer.setEspmName(oldName, ret.rename_plugins[oldName])
         idetails.refreshCurrent(installer)
         #Install if necessary
         ui_refresh = [False, False]
         try:
-            if ret.Install:
+            if ret.should_install:
                 if self._selected_info.isActive: #If it's currently installed, anneal
                     title, doIt = _(u'Annealing...'), self.idata.bain_anneal
                 else: #Install, if it's not installed
@@ -262,7 +262,7 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         manuallyApply = []  # List of tweaks the user needs to  manually apply
         lastApplied = None
         new_targets = {}
-        for iniFile, wizardEdits in ret.IniEdits.iteritems():
+        for iniFile, wizardEdits in ret.ini_edits.iteritems():
             outFile = bass.dirs['tweaks'].join(u'%s - Wizard Tweak [%s].ini' %
                 (installer.archive, iniFile.sbody))
             with outFile.open('w') as out:
@@ -280,7 +280,8 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             else: # suppose that the target ini file is in the Data/ dir
                 target_path = bass.dirs['mods'].join(iniFile)
                 new_targets[target_path.stail] = target_path
-                if not (iniFile.s in installer.ci_dest_sizeCrc and ret.Install):
+                if not (iniFile.s in installer.ci_dest_sizeCrc and
+                        ret.should_install):
                     # Can only automatically apply ini tweaks if the ini was
                     # actually installed.  Since BAIN is setup to not auto
                     # install after the wizard, we'll show a message telling
@@ -312,18 +313,21 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
     @staticmethod
     def _save_size_pos(default, ret):
         # Sanity checks on returned size/position
-        if not isinstance(ret.Pos, balt.wxPoint):
+        if not isinstance(ret.wizard_pos, balt.wxPoint):
             deprint(_(
                 u'Returned Wizard position (%s) was not a wx.Point (%s), '
-                u'reverting to default position.') % (ret.Pos, type(ret.Pos)))
-            ret.Pos = balt.defPos
-        if not isinstance(ret.PageSize, balt.wxSize):
+                u'reverting to default position.') % (ret.wizard_pos,
+                                                      type(ret.wizard_pos)))
+            ret.wizard_pos = balt.defPos
+        if not isinstance(ret.wizard_size, balt.wxSize):
             deprint(_(u'Returned Wizard size (%s) was not a wx.Size (%s), '
                       u'reverting to default size.') % (
-                        ret.PageSize, type(ret.PageSize)))
-            ret.PageSize = tuple(default)
-        bass.settings['bash.wizard.size'] = (ret.PageSize[0], ret.PageSize[1])
-        bass.settings['bash.wizard.pos'] = (ret.Pos[0], ret.Pos[1])
+                        ret.wizard_size, type(ret.wizard_size)))
+            ret.wizard_size = tuple(default)
+        bass.settings['bash.wizard.size'] = (ret.wizard_size[0],
+                                             ret.wizard_size[1])
+        bass.settings['bash.wizard.pos'] = (ret.wizard_pos[0],
+                                            ret.wizard_pos[1])
 
     @staticmethod
     def _get_size_and_pos():
