@@ -355,21 +355,22 @@ class PageFinish(PageInstaller):
     """Page displayed at the end of a wizard, showing which sub-packages and
     which plugins will be selected. Also displays some notes for the user."""
 
-    def __init__(self, parent, subsList, espmsList, espmRenames, bAuto, notes, iniedits):
+    def __init__(self, parent, subsList, plugin_list, plugin_renames, bAuto,
+                 notes, iniedits):
         PageInstaller.__init__(self, parent)
         subs = subsList.keys()
         subs.sort(lambda l,r: cmp(l, r))
         subs = [x.replace(u'&',u'&&') for x in subs]
-        espms = espmsList.keys()
-        espms.sort(lambda l,r: cmp(l, r))
+        plugins = plugin_list.keys()
+        plugins.sort(lambda l,r: cmp(l, r))
         #--make the list that will be displayed
-        espmShow = []
-        for x in espms:
-            if x in espmRenames:
-                espmShow.append(x + u' -> ' + espmRenames[x])
+        displayed_plugins = []
+        for x in plugins:
+            if x in plugin_renames:
+                displayed_plugins.append(x + u' -> ' + plugin_renames[x])
             else:
-                espmShow.append(x)
-        espmShow = [x.replace(u'&',u'&&') for x in espmShow]
+                displayed_plugins.append(x)
+        displayed_plugins = [x.replace(u'&',u'&&') for x in displayed_plugins]
         sizerMain = balt.vSizer()
         parent.parser.choiceIdex += 1
         #--Heading
@@ -378,7 +379,7 @@ class PageFinish(PageInstaller):
         textTitle.Wrap(parent.GetPageSize()[0]-10)
         sizerTitle.Add(textTitle,0,wx.ALIGN_CENTER)
         sizerMain.Add(sizerTitle,0,wx.EXPAND)
-        #--Subpackages and Espms
+        #--Subpackages and Plugins
         subPackageSizer = balt.vSizer(
             balt.StaticText(self, _(u'Sub-Packages')), vspace(2))
         self.listSubs = balt.listBox(self, choices=subs, kind='checklist',
@@ -389,19 +390,22 @@ class PageFinish(PageInstaller):
                 self.listSubs.Check(index, True)
                 self.parent.ret.select_sub_packages.append(key)
         subPackageSizer.Add(self.listSubs,1,wx.EXPAND)
-        espmSizer = balt.vSizer(balt.StaticText(self, _(u'Plugins')), vspace(2))
-        self.listEspms = balt.listBox(self, choices=espmShow, kind='checklist',
-                                      onCheck=self.OnSelectEspms)
-        for index,key in enumerate(espms):
-            if espmsList[key]:
-                self.listEspms.Check(index, True)
+        plugin_sizer = balt.vSizer(balt.StaticText(self, _(u'Plugins')),
+                                   vspace(2))
+        self.plugin_selection = balt.listBox(self, choices=displayed_plugins,
+                                             kind='checklist',
+                                             onCheck=self._on_select_plugin)
+        for index,key in enumerate(plugins):
+            if plugin_list[key]:
+                self.plugin_selection.Check(index, True)
                 self.parent.ret.select_plugins.append(key)
-        espmSizer.Add(self.listEspms,1,wx.EXPAND)
-        self.parent.ret.rename_plugins = espmRenames
-        sizerSubsEspms = balt.hSizer((subPackageSizer, 1, wx.EXPAND),
-            hspace(5), (espmSizer, 1, wx.EXPAND))
+        plugin_sizer.Add(self.plugin_selection, 1, wx.EXPAND)
+        self.parent.ret.rename_plugins = plugin_renames
+        sizer_subs_plugins = balt.hSizer(
+            (subPackageSizer, 1, wx.EXPAND), hspace(5),
+            (plugin_sizer, 1, wx.EXPAND))
         sizerMain.Add(*vspace(5))
-        sizerMain.Add(sizerSubsEspms, 2, wx.EXPAND)
+        sizerMain.Add(sizer_subs_plugins, 2, wx.EXPAND)
         sizerMain.Add(*vspace(5))
         #--Ini tweaks
         sizerTweaks = balt.vSizer(balt.StaticText(self, _(u'Ini Tweaks:')),
@@ -458,9 +462,9 @@ class PageFinish(PageInstaller):
         index = event.GetSelection()
         self.listSubs.Check(index, not self.listSubs.IsChecked(index))
 
-    def OnSelectEspms(self, event):
+    def _on_select_plugin(self, event):
         index = event.GetSelection()
-        self.listEspms.Check(index, not self.listEspms.IsChecked(index))
+        self.plugin_selection.Check(index, not self.plugin_selection.IsChecked(index))
 
     def OnSelectIni(self, event):
         index = event.GetSelection()
@@ -722,11 +726,11 @@ class WryeParser(ScriptParser.Parser):
             self.choices = []
             self.choiceIdex = -1
             self.sublist = bolt.LowerDict()
-            self.espmlist = bolt.LowerDict()
+            self.plugin_list = bolt.LowerDict()
             for k, v in installer.espmMap.iteritems():
                 for j in v:
-                    if j not in self.espmlist:
-                        self.espmlist[j] = False
+                    if j not in self.plugin_list:
+                        self.plugin_list[j] = False
                 if k == u'': continue
                 self.sublist[k] = False
         #--Constants
@@ -782,7 +786,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction(u'CompareGEVersion', self.fnCompareGEVersion, 1)
         self.SetFunction(u'CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction(u'DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
-        self.SetFunction(u'GetEspmStatus', self.fnGetEspmStatus, 1)
+        self.SetFunction(u'GetEspmStatus', self.fn_get_plugin_status, 1)
         self.SetFunction(u'EditINI', self.fnEditINI, 4, 5)
         self.SetFunction(u'DisableINILine',self.fnDisableINILine, 3)
         self.SetFunction(u'Exec', self.fnExec, 1)
@@ -803,15 +807,15 @@ class WryeParser(ScriptParser.Parser):
         #--Keywords
         self.SetKeyword(u'SelectSubPackage', self.kwdSelectSubPackage, 1)
         self.SetKeyword(u'DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
-        self.SetKeyword(u'SelectEspm', self.kwdSelectEspm, 1)
-        self.SetKeyword(u'DeSelectEspm', self.kwdDeSelectEspm, 1)
+        self.SetKeyword(u'SelectEspm', self.kwd_select_plugin, 1)
+        self.SetKeyword(u'DeSelectEspm', self.kwd_de_select_plugin, 1)
         self.SetKeyword(u'SelectAll', self.kwdSelectAll)
         self.SetKeyword(u'DeSelectAll', self.kwdDeSelectAll)
-        self.SetKeyword(u'SelectAllEspms', self.kwdSelectAllEspms)
-        self.SetKeyword(u'DeSelectAllEspms', self.kwdDeSelectAllEspms)
-        self.SetKeyword(u'RenameEspm', self.kwdRenameEspm, 2)
-        self.SetKeyword(u'ResetEspmName', self.kwdResetEspmName, 1)
-        self.SetKeyword(u'ResetAllEspmNames', self.kwdResetAllEspmNames)
+        self.SetKeyword(u'SelectAllEspms', self.kwd_select_all_plugins)
+        self.SetKeyword(u'DeSelectAllEspms', self.kwd_de_select_all_plugins)
+        self.SetKeyword(u'RenameEspm', self.kwd_rename_plugin, 2)
+        self.SetKeyword(u'ResetEspmName', self.kwd_reset_plugin_name, 1)
+        self.SetKeyword(u'ResetAllEspmNames', self.kwd_reset_all_plugin_names)
         self.SetKeyword(u'Note', self.kwdNote, 1)
         self.SetKeyword(u'If', self.kwdIf, 1 )
         self.SetKeyword(u'Elif', self.kwdElif, 1)
@@ -842,7 +846,7 @@ class WryeParser(ScriptParser.Parser):
         self.variables.clear()
         self.Flow = []
         self.notes = []
-        self.espmrenames = {}
+        self.plugin_renames = {}
         self.iniedits = {}
         self.cLine = 0
         self.reversing = 0
@@ -882,7 +886,9 @@ class WryeParser(ScriptParser.Parser):
                 return self.page
         self.cLine += 1
         self.cLineStart = self.cLine
-        return PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes, self.iniedits)
+        return PageFinish(self.parent, self.sublist, self.plugin_list,
+                          self.plugin_renames, self.bAuto, self.notes,
+                          self.iniedits)
 
     def Back(self):
         if self.choiceIdex == 0:
@@ -891,7 +897,7 @@ class WryeParser(ScriptParser.Parser):
         self.variables.clear()
         self.Flow = []
         self.notes = []
-        self.espmrenames = {}
+        self.plugin_renames = {}
         self.iniedits = {}
         i = 0
         while self.ExecCount > 0 and i < len(self.lines):
@@ -904,33 +910,33 @@ class WryeParser(ScriptParser.Parser):
                 self.ExecCount -= 1
         for i in self.sublist:
             self.sublist[i] = False
-        for i in self.espmlist:
-            self.espmlist[i] = False
+        for i in self.plugin_list:
+            self.plugin_list[i] = False
         self.cLine = 0
         self.reversing = self.choiceIdex-1
         self.choiceIdex = -1
         return self.Continue()
 
-    def EspmIsInPackage(self, espm, package):
+    def _is_plugin_in_package(self, plugin_name, package):
         if package not in self.installer.espmMap: return False
-        espm = espm.lower()
+        plugin_name = plugin_name.lower()
         v = self.installer.espmMap[package]
         for j in v:
-            if espm == j.lower():
+            if plugin_name == j.lower():
                 return True
         return False
 
-    def EspmHasActivePackage(self, espm):
+    def _plugin_in_active_package(self, plugin_name):
         for i in self.sublist:
-            if self.EspmIsInPackage(espm, i):
+            if self._is_plugin_in_package(plugin_name, i):
                 if self.sublist[i]:
                     return True
         return False
 
-    def GetEspm(self, espm):
-        espm = espm.lower()
-        for i in self.espmlist:
-            if espm == i.lower():
+    def _resolve_plugin_rename(self, plugin_name):
+        plugin_name = plugin_name.lower()
+        for i in self.plugin_list:
+            if plugin_name == i.lower():
                 return i
         return None
 
@@ -1074,7 +1080,7 @@ class WryeParser(ScriptParser.Parser):
                 return False
         return True
 
-    def fnGetEspmStatus(self, filename):
+    def fn_get_plugin_status(self, filename):
         file = bolt.GPath(filename)
         if file in bosh.modInfos.merged: return 3   # Merged
         if load_order.cached_is_active(file): return 2  # Active
@@ -1493,10 +1499,10 @@ class WryeParser(ScriptParser.Parser):
             self.sublist[package] = bSelect
             for i in self.installer.espmMap[package]:
                 if bSelect:
-                    self._SelectEspm(True, i)
+                    self._select_plugin(True, i)
                 else:
-                    if not self.EspmHasActivePackage(i):
-                        self._SelectEspm(False, i)
+                    if not self._plugin_in_active_package(i):
+                        self._select_plugin(False, i)
         else:
             error(_(u"Sub-package '%s' is not a part of the installer.") % subpackage)
 
@@ -1506,41 +1512,48 @@ class WryeParser(ScriptParser.Parser):
     def _SelectAll(self, bSelect):
         for i in self.sublist.keys():
             self.sublist[i] = bSelect
-        for i in self.espmlist.keys():
-            self.espmlist[i] = bSelect
+        for i in self.plugin_list.keys():
+            self.plugin_list[i] = bSelect
 
-    def kwdSelectEspm(self, espm): self._SelectEspm(True, espm)
-    def kwdDeSelectEspm(self, espm): self._SelectEspm(False, espm)
+    def kwd_select_plugin(self, plugin_name):
+        self._select_plugin(True, plugin_name)
 
-    def _SelectEspm(self, bSelect, name):
-        espm = self.GetEspm(name)
-        if espm:
-            self.espmlist[espm] = bSelect
+    def kwd_de_select_plugin(self, plugin_name):
+        self._select_plugin(False, plugin_name)
+
+    def _select_plugin(self, should_activate, plugin_name):
+        resolved_name = self._resolve_plugin_rename(plugin_name)
+        if resolved_name:
+            self.plugin_list[resolved_name] = should_activate
         else:
-            error(_(u"Espm '%s' is not a part of the installer.") % name)
+            error(_(u"Plugin '%s' is not a part of the installer.") %
+                  plugin_name)
 
-    def kwdSelectAllEspms(self): self._SelectAllEspms(True)
-    def kwdDeSelectAllEspms(self): self._SelectAllEspms(False)
+    def kwd_select_all_plugins(self): self._select_all_plugins(True)
+    def kwd_de_select_all_plugins(self): self._select_all_plugins(False)
 
-    def _SelectAllEspms(self, bSelect):
-        for i in self.espmlist.keys():
-            self.espmlist[i] = bSelect
+    def _select_all_plugins(self, should_activate):
+        for i in self.plugin_list.keys():
+            self.plugin_list[i] = should_activate
 
-    def kwdRenameEspm(self, espm, newName):
-        espm = self.GetEspm(espm)
-        if espm:
+    def kwd_rename_plugin(self, plugin_name, new_name):
+        plugin_name = self._resolve_plugin_rename(plugin_name)
+        if plugin_name:
             # Keep same extension
-            if espm.lower()[-4:] != newName.lower()[-4:]:
-                raise ScriptParser.ParserError(_(u'Cannot rename %s to %s: the extensions must match.') % (espm, newName))
-            self.espmrenames[espm] = newName
+            if plugin_name.lower()[-4:] != new_name.lower()[-4:]:
+                raise ScriptParser.ParserError(_(u'Cannot rename %s to %s: '
+                                                 u'the extensions must '
+                                                 u'match.') %
+                                               (plugin_name, new_name))
+            self.plugin_renames[plugin_name] = new_name
 
-    def kwdResetEspmName(self, espm):
-        espm = self.GetEspm(espm)
-        if espm and espm in self.espmrenames:
-            del self.espmrenames[espm]
+    def kwd_reset_plugin_name(self, plugin_name):
+        plugin_name = self._resolve_plugin_rename(plugin_name)
+        if plugin_name and plugin_name in self.plugin_renames:
+            del self.plugin_renames[plugin_name]
 
-    def kwdResetAllEspmNames(self):
-        self.espmrenames = dict()
+    def kwd_reset_all_plugin_names(self):
+        self.plugin_renames = dict()
 
     def kwdNote(self, note):
         self.notes.append(u'- %s\n' % note)
@@ -1583,7 +1596,9 @@ class WryeParser(ScriptParser.Parser):
             # Error converting to float, just assume it's OK
             bWBOk = True
         if not bGameOk or not bSEOk or not bGEOk or not bWBOk:
-            self.page = PageVersions(self.parent, bGameOk, gameHave, game, bSEOk, seHave, se, bGEOk, geHave, ge, bWBOk, wbHave, wbWant)
+            self.page = PageVersions(self.parent, bGameOk, gameHave, game,
+                                     bSEOk, seHave, se, bGEOk, geHave, ge,
+                                     bWBOk, wbHave, wbWant)
 
     def _TestVersion_GE(self, want):
         if isinstance(bush.game.ge.exe,str):
@@ -1621,7 +1636,9 @@ class WryeParser(ScriptParser.Parser):
         return [-1, u'None']
 
     def kwdReturn(self):
-        self.page = PageFinish(self.parent, self.sublist, self.espmlist, self.espmrenames, self.bAuto, self.notes, self.iniedits)
+        self.page = PageFinish(self.parent, self.sublist, self.plugin_list,
+                               self.plugin_renames, self.bAuto, self.notes,
+                               self.iniedits)
 
     def kwdCancel(self, msg=_(u"No reason given")):
         self.page = PageError(self.parent, _(u'The installer wizard was canceled:'), msg)
