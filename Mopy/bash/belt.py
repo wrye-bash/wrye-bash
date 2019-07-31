@@ -1634,17 +1634,11 @@ class WryeParser(ScriptParser.Parser):
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':
                 return [1, ver]
-            if len(need) != 4:
-                error(_(u"Version '%s' expected in format 'x.x.x.x'") % need)
-                return [-1, ver]
-            if have[0] > need[0]: return [1, ver]
-            if have[0] < need[0]: return [-1, ver]
-            if have[1] > need[1]: return [1, ver]
-            if have[1] < need[1]: return [-1, ver]
-            if have[2] > need[2]: return [1, ver]
-            if have[2] < need[2]: return [-1, ver]
-            if have[3] > need[3]: return [1, ver]
-            if have[3] < need[3]: return [-1, ver]
+            for have_part, need_part in zip(have, need):
+                if have_part > need_part:
+                    return [1, ver]
+                elif have_part < need_part:
+                    return [-1, ver]
             return [0, ver]
         elif need == u'None':
             return [0, u'None']
