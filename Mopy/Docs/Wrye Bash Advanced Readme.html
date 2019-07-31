@@ -131,32 +131,21 @@
 </div>
 
 <h2 id="intro">Introduction <a class="back2top" href="#contents">Back to top</a></h2>
-<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, Fallout 3, Fallout New Vegas, TES V: Skyrim, Fallout 4 and SSE: Skyrim Special Edition. Its features include:
-<ul>
-    <li>A mod installation and conflict manager
-    <li>A plugin load order manager
-    <li>Increased mod compatibility
-    <li>Lifting of the 255 plugin limit through automatic merging of compatible mods
-    <li>.ini and settings files tweak management
-    <li>Screenshot management
-    <li>Many, many more features
-</ul>
-<p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>A companion to the <a href="Wrye%20Bash%20General%20Readme.html">General Readme</a>, this document details those features
-    that were omitted from the aforementioned readme. These features are often more specialised, advanced or complicated, and
+    that were omitted from the aforementioned readme. They are often more specialized, advanced or complicated, and
     many are geared more towards mod authors than mod users. This readme is also more technical and goes into more depth on
     how Wrye Bash functions. It assumes the reader has previously read the General Readme.
 <p>Note that the <a href="#people">People</a> tab is hidden by default. You can toggle the visibility of the tabs in Wrye Bash's main tab bar by right-clicking the tab bar and checking or unchecking the options in the context menu displayed.
 
 <h3 id="intro-title">Title Bar Info <a class="back2top" href="#contents">Back to top</a></h3>
 <p>As a quick note that doesn't really belong anywhere else, Wrye Bash's title bar contains some useful information. The title is formatted as:
-<p><code>Wrye Bash [Bash Version] [Install Type] [Game Modifier], Cbash v[CBash Version]: [Save Profile] [Version Indicator]</code>
+<p><code>[Application Name] [Bash Version] [Install Type] [Game Modifier], CBash v[CBash Version]: [Save Profile] [Version Indicator]</code>
 <p>The square bracketed information is:
 <ul>
+    <li><code>[Application Name]</code>: <q>Wrye Bash</q> if <code>Use Alternate Wrye Bash Name</code> is disabled in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings Menu</a>, otherwise this will be a name based on the game Wrye Bash is managing (e.g. <q>Wrye Smash</q> for Skyrim).</li>
     <li><code>[Bash Version]</code>: This is the version number for the version of Wrye Bash running. Useful when troubleshooting.
-    <li><code>[Install Type]</code>: If the Python version is running, this will read <q>Python</q>. If the Standalone version is running, it will read <q>(Standalone)</q>. See the <a href="#install">Installation</a> section for more information.
-    <li><code>[Game Modifier]</code>: If the option is selected in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings menu</a>,
-    this will display <q>for Oblivion</q>, <q>for Skyrim</q> or <q>for Fallout</q> depending on the game it is being run for.
+    <li><code>[Install Type]</code>: If the Standalone version is running, it will read <q>(Standalone)</q>. If the Python version is running, this part is omitted. See the <a href="#install">Installation</a> section for more information.</li>
+    <li><code>[Game Modifier]</code>: <q>for [Game]</q>, where [Game] is the name of the managed game, if <code>Use Alternate Wrye Bash Name</code> is disabled in the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-settings">Settings Menu</a>. Otherwise, this is not displayed.</li>
     <li><code>[CBash Version]</code>: This is the version number for the version of CBash included with the Wrye Bash install. Useful when troubleshooting. See the <a href="#patch">Setting Up A Bashed Patch</a> section for more information.
     <li><code>[Save Profile]</code>: This is the name of the <a href="Wrye%20Bash%20Advanced%20Readme.html#saves-profiles">save profile</a> Wrye Bash is currently using. By default it is <q>Default</q>.
     <li><code>[Version Indicator]</code>: This is only displayed when Wrye Bash is running for Oblivion. It indicates the version of Oblivion.esm currently being used. This is related to the <a href="Wrye%20Bash%20Advanced%20Readme.html#tools-swapping">Oblivion.esm Swapping</a> feature.
@@ -339,21 +328,21 @@ tab. The directories skipped are:
     <tbody>
         <tr><td>Oblivion<td>tes4edit backups, tes4edit cache, bgsee, conscribe logs<td>OBSE
         <tr><td>Fallout 3<td>fo3edit backups, fo3edit cache<td>FOSE
-        <tr><td>Fallout New Vegas<td>fnvedit backups, fnvedit cache<td>NVSE
+        <tr><td>Fallout&colon; New Vegas<td>fnvedit backups, fnvedit cache<td>NVSE
         <tr><td>Skyrim<td>tes5edit backups, tes5edit cache<td>SKSE, SkyProc Patchers, Script Dragon
         <tr><td>Fallout 4<td>fo4edit backups, fo4edit cache<td>F4SE
-        <tr><td>Skyrim SE<td>sseedit backups, sseedit cache<td>SKSE, SkyProc Patchers
+        <tr><td>Skyrim&colon; Special Edition<td>sseedit backups, sseedit cache<td>SKSE, SkyProc Patchers
     <tr class="tabttl"><th colspan="3">Per game skipped file extensions</th></tr>
     <tr class="tabttl"><th>Skipped file extension</th><th>Games</th><th>Notes</th></tr>
     <tbody>
       <tr>
         <td>.bsl</td>
-        <td>Skyrim, Skyrim SE</td>
+        <td>Skyrim, Skyrim&colon; Special Edition</td>
         <td>If <a href="#bainSkipBSLFiles">Skip BSL Files</a> is checked</td>
       </tr>
       <tr>
         <td>.psc</td>
-        <td>Skyrim, Skyrim SE, Fallout 4</td>
+        <td>Skyrim, Skyrim&colon; Special Edition, Fallout 4</td>
         <td>If <a href="#bainSkipScriptSources">Skip Script Sources</a> is checked</td>
       </tr>
     </tbody>
@@ -368,10 +357,10 @@ tab. The directories skipped are:
 
 
 <h3 id="bain-se">Script Extender Plugin Installation <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Script Extender (OBSE, SKSE) plugins (.dll, .dlx extensions) may be installed through BAIN if the following conditions are met:
+<p>Script Extender (e.g. OBSE, SKSE, F4SE) plugins (.dll, .dlx extensions) may be installed through BAIN if the following conditions are met:
 <ul>
-    <li>The package (or subpackage in the case of a Complex Bain) contains the OBSE plugin file inside <code>OBSE\Plugins\</code> (for
-        Oblivion), or <code>SKSE\Plugins\</code> (for Skyrim) sub-folders.
+    <li>The package (or subpackage in the case of a Complex Bain) contains the OBSE plugin file inside <code>**SE\Plugins\</code> (e.g. OBSE for
+        Oblivion) sub-folders.
     <li>The <a href="#bainSkipSEPlugins">Skip (**SE) Plugins</a> option found in the Installers tab column header context menu is disabled.
 </ul>
 <p>When attempting to install a specific Script Extender plugin for the first time, Wrye Bash will display a warning dialogue and ask you to confirm or deny the plugin's installation. Thereafter you can uninstall and install the plugin as you like without seeing the warning. These additional requirements are due to the significant (though currently theoretical) dangers of installing executable files.
@@ -595,11 +584,11 @@ tab. The directories skipped are:
         <tr><td colspan="2" id="bainWizardIconOverlay">Wizard Icon Overlay<td>If checked, installers with a Wizard will have a magic wand image displayed over their icons.</tr>
         <tr><td rowspan="12" id="bainGlobalSkips">Global Skips</td>
         <tr><td id="bainSkipSEPlugins">Skip (**SE) Plugins<td><em>Non-Skyrim only.</em> If this is checked, files to go in the Data\[**SE]\Plugins folder will not be installed.
-        <tr><td>Skip SKSE/Script Dragon Plugins<td><em>Skyrim and Skyrim SE only.</em> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
+        <tr><td>Skip SKSE/Script Dragon Plugins<td><em>Skyrim only.</em> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
         <tr><td id="bainSkipScreenshots">Skip Screenshots<td>If checked, then files from a Data\Screenshots directory will be skipped.
         <tr>
           <td id="bainSkipScriptSources">Skip Script Sources</td>
-          <td><em>Skyrim, Skyrim SE and Fallout 4 only.</em> If checked, loose script sources (.psc files) will be skipped.</td>
+          <td><em>Skyrim, Skyrim&colon; Special Edition and Fallout 4 only.</em> If checked, loose script sources (.psc files) will be skipped.</td>
         </tr>
         <tr><td id="bainSkipImages">Skip Images<td>If checked, image files will be skipped.
         <tr><td id="bainSkipDocs">Skip Docs<td>If checked, document files will be skipped vice being swept to the Docs\ directory.
@@ -607,7 +596,7 @@ tab. The directories skipped are:
         <tr><td id="bainSkipLODMeshes">Skip LOD Meshes<td>If checked, landscape LOD meshes will be skipped.
         <tr><td id="bainSkipLODTextures">Skip LOD Textures<td>If checked, landscape LOD textures will be skipped.
         <tr><td id="bainSkipLODNormals">Skip LOD Normals<td>If checked, landscape LOD normals will be skipped.
-        <tr><td id="bainSkipBSLFiles">Skip BSL Files<td><em>Skyrim and Skyrim SE only.</em> If checked, BSL Files will be skipped.
+        <tr><td id="bainSkipBSLFiles">Skip BSL Files<td><em>Skyrim and Skyrim&colon; Special Edition only.</em> If checked, BSL Files will be skipped.
         <tr><td colspan="2" id="bainAutonameStringTranslationFiles">Auto-name String Translation Files<td><em>Skyrim only.</em> If checked, string translation files will be renamed so that they are loaded for the language Skyrim is currently run for, unless there are existing translation files for that language.
 </table>
 </div>
@@ -665,8 +654,8 @@ tab. The directories skipped are:
             <td>Attempts to open the selected package's page on TES Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
         </tr>
         <tr>
-            <td>Skyrim Nexus...</td>
-            <td>Attempts to open the selected package's page on Skyrim Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
+            <td>[Game] Nexus...</td>
+            <td>Attempts to open the selected package's page on the game's matching Nexus. This command assumes that the trailing digits in a package's name is the package ID at the site.</td>
         </tr>
         <tr>
             <td>TES Alliance...</td>
@@ -721,7 +710,7 @@ tab. The directories skipped are:
         <tr>
             <td colspan="2" id="bainExportACHlist">Export ACHList</td>
             <td> This exports a file list of the files configured to be installed by this installer (except top level files and docs installed in Data/Docs folder). This list is used when the CK asks for a list of files to make new BSA files, for use when uploading to Bethesda.net. It will generate a
-                <code>installer-name.achlist</code> file inside the Mod Info Exports directory in the game (exe) folder. Mod Info Exports will be created if it doesn't exist. If an achlist with the same name exists it will be overwritten. Import the ACHList Bash generated and it will then package your files into the proper archives for upload. Available only for Skyrim Special Edition and Fallout 4. </td>
+                <code>installer-name.achlist</code> file inside the Mod Info Exports directory in the game (exe) folder. Mod Info Exports will be created if it doesn't exist. If an achlist with the same name exists it will be overwritten. Import the ACHList Bash generated and it will then package your files into the proper archives for upload. Available only for Skyrim&colon; Special Edition and Fallout 4. </td>
         </tr>
         <tr>
             <td rowspan="10" id="bainPackageMenu">Package..</td>
@@ -851,9 +840,9 @@ tab. The directories skipped are:
         <tr><td>Modification Time<td>This field is editable, by clicking in the box. After changes are made, click the Save button to commit
             your changes to the plugin, or Cancel to discard them. Notes : For Oblivion, this affects the load order of the selected plugin.
             For Skyrim, it has no effect, except that if it is changed for a plugin obtained from Steam Workshop, it will cause the plugin
-            to be redownloaded as Steam Workshop uses modification time to detect file versions. For Skyrim Special Edition, there was a bug
+            to be redownloaded as Steam Workshop uses modification time to detect file versions. For Skyrim&colon; Special Edition, there was a bug
             at some point, with DLC Load Order being set by Date / Time Stamp (only the DLCs were affected by this). The only way to
-            re-arrange your Skyrim SE DLC plugins Load Order was to edit their modification time, so that they follow each other by for
+            re-arrange your Skyrim&colon; Special Edition DLC plugins Load Order was to edit their modification time, so that they follow each other by for
             example one minute. The bug was fixed in a later patch - but anyway Bash won't let you change neither the load order nor the
             modification times of the DLCs. The game always loads them before other masters and in the following order:
             Dawnguard / Hearthfire / Dragonborn. So Bash will timestamp them in one minute intervals following Skyrim/Update esms, so even
@@ -870,7 +859,7 @@ tab. The directories skipped are:
         take their renamed values and the <em>Save</em> and <em>Cancel</em> buttons are enabled. You may click on Save to save the new master list,
         or on Cancel to revert displaying the non renamed masters.<br />
         Disallowing edits will revert the list to the original and disable Save and Cancel buttons (if no other fields are edited).<br />
-        <tr><td>MI<td>Master Index of the mod. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
+        <tr><td>MI<td>Master Index of the mod. This means the actual number of the masters in succession starting with e.g. 00 Skyrim.esm, 00 Oblivion.esm, etc.<br />
         <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Bash Tags<td>This field lists any Bash Tags that are assigned to the selected plugin. Right-clicking will display a list of Bash Tags and allow you to add or remove tags by checking or unchecking them.
 </table>
@@ -1179,7 +1168,6 @@ and masterlist relative priority and role see the LOOT docs.
 <p>Bash Tags may also be set manually, by right-clicking a plugin's Bash Tags field in the Mods Tab sidebar and checking or unchecking tags in the list displayed. If you wish to revert to automatic tagging, choose <q>Automatic</q> in the right-click list. If you are a mod author, you may wish to use <q>Copy to Description</q> for your mod's plugins before releasing it to ensure that users have the tags applied automatically.
 
 <p><strong>Note:</strong> A Bash Tag should only be applied when it is <strong>important</strong> that the plugin's change to whatever the Tag relates to is preserved. If a change your plugin makes is not important to the functioning of your mod, do not add a Bash Tag for it. Doing otherwise negates the purpose of the Bash Tag system.
-<p>Wrye Bash Supported Games: TESIV: Oblivion, TESV: Skyrim, TESV: Skyrim SE, Fallout 3, Fallout&colon; New Vegas, Fallout 4.</p>
 <p>
     <strong>Note:</strong> Not all record types or bash tags are available/supported for each game.</p>
 <table>
@@ -3969,7 +3957,7 @@ and masterlist relative priority and role see the LOOT docs.
 
 <h3 id="patch-tweaks">Tweak Options In Detail <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Each <q>Tweak...</q> section has a table below that details the options found within it.
-<p>Tweaks are game dependant, most apply for Oblivion, not all of them will be available for Skyrim / Fallout.
+<p>Tweaks are game dependant, most apply for Oblivion, not all of them will be available for newer games.
 <table>
     <thead>
         <tr><th colspan="2">Race Tweaks
@@ -4100,7 +4088,7 @@ and masterlist relative priority and role see the LOOT docs.
     set prior to starting a new game. <br/>Trying to change the same settings in a continued game by rebuilding your bashed patch may fail
     for games newer than Oblivion, because the game setting will always be loaded from your ongoing save files ( which the game loads last,
     after the Bashed Patch ). <br/>For example Timescale once you change it, is known to become permanently baked in your save game for
-    Skyrim / Skyrim SE, it can be set once, but thereafter is part of your saves, and can only be changed by console command or starting a
+    Skyrim / Skyrim&colon; Special Edition, it can be set once, but thereafter is part of your saves, and can only be changed by console command or starting a
     new game.
 <table>
     <thead>
@@ -4256,7 +4244,7 @@ and masterlist relative priority and role see the LOOT docs.
         Masters can also be disabled (again if editing is allowed) if they have been removed and are preventing your save from loading, as may sometimes happen,
         by right-clicking them and selecting <q>Disable</q>. Note that logical errors may still occur that prevent the removal of
         the plugin dependency, but this will let the game <em>try</em> to remove the dependency.<br />
-        <tr><td>MI<td>Master Index of the save game. This means the actual number of the masters in succession starting with 00 Skyrim.esm, or 00 Oblivion.esm.<br />
+        <tr><td>MI<td>Master Index of the save game. This means the actual number of the masters in succession starting with e.g. 00 Skyrim.esm, or 00 Oblivion.esm, etc.<br />
         <tr><td>Current LO<td>Current load order in relation to the load order of the Active Plugins. Active Plugins should correspond with plugins.txt.
         <tr><td>Notes<td>This section can be used to keep notes on the save file.
 </table>
@@ -4621,7 +4609,7 @@ and masterlist relative priority and role see the LOOT docs.
   <tr><td colspan="2" id="settingsLanguage">Language<td>This submenu lists the languages for which translations of Wrye Bash exist.
   <tr><td colspan="2">Plugin Encoding<td>This submenu allows you to select the encoding that Wrye Bash assumes plugin descriptions to be written in. The <q>Automatic</q> option is selected, Wrye Bash attempts to detect the encoding from the contents of the description. If a plugin description is being displayed incorrectly, try selecting another encoding from this list.
   <tr><td colspan="2">Game<td>This submenu lists the games that Wrye Bash supports and detects as being installed. Selecting a game will close Wrye Bash and re-open it for the selected game.
-        <tr><td colspan="2">Use Alternate Wrye Bash Name<td>If checked, displays in the title bar <q>Wrye Bash</q> when running for Oblivion and <q>Wrye Smash</q> when running for Skyrim. If unchecked, the title bar will contain <q>Wrye Bash for [Game]</q> instead.
+  <tr><td colspan="2">Use Alternate Wrye Bash Name<td>If checked, displays a game-specific name instead of Wrye Bash in the title bar instead. See the <a href="#intro-title">Title Bar Info</a> section for more information.</td></tr>
   <tr><td colspan="2">Debug Mode<td>Opens up a window to which debugging information is written.
   <tr><td colspan="2" id="settingsDumpTranslator">Dump Translator<td>Generates a new translation file for your locale. See <a href="#international">Internationalisation</a> for more information.
 </table>

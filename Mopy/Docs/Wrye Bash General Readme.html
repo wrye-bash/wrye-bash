@@ -112,7 +112,7 @@
 </div>
 
 <h2 id="intro">Introduction <a class="back2top" href="#contents">Back to top</a></h2>
-<p>Wrye Bash is a powerful mod management utility for TES IV: Oblivion, Fallout 3, Fallout New Vegas, TES V: Skyrim, Fallout 4 and SSE: Skyrim Special Edition. Its features include:
+<p>Wrye Bash is a powerful mod management utility for games based on Bethesda's Creation Engine. Its features include:
 <ul>
     <li>A mod installation and conflict manager
     <li>A plugin load order manager
@@ -122,13 +122,22 @@
     <li>Screenshot management
     <li>Many, many more features
 </ul>
+<p>It currently supports the following games:</p>
+<ul>
+    <li>Oblivion</li>
+    <li>Fallout 3</li>
+    <li>Fallout&colon; New Vegas</li>
+    <li>Skyrim</li>
+    <li>Fallout 4</li>
+    <li>Skyrim&colon; Special Edition</li>
+</ul>
 <p>Wrye Bash can appear daunting at first. To help make it more manageable, the documentation has been split into a few readmes that are targeted towards different usage requirements.
 <p>This readme covers only the most commonly used features, so that the average user can start using Wrye Bash without being overwhelmed. Information on the less commonly used features and more technical details of the features covered in this readme may be found in the <a href="Wrye%20Bash%20Advanced%20Readme.html">Advanced Readme</a>. Information on some of the syntaxes and file formats that Wrye Bash uses are found in the <a href="Wrye%20Bash%20Technical%20Readme.html">Technical Readme</a>. Finally, Wrye Bash's version history is stored in the <a href="Wrye%20Bash%20Version%20History.html">Version History</a> document.</p>
 
 <h3 id="intro-glossary">Glossary <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Modding for Oblivion and Skyrim has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
+<p>Modding for Creation Engine games has a wonderful history of confusing terminology. The list below details some terms commonly used when dealing with mods.
 <ul>
-    <li><strong>The game</strong> is the game that Wrye Bash is running for, either Oblivion, Fallout3, FalloutNV, Skyrim, Fallout4 or Skyrim SE.
+    <li><strong>The game</strong> is the game that Wrye Bash is managing, one of the ones listed above.</li>
     <li><strong>CTD</strong> is an acronym for Crash To Desktop. Used to describe the game crashing.
     <li><strong>DLC</strong> refers to any of the official downloadable content for the game.
     <li><strong>Mod</strong> refers to any unofficial user-made modification to the game.
@@ -137,16 +146,26 @@
     <li><strong>ESM</strong> (case-insensitive) refers to any file with a <code>.esm</code> extension. It is an acronym for Elder Scrolls Master.
     <li><strong>Plugin</strong> refers to any ESP <u>or</u> ESM file.
     <li><strong>Master</strong> refers to any plugins that another plugin is dependent on to function. (It can also refer to an ESM file, as it used to be that only ESMs could be masters, until mod authors developed methods of using ESP files as masters too. The latter definition will not be used in this documentation.)
-    <li><strong>The game's master file</strong> refers to the ESM that must be loaded for the game to function. For Oblivion, this is <code>Oblivion.esm</code>, for Skyrim this is <code>Skyrim.esm</code>, and for Fallout 4 this is <code>Fallout4.esm</code>.
     <li><strong>Conflicts</strong> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.
     <li><strong>Resource Conflicts</strong> occur when two mods contain two different files that go in the same place, so one mod's file overwrites the others's file. This type of conflict can be managed by altering the install order of mods.
     <li><strong>Data Conflicts</strong> occur when two mod plugins alter the same game data. This type of conflict can be managed by altering the load order of plugins.
     <li><strong>BSAs</strong> are Bethesda Softwork Archives, with <code>.bsa</code> file extensions. They can be used to store resource files such as textures and meshes.
     <li><strong>ITMs</strong> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.
     <li><strong>UDRs</strong> are Undeleted and Disabled References. Deleted References can cause crashing, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. This acronym is generally misused - the UDR acronym is frequently used to refer to the deleted references, rather than their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS/LOOT will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.
+    <li><strong>The game's master file</strong> refers to the ESM that must be loaded for the game to function. A short table showing the master file for each game follows:</li>
+    <table>
+        <thead><tr><th>Game</th><th>Master File</th></tr></thead>
+        <tbody>
+            <tr><td>Oblivion</td><td>Oblivion.esm</td></tr>
+            <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
+            <tr><td>Fallout&colon; New Vegas</td><td>FalloutNV.esm</td></tr>
+            <tr><td>Skyrim</td><td>Skyrim.esm</td></tr>
+            <tr><td>Fallout 4</td><td>Fallout4.esm</td></tr>
+            <tr><td>Skyrim&colon; Special Edition</td><td>Skyrim.esm</td></tr>
+        </tbody>
+    </table>
 </ul>
-<p>This readme will also use the placeholder <strong>[Game]</strong>. Replace this with <q>Oblivion</q>, <q>Fallout 3</q>, <q>Fallout NV</q>, <q>Skyrim</q>, <q>Fallout 4</q> or <q>Skyrim SE</q> depending on which game Wrye Bash is running for. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img alt="External Link Icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII="/> go to pages that are not part of the Wrye Bash documentation.</p>
-
+<p>This readme will also use the placeholder <strong>[Game]</strong>. Replace this with the game that you're managing with Wrye Bash. Additional terminology specific to Wrye Bash's functions will be introduced as required. Also, links that are followed by <img alt="External Link Icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAVklEQVR4Xn3PgQkAMQhDUXfqTu7kTtkpd5RA8AInfArtQ2iRXFWT2QedAfttj2FsPIOE1eCOlEuoWWjgzYaB/IkeGOrxXhqB+uA9Bfcm0lAZuh+YIeAD+cAqSz4kCMUAAAAASUVORK5CYII="/> go to pages that are not part of the Wrye Bash documentation.</p>
 
 <h2 id="install">Installation <a class="back2top" href="#contents">Back to top</a></h2>
 <p>The simplest way to install Wrye Bash is using the installer, as it installs Wrye Bash and its dependencies automatically. However, the instructions below are provided if a manual install method is preferred.
@@ -155,7 +174,7 @@
 <p>Manual Standalone Version Install:
 <ol>
     <li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
-    <li>Extract the downloaded Wrye Bash archive into the game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q> depending on the game) so that the Mopy
+    <li>Extract the downloaded Wrye Bash archive into the game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
         directory appears in the game folder.
     <li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
 </ol>
@@ -166,7 +185,7 @@
         for the list of included libraries and their versions. If you have previously installed Python and any Python libraries,
         you may not need to install them again.
     <li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
-    <li>Extract the downloaded Wrye Bash archive into your game folder (<q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q> depending on the game) so that the Mopy
+    <li>Extract the downloaded Wrye Bash archive into your game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
     directory appears by the game executable. See the
     <a href="Wrye%20Bash%20Advanced%20Readme.html#install-alternate">Alternative Install Locations</a> if you wish to install to a different directory.
     <li>Navigate to the Mopy directory and run Wrye Bash by double-clicking <q>Wrye Bash Launcher.pyw</q>.
@@ -255,10 +274,10 @@ but there are game specific directories as well (all directory detection is <em>
     <tbody>
         <tr><td>Oblivion<td>distantlod, facegen, fonts, menus, shaders, trees<td>_tejon, ini, obse, pluggy, scripts, streamline
         <tr><td>Fallout 3<td>facegen, lodsettings, menus, shaders<td>ini, fose, scripts
-        <tr><td>Fallout NV<td>facegen, lodsettings, menus, shaders<td>ini, nvse, scripts
+        <tr><td>Fallout&colon; New Vegas<td>facegen, lodsettings, menus, shaders<td>ini, nvse, scripts
         <tr><td>Skyrim<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (Bodyslide, FNIS), dyndolod
         <tr><td>Fallout 4<td>interface, lodsettings, materials, misc, programs, scripts, seq, shadersfx, strings, vis<td>f4se, ini, mcm (Fallout 4 MCM), tools (BodySlide, FNIS)
-        <tr><td>Skyrim SE<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (BodySlide, FNIS), dyndolod
+        <tr><td>Skyrim&colon; Special Edition<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (BodySlide, FNIS), dyndolod
 </table>
 
 All these directories (either in the Global or Extra and Bonus Game directories) constitute the <strong>standard game directories</strong> for this game. If
@@ -472,7 +491,7 @@ from other packages previously overridden by the uninstalled package's
     plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
 <p>Some plugins are explicitly dependent on other plugins - they have these plugins as <q>masters</q>. When a plugin is activated, its masters are also activated. Conversely, when a plugin upon which other plugins depend is deactivated, those plugins are also deactivated.</p>
 <p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FE, which is 0 to 254 in decimal. (This number also forms the first two digits of a record's Form ID.)
-<p>Note that you can only have a maximum of 255 plugins active at any one time, including your game's master file (eg. Oblivion.esm, Skyrim.esm).
+<p>Note that you can only have a maximum of 255 plugins active at any one time, including your game's master file.
     Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
 <p>With the advent of <strong>esl files</strong> the load order system was modified - exactly how it is still unclear. Bash makes two assumptions when
     calculating load order of esl files:
@@ -480,7 +499,7 @@ from other packages previously overridden by the uninstalled package's
     <li> esls load among esms in the order of the plugins txt.
     <li> only extension matters - Bash does not look at the esl flag. Name your esls esls.
 </ol>
-<p>Special cc** esls are read from Fallout4/Skyrim.ccc file</p>
+<p>Special cc** .esl files are read from Fallout4/Skyrim.ccc file</p>
 
 <h3 id="load-set">Setting The Load Order <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Setting up a correct load order that minimises detrimental conflicts that could cause issues in-game can be a difficult and time-consuming process. Effective load-ordering often requires a knowledge of what each plugin in your load order contains so that you can position the plugins to minimise these conflicts. For simple mods, the description in the mod's readme will usually be sufficient to determine the records it contains, but to be sure a utility such as TES4Edit is required.
@@ -646,12 +665,12 @@ from other packages previously overridden by the uninstalled package's
         <tr><td>Import Actors: Death Items<td><em>Oblivion only.</em> Preserves the changes made to the items added to an actor when it dies by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td id="patchImportActorsSpells">Import Actors: Spells<td><em>Oblivion only.</em> Preserves the changes made to the spells actors have by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td id="patchImportCells">Import Cells<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to cell settings such as lighting, climate, music, name, owner, water and more.<td>Always, unless you are told otherwise by a mod's readme.
-        <tr><td>Import Factions<td><em>Oblivion, Fallout 3 and Fallout NV only.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td>Import Factions<td><em>Oblivion, Fallout 3 and Fallout&colon; New Vegas only.</em> Preserves the changes made to the factions an actor belongs to by the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td id="patchImportGraphics">Import Graphics<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various textures and models throughout the game.<td>The decision is entirely based on user preference. Choose whichever mods' graphics you prefer.
         <tr><td id="patchImportInventory">Import Inventory<td><em>All but Fallout 4.</em> Merges the changes made to the items in an actor's inventory by all the mods selected.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td id="patchImportNPCFaces">Import NPC Faces<td><em>Oblivion only.</em> Preserves the changes made to NPC faces by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' NPC faces you prefer.
         <tr><td id="patchImportNames">Import Names<td><em>All but Fallout 4.</em> Preserves the changes made to various names throughout the game by the mods selected.<td>The decision is entirely based on user preference. Choose whichever mods' names you prefer.
-        <tr><td id="patchImportRelations">Import Relations<td><em>Oblivion, Fallout 3 and Fallout NV only.</em> Preserves the changes made by the mods selected to how factions interact.<td>Always, unless you are told otherwise by a mod's readme.
+        <tr><td id="patchImportRelations">Import Relations<td><em>Oblivion, Fallout 3 and Fallout&colon; New Vegas only.</em> Preserves the changes made by the mods selected to how factions interact.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td>Import Roads<td><em>Oblivion only.</em> Preserves the changes made by the mods selected to the landscape's roads.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td>Import Scripts<td><em>Oblivion only.</em> Preserves the changes made by the mods selected to the scripts attached to things in the game.<td>Always, unless you are told otherwise by a mod's readme.
         <tr><td id="patchImportSounds">Import Sounds<td><em>All but Fallout 4.</em> Preserves the changes made by the mods selected to various sounds in the game.<td>The decision is entirely based on user preference. Choose whichever mods' sounds you prefer.
@@ -676,7 +695,7 @@ from other packages previously overridden by the uninstalled package's
 <table>
     <thead><tr><th>Section<th>Description<th>When You Should Use It
     <tbody>
-        <tr><td id="patchAliasModNames">Alias Mod Names<td><em>Oblivion, Fallout 3 and Fallout NV only.</em> Allows Wrye Bash to recognise some common renamings of plugins that are referenced in .csv data files that it imports as part of some Bashed Patch sections. Renamings should be listed in the text box for this section. The format is <code>Old.esp =&gt; New.esp</code>.<td>If you have renamed a plugin that is referenced in a CSV file you have selected in the Bashed Patch's configuration. It is recommended that you refrain from renaming plugins, as it can break parts of Wrye Bash and other utilities.
+        <tr><td id="patchAliasModNames">Alias Mod Names<td><em>Oblivion, Fallout 3 and Fallout&colon; New Vegas only.</em> Allows Wrye Bash to recognise some common renamings of plugins that are referenced in .csv data files that it imports as part of some Bashed Patch sections. Renamings should be listed in the text box for this section. The format is <code>Old.esp =&gt; New.esp</code>.<td>If you have renamed a plugin that is referenced in a CSV file you have selected in the Bashed Patch's configuration. It is recommended that you refrain from renaming plugins, as it can break parts of Wrye Bash and other utilities.
         <tr><td id="patchReplaceFormIDs">Replace Form IDs<td><em>Oblivion only.</em> Replaces a set of formIDs with another set of formIDs defined by a .csv file.<td>If you use a mod that tells you to use it.
         <tr><td id="patchCoblCatalogs">Cobl Catalogs<td><em>Oblivion only.</em> Updates Cobl's ingredient and effect catalogs to take into account those added by mods you use.<td>If you use Cobl (a.k.a. Common Oblivion).
         <tr><td>Cobl Exhaustion<td><em>Oblivion only.</em> Updates greater powers added by the mods that are listed in the selected .csv file options so that they're compatible with Cobl's Exhaustion feature.<td>If you use Cobl's Exhaustion feature.
@@ -696,10 +715,10 @@ from other packages previously overridden by the uninstalled package's
 <figcaption class="ini-overview-figcap">Wrye Bash's INI Edits tab, editing Oblivion.ini, Oblivion's configuration file, and All Natural.ini, a mod's configuration file. (Animated slideshow.)</figcaption>
 </figure>
 
-<p>The Ini Edits tab allows the user to quickly apply edits to Oblivion.ini, Skyrim.ini or Fallout4Custom.ini, depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
+<p>The Ini Edits tab allows the user to quickly apply edits to the games's INI file (e.g. Oblivion.ini, Skyrim.ini, Fallout4Custom.ini, etc.) depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
 <p>The drop-down box allows you to select the current ini file. The <q>Browse...</q> option in the drop-down box can be used to select an ini file not listed.
 <p>Selecting a tweak will display its contents in the middle column, and highlights the changes it applies to the current ini file in the right column. To apply a tweak, right click it and select <a href="#tweakApply">Apply</a>.
-<p><strong>Warning:</strong> Incorrect Oblivion.ini or Skyrim.ini settings can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.</p>
+<p><strong>Warning:</strong> Incorrect INI settings in the game INI can cause bugs, CTDs or other damage to your game. Advanced settings in particular tend to be machine-specific and should not be casually copied from one computer to another.</p>
 
 <h3 id="ini-symbols">What Symbols &amp; Colours Mean <a class="back2top" href="#contents">Back to top</a></h3>
 <table>
@@ -804,8 +823,8 @@ from other packages previously overridden by the uninstalled package's
 <ul>
  <li>Right-clicking the BOSS icon and selecting <q id="launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</q> will cause Wrye Bash to temporarily disable Lock Load Order
      when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order, re-enabling it after BOSS has finished running. It has no effect when BOSS
-     is run from outside Wrye Bash, or when Wrye Bash is running for Skyrim.
- <li>Right-clicking the BOSS icon and selecting the <q>Launch BOSS GUI</q> will cause Wrye Bash to launch BOSS's GUI instead of its command line interface.
+     is run from outside Wrye Bash, or when Wrye Bash is managing Skyrim or a newer game.
+ <li>Right-clicking the BOSS icon and selecting the <q>Launch using GUI</q> will cause Wrye Bash to launch BOSS's GUI instead of its command line interface.
     <li>If <strong>V</strong> is pressed, it will disable version parsing.
     <li>If <strong>R</strong> is pressed, it will do a level 1 revert (to the state just prior to the last sort).
     <li>If <strong>Shift-R</strong> is pressed, it will do a level 2 revert (to the state just prior to the 2nd last sort).
@@ -1206,7 +1225,7 @@ MemoryError</code>
   <li>
     <strong>Additional Thanks</strong>
     <ul>
-      <li><img alt="Alternity's Icon" src="../bash/images/people/altyavi32.gif"><span><a href="https://afkmods.iguanadons.net/index.php?/profile/1652-alt3rn1ty/">Alt3rn1ty:</a> For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim SE, and being an all-round bon oeuf.</span></li>
+      <li><img alt="Alternity's Icon" src="../bash/images/people/altyavi32.gif"><span><a href="https://afkmods.iguanadons.net/index.php?/profile/1652-alt3rn1ty/">Alt3rn1ty:</a> For Wrye Bash screenshot / UI images used in the documentation, corrections and suggestions, many INI tweaks for Skyrim, Fallout4 and Skyrim&colon; Special Edition, and being an all-round bon oeuf.</span></li>
       <li><img alt="Arthmoor's Icon" src="../bash/images/people/armravi32.png"><span><a href="https://github.com/Arthmoor">Arthmoor:</a> All-round support of the project including pushing code snippets from anonymous contributors, assisting with issue tracking, and generally high activity in and around the project.</span></li>
       <li><img alt="ElminsterAU's Icon" src="../bash/images/people/elmsavi32.png"><span><a href="https://github.com/ElminsterAU">ElminsterAU:</a> Bug catching, technical suggestions.</span></li>
       <li><img alt="Fireundubh's Icon" src="../bash/images/people/fireavi32.png"><span><a href="https://github.com/fireundubh">fireundubh:</a> Bug catching and fixes, and readability formatting.</span></li>
