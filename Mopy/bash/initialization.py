@@ -144,17 +144,17 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
     # Use local copy of the oblivion.ini if present
     # see: http://en.uesp.net/wiki/Oblivion:Ini_Settings
     # Oblivion reads the Oblivion.ini in the directory where it exists
-    # first, and only if bUseMyGames is non-existent or set to 1 does it
-    # then look for My Documents\My Games\Oblivion.ini. In other words,
-    # both can exist simultaneously, and only the value of bUseMyGames in
-    # the Oblivion.ini directory where Oblivion.exe is run from will
+    # first, and only if bUseMyGamesDirectory is non-existent or set to 1 does
+    # it then look for My Documents\My Games\Oblivion.ini. In other words,
+    # both can exist simultaneously, and only the value of bUseMyGamesDirectory
+    # in the Oblivion.ini directory where Oblivion.exe is run from will
     # actually matter.
     # Utumno: not sure how/if this applies to other games
     data_oblivion_ini = dirs['app'].join(game_info.iniFiles[0])
     game_ini_path = dirs['saveBase'].join(game_info.iniFiles[0])
     dirs['mods'] = dirs['app'].join(u'Data')
     if data_oblivion_ini.exists():
-        oblivionIni = ConfigParser()
+        oblivionIni = ConfigParser(allow_no_value=True)
         oblivionIni.read(data_oblivion_ini.s)
         # is bUseMyGamesDirectory set to 0?
         if get_ini_option(oblivionIni, u'bUseMyGamesDirectory') == u'0':
