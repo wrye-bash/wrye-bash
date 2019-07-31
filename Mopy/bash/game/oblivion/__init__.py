@@ -72,8 +72,9 @@ class OblivionGameInfo(GameInfo):
     class ge(GameInfo.ge):
         ge_abbrev = u'OBGE'
         long_name = u'Oblivion Graphics Extender'
-        exe = [(u'Data',u'obse',u'plugins',u'obge.dll'),
-               (u'Data',u'obse',u'plugins',u'obgev2.dll'),
+        exe = [(u'obse', u'plugins', u'obge.dll'),
+               (u'obse', u'plugins', u'obgev2.dll'),
+               (u'obse', u'plugins', u'oblivionreloaded.dll'),
                ]
         url = u'https://www.nexusmods.com/oblivion/mods/30054'
         url_tip = u'https://www.nexusmods.com/oblivion'
