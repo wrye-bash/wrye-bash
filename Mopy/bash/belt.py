@@ -1415,7 +1415,8 @@ class WryeParser(ScriptParser.Parser):
             #this select
             self.PushFlow(u'Select', False, [u'SelectOne', u'SelectMany', u'EndSelect'])
             return
-        main_desc = args.pop(0)
+        # Escape ampersands, since they're treated as escape characters by wx
+        main_desc = args.pop(0).replace(u'&', u'&&')
         if len(args) % 3:
             error(MISSING_ARGS % name)
         images = []
