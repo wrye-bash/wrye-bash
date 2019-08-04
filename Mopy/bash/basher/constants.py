@@ -47,8 +47,8 @@ colorInfo = {
           u'Masters info on both the Mods Tab and Saves Tab.'),),
     'mods.text.eslm': (_(u'ESLM'),
         _(u'Tabs: Mods, Saves') + u'\n\n' +
-        _(u'This is the text color used for ESLs with a master flag in the'
-          u'Mods Tab, and in the Masters info on both the Mods Tab and Saves'
+        _(u'This is the text color used for ESLs with a master flag in the '
+          u'Mods Tab, and in the Masters info on both the Mods Tab and Saves '
           u'Tab.'),),
     'mods.text.noMerge': (_(u"'NoMerge' Plugin"),
         _(u'Tabs: Mods') + u'\n\n' +
@@ -138,9 +138,9 @@ colorInfo = {
     ),
 }
 if bush.game.check_esl:
-    colorInfo['mods.text.mergeable'] = (_(u'Esl Capable plugin'),
+    colorInfo['mods.text.mergeable'] = (_(u'ESL Capable plugin'),
             _(u'Tabs: Mods') + u'\n\n' +
-            _(u'This is the text color used for Esl Capable plugins.'),
+            _(u'This is the text color used for ESL Capable plugins.'),
         )
 else:
     colorInfo['mods.text.mergeable'] = (_(u'Mergeable Plugin'),
