@@ -272,7 +272,7 @@ def pack_7z(file_list, archive, list_path):
         for node in sorted(file_list, key=unicode.lower):
             out.write(node)
             out.write("\n")
-    cmd_7z = [EXE_7z, "a", "-mx9", archive, "@%s" % list_path]
+    cmd_7z = [EXE_7z, "a", "-m0=lzma2", "-mx9", archive, "@%s" % list_path]
     try:
         utils.run_subprocess(cmd_7z, LOGGER, cwd=ROOT_PATH)
     finally:

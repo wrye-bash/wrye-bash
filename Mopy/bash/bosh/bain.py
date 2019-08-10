@@ -1505,6 +1505,10 @@ class InstallerProject(Installer):
             #--Compress
             command = u'"%s" a "%s" -t"%s" %s -y -r -o"%s" -i!"%s\\*" -x@%s -scsUTF-8 -sccUTF-8' % (
                 archives.exe7z, outFile.temp.s, archiveType, solid, outDir.s, projectDir.s, self.tempList.s)
+            if archiveType == u'7z':
+                # 7zip-zstd defaults to zstd compression, but we want to be
+                # compatible with regular 7zip, so specify LZMA2 explicitly
+                command += u' -m0=lzma2'
             try:
                 compress7z(command, outDir, outFile.tail, projectDir, progress)
             finally:
