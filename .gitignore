@@ -36,8 +36,10 @@ Mopy/bash/l10n/*NEW.txt
 
 # IDE files
 .idea/
+.vscode/
 # if a symlink
 .idea
+.vscode
 
 # The LOOT API binaries
 Mopy/loot_api.*
