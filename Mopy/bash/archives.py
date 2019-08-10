@@ -148,8 +148,11 @@ def compressionSettings(archive_path, blockSize, isSolid):
 
 def compressCommand(destArchive, destDir, srcFolder, solid=u'-ms=on',
                     archiveType=u'7z'): # WIP - note solid on by default (7z)
+    # 7zip-zstd defaults to zstd compression, but we want to be compatible with
+    # regular 7zip, so specify LZMA2 explicitly
+    compression_method = [u'-m0=lzma2'] if archiveType == u'7z' else []
     return [exe7z, u'a', destDir.join(destArchive).temp.s,
-            u'-t%s' % archiveType] + solid.split() + [
+            u'-t%s' % archiveType] + solid.split() + compression_method + [
             u'-y', u'-r', # quiet, recursive
             u'-o"%s"' % destDir.s,
             u'-scsUTF-8', u'-sccUTF-8', # encode output in unicode
