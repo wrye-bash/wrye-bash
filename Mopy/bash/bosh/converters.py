@@ -457,7 +457,9 @@ class InstallerConverter(object):
                 if GPath(fileName).cext in readExts:
                     fileAppend(fileName)
             if len(fileList): subArchives[installerCRC] = fileList
-        if len(subArchives):
+        # TODO(inf) Hacky temp fix - real fix is probably passing a valid
+        #  crc_installer param to this method
+        if len(subArchives) and crc_installer:
             archivedFiles = dict()
             nextStep = step = 0.3 / len(subArchives)
             #--Extract any subArchives

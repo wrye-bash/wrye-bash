@@ -2552,60 +2552,80 @@ class InstallersData(DataStore):
             self.irefresh(what='NS')
 
     #--Utils
-    def getConflictReport(self, srcInstaller, mode, modInfos):
-        """Returns report of overrides for specified package for display on conflicts tab.
-        mode: OVER: Overrides; UNDER: Underrides"""
-        srcOrder = srcInstaller.order
-        conflictsMode = (mode == 'OVER')
-        if conflictsMode:
-            #mismatched = srcInstaller.mismatchedFiles | srcInstaller.missingFiles
-            mismatched = set(srcInstaller.ci_dest_sizeCrc)
-        else:
-            mismatched = srcInstaller.underrides
-        if not mismatched: return u''
-        showInactive = conflictsMode and bass.settings['bash.installers.conflictsReport.showInactive']
-        showLower = conflictsMode and bass.settings['bash.installers.conflictsReport.showLower']
+    def _get_active_bsas(self, inst, active_bsas):
+        return (k for k in active_bsas if k.name.s in inst.ci_dest_sizeCrc)
+
+    def _deprint(self, bs, inst):
+        deprint(u'Error parsing %s [%s]' % (bs.name, inst.archive),
+                traceback=True)
+
+    def find_conflicts(self, src_installer, active_bsas=None,
+                       conflicts_mode=True):
+        """
+        Returns all conflicts for the specified installer, filtering them by
+        BSA (if enabled by the user) or loose file and whether they are lower
+        or higher than the specified installer.
+
+        :param src_installer: The installer to find conflicts for.
+        :param active_bsas: The list of currently active BSAs. Can be retrieved
+                            via bosh.modInfos.get_active_bsas(). Only needed if
+                            BSA conflicts are enabled (via
+                            bash.installers.conflictsReport.showBSAConflicts).
+        :param conflicts_mode: Whether to list overrides (True) or underrides
+                               (False).
+        :return: Four lists corresponding to the lower loose, higher loose,
+                 lower BSA and higher BSA conflicts. If BSA conflicts are not
+                 enabled, the last two will be None instead.
+        """
+        srcOrder = src_installer.order
+        showInactive = conflicts_mode and bass.settings['bash.installers.conflictsReport.showInactive']
+        showLower = conflicts_mode and bass.settings['bash.installers.conflictsReport.showLower']
         showBSA = bass.settings['bash.installers.conflictsReport.showBSAConflicts']
-        src_sizeCrc = srcInstaller.ci_dest_sizeCrc
-        packConflicts = []
-        bsaConflicts = []
+        if conflicts_mode:
+            mismatched = set(src_installer.ci_dest_sizeCrc)
+        else:
+            mismatched = src_installer.underrides
+        if not mismatched: return [], [], [], []
+        src_sizeCrc = src_installer.ci_dest_sizeCrc
         # Calculate bsa conflicts
         if showBSA:
-            active_bsas = modInfos.get_active_bsas()
-            def _get_active_bsas(inst):
-                return (k for k in active_bsas if
-                        k.name.s in inst.ci_dest_sizeCrc)
-            def _deprint(bs, inst):
-                deprint(u'Error parsing %s [%s]' % (bs.name, inst.archive),
-                        traceback=True)
-            # Map srcInstaller's active bsas' assets to those bsas, assigning
-            # the assets to the highest loading bsa - 99% we have just one bsa
-            src_bsa_to_assets, src_assets = collections.OrderedDict(), set()
-            for b in reversed(list(_get_active_bsas(srcInstaller))):
-                try:
-                    b_assets = b.assets - src_assets
-                except BSAError:
-                    _deprint(b, srcInstaller)
-                    continue
-                if b_assets:
-                    src_bsa_to_assets[b] = b_assets
-                    src_assets |= b_assets
-            # Calculate all conflicts and save them in bsaConflicts
+            lower_bsa, higher_bsa = [], []
+            # Calculate all conflicts and save them in lower_bsa and higher_bsa
+            asset_to_bsa, src_assets = self.find_src_assets(src_installer,
+                                                            active_bsas)
             for package, installer in self.sorted_pairs():
-                if installer.order == srcOrder or not (
-                            showInactive or installer.isActive):
+                if installer.order == srcOrder or not (showInactive or
+                                                       installer.isActive):
                     continue # check active installers different than src
-                for bsa_info in _get_active_bsas(installer):
+                for bsa_info in self._get_active_bsas(installer, active_bsas):
                     try: # conflicting assets from this installer active bsas
                         curConflicts = bsa_info.assets & src_assets
                     except BSAError:
-                        _deprint(bsa_info, installer)
+                        self._deprint(bsa_info, installer)
                         continue
                     if curConflicts:
-                        bsaConflicts.append(
-                            (package, bsa_info, bolt.sortFiles(curConflicts)))
-            bsaConflicts.sort(key=lambda tup: active_bsas[tup[1]])
-        # Calculate esp/esm conflicts
+                        lower_result, higher_result = set(), set()
+                        for conflict in curConflicts:
+                            orig_order = active_bsas[asset_to_bsa[conflict]]
+                            curr_order = active_bsas[bsa_info]
+                            if curr_order == orig_order: continue
+                            elif curr_order < orig_order:
+                                if showLower: lower_result.add(conflict)
+                            else:
+                                higher_result.add(conflict)
+                        if lower_result:
+                            lower_bsa.append((package, bsa_info,
+                                              bolt.sortFiles(lower_result)))
+                        if higher_result:
+                            higher_bsa.append((package, bsa_info,
+                                               bolt.sortFiles(higher_result)))
+            def _sort_bsa_conflicts(conflict): return active_bsas[conflict[1]]
+            lower_bsa.sort(key=_sort_bsa_conflicts)
+            higher_bsa.sort(key=_sort_bsa_conflicts)
+        else:
+            lower_bsa, higher_bsa = None, None
+        # Calculate loose conflicts
+        lower_loose, higher_loose = [], []
         for package, installer in self.sorted_pairs():
             if installer.order == srcOrder or not (
                         showInactive or installer.isActive): continue
@@ -2614,60 +2634,90 @@ class InstallersData(DataStore):
                 [x for x, y in installer.ci_dest_sizeCrc.iteritems()
                 if x in mismatched and y != src_sizeCrc[x]])
             if curConflicts:
-                packConflicts.append((installer, package.s, curConflicts))
+                if installer.order < srcOrder:
+                    conflict_type = lower_loose
+                else:
+                    conflict_type = higher_loose
+                conflict_type.append((installer, package.s, curConflicts))
+        return lower_loose, higher_loose, lower_bsa, higher_bsa
+
+    def find_src_assets(self, src_installer, active_bsas):
+        """Map srcInstaller's active bsas' assets to those bsas, assigning
+        the assets to the highest loading bsa - there's generally only one BSA
+        for Skyrim and older, one or two for SSE and any number of BSAs for
+        FO4.
+
+        :param src_installer: The installer from which to retrieve BSA assets.
+        :param active_bsas: The set of active BSAs. Generally retrieved via
+                            bosh.modInfos.get_active_bsas().
+        :return: An OrderedDict containing a mapping from asset to BSA and the
+                 relevant assets from the installer's BSAs in a set."""
+        asset_to_bsa, src_assets = collections.OrderedDict(), set()
+        for b in reversed(list(self._get_active_bsas(src_installer,
+                                                     active_bsas))):
+            try:
+                b_assets = b.assets - src_assets
+            except BSAError:
+                self._deprint(b, src_installer)
+                continue
+            if b_assets:
+                for b_asset in b_assets:
+                    asset_to_bsa[b_asset] = b
+                src_assets |= b_assets
+        return asset_to_bsa, src_assets
+
+    def getConflictReport(self, srcInstaller, mode, modInfos):
+        """Returns report of overrides for specified package for display on
+        conflicts tab.
+
+        :param srcInstaller: The installer to find conflicts for.
+        :param mode: 'OVER': Overrides; 'UNDER': Underrides.
+        :param modInfos: bosh.modInfos
+        :return: A string containing the printable report of all conflicts."""
+        conflictsMode = (mode == 'OVER')
+        if conflictsMode:
+            if not set(srcInstaller.ci_dest_sizeCrc): return u''
+        else:
+            if not srcInstaller.underrides: return u''
+        showLower = conflictsMode and bass.settings['bash.installers.conflictsReport.showLower']
+        showBSA = bass.settings['bash.installers.conflictsReport.showBSAConflicts']
+        active_bsas = modInfos.get_active_bsas() if showBSA else None
+        lower_loose, higher_loose, lower_bsa, higher_bsa = self.find_conflicts(
+            srcInstaller, active_bsas, conflictsMode)
         # Generate report
         with sio() as buff:
             # Print BSA conflicts
             if showBSA:
                 buff.write(u'= %s %s\n\n' % (_(u'Active BSA Conflicts'), u'=' * 40))
-                #map bsas (lowest loading bsas first) to their set of conflicts
-                bsa_package_to_conflicts = collections.OrderedDict()
-                for package, bsa, srcFiles in bsaConflicts:
-                    src_bsa_to_confl = collections.defaultdict(list)
-                    for confl in srcFiles:
-                        for i, j in src_bsa_to_assets.iteritems():
-                            if confl in j:
-                                src_bsa_to_confl[i].append(confl)
-                    bsa_package_to_conflicts[(bsa, package)] = src_bsa_to_confl
                 # Print partitions - bsa loading order NOT installer order
-                lower, higher = [], []
-                for (bsa, package), (src_bsa_to_confl) in \
-                        bsa_package_to_conflicts.iteritems():
-                    bsa_order = active_bsas[bsa]
-                    for src_bsa, confl in src_bsa_to_confl.iteritems():
-                        partition = higher if (
-                            active_bsas[src_bsa] < bsa_order) else lower
-                        partition.append((bsa, package, confl))
                 def _print_bsa_conflicts(conflicts, title=_(u'Lower')):
                     buff.write(u'= %s %s\n' % (title, u'=' * 40))
-                    for bsa_, package_, confl_ in conflicts:
+                    for package_, bsa_, confl_ in conflicts:
                         buff.write(u'==%X== %s : %s\n' % (
                             active_bsas[bsa_], package_, bsa_.name))
                         buff.write(u'\n'.join(confl_) + u'\n\n')
-                if showLower and lower:
-                    _print_bsa_conflicts(lower, _(u'Lower'))
-                if higher:
-                    _print_bsa_conflicts(higher, _(u'Higher'))
-            isHigher = -1
-            if showBSA: buff.write(
-                u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
+                if showLower and lower_bsa:
+                    _print_bsa_conflicts(lower_bsa, _(u'Lower'))
+                if higher_bsa:
+                    _print_bsa_conflicts(higher_bsa, _(u'Higher'))
+                buff.write(u'= %s %s\n\n' % (_(u'Loose File Conflicts'), u'=' * 36))
             # Print loose file conflicts
-            for installer,package,srcFiles in packConflicts:
-                order = installer.order
-                # Print partitions
-                if showLower and (order > srcOrder) != isHigher:
-                    isHigher = (order > srcOrder)
-                    buff.write(u'= %s %s\n' % ((_(u'Lower'),_(u'Higher'))[isHigher],u'='*40))
-                buff.write(u'==%d== %s\n'% (order,package))
-                # Print srcFiles
-                for src_file in srcFiles:
-                    oldName = installer.getEspmName(src_file)
-                    buff.write(oldName)
-                    if oldName != src_file:
-                        buff.write(u' -> ')
-                        buff.write(src_file)
+            def _print_loose_conflicts(conflicts, title=_(u'Lower')):
+                buff.write(u'= %s %s\n' % (title, u'=' * 40))
+                for inst_, package_, confl_ in conflicts:
+                    buff.write(u'==%d== %s\n' % (inst_.order, package_))
+                    for src_file in confl_:
+                        oldName = inst_.getEspmName(src_file)
+                        buff.write(oldName)
+                        if oldName != src_file:
+                            buff.write(u' -> ')
+                            buff.write(src_file)
+                        buff.write(u'\n')
                     buff.write(u'\n')
-                buff.write(u'\n')
+            if showLower and lower_loose:
+                    _print_loose_conflicts(lower_loose, _(u'Lower'))
+            if higher_loose:
+                    _print_loose_conflicts(higher_loose, _(u'Higher'))
             report = buff.getvalue()
         if not conflictsMode and not report and not srcInstaller.isActive:
             report = _(u"No Underrides. Mod is not completely un-installed.")

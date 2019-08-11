@@ -32,7 +32,6 @@ Their window attribute points to the InstallersPanel singleton.
 """
 
 import StringIO
-import copy
 import os
 import re
 import webbrowser
@@ -202,8 +201,6 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         with balt.BusyCursor():
             installer = self._selected_info
             subs = []
-            oldRemaps = copy.copy(installer.remaps)
-            installer.remaps = {} # FIXME(ut): only clear if not cancelled ?
             idetails = self.iPanel.detailsPanel
             idetails.refreshCurrent(installer)
             for index in xrange(idetails.gSubList.GetCount()):
@@ -218,7 +215,6 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
         ret = wizard.Run()
         self._save_size_pos(default, ret)
         if ret.canceled:
-            installer.remaps = oldRemaps
             idetails.refreshCurrent(installer)
             return
         #Check the sub-packages that were selected by the wizard

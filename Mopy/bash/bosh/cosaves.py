@@ -390,6 +390,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
 
     def __init__(self, ins, chunk_type):
         super(_xSEChunkARVR, self).__init__(ins, chunk_type)
+        self.elements = []
         self.mod_index = unpack_byte(ins)
         self.array_id = unpack_int(ins)
         self.key_type = unpack_byte(ins)
@@ -400,7 +401,6 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             for x in xrange(num_references):
                 self.references.append(unpack_byte(ins))
         num_elements = unpack_int(ins)
-        self.elements = []
         for x in xrange(num_elements):
             self.elements.append(self._xSEEntryARVR(ins, self.key_type))
 
