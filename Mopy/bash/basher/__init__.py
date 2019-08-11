@@ -2882,6 +2882,25 @@ class InstallersDetails(_SashDetailsPanel):
             nConfigured = len(installer.ci_dest_sizeCrc)
             nMissing = len(installer.missingFiles)
             nMismatched = len(installer.mismatchedFiles)
+            # Handle overrides first
+            show_bsa = bass.settings['bash.installers.conflictsReport.showBSAConflicts']
+            active_bsas = bosh.modInfos.get_active_bsas()
+            def _count_conflicts(accum, entry): return accum + len(entry[2])
+            lower_loose, higher_loose, lower_bsa, higher_bsa = \
+                self._idata.find_conflicts(installer, active_bsas)
+            n_lower_conflicts = reduce(_count_conflicts, lower_loose, 0)
+            if show_bsa:
+                n_lower_conflicts += reduce(_count_conflicts, lower_bsa, 0)
+            n_higher_conflicts = reduce(_count_conflicts, higher_loose, 0)
+            if show_bsa:
+                n_higher_conflicts += reduce(_count_conflicts, higher_bsa, 0)
+            # Next, do the same for underrides
+            lower_loose, higher_loose, lower_bsa, higher_bsa = \
+                self._idata.find_conflicts(installer, active_bsas,
+                                           conflicts_mode=False)
+            n_underrides = reduce(_count_conflicts, higher_loose, 0)
+            n_dirty = len(installer.dirty_sizeCrc)
+
             if installer.is_project():
                 info += _(u'Size:') + u' %s\n' % round_size(installer.fsize)
             elif installer.is_marker():
@@ -2909,13 +2928,24 @@ class InstallersDetails(_SashDetailsPanel):
             info += (_(u'Configured:')+u' %u (%s)\n' % (
                 nConfigured, round_size(installer.unSize)),
                      _(u'Configured:')+u' N/A\n',)[installer.is_marker()]
-            info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
-                nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
-            info += (_(u'  Missing:')+u' %s\n' % installer.number_string(
-                nMissing, marker_string=u'N/A'))
-            info += (_(u'  Conflicts:')+u' %s\n' % installer.number_string(
-                nMismatched, marker_string=u'N/A'))
+            if nConfigured > 0:
+                info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
+                    nConfigured - nMissing - nMismatched, marker_string=u'N/A'))
+                info += (_(u'  Missing:')+u' %s\n' % installer.number_string(
+                    nMissing, marker_string=u'N/A'))
+                info += (_(u'  Conflicts:')+u' %s\n' % installer.number_string(
+                    nMismatched, marker_string=u'N/A'))
+                if nMismatched > 0:
+                    info += (_(u'    Overridden:')+u' %s\n' % installer.number_string(
+                        n_higher_conflicts, marker_string=u'N/A'))
+                info += (_(u'  Overrides:')+u' %s\n' % installer.number_string(
+                    n_lower_conflicts, marker_string=u'N/A'))
+                info += (_(u'  Underridden:')+u' %s\n' % installer.number_string(
+                    n_underrides, marker_string=u'N/A'))
             info += u'\n'
+            if n_dirty > 0:
+                info += (_(u'Dirty:')+u' %s\n' % installer.number_string(
+                    n_dirty, marker_string=u'N/A'))
             #--Infoboxes
             gPage.text_content = info + dumpFiles(
                 installer.ci_dest_sizeCrc, u'== ' + _(u'Configured Files'))
