@@ -118,9 +118,17 @@ def isPBashMergeable(modInfo, minfos, reasons):
         reasons.append(_(u'Is a master of mod(s): ')+u', '.join(sorted(dependent))+u'.')
     return False if reasons else True
 
-def is_esl_capable(modInfo, minfos, reasons):
-    """Returns True or error message indicating whether specified mod is
-    convertible to a light plugin."""
+def is_esl_capable(modInfo, _minfos, reasons):
+    """Determines whether or not the specified mod can be converted to a light
+    plugin. Optionally also returns the reasons it can't be converted.
+
+    :param modInfo: The mod to check.
+    :param _minfos: Ignored. Needed to mirror the signature of isPBashMergeable
+                    and isCBashMergeable.
+    :param reasons: A list of strings that should be filled with the reasons
+                    why this mod can't be ESL flagged, or None if only the
+                    return value of this method is of interest.
+    :return: True if the specified mod could be flagged as ESL."""
     verbose = reasons is not None
     if modInfo.isBP():
         if not verbose: return False
