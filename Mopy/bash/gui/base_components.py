@@ -29,6 +29,41 @@ __author__ = u'nycz, Infernio'
 
 import wx as _wx
 
+# Utilities -------------------------------------------------------------------
+class Color(object):
+    """A simple RGB(A) color class used to avoid having to return wx.Colour
+    objects."""
+    def __init__(self, red, green, blue, alpha=255): # type: (int, int, int, int) -> None
+        """Creates a new color object with the specified color properties.
+        Note that all color components must be in the range [0-255] (inclusive
+        on both ends), otherwise a RuntimeException is raised.
+
+        :param red: The amount of red in this color: [0-255].
+        :param green: The amount of green in this color: [0-255].
+        :param blue: The amount of blue in this color: [0-255].
+        :param alpha: The amount of alpha in this color: [0-255]. Defaults to
+                      255."""
+        for color in (red, green, blue, alpha):
+            if color < 0 or color > 255:
+                raise RuntimeError(u'All color components must be in range '
+                                   u'0-255.')
+        self.red, self.green, self.blue, self.alpha = red, green, blue, alpha
+
+    def _to_wx(self): # type: () -> _wx.Colour
+        """Converts this Color object back into a wx.Colour object.
+
+        :return: A wx.Colour object representing the same color as this one."""
+        return _wx.Colour(self.red, self.green, self.blue, self.alpha)
+
+    @staticmethod
+    def _from_wx(color): # type: (_wx.Colour) -> Color
+        """Creates a new Color object by copying the color properties from the
+        specified wx.Colour object.
+
+        :param color: The wx.Colour object to copy.
+        :return: A Color object representing the same color."""
+        return Color(color.red, color.green, color.blue, color.alpha)
+
 # Base Elements ---------------------------------------------------------------
 class _AWidget(object):
     """Abstract base class for all GUI items. Holds a reference to the native
