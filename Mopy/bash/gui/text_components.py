@@ -32,6 +32,7 @@ import wx as _wx
 
 from .base_components import _AWidget
 
+# Text Input ------------------------------------------------------------------
 class _ATextInput(_AWidget):
     """Abstract base class for all text input classes."""
     # TODO: consider on_lose_focus
@@ -197,7 +198,24 @@ class TextField(_ATextInput):
                                         max_length=max_length,
                                         no_border=no_border)
 
-class Label(_AWidget):
+# Labels ----------------------------------------------------------------------
+class _ALabel(_AWidget):
+    """Abstract base class for labels."""
+    @property
+    def label_text(self): # type: () -> unicode
+        """Returns the text of this label as a string.
+
+        :return: The text of this label."""
+        return self._native_widget.GetLabel()
+
+    @label_text.setter
+    def label_text(self, new_text): # type: (unicode) -> None
+        """Changes the text of this label to the specified string.
+
+        :param new_text: The new text to use."""
+        self._native_widget.SetLabel(new_text)
+
+class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
     def __init__(self, parent, text):
@@ -215,16 +233,21 @@ class Label(_AWidget):
         :param max_length: The maximum number of pixels a line may be long."""
         self._native_widget.Wrap(max_length)
 
-    @property
-    def label_text(self): # type: () -> unicode
-        """Returns the text of this label as a string.
+class HyperlinkLabel(_ALabel):
+    """A label that opens a URL when clicked, imitating a hyperlink in a
+    browser. Typically styled blue."""
+    def __init__(self, parent, text, url, always_unvisited=False):
+        """Creates a new HyperlinkLabel with the specified parent, text and
+        URL.
 
-        :return: The text of this label."""
-        return self._native_widget.GetLabel()
-
-    @label_text.setter
-    def label_text(self, new_text): # type: (unicode) -> None
-        """Changes the text of this label to the specified string.
-
-        :param new_text: The new text to use."""
-        self._native_widget.SetLabel(new_text)
+        :param parent: The object that this hyperlink label belongs to.
+        :param text: The text of this hyperlink label.
+        :param url: The URL to open when this hyperlink label is clicked on.
+        :param always_unvisited: If set to True, this link will always appear
+                                 as if it hasn't been clicked on (i.e. blue -
+                                 it will never turn purple)."""
+        super(HyperlinkLabel, self).__init__()
+        self._native_widget = _wx.HyperlinkCtrl(parent, _wx.ID_ANY, text, url)
+        if always_unvisited:
+            self._native_widget.SetVisitedColour(
+                self._native_widget.GetNormalColour())
