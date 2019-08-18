@@ -31,24 +31,30 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 
 from .base_components import _AWidget
+from .events import EventHandler
 
 # Text Input ------------------------------------------------------------------
 class _ATextInput(_AWidget):
-    """Abstract base class for all text input classes."""
-    # TODO: consider on_lose_focus
+    """Abstract base class for all text input classes.
+
+    Events:
+     - on_focus_lost(): Posted when this text input goes out of focus. Used in
+       WB to auto-save edits.
+     - on_right_clicked(): Posted when this text input is right-clicked.
+     - on_text_changed(new_text: unicode): Posted when the text in this text
+       input changes. Be warned that changing it via _ATextInput.text_content
+       also posts this event, so if you have to change text in response to this
+       event, use _ATextInput.modified to check if it was a user modification;
+       otherwise, you risk getting into an infinite loop."""
     # TODO: style and/or (fixed) font
     def __init__(self, parent, text=None, multiline=True, editable=True,
-                 on_text_change=None, auto_tooltip=True, max_length=None,
-                 no_border=False, style=0):
+                 auto_tooltip=True, max_length=None, no_border=False, style=0):
         """Creates a new _ATextInput instance with the specified properties.
 
         :param parent: The object that this text input belongs to.
         :param text: The initial text in this text input.
         :param multiline: True if this text input allows multiple lines.
         :param editable: True if the user may edit text in this text input.
-        :param on_text_change: A callback to call whenever the text in this
-                               text input changes. Takes a single parameter,
-                               the wx event that occurred. TODO(inf) de-wx!
         :param auto_tooltip: Whether or not to automatically show a tooltip
                              when the entered text exceeds the length of this
                              text input.
@@ -60,41 +66,42 @@ class _ATextInput(_AWidget):
         :param style: Internal parameter used to allow subclasses to wrap style
                       flags on their own."""
         super(_ATextInput, self).__init__()
+        # Construct the native widget
         if multiline: style |= _wx.TE_MULTILINE
         if not editable: style |= _wx.TE_READONLY
         if no_border: style |= _wx.BORDER_NONE
         self._native_widget = _wx.TextCtrl(parent, style=style)
         if text: self._native_widget.SetValue(text)
-        if on_text_change:
-            self._native_widget.Bind(_wx.EVT_TEXT, on_text_change)
-        if auto_tooltip:
-            self._native_widget.Bind(_wx.EVT_SIZE, self.__on_size_change)
-            self._native_widget.Bind(_wx.EVT_TEXT, self.__on_text_change)
         if max_length:
             self._native_widget.SetMaxLength(max_length)
+        # Events
+        # Internal use only - used to implement auto_tooltip below
+        self._on_size_changed = EventHandler(self._native_widget, _wx.EVT_SIZE)
+        self.on_focus_lost = EventHandler(self._native_widget,
+                                          _wx.EVT_KILL_FOCUS)
+        self.on_right_clicked = EventHandler(self._native_widget,
+                                             _wx.EVT_CONTEXT_MENU)
+        self.on_text_changed = EventHandler(self._native_widget, _wx.EVT_TEXT,
+                                            lambda event: [event.GetString()])
+        # Need to delay this until now since it uses the events from above
+        if auto_tooltip:
+            self._on_size_changed.subscribe(self._on_size_change)
+            self.on_text_changed.subscribe(self._update_tooltip)
 
-    def __update_tooltip(self, text): # type: (unicode) -> None
-        """Internal method that shows or hides the tooltip depending on the
+    def _update_tooltip(self, new_text): # type: (unicode) -> None
+        """Internal callback that shows or hides the tooltip depending on the
         length of the currently entered text and the size of this text input.
 
-        :param text: The text inside this text input."""
-        w = self._native_widget
-        self.tooltip = (text if w.GetClientSize()[0] < w.GetTextExtent(text)[0]
-                        else None)
+        :param new_text: The text inside this text input."""
+        n_widget = self._native_widget
+        if n_widget.GetClientSize()[0] < n_widget.GetTextExtent(new_text)[0]:
+            self.tooltip = new_text
+        else:
+            self.tooltip = None
 
-    def __on_text_change(self, event):
-        """Internal callback that updates the tooltip when the text changes.
-
-        :param event: The wx event that occurred."""
-        self.__update_tooltip(event.GetString())
-        event.Skip()
-
-    def __on_size_change(self, event):
-        """Internal callback that updates the tooltip when the size changes.
-
-        :param event: The wx event that occurred."""
-        self.__update_tooltip(self._native_widget.GetValue())
-        event.Skip()
+    def _on_size_change(self):
+        """Internal callback that updates the tooltip when the size changes."""
+        self._update_tooltip(self._native_widget.GetValue())
 
     @property
     def editable(self): # type: () -> bool
@@ -143,18 +150,15 @@ class _ATextInput(_AWidget):
         self._native_widget.SetModified(is_modified)
 
 class TextArea(_ATextInput):
-    """A multi-line text edit widget."""
-    def __init__(self, parent, text=None, editable=True, on_text_change=None,
-                 auto_tooltip=True, max_length=None, no_border=False,
-                 wrap=True):
+    """A multi-line text edit widget. See the documentation for _ATextInput
+    for a list of the events this component offers."""
+    def __init__(self, parent, text=None, editable=True, auto_tooltip=True,
+                 max_length=None, no_border=False, wrap=True):
         """Creates a new TextArea instance with the specified properties.
 
         :param parent: The object that this text input belongs to.
         :param text: The initial text in this text input.
         :param editable: True if the user may edit text in this text input.
-        :param on_text_change: A callback to call whenever the text in this
-                               text input changes. Takes a single parameter,
-                               the wx event that occurred. TODO(inf) de-wx!
         :param auto_tooltip: Whether or not to automatically show a tooltip
                              when the entered text exceeds the length of this
                              text input.
@@ -166,23 +170,20 @@ class TextArea(_ATextInput):
         :param wrap: Whether or not to wrap text inside this text input."""
         wrap_style = _wx.TE_DONTWRAP if not wrap else 0
         super(TextArea, self).__init__(parent, text=text, editable=editable,
-                                       on_text_change=on_text_change,
                                        auto_tooltip=auto_tooltip,
                                        max_length=max_length,
                                        no_border=no_border, style=wrap_style)
 
 class TextField(_ATextInput):
-    """A single-line text edit widget."""
-    def __init__(self, parent, text=None, editable=True, on_text_change=None,
-                 auto_tooltip=True, max_length=None, no_border=False):
+    """A single-line text edit widget. See the documentation for _ATextInput
+    for a list of the events this component offers."""
+    def __init__(self, parent, text=None, editable=True, auto_tooltip=True,
+                 max_length=None, no_border=False):
         """Creates a new TextField instance with the specified properties.
 
         :param parent: The object that this text input belongs to.
         :param text: The initial text in this text input.
         :param editable: True if the user may edit text in this text input.
-        :param on_text_change: A callback to call whenever the text in this
-                               text input changes. Takes a single parameter,
-                               the wx event that occurred. TODO(inf) de-wx!
         :param auto_tooltip: Whether or not to automatically show a tooltip
                              when the entered text exceeds the length of this
                              text input.
@@ -193,7 +194,6 @@ class TextField(_ATextInput):
                           hidden."""
         super(TextField, self).__init__(parent, text=text, multiline=False,
                                         editable=editable,
-                                        on_text_change=on_text_change,
                                         auto_tooltip=auto_tooltip,
                                         max_length=max_length,
                                         no_border=no_border)

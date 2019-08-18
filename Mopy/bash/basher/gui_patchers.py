@@ -160,9 +160,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         #    _(u"Example Mod 1.esp >> Example Mod 1.2.esp"))
         #--Aliases Text
         self.gAliases = TextArea(gConfigPanel)
-        # TOOD(inf) de-wx!
-        balt.set_event_hook(self.gAliases._native_widget,
-                            balt.Events.FOCUS_LOST, self.OnEditAliases)
+        self.gAliases.on_focus_lost.subscribe(self.OnEditAliases)
         self.SetAliasText()
         #--Sizing
         self.main_layout.add((self.gAliases,
@@ -174,8 +172,7 @@ class _AliasesPatcherPanel(_PatcherPanel):
         self.gAliases.text_content = u'\n'.join([
             u'%s >> %s' % (key.s,value.s) for key,value in sorted(self.aliases.items())])
 
-    def OnEditAliases(self, event):
-        event.Skip()
+    def OnEditAliases(self):
         aliases_text = self.gAliases.text_content
         self.aliases.clear()
         for line in aliases_text.split(u'\n'):

@@ -988,9 +988,9 @@ class ListEditor(Dialog):
         self.gInfoBox = None # type: TextArea
         if data.showInfo:
             editable = not self._listEditorData.infoReadOnly
-            callback = self.OnInfoEdit if editable else None
-            self.gInfoBox = TextArea(self, editable=editable,
-                                         on_text_change=callback)
+            self.gInfoBox = TextArea(self, editable=editable)
+            if editable:
+                self.gInfoBox.on_text_changed.subscribe(self.OnInfoEdit)
             # TODO(nycz): GUI size=(130, -1), SUNKEN_BORDER
         #--Buttons
         buttonSet = [
@@ -1074,13 +1074,13 @@ class ListEditor(Dialog):
             self.gInfoBox.text_content = u''
 
     #--Show Info
-    def OnInfoEdit(self):
+    def OnInfoEdit(self, new_text):
         """Info box text has been edited."""
         selections = self.listBox.GetSelections()
         if not selections: return bell()
         item = self._list_items[selections[0]]
         if self.gInfoBox.modified:
-            self._listEditorData.setInfo(item, self.gInfoBox.text_content)
+            self._listEditorData.setInfo(item, new_text)
 
     #--Save/Cancel
     def DoSave(self):
@@ -3110,18 +3110,12 @@ class Events(object):
     RESIZE = 'resize'
     ACTIVATE = 'activate'
     CLOSE = 'close'
-    TEXT_CHANGED = 'text_changed'
-    CONTEXT_MENU = 'context_menu'
     CHAR_KEY_PRESSED = 'char_key_pressed'
     MOUSE_MOTION = 'mouse_motion'
     MOUSE_LEAVE_WINDOW = 'mouse_leave_window'
-    MOUSE_LEFT_UP = 'mouse_left_up'
-    MOUSE_LEFT_DOWN = 'mouse_left_down'
     MOUSE_LEFT_DOUBLECLICK = 'mouse_left_doubleclick'
     MOUSE_RIGHT_UP = 'mouse_right_up'
-    MOUSE_RIGHT_DOWN = 'mouse_right_down'
     MOUSE_MIDDLE_UP = 'mouse_middle_up'
-    MOUSE_MIDDLE_DOWN = 'mouse_middle_down'
     WIZARD_CANCEL = 'wizard_cancel'
     WIZARD_FINISHED = 'wizard_finished'
     WIZARD_PAGE_CHANGING = 'wizard_page_changing'
@@ -3129,29 +3123,21 @@ class Events(object):
     # also the names here... ugh. needless to say its very wip
     COMBOBOX_CHOICE = 'combobox_choice'
     COLORPICKER_CHANGED = 'colorpicker_changed'
-    FOCUS_LOST = 'focus_lost'
 
 _WX_EVENTS = {Events.RESIZE:                wx.EVT_SIZE,
               Events.ACTIVATE:              wx.EVT_ACTIVATE,
               Events.CLOSE:                 wx.EVT_CLOSE,
-              Events.TEXT_CHANGED:          wx.EVT_TEXT,
-              Events.CONTEXT_MENU:          wx.EVT_CONTEXT_MENU,
               Events.CHAR_KEY_PRESSED:      wx.EVT_CHAR,
               Events.MOUSE_MOTION:          wx.EVT_MOTION,
               Events.MOUSE_LEAVE_WINDOW:    wx.EVT_LEAVE_WINDOW,
-              Events.MOUSE_LEFT_UP:         wx.EVT_LEFT_UP,
-              Events.MOUSE_LEFT_DOWN:       wx.EVT_LEFT_DOWN,
               Events.MOUSE_LEFT_DOUBLECLICK:wx.EVT_LEFT_DCLICK,
               Events.MOUSE_RIGHT_UP:        wx.EVT_RIGHT_UP,
-              Events.MOUSE_RIGHT_DOWN:      wx.EVT_RIGHT_DOWN,
               Events.MOUSE_MIDDLE_UP:       wx.EVT_MIDDLE_UP,
-              Events.MOUSE_MIDDLE_DOWN:     wx.EVT_MIDDLE_DOWN,
               Events.WIZARD_CANCEL:         wiz.EVT_WIZARD_CANCEL,
               Events.WIZARD_FINISHED:       wiz.EVT_WIZARD_FINISHED,
               Events.WIZARD_PAGE_CHANGING:  wiz.EVT_WIZARD_PAGE_CHANGING,
               Events.COMBOBOX_CHOICE:       wx.EVT_COMBOBOX,
               Events.COLORPICKER_CHANGED:   wx.EVT_COLOURPICKER_CHANGED,
-              Events.FOCUS_LOST:            wx.EVT_KILL_FOCUS,
 }
 
 def set_event_hook(obj, event, callback):

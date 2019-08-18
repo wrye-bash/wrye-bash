@@ -86,7 +86,7 @@ from ..balt import Links, ItemLink
 
 from ..gui import Button, CancelButton, CheckBox, HLayout, Label, \
     LayoutOptions, RIGHT, SaveButton, Spacer, Stretch, TextArea, TextField, \
-    TOP, VLayout
+    TOP, VLayout, EventResult
 
 # Constants -------------------------------------------------------------------
 from .constants import colorInfo, settingDefaults, karmacons, installercons
@@ -1191,15 +1191,14 @@ class _EditableMixinOnFileInfos(_EditableMixin):
     def __init__(self, masterPanel, ui_list_panel):
         _EditableMixin.__init__(self, masterPanel)
         #--File Name
-        self.file = TextField(self.top, on_text_change=self.OnFileEdit,
-                              max_length=self._max_filename_chars)
+        self.file = TextField(self.top, max_length=self._max_filename_chars)
+        self.file.on_focus_lost.subscribe(self.OnFileEdited)
+        self.file.on_text_changed.subscribe(self.OnFileEdit)
         # TODO(nycz): GUI set_size
         #                       size=(self._min_controls_width, -1))
-        set_event_hook(self.file._native_widget, Events.FOCUS_LOST,
-                       self.OnFileEdited)
         self.panel_uilist = ui_list_panel.uiList
 
-    def OnFileEdited(self, event):
+    def OnFileEdited(self):
         """Event: Finished editing file name."""
         if not self.file_info: return
         #--Changed?
@@ -1220,17 +1219,15 @@ class _EditableMixinOnFileInfos(_EditableMixin):
         else:
             self.fileStr = fileStr
             self.SetEdited()
-        event.Skip()
 
     def _validate_filename(self, fileStr):
         return self.panel_uilist.validate_filename(None, fileStr)[0]
 
-    def OnFileEdit(self, event):
+    def OnFileEdit(self, new_text):
         """Event: Editing filename."""
         if not self.file_info: return
-        if not self.edited and self.fileStr != self.file.text_content:
+        if not self.edited and self.fileStr != new_text:
             self.SetEdited()
-        event.Skip()
 
     @balt.conversation
     def _refresh_detail_info(self):
@@ -1316,27 +1313,25 @@ class ModDetails(_SashDetailsPanel):
         #--Version
         self.version = Label(top, u'v0.00')
         #--Author
-        # TODO(inf) de-wx! size and all the set_event_hooks below
-        self.gAuthor = TextField(top, on_text_change=self.OnAuthorEdit,
-                                 max_length=511) # size=(textWidth,-1))
-        set_event_hook(self.gAuthor._native_widget, Events.FOCUS_LOST,
-                       self.OnEditAuthor)
+        # TODO(inf) de-wx! all the size usages below
+        self.gAuthor = TextField(top, max_length=511) # size=(textWidth,-1))
+        self.gAuthor.on_focus_lost.subscribe(self.OnEditAuthor)
+        self.gAuthor.on_text_changed.subscribe(self.OnAuthorEdit)
         #--Modified
-        self.modified = TextField(top, on_text_change=self.OnModifiedEdit,
-                                  max_length=32)
-        set_event_hook(self.modified._native_widget, Events.FOCUS_LOST,
-                       self.OnEditModified)
+        self.modified = TextField(top, max_length=32)
+        self.modified.on_focus_lost.subscribe(self.OnEditModified)
+        self.modified.on_text_changed.subscribe(self.OnModifiedEdit)
         # size=(textWidth, -1),
         #--Description
-        self.description = TextArea(top, on_text_change=self.OnDescrEdit,
-                                    auto_tooltip=False, max_length=511)
+        self.description = TextArea(top, auto_tooltip=False, max_length=511)
             # size=(textWidth, 128),
-        set_event_hook(self.description._native_widget, Events.FOCUS_LOST,
-                       self.OnEditDescription)
+        self.description.on_focus_lost.subscribe(self.OnEditDescription)
+        self.description.on_text_changed.subscribe(self.OnDescrEdit)
         #--Bash tags
         self.gTags = TextArea(self._bottom_low_panel, auto_tooltip=False,
                               editable=False)
                                 # size=(textWidth, 64))
+        self.gTags.on_right_clicked.subscribe(self.ShowBashTagsMenu)
         #--Layout
         VLayout(spacing=4, default_fill=True, items=[
             HLayout(items=[Label(top, _(u'File:')), Stretch(), self.version]),
@@ -1352,10 +1347,6 @@ class ModDetails(_SashDetailsPanel):
         ]).apply_to(self._bottom_low_panel)
         VLayout(default_weight=1, default_fill=True,
                 items=[subSplitter]).apply_to(bottom)
-        #--Events
-        # TODO(nycz): GUI event binding
-        set_event_hook(self.gTags._native_widget, Events.CONTEXT_MENU,
-                       self.ShowBashTagsMenu)
 
     def _resetDetails(self):
         self.modInfo = None
@@ -1392,28 +1383,26 @@ class ModDetails(_SashDetailsPanel):
         # TODO(inf) de-wx! - or investigate why it's needed
         self.gTags._native_widget.Refresh()
 
-    def _OnTextEdit(self, event, value, control):
+    def _OnTextEdit(self, old_text, new_text):
         if not self.modInfo: return
-        if not self.edited and value != control.text_content: self.SetEdited()
-        event.Skip()
-    def OnAuthorEdit(self, event):
-        self._OnTextEdit(event, self.authorStr, self.gAuthor)
-    def OnModifiedEdit(self, event):
-        self._OnTextEdit(event, self.modifiedStr, self.modified)
-    def OnDescrEdit(self, event):
-        self._OnTextEdit(event, self.descriptionStr.replace(
-            '\r\n', '\n').replace('\r', '\n'), self.description)
+        if not self.edited and old_text != new_text: self.SetEdited()
 
-    def OnEditAuthor(self, event):
-        event.Skip()
+    def OnAuthorEdit(self, new_text):
+        self._OnTextEdit(self.authorStr, new_text)
+    def OnModifiedEdit(self, new_text):
+        self._OnTextEdit(self.modifiedStr, new_text)
+    def OnDescrEdit(self, new_text):
+        self._OnTextEdit(self.descriptionStr.replace(
+            '\r\n', '\n').replace('\r', '\n'), new_text)
+
+    def OnEditAuthor(self):
         if not self.modInfo: return
         authorStr = self.gAuthor.text_content
         if authorStr != self.authorStr:
             self.authorStr = authorStr
             self.SetEdited()
 
-    def OnEditModified(self, event):
-        event.Skip()
+    def OnEditModified(self):
         if not self.modInfo: return
         modifiedStr = self.modified.text_content
         if modifiedStr == self.modifiedStr: return
@@ -1430,8 +1419,7 @@ class ModDetails(_SashDetailsPanel):
         self.modified.text_content = modifiedStr #--Normalize format
         self.SetEdited()
 
-    def OnEditDescription(self, event):
-        event.Skip()
+    def OnEditDescription(self):
         if not self.modInfo: return
         if self.description.text_content != self.descriptionStr.replace('\r\n',
                 '\n').replace('\r', '\n'):
@@ -1536,10 +1524,11 @@ class ModDetails(_SashDetailsPanel):
         modInfo.setmtime(newTimeInt)
 
     #--Bash Tags
-    def ShowBashTagsMenu(self, event):
+    def ShowBashTagsMenu(self):
         """Show bash tags menu."""
-        event.Skip()
-        if not self.modInfo: return
+        # Note that we have to return EventResult.FINISH, otherwise the default
+        # text menu will get shown after a tag is applied.
+        if not self.modInfo: return EventResult.FINISH
         #--Links closure
         mod_info = self.modInfo
         mod_tags = mod_info.getBashTags()
@@ -1625,6 +1614,7 @@ class ModDetails(_SashDetailsPanel):
         tagLinks = Links()
         tagLinks.append(_TagLinks())
         tagLinks.PopupMenu(self.gTags, Link.Frame, None)
+        return EventResult.FINISH
 
 #------------------------------------------------------------------------------
 class INIDetailsPanel(_DetailsMixin, SashPanel):
@@ -1963,10 +1953,9 @@ class SaveDetails(_SashDetailsPanel):
         self.picture = balt.Picture(top, textWidth, 192 * textWidth / 256,
             background=colors['screens.bkgd.image']) #--Native: 256x192
         #--Save Info
-        self.gInfo = TextArea(self._bottom_low_panel,
-                              on_text_change=self.OnInfoEdit)
+        self.gInfo = TextArea(self._bottom_low_panel, max_length=2048)
+        self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
         # TODO(nycz): GUI set_size size=(textWidth, 64)
-        # TODO(nycz): GUI what do? maxChars=2048)
         #--Layouts
         VLayout(default_fill=True, items=[
             self.file,
@@ -2029,12 +2018,10 @@ class SaveDetails(_SashDetailsPanel):
             self.playerLevel, int(self.gameDays), self.playMinutes / 60,
             (self.playMinutes % 60), self.curCellStr)
 
-    def OnInfoEdit(self,event):
+    def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self.saveInfo and self.gInfo.modified:
-            bosh.saveInfos.table.setItem(self.saveInfo.name, 'info',
-                                         self.gInfo.text_content)
-        event.Skip() # not strictly needed - no other handler for onKillFocus
+            bosh.saveInfos.table.setItem(self.saveInfo.name, 'info', new_text)
 
     def _validate_filename(self, fileStr):
         return self.panel_uilist.validate_filename(
@@ -2594,8 +2581,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
             ('gSkipped',_(u'Skipped')),
             )
         for name,title in infoTitles:
-            gPage = TextArea(self.gNotebook, wrap=False,
-                             editable=False, auto_tooltip=False)
+            gPage = TextArea(self.gNotebook, editable=False,
+                             auto_tooltip=False, wrap=False)
             gPage.widget_name = name
             # TODO(nycz): GUI to fix when Notebook is wrapped
             self.gNotebook.AddPage(gPage._native_widget,title)
@@ -3232,7 +3219,8 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         #--Data
         self._bsa_info = None
         #--BSA Info
-        self.gInfo = TextArea(self.bottom, on_text_change=self.OnInfoEdit)
+        self.gInfo = TextArea(self.bottom)
+        self.gInfo.on_text_changed.subscribe(self.OnInfoEdit)
         #--Layout
         VLayout(default_fill=True, items=[Label(self.top, _(u'File:')),
                                           self.file]).apply_to(self.top)
@@ -3262,12 +3250,10 @@ class BSADetails(_EditableMixinOnFileInfos, SashPanel):
         else:
             self.gInfo.text_content = _(u'Notes: ')
 
-    def OnInfoEdit(self,event):
+    def OnInfoEdit(self, new_text):
         """Info field was edited."""
         if self._bsa_info and self.gInfo.modified:
-            bosh.bsaInfos.table.setItem(self._bsa_info.name, 'info',
-                                        self.gInfo.text_content)
-        event.Skip()
+            bosh.bsaInfos.table.setItem(self._bsa_info.name, 'info', new_text)
 
     def DoSave(self):
         """Event: Clicked Save button."""

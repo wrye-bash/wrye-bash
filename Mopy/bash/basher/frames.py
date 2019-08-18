@@ -445,8 +445,8 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         self.gWebsite = TextField(self, config.website, max_length=512)
         self.gAuthor = TextField(self, config.author, max_length=512)
         self.gEmail = TextField(self, text=config.email, max_length=512)
-        self.gAbstract = TextArea(self, text=config.abstract)
-                                  # maxChars=4 * 1024)
+        self.gAbstract = TextArea(self, text=config.abstract,
+                                  max_length=4 * 1024)
         #--Layout
         def _no_fill_text(txt):
             return Label(self, txt), LayoutOptions(fill=False)

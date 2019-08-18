@@ -365,8 +365,9 @@ class CreateNewProject(balt.Dialog):
         self.existingProjects = [x for x in bass.dirs['installers'].list() if bass.dirs['installers'].join(x).isdir()]
 
         #--Attributes
-        self.textName = TextField(self, _(u'New Project Name-#####'),
-                                  on_text_change=self.OnCheckProjectsColorTextCtrl)
+        self.textName = TextField(self, _(u'New Project Name-#####'))
+        self.textName.on_text_changed.subscribe(
+            self.OnCheckProjectsColorTextCtrl)
         self.checkEsp = CheckBox(self, _(u'Blank.esp'),
                                  on_toggle=self.OnCheckBoxChange, checked=True)
         self.checkEspMasterless = CheckBox(self, _(u'Blank Masterless.esp'),
@@ -393,22 +394,18 @@ class CreateNewProject(balt.Dialog):
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self)
         self.SetInitialSize()
-        # Event Handlers
-        set_event_hook(self.textName, Events.TEXT_CHANGED,
-                       self.OnCheckProjectsColorTextCtrl)
         # Dialog Icon Handlers
         self.SetIcon(installercons.get_image('off.white.dir').GetIcon())
         self.OnCheckBoxChange()
 
-    def OnCheckProjectsColorTextCtrl(self,event):
-        projectName = bolt.GPath(self.textName.text_content)
+    def OnCheckProjectsColorTextCtrl(self, new_text):
+        projectName = bolt.GPath(new_text)
         if projectName in self.existingProjects: #Fill this in. Compare this with the self.existingprojects list
             self.textName.background_color = '#FF0000'
             self.textName.tooltip = _(u'There is already a project with that name!')
         else:
             self.textName.background_color = '#FFFFFF'
             self.textName.tooltip = None
-        event.Skip()
 
     def OnCheckBoxChange(self, is_checked=None):
         """ Change the Dialog Icon to represent what the project status will
