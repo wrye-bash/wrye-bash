@@ -353,13 +353,17 @@ class ModChecker(BaltFrame):
         VLayout(border=4, spacing=4, default_fill=True, items=[
             (self._html_ctrl.web_viewer, LayoutOptions(weight=1)),
             HLayout(spacing=4, items=[
-                back_button, forward_button, self._buttons[_MOD_LIST],
-                self._buttons[_CRC], self._buttons[_VERSION], Stretch(),
-                self._buttons[_COPY_TEXT]]),
+                self._buttons[_MOD_LIST], self._buttons[_CRC],
+                self._buttons[_VERSION]
+            ]),
             HLayout(spacing=4, items=[
-                self._buttons[_SCAN_DIRTY], self._buttons[_RULE_SETS],
-                self._buttons[_NOTES], self._buttons[_CONFIG],
-                self._buttons[_SUGGEST], Stretch(), self._buttons[_UPDATE]])
+                self._buttons[_RULE_SETS], self._buttons[_NOTES],
+                self._buttons[_CONFIG], self._buttons[_SUGGEST]
+            ]),
+            HLayout(spacing=4, items=[
+                self._buttons[_SCAN_DIRTY], Stretch(), self._buttons[_UPDATE],
+                self._buttons[_COPY_TEXT], back_button, forward_button
+            ])
         ]).apply_to(self)
         self.CheckMods()
 
