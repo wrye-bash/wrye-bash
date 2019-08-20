@@ -65,19 +65,20 @@ class ColorDialog(balt.Dialog):
         help_ = colorInfo[choiceKey][1]
         self.textCtrl = TextArea(self, text=help_, editable=False)
         #--Buttons
-        self.default = Button(self, _(u'Default'),
-                              onButClickEventful=self.OnDefault)
-        self.defaultAll = Button(self, _(u'All Defaults'),
-                                 onButClickEventful=self.OnDefaultAll)
-        self.apply = ApplyButton(self, onButClickEventful=self.OnApply)
-        self.applyAll = Button(self, _(u'Apply All'),
-                               onButClickEventful=self.OnApplyAll)
-        self.export_config = Button(self, _(u'Export...'),
-                                    onButClickEventful=self.OnExport)
-        self.importConfig = Button(self, _(u'Import...'),
-                                   onButClickEventful=self.OnImport)
-        self.ok = OkButton(self, onButClickEventful=self.OnOK,
-                           default=True)
+        self.default = Button(self, _(u'Default'))
+        self.default.on_clicked.subscribe(self.OnDefault)
+        self.defaultAll = Button(self, _(u'All Defaults'))
+        self.defaultAll.on_clicked.subscribe(self.OnDefaultAll)
+        self.apply = ApplyButton(self)
+        self.apply.on_clicked.subscribe(self.OnApply)
+        self.applyAll = Button(self, _(u'Apply All'))
+        self.applyAll.on_clicked.subscribe(self.OnApplyAll)
+        self.export_config = Button(self, _(u'Export...'))
+        self.export_config.on_clicked.subscribe(self.OnExport)
+        self.importConfig = Button(self, _(u'Import...'))
+        self.importConfig.on_clicked.subscribe(self.OnImport)
+        self.ok = OkButton(self, default=True)
+        self.ok.on_clicked.subscribe(self.OnOK)
         #--Events
         set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE, self.OnComboBox)
         set_event_hook(self.picker, Events.COLORPICKER_CHANGED,
@@ -146,24 +147,20 @@ class ColorDialog(balt.Dialog):
         # TODO(inf) de-wx!, needed for wx3, check if needed in Phoenix
         self.comboBox.Unbind(wx.EVT_SIZE)
 
-    def OnDefault(self,event):
-        # TODO(nycz): un-event this ok
-        event.Skip()
+    def OnDefault(self):
         color_key = self.GetColorKey()
         newColor = settingDefaults['bash.colors'][color_key]
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
 
-    def OnDefaultAll(self,event):
-        event.Skip()
+    def OnDefaultAll(self):
         for key in colors:
             default = settingDefaults['bash.colors'][key]
             if colors[key] != default:
                 self.changes[key] = default
         self.UpdateUIButtons()
 
-    def OnApply(self,event):
-        event.Skip()
+    def OnApply(self):
         color_key = self.GetColorKey()
         newColor = self.changes[color_key]
         #--Update settings and colors
@@ -173,8 +170,7 @@ class ColorDialog(balt.Dialog):
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
-    def OnApplyAll(self,event):
-        event.Skip()
+    def OnApplyAll(self):
         for key,newColor in self.changes.iteritems():
             bass.settings['bash.colors'][key] = newColor
             colors[key] = newColor
@@ -182,12 +178,11 @@ class ColorDialog(balt.Dialog):
         self.UpdateUIButtons()
         self.UpdateUIColors()
 
-    def OnOK(self, event):
+    def OnOK(self):
         self._unbind_combobox()
-        self.OnApplyAll(event)
+        self.OnApplyAll()
 
-    def OnExport(self,event):
-        event.Skip()
+    def OnExport(self):
         outDir = bass.dirs['patches']
         outDir.makedirs()
         #--File dialog
@@ -204,8 +199,7 @@ class ColorDialog(balt.Dialog):
         except Exception as e:
             balt.showError(self,_(u'An error occurred writing to ')+outPath.stail+u':\n\n%s'%e)
 
-    def OnImport(self,event):
-        event.Skip()
+    def OnImport(self):
         inDir = bass.dirs['patches']
         inDir.makedirs()
         #--File dialog
@@ -298,8 +292,8 @@ class ImportFaceDialog(balt.Dialog):
         self.statsText  = Label(self,u'')
         self.classText  = Label(self,u'')
         #--Other
-        importButton = Button(self, label=_(u'Import'),
-                              on_click=self.DoImport, default=True)
+        importButton = Button(self, label=_(u'Import'), default=True)
+        importButton.on_clicked.subscribe(self.DoImport)
         self.picture = balt.Picture(self,350,210,scaling=2)
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[
             # Row 1
@@ -381,6 +375,8 @@ class CreateNewProject(balt.Dialog):
             self.checkWizardImages.enabled = False
         self.checkDocs = CheckBox(self, _(u'Docs Directory'))
         # Panel Layout
+        ok_button = OkButton(self)
+        ok_button.on_clicked.subscribe(self.OnClose)
         VLayout(border=5, spacing=5, items=[
             Label(self, _(u'What do you want to name the New Project?')),
             (self.textName, LayoutOptions(fill=True)),
@@ -388,9 +384,7 @@ class CreateNewProject(balt.Dialog):
             self.checkEsp, self.checkEspMasterless, self.checkWizard,
             self.checkWizardImages, self.checkDocs,
             Stretch(),
-            (HLayout(spacing=5, items=[
-                OkButton(self, onButClickEventful=self.OnClose),
-                CancelButton(self, onButClickEventful=self.OnCancel)]),
+            (HLayout(spacing=5, items=[ok_button, CancelButton(self)]),
              LayoutOptions(h_align=CENTER))
         ]).apply_to(self)
         self.SetInitialSize()
@@ -420,10 +414,7 @@ class CreateNewProject(balt.Dialog):
         else:
             self.SetIcon(installercons.get_image('off.grey.dir').GetIcon())
 
-    @staticmethod
-    def OnCancel(event): event.Skip()
-
-    def OnClose(self, event):
+    def OnClose(self):
         """ Create the New Project and add user specified extras. """
         projectName = bolt.GPath(self.textName.text_content.strip())
         projectDir = bass.dirs['installers'].join(projectName)
@@ -433,7 +424,6 @@ class CreateNewProject(balt.Dialog):
                 u'There is already a project with that name!') + u'\n' + _(
                 u'Pick a different name for the project and try again.'))
             return
-        event.Skip()
 
         # Create project in temp directory, so we can move it via
         # Shell commands (UAC workaround)

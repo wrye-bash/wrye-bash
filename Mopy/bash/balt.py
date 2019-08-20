@@ -387,8 +387,9 @@ def bitmapButton(parent, bitmap, button_tip=None, pos=defPos, size=defSize,
     return gButton
 
 def ok_and_cancel_group(parent, on_ok=None):
-    return HLayout(spacing=4, items=[OkButton(parent, on_click=on_ok),
-                                     CancelButton(parent)])
+    ok_button = OkButton(parent)
+    ok_button.on_clicked.subscribe(on_ok)
+    return HLayout(spacing=4, items=[ok_button, CancelButton(parent)])
 
 def spinCtrl(parent, value=u'', pos=defPos, size=defSize,
              style=wx.SP_ARROW_KEYS, min=0, max=100, initial=0,
@@ -829,10 +830,11 @@ class Log(_Log):
             fixedStyle.SetFont(fixedFont)
             # txtCtrl.SetStyle(0,txtCtrl.GetLastPosition(),fixedStyle)
         #--Layout
+        ok_button = OkButton(self.window, default=True)
+        ok_button.on_clicked.subscribe(self.window.Close)
         VLayout(border=2, items=[
             (txtCtrl, LayoutOptions(fill=True, weight=1, border=2)),
-            (OkButton(self.window, on_click=self.window.Close, default=True),
-             LayoutOptions(h_align=RIGHT, border=2))
+            (ok_button, LayoutOptions(h_align=RIGHT, border=2))
         ]).apply_to(self.window)
         self.ShowLog()
 
@@ -855,7 +857,8 @@ class WryeLog(_Log):
         self._html_ctrl = HtmlCtrl(self.window)
         self._html_ctrl.try_load_html(file_path=logPath)
         #--Buttons
-        gOkButton = OkButton(self.window, on_click=self.window.Close, default=True)
+        gOkButton = OkButton(self.window, default=True)
+        gOkButton.on_clicked.subscribe(self.window.Close)
         if not asDialog:
             self.window.SetBackgroundColour(gOkButton.background_color)
         #--Layout
@@ -1003,10 +1006,13 @@ class ListEditor(Dialog):
         for k,v in (orderedDict or {}).items():
             buttonSet.append((True, k, v))
         if sum(bool(x[0]) for x in buttonSet):
-            buttons = VLayout(spacing=4, items=[
-                Button(self, (flag == True and defLabel) or flag,
-                           on_click=func)
-                for flag, defLabel, func in buttonSet if flag])
+            def _btn(btn_label, btn_callback):
+                new_button = Button(self, btn_label)
+                new_button.on_clicked.subscribe(btn_callback)
+                return new_button
+            new_buttons = [_btn(defLabel, func) for flag, defLabel, func
+                           in buttonSet if flag]
+            buttons = VLayout(spacing=4, items=new_buttons)
         else:
             buttons = None
         #--Layout
@@ -3105,6 +3111,7 @@ class BaltFrame(wx.Frame):
             _settings[_key + '.size'] = tuple(self.GetSize())
         self.Destroy()
 
+# TODO(inf) replace and remove, need to come up with a better system
 # Event bindings --------------------------------------------------------------
 class Events(object):
     RESIZE = 'resize'

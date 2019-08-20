@@ -248,9 +248,10 @@ class _ListPatcherPanel(_PatcherPanel):
             self.gAuto = CheckBox(gConfigPanel, _(u'Automatic'),
                                   on_toggle=self.OnAutomatic,
                                   checked=self.autoIsChecked)
-            self.gAdd = Button(gConfigPanel, _(u'Add'), on_click=self.OnAdd)
-            self.gRemove = Button(gConfigPanel, _(u'Remove'),
-                                  on_click=self.OnRemove)
+            self.gAdd = Button(gConfigPanel, _(u'Add'))
+            self.gAdd.on_clicked.subscribe(self.OnAdd)
+            self.gRemove = Button(gConfigPanel, _(u'Remove'))
+            self.gRemove.on_clicked.subscribe(self.OnRemove)
             right_side_components.extend([self.gAuto, Spacer(4), self.gAdd,
                                           self.gRemove])
             self.OnAutomatic(self.autoIsChecked)
@@ -269,10 +270,10 @@ class _ListPatcherPanel(_PatcherPanel):
 
     def _get_select_layout(self):
         if not self.selectCommands: return None
-        self.gSelectAll = Button(self.gConfigPanel, _(u'Select All'),
-                                 on_click=self.SelectAll)
-        self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'),
-                                   on_click=self.DeselectAll)
+        self.gSelectAll = Button(self.gConfigPanel, _(u'Select All'))
+        self.gSelectAll.on_clicked.subscribe(self.SelectAll)
+        self.gDeselectAll = Button(self.gConfigPanel, _(u'Deselect All'))
+        self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
         return VLayout(spacing=4, items=[Spacer(4), self.gSelectAll,
                                          self.gDeselectAll])
 
@@ -517,10 +518,11 @@ class _TweakPatcherPanel(_ChoiceMenuMixin, _PatcherPanel):
 
     def _get_tweak_select_layout(self, ):
         if self.selectCommands:
-            self.gTweakSelectAll = Button(self.gConfigPanel,
-                                          _(u'Select All'), on_click=self.TweakSelectAll)
+            self.gTweakSelectAll = Button(self.gConfigPanel, _(u'Select All'))
+            self.gTweakSelectAll.on_clicked.subscribe(self.TweakSelectAll)
             self.gTweakDeselectAll = Button(self.gConfigPanel,
-                                            _(u'Deselect All'), on_click=self.TweakDeselectAll)
+                                            _(u'Deselect All'))
+            self.gTweakDeselectAll.on_clicked.subscribe(self.TweakDeselectAll)
             tweak_select_layout = VLayout(spacing=4, items=[
                 Spacer(4), self.gTweakSelectAll, self.gTweakDeselectAll])
         else: tweak_select_layout = None

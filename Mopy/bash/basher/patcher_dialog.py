@@ -88,29 +88,32 @@ class PatchDialog(balt.Dialog):
         self.currentPatcher = None
         patcherNames = [patcher.getName() for patcher in self.patchers]
         #--GUI elements
-        self.gExecute = OkButton(self, label=_(u'Build Patch'),
-                                 on_click=self.PatchExecute)
+        self.gExecute = OkButton(self, label=_(u'Build Patch'))
+        self.gExecute.on_clicked.subscribe(self.PatchExecute)
         # TODO(nycz): somehow move setUAC further into env?
         # Note: for this to work correctly, it needs to be run BEFORE
         # appending a menu item to a menu (and so, needs to be enabled/
         # disabled prior to that as well.
         # TODO(nycz): DEWX - Button.GetHandle
         env.setUAC(self.gExecute._native_widget.GetHandle(), True)
-        self.gSelectAll = SelectAllButton(self, on_click=self.SelectAll)
-        self.gDeselectAll = DeselectAllButton(self, on_click=self.DeselectAll)
+        self.gSelectAll = SelectAllButton(self)
+        self.gSelectAll.on_clicked.subscribe(self.SelectAll)
+        self.gDeselectAll = DeselectAllButton(self)
+        self.gDeselectAll.on_clicked.subscribe(self.DeselectAll)
         cancelButton = CancelButton(self)
         self.gPatchers = balt.listBox(self, choices=patcherNames,
                                       isSingle=True, kind='checklist',
                                       onSelect=self.OnSelect,
                                       onCheck=self.OnCheck)
-        self.gExportConfig = SaveAsButton(self, label=_(u'Export'),
-                                          on_click=self.ExportConfig)
-        self.gImportConfig = OpenButton(self, label=_(u'Import'),
-                                        on_click=self.ImportConfig)
-        self.gRevertConfig = RevertToSavedButton(self,
-                                                 on_click=self.RevertConfig)
-        self.gRevertToDefault = RevertButton(
-            self, label=_(u'Revert To Default'), on_click=self.DefaultConfig)
+        self.gExportConfig = SaveAsButton(self, label=_(u'Export'))
+        self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
+        self.gImportConfig = OpenButton(self, label=_(u'Import'))
+        self.gImportConfig.on_clicked.subscribe(self.ImportConfig)
+        self.gRevertConfig = RevertToSavedButton(self)
+        self.gRevertConfig.on_clicked.subscribe(self.RevertConfig)
+        self.gRevertToDefault = RevertButton(self,
+                                             label=_(u'Revert To Default'))
+        self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
         for index,patcher in enumerate(self.patchers):
             self.gPatchers.Check(index,patcher.isEnabled)
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')

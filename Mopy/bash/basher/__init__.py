@@ -1150,8 +1150,10 @@ class _EditableMixin(_DetailsMixin):
     def __init__(self, buttonsParent):
         self.edited = False
         #--Save/Cancel
-        self.save = SaveButton(buttonsParent, on_click=self.DoSave)
-        self.cancel = CancelButton(buttonsParent, on_click=self.DoCancel)
+        self.save = SaveButton(buttonsParent)
+        self.save.on_clicked.subscribe(self.DoSave)
+        self.cancel = CancelButton(buttonsParent)
+        self.cancel.on_clicked.subscribe(self.DoCancel)
         self.save.enabled = False
         self.cancel.enabled = False
 
@@ -1631,11 +1633,12 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self._ini_detail = None
         left,right = self.left, self.right
         #--Remove from list button
-        self.removeButton = Button(right, _(u'Remove'),
-                                   on_click=self._OnRemove)
+        self.removeButton = Button(right, _(u'Remove'))
+        self.removeButton.on_clicked.subscribe(self._OnRemove)
         #--Edit button
-        self.editButton = Button(right, _(u'Edit...'), on_click=lambda:
-                                      self.current_ini_path.start())
+        self.editButton = Button(right, _(u'Edit...'))
+        self.editButton.on_clicked.subscribe(lambda:
+                                             self.current_ini_path.start())
         #--Ini file
         self.iniContents = TargetINILineCtrl(right)
         self.lastDir = settings.get('bash.ini.lastDir', bass.dirs['mods'].s)
@@ -2359,6 +2362,10 @@ class InstallersList(balt.UIList):
             with balt.Dialog(self,_(u'Move or Copy?')) as dialog:
                 gCheckBox = CheckBox(dialog,
                                      _(u"Don't show this in the future."))
+                move_button = Button(dialog, label=_(u'Move'))
+                move_button.on_clicked.subscribe(lambda: dialog.EndModal(1))
+                copy_button = Button(dialog, label=_(u'Copy'))
+                copy_button.on_clicked.subscribe(lambda: dialog.EndModal(2))
                 VLayout(border=6, spacing=6, items=[
                     HLayout(spacing=6, default_border=6, items=[
                         (staticBitmap(dialog), LayoutOptions(v_align=TOP)),
@@ -2366,12 +2373,8 @@ class InstallersList(balt.UIList):
                     ]),
                     Stretch(), Spacer(10), gCheckBox,
                     (HLayout(spacing=4, items=[
-                        Button(dialog, label=_(u'Move'),
-                               on_click=lambda: dialog.EndModal(1)),
-                        Button(dialog, label=_(u'Copy'),
-                               on_click=lambda: dialog.EndModal(2)),
-                        CancelButton(dialog)
-                     ]), LayoutOptions(h_align=RIGHT))
+                        move_button, copy_button, CancelButton(dialog)
+                    ]), LayoutOptions(h_align=RIGHT))
                 ]).apply_to(dialog)
                 result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
                 if result == 1: action = 'MOVE'

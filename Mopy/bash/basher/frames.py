@@ -65,17 +65,17 @@ class DocBrowser(BaltFrame):
                                       isSort=True,
                                       onSelect=self._do_select_mod)
         # Buttons
-        self._set_btn = Button(main_window, _(u'Set Doc...'),
-                               on_click=self._do_set)
-        self._forget_btn = Button(main_window, _(u'Forget Doc...'),
-                                  on_click=self._do_forget)
-        self._rename_btn = Button(main_window, _(u'Rename Doc...'),
-                                  on_click=self._do_rename)
-        self._edit_btn = ToggleButton(main_window, label=_(u'Edit Doc...'),
+        self._set_btn = Button(main_window, _(u'Set Doc...'))
+        self._set_btn.on_clicked.subscribe(self._do_set)
+        self._forget_btn = Button(main_window, _(u'Forget Doc...'))
+        self._forget_btn.on_clicked.subscribe(self._do_forget)
+        self._rename_btn = Button(main_window, _(u'Rename Doc...'))
+        self._rename_btn.on_clicked.subscribe(self._do_rename)
+        self._edit_btn = ToggleButton(main_window, _(u'Edit Doc...'),
                                       on_toggle=self._do_edit)
         self._open_btn = Button(main_window, _(u'Open Doc...'),
-                                on_click=self._do_open,
                                 tooltip=_(u'Open doc in external editor.'))
+        self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
         self._doc_ctrl = HtmlCtrl(main_window)
         self._prev_btn, self._next_btn = self._doc_ctrl.get_buttons()
@@ -325,8 +325,9 @@ class ModChecker(BaltFrame):
                 btn = ToggleButton(self, caption, on_toggle=callback)
             elif type_ == 'check':
                 btn = CheckBox(self, caption, on_toggle=callback)
-            else: # type_ == 'click':
-                btn = Button(self, caption, on_click=callback)
+            else: # type_ == 'click'
+                btn = Button(self, caption)
+                btn.on_clicked.subscribe(callback)
             if setting_key is not None:
                 new_value = bass.settings.get(
                     'bash.modChecker.show{}'.format(setting_key), setting_value)
@@ -450,6 +451,10 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         #--Layout
         def _no_fill_text(txt):
             return Label(self, txt), LayoutOptions(fill=False)
+        save_button = SaveButton(self, default=True)
+        save_button.on_clicked.subscribe(self.DoSave)
+        cancel_button = CancelButton(self)
+        cancel_button.on_clicked.subscribe(self.OnCloseWindow)
         VLayout(default_fill=True, spacing=4, border=4, items=[
             GridLayout(h_spacing=4, v_spacing=4, default_v_align=CENTER,
                        stretch_cols=[1], default_fill=True, items=[
@@ -461,9 +466,7 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
             Spacer(10),
             _no_fill_text(_(u'Abstract')),
             (self.gAbstract, LayoutOptions(weight=1)),
-            HLayout(spacing=4, items=[
-                SaveButton(self, on_click=self.DoSave, default=True),
-                CancelButton(self, on_click=self.OnCloseWindow)])
+            HLayout(spacing=4, items=[save_button, cancel_button])
         ]).apply_to(self)
         self.SetSize((350,400))
 
