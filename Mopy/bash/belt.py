@@ -388,12 +388,12 @@ class PageFinish(PageInstaller):
         self.parent.ret.ini_edits = iniedits
         # Apply/install checkboxes
         self.checkApply = CheckBox(self, _(u'Apply these selections'),
-                                   on_toggle=self.OnCheckApply,
                                    checked=bAuto)
+        self.checkApply.on_checked.subscribe(self.OnCheckApply)
         auto = bass.settings['bash.installers.autoWizard']
         self.checkInstall = CheckBox(self, _(u'Install this package'),
-                                     on_toggle=self.OnCheckInstall,
                                      checked=auto)
+        self.checkInstall.on_checked.subscribe(self.OnCheckInstall)
         self.parent.ret.should_install = auto
         # Layout
         layout = VLayout(default_fill=True, spacing=4, items=[
@@ -499,16 +499,16 @@ class PageVersions(PageInstaller):
                                      u'requirements are not met for using '
                                      u'this installer.'))
         text_warning.wrap(parent.GetPageSize()[0] - 20)
-        self.checkOk = CheckBox(self, _(u'Install anyway.'),
-                                on_toggle=self.OnCheck)
+        self.checkOk = CheckBox(self, _(u'Install anyway.'))
+        self.checkOk.on_checked.subscribe(self.OnCheck)
         VLayout(items=[
             Stretch(1),
             (text_warning, LayoutOptions(h_align=CENTER)),
             Stretch(1),
             (versions_box, LayoutOptions(fill=True, weight=1)),
             Stretch(2),
-            (self.checkOk, LayoutOptions(h_align=RIGHT,
-                                         v_align=BOTTOM, border=5))
+            (self.checkOk, LayoutOptions(h_align=RIGHT, v_align=BOTTOM,
+                                         border=5))
         ]).apply_to(self)
         self._enableForward(False)
         self.Layout()

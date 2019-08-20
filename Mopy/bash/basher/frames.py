@@ -78,9 +78,9 @@ class DocBrowser(BaltFrame):
                                   tooltip=_(u'Renames the document.'))
         self._rename_btn.on_clicked.subscribe(self._do_rename)
         self._edit_box = CheckBox(main_window, _(u'Allow Editing'),
-                                  on_toggle=self._do_edit,
                                   tooltip=_(u'Enables or disables editing in '
                                             u'the text field below.'))
+        self._edit_box.on_checked.subscribe(self._do_edit)
         self._open_btn = Button(main_window, _(u'Open Doc...'),
                                 tooltip=_(u'Opens the document in your '
                                           u'default viewer/editor.'))
@@ -331,7 +331,8 @@ class ModChecker(BaltFrame):
         def _f(key, make_checkbox, caption, setting_key=None,
                setting_value=None, callback=self.CheckMods):
             if make_checkbox:
-                btn = CheckBox(self, caption, on_toggle=callback)
+                btn = CheckBox(self, caption)
+                btn.on_checked.subscribe(callback)
             else:
                 btn = Button(self, caption)
                 btn.on_clicked.subscribe(callback)

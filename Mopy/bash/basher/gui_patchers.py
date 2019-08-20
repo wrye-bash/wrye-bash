@@ -242,12 +242,13 @@ class _ListPatcherPanel(_PatcherPanel):
             if self.show_empty_sublist_checkbox:
                 self.g_remove_empty = CheckBox(
                     gConfigPanel, _(u'Remove Empty Sublists'),
-                    on_toggle=self._on_remove_empty_checked,
                     checked=self.remove_empty_sublists)
+                self.g_remove_empty.on_checked.subscribe(
+                    self._on_remove_empty_checked)
                 right_side_components.extend([self.g_remove_empty])
             self.gAuto = CheckBox(gConfigPanel, _(u'Automatic'),
-                                  on_toggle=self.OnAutomatic,
                                   checked=self.autoIsChecked)
+            self.gAuto.on_checked.subscribe(self.OnAutomatic)
             self.gAdd = Button(gConfigPanel, _(u'Add'))
             self.gAdd.on_clicked.subscribe(self.OnAdd)
             self.gRemove = Button(gConfigPanel, _(u'Remove'))

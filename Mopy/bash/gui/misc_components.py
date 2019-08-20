@@ -30,31 +30,33 @@ __author__ = u'nycz, Infernio'
 import wx as _wx
 
 from .base_components import _AWidget
+from .events import EventHandler
 
 class CheckBox(_AWidget):
-    """Represents a simple two-state checkbox."""
-    def __init__(self, parent, label=u'', on_toggle=None, tooltip=None,
-                 checked=False):
+    """Represents a simple two-state checkbox.
+
+    Events:
+     - on_checked(checked: bool): Posted when this checkbox's state is changed
+       by checking or unchecking it. The parameter is True if the checkbox is
+       now checked and False if it is now unchecked."""
+    def __init__(self, parent, label=u'', tooltip=None, checked=False):
         """Creates a new CheckBox with the specified properties.
 
         :param parent: The object that the checkbox belongs to.
         :param label: The text shown on the checkbox.
-        :param on_toggle: A callback to execute when the button is clicked.
-                          Takes a single parameter, a boolean that is True if
-                          the checkbox is checked.
         :param tooltip: A tooltip to show when the user hovers over the
                         checkbox.
         :param checked: The initial state of the checkbox."""
         super(CheckBox, self).__init__()
+        # Create native widget
         self._native_widget = _wx.CheckBox(parent, _wx.ID_ANY,
                                            label=label, name=u'checkBox')
-        if on_toggle:
-            def _toggle_callback(_event): # type: (_wx.Event) -> None
-                on_toggle(self._native_widget.GetValue())
-            self._native_widget.Bind(_wx.EVT_CHECKBOX, _toggle_callback)
         if tooltip:
             self.tooltip = tooltip
         self.is_checked = checked
+        # Events
+        self.on_checked = EventHandler(self._native_widget, _wx.EVT_CHECKBOX,
+                                       lambda event: [event.IsChecked()])
 
     @property
     def is_checked(self): # type: () -> bool

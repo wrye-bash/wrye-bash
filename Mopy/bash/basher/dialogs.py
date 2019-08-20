@@ -362,13 +362,13 @@ class CreateNewProject(balt.Dialog):
         self.textName = TextField(self, _(u'New Project Name-#####'))
         self.textName.on_text_changed.subscribe(
             self.OnCheckProjectsColorTextCtrl)
-        self.checkEsp = CheckBox(self, _(u'Blank.esp'),
-                                 on_toggle=self.OnCheckBoxChange, checked=True)
-        self.checkEspMasterless = CheckBox(self, _(u'Blank Masterless.esp'),
-                                           on_toggle=self.OnCheckBoxChange, checked=False)
-        self.checkWizard = CheckBox(self, _(u'Blank wizard.txt'),
-                                    on_toggle=self.OnCheckBoxChange)
+        self.checkEsp = CheckBox(self, _(u'Blank.esp'), checked=True)
+        self.checkEspMasterless = CheckBox(self, _(u'Blank Masterless.esp'))
+        self.checkWizard = CheckBox(self, _(u'Blank wizard.txt'))
         self.checkWizardImages = CheckBox(self, _(u'Wizard Images Directory'))
+        for checkbox in (self.checkEsp, self.checkEspMasterless,
+                         self.checkWizard):
+            checkbox.on_checked.subscribe(self.OnCheckBoxChange)
         if not bEnableWizard:
             # pywin32 not installed
             self.checkWizard.enabled = False
