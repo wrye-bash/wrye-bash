@@ -2379,7 +2379,7 @@ class InstallersList(balt.UIList):
                 result = dialog.ShowModal() # buttons call dialog.EndModal(1/2)
                 if result == 1: action = 'MOVE'
                 elif result == 2: action = 'COPY'
-                if gCheckBox.checked:
+                if gCheckBox.is_checked:
                     settings['bash.installers.onDropFiles.action'] = action
         return action
 

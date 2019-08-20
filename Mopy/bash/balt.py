@@ -520,7 +520,7 @@ def _continueDialog(parent, message, title, checkBoxText):
         ]).apply_to(dialog)
         #--Get continue key setting and return
         result = dialog.ShowModal()
-        check = gCheckBox.checked
+        check = gCheckBox.is_checked
         return result, check
 
 #------------------------------------------------------------------------------

@@ -338,11 +338,11 @@ class ImportFaceDialog(balt.Dialog):
         #--Do import
         pc_flags = bosh.faces.PCFaces.pcf_flags() # make a copy of PCFaces flags
         pc_flags.hair = pc_flags.eye = True
-        pc_flags.name = self.nameCheck.checked
-        pc_flags.race = self.raceCheck.checked
-        pc_flags.gender = self.genderCheck.checked
-        pc_flags.stats = self.statsCheck.checked
-        pc_flags.iclass = self.classCheck.checked
+        pc_flags.name = self.nameCheck.is_checked
+        pc_flags.race = self.raceCheck.is_checked
+        pc_flags.gender = self.genderCheck.is_checked
+        pc_flags.stats = self.statsCheck.is_checked
+        pc_flags.iclass = self.classCheck.is_checked
         #deprint(flags.getTrueAttrs())
         bass.settings['bash.faceImport.flags'] = int(pc_flags)
         bosh.faces.PCFaces.save_setFace(self.fileInfo,self.data[item],pc_flags)
@@ -365,7 +365,7 @@ class CreateNewProject(balt.Dialog):
         self.checkEsp = CheckBox(self, _(u'Blank.esp'),
                                  on_toggle=self.OnCheckBoxChange, checked=True)
         self.checkEspMasterless = CheckBox(self, _(u'Blank Masterless.esp'),
-                                   on_toggle=self.OnCheckBoxChange, checked=False)
+                                           on_toggle=self.OnCheckBoxChange, checked=False)
         self.checkWizard = CheckBox(self, _(u'Blank wizard.txt'),
                                     on_toggle=self.OnCheckBoxChange)
         self.checkWizardImages = CheckBox(self, _(u'Wizard Images Directory'))
@@ -404,8 +404,8 @@ class CreateNewProject(balt.Dialog):
     def OnCheckBoxChange(self, is_checked=None):
         """ Change the Dialog Icon to represent what the project status will
         be when created. """
-        if self.checkEsp.checked:
-            if self.checkWizard.checked:
+        if self.checkEsp.is_checked:
+            if self.checkWizard.is_checked:
                 self.SetIcon(
                     installercons.get_image('off.white.dir.wiz').GetIcon())
             else:
@@ -429,22 +429,22 @@ class CreateNewProject(balt.Dialog):
         # Shell commands (UAC workaround)
         tmpDir = bolt.Path.tempDir()
         tempProject = tmpDir.join(projectName)
-        if self.checkEsp.checked:
+        if self.checkEsp.is_checked:
             fileName = u'Blank, %s.esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject)
-        if self.checkEspMasterless.checked:
+        if self.checkEspMasterless.is_checked:
             fileName = u'Blank, %s (masterless).esp' % bush.game.fsName
             bosh.modInfos.create_new_mod(fileName, directory=tempProject,
                                          masterless=True)
-        if self.checkWizard.checked:
+        if self.checkWizard.is_checked:
             # Create empty wizard.txt
             wizardPath = tempProject.join(u'wizard.txt')
             with wizardPath.open('w',encoding='utf-8') as out:
                 out.write(u'; %s BAIN Wizard Installation Script\n' % projectName)
-        if self.checkWizardImages.checked:
+        if self.checkWizardImages.is_checked:
             # Create 'Wizard Images' directory
             tempProject.join(u'Wizard Images').makedirs()
-        if self.checkDocs.checked:
+        if self.checkDocs.is_checked:
             #Create the 'Docs' Directory
             tempProject.join(u'Docs').makedirs()
         # if self.checkScreenshot.IsChecked():

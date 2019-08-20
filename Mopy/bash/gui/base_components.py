@@ -113,11 +113,11 @@ class _AWidget(object):
         return self._native_widget.IsEnabled()
 
     @enabled.setter
-    def enabled(self, enabled): # type: (bool) -> None
+    def enabled(self, is_enabled): # type: (bool) -> None
         """Enables or disables this widget based on the specified parameter.
 
-        :param enabled: Whether or not to enable this widget."""
-        self._native_widget.Enable(enabled)
+        :param is_enabled: Whether or not to enable this widget."""
+        self._native_widget.Enable(is_enabled)
 
     @property
     def tooltip(self): # type: () -> unicode

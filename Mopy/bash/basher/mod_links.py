@@ -2042,7 +2042,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
             dialog.EndModal(1)
             bass.settings['bash.mods.export.deprefix'] = gdeprefix.text_content.strip()
             bass.settings['bash.mods.export.skip'] = gskip.text_content.strip()
-            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.checked
+            bass.settings['bash.mods.export.skipcomments'] = gskipcomments.is_checked
         dialog = balt.Dialog(Link.Frame, _(u'Export Scripts Options'),
                              size=(400, 180), resize=False)
         gskip = TextField(dialog)
@@ -2051,7 +2051,7 @@ class Mod_Scripts_Export(_Mod_Export_Link):
                 tooltip=_(u"If active doesn't export comments in the scripts"))
         gskip.text_content = bass.settings['bash.mods.export.skip']
         gdeprefix.text_content = bass.settings['bash.mods.export.deprefix']
-        gskipcomments.checked = bass.settings['bash.mods.export.skipcomments']
+        gskipcomments.is_checked = bass.settings['bash.mods.export.skipcomments']
         msg = [_(u'Remove prefix from file names i.e. enter cob to save '
                  u'script cobDenockInit'),
                _(u'as DenockInit.ext rather than as cobDenockInit.ext'),
