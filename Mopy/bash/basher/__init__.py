@@ -3630,7 +3630,7 @@ class BashStatusBar(DnDStatusBar):
             # Find the BashStatusBar_Button instance that made it
             link = self.GetLink(button=button)
             if link:
-                button.Show(False)
+                button.visible = False
                 self.buttons.remove(button)
                 settings['bash.statusbar.hide'].add(link.uid)
                 settings.setChanged('bash.statusbar.hide')

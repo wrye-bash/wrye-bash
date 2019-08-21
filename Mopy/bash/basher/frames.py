@@ -105,11 +105,7 @@ class DocBrowser(BaltFrame):
         VLayout(default_fill=1, default_border=4, default_weight=1,
                 items=[root_window])
         for btn in self._buttons:
-            # TODO(inf) de-wx! Wrap bitmapButton and drop this check
-            if isinstance(btn, Button) or isinstance(btn, CheckBox):
-                btn.enabled = False
-            else:
-                btn.Disable()
+            btn.enabled = False
 
     @staticmethod
     def _resources(): return Resources.bashDocBrowser

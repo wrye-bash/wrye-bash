@@ -26,11 +26,12 @@ import webbrowser
 from . import BashStatusBar, BashFrame
 from .frames import ModChecker, DocBrowser
 from .. import bass, bosh, bolt, balt, bush, parsers, load_order
-from ..balt import ItemLink, Link, Links, bitmapButton, \
-    SeparatorLink, tooltip, BoolLink, staticBitmap
+from ..balt import ItemLink, Link, Links, SeparatorLink, tooltip, BoolLink, \
+    staticBitmap
 from ..bolt import GPath
 from ..exception import AbstractError
 from ..env import getJava
+from ..gui import ClickableImage, EventResult
 
 __all__ = ['Obse_Button', 'LAA_Button', 'AutoQuit_Button', 'Game_Button',
            'TESCS_Button', 'App_Button', 'Tooldir_Button', 'App_Tes4View',
@@ -44,7 +45,7 @@ class _StatusBar_Hide(ItemLink):
     """The (single) link on the button's menu - hides the button."""
     def _initData(self, window, selection):
         super(_StatusBar_Hide, self)._initData(window, selection)
-        tip_ = window.GetToolTip().GetTip()
+        tip_ = window.tooltip
         self._text = _(u"Hide '%s'") % tip_
         self._help = _(u"Hides %(buttonname)s's status bar button (can be"
             u" restored through the settings menu).") % ({'buttonname': tip_})
@@ -75,19 +76,20 @@ class StatusBar_Button(ItemLink):
         existent buttons."""
         return True
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         """Create and return gui button - you must define imageKey - WIP overrides"""
-        btn_image = kwdargs.pop('image', None) or balt.images[self.imageKey %
+        btn_image = image or balt.images[self.imageKey %
                         bass.settings['bash.statusbar.iconSize']].GetBitmap()
-        kwdargs['onRClick'] = kwdargs.pop('onRClick', None) or self.DoPopupMenu
-        kwdargs['onBBClick'] = self.Execute
         if self.gButton is not None:
-            self.gButton.Destroy()
-        self.gButton = bitmapButton(window, btn_image, style=style,
-                                    button_tip=self.sb_button_tip, **kwdargs)
+            # TODO(inf) de-wx!
+            self.gButton._native_widget.Destroy()
+        self.gButton = ClickableImage(window, btn_image,
+                                      tooltip=self.sb_button_tip)
+        self.gButton.on_clicked.subscribe(self.Execute)
+        self.gButton.on_right_clicked.subscribe(onRClick or self.DoPopupMenu)
         return self.gButton
 
-    def DoPopupMenu(self,event):
+    def DoPopupMenu(self):
         if self.canHide:
             if len(self.mainMenu) == 0 or not isinstance(self.mainMenu[-1],
                                                          _StatusBar_Hide):
@@ -96,8 +98,7 @@ class StatusBar_Button(ItemLink):
                 self.mainMenu.append(_StatusBar_Hide())
         if len(self.mainMenu) > 0:
             self.mainMenu.PopupMenu(self.gButton,Link.Frame,0)
-        else:
-            event.Skip()
+            return EventResult.FINISH ##: Kept it as such, test if needed
 
     # Helper function to get OBSE version
     @property
@@ -195,16 +196,16 @@ class App_Button(StatusBar_Button):
                 return False
             return self.exePath.exists()
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         if not self.IsPresent(): return None
         size = bass.settings['bash.statusbar.iconSize'] # 16, 24, 32
         idex = (size / 8) - 2 # 0, 1, 2, duh
-        super(App_Button, self).GetBitmapButton(window, style=style,
-              image=self.images[idex].GetBitmap())
+        super(App_Button, self).GetBitmapButton(
+            window, self.images[idex].GetBitmap(), onRClick)
         if self.obseTip is not None:
             App_Button.obseButtons.append(self)
             if BashStatusBar.obseButton.button_state:
-                self.gButton.SetToolTip(tooltip(self.obseTip))
+                self.gButton.tooltip = self.obseTip
         return self.gButton
 
     def ShowError(self,error):
@@ -539,9 +540,9 @@ class _StatefulButton(StatusBar_Button):
         elif state == -1: #--Invert
             self.button_state = True ^ self.button_state
         if self.gButton:
-            self.gButton.SetBitmapLabel(balt.images[self.imageKey %
-                        bass.settings['bash.statusbar.iconSize']].GetBitmap())
-            self.gButton.SetToolTip(tooltip(self.sb_button_tip))
+            self.gButton.image = balt.images[self.imageKey %
+                        bass.settings['bash.statusbar.iconSize']].GetBitmap()
+            self.gButton.tooltip = self.sb_button_tip
 
     @property
     def button_state(self): return self._present and bass.settings.get(
@@ -557,11 +558,11 @@ class _StatefulButton(StatusBar_Button):
     @property
     def _present(self): return True
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         if not self._present: return None
         self.SetState()
-        return super(_StatefulButton, self).GetBitmapButton(window, style,
-                                                            **kwdargs)
+        return super(_StatefulButton, self).GetBitmapButton(window, image,
+                                                            onRClick)
 
     def Execute(self):
         """Invert state."""
@@ -590,7 +591,7 @@ class Obse_Button(_StatefulButton):
     def UpdateToolTips(self):
         tipAttr = ('sb_button_tip', 'obseTip')[self.button_state]
         for button in App_Button.obseButtons:
-            button.gButton.SetToolTip(tooltip(getattr(button,tipAttr,u'')))
+            button.gButton.tooltip = getattr(button, tipAttr, u'')
 
 class LAA_Button(_StatefulButton):
     """4GB Launcher on/off state button."""
@@ -659,9 +660,9 @@ class App_Settings(StatusBar_Button):
     """Show settings dialog."""
     imageKey, _tip = 'settingsbutton.%s', _(u'Settings')
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         return super(App_Settings, self).GetBitmapButton(
-            window, style, onRClick=lambda __event: self.Execute())
+            window, image, lambda: self.Execute())
 
     def Execute(self):
         BashStatusBar.SettingsMenu.PopupMenu(Link.Frame.statusBar, Link.Frame,
@@ -672,10 +673,11 @@ class App_Restart(StatusBar_Button):
     """Restart Wrye Bash"""
     _tip = _(u"Restart")
 
-    def GetBitmapButton(self, window, style, **kwdargs):
+    def GetBitmapButton(self, window, image=None, onRClick=None):
         size = bass.settings['bash.statusbar.iconSize']
-        return super(App_Restart, self).GetBitmapButton(window, style,
-            image=staticBitmap(window, special='undo', size=(size,size)))
+        return super(App_Restart, self).GetBitmapButton(
+            window, staticBitmap(window, special='undo', size=(size,size)),
+            onRClick)
 
     def Execute(self): Link.Frame.Restart()
 
