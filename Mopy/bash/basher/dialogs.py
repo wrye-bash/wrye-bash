@@ -63,7 +63,7 @@ class ColorDialog(balt.Dialog):
         self.picker = ColorPicker(self, colors[choiceKey])
         #--Description
         help_ = colorInfo[choiceKey][1]
-        self.textCtrl = TextArea(self, text=help_, editable=False)
+        self.textCtrl = TextArea(self, init_text=help_, editable=False)
         #--Buttons
         self.default = Button(self, _(u'Default'))
         self.default.on_clicked.subscribe(self.OnDefault)

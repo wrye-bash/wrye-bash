@@ -819,7 +819,7 @@ class Log(_Log):
                                   log_icons)
         self.window.SetBackgroundColour(wx.NullColour) #--Bug workaround to ensure that default colour is being used.
         #--Text
-        txtCtrl = TextArea(self.window, text=logText, auto_tooltip=False)
+        txtCtrl = TextArea(self.window, init_text=logText, auto_tooltip=False)
                           # special=True) SUNKEN_BORDER and TE_RICH2
         # TODO(nycz): GUI fixed width font
         if fixedFont:

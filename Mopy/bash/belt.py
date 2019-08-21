@@ -205,7 +205,8 @@ class PageError(PageInstaller):
         #Layout stuff
         VLayout(spacing=5, items=[
             Label(self, title),
-            (TextArea(self, editable=False, text=errorMsg, auto_tooltip=False),
+            (TextArea(self, editable=False, init_text=errorMsg,
+                      auto_tooltip=False),
              LayoutOptions(weight=1, fill=True))
         ]).apply_to(self)
         self.Layout()
@@ -412,7 +413,7 @@ class PageFinish(PageInstaller):
                      items=[self.listInis, self.listTweaks]),
              LayoutOptions(weight=1)),
             Label(self, _(u'Notes:')),
-            (TextArea(self, text=u''.join(notes), auto_tooltip=False),
+            (TextArea(self, init_text=u''.join(notes), auto_tooltip=False),
              LayoutOptions(weight=1)),
             HLayout(items=[
                 Stretch(),

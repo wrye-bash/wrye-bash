@@ -47,12 +47,12 @@ class _ATextInput(_AWidget):
        event, use _ATextInput.modified to check if it was a user modification;
        otherwise, you risk getting into an infinite loop."""
     # TODO: style and/or (fixed) font
-    def __init__(self, parent, text=None, multiline=True, editable=True,
+    def __init__(self, parent, init_text=None, multiline=True, editable=True,
                  auto_tooltip=True, max_length=None, no_border=False, style=0):
         """Creates a new _ATextInput instance with the specified properties.
 
         :param parent: The object that this text input belongs to.
-        :param text: The initial text in this text input.
+        :param init_text: The initial text in this text input.
         :param multiline: True if this text input allows multiple lines.
         :param editable: True if the user may edit text in this text input.
         :param auto_tooltip: Whether or not to automatically show a tooltip
@@ -71,7 +71,7 @@ class _ATextInput(_AWidget):
         if not editable: style |= _wx.TE_READONLY
         if no_border: style |= _wx.BORDER_NONE
         self._native_widget = _wx.TextCtrl(parent, style=style)
-        if text: self._native_widget.SetValue(text)
+        if init_text: self._native_widget.SetValue(init_text)
         if max_length:
             self._native_widget.SetMaxLength(max_length)
         # Events
@@ -152,12 +152,13 @@ class _ATextInput(_AWidget):
 class TextArea(_ATextInput):
     """A multi-line text edit widget. See the documentation for _ATextInput
     for a list of the events this component offers."""
-    def __init__(self, parent, text=None, editable=True, auto_tooltip=True,
-                 max_length=None, no_border=False, wrap=True):
+    def __init__(self, parent, init_text=None, editable=True,
+                 auto_tooltip=True, max_length=None, no_border=False,
+                 wrap=True):
         """Creates a new TextArea instance with the specified properties.
 
         :param parent: The object that this text input belongs to.
-        :param text: The initial text in this text input.
+        :param init_text: The initial text in this text input.
         :param editable: True if the user may edit text in this text input.
         :param auto_tooltip: Whether or not to automatically show a tooltip
                              when the entered text exceeds the length of this
@@ -169,7 +170,8 @@ class TextArea(_ATextInput):
                           hidden.
         :param wrap: Whether or not to wrap text inside this text input."""
         wrap_style = _wx.TE_DONTWRAP if not wrap else 0
-        super(TextArea, self).__init__(parent, text=text, editable=editable,
+        super(TextArea, self).__init__(parent, init_text=init_text,
+                                       editable=editable,
                                        auto_tooltip=auto_tooltip,
                                        max_length=max_length,
                                        no_border=no_border, style=wrap_style)
@@ -177,12 +179,12 @@ class TextArea(_ATextInput):
 class TextField(_ATextInput):
     """A single-line text edit widget. See the documentation for _ATextInput
     for a list of the events this component offers."""
-    def __init__(self, parent, text=None, editable=True, auto_tooltip=True,
-                 max_length=None, no_border=False):
+    def __init__(self, parent, init_text=None, editable=True,
+                 auto_tooltip=True, max_length=None, no_border=False):
         """Creates a new TextField instance with the specified properties.
 
         :param parent: The object that this text input belongs to.
-        :param text: The initial text in this text input.
+        :param init_text: The initial text in this text input.
         :param editable: True if the user may edit text in this text input.
         :param auto_tooltip: Whether or not to automatically show a tooltip
                              when the entered text exceeds the length of this
@@ -192,8 +194,8 @@ class TextField(_ATextInput):
                            want a limit.
         :param no_border: True if the borders of this text input should be
                           hidden."""
-        super(TextField, self).__init__(parent, text=text, multiline=False,
-                                        editable=editable,
+        super(TextField, self).__init__(parent, init_text=init_text,
+                                        multiline=False, editable=editable,
                                         auto_tooltip=auto_tooltip,
                                         max_length=max_length,
                                         no_border=no_border)
@@ -218,13 +220,13 @@ class _ALabel(_AWidget):
 class Label(_ALabel):
     """A static text element. Doesn't have a border and the text can't be
     interacted with by the user."""
-    def __init__(self, parent, text):
+    def __init__(self, parent, init_text):
         """Creates a new Label with the specified parent and text.
 
         :param parent: The object that this label belongs to.
-        :param text: The text of this label."""
+        :param init_text: The initial text of this label."""
         super(Label, self).__init__()
-        self._native_widget = _wx.StaticText(parent, _wx.ID_ANY, text)
+        self._native_widget = _wx.StaticText(parent, _wx.ID_ANY, init_text)
 
     def wrap(self, max_length): # type: (int) -> None
         """Wraps this label's text so that each line is at most max_length
@@ -236,18 +238,19 @@ class Label(_ALabel):
 class HyperlinkLabel(_ALabel):
     """A label that opens a URL when clicked, imitating a hyperlink in a
     browser. Typically styled blue."""
-    def __init__(self, parent, text, url, always_unvisited=False):
+    def __init__(self, parent, init_text, url, always_unvisited=False):
         """Creates a new HyperlinkLabel with the specified parent, text and
         URL.
 
         :param parent: The object that this hyperlink label belongs to.
-        :param text: The text of this hyperlink label.
+        :param init_text: The initial text of this hyperlink label.
         :param url: The URL to open when this hyperlink label is clicked on.
         :param always_unvisited: If set to True, this link will always appear
                                  as if it hasn't been clicked on (i.e. blue -
                                  it will never turn purple)."""
         super(HyperlinkLabel, self).__init__()
-        self._native_widget = _wx.HyperlinkCtrl(parent, _wx.ID_ANY, text, url)
+        self._native_widget = _wx.HyperlinkCtrl(parent, _wx.ID_ANY, init_text,
+                                                url)
         if always_unvisited:
             self._native_widget.SetVisitedColour(
                 self._native_widget.GetNormalColour())

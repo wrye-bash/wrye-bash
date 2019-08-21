@@ -446,13 +446,13 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
             style=wx.RESIZE_BORDER | wx.CAPTION | wx.CLIP_CHILDREN |
                   wx.TAB_TRAVERSAL)
         #--Fields
-        self.gName = TextField(self, text=config.name, max_length=100)
+        self.gName = TextField(self, init_text=config.name, max_length=100)
         self.gVersion = TextField(self, u'{:d}.{:02d}'.format(
             config.vMajor, config.vMinor), max_length=32)
         self.gWebsite = TextField(self, config.website, max_length=512)
         self.gAuthor = TextField(self, config.author, max_length=512)
-        self.gEmail = TextField(self, text=config.email, max_length=512)
-        self.gAbstract = TextArea(self, text=config.abstract,
+        self.gEmail = TextField(self, init_text=config.email, max_length=512)
+        self.gAbstract = TextArea(self, init_text=config.abstract,
                                   max_length=4 * 1024)
         #--Layout
         def _no_fill_text(txt):
