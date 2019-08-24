@@ -218,7 +218,7 @@ class BackwardButton(ImageButton):
 
     See Button for documentation on button events."""
     def __init__(self, parent):
-        """Constructs a new BackwardButton with the specified parent.
+        """Creates a new BackwardButton with the specified parent.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component."""
@@ -234,7 +234,7 @@ class ForwardButton(ImageButton):
 
     See Button for documentation on button events."""
     def __init__(self, parent):
-        """Constructs a new ForwardButton with the specified parent.
+        """Creates a new ForwardButton with the specified parent.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component."""
@@ -244,12 +244,30 @@ class ForwardButton(ImageButton):
                                             tooltip=_(u'Go Forwards'),
                                             exact_fit=True)
 
+class ReloadButton(ImageButton):
+    """An image button with no text that displays two arrows in a circle. Used
+    for reloading documents, websites, etc.
+
+    See Button for documentation on button events."""
+    def __init__(self, parent):
+        """Creates a new ReloadButton with the specified parent.
+
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component."""
+        # TODO(inf) Image API! This is really, really ugly
+        from .. import bass
+        reload_icon = _wx.Bitmap(bass.dirs[u'images'].join(u'reload16.png').s,
+                                 _wx.BITMAP_TYPE_PNG)
+        super(ReloadButton, self).__init__(parent, reload_icon,
+                                           tooltip=_(u'Reload'),
+                                           exact_fit=True)
+
 class ClickableImage(ImageButton):
     """An image that acts like a button. Has no text and no borders.
 
     See Button for documentation on button events."""
     def __init__(self, parent, image, tooltip=None):
-        """Constructs a new ClickableImage with the specified properties.
+        """Creates a new ClickableImage with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.

@@ -34,3 +34,4 @@ from .events import *
 from .layouts import *
 from .misc_components import *
 from .text_components import *
+from .web_components import *
