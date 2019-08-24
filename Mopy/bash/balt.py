@@ -24,15 +24,11 @@
 
 # Imports ---------------------------------------------------------------------
 import re
-import urllib
-import urlparse
-
 import bass # for dirs - try to avoid
 #--Localization
 #..Handled by bolt, so import that.
 import bolt
 from bolt import GPath, deprint
-from windows import StartURL
 from exception import AbstractError, AccessDeniedError, ArgumentError, \
     BoltError, CancelError, SkipError, StateError
 #--Python
@@ -51,15 +47,13 @@ import wx.wizard as wiz
 #--gui
 from .gui import Button, CancelButton, CheckBox, HBoxedLayout, HLayout, \
     Label, LayoutOptions, OkButton, RIGHT, Stretch, TextArea, TOP, VLayout, \
-    BackwardButton, ForwardButton
-#--wx webview, may not be present on all systems
-try:
-    # raise ImportError
-    import wx.html2 as _wx_html2
-except ImportError:
-    _wx_html2 = None
-    deprint(
-        _(u'wx.WebView is missing, features utilizing HTML will be disabled'))
+    BackwardButton, ForwardButton, ReloadButton, web_viewer_available, \
+    WebViewer
+
+# Print a notice if wx.html2 is missing
+if not web_viewer_available():
+    deprint(_(u'wx.html2.WebView is missing, features utilizing HTML will be '
+              u'disabled'))
 
 class Resources(object):
     #--Icon Bundles
@@ -663,62 +657,37 @@ def showInfo(parent,message,title=_(u'Information'),**kwdargs):
     return askStyled(parent,message,title,wx.OK|wx.ICON_INFORMATION,**kwdargs)
 
 #------------------------------------------------------------------------------
-
+# TODO(inf) de-wx! Pretty much ready to be moved to webview.py, which really
+#  needs a better name - web_components.py?
 class HtmlCtrl(object):
-    @staticmethod
-    def html_lib_available(): return bool(_wx_html2)
-
     def __init__(self, parent):
         ctrl = self.web_viewer = wx.Window(parent)
         # init the fallback/plaintext widget
         self._text_ctrl = TextArea(ctrl, editable=False, auto_tooltip=False)
         items = [self._text_ctrl]
-        self._prev_button = BackwardButton(parent)
-        self._next_button = ForwardButton(parent)
-        if _wx_html2:
-            # TODO(inf) de-wx! (see _update_buttons, ugly)
-            self._html_ctrl = _wx_html2.WebView.New(ctrl)
-            self._html_ctrl.Bind(
-                _wx_html2.EVT_WEBVIEW_LOADED,
-                lambda _event: self._update_buttons(enable_html=True))
-            self._html_ctrl.Bind(
-                _wx_html2.EVT_WEBVIEW_NEWWINDOW,
-                lambda event: self._open_in_external(event.GetURL()))
+        if web_viewer_available():
+            # We can render HTML, create the WebViewer and use its buttons
+            self._html_ctrl = WebViewer(ctrl, buttons_parent=parent)
+            self._prev_button, self._next_button, self._reload_button = \
+                self._html_ctrl.get_navigation_buttons()
             items.append(self._html_ctrl)
             self._text_ctrl.enabled = False
-            self._prev_button.on_clicked.subscribe(self.go_back)
-            self._next_button.on_clicked.subscribe(self.go_forward)
+        else:
+            # Emulate the buttons WebViewer would normally provide
+            self._prev_button = BackwardButton(parent)
+            self._next_button = ForwardButton(parent)
+            self._reload_button = ReloadButton(parent)
         VLayout(default_weight=4, default_fill=True,
                 items=items).apply_to(ctrl)
         self.switch_to_text() # default to text
 
-    @staticmethod
-    def _open_in_external(target_url):
-        # We don't support tabs and windows, just open it in the user's browser
-        # TODO(inf) just webbrowser.open() instead?
-        StartURL(target_url)
-
-    def _update_buttons(self, enable_html):
-        if _wx_html2:
-            self._html_ctrl.Enable(enable_html)
-            self._html_ctrl.Show(enable_html)
+    def _update_views(self, enable_html):
+        if web_viewer_available():
+            self._html_ctrl.enabled = enable_html
+            self._html_ctrl.visible = enable_html
+            self._html_ctrl.update_buttons()
         self._text_ctrl.enabled = not enable_html
         self._text_ctrl.visible = not enable_html
-        self._prev_button.enabled = enable_html and self._html_ctrl.CanGoBack()
-        self._next_button.enabled = enable_html and \
-                                    self._html_ctrl.CanGoForward()
-
-    def go_back(self):
-        # Sanity check, shouldn't ever hit this
-        if self._html_ctrl.CanGoBack():
-            self._html_ctrl.GoBack()
-        # HTML must be enabled, otherwise the button wouldn't be enabled
-        self._update_buttons(enable_html=True)
-
-    def go_forward(self):
-        if self._html_ctrl.CanGoForward():
-            self._html_ctrl.GoForward()
-        self._update_buttons(enable_html=True)
 
     @property
     def fallback_text(self):
@@ -744,24 +713,23 @@ class HtmlCtrl(object):
         self._text_ctrl.editable = editable
 
     def switch_to_html(self):
-        if not _wx_html2: return
-        self._update_buttons(enable_html=True)
+        if not web_viewer_available(): return
+        self._update_views(enable_html=True)
         self.web_viewer.Layout()
 
     def switch_to_text(self):
-        self._update_buttons(enable_html=False)
+        self._update_views(enable_html=False)
         self.web_viewer.Layout()
 
     def get_buttons(self):
-        return self._prev_button, self._next_button
+        return self._prev_button, self._next_button, self._reload_button
 
     def try_load_html(self, file_path, file_text=u''):
         # type: (bolt.Path) -> None
-        """Load a HTML file if wx.WebView is available, or load the text."""
-        if _wx_html2:
-            self._html_ctrl.ClearHistory()
-            url = urlparse.urljoin(u'file:', urllib.pathname2url(file_path.s))
-            self._html_ctrl.LoadURL(url)
+        """Load a HTML file if WebViewer is available, or load the text."""
+        if web_viewer_available():
+            self._html_ctrl.clear_history()
+            self._html_ctrl.open_file(file_path.s)
             self.switch_to_html()
         else:
             self.load_text(file_text)

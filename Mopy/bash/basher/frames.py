@@ -33,7 +33,7 @@ from ..bolt import GPath
 from ..bosh import omods
 from ..gui import Button, CancelButton, CENTER, CheckBox, GridLayout, \
     HLayout, Label, LayoutOptions, SaveButton, Spacer, Stretch, TextArea, \
-    TextField, VLayout
+    TextField, VLayout, web_viewer_available
 
 class DocBrowser(BaltFrame):
     """Doc Browser frame."""
@@ -87,10 +87,11 @@ class DocBrowser(BaltFrame):
         self._open_btn.on_clicked.subscribe(self._do_open)
         self._doc_name_box = TextField(main_window, editable=False)
         self._doc_ctrl = HtmlCtrl(main_window)
-        self._prev_btn, self._next_btn = self._doc_ctrl.get_buttons()
+        self._prev_btn, self._next_btn, self._reload_btn = \
+            self._doc_ctrl.get_buttons()
         self._buttons = [self._edit_box, self._set_btn, self._forget_btn,
                          self._rename_btn, self._open_btn, self._prev_btn,
-                         self._next_btn]
+                         self._next_btn, self._reload_btn]
         #--Mod list
         VLayout(spacing=4, default_fill=True, items=[
             self._mod_name_box, (self._mod_list, LayoutOptions(weight=1))
@@ -214,12 +215,12 @@ class DocBrowser(BaltFrame):
 
     def _load_data(self, path=None, data=None, editing=False):
         if path and path.cext in (u'.htm',u'.html',u'.mht') and not editing \
-                and self._doc_ctrl.html_lib_available():
+                and web_viewer_available():
             self._doc_ctrl.try_load_html(path)
         else:
             # Oddly, wxPython's LoadFile function doesn't read unicode
             # correctly, even in unicode builds
-            if data is None:
+            if data is None and path:
                 try:
                     with path.open('r',encoding='utf-8-sig') as ins:
                         data = ins.read()
@@ -321,7 +322,7 @@ class ModChecker(BaltFrame):
         #--Text
         self.check_mods_text = None
         self._html_ctrl = HtmlCtrl(self)
-        back_button, forward_button = self._html_ctrl.get_buttons()
+        back_btn, forward_btn, reload_btn = self._html_ctrl.get_buttons()
         self._controls = OrderedDict()
         self._setting_names = {}
         def _f(key, make_checkbox, caption, setting_key=None,
@@ -365,7 +366,7 @@ class ModChecker(BaltFrame):
             ]),
             HLayout(spacing=4, items=[
                 self._controls[_SCAN_DIRTY], Stretch(), self._controls[_UPDATE],
-                self._controls[_COPY_TEXT], back_button, forward_button
+                self._controls[_COPY_TEXT], back_btn, forward_btn, reload_btn
             ])
         ]).apply_to(self)
         self.CheckMods()
@@ -404,7 +405,7 @@ class ModChecker(BaltFrame):
               for key in [_MOD_LIST, _RULE_SETS, _NOTES, _CONFIG, _SUGGEST,
                           _CRC, _VERSION]],
             mod_checker=(None, self)[self._controls[_SCAN_DIRTY].is_checked])
-        if HtmlCtrl.html_lib_available():
+        if web_viewer_available():
             log_path = bass.dirs['saveBase'].join(u'ModChecker.html')
             balt.convert_wtext_to_html(log_path, self.check_mods_text)
             self._html_ctrl.try_load_html(log_path)
