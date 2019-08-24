@@ -54,13 +54,15 @@ class Button(_AButton):
                  exact_fit=False, no_border=False):
         """Creates a new Button with the specified properties.
 
-        :param parent: The object that the button belongs to.
-        :param label: The text shown on the button.
-        :param tooltip: A tooltip to show when the user hovers over the button.
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component.
+        :param label: The text shown on this button.
+        :param tooltip: A tooltip to show when the user hovers over this
+                        button.
         :param default: If set to True, this button will be the 'default',
                         meaning that if a user selects nothing else and hits
                         Enter, this button will activate.
-        :param exact_fit: If set to True, will fit the size of the button
+        :param exact_fit: If set to True, will fit the size of this button
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
                           hidden."""
@@ -73,9 +75,9 @@ class Button(_AButton):
             btn_style |= _wx.BU_EXACTFIT
         if no_border:
             btn_style |= _wx.BORDER_NONE
-        self._native_widget = _wx.Button(parent, self.__class__._id,
-                                         label=label, name=u'button',
-                                         style=btn_style)
+        self._native_widget = _wx.Button(self._resolve(parent),
+                                         self.__class__._id, label=label,
+                                         name=u'button', style=btn_style)
         if default:
             self._native_widget.SetDefault()
         if tooltip:
@@ -175,14 +177,16 @@ class ImageButton(Button):
                  exact_fit=False, no_border=False):
         """Creates a new _AImageButton with the specified properties.
 
-        :param parent: The object that the button belongs to.
-        :param image: The image shown on the button.
-        :param label: The text shown on the button.
-        :param tooltip: A tooltip to show when the user hovers over the button.
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component.
+        :param image: The image shown on this button.
+        :param label: The text shown on this button.
+        :param tooltip: A tooltip to show when the user hovers over this
+                        button.
         :param default: If set to True, this button will be the 'default',
                         meaning that if a user selects nothing else and hits
                         Enter, this button will activate.
-        :param exact_fit: If set to True, will fit the size of the button
+        :param exact_fit: If set to True, will fit the size of this button
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
                           hidden."""
@@ -216,7 +220,8 @@ class BackwardButton(ImageButton):
     def __init__(self, parent):
         """Constructs a new BackwardButton with the specified parent.
 
-        :param parent: The object that the button belongs to."""
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component."""
         backward_image = _wx.ArtProvider.GetBitmap(
             _wx.ART_GO_BACK, _wx.ART_HELP_BROWSER, (16, 16))
         super(BackwardButton, self).__init__(parent, backward_image,
@@ -231,7 +236,8 @@ class ForwardButton(ImageButton):
     def __init__(self, parent):
         """Constructs a new ForwardButton with the specified parent.
 
-        :param parent: The object that the button belongs to."""
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component."""
         forward_image = _wx.ArtProvider.GetBitmap(
             _wx.ART_GO_FORWARD, _wx.ART_HELP_BROWSER, (16, 16))
         super(ForwardButton, self).__init__(parent, forward_image,
@@ -245,9 +251,10 @@ class ClickableImage(ImageButton):
     def __init__(self, parent, image, tooltip=None):
         """Constructs a new ClickableImage with the specified properties.
 
-        :param parent: The object that the button belongs to.
-        :param image: The image shown on the button.
-        :param tooltip: A tooltip to show when the user hovers over the
+        :param parent: The object that this button belongs to. May be a wx
+                       object or a component.
+        :param image: The image shown on this button.
+        :param tooltip: A tooltip to show when the user hovers over this
                         button."""
         super(ClickableImage, self).__init__(parent, image, tooltip=tooltip,
                                              exact_fit=True, no_border=True)

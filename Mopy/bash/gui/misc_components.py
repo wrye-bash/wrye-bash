@@ -42,14 +42,15 @@ class CheckBox(_AComponent):
     def __init__(self, parent, label=u'', tooltip=None, checked=False):
         """Creates a new CheckBox with the specified properties.
 
-        :param parent: The object that the checkbox belongs to.
-        :param label: The text shown on the checkbox.
-        :param tooltip: A tooltip to show when the user hovers over the
+        :param parent: The object that this checkbox belongs to. May be a wx
+                       object or a component.
+        :param label: The text shown on this checkbox.
+        :param tooltip: A tooltip to show when the user hovers over this
                         checkbox.
         :param checked: The initial state of the checkbox."""
         super(CheckBox, self).__init__()
         # Create native widget
-        self._native_widget = _wx.CheckBox(parent, _wx.ID_ANY,
+        self._native_widget = _wx.CheckBox(self._resolve(parent), _wx.ID_ANY,
                                            label=label, name=u'checkBox')
         if tooltip:
             self.tooltip = tooltip

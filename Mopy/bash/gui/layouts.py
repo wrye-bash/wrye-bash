@@ -121,10 +121,10 @@ class _ALayout(object):
         if isinstance(item, tuple):
             item, options = item
         if item is None: return None, None, None, None
-        if isinstance(item, _ALayout):
+        elif isinstance(item, _ALayout):
             item = item._sizer
-        elif isinstance(item, _AComponent):
-            item = item._native_widget
+        else:
+            item = _AComponent._resolve(item)
         border = self.default_border
         fill_ = self.default_fill
         h_align = self.default_h_align
