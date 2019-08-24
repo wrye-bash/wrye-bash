@@ -2586,7 +2586,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         for name,title in infoTitles:
             gPage = TextArea(self.gNotebook, editable=False,
                              auto_tooltip=False, wrap=False)
-            gPage.widget_name = name
+            gPage.component_name = name
             # TODO(nycz): GUI to fix when Notebook is wrapped
             self.gNotebook.AddPage(gPage._native_widget,title)
             self.infoPages.append([gPage,False])
@@ -2719,7 +2719,7 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         gPage,initialized = self.infoPages[index]
         if initialized: return
         else: self.infoPages[index][1] = True
-        pageName = gPage.widget_name
+        pageName = gPage.component_name
         def dumpFiles(files, header=u''):
             if files:
                 buff = StringIO.StringIO()

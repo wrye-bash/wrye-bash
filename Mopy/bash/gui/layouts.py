@@ -24,14 +24,14 @@
 
 """This module defines layout components that define how components will fit
 together to create a GUI. In doing so, it is also responsible for making the
-rest of the gui modules work by chaining the _AWidget-based high-level
+rest of the gui modules work by chaining the _AComponent-based high-level
 components into actual wx calls."""
 
 __author__ = u'nycz'
 
 import wx as _wx
 
-from .base_components import _AWidget
+from .base_components import _AComponent
 
 CENTER, LEFT, RIGHT, TOP, BOTTOM = 'center', 'left', 'right', 'top', 'bottom'
 _H_ALIGNS = {None: _wx.ALIGN_LEFT,
@@ -123,7 +123,7 @@ class _ALayout(object):
         if item is None: return None, None, None, None
         if isinstance(item, _ALayout):
             item = item._sizer
-        elif isinstance(item, _AWidget):
+        elif isinstance(item, _AComponent):
             item = item._native_widget
         border = self.default_border
         fill_ = self.default_fill

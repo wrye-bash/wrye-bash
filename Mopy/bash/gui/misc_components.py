@@ -29,10 +29,10 @@ __author__ = u'nycz, Infernio'
 
 import wx as _wx
 
-from .base_components import _AWidget
+from .base_components import _AComponent
 from .events import EventHandler
 
-class CheckBox(_AWidget):
+class CheckBox(_AComponent):
     """Represents a simple two-state checkbox.
 
     Events:

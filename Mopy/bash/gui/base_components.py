@@ -23,7 +23,7 @@
 # =============================================================================
 
 """This module houses parts of the GUI code that form the basis for the
-more specialized parts (e.g. _AWidget)."""
+more specialized parts (e.g. _AComponent)."""
 
 __author__ = u'nycz, Infernio'
 
@@ -65,71 +65,71 @@ class Color(object):
         return Color(color.red, color.green, color.blue, color.alpha)
 
 # Base Elements ---------------------------------------------------------------
-class _AWidget(object):
+class _AComponent(object):
     """Abstract base class for all GUI items. Holds a reference to the native
     wx widget that we abstract over."""
     def __init__(self):
-        """Creates a new _AWidget instance. This initializes _native_widget to
-        None, which will later receive a proper value inside the __init__
-        methods of _AWidget's subclasses."""
+        """Creates a new _AComponent instance. This initializes _native_widget
+        to None, which will later receive a proper value inside the __init__
+        methods of _AComponent's subclasses."""
         self._native_widget = None  # type: _wx.Window
 
     @property
-    def widget_name(self): # type: () -> unicode
-        """Returns the name of this widget.
+    def component_name(self): # type: () -> unicode
+        """Returns the name of this component.
 
-        :return: This widget's name."""
+        :return: This component's name."""
         return self._native_widget.GetName()
 
-    @widget_name.setter
-    def widget_name(self, new_name): # type: (unicode) -> None
-        """Sets the name of this widget to the specified name.
+    @component_name.setter
+    def component_name(self, new_name): # type: (unicode) -> None
+        """Sets the name of this component to the specified name.
 
-        :param new_name: The string to change this widget's name to."""
+        :param new_name: The string to change this component's name to."""
         self._native_widget.SetName(new_name)
 
     @property
     def visible(self): # type: () -> bool
-        """Returns True if this widget is currently visible, i.e. if the user
-        can see it in the GUI.
+        """Returns True if this component is currently visible, i.e. if the
+        user can see it in the GUI.
 
-        :return: True if this widget is currently visible."""
+        :return: True if this component is currently visible."""
         return self._native_widget.IsShown()
 
     @visible.setter
     def visible(self, is_visible): # type: (bool) -> None
-        """Shows or hides this widget based on the specified parameter.
+        """Shows or hides this component based on the specified parameter.
 
-        :param is_visible: Whether or not to show this widget."""
+        :param is_visible: Whether or not to show this component."""
         self._native_widget.Show(is_visible)
 
     @property
     def enabled(self): # type: () -> bool
-        """Returns True if this widget is currently enabled, i.e. if the user
-        can interact with it. Disabled widgets are typically styled in some way
-        to indicate this fact to the user (e.g. greyed out).
+        """Returns True if this component is currently enabled, i.e. if the
+        user can interact with it. Disabled widgets are typically styled in
+        some way to indicate this fact to the user (e.g. greyed out).
 
-        :return: True if this widget is currently enabled."""
+        :return: True if this component is currently enabled."""
         return self._native_widget.IsEnabled()
 
     @enabled.setter
     def enabled(self, is_enabled): # type: (bool) -> None
-        """Enables or disables this widget based on the specified parameter.
+        """Enables or disables this component based on the specified parameter.
 
-        :param is_enabled: Whether or not to enable this widget."""
+        :param is_enabled: Whether or not to enable this component."""
         self._native_widget.Enable(is_enabled)
 
     @property
     def tooltip(self): # type: () -> unicode
-        """Returns the current contents of this widget's tooltip. If no tooltip
-        is set, returns an empty string.
+        """Returns the current contents of this component's tooltip. If no
+        tooltip is set, returns an empty string.
 
-        :return: This widget's tooltip."""
+        :return: This component's tooltip."""
         return self._native_widget.GetToolTipString() or u''
 
     @tooltip.setter
     def tooltip(self, new_tooltip): # type: (unicode) -> None
-        """Sets the tooltip of this widget to the specified string. If the
+        """Sets the tooltip of this component to the specified string. If the
         string is empty or None, the tooltip is simply removed.
 
         :param new_tooltip: The string to change the tooltip to."""
@@ -142,16 +142,16 @@ class _AWidget(object):
     # TODO: use a custom color class here
     @property
     def background_color(self): # type: () -> _wx.Colour
-        """Returns the background color of this widget as a wx.Colour
+        """Returns the background color of this component as a wx.Colour
         object.
 
-        :return: The background color of this widget."""
+        :return: The background color of this component."""
         return self._native_widget.GetBackgroundColour()
 
     @background_color.setter
     def background_color(self, new_color): # type: (_wx.Colour) -> None
-        """Changes the background color of this widget to the color represented
-        by the specified wx.Colour object.
+        """Changes the background color of this component to the color
+        represented by the specified wx.Colour object.
 
         :param new_color: The color to change the background color to."""
         self._native_widget.SetBackgroundColour(new_color)
