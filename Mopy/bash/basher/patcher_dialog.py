@@ -248,9 +248,10 @@ class PatchDialog(balt.Dialog):
                     readme = bass.dirs['saveBase'].join(readme.tail)
                 #finally:
                 #    tempReadmeDir.head.rmtree(safety=tempReadmeDir.head.stail)
-            bosh.modInfos.table.setItem(patch_name,'doc',readme)
+            readme = readme.root + u'.html'
+            bosh.modInfos.table.setItem(patch_name, 'doc', readme)
             balt.playSound(self.parent, bass.inisettings['SoundSuccess'].s)
-            balt.WryeLog(self.parent, readme.root + u'.html', patch_name.s,
+            balt.WryeLog(self.parent, readme, patch_name.s,
                          log_icons=Resources.bashBlue)
             #--Select?
             count, message = 0, _(u'Activate %s?') % patch_name.s

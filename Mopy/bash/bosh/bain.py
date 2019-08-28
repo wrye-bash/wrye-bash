@@ -2575,8 +2575,11 @@ class InstallersData(DataStore):
             bp_doc = modInfos.table.getItem(f, 'doc')
             if bp_doc: # path is absolute, convert to relative to the Data/ dir
                 bp_doc = bp_doc.relpath(bass.dirs['mods'].s)
-                keepFiles.add((bolt.CIstr('%s' % bp_doc))) # .txt
-                keepFiles.add((bolt.CIstr(bp_doc.root.s + u'.html')))
+                # Keep both versions of the BP doc (.txt and .html)
+                keepFiles.add((bolt.CIstr('%s' % bp_doc)))
+                keepFiles.add((bolt.CIstr(
+                    bp_doc.root.s + (u'.txt' if bp_doc.cext == u'.txt'
+                                     else u'.html'))))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.wryeBashDataFiles))
         keepFiles.update((bolt.CIstr(f) for f in bush.game.ignoreDataFiles))
         removes = set(self.data_sizeCrcDate) - keepFiles
