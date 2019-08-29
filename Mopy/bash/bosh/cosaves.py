@@ -441,8 +441,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
         if self.chunk_version >= 1:
             # Every reference is a byte
             total_len += 4 + len(self.references)
-        total_len += sum(imap(lambda e: e.entry_length(self.key_type),
-                              self.elements))
+        total_len += sum(imap(lambda e: e.entry_length(), self.elements))
         return total_len
 
     def dump_to_log(self, log, save_masters):
@@ -471,7 +470,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                                               save_masters[refModID].s))
         log(_(u'   Size:  %u') % len(self.elements))
         for element in self.elements:
-            element.dump_to_log(log, self.key_type)
+            element.dump_to_log(log, save_masters)
 
 class _xSEChunkLIMD(_xSEModListChunk):
     """An LIMD (Light Mod Files) chunk. Available for SKSE64 and F4SE. This is
