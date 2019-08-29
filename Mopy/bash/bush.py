@@ -29,6 +29,7 @@ that are used by multiple objects."""
 # Imports ---------------------------------------------------------------------
 import collections
 import struct
+import textwrap
 import game as game_init
 from bass import get_ini_option
 from bolt import GPath, Path, deprint
@@ -80,9 +81,15 @@ def _supportedGames():
     # unload some modules, _supportedGames is meant to run once
     del pkgutil
     _display_fsName.update({v: k for k, v in _fsName_display.iteritems()})
-    deprint(u'Detected the following supported games via Windows Registry:')
-    for foundName in _registryGames:
-        deprint(u' %s:' % foundName, _registryGames[foundName])
+    # Dump out info about all games that we *could* launch, but wrap it
+    deprint(u'The following games are supported by this version of Wrye Bash:')
+    all_supported_games = u', '.join(sorted(_display_fsName.keys()))
+    for wrapped_line in textwrap.wrap(all_supported_games):
+        deprint(u' ' + wrapped_line)
+    # Dump out info about all games that we *actually* found
+    deprint(u'The following installed games were found via Windows Registry:')
+    for found_name in sorted(_registryGames.keys()):
+        deprint(u' %s: %s' % (found_name, _registryGames[found_name]))
     return _registryGames.copy()
 
 def _detectGames(cli_path=u'', bash_ini_=None):

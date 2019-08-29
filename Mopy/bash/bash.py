@@ -405,7 +405,7 @@ def _import_bush_and_set_game(opts, bashIni):
                 u'line argument or the bash.ini to specify the game path.')
         retCode = _wxSelectGame(ret, msgtext)
         if retCode is None:
-            bolt.deprint(u"No games were found or Selected. Aborting.")
+            bolt.deprint(u'No games were found or selected. Aborting.')
             return None
         # Add the game to the command line, so we use it if we restart
         bass.update_sys_argv(['--oblivionPath', bush.game_path(retCode).s])

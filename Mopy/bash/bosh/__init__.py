@@ -431,7 +431,7 @@ class FileInfo(AFile):
         return self.getFileInfos().bash_dir.join(u'Snapshots')
 
 #------------------------------------------------------------------------------
-reBashTags = re.compile(ur'{{ *BASH *:[^}]*}}\s*\n?',re.U)
+reBashTags = re.compile(u'{{ *BASH *:[^}]*}}\\s*\\n?',re.U)
 
 class ModInfo(FileInfo):
     """A plugin file. Currently, these are .esp, .esm and .esl files."""
