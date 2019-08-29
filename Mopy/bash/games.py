@@ -741,6 +741,7 @@ class AsteriskGame(Game):
 
     max_espms = 254
     max_esls = 4096 # hard limit, game runs out of fds sooner, testing needed
+    # Creation Club content file - if empty, indicates that this game has no CC
     _ccc_filename = u''
     _star = True
 
@@ -841,6 +842,7 @@ class AsteriskGame(Game):
 
     @classmethod
     def parse_ccc_file(cls):
+        if not cls._ccc_filename: return # Abort if this game has no CC
         _ccc_path = bass.dirs['app'].join(cls._ccc_filename)
         try:
             with open(_ccc_path.s, 'r') as ins:
