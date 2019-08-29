@@ -395,7 +395,7 @@ def _detect_game(opts, backup_bash_ini):
 def _import_bush_and_set_game(opts, bashIni):
     import bush
     bolt.deprint(u'Searching for game to manage:')
-    ret = bush.detect_and_set_game(opts.oblivionPath, bashIni)
+    ret, game_icons = bush.detect_and_set_game(opts.oblivionPath, bashIni)
     if ret is not None:  # None == success
         if len(ret) == 0:
             msgtext = _(
@@ -410,7 +410,7 @@ def _import_bush_and_set_game(opts, bashIni):
             msgtext += _(
                 u'To prevent this message in the future, use the -o command\n'
                 u'line argument or the bash.ini to specify the game path.')
-        retCode = _wxSelectGame(ret, msgtext)
+        retCode = _wxSelectGame(ret, game_icons, msgtext)
         if retCode is None:
             bolt.deprint(u'No games were found or selected. Aborting.')
             return None
@@ -504,24 +504,36 @@ class _AppReturnCode(object):
     def get(self): return self.value
     def set(self, value): self.value = value
 
-def _wxSelectGame(ret, msgtext):
+def _wxSelectGame(ret, game_icons, msgtext):
 
     class GameSelect(_wx.Frame):
-        def __init__(self, game_names, callback):
+        def __init__(self, game_names, game_icons, callback):
             _wx.Frame.__init__(self, None, title=u'Wrye Bash')
             self.callback = callback
+            # Setup the size - we give each button 42 pixels, 32 for the image
+            # plus 10 for the borders. However, we limit the total size of the
+            # display list at 600 pixels, where the scrollbar takes over
+            self.SetSizeHints(420, 200)
+            self.SetSize((420, min(600, 200 + len(game_names) * 42)))
+            # Construct the window and add the static text, setup the
+            # scrollbars if needed
             panel = _wx.ScrolledWindow(self, style=_wx.TAB_TRAVERSAL)
-            panel.SetScrollbars(20, 20, 50, 50)
+            panel.SetScrollbars(0, 20, 0, 50)
             sizer = _wx.BoxSizer(_wx.VERTICAL)
             sizer.Add(_wx.StaticText(panel, label=msgtext,
                                      style=_wx.ALIGN_CENTER_HORIZONTAL),
-                      1, _wx.EXPAND | _wx.ALL, 5)
+                      0, _wx.EXPAND | _wx.ALL, 5)
+            # Add the game buttons to the window
             for game_name in game_names:
-                sizer.Add(_wx.Button(panel, label=game_name.title()), 0,
-                          _wx.EXPAND | _wx.ALL ^ _wx.TOP, 5)
+                game_btn = _wx.Button(panel, label=game_name)
+                game_btn.SetBitmap(_wx.Bitmap(game_icons[game_name]))
+                sizer.Add(game_btn, 0, _wx.EXPAND | _wx.ALL ^ _wx.BOTTOM, 5)
+            # Finally, append the 'Quit' button
             quit_button = _wx.Button(panel, _wx.ID_CANCEL, _(u'Quit'))
+            quit_button.SetBitmap(_wx.ArtProvider.GetBitmap(
+                _wx.ART_ERROR, _wx.ART_HELP_BROWSER, (32, 32)))
             quit_button.SetDefault()
-            sizer.Add(quit_button, 0, _wx.EXPAND | _wx.ALL ^ _wx.TOP, 5)
+            sizer.Add(quit_button, 0, _wx.EXPAND | _wx.ALL ^ _wx.BOTTOM, 5)
             self.Bind(_wx.EVT_BUTTON, self.OnButton)
             panel.SetSizer(sizer)
 
@@ -531,10 +543,11 @@ def _wxSelectGame(ret, msgtext):
             self.Close(True)
 
     _app = _wx.App(False)
+    _app.locale = _wx.Locale(_wx.LANGUAGE_DEFAULT)
     retCode = _AppReturnCode()
     # Sort before we pass these on - this is purely visual
     ret.sort()
-    frame = GameSelect(ret, retCode.set)
+    frame = GameSelect(ret, game_icons, retCode.set)
     frame.Show()
     frame.Center()
     _app.MainLoop()
