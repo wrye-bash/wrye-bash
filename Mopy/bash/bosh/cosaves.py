@@ -307,19 +307,12 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
     """An ARVR (Array Variable) chunk. Only available in OBSE and NVSE. See
     ArrayVar.h in xSE's source code for the specification."""
     _fully_decoded = True
-    __slots__ = ('mod_index', 'array_id', 'key_type', 'is_packed',
+    __slots__ = ('_key_type', 'mod_index', 'array_id', 'is_packed',
                  'references', 'elements')
 
     class _xSEEntryARVR(_ChunkEntry, _Dumpable):
-        """A single ARVR entry. An ARVR chunk contains several of these.
-        Unfortunately, this one requires some semi-hacky workarounds, since its
-        layout depends on the value of the key type, which is the same for each
-        entry and is stored in the main chunk. Therefore, we can't really use
-        the standard _ChunkEntry methods and instead have to create our own,
-        where we can pass the key_type variable as a parameter. Nevertheless,
-        we do extend the classes and fill the standard methods with
-        'raise AbstractError' statements to signal this fact."""
-        __slots__ = ('key', 'element_type', 'stored_data')
+        """A single ARVR entry. An ARVR chunk contains several of these."""
+        __slots__ = ('_key_type', 'key', 'element_type', 'stored_data')
 
         def __init__(self, ins, key_type):
             if key_type == 1:
@@ -329,6 +322,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
             else:
                 raise RuntimeError(u'Unknown or unsupported key type %u.' %
                                    key_type)
+            self._key_type = key_type
             self.element_type = unpack_byte(ins)
             if self.element_type == 1:
                 self.stored_data = unpack_double(ins)
@@ -341,17 +335,13 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                                    self.element_type)
 
         def write_entry(self, out):
-            raise AbstractError(u'Use write_arvr_entry instead.')
-
-        def write_arvr_entry(self, out, key_type):
-            """See write_entry documentation."""
-            if key_type == 1:
+            if self._key_type == 1:
                 _pack(out, '=d', self.key)
-            elif key_type == 3:
+            elif self._key_type == 3:
                 _pack_cosave_str16(out, self.key)
             else:
                 raise RuntimeError(u'Unknown or unsupported key type %u.' %
-                                   key_type)
+                                   self._key_type)
             _pack(out, '=B', self.element_type)
             if self.element_type == 1:
                 _pack(out, '=d', self.stored_data)
@@ -364,29 +354,21 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                                    self.element_type)
 
         def entry_length(self):
-            raise AbstractError(u'Use arvr_entry_length instead.')
-
-        def arvr_entry_length(self, key_type):
-            """See entry_length documentation."""
-            # key is either d or H, element_type is B
-            total_len = (9 if key_type == 1 else 3)
+            # element_type is B, key is either d or H + str
+            total_len = 1 + (8 if self._key_type == 1 else 2 + len(self.key))
             if self.element_type == 1:
                 total_len += 8
             elif self.element_type in (2, 4):
                 total_len += 4
             elif self.element_type == 3:
-                total_len += 4 + len(self.stored_data)
+                total_len += 2 + len(self.stored_data)
             return total_len
 
         def dump_to_log(self, log, save_masters):
-            raise AbstractError(u'Use dump_arvr_to_log instead.')
-
-        def dump_arvr_to_log(self, log, key_type):
-            """See dump_to_log documentation."""
-            if key_type == 1:
+            if self._key_type == 1:
                 key_str = u'%f' % self.key
-            elif key_type == 3:
-                key_str = decode(self.key)
+            elif self._key_type == 3:
+                key_str = self.key
             else:
                 key_str = u'BAD'
             if self.element_type == 1:
@@ -396,7 +378,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                 data_str = u'0x%08X' % self.stored_data
                 type_str = u'REF'
             elif self.element_type == 3:
-                data_str = decode(self.stored_data)
+                data_str = self.stored_data
                 type_str = u'STR'
             elif self.element_type == 4:
                 data_str = u'%u' % self.stored_data
@@ -422,6 +404,23 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
         for x in xrange(num_elements):
             self.elements.append(self._xSEEntryARVR(ins, self.key_type))
 
+    @property
+    def key_type(self):
+        """Returns the key type of this ARVR chunk.
+
+        :return: The key type of this ARVR chunk."""
+        return self._key_type
+
+    @key_type.setter
+    def key_type(self, new_key_type):
+        """Changes the key type of this ARVR chunk.
+
+        :param new_key_type: The key type to change to."""
+        self._key_type = new_key_type
+        # Need to update the cached information in the entries too
+        for element in self.elements:
+            element._key_type = new_key_type
+
     def write_chunk(self, out):
         super(_xSEChunkARVR, self).write_chunk(out)
         _pack(out, '=B', self.mod_index)
@@ -434,7 +433,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                 _pack(out, '=B', reference)
         _pack(out, '=I', len(self.elements))
         for element in self.elements:
-            element.write_arvr_entry(out, self.key_type)
+            element.write_entry(out)
 
     def chunk_length(self):
         # The ones that are always there (3*B, 2*I)
@@ -442,7 +441,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
         if self.chunk_version >= 1:
             # Every reference is a byte
             total_len += 4 + len(self.references)
-        total_len += sum(imap(lambda e: e.arvr_entry_length(self.key_type),
+        total_len += sum(imap(lambda e: e.entry_length(self.key_type),
                               self.elements))
         return total_len
 
@@ -472,7 +471,7 @@ class _xSEChunkARVR(_xSEChunk, _Dumpable):
                                               save_masters[refModID].s))
         log(_(u'   Size:  %u') % len(self.elements))
         for element in self.elements:
-            element.dump_arvr_to_log(log, self.key_type)
+            element.dump_to_log(log, self.key_type)
 
 class _xSEChunkLIMD(_xSEModListChunk):
     """An LIMD (Light Mod Files) chunk. Available for SKSE64 and F4SE. This is
