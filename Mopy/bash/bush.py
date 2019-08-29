@@ -31,7 +31,7 @@ Bash to use, so must be imported and run high up in the booting sequence.
 import collections
 import textwrap
 import game as game_init
-from bass import get_ini_option
+import bass
 from bolt import GPath, Path, deprint
 from env import get_registry_game_path
 from exception import BoltError
@@ -125,7 +125,7 @@ def _detectGames(cli_path=u'', bash_ini_=None):
             _(u'No known game in the path specified via -o argument: ' +
               u'%(path)s'))
     #--Second: check if sOblivionPath is specified in the ini
-    ini_game_path = get_ini_option(bash_ini_, u'sOblivionPath')
+    ini_game_path = bass.get_ini_option(bash_ini_, u'sOblivionPath')
     if ini_game_path and not ini_game_path == u'.':
         test_path = GPath(ini_game_path.strip())
         if not test_path.isabs():
@@ -181,13 +181,15 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
         name = _display_fsName[name] # we are passed a display name in
     if name is not None: # try the game returned by detectGames() or specified
         __setGame(name, u' Using %(gamename)s game:')
-        return None
+        return None, None
     elif len(foundGames) == 1:
         __setGame(foundGames.keys()[0], u'Single game found [%(gamename)s]:')
-        return None
+        return None, None
     # No match found, return the list of possible games (may be empty if
     # nothing is found in registry)
-    return [_fsName_display[k] for k in foundGames]
+    game_icons = {_fsName_display[g]: bass.dirs['images'].join(g + u'32.png').s
+                  for g in foundGames}
+    return game_icons.keys(), game_icons
 
 def game_path(display_name): return foundGames[_display_fsName[display_name]]
 def get_display_name(fs_name): return _fsName_display[fs_name]
