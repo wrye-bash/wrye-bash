@@ -112,6 +112,11 @@ def InitStatusBar():
                      imageList(u'tools/tes4edit%s.png'),
                      _(u"Launch TES5Edit"),
                      uid=u'TES5Edit'))
+    BashStatusBar.buttons.append( #EnderalEdit
+        App_Tes4View((bass.tooldirs['EnderalEditPath'], u'-Enderal -edit'),
+                     imageList(u'tools/tes4edit%s.png'),
+                     _(u"Launch EnderalEdit"),
+                     uid=u'EnderalEdit'))
     BashStatusBar.buttons.append( #SSEEdit
         App_Tes4View((bass.tooldirs['SSEEditPath'], u'-SSE -edit'),
                      imageList(u'tools/tes4edit%s.png'),

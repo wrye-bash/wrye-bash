@@ -2990,6 +2990,7 @@ def initDefaultTools():
     tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
     tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
+    tooldirs['EnderalEditPath'] = dirs['app'].join(u'EnderalEdit.exe')
     tooldirs['SSEEditPath'] = dirs['app'].join(u'SSEEdit.exe')
     tooldirs['Fo4EditPath'] = dirs['app'].join(u'FO4Edit.exe')
     tooldirs['Fo3EditPath'] = dirs['app'].join(u'FO3Edit.exe')

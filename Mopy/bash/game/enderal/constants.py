@@ -602,3 +602,6 @@ allBethFiles = {
     u'Video\\MQ17BlackGuardian.bik',
     u'Video\\MQP03NearDeathExperience.bik',
 }
+
+# xEdit menu string and key for expert setting
+xEdit_expert = (_(u'EnderalEdit Expert'), 'enderalView.iKnowWhatImDoing')
