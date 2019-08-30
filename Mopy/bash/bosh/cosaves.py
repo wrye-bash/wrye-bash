@@ -1576,10 +1576,7 @@ def get_cosave_type(game_fsName):
     if game_fsName == u'Oblivion':
         xSECosave._pluggy_signature = 0x2330
         _xSEHeader.savefile_tag = u'OBSE'
-    elif game_fsName == u'Skyrim':
-        xSECosave._xse_signature = 0x0
-        _xSEHeader.savefile_tag = u'SKSE'
-    elif game_fsName == u'Skyrim Special Edition':
+    elif game_fsName in (u'Enderal', u'Skyrim', u'Skyrim Special Edition'):
         xSECosave._xse_signature = 0x0
         _xSEHeader.savefile_tag = u'SKSE'
     elif game_fsName == u'Fallout4':

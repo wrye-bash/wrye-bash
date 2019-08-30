@@ -1384,7 +1384,8 @@ class ItemStats:
         self.class_attrs = bush.game.statsTypes
         self.class_fid_attr_value = defaultdict(lambda : defaultdict(dict))
         self.aliases = aliases or {} #--For aliasing mod names
-        if bush.game.fsName in (u'Skyrim', u'Skyrim Special Edition'):
+        if bush.game.fsName in (u'Enderal', u'Skyrim',
+                                u'Skyrim Special Edition'):
             self.attr_type = {'eid':self.sstr,
                               'weight':self.sfloat,
                               'value':self.sint,
