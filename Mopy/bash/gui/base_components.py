@@ -89,6 +89,7 @@ class Colors(object):
     dictionary syntax access (colors[key]) and predefined colors."""
     WHITE = Color(255, 255, 255)
     RED = Color(255, 0, 0)
+    BLACK = Color(0, 0, 0)
 
     def __init__(self):
         self._colors = {}
@@ -217,8 +218,8 @@ class _AComponent(object):
         return Color.from_wx(self._native_widget.GetBackgroundColour())
 
     def set_background_color(self, new_color): # type: (Color) -> None
-        """Changes the background color of this component to the color
-        represented by the specified representation - see wx.Colour.Set.
+        """Changes the background color of this component to the specified
+        color. See gui.Color.
 
         :param new_color: The color to change the background color to."""
         self._native_widget.SetBackgroundColour(new_color.to_rgba_tuple())
@@ -227,6 +228,14 @@ class _AComponent(object):
     def reset_background_color(self):
         """Resets the background color of this component to the default one."""
         self._native_widget.SetBackgroundColour(_wx.NullColour)
+        self._native_widget.Refresh()
+
+    def set_foreground_color(self, new_color): # type: (Color) -> None
+        """Changes the foreground color of this component to the specified
+        color. See gui.Color.
+
+        :param new_color: The color to change the foreground color to."""
+        self._native_widget.SetForegroundColour(new_color.to_rgba_tuple())
         self._native_widget.Refresh()
 
     @property

@@ -175,6 +175,8 @@ class FileInfo(AFile):
         self.masterNames = tuple()
         self.masterOrder = tuple()
         self.madeBackup = False
+        # True if the masters for this file are not reliable
+        self.has_inaccurate_masters = False
         #--Ancillary storage
         self.extras = {}
         super(FileInfo, self).__init__(g_path, load_cache)
@@ -1106,6 +1108,15 @@ class SaveInfo(FileInfo):
         # Fall back on the regular masters - either the cosave is unnecessary,
         # doesn't exist or isn't accurate
         return self.header.masters
+
+    def _reset_masters(self):
+        super(SaveInfo, self)._reset_masters()
+        # If this save has ESL masters, and no cosave or a cosave from an
+        # older version, then the masters are unreliable and we need to warn
+        if bush.game.has_esl and self.header.has_esl_masters:
+            xse_cosave = self.get_xse_cosave()
+            self.has_inaccurate_masters = xse_cosave is None or \
+                not xse_cosave.has_accurate_master_list(True)
 
 #------------------------------------------------------------------------------
 class ScreenInfo(FileInfo):

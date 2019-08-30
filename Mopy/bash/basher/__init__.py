@@ -339,6 +339,7 @@ class MasterList(_ModsUIList):
         self.fileInfo = None
         self.loadOrderNames = [] # cache, orders missing last alphabetically
         self._allowEditKey = keyPrefix + '.allowEdit'
+        self.is_inaccurate = False # Mirrors SaveInfo.has_inaccurate_masters
         #--Parent init
         super(MasterList, self).__init__(parent,
                       listData=listData if listData is not None else {},
@@ -380,6 +381,7 @@ class MasterList(_ModsUIList):
         if not fileInfo:
             return
         #--Fill data and populate
+        self.is_inaccurate = fileInfo.has_inaccurate_masters
         has_sizes = bush.game.Esp.check_master_sizes and isinstance(
             fileInfo, bosh.ModInfo) # only mods have master sizes
         for mi, masters_name in enumerate(fileInfo.get_masters()):
@@ -1337,8 +1339,9 @@ class _ModsSavesDetails(_EditableMixinOnFileInfos, _SashDetailsPanel):
         self.uilist = self._master_list_type(
             self.masterPanel, keyPrefix=self.keyPrefix, panel=ui_list_panel,
             detailsPanel=self)
+        self._masters_label = Label(self.masterPanel, _(u'Masters:'))
         VLayout(spacing=4, items=[
-            Label(self.masterPanel, _(u"Masters:")),
+            self._masters_label,
             (self.uilist, LayoutOptions(weight=1, expand=True)),
             HLayout(spacing=4, items=[self.save, self.cancel])
         ]).apply_to(self.masterPanel)
@@ -2027,12 +2030,14 @@ class SaveDetails(_ModsSavesDetails):
         VLayout(item_expand=True, items=[
             self._fname_ctrl,
             HLayout(item_expand=True, items=[
-                (self.playerInfo, LayoutOptions(weight=1)), self.gCoSaves]),
-            (self.picture, LayoutOptions(weight=1))
+                (self.playerInfo, LayoutOptions(weight=1)), self.gCoSaves
+            ]),
+            (self.picture, LayoutOptions(weight=1)),
         ]).apply_to(top)
-        VLayout(items=[Label(self._bottom_low_panel, _(u"Save Notes:")),
-            (self.gInfo, LayoutOptions(expand=True, weight=1))]
-                ).apply_to(self._bottom_low_panel)
+        VLayout(items=[
+            Label(self._bottom_low_panel, _(u'Save Notes:')),
+            (self.gInfo, LayoutOptions(expand=True, weight=1))
+        ]).apply_to(self._bottom_low_panel)
 
     def _resetDetails(self):
         self.saveInfo = None
@@ -2069,6 +2074,7 @@ class SaveDetails(_ModsSavesDetails):
         note_text = bosh.saveInfos.table.getItem(fileName, 'info',
                                                  u'') if fileName else u''
         self.gInfo.text_content = note_text
+        self._update_masters_warning()
 
     def _set_player_info_label(self):
         self.playerInfo.label_text = (self.playerNameStr + u'\n' +
@@ -2076,6 +2082,20 @@ class SaveDetails(_ModsSavesDetails):
             _(u'Play') + u' %d:%02d\n%s') % (
             self.playerLevel, int(self.gameDays), self.playMinutes // 60,
             (self.playMinutes % 60), self.curCellStr)
+
+    def _update_masters_warning(self):
+        """Show or hide the 'inaccurate masters' warning."""
+        show_warning = self.uilist.is_inaccurate
+        self._masters_label.label_text = (
+            _(u'Masters (likely inaccurate, hover for more info):')
+            if show_warning else _(u'Masters:'))
+        self._masters_label.tooltip = (
+            _(u'This save has ESL masters and cannot be displayed accurately '
+              u'without an up-to-date cosave. Please install the latest '
+              u'version of %s and create a new save to see the true master '
+              u'order.') % bush.game.Se.se_abbrev if show_warning else u'')
+        self._masters_label.set_foreground_color(
+            colors.RED if show_warning else colors.BLACK)
 
     def OnInfoEdit(self, new_text):
         """Info field was edited."""

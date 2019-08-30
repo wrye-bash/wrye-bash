@@ -199,9 +199,9 @@ class SkyrimSaveHeader(SaveFileHeader):
     # extra slots - only version is really used, gameDate used once (calc_time)
     # _formVersion distinguish between old and new save formats
     # _compressType of Skyrim SE saves - used to decide how to read/write them
-    __slots__ = ('gameDate', 'saveNumber', 'version', 'raceEid', 'pcSex',
-                 'pcExp', 'pcLvlExp', 'filetime', '_formVersion',
-                 '_compressType', '_sse_start')
+    __slots__ = (u'gameDate', u'saveNumber', u'version', u'raceEid', u'pcSex',
+                 u'pcExp', u'pcLvlExp', u'filetime', u'_formVersion',
+                 u'_compressType', u'_sse_start', u'has_esl_masters')
 
     unpackers = OrderedDict([
         ('header_size', (00, unpack_int)),
@@ -263,8 +263,12 @@ class SkyrimSaveHeader(SaveFileHeader):
         # SSE / FO4 save format with esl block
         if self._esl_block():
             _num_esl_masters = unpack_short(ins)
+            # Remember if we had ESL masters for the inacurracy warning
+            self.has_esl_masters = _num_esl_masters > 0
             for count in xrange(_num_esl_masters):
                 self.masters.append(unpack_str16(ins))
+        else:
+            self.has_esl_masters = False
         # Check for master's table size
         if ins.tell() + sse_offset != self._mastersStart + mastersSize + 4:
             raise SaveHeaderError(
