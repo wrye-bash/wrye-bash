@@ -3,14 +3,14 @@ Wrye Bash
 
 ### About
 
-Wrye Bash is a mod management utility for Oblivion, Fallout 3, Fallout NV, Skyrim,
- Fallout 4 and Skyrim Special Edition, with a rich set of features.
- This is a fork of the Wrye Bash related code from the
- [SVN 3177 trunk revision][1].
- We are in the process of refactoring the code to eventually support more games,
- offering the same feature set for all of them.
- Please read the [Contributing](#contributing) section below if interested in
- contributing.
+Wrye Bash is a mod management utility for games based on Bethesda's Creation
+Engine, with a rich set of features.
+This is a fork of the Wrye Bash related code from the
+[SVN 3177 trunk revision][1].
+We are in the process of refactoring the code to eventually support more games,
+offering the same feature set for all of them.
+Please read the [Contributing](#contributing) section below if interested in
+contributing.
 
 #### Supported Games
 
@@ -21,8 +21,8 @@ tested on (previous versions or latest versions may or may not work):
 * Fallout 3 (patch 1.7.0.3)
 * Fallout New Vegas (patch 1.4.0.525)
 * Skyrim (patch 1.9.36.0)
-* Fallout 4 (patch 1.10.120.0)
-* Skyrim Special Edition (patch 1.5.62.0)
+* Fallout 4 (patch 1.10.138.0)
+* Skyrim Special Edition (patch 1.5.80.0)
 
 ### Download
 
