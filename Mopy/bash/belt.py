@@ -1082,8 +1082,9 @@ class WryeParser(ScriptParser.Parser):
 
     # Functions...
     def fnCompareGameVersion(self, obWant):
-        ret = self._TestVersion(self._TestVersion_Want(obWant),
-                                bass.dirs['app'].join(bush.game.launch_exe))
+        ret = self._TestVersion(
+            self._TestVersion_Want(obWant),
+            bass.dirs['app'].join(*bush.game.version_detect_file))
         return ret[0]
     def fnCompareSEVersion(self, seWant):
         if bush.game.se.se_abbrev != u'':
@@ -1567,8 +1568,8 @@ class WryeParser(ScriptParser.Parser):
         if not wbWant: wbWant = u'0.0'
         wbHave = bass.AppVersion
 
-        ret = self._TestVersion(gameWant,
-                                bass.dirs['app'].join(bush.game.launch_exe))
+        ret = self._TestVersion(
+            gameWant, bass.dirs['app'].join(*bush.game.version_detect_file))
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.se.se_abbrev != u'':

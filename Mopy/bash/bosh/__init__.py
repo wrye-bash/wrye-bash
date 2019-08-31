@@ -2977,7 +2977,7 @@ def initDefaultTools():
         tooldirs['boss'] = GPath(u'C:\\**DNE**')
         # Detect globally installed (into Program Files) BOSS
         path_in_registry = env.get_registry_path(u'Boss', u'Installed Path',
-                                                 u'BOSS.exe')
+                                                 [u'BOSS.exe'])
         if path_in_registry:
             tooldirs['boss'] = path_in_registry
 

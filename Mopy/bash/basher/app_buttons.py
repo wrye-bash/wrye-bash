@@ -102,14 +102,13 @@ class StatusBar_Button(ItemLink):
     # Helper function to get OBSE version
     @property
     def obseVersion(self):
+        if not bass.settings['bash.statusbar.showversion']: return u''
         if bass.inisettings['SteamInstall']:
             se_exe = bass.dirs['app'].join(bush.game.se.steam_exe)
         else:
             se_exe = bass.dirs['app'].join(bush.game.se.exe)
-        if se_exe.isfile():
-            return u'.'.join([u'%s' % x for x in se_exe.strippedVersion])
-        else:
-            return u''
+        if not se_exe.isfile(): return u''
+        return u' ' + u'.'.join([u'%s' % x for x in se_exe.strippedVersion])
 
 #------------------------------------------------------------------------------
 # App Links -------------------------------------------------------------------
@@ -463,6 +462,12 @@ class App_BOSS(App_Button):
 #------------------------------------------------------------------------------
 class Game_Button(App_Button):
     """Will close app on execute if autoquit is on."""
+    def __init__(self, exe_path_args, version_path, images, tip, obse_tip):
+        super(Game_Button, self).__init__(
+            exePathArgs=exe_path_args, images=images, tip=tip,
+            obseTip=obse_tip, obseArg=u'', uid=u'Oblivion')
+        self._version_path = version_path
+
     @property
     def sb_button_tip(self):
         tip_ = self._tip + u' ' + self.version if self.version else self._tip
@@ -475,7 +480,7 @@ class Game_Button(App_Button):
         # Oblivion (version)
         tip_ = self._obseTip % (dict(version=self.version))
         # + OBSE
-        tip_ += u' + %s %s' % (bush.game.se.se_abbrev, self.obseVersion)
+        tip_ += u' + %s%s' % (bush.game.se.se_abbrev, self.obseVersion)
         # + LAA
         if BashStatusBar.laaButton.button_state:
             tip_ += u' + ' + bush.game.laa.name
@@ -486,6 +491,15 @@ class Game_Button(App_Button):
         if bass.settings.get('bash.autoQuit.on',False):
             Link.Frame.Close(True)
 
+    @property
+    def version(self):
+        if not bass.settings['bash.statusbar.showversion']: return u''
+        version = self._version_path.strippedVersion
+        if version != (0,):
+            version = u'.'.join([u'%s'%x for x in version])
+            return version
+        return u''
+
 #------------------------------------------------------------------------------
 class TESCS_Button(App_Button):
     """CS button.  Needs a special Tooltip when OBSE is enabled."""
@@ -495,7 +509,7 @@ class TESCS_Button(App_Button):
         tip_ = self._obseTip % (dict(version=self.version))
         if not self.obseArg: return tip_
         # + OBSE
-        tip_ += u' + %s %s' % (bush.game.se.se_abbrev, self.obseVersion)
+        tip_ += u' + %s%s' % (bush.game.se.se_abbrev, self.obseVersion)
         # + CSE
         cse_path = bass.dirs['mods'].join(u'obse', u'plugins',
                                           u'Construction Set Extender.dll')
@@ -570,7 +584,7 @@ class Obse_Button(_StatefulButton):
         return state
 
     @property
-    def sb_button_tip(self): return ((_(u"%s %s Disabled"), _(u"%s %s Enabled"))[
+    def sb_button_tip(self): return ((_(u"%s%s Disabled"), _(u"%s%s Enabled"))[
         self.button_state]) % (bush.game.se.se_abbrev, self.obseVersion)
 
     def UpdateToolTips(self):

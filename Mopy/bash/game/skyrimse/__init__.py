@@ -33,8 +33,9 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     fsName = u'Skyrim Special Edition'
     altName = u'Wrye Smash'
     defaultIniFile = u'Skyrim_Default.ini'
-    game_detect_file = [u'SkyrimSE.exe']
     launch_exe = u'SkyrimSE.exe'
+    game_detect_file = [u'SkyrimSE.exe']
+    version_detect_file = [u'SkyrimSE.exe']
     masterlist_dir = u'SkyrimSE'
     regInstallKeys = (
         u'Bethesda Softworks\\Skyrim Special Edition',

@@ -32,8 +32,9 @@ class Fallout4GameInfo(GameInfo):
     fsName = u'Fallout4'
     altName = u'Wrye Flash'
     defaultIniFile = u'Fallout4_default.ini'
-    game_detect_file = [u'Fallout4.exe']
     launch_exe = u'Fallout4.exe'
+    game_detect_file = [u'Fallout4.exe']
+    version_detect_file = [u'Fallout4.exe']
     masterFiles = [u'Fallout4.esm']
     iniFiles = [u'Fallout4.ini', u'Fallout4Prefs.ini', u'Fallout4Custom.ini', ]
     pklfile = ur'bash\db\Fallout4_ids.pkl'

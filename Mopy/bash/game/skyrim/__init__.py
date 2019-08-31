@@ -33,9 +33,10 @@ class SkyrimGameInfo(GameInfo):
     fsName = u'Skyrim'
     altName = u'Wrye Smash'
     defaultIniFile = u'Skyrim_default.ini'
+    launch_exe = u'TESV.exe'
     # Set to this because TESV.exe also exists for Enderal
     game_detect_file = [u'SkyrimLauncher.exe']
-    launch_exe = u'TESV.exe'
+    version_detect_file = [u'TESV.exe']
     masterFiles = [u'Skyrim.esm', u'Update.esm']
     iniFiles = [u'Skyrim.ini', u'SkyrimPrefs.ini']
     pklfile = ur'bash\db\Skyrim_ids.pkl'

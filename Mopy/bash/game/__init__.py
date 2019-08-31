@@ -39,14 +39,19 @@ class GameInfo(object):
     altName = u'' ## Example: u'Wrye Smash'
     # Name of game's default ini file.
     defaultIniFile = u''
+    # The exe to use when launching the game (without xSE present)
+    launch_exe = u'' ## Example: u'TESV.exe'
     # Path to a file to look for to see if this is the right game. Given as a
     # list of strings that will be joined with the -o parameter. Must be unique
     # among all games. As a rule of thumb, use the file you specified in
     # launch_exe, unless that file is shared by multiple games, in which case
     # you MUST find unique files - see Skyrim and Enderal, which share TESV.exe
     game_detect_file = []
-    # The exe to use when launching the game (without xSE present)
-    launch_exe = u'' ## Example: u'TESV.exe'
+    # Path to a file to pass to env.get_file_version to determine the game's
+    # version. Usually the same as launch_exe, but some games need different
+    # ones here (e.g. Enderal, which has Skyrim's version in the launch_exe,
+    # and therefore needs a different file here).
+    version_detect_file = []
     # The main plugin Wrye Bash should look for
     masterFiles = []
     # INI files that should show up in the INI Edits tab

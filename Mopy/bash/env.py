@@ -47,29 +47,30 @@ try:
 except ImportError:
     win32api = None
 
-def get_registry_path(subkey, entry, exe):
+def get_registry_path(subkey, entry, detection_file):
     """Check registry for a path to a program."""
     if not winreg: return None
     for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
         for wow6432 in (u'', u'Wow6432Node\\'):
             try:
-                key = winreg.OpenKey(hkey,
-                                     u'Software\\%s%s' % (wow6432, subkey))
+                key = winreg.OpenKey(
+                    hkey, u'Software\\%s%s' % (wow6432, subkey), 0,
+                    winreg.KEY_READ | winreg.KEY_WOW64_64KEY)
                 value = winreg.QueryValueEx(key, entry)
             except OSError:
                 continue
             if value[1] != winreg.REG_SZ: continue
             installPath = GPath(value[0])
             if not installPath.exists(): continue
-            exePath = installPath.join(exe)
+            exePath = installPath.join(*detection_file)
             if not exePath.exists(): continue
             return installPath
     return None
 
 def get_registry_game_path(submod):
-    """Check registry supplied game paths for the game.exe."""
+    """Check registry supplied game paths for the game detection file."""
     subkey, entry = submod.regInstallKeys
-    return get_registry_path(subkey, entry, submod.launch_exe)
+    return get_registry_path(subkey, entry, submod.game_detect_file)
 
 try: # Python27\Lib\site-packages\win32comext\shell
     from win32com.shell import shell, shellcon
