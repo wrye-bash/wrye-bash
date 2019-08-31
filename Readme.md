@@ -17,7 +17,7 @@ contributing.
 Here is a list of supported games with the minimal patch version that Bash was
 tested on (previous versions or latest versions may or may not work):
 
-* Oblivion (patch 1.2.0416)
+* Oblivion (patch 1.2.0.416)
 * Fallout 3 (patch 1.7.0.3)
 * Fallout New Vegas (patch 1.4.0.525)
 * Skyrim (patch 1.9.36.0)
