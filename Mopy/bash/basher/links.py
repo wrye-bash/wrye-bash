@@ -178,7 +178,7 @@ def InitStatusBar():
     for mt in misc_tools: BashStatusBar.buttons.append(Tooldir_Button(*mt))
     #--Custom Apps
     dirApps = bass.dirs['mopy'].join(u'Apps')
-    badIcons = [Image(bass.dirs['images'].join(u'x.png'))] * 3
+    badIcons = [Image(bass.dirs['images'].join(u'error_cross_16.png'))] * 3
     def iconList(fileName):
         return [Image(fileName, Image.typesDict['ico'], x) for x in
                 (16, 24, 32)]

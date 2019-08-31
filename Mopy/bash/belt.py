@@ -514,9 +514,8 @@ class PageVersions(PageInstaller):
                  seNeed, bGEOk, geHave, geNeed, bWBOk, wbHave, wbNeed):
         PageInstaller.__init__(self, parent)
 
-        bmp = [wx.Bitmap(bass.dirs['images'].join(u'x.png').s),
-               wx.Bitmap(bass.dirs['images'].join(u'check.png').s)
-               ]
+        bmp = [wx.Bitmap(bass.dirs['images'].join(u'error_cross_24.png').s),
+               wx.Bitmap(bass.dirs['images'].join(u'checkmark_24.png').s)]
 
         sizerMain = wx.FlexGridSizer(5, 1, 0, 0)
 
