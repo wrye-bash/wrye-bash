@@ -719,9 +719,10 @@ from other packages previously overridden by the uninstalled package's
 <h3 id="ini-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
 <figure class="slideshow">
 <img alt="INI Edits Tab" src="../bash/images/readme/ini-edits-1.png"/>
+<img alt="INI Edits Tab" src="../bash/images/readme/ini-edits-2.png"/>
 <img alt="INI Edits Tab" src="../bash/images/readme/ini-oblivion.png"/>
 <img alt="INI Edits Tab" src="../bash/images/readme/ini-all_natural.png"/>
-<figcaption class="ini-overview-figcap">Wrye Bash's INI Edits tab, editing Oblivion.ini, Oblivion's configuration file, and All Natural.ini, a mod's configuration file. (Animated slideshow.)</figcaption>
+<figcaption class="ini-overview-figcap">Wrye Bash's INI Edits tab, editing SkyrimPrefs.ini, Oblivion.ini, and All Natural.ini, a mod's configuration file.</figcaption>
 </figure>
 
 <p>The Ini Edits tab allows the user to quickly apply edits to the games's INI file (e.g. Oblivion.ini, Skyrim.ini, Fallout4Custom.ini, etc.) depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
@@ -747,6 +748,45 @@ from other packages previously overridden by the uninstalled package's
         <tr><td class="ini-symbols-grnbg">Green Background<td>The specific variable value matches the value in the current ini file.
 </table>
 <h3 id="ini-commands">Buttons &amp; Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
+<div class="prlflex clearf">
+    <figure class="slideshow" style="width: 432px; min-height: 152px">
+        <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-1.png">
+        <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-2.png">
+        <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-3.png">
+    </figure>
+    <table id="iniHeaderCommands">
+        <thead>
+            <tr><th colspan="2">Column Header Context Menu
+            <tr><th>Command<th>Description
+        <tbody>
+            <tr><td>Sort By<td>This submenu allows you to choose by which column the ini list is sorted. This is equivalent to clicking on a column header.
+            <tr><td>Columns<td>This submenu allows you to choose which columns are visible in the ini list.
+            <tr><td id="allowTweaksWithNewSettings">Allow Tweaks with New Settings<td>Allows tweaks which have new sections and/or settings to
+                be installed. Use carefully as you might inadvertently add bogus sections/settings to your ini.
+            <tr><td>Open...<td>Open the <code>Data/INI Tweaks</code> folder
+            <tr><td>List Active INIs...<td>Lists all currently applied INI tweaks to the selected INI.
+    </table>
+</div>
+<div class="prlflex clearf">
+    <figure style="width: 279px; min-height: 123px"> <!-- Add class="slideshow" if we ever have more than one here -->
+        <img alt="INI Edits Menu" src="../bash/images/readme/ini-edits-rclick-ini-menu.png">
+    </figure>
+    <table id="iniMenuCommands">
+        <thead>
+            <tr><th colspan="2">Tweak Context Menu
+            <tr><th>Command<th>Description
+        <tbody>
+            <tr><td id="tweakApply">Apply<td>Applies the tweak to the current ini file.
+            <tr><td>Create Tweak with current settings...<td>Creates a new tweak with the same settings as the selected tweak, but uses the values in the current ini file.
+            <tr><td>List Errors...<td>Lists invalid tweaks (for instance OBSE ini tweaks are invalid if current target ini is Oblivion ini), and
+                also lists section headers and/or individual settings that are present in selected tweak(s) but are missing from the current
+                target ini. These tweaks may be installed however - depending on <a href="#allowTweaksWithNewSettings">Allow Tweaks with New
+                    Settings</a> setting.
+            <tr><td>Open/Copy...<td>If the (single) selected item is a default Bash tweak this menu item copies it to the
+                <code>Data/INI Tweaks</code> folder, otherwise it opens the tweak with the default text editor for .ini files.
+            <tr><td>Delete<td>Delete the tweak. Default (hardcoded) Bash ini tweaks can't be deleted.
+    </table>
+</div>
 <table>
     <thead>
         <tr><th colspan="2">Ini Edits Tab
@@ -754,33 +794,6 @@ from other packages previously overridden by the uninstalled package's
     <tbody>
         <tr><td>Remove<td>Removes the selected ini file from the drop-down selection box. This will not remove game default INI files.
         <tr><td>Edit...<td>Opens the current ini file for editing in the default text editor.
-</table>
-<table>
-    <thead>
-        <tr><th colspan="2">Column Header Context Menu
-        <tr><th>Command<th>Description
-    <tbody>
-        <tr><td>Sort By<td>This submenu allows you to choose by which column the ini list is sorted. This is equivalent to clicking on a column header.
-        <tr><td>Columns<td>This submenu allows you to choose which columns are visible in the ini list.
-        <tr><td id="allowTweaksWithNewSettings">Allow Tweaks with New Settings<td>Allows tweaks which have new sections and/or settings to
-            be installed. Use carefully as you might inadvertently add bogus sections/settings to your ini.
-        <tr><td>Open...<td>Open the <code>Data/INI Tweaks</code> folder
-        <tr><td>List Active INIs...<td>Lists all currently applied INI tweaks to the selected INI.
-</table>
-<table>
-    <thead>
-        <tr><th colspan="2">Tweak Context Menu
-        <tr><th>Command<th>Description
-    <tbody>
-        <tr><td id="tweakApply">Apply<td>Applies the tweak to the current ini file.
-        <tr><td>Create Tweak with current settings...<td>Creates a new tweak with the same settings as the selected tweak, but uses the values in the current ini file.
-        <tr><td>List Errors...<td>Lists invalid tweaks (for instance OBSE ini tweaks are invalid if current target ini is Oblivion ini), and
-            also lists section headers and/or individual settings that are present in selected tweak(s) but are missing from the current
-            target ini. These tweaks may be installed however - depending on <a href="#allowTweaksWithNewSettings">Allow Tweaks with New
-                Settings</a> setting.
-        <tr><td>Open/Copy...<td>If the (single) selected item is a default Bash tweak this menu item copies it to the
-            <code>Data/INI Tweaks</code> folder, otherwise it opens the tweak with the default text editor for .ini files.
-        <tr><td>Delete<td>Delete the tweak. Default (hardcoded) Bash ini tweaks can't be deleted.
 </table>
 
 <h2 id="launchers">Launching Applications <a class="back2top" href="#contents">Back to top</a></h2>
