@@ -1001,13 +1001,13 @@ class Progress(bolt.Progress):
     def _do_progress(self, state, message):
         if not self.dialog:
             raise StateError(u'Dialog already destroyed.')
-        elif (state == 0 or state == 1 or (message != self.prevMessage) or
-            (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
+        elif ((state - self.prevState) > 0.05 or
+              (time.time() - self.prevTime) > 0.5 or state in (0, 1)):
             if message != self.prevMessage:
                 ret = self.dialog.Update(int(state * 100), u'\n'.join(
                     [self._ellipsize(msg) for msg in message.split(u'\n')]))
             else:
-                ret = self.dialog.Update(int(state*100))
+                ret = self.dialog.Update(int(state * 100))
             if not ret[0]:
                 raise CancelError
             self.prevMessage = message
