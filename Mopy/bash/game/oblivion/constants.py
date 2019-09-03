@@ -314,6 +314,30 @@ allConditions = set(entry[0] for entry in conditionFunctionData)
 fid1Conditions = set(entry[0] for entry in conditionFunctionData if entry[2] == 2)
 fid2Conditions = set(entry[0] for entry in conditionFunctionData if entry[3] == 2)
 
+# Known record types
+save_rec_types = {
+    6 : _(u'Faction'),
+    19: _(u'Apparatus'),
+    20: _(u'Armor'),
+    21: _(u'Book'),
+    22: _(u'Clothing'),
+    25: _(u'Ingredient'),
+    26: _(u'Light'),
+    27: _(u'Misc. Item'),
+    33: _(u'Weapon'),
+    35: _(u'NPC'),
+    36: _(u'Creature'),
+    39: _(u'Key'),
+    40: _(u'Potion'),
+    48: _(u'Cell'),
+    49: _(u'Object Ref'),
+    50: _(u'NPC Ref'),
+    51: _(u'Creature Ref'),
+    58: _(u'Dialog Entry'),
+    59: _(u'Quest'),
+    61: _(u'AI Package'),
+}
+
 #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
 #  as the form id.  Any GMST as such needs it Editor Id listed here.
 gmstEids = [

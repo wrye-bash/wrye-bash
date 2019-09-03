@@ -194,27 +194,3 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
 
 def game_path(display_name): return foundGames[_display_fsName[display_name]]
 def get_display_name(fs_name): return _fsName_display[fs_name]
-
-# Save File Info --------------------------------------------------------------
-saveRecTypes = {
-    6 : _(u'Faction'),
-    19: _(u'Apparatus'),
-    20: _(u'Armor'),
-    21: _(u'Book'),
-    22: _(u'Clothing'),
-    25: _(u'Ingredient'),
-    26: _(u'Light'),
-    27: _(u'Misc. Item'),
-    33: _(u'Weapon'),
-    35: _(u'NPC'),
-    36: _(u'Creature'),
-    39: _(u'Key'),
-    40: _(u'Potion'),
-    48: _(u'Cell'),
-    49: _(u'Object Ref'),
-    50: _(u'NPC Ref'),
-    51: _(u'Creature Ref'),
-    58: _(u'Dialog Entry'),
-    59: _(u'Quest'),
-    61: _(u'AI Package'),
-    }
