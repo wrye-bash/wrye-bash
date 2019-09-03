@@ -2,12 +2,6 @@
 * Extracted Inlines
 ********************/
 
-/* Figures */
-.mods-details-figure {
-  min-height: 34.4375rem;			/* 551px */
-  width: 19.875rem;				/* 318px */
-}
-
 /* Figure Captions */
 .screenshots-overview-figcap, .people-overview-figcap {
   padding-top: 40rem;				/* 640px */

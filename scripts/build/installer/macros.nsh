@@ -575,6 +575,7 @@
         Delete "${Path}\Mopy\bash\images\readme\error.jpg"
         Delete "${Path}\Mopy\bash\images\readme\installers-wizard-1.jpg"
         Delete "${Path}\Mopy\bash\images\readme\installers-wizard-2.jpg"
+        Delete "${Path}\Mopy\bash\images\readme\mods.png"
         Delete "${Path}\Mopy\bash\images\readme\pm-archive-1.png"
         Delete "${Path}\Mopy\bash\images\readme\pm-archive-2.png"
         Delete "${Path}\Mopy\bash\images\readme\selectmany.jpg"
