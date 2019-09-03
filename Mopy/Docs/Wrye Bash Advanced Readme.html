@@ -4650,21 +4650,13 @@ and masterlist relative priority and role see the LOOT docs.
 
 
 <h3 class="clearfb" id="tools-checker">Mod Checker <a class="back2top" href="#contents">Back to top</a></h3>
-<div class="bbimgr clearf">
-  <figure class="tools-checker-figure">
-    <img alt="Mod Checker" src="../bash/images/readme/mod-checker-1.png">
-    <figcaption>
-      Wrye Bash's Mod Checker
-    </figcaption>
-  </figure>
-</div>
 <p>The Mod Checker checks your active and merged plugins for errors, and provides warnings for any found, as well as configuration recaps and suggestions. It can be opened by clicking the <a href="Wrye%20Bash%20General%20Readme.html#launchersModChecker">Mod Checker button</a> in the status bar.
 <p>At the top of the report is the Active Mod Files section, which lists your load order. It also displays any warnings that are applicable beneath the plugin(s) that they are applicable to. These warnings are either regarding missing masters or delinquent masters.
 <ul>
     <li>Missing masters occur when a plugin that an active plugin depends on is not active. This results in an immediate CTD when the game is launched.
     <li>Delinquent masters occur when a plugin's master loads after the plugin itself. This should be fixed to prevent issues in-game.
 </ul>
-<p>The next section of the report details the output of any rulesets installed. These are text files that contain a set of instructions that tell the Mod Checker what to look for and what to say in the report if anything is found. Currently the only ruleset distributed by Wrye Bash is for Cobl. Rulesets are stored in <code>Data\Bash Patches</code> and end in <q>Rules.txt</q>. Information on ruleset syntax can be found at <a href="https://web.archive.org/web/20120428235951/http://www.uesp.net:80/wiki/Tes4Mod:Wrye_Bash/Mod_Checker">UESP: Wrye Bash Mod Checker</a>.
+<p>The next section of the report details the output of any rulesets installed. These are text files that contain a set of instructions that tell the Mod Checker what to look for and what to say in the report if anything is found. Currently the only ruleset distributed by Wrye Bash is for Cobl. Rulesets are stored in <code>Data\Bash Patches</code> and end in <q>Rules.txt</q>. Information on ruleset syntax can be found in the <a href="Wrye%20Bash%20Technical%20Readme.html#rulesets">Technical Readme</a>.
 <p>The rest of the report details any plugin groups that have been set up. Each group's section contains the following information:
 <ul>
     <li>Notes: These are various notes on the plugin group, as entered by the user.
@@ -4672,12 +4664,21 @@ and masterlist relative priority and role see the LOOT docs.
     <li>Suggestions: Specific suggestions for the plugin group. These are typically activating or deactivating certain plugins, or replacing mods with other mods.
     <li>Warnings: Like suggestions, but the causes are more likely to cause issues. This section will detail what should be activated or deactivated to resolve the problems.
 </ul>
-<table>
+<div class="prlflex clearf">
+  <figure class="slideshow" style="width: 576px; min-height: 596px">
+    <img alt="Mod Checker" src="../bash/images/readme/mod-checker-1.png">
+        <img alt="Mod Checker" src="../bash/images/readme/mod-checker-2.png">
+    <figcaption class="tools-checker-figcap">
+      Wrye Bash's Mod Checker
+    </figcaption>
+  </figure>
+  <table>
     <thead>
-        <tr><th colspan="2">Mod Checker Buttons
-        <tr><th>Button<th>Function
+        <tr><th colspan="2">Mod Checker Controls
+        <tr><th>Control<th>Function
     <tbody>
         <tr><td>Forward/Back Arrows<td>The Mod Checker report may contain links to other pages. These two buttons allow navigation between pages viewed, similar to the forward/back buttons in a web browser.
+        <tr><td>Reload</td><td>Reloads the current page. Works identically to a browser's reload button.</td></tr>
         <tr><td>Mod List<td>Toggles the display of the Active Mod Files list.
         <tr><td>Rule Sets<td>Toggles the display of the headers for the rulesets installed, even if they produce no other output.
         <tr><td>Notes<td>Toggles the display of plugin group notes.
@@ -4688,8 +4689,8 @@ and masterlist relative priority and role see the LOOT docs.
         <tr><td>Scan for Dirty Edits<td>Toggles the scanning of plugins for dirty edits. Effectively runs <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a> on each of the plugins in the Active Mod Files list and displays the results in the Mod Checker's report.
         <tr><td>Copy Text<td>Copies the text of the report to the clipboard. Useful for posting on forums.
         <tr><td>Update<td>Forces a refresh of the report.
-</table>
-
+  </table>
+</div>
 
 <h3 id="tools-swapping">Oblivion.esm Swapping <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Oblivion.esm swapping is a feature that allows mod authors to switch between different versions of Oblivion.esm on the fly. This is useful as it allows mod authors to make plugins that are totally SI-independent (as the Shivering Isles patches Oblivion.esm instead of using a new plugin). It can also be used to avoid the need for a fully patched Oblivion to run a plugin, but this usage is <strong>not recommended</strong>. If you want a plugin to work on older versions of Oblivion, use the <a href="#modsVersion0.8">Version 0.8</a> command on it.

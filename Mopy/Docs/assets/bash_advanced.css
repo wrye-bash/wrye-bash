@@ -7,9 +7,6 @@
   min-height: 34.4375rem;			/* 551px */
   width: 19.875rem;				/* 318px */
 }
-.tools-checker-figure {
-  width: 29.6875rem;				/* 475px */
-}
 
 /* Figure Captions */
 .screenshots-overview-figcap, .people-overview-figcap {
@@ -23,6 +20,9 @@
 }
 .tools-docs-figcap {
   padding-top: 34.5rem;			/* 520px */
+}
+.tools-checker-figcap {
+  padding-top: 38.5rem;
 }
 
 /* Tables */
