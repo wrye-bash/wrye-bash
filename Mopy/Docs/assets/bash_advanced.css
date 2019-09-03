@@ -4,7 +4,7 @@
 
 /* Figure Captions */
 .screenshots-overview-figcap, .people-overview-figcap {
-  padding-top: 40rem;				/* 640px */
+  padding-top: 41.6875rem;				/* 640px */
 }
 .launchers-hide-figcap {
   padding-top: 5.9375rem;			/* 95px */
@@ -20,17 +20,18 @@
 }
 
 /* Tables */
-.people-tables {
-  margin-top: 1.875rem;			/* 30px */
-  min-width: 17.1875rem;			/* 275px */
+.people-pairs > * {
+  max-width: 49%;
 }
 #people-commands {
   margin-right: -100%;
   padding-left: 1.0625rem;		/* 17px */
 }
-#people-symbols {
-  margin-left: -12.5rem;			/* -200px */
-  padding-left: 13.5625rem;		/* 217px */
+.people-symbols-table img {
+  min-width: auto;
+}
+.people-symbols-p {
+  margin-top: 0;
 }
 .tools-colors-table {
   max-width: 98%;
