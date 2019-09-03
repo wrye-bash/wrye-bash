@@ -965,166 +965,179 @@ tab. The directories skipped are:
         </tbody>
     </table>
 </div>
-<table>
-    <thead>
-        <tr><th colspan="3">Plugin Context Menu
-        <tr><th colspan="2">Command<th>Description
-    <tbody>
-        <tr><td rowspan="11">File<td id="modsCreateDummyMasters">Create Dummy Masters...<td>Creates an empty plugin for each missing master a mod has.  This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters. These dummy plugins can later be removed using the <a href="#modsRemoveDummyMasters">Remove Dummy Masters</a> command.
-        <tr><td id="modsBackup">Backup<td>Creates a backup of the selected plugin in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up plugin has <code>f</code> appended to its file extension, giving <code>.espf</code> or <code>.esmf</code>.
-        <tr><td id="modsDuplicate">Duplicate...<td>Creates a duplicate of the selected plugin in the Data folder.
-        <tr><td id="modsSnapshot">Snapshot...<td>Creates a snapshot copy of the selected plugin in <code>Bash\Snapshots</code>. Snapshot filenames are appended with <code>-n</code> where n is a number between 01 and 99. Eg. the first snapshot of <code>Plugin.esp</code> is <code>Plugin-01.esp</code>. The number is incremented each time the plugin has a snapshot taken. Additionally, if there is a version line in the plugin's description field, then the snapshot number will be appended to the version number in the same manner.
-        <tr><td>Delete<td><strong>Permanently</strong> deletes the selected plugin, and any backups of it, but not snapshots.
-        <tr><td>Hide<td>Moves the selected plugin to the <code>[Game] Mods/Bash Mod Data/Hidden</code> subdirectory. If the plugin's author
-            is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there. If not and the
-            plugin's group is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there
-            instead. Otherwise it will be placed inside Bash Mod Data/Hidden.
-        <tr><td>Redate...<td>Change the modification time of the selected plugin. If more than one plugin is selected, then all the plugins will have their modification times altered, with the first in the list being set to the specified time and the rest at one minute intervals from that time.
-        <tr><td>Sort<td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.
-        <tr><td>Revert To Backup<td>Reverts the selected plugin to the last backup made of it.
-        <tr><td>Revert To First Backup<td>Reverts the selected plugin to the first backup made of it.
-        <tr><td>Revert To Snapshot...<td>Reverts the selected plugin to a selected snapshot.
-        <tr><td rowspan="9">Groups<td>Export Group<td>Exports the selected plugin's groups to a CSV file as plugin name/groups pairs.
-            <tr><td>Import Group<td>This will set the groups for selected mods as specified in a csv file (as created by the Export Groups command). If selected mods are not assigned a group in the file nothing happens.
-            <tr><td rowspan="6">Edit Groups...<td>Add: add a new group to existing groups. Group names can be in Unicode.
-            <tr><td>Rename: rename selected group. Mods that belong to it will have the group renamed.
-            <tr><td>Remove: delete selected group. Deleting a group removes it from mods that belong to it.
-            <tr><td>Refresh: pick up assigned groups and add them to the existing ones. Use it after importing groups from a file to update available groups.
-            <tr><td>Sync: sync the list of available groups to the assigned ones - in other words delete unassigned groups.
-            <tr><td>Default: reset the list of available groups to the default ones. This won't delete non default assigned groups. It's a feature. Use Refresh to pick up your groups and add them to the defaults.
-            <tr><td>Groups Menu<td>Set a group for the selected plugin(s). Groups that are assigned to the selected plugins appear checked.
-            They provide no automatic functionality, other than to place hidden plugins in group folders provided those folders already
-            exist. Use them to group plugins together so you can disable or enable them at once, etc. Note to old timers:
-            <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking balo groups for the ride - those of you who remember
-            them, shed a tear goodbye.
-        <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
-        <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
-        <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
-        <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
-        <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
-        <tr><td colspan="2" id="modsCreateBOSSReport">Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official LOOT thread.
-        <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
-        <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
-            mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
-            <code>++</code>, <code>**</code> and <code>__</code> respectively.
-        <tr><td colspan="2">Jump to installer<td>Jump to the installer of the selected mod, if the Installers tab is displayed and enabled and the
-            plugin has an installer. You can Alt click on the mod to the same effect.
-        <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled. Will unghost a ghosted plugin if enabled.
-        <tr><td colspan="2">Ghost/Unghost<td>Displayed if a single plugin is selected. Manually ghost/unghost this plugin (active ones can't
-            be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag (if set). This will survive autoGhost till next restart. If
-            you want your changes to persist, mark the plugin as <a href="#modsDontGhost">disallow ghosting</a>.
-        <tr><td colspan="2">Ghost<td>Displayed if multiple plugins are selected. Ghost selected plugins (no effect on active ones). Unghost all at once is on the todo list, if you wondered.
-        <tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
-        <tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
-        <tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
-        <tr><td colspan="2" id="modsMarkMergeable">Mark Mergeable...<td>Scans the selected plugin(s) to determine if they are mergeable or not. Wrye Bash does this automatically, but this command reports why mods are unmergeable.
-        <tr><td colspan="2">Mark Mergeable (CBash)...<td><em>Oblivion only.</em> Does the same thing as <a href="#modsMarkMergeable">Mark Mergeable...</a>, but uses CBash to scan the plugins. A Bashed Patch built using CBash can merge more plugins, so the results between the two Mark Mergeable commands will differ.
-        <tr><td colspan="2">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
-        <tr><td colspan="2">Rebuild Patch (CBash *Beta*)...<td><em>Oblivion only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
-        <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
-        <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
-        <tr><td rowspan="13">Export<td>Cell Block Info...<td><em>Oblivion only.</em> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
-        <tr><td id="modsExportEditorIDs">Editor Ids...<td><strong>For advanced mod authors only.</strong> Exports the Editor IDs of the records in the selected plugin to a CSV file.
-        <tr><td id="modsExportFactions">Factions...<td><strong>For advanced mod authors only.</strong> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Factions option.
-        <tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
-        <tr><td id="modsExportNPCLevels">NPC Levels...<td><strong>For advanced mod authors only.</strong> Exports NPC level info from the selected plugin to a CSV file. Only NPCs which are dynamically levelled (ie. offset from the player's level) will be exported.
-        <tr><td>Map Markers...<td><em>Oblivion only.</em> Exports information about the map marker data in the plugin.
-        <tr><td>Prices...<td>Exports the prices of objects in the selected plugin to a CSV file.
-        <tr><td id="modsExportRelations">Relations...<td><strong>For advanced mod authors only.</strong> Exports the faction relationships in the selected plugin to a CSV file. This does not export race relationships. The CSV file can also be used in the Bashed Patch's Import Relations option.
-        <tr><td id="modsExportIngredients">Ingredients...<td>Exports alchemy ingredient record data from the selected plugin to a CSV file.
-        <tr><td>Scripts...<td>Exports the scripts in the selected plugin to a series of text files. The scripts may then be edited in the text files and re-imported. <br><br><strong>Warning:</strong> Do not change the first three lines of each text file exported when editing unless you know what you're doing.
-        <tr><td id="modsExportSigilStones">Sigil Stones...<td>Exports the stats of sigil stones from the selected plugin to a CSV file.
-        <tr><td id="modsExportSpellStats">Spells...<td>Exports spell stats in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option. There are two modes of export, Basic and Detailed. The spell stats exported in Basic mode are as follows.
-            <ul>
-                <li>Form ID
-                <li>Editor ID
-                <li>Name
-                <li>Cost
-                <li>Level type
-                <li>Spell type
-            </ul>
-            In Detailed mode, all Basic stats are exported as well as a variety of flags and all the spell effects.
-        <tr><td id="modsExportStats">Stats...<td>Exports stats for the following record types in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option.
-            <ul>
-                <li>Ammunition
-                <li>Apparatus
-                <li>Armor
-                <li>Book
-                <li>Clothing
-                <li>Ingredient
-                <li>Key
-                <li>Light
-                <li>Misc. Item
-                <li>Sigil Stone
-                <li>Soulgem
-                <li>Weapon
-            </ul>
-        <tr><td rowspan="14">Import<td>Editor Ids...<td><strong>For advanced mod authors only.</strong> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes.<br><br><strong>Note:</strong> You may have to recompile any altered scripts in the Construction Set.
-            <br><br>If you wish to update script references <em>after</em> the Editor IDs were changed, edit the CSV file and add another column after the eid column and give the old Editor IDs in the new column. E.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
-        <tr><td id="modsImportFactions">Factions...<td><strong>For advanced mod authors only.</strong> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
-        <tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file (or other mod) into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
-        <tr><td id="modsImportNPCLevels">NPC Levels...<td><strong>For advanced mod authors only.</strong> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="#savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="#modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
-            <ul>
-                <li>The first column is the Form ID. <strong>This must not have been edited.</strong>
-                <li>The second column is the Editor ID, which is ignored on import.
-                <li>The next three columns are the levelling info.
-                <li>The last four columns are the original NPC levels from the game's master file. If the NPCs are mod-added, these will be blank. These columns are ignored on import.
-            </ul>
-        <tr><td>Map Markers...<td><em>Oblivion only.</em> Imports map marker data from a CSV file into the selected plugin.
-        <tr><td>Prices...<td>Imports the prices of objects from a CSV file (or other mod) into the selected plugin.
-        <tr><td id="modsImportRelations">Relations...<td><strong>For advanced mod authors only.</strong> Imports faction relationships from a CSV file into the selected plugin.
-        <tr><td id="modsImportIngredients">Ingredients...<td>Imports alchemy ingredient record data from a CSV file into the selected plugin.
-        <tr><td>Scripts...<td>Imports scripts from a series of text files into the selected plugin.<br><br><strong>Note:</strong> You must recompile any altered or new scripts in the Construction Set.
-        <tr><td id="modsImportSigilStones">Sigil Stones...<td>Imports the stats of sigil stones from a CSV file into the selected plugin.
-        <tr><td id="modsImportSpellStats">Spells...<td>Imports spell stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their spell stats change, no records will be added. The spell stats supported are those exported by <a href="#modsExportSpellStats">Export Spell Stats...</a>, and importing uses the same Basic and Detailed mode distinctions.
-        <tr><td id="modsImportStats">Stats...<td>Imports stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their stats change, no records will be added. The object stats supported are those exported by <a href="#modsExportStats">Export Stats...</a>.
-        <tr><td id="modsImportFace">Face...<td>This command relates to <a href="#saves-face">Face Importing</a>.
-        <tr><td id="modsImportFormIDs">FormIDs...<td><strong>For advanced mod authors only.</strong> It is useful if you want to replace the records in one master with equivalent records in another master. This command replaces the Form IDs in a plugin according to a CSV file that acts as a Form ID mapper. An example of such a file is <code>Data\Bash Patches\TI to Cobl_Formids.csv</code>. The instructions below detail how to create a Form ID mapper.
-            <ol>
-                <li>Use <a href="#modsExportEditorIDs">Export Editor Ids</a> on both the plugin containing the Form IDs to be replaced and the plugin containing the replacement Form IDs.
-                <li>Combine the two CSV files produced into a CSV file with the following columns:
+<div class="prlflex clearf">
+    <figure class="slideshow" style="width: 556px; min-height: 789px">
+        <img alt="Mod Context Menu" src="../bash/images/readme/mods-rclick-mod-menu-1.png">
+        <img alt="Mod Context Menu" src="../bash/images/readme/mods-rclick-mod-menu-2.png">
+        <img alt="Mod Context Menu" src="../bash/images/readme/mods-rclick-mod-menu-3.png">
+        <img alt="Mod Context Menu" src="../bash/images/readme/mods-rclick-mod-menu-4.png">
+        <img alt="Mod Context Menu" src="../bash/images/readme/mods-rclick-mod-menu-5.png">
+        <img alt="Mod Context Menu" src="../bash/images/readme/mods-rclick-mod-menu-6.png">
+        <img alt="Mod Context Menu" src="../bash/images/readme/mods-rclick-mod-menu-7.png">
+    </figure>
+    <table>
+        <thead>
+            <tr><th colspan="3">Plugin Context Menu
+            <tr><th colspan="2">Command<th>Description
+        </thead>
+        <tbody>
+            <tr><td rowspan="11">File<td id="modsCreateDummyMasters">Create Dummy Masters...<td>Creates an empty plugin for each missing master a mod has.  This is useful for allowing TES4Edit to open a 'Filter' patch without having all of the required masters. These dummy plugins can later be removed using the <a href="#modsRemoveDummyMasters">Remove Dummy Masters</a> command.
+            <tr><td id="modsBackup">Backup<td>Creates a backup of the selected plugin in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up plugin has <code>f</code> appended to its file extension, giving <code>.espf</code> or <code>.esmf</code>.
+            <tr><td id="modsDuplicate">Duplicate...<td>Creates a duplicate of the selected plugin in the Data folder.
+            <tr><td id="modsSnapshot">Snapshot...<td>Creates a snapshot copy of the selected plugin in <code>Bash\Snapshots</code>. Snapshot filenames are appended with <code>-n</code> where n is a number between 01 and 99. Eg. the first snapshot of <code>Plugin.esp</code> is <code>Plugin-01.esp</code>. The number is incremented each time the plugin has a snapshot taken. Additionally, if there is a version line in the plugin's description field, then the snapshot number will be appended to the version number in the same manner.
+            <tr><td>Delete<td><strong>Permanently</strong> deletes the selected plugin, and any backups of it, but not snapshots.
+            <tr><td>Hide<td>Moves the selected plugin to the <code>[Game] Mods/Bash Mod Data/Hidden</code> subdirectory. If the plugin's author
+                is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there. If not and the
+                plugin's group is defined and there is a Bash Mod Data/Hidden subdirectory of the same name, the plugin will be placed there
+                instead. Otherwise it will be placed inside Bash Mod Data/Hidden.
+            <tr><td>Redate...<td>Change the modification time of the selected plugin. If more than one plugin is selected, then all the plugins will have their modification times altered, with the first in the list being set to the specified time and the rest at one minute intervals from that time.
+            <tr><td>Sort<td>Set the load order of the selected plugins starting at the lowest ordered mod, sorting them alphabetically.
+            <tr><td>Revert To Backup<td>Reverts the selected plugin to the last backup made of it.
+            <tr><td>Revert To First Backup<td>Reverts the selected plugin to the first backup made of it.
+            <tr><td>Revert To Snapshot...<td>Reverts the selected plugin to a selected snapshot.
+            <tr><td rowspan="9">Groups<td>Export Group<td>Exports the selected plugin's groups to a CSV file as plugin name/groups pairs.
+                <tr><td>Import Group<td>This will set the groups for selected mods as specified in a csv file (as created by the Export Groups command). If selected mods are not assigned a group in the file nothing happens.
+                <tr><td rowspan="6">Edit Groups...<td>Add: add a new group to existing groups. Group names can be in Unicode.
+                <tr><td>Rename: rename selected group. Mods that belong to it will have the group renamed.
+                <tr><td>Remove: delete selected group. Deleting a group removes it from mods that belong to it.
+                <tr><td>Refresh: pick up assigned groups and add them to the existing ones. Use it after importing groups from a file to update available groups.
+                <tr><td>Sync: sync the list of available groups to the assigned ones - in other words delete unassigned groups.
+                <tr><td>Default: reset the list of available groups to the default ones. This won't delete non default assigned groups. It's a feature. Use Refresh to pick up your groups and add them to the defaults.
+                <tr><td>Groups Menu<td>Set a group for the selected plugin(s). Groups that are assigned to the selected plugins appear checked.
+                They provide no automatic functionality, other than to place hidden plugins in group folders provided those folders already
+                exist. Use them to group plugins together so you can disable or enable them at once, etc. Note to old timers:
+                <abbr title="Bash Auto Load Ordering">BALO</abbr> has been removed taking balo groups for the ride - those of you who remember
+                them, shed a tear goodbye.
+            <tr><td colspan="2">Rating<td>A purely cosmetic feature, this allows you to assign different rating values to plugins.
+            <tr><td colspan="2">Details...<td>Displays a list of the records in the selected plugin, similar to the Details view in the Construction Set.
+            <tr><td colspan="2">List Masters...<td>Outputs a list of the selected plugin's masters.
+            <tr><td colspan="2">Readme...<td>Attempts to open the selected plugin's associated readme in the <a href="#tools-docs">Doc Browser</a>.
+            <tr><td colspan="2">List Bash Tags...<td>Outputs a BBCode-formatted list of all the Bash Tags applied to the selected plugin, and where/how the Bash Tags was specified. It can be useful for debugging a broken load order.
+            <tr><td colspan="2" id="modsCreateBOSSReport">Create BOSS Report...<td>Outputs the plugin filename, <abbr title="Cyclic Redundancy Check">CRC</abbr>, and <abbr title="Identical To Master record">ITM</abbr>/<abbr title="Undeleted and Disabled Reference">UDR</abbr> count for easy reporting of the plugin to an official LOOT thread.
+            <tr><td colspan="2" id="modsCopyModInfo">Copy Mod Info...<td>Outputs a report on the selected plugins(s) with the info from the currently displayed columns.
+            <tr><td colspan="2">List Dependencies<td>Displays and copies to the clipboard a list of mods that have the currently selected
+                mod as master. Active mods are prefixed with their load order while merged, imported and inactive mods are prefixed with
+                <code>++</code>, <code>**</code> and <code>__</code> respectively.
+            <tr><td colspan="2">Jump to installer<td>Jump to the installer of the selected mod, if the Installers tab is displayed and enabled and the
+                plugin has an installer. You can Alt click on the mod to the same effect.
+            <tr><td colspan="2" id="modsDontGhost">Disallow Ghosting<td>Displayed if a single plugin is selected. Don't ghost this plugin when it is inactive, even if Auto-Ghost is enabled. Will unghost a ghosted plugin if enabled.
+            <tr><td colspan="2">Ghost/Unghost<td>Displayed if a single plugin is selected. Manually ghost/unghost this plugin (active ones can't
+                be ghosted). Ghosting a plugin will clear its Disallow Ghosting flag (if set). This will survive autoGhost till next restart. If
+                you want your changes to persist, mark the plugin as <a href="#modsDontGhost">disallow ghosting</a>.
+            <tr><td colspan="2">Ghost<td>Displayed if multiple plugins are selected. Ghost selected plugins (no effect on active ones). Unghost all at once is on the todo list, if you wondered.
+            <tr><td rowspan="3">Ghosting<td>Allow Ghosting<td>Displayed if multiple plugins are selected. Unchecks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
+            <tr><td>Disallow Ghosting<td>Displayed if multiple plugins are selected. Checks <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
+            <tr><td>Invert Ghosting<td>Displayed if multiple plugins are selected. Toggles the status of <a href="#modsDontGhost">Disallow Ghosting</a> for the selected plugins.
+            <tr><td colspan="2" id="modsMarkMergeable">Mark Mergeable...<td>Scans the selected plugin(s) to determine if they are mergeable or not. Wrye Bash does this automatically, but this command reports why mods are unmergeable.
+            <tr><td colspan="2">Mark Mergeable (CBash)...<td><em>Oblivion only.</em> Does the same thing as <a href="#modsMarkMergeable">Mark Mergeable...</a>, but uses CBash to scan the plugins. A Bashed Patch built using CBash can merge more plugins, so the results between the two Mark Mergeable commands will differ.
+            <tr><td colspan="2">Rebuild Patch...<td>Rebuild the selected Bashed Patch using the Python patcher.
+            <tr><td colspan="2">Rebuild Patch (CBash *Beta*)...<td><em>Oblivion only.</em> Rebuild the selected Bashed Patch using the CBash patcher.
+            <tr><td colspan="2" id="modsListPatchConfig">List Patch Config...<td>Displays a summary of how the selected Bashed Patch is configured.
+            <tr><td colspan="2" id="modsExportPatchConfig">Export Patch Config...<td>Exports the configuration of the selected Bashed Patch to a file.
+            <tr><td rowspan="13">Export<td>Cell Block Info...<td><em>Oblivion only.</em> Exports a list of cell block Editor IDs and their coordinates in the selected plugin to a CSV file.
+            <tr><td id="modsExportEditorIDs">Editor Ids...<td><strong>For advanced mod authors only.</strong> Exports the Editor IDs of the records in the selected plugin to a CSV file.
+            <tr><td id="modsExportFactions">Factions...<td><strong>For advanced mod authors only.</strong> Exports the factions defined for actors in the selected plugin to a CSV file, which can be imported to a plugin or used in the Bashed Patch's Import Factions option.
+            <tr><td id="modsExportNames">Names...<td>Exports the names of the objects in the selected plugin to a CSV file. All the records displayed in the Construction Set's Objects Window are supported - cells and dialogue are not. As well as being useful for the usual large-scale changes, this command is useful for translators. The CSV file can also be used in the Bashed Patch's Import Names option.
+            <tr><td id="modsExportNPCLevels">NPC Levels...<td><strong>For advanced mod authors only.</strong> Exports NPC level info from the selected plugin to a CSV file. Only NPCs which are dynamically levelled (ie. offset from the player's level) will be exported.
+            <tr><td>Map Markers...<td><em>Oblivion only.</em> Exports information about the map marker data in the plugin.
+            <tr><td>Prices...<td>Exports the prices of objects in the selected plugin to a CSV file.
+            <tr><td id="modsExportRelations">Relations...<td><strong>For advanced mod authors only.</strong> Exports the faction relationships in the selected plugin to a CSV file. This does not export race relationships. The CSV file can also be used in the Bashed Patch's Import Relations option.
+            <tr><td id="modsExportIngredients">Ingredients...<td>Exports alchemy ingredient record data from the selected plugin to a CSV file.
+            <tr><td>Scripts...<td>Exports the scripts in the selected plugin to a series of text files. The scripts may then be edited in the text files and re-imported. <br><br><strong>Warning:</strong> Do not change the first three lines of each text file exported when editing unless you know what you're doing.
+            <tr><td id="modsExportSigilStones">Sigil Stones...<td>Exports the stats of sigil stones from the selected plugin to a CSV file.
+            <tr><td id="modsExportSpellStats">Spells...<td>Exports spell stats in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option. There are two modes of export, Basic and Detailed. The spell stats exported in Basic mode are as follows.
                 <ul>
-                    <li>Record type. This is ignored by Wrye Bash, but can be useful for reference.
-                    <li>Old Mod. This supplies the first two digits in the old Form ID.
-                    <li>Old Object. This supplies the rest of the old Form ID.
-                    <li>Old Eid. The Editor ID for the old object.
-                    <li>New Eid. The Editor ID for the new object.
-                    <li>New Mod This supplies the first two digits in the new Form ID.
-                    <li>New Object. This supplies the rest of the new Form ID.
+                    <li>Form ID
+                    <li>Editor ID
+                    <li>Name
+                    <li>Cost
+                    <li>Level type
+                    <li>Spell type
                 </ul>
-                <p>Note that if either of the new or old sides of a row are empty, the row will be skipped. Also, the new object does not have to be of the same type as the old object, but they should be compatible.
-                <li>Save the new CSV file so that its filename ends with <q>Formids.csv</q>.
-            </ol>
-            <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using TES4Edit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
-            <strong>Note:</strong> You can also use TES4Edit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. TES4Edit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
-        <tr><td rowspan="6">Mod Cleaning<td>Don't check against BOSS's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
-        <tr><td id="modsScanForDirtyEdits">Scan for Dirty Edits<td><em>Oblivion only.</em> Scans the selected plugin for Identical To Master records and deleted references, outputting counts of the dirty edits found. The dirty edit counts may differ from the output provided by TES4Edit as that includes other "junk" records in the <abbr title="Identical To Master record">ITM</abbr> count. Wrye Bash does not count these junk records as they are non-harmful.
-        <tr><td>Scan for <abbr title="Undeleted and Disabled Reference">UDR</abbr><td><em>Skyrim only.</em> Behaves as the above <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a>, but only for deleted references.
-        <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
-        <tr><td id="modsNvidiaFogFix">Nvidia Fog Fix<td>Systems with Nvidia graphics cards can suffer a black screen bug when interior cell fog distances are set to 0. This command scans the selected plugin(s) and sets any zero-valued fog distances to 0.001.<br><br><strong>It is advised that mod authors use this on their mods before release.</strong>
-        <tr><td id="modsUndeleteRefs">Undelete Refs<td><strong>This is an experimental feature for advanced mod authors. If you're trying to undelete references, you should probably use TES4Edit instead.</strong> Deleted references can cause crashes. This command undeletes references and disables them instead. However, the undeleted reference does not contain the missing data caused by deletion. TES4Edit can add this data back in.
-        <tr><td colspan="2">Add Master...<td><strong>Note: Currently Disabled.</strong> Adds specified master to the list of masters for the selected plugin, thus ceding ownership of new content
-            of this mod to the new master. Useful for splitting mods into esm/esp pairs.<br><br><strong>Warning:</strong> For advanced mod authors only.
-            You should only use this if you know exactly what you're doing: adding a master through Bash does not update record FormIDs,
-            so new content added by the mod will now seem added by the mod's new master (the "cedes ownership" part above) - resulting in
-            the mod marked as mergeable - info from Arthmoor and Lojack here: <a href="https://web.archive.org/web/20190307225455/https://forums.bethsoft.com/topic/1536340-wrye-bash-thread-105/page-3#entry24345148">Wrye Bash - Thread #105, post #80</a>
-            see previous posts for the confusion that this might cause. As Lojack points out if you're doing that sort of low level adding of masters,
-            you should be using xEdit.
-        <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
-        <tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
-        <tr><td colspan="2" id="modsEsmifySelf">Add/Remove ESM Flag<td>The distinction between esp and esm plugins is not dependent on their file
-            extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
-            useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise.
-            Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. NB: the file extension won't change
-            and this is used by Bash so do not mess with it.<br><br><strong>Warning:</strong> Make sure to toggle any plugins back before playing the game, otherwise
-            savegames will get confused, possibly causing bugs and corruption. To toggle the masters back use the same command on the plugin which
-            should now be named Remove ESM Flag.
-        <tr><td colspan="2" id="modsEsmifyMasters">Add/Remove ESM Flag To/From Masters<td>This works as <a href="#modsEsmifySelf">Add/Remove ESM Flag</a> does,
-            but toggles a plugin's masters rather than the plugin itself. The load order of plugins will change to reflect their new status but
-            since the modification time won't change they will revert back to their original positions for modification time based load orders.
-            Be sure to backup your load order for Skyrim.
-        <tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set.<br><br><strong>Warning:</strong> It is possible that this may cause data loss.
-</table>
+                In Detailed mode, all Basic stats are exported as well as a variety of flags and all the spell effects.
+            <tr><td id="modsExportStats">Stats...<td>Exports stats for the following record types in the selected plugin to a CSV file. The CSV file can also be used in the Bashed Patch's Import Stats option.
+                <ul>
+                    <li>Ammunition
+                    <li>Apparatus
+                    <li>Armor
+                    <li>Book
+                    <li>Clothing
+                    <li>Ingredient
+                    <li>Key
+                    <li>Light
+                    <li>Misc. Item
+                    <li>Sigil Stone
+                    <li>Soulgem
+                    <li>Weapon
+                </ul>
+            <tr><td rowspan="14">Import<td>Editor Ids...<td><strong>For advanced mod authors only.</strong> Imports the Editor IDs for records in the selected plugin from a CSV file. As well as updating the Editor IDs of records themselves, this also updates any Editor IDs referenced in normal (non quest stage or dialogue) scripts to reflect the changes.<br><br><strong>Note:</strong> You may have to recompile any altered scripts in the Construction Set.
+                <br><br>If you wish to update script references <em>after</em> the Editor IDs were changed, edit the CSV file and add another column after the eid column and give the old Editor IDs in the new column. E.g. <code>MISC Oblivion.esm 0x0123456 newEid oldEid</code>
+            <tr><td id="modsImportFactions">Factions...<td><strong>For advanced mod authors only.</strong> Applies to the selected plugin the factions defined for actors in a CSV file previously exported using Wrye Bash.
+            <tr><td id="modsImportNames">Names...<td>Imports names for objects from a CSV file (or other mod) into the selected plugin. Only records that already exist in the plugin will have their names changed, no records will be added.
+            <tr><td id="modsImportNPCLevels">NPC Levels...<td><strong>For advanced mod authors only.</strong> Imports NPC level info from a CSV file into the selected plugin. This does not affect Creature levels or leveled lists, nor does it affect the levels of NPCs in existing saves, for which <a href="#savesUpdateNPCLevels">Update NPC Levels</a> must be used. As well as the format exported by <a href="#modsExportNPCLevels">Export NPC Levels</a>, an older format is supported:
+                <ul>
+                    <li>The first column is the Form ID. <strong>This must not have been edited.</strong>
+                    <li>The second column is the Editor ID, which is ignored on import.
+                    <li>The next three columns are the levelling info.
+                    <li>The last four columns are the original NPC levels from the game's master file. If the NPCs are mod-added, these will be blank. These columns are ignored on import.
+                </ul>
+            <tr><td>Map Markers...<td><em>Oblivion only.</em> Imports map marker data from a CSV file into the selected plugin.
+            <tr><td>Prices...<td>Imports the prices of objects from a CSV file (or other mod) into the selected plugin.
+            <tr><td id="modsImportRelations">Relations...<td><strong>For advanced mod authors only.</strong> Imports faction relationships from a CSV file into the selected plugin.
+            <tr><td id="modsImportIngredients">Ingredients...<td>Imports alchemy ingredient record data from a CSV file into the selected plugin.
+            <tr><td>Scripts...<td>Imports scripts from a series of text files into the selected plugin.<br><br><strong>Note:</strong> You must recompile any altered or new scripts in the Construction Set.
+            <tr><td id="modsImportSigilStones">Sigil Stones...<td>Imports the stats of sigil stones from a CSV file into the selected plugin.
+            <tr><td id="modsImportSpellStats">Spells...<td>Imports spell stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their spell stats change, no records will be added. The spell stats supported are those exported by <a href="#modsExportSpellStats">Export Spell Stats...</a>, and importing uses the same Basic and Detailed mode distinctions.
+            <tr><td id="modsImportStats">Stats...<td>Imports stats from a CSV file into the selected plugin. Only records that exist in the plugin will have their stats change, no records will be added. The object stats supported are those exported by <a href="#modsExportStats">Export Stats...</a>.
+            <tr><td id="modsImportFace">Face...<td>This command relates to <a href="#saves-face">Face Importing</a>.
+            <tr><td id="modsImportFormIDs">FormIDs...<td><strong>For advanced mod authors only.</strong> It is useful if you want to replace the records in one master with equivalent records in another master. This command replaces the Form IDs in a plugin according to a CSV file that acts as a Form ID mapper. An example of such a file is <code>Data\Bash Patches\TI to Cobl_Formids.csv</code>. The instructions below detail how to create a Form ID mapper.
+                <ol>
+                    <li>Use <a href="#modsExportEditorIDs">Export Editor Ids</a> on both the plugin containing the Form IDs to be replaced and the plugin containing the replacement Form IDs.
+                    <li>Combine the two CSV files produced into a CSV file with the following columns:
+                    <ul>
+                        <li>Record type. This is ignored by Wrye Bash, but can be useful for reference.
+                        <li>Old Mod. This supplies the first two digits in the old Form ID.
+                        <li>Old Object. This supplies the rest of the old Form ID.
+                        <li>Old Eid. The Editor ID for the old object.
+                        <li>New Eid. The Editor ID for the new object.
+                        <li>New Mod This supplies the first two digits in the new Form ID.
+                        <li>New Object. This supplies the rest of the new Form ID.
+                    </ul>
+                    <p>Note that if either of the new or old sides of a row are empty, the row will be skipped. Also, the new object does not have to be of the same type as the old object, but they should be compatible.
+                    <li>Save the new CSV file so that its filename ends with <q>Formids.csv</q>.
+                </ol>
+                <p>If you've completely swapped from one base plugin to another, you may wish to remove the old dependency. This can be done using TES4Edit's <q>Clean Masters</q> command or TES4Gecko's <q>Edit Master List</q> command. The former only removes totally unused masters while the latter can remove used masters with the appropriate cleanup, and is not an automated procedure.</p>
+                <strong>Note:</strong> You can also use TES4Edit to change the Form IDs using its <q>Batch Change Referencing Records</q> command together with the CSV file created. TES4Edit will also change the definition of a Form ID, rather than just any references to it, unlike Wrye Bash.
+            <tr><td rowspan="6">Mod Cleaning<td>Don't check against BOSS's dirty mod list<td>Overrides the setting in the column header context menu for the specific plugin(s) selected.
+            <tr><td id="modsScanForDirtyEdits">Scan for Dirty Edits<td><em>Oblivion only.</em> Scans the selected plugin for Identical To Master records and deleted references, outputting counts of the dirty edits found. The dirty edit counts may differ from the output provided by TES4Edit as that includes other "junk" records in the <abbr title="Identical To Master record">ITM</abbr> count. Wrye Bash does not count these junk records as they are non-harmful.
+            <tr><td>Scan for <abbr title="Undeleted and Disabled Reference">UDR</abbr><td><em>Skyrim only.</em> Behaves as the above <a href="#modsScanForDirtyEdits">Scan for Dirty Edits</a>, but only for deleted references.
+            <tr><td id="modsRemoveWorldOrphans">Remove World Orphans<td>Some plugins have a mild form of corruption where exterior cells of new worldspaces in an esp master of the plugin are included in the plugin even if they are not edited, but the parent worldspace is not included, creating "orphaned" cells. This command removes these "orphans".
+            <tr><td id="modsNvidiaFogFix">Nvidia Fog Fix<td>Systems with Nvidia graphics cards can suffer a black screen bug when interior cell fog distances are set to 0. This command scans the selected plugin(s) and sets any zero-valued fog distances to 0.001.<br><br><strong>It is advised that mod authors use this on their mods before release.</strong>
+            <tr><td id="modsUndeleteRefs">Undelete Refs<td><strong>This is an experimental feature for advanced mod authors. If you're trying to undelete references, you should probably use TES4Edit instead.</strong> Deleted references can cause crashes. This command undeletes references and disables them instead. However, the undeleted reference does not contain the missing data caused by deletion. TES4Edit can add this data back in.
+            <tr><td colspan="2">Add Master...<td><strong>Note: Currently Disabled.</strong> Adds specified master to the list of masters for the selected plugin, thus ceding ownership of new content
+                of this mod to the new master. Useful for splitting mods into esm/esp pairs.<br><br><strong>Warning:</strong> For advanced mod authors only.
+                You should only use this if you know exactly what you're doing: adding a master through Bash does not update record FormIDs,
+                so new content added by the mod will now seem added by the mod's new master (the "cedes ownership" part above) - resulting in
+                the mod marked as mergeable - info from Arthmoor and Lojack here: <a href="https://web.archive.org/web/20190307225455/https://forums.bethsoft.com/topic/1536340-wrye-bash-thread-105/page-3#entry24345148">Wrye Bash - Thread #105, post #80</a>
+                see previous posts for the confusion that this might cause. As Lojack points out if you're doing that sort of low level adding of masters,
+                you should be using xEdit.
+            <tr><td colspan="2" id="modsCopyToEsm">Copy To Esm/Esp<td>Creates a .esp copy of a .esm or vice versa.
+            <tr><td colspan="2" id="modsDecompileAll">Decompile All<td>Undoes the effect of a <q>Compile All</q> performed in the Construction Set. It will not do anything to the game's master file.
+            <tr><td colspan="2" id="modsEsmifySelf">Add/Remove ESM Flag<td>The distinction between esp and esm plugins is not dependent on their file
+                extensions, but on a bit in the file. This command toggles this bit so that .esp files behave as .esm files and vice versa. It is
+                useful for creating and editing plugins with .esp files as masters, which cannot be done in the Construction Set otherwise.
+                Esm files cannot be edited in the Construction Set as esp files, so this command is disabled for them. NB: the file extension won't change
+                and this is used by Bash so do not mess with it.<br><br><strong>Warning:</strong> Make sure to toggle any plugins back before playing the game, otherwise
+                savegames will get confused, possibly causing bugs and corruption. To toggle the masters back use the same command on the plugin which
+                should now be named Remove ESM Flag.
+            <tr><td colspan="2" id="modsEsmifyMasters">Add/Remove ESM Flag To/From Masters<td>This works as <a href="#modsEsmifySelf">Add/Remove ESM Flag</a> does,
+                but toggles a plugin's masters rather than the plugin itself. The load order of plugins will change to reflect their new status but
+                since the modification time won't change they will revert back to their original positions for modification time based load orders.
+                Be sure to backup your load order for Skyrim.
+            <tr><td colspan="2" id="modsVersion0.8">Version 0.8<td>Resets the file version number of the selected plugin so that it can be edited in an older version of the Construction Set, which is required when making certain changes due to bugs in the latest Construction Set.<br><br><strong>Warning:</strong> It is possible that this may cause data loss.
+        </tbody>
+    </table>
+</div>
 
 <table>
     <thead>
