@@ -195,39 +195,6 @@ def detect_and_set_game(cli_game_dir=u'', bash_ini_=None, name=None):
 def game_path(display_name): return foundGames[_display_fsName[display_name]]
 def get_display_name(fs_name): return _fsName_display[fs_name]
 
-acbs = {
-    u'Armorer': 0,
-    u'Athletics': 1,
-    u'Blade': 2,
-    u'Block': 3,
-    u'Blunt': 4,
-    u'Hand to Hand': 5,
-    u'Heavy Armor': 6,
-    u'Alchemy': 7,
-    u'Alteration': 8,
-    u'Conjuration': 9,
-    u'Destruction': 10,
-    u'Illusion': 11,
-    u'Mysticism': 12,
-    u'Restoration': 13,
-    u'Acrobatics': 14,
-    u'Light Armor': 15,
-    u'Marksman': 16,
-    u'Mercantile': 17,
-    u'Security': 18,
-    u'Sneak': 19,
-    u'Speechcraft': 20,
-    u'Health': 21,
-    u'Strength': 25,
-    u'Intelligence': 26,
-    u'Willpower': 27,
-    u'Agility': 28,
-    u'Speed': 29,
-    u'Endurance': 30,
-    u'Personality': 31,
-    u'Luck': 32,
-    }
-
 # Save File Info --------------------------------------------------------------
 saveRecTypes = {
     6 : _(u'Faction'),
