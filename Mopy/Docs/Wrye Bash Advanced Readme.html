@@ -915,44 +915,56 @@ tab. The directories skipped are:
 
 <h3 id="mods-commands">Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
 <p>The tables below detail the full list of context menu commands available in the Mods tab.
-<table>
-    <thead>
-        <tr><th colspan="3">Column Header Context Menu
-        <tr><th colspan="2">Command<th>Description
-    <tbody>
-        <tr><td rowspan="6">Active Mods<td id="modsLoadAll">Activate All<td>Activates all the plugins in the mod list. If more than 255 mods are
-            present Bash will activate all it can from the bashed patches, then non mergeable and then mergeable mods then will display an
-            error message. Bash will try to activate mods in their load order.
-        <tr><td>De-activate All<td>Deactivates all the plugins in the mod list. Some plugins will not be deactivated (for instance Fallout 4
-        DLCs) as the game force loads them when present.
-        <tr><td>Activate Selected<td>Activate only the mods selected in the mod list interface - warning: their masters won't be activated !
-        <tr><td>Save Active Mods List<td>Saves the currently active mods to a new list.
-        <tr><td>Edit Active Mods Lists...<td>Allows the deletion and renaming of active mods lists.
-        <tr><td>[Active Mods List]<td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
-            list name will apply the list, trying to activate exactly the plugins that are listed in it.
-        <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
-        <tr><td colspan="2">Oblivion.esm<td><em>Oblivion only.</em> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
-        <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
-        <tr><td rowspan="5">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidentally delete your current one or wish to have more than one.
-        <tr><td>New Mod...<td>Creates an empty plugin.
-        <tr><td>New Mod (masterless)...<td>Creates an empty plugin with no masters.
-        <tr><td>Open...<td>Opens the Data folder in Windows Explorer.
-        <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden plugins to unhide.
-        <tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
-        <tr><td colspan="2">List Bash Tags<td>This outputs a BBCode-formatted list of all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
-        <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
-        <tr><td colspan="2">Lock Load Order<td>This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye
-            Bash starts or is focused (ie. on top of all other program windows) and reverses those changes.
-        <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
-        <tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
-        <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
-        <tr><td colspan="2">Check mods against LOOT's dirty mod list<td>LOOT's masterlist contains information on dirty plugins that can be
-            used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this information if
-            bundled version of LOOT is functional for this game. Note that the detection is based on user's LOOT install masterlists, if
-            those are compatible with bundled LOOT, otherwise Bash falls back to the taglists it comes with.
-        <tr><td colspan="2" id="refreshCRCs">Recalculate CRCs<td>Clean stale CRCs from cache. Workaround for buggy CRC updates in previous
-            versions of Bash. Use for instance when plugins show as mismatched in BAIN when they are not.
-</table>
+<div class="prlflex clearf">
+    <figure class="slideshow" style="width: 521px; min-height: 372px">
+        <img alt="Mods Context Menu" src="../bash/images/readme/mods-rclick-file-header-menu-1.png">
+        <img alt="Mods Context Menu" src="../bash/images/readme/mods-rclick-file-header-menu-2.png">
+        <img alt="Mods Context Menu" src="../bash/images/readme/mods-rclick-file-header-menu-3.png">
+        <img alt="Mods Context Menu" src="../bash/images/readme/mods-rclick-file-header-menu-4.png">
+        <img alt="Mods Context Menu" src="../bash/images/readme/mods-rclick-file-header-menu-5.png">
+        <img alt="Mods Context Menu" src="../bash/images/readme/mods-rclick-file-header-menu-6.png">
+    </figure>
+    <table>
+        <thead>
+            <tr><th colspan="3">Column Header Context Menu
+            <tr><th colspan="2">Command<th>Description
+        </thead>
+        <tbody>
+            <tr><td rowspan="6">Active Mods<td id="modsLoadAll">Activate All<td>Activates all the plugins in the mod list. If more than 255 mods are
+                present Bash will activate all it can from the bashed patches, then non mergeable and then mergeable mods then will display an
+                error message. Bash will try to activate mods in their load order.
+            <tr><td>De-activate All<td>Deactivates all the plugins in the mod list. Some plugins will not be deactivated (for instance Fallout 4
+            DLCs) as the game force loads them when present.
+            <tr><td>Activate Selected<td>Activate only the mods selected in the mod list interface - warning: their masters won't be activated !
+            <tr><td>Save Active Mods List<td>Saves the currently active mods to a new list.
+            <tr><td>Edit Active Mods Lists...<td>Allows the deletion and renaming of active mods lists.
+            <tr><td>[Active Mods List]<td>[Active Mods List] items are listed below the separator in the Active Mods submenu. Clicking a
+                list name will apply the list, trying to activate exactly the plugins that are listed in it.
+            <tr><td colspan="2">Sort By<td>This submenu allows you to choose by which column the plugin list is sorted. This is equivalent to clicking on a column header. You can also choose to sort by <q>Type</q>, which will place .esms before .esps regardless of the sorting criteria, or by <q>Selection</q>, which places selected plugins before unselected plugins regardless of criteria.
+            <tr><td colspan="2">Oblivion.esm<td><em>Oblivion only.</em> This submenu relates to <a href="#tools-swapping">Oblivion.esm Swapping</a>.
+            <tr><td colspan="2">Columns<td>This submenu allows you to choose which columns are visible in the mod list.
+            <tr><td rowspan="5">File<td>New Bashed Patch...<td>Creates a new Bashed Patch plugin. Useful if you accidentally delete your current one or wish to have more than one.
+            <tr><td>New Mod...<td>Creates an empty plugin.
+            <tr><td>New Mod (masterless)...<td>Creates an empty plugin with no masters.
+            <tr><td>Open...<td>Opens the Data folder in Windows Explorer.
+            <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden plugins to unhide.
+            <tr><td colspan="2" id="modsListMods">List Mods<td>This outputs a BBCode-formatted load order, including version information, activation status and major load order errors. It can be useful for debugging a broken load order. If the 'c' keyboard key is pressed when this command is selected, the CRCs of plugins will also be displayed in the output.
+            <tr><td colspan="2">List Bash Tags<td>This outputs a BBCode-formatted list of all the Bash Tags applied to the plugins in your load order, and where/how the Bash Tags were specified. It can be useful for debugging a broken load order.
+            <tr><td colspan="2" id="modsAutoGhost">Auto-Ghost<td>The game engine has a bug where it reads all the plugins in the Data folder, and this can affect performance when the number of plugins is around 300+. Auto-Ghosting adds a <q>.ghost</q> extension to all inactive plugins automatically to prevent the game engine reading them, and so helping to avoid the performance drop. When a ghosted plugin is activated, the <q>.ghost</q> extension is removed, allowing it to function as normal. Note that other utilities will not recognise ghosted plugins, so there are options available for individual plugins to control which get ghosted.
+            <tr><td colspan="2">Lock Load Order<td>This prevents other utilities from altering plugin modification times. More accurately, it detects changes to modification times when Wrye
+                Bash starts or is focused (ie. on top of all other program windows) and reverses those changes.
+            <tr><td colspan="2">Debug Mode<td>Activates debug output. Only a few commands will display any debug output, but it may be useful for troubleshooting.
+            <tr><td colspan="2">TES4Edit Expert<td>If checked, this option runs TES4Edit with the <code>-IKnowWhatImDoing</code> argument, activating more advanced functionality, whenever TES4Edit is run from its launcher in the status bar.
+            <tr><td colspan="2" id="modsRemoveDummyMasters">Remove Dummy Masters...<td>Removes all dummy master files created using <a href="#modsCreateDummyMasters">Create Dummy Masters...</a> on a plugin.
+            <tr><td colspan="2">Check mods against LOOT's dirty mod list<td>LOOT's masterlist contains information on dirty plugins that can be
+                used by Wrye Bash to highlight these plugins in the mod list. Checking this setting tells Wrye Bash to use this information if
+                bundled version of LOOT is functional for this game. Note that the detection is based on user's LOOT install masterlists, if
+                those are compatible with bundled LOOT, otherwise Bash falls back to the taglists it comes with.
+            <tr><td colspan="2" id="refreshCRCs">Recalculate CRCs<td>Clean stale CRCs from cache. Workaround for buggy CRC updates in previous
+                versions of Bash. Use for instance when plugins show as mismatched in BAIN when they are not.
+        </tbody>
+    </table>
+</div>
 <table>
     <thead>
         <tr><th colspan="3">Plugin Context Menu
