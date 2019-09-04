@@ -578,6 +578,7 @@
         Delete "${Path}\Mopy\bash\images\readme\mods.png"
         Delete "${Path}\Mopy\bash\images\readme\pm-archive-1.png"
         Delete "${Path}\Mopy\bash\images\readme\pm-archive-2.png"
+        Delete "${Path}\Mopy\bash\images\saves-repair-factions.png"
         Delete "${Path}\Mopy\bash\images\readme\selectmany.jpg"
         Delete "${Path}\Mopy\bash\images\readme\selectone.jpg"
         Delete "${Path}\Mopy\bash\images\readme\wryebash_01.png"
