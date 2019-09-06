@@ -226,7 +226,9 @@ class Parser(object):
         def Type(self): return self.__class__.__name__
 
     class Callable(ParserType):
-        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, passCommas=False):
+        def __init__(self, callable_name, function, min_args=0,
+                     max_args=KEY.NA, passTokens=False, passCommas=False):
+            self.callable_name = callable_name
             self.function = function
             self.passTokens = passTokens
             self.passCommas = passCommas
@@ -246,33 +248,46 @@ class Parser(object):
             numArgs = len(args)
             if self.maxArgs != KEY.NO_MAX and numArgs > self.maxArgs:
                 if self.minArgs == self.maxArgs:
-                    error(ERR_TOO_MANY_ARGS % (self.Type, u'self.text', numArgs, self.minArgs))
+                    error(ERR_TOO_MANY_ARGS % (
+                        self.Type, self.callable_name, numArgs, self.minArgs))
                 else:
-                    error(ERR_TOO_MANY_ARGS % (self.Type, u'self.text', numArgs, u'min: %s, max: %s' % (self.minArgs,self.maxArgs)))
+                    error(ERR_TOO_MANY_ARGS % (
+                        self.Type, self.callable_name, numArgs,
+                        u'min: %s, max: %s' % (self.minArgs,self.maxArgs)))
             if numArgs < self.minArgs:
                 if self.maxArgs == KEY.NO_MAX:
-                    error(ERR_TOO_FEW_ARGS % (self.Type, u'self.text', numArgs, u'min: %s' % self.minArgs))
+                    error(ERR_TOO_FEW_ARGS % (
+                        self.Type, self.callable_name, numArgs,
+                        u'min: %s' % self.minArgs))
                 elif self.minArgs == self.maxArgs:
-                    error(ERR_TOO_FEW_ARGS % (self.Type, u'self.text', numArgs, self.minArgs))
+                    error(ERR_TOO_FEW_ARGS % (
+                        self.Type, self.callable_name, numArgs, self.minArgs))
                 else:
-                    error(ERR_TOO_FEW_ARGS % (self.Type, u'self.text', numArgs, u'min: %s, max: %s' % (self.minArgs, self.maxArgs)))
+                    error(ERR_TOO_FEW_ARGS % (
+                        self.Type, self.callable_name, numArgs,
+                        u'min: %s, max: %s' % (self.minArgs, self.maxArgs)))
             return self.function(*args)
 
-
     class Operator(Callable):
-        def __init__(self, function, precedence, association=LEFT, passTokens=True):
+        def __init__(self, operator_name, function, precedence,
+                     association=LEFT, passTokens=True):
             self.precedence = precedence
             self.association = association
             if self.precedence in (OP.UNA, OP.NOT):
                 min_args = 1
             else:
                 min_args = 2
-            super(Parser.Operator,self).__init__(function, min_args, passTokens=passTokens)
+            super(Parser.Operator,self).__init__(operator_name, function,
+                                                 min_args,
+                                                 passTokens=passTokens)
 
     class Keyword(Callable):
-        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, splitCommas=True, passCommas=False):
+        def __init__(self, keyword_name, function, min_args=0, max_args=KEY.NA,
+                     passTokens=False, splitCommas=True, passCommas=False):
             self.splitCommas = splitCommas
-            super(Parser.Keyword,self).__init__(function, min_args, max_args, passTokens, passCommas)
+            super(Parser.Keyword,self).__init__(keyword_name, function,
+                                                min_args, max_args,
+                                                passTokens, passCommas)
 
         def __call__(self, *args):
             gParser.StripOuterParens(args)
@@ -294,13 +309,16 @@ class Parser(object):
             return self.execute(*args)
 
     class Function(Callable):
-        def __init__(self, function, min_args=0, max_args=KEY.NA, passTokens=False, dotFunction=False):
+        def __init__(self, function_name, function, min_args=0,
+                     max_args=KEY.NA, passTokens=False, dotFunction=False):
             """function: function that will be called with the args
                num_args: number of args required for the function
                passTokens: whether tokens or the data within should be passed as args
                dotFunction: whether this function can be called using the dot operator
                """
-            super(Parser.Function,self).__init__(function, min_args, max_args, passTokens)
+            super(Parser.Function,self).__init__(function_name, function,
+                                                 min_args, max_args,
+                                                 passTokens)
             self.dotFunction = dotFunction
 
     class Token:
@@ -443,19 +461,19 @@ class Parser(object):
         type_ = getType(name, self)
         if type_ not in [NAME,OPERATOR,UNKNOWN]:
             error(ERR_CANNOT_SET % (u'operator', name, Types[type_]))
-        self.operators[name] = Parser.Operator(*args, **kwdargs)
+        self.operators[name] = Parser.Operator(name, *args, **kwdargs)
         for i in name:
             if i not in self.opChars: self.opChars += i
     def SetKeyword(self, name, *args, **kwdargs):
         type_ = getType(name, self)
         if type_ not in [NAME,KEYWORD]:
             error(ERR_CANNOT_SET % (u'keyword', name, Types[type_]))
-        self.keywords[name] = Parser.Keyword(*args, **kwdargs)
+        self.keywords[name] = Parser.Keyword(name, *args, **kwdargs)
     def SetFunction(self, name, *args, **kwdargs):
         type_ = getType(name, self)
         if type_ not in [NAME,FUNCTION]:
             error(ERR_CANNOT_SET % (u'function', name, Types[type_]))
-        self.functions[name] = Parser.Function(*args, **kwdargs)
+        self.functions[name] = Parser.Function(name, *args, **kwdargs)
     def SetConstant(self, name, value):
         type_ = getType(name, self)
         if type_ not in [NAME,CONSTANT]:
@@ -465,6 +483,7 @@ class Parser(object):
         type_ = getType(name, self)
         if type_ not in [NAME, VARIABLE]:
             error(ERR_CANNOT_SET % (u'variable', name, Types[type_]))
+        self.variables[name] = value
 
     # Flow control stack
     def PushFlow(self, stmnt_type, active, keywords, **attribs):

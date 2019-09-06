@@ -170,12 +170,17 @@ try:
             if isinstance(path,unicode) and os.name in ('nt','ce'):
                 LoadLibrary = windll.kernel32.LoadLibraryW
                 handle = LoadLibrary(path)
+            from env import get_file_version
+            if get_file_version(path) < (0, 7):
+                raise ImportError(u'Bundled CBash version is too old for this '
+                                  u'Wrye Bash version. Only 0.7.0+ is '
+                                  u'supported.')
             _CBash = CDLL(path,handle=handle)
             break
     del paths
 except (AttributeError,ImportError,OSError) as error:
     _CBash = None
-    print error
+    deprint(u'Failed to import CBash.', traceback=True)
 except:
     _CBash = None
     raise
@@ -206,14 +211,9 @@ if _CBash:
 ##        raise CBashError("Check the log.")
         return
 
-    try:
-        _CGetVersionMajor = _CBash.cb_GetVersionMajor
-        _CGetVersionMinor = _CBash.cb_GetVersionMinor
-        _CGetVersionRevision = _CBash.cb_GetVersionRevision
-    except AttributeError: #Functions were renamed in v0.5.0
-        _CGetVersionMajor = _CBash.cb_GetMajor
-        _CGetVersionMinor = _CBash.cb_GetMinor
-        _CGetVersionRevision = _CBash.cb_GetRevision
+    _CGetVersionMajor = _CBash.cb_GetVersionMajor
+    _CGetVersionMinor = _CBash.cb_GetVersionMinor
+    _CGetVersionRevision = _CBash.cb_GetVersionRevision
     _CGetVersionMajor.restype = c_ulong
     _CGetVersionMinor.restype = c_ulong
     _CGetVersionRevision.restype = c_ulong

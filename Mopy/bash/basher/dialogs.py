@@ -292,7 +292,7 @@ class ImportFaceDialog(balt.Dialog):
                               onButClick=self.DoImport, default=True)
         self.picture = balt.Picture(self,350,210,scaling=2)
         #--Layout
-        fgSizer = wx.FlexGridSizer(3,2,2,4)
+        fgSizer = wx.FlexGridSizer(5,2,2,4)
         fgSizer.AddGrowableCol(1,1)
         fgSizer.AddMany([
             self.nameCheck,

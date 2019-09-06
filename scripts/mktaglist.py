@@ -47,7 +47,7 @@ print u'Loaded the LOOT API v{0} using wrapper version {1}'.format(
 gamesData = [
     (u'Oblivion', 'Oblivion.esm', 'oblivion', loot_api.GameType.tes4),
     (u'Skyrim', 'Skyrim.esm', 'skyrim', loot_api.GameType.tes5),
-    (u'Skyrim Special Edition', 'Skyrim.esm', 'skyrimse', loot_api.GameType.tes5se),
+    (u'SkyrimSE', 'Skyrim.esm', 'skyrimse', loot_api.GameType.tes5se),
     (u'Fallout3', 'Fallout3.esm', 'fallout3', loot_api.GameType.fo3),
     (u'FalloutNV', 'FalloutNV.esm', 'falloutnv', loot_api.GameType.fonv),
     (u'Fallout4', 'Fallout4.esm', 'fallout4', loot_api.GameType.fo4),

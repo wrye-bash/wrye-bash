@@ -2294,6 +2294,9 @@ class WryeText:
                 if address == u'#': address += unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             if address.startswith(u'!'):
                 newWindow = u' target="_blank"'
+                if address == text:
+                    # We have no text, cut off the '!' here too
+                    text = text[1:]
                 address = address[1:]
             else:
                 newWindow = u''

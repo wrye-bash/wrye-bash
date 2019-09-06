@@ -360,7 +360,7 @@ class ConfigHelpers:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
     _cleaning_wiki_url = u'[[!https://tes5edit.github.io/docs/5-mod-cleaning' \
-                         u'-and-error-checking.html]]'
+                         u'-and-error-checking.html|Tome of xEdit]]'
 
     def checkMods(self, showModList=False, showRuleSets=False, showNotes=False,
                   showConfig=True, showSuggest=True, showCRC=False,

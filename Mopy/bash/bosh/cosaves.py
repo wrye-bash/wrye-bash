@@ -1468,9 +1468,12 @@ class PluggyCosave(_ACosave):
     def read_cosave(self, light=False):
         target_state = 1 if light else 2
         if self.loading_state < target_state:
-            # The Pluggy file format requires reading a file twice: once all but
-            # the last 12 bytes, which is used for reading the header an chunks,
-            # and once all but the last 4 bytes, for a CRC check.
+            # Need to reset these to avoid adding duplicates
+            self.cosave_chunks = []
+            self.remappable_chunks = []
+            # The Pluggy file format requires reading a file twice: once all
+            # but the last 12 bytes, which is used for reading the header and
+            # chunks, and once all but the last 4 bytes, for a CRC check.
             total_size = self.cosave_path.size
             with self.cosave_path.open('rb') as ins:
                 # This is what we'll read the header and chunks from later.
