@@ -150,13 +150,6 @@ class GameInfo(object):
         install_dir = u'' # The directory, relative to the Data folder, into
                           # which SkyProc patchers will be installed.
 
-    # Quick shortcut for combining the SE and SD names
-    @classmethod
-    def se_sd(cls):
-        se_sd_ = cls.se.se_abbrev
-        if cls.sd.long_name: se_sd_ += u'/' + cls.sd.long_name
-        return se_sd_
-
     # Graphics Extender information
     class ge(object):
         ge_abbrev = u'' # Abbreviated name. If this is empty, it signals
