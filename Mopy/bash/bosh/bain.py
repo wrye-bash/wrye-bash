@@ -978,10 +978,18 @@ class Installer(object):
             newPath = bass.dirs['installers'].join(newName)
             if not newPath.exists():
                 DataStore._rename_operation(data, g_path, newName)
-                #--Add the new archive to Bash and remove old one
+                # If we hit a refresh after that fs operation, BAIN may have
+                # already deleted the old installer and created a new one for
+                # the renamed path - undo that here
+                # TODO(inf) This is quite hacky - we need some way to suspend
+                #  refreshes while in _installer_rename, i.e. make it atomic
+                if g_path in data:
+                    del data[g_path]
+                if newName in data:
+                    del data[newName]
+                # Add the new archive to BAIN and remove old one
                 data[newName] = self
-                del data[g_path]
-                #--Update the iniInfos & modInfos for 'installer'
+                # Update the iniInfos & modInfos for 'installer'
                 from . import modInfos, iniInfos
                 mfiles = [x for x in modInfos.table.getColumn('installer') if
                           modInfos.table[x]['installer'] == self.archive]
