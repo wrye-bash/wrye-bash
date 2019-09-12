@@ -578,6 +578,7 @@
         Delete "${Path}\Mopy\bash\basher\pm_tab.p*"
         Delete "${Path}\Mopy\bash\bosh.p*"
         Delete "${Path}\Mopy\bash\bosh\msgs.p*"
+        Delete "${Path}\Mopy\bash\bweb.p*"
         ; As of commit 3ade2c3 INI Tweaks are removed for Skyrim and Oblivion
         Delete "${Path}\Mopy\INI Tweaks\Oblivion\Autosave, Never [Oblivion].ini"
         Delete "${Path}\Mopy\INI Tweaks\Oblivion\Autosave, ~Always [Oblivion].ini"
