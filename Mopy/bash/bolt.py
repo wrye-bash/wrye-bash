@@ -32,7 +32,6 @@ import copy
 import csv
 import datetime
 import errno
-import gettext
 import locale
 import os
 import pkgutil
@@ -175,11 +174,6 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
         else: return goodEncoding[0]
     raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
 
-def formatInteger(value):
-    """Convert integer to string formatted to locale."""
-    return decode(locale.format('%d', int(value), True),
-                  locale.getpreferredencoding())
-
 def formatDate(value):
     """Convert time to string formatted to to locale's default date/time."""
     try:
@@ -188,7 +182,8 @@ def formatDate(value):
         local = time.gmtime(value)
         # deprint(u'Timestamp %d failed to convert to local, using %s' % (
         #     value, local))
-    return decode(time.strftime('%c', local), locale.getpreferredencoding())
+    return decode(time.strftime('%c', local),
+                  locale.getpreferredencoding(do_setlocale=False))
 
 def unformatDate(date, formatStr):
     """Basically a wrapper around time.strptime. Exists to get around bug in
@@ -196,7 +191,7 @@ def unformatDate(date, formatStr):
     try:
         return time.strptime(date, '%c')
     except ValueError:
-        if formatStr == '%c' and u'Japanese' in locale.getlocale()[0]:
+        if formatStr == '%c' and bass.active_locale.lower() == u'japanese':
             date = re.sub(u'^([0-9]{4})/([1-9])', r'\1/0\2', date, flags=re.U)
             return time.strptime(date, '%c')
         else:
@@ -206,7 +201,7 @@ def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 
 def round_size(kbytes):
     """Round non zero sizes to 1 KB."""
-    return formatInteger(0 if kbytes == 0 else max(kbytes, 1024) / 1024) + u' KB'
+    return u'%u KB' % (0 if kbytes == 0 else max(kbytes, 1024) / 1024)
 
 # Helpers ---------------------------------------------------------------------
 def sortFiles(files, __split=os.path.split):
@@ -334,53 +329,6 @@ def dumpTranslator(outPath, lang, *files):
                 try: os.remove(tmpTxt)
                 except: pass
     return outTxt
-
-def initTranslator(lang=None, path=None):
-    if not lang:
-        try:
-            lang = locale.getlocale()[0].split('_', 1)[0]
-            lang = decode(lang)
-        except UnicodeError:
-            deprint(u'Still unicode problems detecting locale:', repr(locale.getlocale()),traceback=True)
-            # Default to English
-            lang = u'English'
-    path = path or os.path.join(u'bash',u'l10n')
-    if lang.lower() == u'german': lang = u'de'
-    txt,po,mo = (os.path.join(path, lang + ext)
-                 for ext in (u'.txt',u'.po',u'.mo'))
-    if not os.path.exists(txt) and not os.path.exists(mo):
-        if lang.lower() != u'english':
-            print u'No translation file for language:', lang
-        trans = gettext.NullTranslations()
-    else:
-        try:
-            if not os.path.exists(mo) or (os.path.getmtime(txt) > os.path.getmtime(mo)):
-                # Compile
-                shutil.copy(txt,po)
-                args = [u'm',u'-o',mo,po]
-                if hasattr(sys,'frozen'):
-                    import msgfmt
-                    old_argv = sys.argv[:]
-                    sys.argv = args
-                    msgfmt.main()
-                    sys.argv = old_argv
-                else:
-                    m = os.path.join(sys.prefix,u'Tools',u'i18n',u'msgfmt.py')
-                    subprocess.call([m,u'-o',mo,po],shell=True)
-                os.remove(po)
-            # install translator
-            with open(mo,'rb') as file:
-                trans = gettext.GNUTranslations(file)
-        except:
-            print 'Error loading translation file:'
-            traceback.print_exc()
-            trans = gettext.NullTranslations()
-    trans.install(unicode=True)
-
-#--Do translator test and set
-if locale.getlocale() == (None,None):
-    locale.setlocale(locale.LC_ALL,u'')
-initTranslator(bass.language)
 
 CBash = 0
 

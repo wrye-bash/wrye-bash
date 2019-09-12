@@ -147,7 +147,6 @@ bleeding edge branch. Commits land here for testing.
   [10]: http://wrye-bash.github.io/docs/Wrye%20Bash%20General%20Readme.html#install
   [11]: http://wrye-bash.github.io/docs/Wrye%20Bash%20Advanced%20Readme.html#install
   [12]: https://github.com/wrye-bash/wrye-bash/archive/dev.zip
-  [13]: http://sourceforge.net/projects/wxpython/files/wxPython/2.8.12.1/wxPython2.8-win32-unicode-2.8.12.1-py27.exe
   [14]: https://github.com/wrye-bash/wrye-bash/blob/0a47238de9e7f46f55fe755f2744e2cea521f514/Mopy/bash/balt.py#L678
   [15]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Running-Wrye-Bash-on-WINE-%28Arch-Linux%29
   [16]: https://github.com/wrye-bash/wrye-bash/issues/240

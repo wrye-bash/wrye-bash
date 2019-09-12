@@ -215,8 +215,8 @@ Unicode true
 
         !insertmacro InitializeRegistryPaths
 
-        StrCpy $MinVersion_wx '2.8.12'
-        StrCpy $MinVersion_pywin32 '217'
+        StrCpy $MinVersion_wx '3.0.2.0'
+        StrCpy $MinVersion_pywin32 '220'
         StrCpy $Python_wx "1"
         StrCpy $Python_pywin32 "1"
 

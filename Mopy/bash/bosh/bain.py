@@ -42,8 +42,8 @@ from .. import balt # YAK!
 from .. import bush, bass, bolt, env, archives
 from ..archives import readExts, defaultExt, list_archive, compress7z, \
     extract7z, compressionSettings
-from ..bolt import Path, deprint, formatInteger, round_size, GPath, sio, \
-    SubProgress, CIstr, LowerDict
+from ..bolt import Path, deprint, round_size, GPath, sio, SubProgress, CIstr, \
+    LowerDict
 from ..exception import AbstractError, ArgumentError, BSAError, CancelError, \
     InstallerArchiveError, SkipError, StateError, FileError
 
@@ -228,7 +228,7 @@ class Installer(object):
 
     @staticmethod
     def number_string(number, marker_string=u''):
-        return formatInteger(number)
+        return str(number)
 
     def size_string(self, marker_string=u''):
         return round_size(self.size)

@@ -22,7 +22,6 @@
 #
 # =============================================================================
 
-import locale
 import sys
 
 from . import BashFrame, BashStatusBar
@@ -43,8 +42,6 @@ __all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
            'Settings_UseAltName', 'Settings_Deprint',
            'Settings_DumpTranslator', 'Settings_UAC']
 
-def _bassLang(): return bass.language if bass.language else \
-    locale.getlocale()[0].split('_', 1)[0]
 #------------------------------------------------------------------------------
 # Settings Links --------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -316,7 +313,7 @@ class _Settings_Language(EnabledLink, RadioLink):
                                                     self._lang)
 
     def _initData(self, window, selection):
-        if self._lang == _bassLang():
+        if bass.active_locale.lower() in self._lang.lower():
             self._help = _(u"Currently using %(languagename)s as the active "
                           u"language.") % ({'languagename': self._text})
             self.check = True
@@ -499,7 +496,7 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
                                 _(u'Dump Translator')): return
         outPath = bass.dirs['l10n']
         with balt.BusyCursor():
-            outFile = bolt.dumpTranslator(outPath.s, _bassLang())
+            outFile = bolt.dumpTranslator(outPath.s, bass.active_locale)
         self._showOk(_(
             u'Translation keys written to ') + u'Mopy\\bash\\l10n\\' + outFile,
                      _(u'Dump Translator') + u': ' + outPath.stail)

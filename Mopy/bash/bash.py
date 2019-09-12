@@ -29,35 +29,51 @@ loop."""
 # Imports ---------------------------------------------------------------------
 import atexit
 import codecs
+import gettext
 import os
 import platform
 import shutil
+import subprocess
 import sys
 import traceback
 from ConfigParser import ConfigParser
 # Local
 import bass
+import bolt
+import env
 import exception
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
-basher = balt = bolt = initialization = None
+basher = balt = initialization = None
 _wx = None
 is_standalone = hasattr(sys, 'frozen')
 
-def _import_bolt(opts):
-    """Import bolt or show a tkinter error and exit if unsuccessful.
+def _early_setup(debug):
+    """Executes (very) early setup by changing working directory and debug
+    mode.
 
-    :param opts: command line arguments"""
-    global bolt
-    try:
-        # First of all set the language, set on importing bolt
-        bass.language = opts.language
-        import bolt  # bass.language must be set
-    except Exception as e:
-        but_kwargs = {'text': u"QUIT", 'fg': 'red'}  # foreground button color
-        msg = u'\n'.join([dump_environment(), u'', u'Unable to load bolt:',
-                          traceback.format_exc(e), u'Exiting.'])
-        _tkinter_error_dial(msg, but_kwargs)
-        sys.exit(1)
+    :param debug: True if debug mode is enabled."""
+    # ensure we are in the correct directory so relative paths will work
+    # properly
+    if is_standalone:
+        pathToProg = os.path.dirname(
+            unicode(sys.executable, bolt.Path.sys_fs_enc))
+    else:
+        pathToProg = os.path.dirname(
+            unicode(sys.argv[0], bolt.Path.sys_fs_enc))
+    if pathToProg:
+        os.chdir(pathToProg)
+    bolt.deprintOn = debug
+    # useful for understanding context of bug reports
+    if debug or is_standalone:
+        # Standalone stdout is NUL no matter what.   Redirect it to stderr.
+        # Also, setup stdout/stderr to the debug log if debug mode /
+        # standalone before wxPython is up
+        global _bugdump_handle
+        # _bugdump_handle = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding='utf-8')
+        _bugdump_handle = codecs.getwriter('utf-8')(
+            open(os.path.join(os.getcwdu(), u'BashBugDump.log'), 'w'))
+        sys.stdout = _bugdump_handle
+        sys.stderr = _bugdump_handle
 
 def _import_wx():
     """Import wxpython or show a tkinter error and exit if unsuccessful."""
@@ -72,6 +88,90 @@ def _import_wx():
         _tkinter_error_dial(msg, but_kwargs)
         sys.exit(1)
 
+def _setup_locale(cli_lang):
+    """Sets up wx and Wrye Bash locales, ensuring they match or falling back
+    to English if that is impossible. Also considers cli_lang as an override,
+    installs the gettext translation and remembers the locale we end up with
+    as bass.active_locale.
+
+    :param cli_lang: The language the user specified on the command line, or
+        None.
+    :return: The wx.Locale object we ended up using."""
+    # We need a throwaway wx.App so that the calls below work
+    _temp_app = _wx.App()
+    # Set the wx language - otherwise we will crash when loading any images
+    if cli_lang and _wx.Locale.FindLanguageInfo(cli_lang):
+        # The user specified a language that wx recognizes and WB supports
+        target_language = _wx.Locale.FindLanguageInfo(cli_lang)
+    else:
+        # Fall back on the default language
+        target_language = _wx.LANGUAGE_DEFAULT
+    # We now have a language that wx supports, but we don't know if WB supports
+    # it - so check that next
+    target_locale = _wx.Locale(target_language)
+    target_name = target_locale.GetSysName().split(u'_', 1)[0]
+    # Ugly hack, carried forward from bolt.initTranslator
+    if target_name.lower() == u'german':
+        target_name = u'de'
+    # English is the default, so it doesn't have a translation file
+    # For all other languages, check if we have a translation
+    trans_path = os.path.join(os.getcwdu(), u'bash', u'l10n')
+    if target_name.lower() != u'english' and not os.path.exists(os.path.join(
+            trans_path, target_name + u'.txt')):
+        # WB does not support the default language, use English instead
+        target_locale = _wx.Locale(_wx.LANGUAGE_ENGLISH)
+        bolt.deprint(u"No translation file for language '%s', falling back to "
+                     u"English" % target_name)
+        target_name = target_locale.GetSysName().split(u'_', 1)[0]
+    bolt.deprint(u"Set wx locale to '%s' (%s)" % (
+        target_name, target_locale.GetCanonicalName()))
+    # Next, set the Wrye Bash locale based on the one we grabbed from wx
+    txt, po, mo = (os.path.join(trans_path, target_name + ext)
+                   for ext in (u'.txt', u'.po', u'.mo'))
+    if not os.path.exists(txt) and not os.path.exists(mo):
+        # We're using English or don't have a translation file - either way,
+        # prepare the English translation
+        trans = gettext.NullTranslations()
+        bolt.deprint(u"Set Wrye Bash locale to 'English'")
+    else:
+        try:
+            # We have a translation file, check if it has to be compiled
+            if not os.path.exists(mo) or (os.path.getmtime(txt) >
+                                          os.path.getmtime(mo)):
+                # Try compiling - have to do it differently if we're a
+                # standalone build
+                shutil.copy(txt, po)
+                args = [u'm', u'-o', mo, po]
+                if is_standalone:
+                    # Delayed import, since it's only present on standalone
+                    import msgfmt
+                    old_argv = sys.argv[:]
+                    sys.argv = args
+                    msgfmt.main()
+                    sys.argv = old_argv
+                else:
+                    # msgfmt is only in Tools, so call it explicitly
+                    m = os.path.join(sys.prefix, u'Tools', u'i18n',
+                                     u'msgfmt.py')
+                    subprocess.call([sys.executable, m, u'-o', mo, po],
+                                    shell=True)
+                # Clean up the temp file we created for compilation
+                os.remove(po)
+            # We've succesfully compiled the translation, read it into memory
+            with open(mo,'rb') as file:
+                trans = gettext.GNUTranslations(file)
+            bolt.deprint(u"Set Wrye Bash locale to '%s'" % target_name)
+        # TODO(inf) Tighten this except
+        except:
+            bolt.deprint(u'Error loading translation file:')
+            traceback.print_exc()
+            trans = gettext.NullTranslations()
+    # Everything has gone smoothly, install the translation and remember what
+    # we ended up with as the final locale
+    trans.install(unicode=True)
+    bass.active_locale = target_name
+    return target_locale
+
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
     """Ascertain that only one instance of Wrye Bash is running.
@@ -85,7 +185,7 @@ def assure_single_instance(instance):
         bolt.deprint(u'Only one instance of Wrye Bash can run. Exiting.')
         msg = _(u'Only one instance of Wrye Bash can run.')
         _app = _wx.App(False)
-        with _wx.MessageDialog(None, msg, _(u'Wrye Bash'), _wx.OK) as dialog:
+        with _wx.MessageDialog(None, msg, u'Wrye Bash', _wx.OK) as dialog:
             dialog.ShowModal()
         sys.exit(1)
 
@@ -136,7 +236,7 @@ def exit_cleanup():
 
 def dump_environment():
     fse = sys.getfilesystemencoding()
-    msg = u'\n'.join([
+    msg = [
         u'Wrye Bash starting',
         u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
             u' (Standalone)' if is_standalone else u''),
@@ -157,11 +257,12 @@ def dump_environment():
         u'filesystem encoding: %s%s' % (fse,
             (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u''),
         u'command line: %s' % sys.argv,
-    ])
+    ]
     if getattr(bolt, 'scandir', None) is not None:
-        msg = u'\n'.join([msg, 'Using scandir ' + bolt.scandir.__version__])
-    print msg
-    return msg
+        msg.append(u'Using scandir ' + bolt.scandir.__version__)
+    for m in msg:
+        bolt.deprint(m)
+    return u'\n'.join(msg)
 
 def _bash_ini_parser(bash_ini_path):
     bash_ini_parser = None
@@ -176,12 +277,14 @@ def main(opts):
 
     :param opts: command line arguments
     :type opts: Namespace"""
-    # First import bolt, needed for localization of error messages
-    _import_bolt(opts)
-    # Then import wx so we can style our error messages nicely
+    # Change working dir and logging
+    _early_setup(opts.debug)
+    # wx is needed to initialize locale, so that's first
     _import_wx()
+    # Next, proceed to initialize the locale using wx
+    wx_locale = _setup_locale(opts.language)
     try:
-        _main(opts)
+        _main(opts, wx_locale)
     except Exception as e:
         msg = u'\n'.join([
             _(u'Wrye Bash encountered an error.'),
@@ -196,30 +299,16 @@ def main(opts):
         _show_wx_error(msg)
         sys.exit(1)
 
-def _main(opts):
+def _main(opts, wx_locale):
     """Run the Wrye Bash main loop.
 
     This function is marked private because it should be inside a try-except
     block. Call main() from the outside.
 
     :param opts: command line arguments
-    """
+    :param wx_locale: The wx.Locale object that we ended up using."""
     import barg
     bass.sys_argv = barg.convert_to_long_options(sys.argv)
-    import env # env imports bolt (this needs fixing)
-    bolt.deprintOn = opts.debug
-    # useful for understanding context of bug reports
-    if opts.debug or is_standalone:
-        # Standalone stdout is NUL no matter what.   Redirect it to stderr.
-        # Also, setup stdout/stderr to the debug log if debug mode /
-        # standalone before wxPython is up
-        global _bugdump_handle
-        # _bugdump_handle = io.open(os.path.join(os.getcwdu(),u'BashBugDump.log'),'w',encoding='utf-8')
-        _bugdump_handle = codecs.getwriter('utf-8')(
-            open(os.path.join(os.getcwdu(), u'BashBugDump.log'), 'w'))
-        sys.stdout = _bugdump_handle
-        sys.stderr = _bugdump_handle
-        old_stderr = _bugdump_handle
 
     if opts.debug:
         dump_environment()
@@ -231,7 +320,7 @@ def _main(opts):
     global initialization
     import initialization
     #--Bash installation directories, set on boot, not likely to change
-    initialization.init_dirs_mopy_and_cd(is_standalone)
+    initialization.init_dirs_mopy()
 
     # if HTML file generation was requested, just do it and quit
     if opts.genHtml is not None:
@@ -297,13 +386,14 @@ def _main(opts):
             # Special case for py2exe version
             app = basher.BashApp()
             # Regain control of stdout/stderr from wxPython
-            sys.stdout = old_stderr
-            sys.stderr = old_stderr
+            sys.stdout = _bugdump_handle
+            sys.stderr = _bugdump_handle
         else:
             app = basher.BashApp(False)
     else:
         app = basher.BashApp()
-
+    # Need to reference the locale object somewhere, so let's do it on the App
+    app.locale = wx_locale
     if not is_standalone and (
         not _rightWxVersion() or not _rightPythonVersion()): return
     if env.isUAC:
@@ -535,15 +625,13 @@ def _wxSelectGame(ret, msgtext):
 # Version checks --------------------------------------------------------------
 def _rightWxVersion():
     wxver = _wx.version()
-    wxver_tuple = _wx.VERSION
-    if wxver != '2.8.12.1 (msw-unicode)' and wxver_tuple < (2,9):
+    if wxver != u'3.0.2.0 msw (classic)':
         return balt.askYes(
-            None, 'Warning: you appear to be using a non-supported version '
-            'of wxPython (%s).  This will cause problems!  It is highly '
-            'recommended you use either version 2.8.12.1 (msw-unicode) or, '
-            'at your discretion, a later version (untested). Do you still '
-            'want to run Wrye Bash?' % wxver,
-            'Warning: Non-Supported wxPython detected', )
+            None, u'Warning: you appear to be using a non-supported version '
+                  u'of wxPython (%s). This will cause problems! It is highly '
+                  u'recommended you use version 3.0.2.0 msw (classic). Do you '
+                  u'still want to run Wrye Bash?' % wxver,
+            u'Warning: Non-Supported wxPython detected',)
     return True
 
 def _rightPythonVersion():

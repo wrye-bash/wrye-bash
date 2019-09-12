@@ -67,8 +67,7 @@ import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, formatInteger, formatDate, \
-    round_size
+from ..bolt import GPath, SubProgress, deprint, formatDate, round_size
 from ..bosh import omods
 from ..cint import CBashApi
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
@@ -2794,8 +2793,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
                      _(u'Data CRC:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'Files:') + u' %s\n' % installer.number_string(
                 installer.num_of_files, marker_string=u'N/A'))
-            info += (_(u'Configured:')+u' %s (%s)\n' % (
-                formatInteger(nConfigured), round_size(installer.unSize)),
+            info += (_(u'Configured:')+u' %u (%s)\n' % (
+                nConfigured, round_size(installer.unSize)),
                      _(u'Configured:')+u' N/A\n',)[isinstance(installer,bosh.InstallerMarker)]
             info += (_(u'  Matched:') + u' %s\n' % installer.number_string(
                 nConfigured - nMissing - nMismatched, marker_string=u'N/A'))

@@ -65,9 +65,9 @@
             ;Detect Python Components:
             ${If} $Python_Path != $Empty
                 ; Detect wxPython.
-                ReadRegStr $Python_wx HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
+                ReadRegStr $Python_wx HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython3.0-py27_is1" "DisplayVersion"
                 ${If} $Python_wx == $Empty
-                    ReadRegStr $Python_wx HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython2.8-unicode-py27_is1" "DisplayVersion"
+                    ReadRegStr $Python_wx HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\wxPython3.0-py27_is1" "DisplayVersion"
                 ${EndIf}
 
                 ; Detect PyWin32.
@@ -108,23 +108,23 @@
 
             ${If} $Python_wx == "1"
                 SetOutPath "$TEMP\PythonInstallers"
-                DetailPrint "wxPython 2.8.12.1 - Downloading..."
-                NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython2.8-win32-unicode-2.8.12.1-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
+                DetailPrint "wxPython 3.0.2.0 - Downloading..."
+                NSISdl::download http://downloads.sourceforge.net/wxpython/wxPython3.0-win32-3.0.2.0-py27.exe "$TEMP\PythonInstallers\wxPython.exe"
                 Pop $R0
                 ${If} $R0 == "success"
-                    DetailPrint "wxPython 2.8.12.1 - Installing..."
+                    DetailPrint "wxPython 3.0.2.0 - Installing..."
                     Sleep 2000
                     HideWindow
                     ExecWait '"$TEMP\PythonInstallers\wxPython.exe"'; /VERYSILENT'
                     BringToFront
-                    DetailPrint "wxPython 2.8.12.1 - Installed."
+                    DetailPrint "wxPython 3.0.2.0 - Installed."
                 ${Else}
-                    DetailPrint "wxPython 2.8.12.1 - Download Failed!"
+                    DetailPrint "wxPython 3.0.2.0 - Download Failed!"
                     MessageBox MB_OK "wxPython download failed, please try running installer again or manually downloading."
                     Abort
                 ${EndIf}
             ${Else}
-                DetailPrint "wxPython 2.8.12.1 is already installed; skipping!"
+                DetailPrint "wxPython 3.0.2.0 is already installed; skipping!"
             ${EndIf}
 
             ${If} $Python_pywin32 == "1"

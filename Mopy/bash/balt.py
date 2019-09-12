@@ -1517,9 +1517,18 @@ class Progress(bolt.Progress):
 
     def getParent(self): return self.dialog.GetParent()
 
-    def setCancel(self, enabled=True):
-        cancel = self.dialog.FindWindowById(wx.ID_CANCEL)
-        cancel.Enable(enabled)
+    def setCancel(self, enabled=True, new_message=u''):
+        # TODO(inf) Hacky, we need to rewrite this class for wx3
+        new_title = self.dialog.GetTitle()
+        new_parent = self.dialog.GetParent()
+        new_style = self.dialog.GetWindowStyle()
+        if enabled:
+            new_style |= wx.PD_CAN_ABORT
+        else:
+            new_style &= ~wx.PD_CAN_ABORT
+        self.dialog.Destroy()
+        self.dialog = wx.ProgressDialog(new_title, new_message, 100,
+                                        new_parent, new_style)
 
     def _do_progress(self, state, message):
         if not self.dialog:
