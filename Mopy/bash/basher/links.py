@@ -262,8 +262,7 @@ def InitInstallerLinks():
     InstallersList.mainMenu.append(Installers_AutoRefreshProjects())
     InstallersList.mainMenu.append(Installers_AutoRefreshBethsoft())
     InstallersList.mainMenu.append(Installers_BsaRedirection())
-    if not bush.game.needs_empty_dirs:
-        InstallersList.mainMenu.append(Installers_RemoveEmptyDirs())
+    InstallersList.mainMenu.append(Installers_RemoveEmptyDirs())
     InstallersList.mainMenu.append(Installers_ConflictsReportShowsInactive())
     InstallersList.mainMenu.append(Installers_ConflictsReportShowsLower())
     InstallersList.mainMenu.append(
