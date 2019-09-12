@@ -21,15 +21,17 @@ tested on (previous versions or latest versions may or may not work):
 * Fallout 3 (patch 1.7.0.3)
 * Fallout New Vegas (patch 1.4.0.525)
 * Skyrim (patch 1.9.36.0)
+* Enderal (patch 1.5.7.0)
 * Fallout 4 (patch 1.10.138.0)
 * Skyrim Special Edition (patch 1.5.80.0)
 
 ### Download
 
 * [Oblivion Nexus][2]
-* [Fallout 3][3]
-* [Fallout New Vegas][4]
+* [Fallout 3 Nexus][3]
+* [Fallout New Vegas Nexus][4]
 * [Skyrim Nexus][5]
+* [Enderal Nexus][30]
 * [Fallout 4 Nexus][6]
 * [Skyrim Special Edition Nexus][7]
 * [Github][8] (all releases)
@@ -129,9 +131,8 @@ you get write rights.
  issue.
 - [`master`](https://github.com/wrye-bash/wrye-bash/tree/master): the production
  branch, contains stable releases. Use it _only_ as reference.
-- [`utumno-wip`](https://github.com/wrye-bash/wrye-bash/tree/utumno-wip):
-bleeding edge dev branch. Do have a look if interested in contributing or
-testing very latest features/fixes.
+- [`nightly`](https://github.com/wrye-bash/wrye-bash/tree/nightly):
+bleeding edge branch. Commits land here for testing.
 
 
   [1]: http://sourceforge.net/p/oblivionworks/code/3177/tree/
@@ -163,3 +164,4 @@ testing very latest features/fixes.
   [27]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-Model-&-Using-The-Repository
   [28]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bgithub%5D-Branching-and-merging-to-dev-using-rebase
   [29]: https://github.com/wrye-bash/wrye-bash/wiki/%5Bdev%5D-Coding-Style
+  [30]: https://www.nexusmods.com/enderal/mods/97
