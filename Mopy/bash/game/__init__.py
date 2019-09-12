@@ -388,9 +388,9 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     inventoryTypes = ()
 
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Race Patcher
-    #------------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     default_eyes = {}
 
     # Record type to name dictionary
@@ -398,6 +398,12 @@ class GameInfo(object):
 
     # xEdit menu string and key for expert setting
     xEdit_expert = ()
+
+    # Set in game/*/default_tweaks.py, this is a dictionary mapping names for
+    # 'default' INI tweaks (i.e. ones that we ship with WB and that can't be
+    # deleted) to OrderedDicts that implement the actual tweaks. See
+    # DefaultIniFile.__init__ for how the tweaks are parsed.
+    default_tweaks = {}
 
     @classmethod
     def init(cls):
@@ -425,14 +431,19 @@ class GameInfo(object):
         'soundsTypes', 'statsHeaders', 'statsTypes', 'xEdit_expert',
     }
     @classmethod
-    def _dynamic_import_constants(cls, package_name):
-        """Dynamically import package's 'constants' module, we need to pass
-        the package name in. Populate class namespace with those constants."""
+    def _dynamic_import_modules(cls, package_name):
+        """Dynamically import package modules to avoid importing them for every
+        game. We need to pass the package name in for importlib to work.
+        Currently populates the GameInfo namespace with the members defined in
+        the relevant constants.py and imports default_tweaks."""
         constants = importlib.import_module('.constants', package=package_name)
         for k in dir(constants):
             if k.startswith('_'): continue
             if k not in cls._constants_members:
                 raise RuntimeError(u'Unexpected game constant %s' % k)
             setattr(cls, k, getattr(constants, k))
+        tweaks_module = importlib.import_module('.default_tweaks',
+                                                package=package_name)
+        cls.default_tweaks = tweaks_module.default_tweaks
 
 GAME_TYPE = None

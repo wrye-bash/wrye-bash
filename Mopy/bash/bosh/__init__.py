@@ -1439,7 +1439,7 @@ class INIInfos(TableFileInfos):
     def __init__(self):
         INIInfos._default_tweaks = dict(
             (GPath(k), DefaultIniInfo(k, v)) for k, v in
-            bush.game_mod.default_tweaks.iteritems())
+            bush.game.default_tweaks.iteritems())
         super(INIInfos, self).__init__(dirs['tweaks'],
                                        factory=ini_info_factory)
         self._ini = None
