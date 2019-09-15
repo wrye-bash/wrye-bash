@@ -325,9 +325,9 @@ class CBash_AssortedTweak_ConsistentRings(AAssortedTweak_ConsistentRings,
                 record._RecordID = override._RecordID
 #------------------------------------------------------------------------------
 rePlayableSkips = re.compile(
-    ur'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|('
-    ur'?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|('
-    ur'?:ghostly immobility)|(?:corpse)', re.I)
+    u'(?:skin)|(?:test)|(?:mark)|(?:token)|(?:willful)|(?:see.*me)|('
+    u'?:werewolf)|(?:no wings)|(?:tsaesci tail)|(?:widget)|(?:dummy)|('
+    u'?:ghostly immobility)|(?:corpse)', re.I)
 
 class AAssortedTweak_ClothingPlayable(AMultiTweakItem):
     """Sets all clothes to playable"""
@@ -488,11 +488,11 @@ class CBash_AssortedTweak_ArmorPlayable(AAssortedTweak_ArmorPlayable,
 #------------------------------------------------------------------------------
 class AAssortedTweak_DarnBooks(AMultiTweakItem):
     """DarNifies books.""" ##: C and P implementations have very similar code
-    reColor = re.compile(ur'<font color="?([a-fA-F0-9]+)"?>',re.I+re.M)
-    reTagInWord = re.compile(ur'([a-z])<font face=1>',re.M)
-    reFont1 = re.compile(ur'(<?<font face=1( ?color=[0-9a-zA]+)?>)+',re.I|re.M)
-    reDiv = re.compile(ur'<div',re.I+re.M)
-    reFont = re.compile(ur'<font',re.I+re.M)
+    reColor = re.compile(u'<font color="?([a-fA-F0-9]+)"?>', re.I + re.M)
+    reTagInWord = re.compile(u'([a-z])<font face=1>', re.M)
+    reFont1 = re.compile(u'(<?<font face=1( ?color=[0-9a-zA]+)?>)+', re.I|re.M)
+    reDiv = re.compile(u'<div', re.I + re.M)
+    reFont = re.compile(u'<font', re.I + re.M)
     reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
     reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
     reBold = re.compile(ur'(__|\*\*|~~)')

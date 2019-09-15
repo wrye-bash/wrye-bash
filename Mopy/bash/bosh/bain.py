@@ -75,7 +75,7 @@ class Installer(object):
                u'.ppt', u'.pptx'}
     reReadMe = re.compile(
         ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
-        ur'(' +ur'|'.join(docExts) + ur')$', re.I | re.U)
+        u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
                 u'.fomod', u'.tb2', u'.lzma', u'.manifest', u'.ckm'}
@@ -218,7 +218,7 @@ class Installer(object):
         if self.__class__._reDataFile is None:
             _reDataFile = ur'(\.(' + u'|'.join(
                 {x[1:] for x in bush.game.espm_extensions} | {
-                    bush.game.bsa_extension, u'ini'}) + ur'))$'
+                    bush.game.bsa_extension, u'ini'}) + u'))$'
             self.__class__._reDataFile = re.compile(_reDataFile, re.I | re.U)
         return self.__class__._reDataFile
 

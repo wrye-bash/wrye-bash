@@ -37,7 +37,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
     version_detect_file = [u'FalloutNV.exe']
     masterFiles = [u'FalloutNV.esm']
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
-    pklfile = ur'bash\db\FalloutNV_ids.pkl'
+    pklfile = u'bash\\db\\FalloutNV_ids.pkl'
     masterlist_dir = u'FalloutNV'
     regInstallKeys = (u'Bethesda Softworks\\FalloutNV',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/newvegas/'
@@ -62,10 +62,10 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         }
     SkipBAINRefresh = {u'fnvedit backups', u'fnvedit cache'}
     ignoreDataFiles = {
-        #    ur'NVSE\Plugins\Construction Set Extender.dll',
-        #    ur'NVSE\Plugins\Construction Set Extender.ini'
+        #    u'NVSE\\Plugins\\Construction Set Extender.dll',
+        #    u'NVSE\\Plugins\\Construction Set Extender.ini'
     }
-    ignoreDataDirs = {ur'LSData'} #    ur'NVSE\Plugins\ComponentDLLs\CSE',
+    ignoreDataDirs = {u'LSData'} #    u'NVSE\\Plugins\\ComponentDLLs\\CSE',
 
     class esp(Fallout3GameInfo.esp):
         canCBash = False # True?

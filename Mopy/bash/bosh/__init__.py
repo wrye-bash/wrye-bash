@@ -88,7 +88,7 @@ reVersion = re.compile(
   re.M | re.I | re.U)
 
 #--Mod Extensions
-__exts = ur'((\.(' + ur'|'.join(ext[1:] for ext in readExts) + ur'))|)$'
+__exts = ur'((\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
 reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
     ur'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
     + __exts, re.I | re.U)
@@ -1680,7 +1680,7 @@ class ModInfos(FileInfos):
     """Collection of modinfos. Represents mods in the Oblivion\Data directory."""
 
     def __init__(self):
-        self.__class__.file_pattern = re.compile(ur'(' + '|'.join(
+        self.__class__.file_pattern = re.compile(u'(' + u'|'.join(
             map(re.escape, bush.game.espm_extensions)) + ur')(\.ghost)?$',
                                                  re.I | re.U)
         FileInfos.__init__(self, dirs['mods'], factory=ModInfo)
@@ -2675,7 +2675,7 @@ class SaveInfos(FileInfos):
         _ext = re.escape(bush.game.ess.ext)
         self.__class__.file_pattern = re.compile(
             ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...)
-            _ext + ur'|' + _ext[:-1] + ur'r' + ur'))$', # enabled/disabled save
+            _ext + u'|' + _ext[:-1] + u'r' + u'))$', # enabled/disabled save
             re.I | re.U)
         self.localSave = bush.game.save_prefix
         self._setLocalSaveFromIni()
@@ -2782,7 +2782,7 @@ class BSAInfos(FileInfos):
 
     def __init__(self):
         self.__class__.file_pattern = re.compile(
-            ur'\.' + bush.game.bsa_extension + ur'$', re.I | re.U)
+            ur'\.' + bush.game.bsa_extension + u'$', re.I | re.U)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):
@@ -2885,7 +2885,7 @@ class PeopleData(DataStore):
         """Enter info from text file."""
         newNames, name, buff = set(), None, None
         with path.open('r') as ins:
-            reName = re.compile(ur'==([^=]+)=*$',re.U)
+            reName = re.compile(u'==([^=]+)=*$', re.U)
             for line in ins:
                 maName = reName.match(line)
                 if not maName:
@@ -2912,7 +2912,7 @@ class PeopleData(DataStore):
 #------------------------------------------------------------------------------
 class ScreensData(DataStore):
     reImageExt = re.compile(
-        ur'\.(' + ur'|'.join(ext[1:] for ext in imageExts) + ur')$',
+        ur'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
         re.I | re.U)
 
     def __init__(self):

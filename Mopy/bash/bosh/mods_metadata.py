@@ -84,7 +84,7 @@ class ModRuleSet:
     class RuleParser:
         """A class for parsing ruleset files."""
         ruleBlockIds = (u'NOTES',u'CONFIG',u'SUGGEST',u'WARN')
-        reComment = re.compile(ur'##.*',re.U)
+        reComment = re.compile(u'##.*', re.U)
         reBlock   = re.compile(ur'^>>\s+([A-Z]+)\s*(.*)',re.U)
         reRule    = re.compile(ur'^(x|o|\+|-|-\+)\s+([^/]+)\s*(\[[^\]]+\])?\s*//(.*)',re.U)
         reExists  = re.compile(ur'^(e)\s+([^/]+)//(.*)',re.U)
@@ -97,7 +97,7 @@ class ModRuleSet:
                     ur'\s*([\-|]?)(.+?(' + espmls + ur'))(\s*\[[^\]]\])?',
                     re.I | re.U)
                 self.__class__.reModVersion = re.compile(
-                    ur'(.+(' + espmls + ur'))\s*(\[[^\]]+\])?', re.I | re.U)
+                    u'(.+(' + espmls + ur'))\s*(\[[^\]]+\])?', re.I | re.U)
             self.ruleSet = ruleSet
             #--Temp storage while parsing.
             self.assumed = []

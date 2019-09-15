@@ -546,7 +546,7 @@ class _AMFactMarker(SpecialPatcher):
             u'\n\n' +
             _(u"Requires Cobl 1.28 and Wrye Morph or similar.")
             )
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U)
+    autoRe = re.compile(u'^UNDEFINED$', re.I | re.U)
     canAutoItemCheck = False #--GUI: Whether new items are checked by default
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
     autoKey = {u'MFact'}

@@ -2333,7 +2333,7 @@ class _ANpcFacePatcher(AImportPatcher):
     name = _(u'Import NPC Faces')
     text = _(u"Import NPC face/eyes/hair from source mods. For use with TNR"
              u" and similar mods.")
-    autoRe = re.compile(ur"^TNR .*.esp$",re.I|re.U)
+    autoRe = re.compile(u'^TNR .*.esp$', re.I | re.U)
     autoKey = {u'NpcFaces', u'NpcFacesForceFullImport', u'Npc.HairOnly',
                u'Npc.EyesOnly'}
 
@@ -3017,7 +3017,7 @@ class WeaponModsPatcher(_SimpleImporter):
     name = _(u"Import Weapon Modifications")
     text = _(u"Merges changes to weapon modifications.")
     tip = text
-    autoRe = re.compile(r"^UNDEFINED$",re.I)
+    autoRe = re.compile(u'^UNDEFINED$', re.I)
     autoKey = {u'WeaponMods'}
     rec_attrs = {'WEAP': ('modelWithMods', 'firstPersonModelWithMods',
         'weaponMods', 'soundMod1Shoot3Ds', 'soundMod1Shoot2D', 'effectMod1',

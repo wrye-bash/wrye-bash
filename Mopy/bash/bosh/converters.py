@@ -304,7 +304,7 @@ class InstallerConverter(object):
                     map(self.__setattr__, self._converter_settings + self.volatile + self.addedSettings, cPickle.load(translator))
         with self.fullPath.unicodeSafe() as converter_path:
             # Temp rename if its name wont encode correctly
-            command = ur'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
+            command = u'"%s" x "%s" BCF.dat -y -so -sccUTF-8' % (
                 archives.exe7z, converter_path.s)
             archives.wrapPopenOut(command, translate, errorMsg=
                 u"\nLoading %s:\nBCF extraction failed." % self.fullPath.s)

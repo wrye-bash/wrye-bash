@@ -1678,7 +1678,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
             pstate += 1
 
 class CBash_RacePatcher(_ARacePatcher, CBash_ListPatcher):
-    autoRe = re.compile(ur'^UNDEFINED$',re.I|re.U)
+    autoRe = re.compile(u'^UNDEFINED$', re.I | re.U)
     tweakers = [
         CBash_RacePatcher_Relations(),
         CBash_RacePatcher_Imports(),

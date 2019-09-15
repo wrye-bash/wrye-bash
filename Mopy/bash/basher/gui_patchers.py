@@ -211,7 +211,7 @@ class _ListPatcherPanel(_PatcherPanel):
     forceItemCheck = False #--Force configChecked to True for all items
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
     #--Compiled re used by getAutoItems
-    autoRe = re.compile(ur"^UNDEFINED$", re.I | re.U)
+    autoRe = re.compile(u'^UNDEFINED$', re.I | re.U)
     # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
     default_autoIsChecked = True
     default_configItems   = []
@@ -767,7 +767,7 @@ class _DoublePatcherPanel(_TweakPatcherPanel, _ListPatcherPanel):
 class _ImporterPatcherPanel(_ListPatcherPanel):
 
     #--Config Phase -----------------------------------------------------------
-    autoRe = re.compile(ur"^UNDEFINED$",re.I|re.U) # overridden by
+    autoRe = re.compile(u'^UNDEFINED$', re.I | re.U) # overridden by
     # NamesPatcher, NpcFacePatcher, and not used by ImportInventory,
     # ImportRelations, ImportFactions
     def saveConfig(self, configs):

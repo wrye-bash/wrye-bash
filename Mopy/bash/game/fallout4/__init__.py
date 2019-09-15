@@ -37,14 +37,14 @@ class Fallout4GameInfo(GameInfo):
     version_detect_file = [u'Fallout4.exe']
     masterFiles = [u'Fallout4.esm']
     iniFiles = [u'Fallout4.ini', u'Fallout4Prefs.ini', u'Fallout4Custom.ini', ]
-    pklfile = ur'bash\db\Fallout4_ids.pkl'
+    pklfile = u'bash\\db\\Fallout4_ids.pkl'
     masterlist_dir = u'Fallout4'
     regInstallKeys = (u'Bethesda Softworks\\Fallout4', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout4/'
     nexusName = u'Fallout 4 Nexus'
     nexusKey = 'bash.installers.openFallout4Nexus.continue'
 
-    bsa_extension = ur'ba2'
+    bsa_extension = u'ba2'
     vanilla_string_bsas = {
         u'fallout4.esm': [u'Fallout4 - Interface.ba2'],
         u'dlcrobot.esm': [u'DLCRobot - Main.ba2'],

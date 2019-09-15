@@ -37,7 +37,7 @@ class Fallout3GameInfo(GameInfo):
     version_detect_file = [u'Fallout3.exe']
     masterFiles = [u'Fallout3.esm']
     iniFiles = [u'Fallout.ini', u'FalloutPrefs.ini']
-    pklfile = ur'bash\db\Fallout3_ids.pkl'
+    pklfile = u'bash\\db\\Fallout3_ids.pkl'
     masterlist_dir = u'Fallout3'
     regInstallKeys = (u'Bethesda Softworks\\Fallout3',u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/fallout3/'
@@ -90,14 +90,14 @@ class Fallout3GameInfo(GameInfo):
         }
     SkipBAINRefresh = {u'fo3edit backups', u'fo3edit cache'}
     wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
-        ur'ArchiveInvalidationInvalidated!.bsa'
-        ur'Fallout - AI!.bsa'
+        u'ArchiveInvalidationInvalidated!.bsa'
+        u'Fallout - AI!.bsa'
     }
     ignoreDataFiles = {
-        #    ur'FOSE\Plugins\Construction Set Extender.dll',
-        #    ur'FOSE\Plugins\Construction Set Extender.ini'
+        #    u'FOSE\\Plugins\\Construction Set Extender.dll',
+        #    u'FOSE\\Plugins\\Construction Set Extender.ini'
     }
-    ignoreDataDirs = {ur'LSData'} # r'FOSE\Plugins\ComponentDLLs\CSE',
+    ignoreDataDirs = {u'LSData'} # u'FOSE\\Plugins\\ComponentDLLs\\CSE',
 
     class esp(GameInfo.esp):
         canBash = True

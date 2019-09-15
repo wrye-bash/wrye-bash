@@ -142,7 +142,7 @@ class OmodFile:
             sizes,total = self.getOmodContents()
 
             # Extract the files
-            reExtracting = re.compile(ur'- (.+)',re.U)
+            reExtracting = re.compile(u'- (.+)', re.U)
             progress(0, self.omod_path.stail + u'\n' + _(u'Extracting...'))
 
             subprogress = bolt.SubProgress(progress, 0, 0.4)

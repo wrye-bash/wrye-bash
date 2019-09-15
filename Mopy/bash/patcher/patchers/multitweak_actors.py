@@ -546,7 +546,7 @@ class AAsIntendedBoarsPatcher(AMultiTweakItem):
     """Set all boars to have the Bethesda boar spells that were never
     assigned (discovered by the UOP team, made into a mod by Tejon)."""
     reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
-    reBoar  = re.compile(ur'(boar)',re.I|re.U)
+    reBoar  = re.compile(u'(boar)', re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
     def __init__(self):
