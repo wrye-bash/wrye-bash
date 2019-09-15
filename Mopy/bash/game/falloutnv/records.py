@@ -727,7 +727,7 @@ class MreDial(MreDial):
      )
     melSet.elements[-1].setMelSet(melSet)
 
-    __slots__ = melSet.getSlotsUsed() + ['infoStamp', 'infoStamp2', 'infos']
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDobj(MelRecord):

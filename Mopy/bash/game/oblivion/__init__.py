@@ -256,7 +256,8 @@ class OblivionGameInfo(GameInfo):
         # Setting RecordHeader class variables - Oblivion is special
         __rec_type = brec.RecordHeader
         __rec_type.rec_header_size = 20
-        __rec_type.rec_pack_format = '=4s4I'
+        __rec_type.rec_pack_format = ['=4s', 'I', 'I', 'I', 'I']
+        __rec_type.rec_pack_format_str = ''.join(__rec_type.rec_pack_format)
         __rec_type.pack_formats = {0: '=4sI4s2I'}
         __rec_type.pack_formats.update(
             {x: '=4s4I' for x in {1, 6, 7, 8, 9, 10}})

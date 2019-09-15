@@ -93,7 +93,12 @@ def getFormIndices(fid):
 class RecordHeader(object):
     """Pack or unpack the record's header."""
     rec_header_size = 24 # Record header size, 20 (Oblivion), 24 (other games)
-    rec_pack_format = '=4s5I'
+    # Record pack format, 4sIIII (Oblivion), 4sIIIII (other games)
+    # Given as a list here, where each string matches one subrecord in the
+    # header. See rec_pack_format_str below as well.
+    rec_pack_format = ['=4s', 'I', 'I', 'I', 'I', 'I']
+    # rec_pack_format as a format string. Use for pack / unpack calls.
+    rec_pack_format_str = ''.join(rec_pack_format)
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
     pack_formats = {0: '=4sI4s3I'} # Top Type
     pack_formats.update({x: '=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
@@ -144,7 +149,7 @@ class RecordHeader(object):
         Format must be either '=4s4I' 20 bytes for Oblivion or '=4s5I' 24
         bytes for rest of games."""
         # args = rec_type, size, uint0, uint1, uint2[, uint3]
-        args = ins.unpack(RecordHeader.rec_pack_format,
+        args = ins.unpack(RecordHeader.rec_pack_format_str,
                           RecordHeader.rec_header_size, 'REC_HEADER')
         #--Bad type?
         rec_type = args[0]
@@ -183,8 +188,8 @@ class RecordHeader(object):
             if RecordHeader.plugin_form_version:
                 pack_args.append(self.extra)
         else:
-            pack_args = [RecordHeader.rec_pack_format, self.recType, self.size,
-                         self.flags1, self.fid, self.flags2]
+            pack_args = [RecordHeader.rec_pack_format_str, self.recType,
+                         self.size, self.flags1, self.fid, self.flags2]
             if RecordHeader.plugin_form_version:
                 extra1, extra2 = struct_unpack('=2h',
                                                struct_pack('=I', self.extra))
@@ -1884,7 +1889,7 @@ class MreLeveledListBase(MelRecord):
 class MreDial(MelRecord):
     """Dialog record."""
     classType = 'DIAL'
-    __slots__ = []
+    __slots__ = ['infoStamp', 'infoStamp2', 'infos']
 
     def __init__(self, header, ins=None, do_unpack=False):
         """Initialize."""
@@ -1901,7 +1906,7 @@ class MreDial(MelRecord):
         while not ins.atEnd(endPos,'INFO Block'):
             #--Get record info and handle it
             header = recHead()
-            recType = header[0]
+            recType = header.recType
             if recType == 'INFO':
                 info = infoClass(header,ins,True)
                 infosAppend(info)
@@ -1913,11 +1918,15 @@ class MreDial(MelRecord):
         """Dumps self., then group header and then records."""
         MreRecord.dump(self,out)
         if not self.infos: return
-        # Magic number '24': size of game's record header - override for Oblivion
-        # Magic format '4sIIIII': format for game's GRUP record - override for Oblivion
-        dial_size = 24 + sum([24 + info.getSize() for info in self.infos])
-        out.pack('4sIIIII', 'GRUP', dial_size, self.fid, 7, self.infoStamp,
-                 self.infoStamp2)
+        header_size = RecordHeader.rec_header_size
+        dial_size = header_size + sum([header_size + info.getSize()
+                                       for info in self.infos])
+        # Not all pack targets may be needed - limit the unpacked amount to the
+        # number of specified GRUP format entries
+        pack_targets = ['GRUP', dial_size, self.fid, 7, self.infoStamp,
+                        self.infoStamp2]
+        out.pack(RecordHeader.rec_pack_format_str,
+                 *pack_targets[:len(RecordHeader.rec_pack_format)])
         for info in self.infos: info.dump(out)
 
     def updateMasters(self,masters):

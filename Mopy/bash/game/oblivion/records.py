@@ -793,39 +793,7 @@ class MreDial(brec.MreDial):
         MelString('FULL','full'),
         MelStruct('DATA','B','dialType'),
     )
-    __slots__ = melSet.getSlotsUsed() + ['infoStamp', 'infos']
-
-    def __init__(self, header, ins=None, do_unpack=False):
-        """Initialize."""
-        MelRecord.__init__(self, header, ins, do_unpack)
-        self.infoStamp = 0 #--Stamp for info GRUP
-        self.infos = []
-
-    def loadInfos(self,ins,endPos,infoClass):
-        """Load infos from ins. Called from MobDials."""
-        infos = self.infos
-        recHead = ins.unpackRecHeader
-        infosAppend = infos.append
-        while not ins.atEnd(endPos,'INFO Block'):
-            #--Get record info and handle it
-            header = recHead()
-            recType = header.recType
-            if recType == 'INFO':
-                info = infoClass(header,ins,True)
-                infosAppend(info)
-            else:
-                raise ModError(ins.inName,u'Unexpected %s record in %s group.'
-                    % (recType,"INFO"))
-
-    def dump(self,out):
-        """Dumps self., then group header and then records."""
-        MreRecord.dump(self,out)
-        if not self.infos: return
-        # Magic number '20': size of Oblivion's record header
-        # Magic format '4sIIII': format for Oblivion's GRUP record
-        dial_size = 20 + sum([20 + info.getSize() for info in self.infos])
-        out.pack('4sIIII', 'GRUP', dial_size, self.fid, 7, self.infoStamp)
-        for info in self.infos: info.dump(out)
+    __slots__ = melSet.getSlotsUsed()
 
 class MreDoor(MelRecord):
     """Container record."""

@@ -2196,7 +2196,7 @@ class MreDial(brec.MreDial):
         MelStruct('SNAM','4s','subtypeName',),
         MelStruct('TIFC','I','infoCount',),
         )
-    __slots__ = melSet.getSlotsUsed() + ['infoStamp','infoStamp2','infos']
+    __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
 #------------------------------------------------------------------------------

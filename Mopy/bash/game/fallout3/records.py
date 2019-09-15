@@ -1281,7 +1281,7 @@ class MreDial(brec.MreDial):
         MelStruct('PNAM','f','priority'),
         MelDialData('DATA','BB','dialType',(_flags,'dialFlags',0L)),
     )
-    __slots__ = melSet.getSlotsUsed() + ['infoStamp', 'infoStamp2', 'infos']
+    __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
 class MreDobj(MelRecord):
