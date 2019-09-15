@@ -3100,3 +3100,11 @@ class WeaponModsPatcher(_SimpleImporter):
                 type_count[type] += 1
         id_data = None
         self._patchLog(log, type_count)
+
+#------------------------------------------------------------------------------
+class KeywordsImporter(_SimpleImporter):
+    name = _(u'Import Keywords')
+    text = _(u'Import keyword changes from source mods.')
+    autoKey = {u'Keywords'}
+    rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
+    # Keywords are all fids, so default to long_types == rec_attrs

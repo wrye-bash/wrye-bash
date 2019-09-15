@@ -2442,6 +2442,13 @@ graphicsModelAttrs = ('model',)
 #------------------------------------------------------------------------------
 inventoryTypes = ('NPC_','CONT',)
 
+#------------------------------------------------------------------------------
+# Keywords Patcher
+#------------------------------------------------------------------------------
+keywords_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'FLOR', 'FURN',
+                  'INGR', 'KEYM', 'LCTN', 'MGEF', 'MISC', 'NPC_', 'SCRL',
+                  'SLGM', 'SPEL', 'TACT', 'WEAP',)
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

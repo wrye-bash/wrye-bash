@@ -143,13 +143,13 @@ class SkyrimGameInfo(GameInfo):
                u'C.ImageSpace', u'C.Light', u'C.Location', u'C.LockList',
                u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
                u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate',
-               u'Delev', u'Filter', u'Graphics', u'Invent', u'Names',
-               u'NoMerge', u'Relev', u'Sound', u'Stats'}
+               u'Delev', u'Filter', u'Graphics', u'Invent', u'Keywords',
+               u'Names', u'NoMerge', u'Relev', u'Sound', u'Stats',}
 
     patchers = (
         u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
         u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
-        u'StatsPatcher', u'NamesPatcher',
+        u'StatsPatcher', u'NamesPatcher', u'KeywordsImporter',
         )
 
     weaponTypes = (
