@@ -1736,7 +1736,7 @@ C.Location, -C.LockList
         </tr>
         <tr>
             <td>Stats</td>
-            <td>Modifies the Stats of items and Objects.</td>
+            <td>Modifies the stats (e.g. weight, value, etc.) of items and other objects.</td>
             <td>See the game-specific sections below for record types:
                 <ul>
                     <li>
@@ -1754,6 +1754,28 @@ C.Location, -C.LockList
                 </ul>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Text</td>
+            <td>Modifies long-form text (e.g. the text in a book, or descriptions of armor, spells, weapons, etc.) of things.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#TextOblivion">Oblivion</a> <q>Text</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#TextFO3">Fallout 3</a> <q>Text</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#TextFNV">Fallout&colon; New Vegas</a> <q>Text</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#TextSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Text</q> section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not Available for Fallout 4.</strong>
             </td>
         </tr>
     </tbody>
@@ -2551,6 +2573,22 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td id="TextOblivion">Text</td>
+            <td>Modifies long-form text (e.g. descriptions of skills or the text in a book) of things.</td>
+            <td>The DESC subrecord in the following record types:
+                <ul>
+                    <li>(BOOK) Book: Book Text</li>
+                    <li>(BSGN) Birthsign: Description</li>
+                    <li>(CLAS) Class: Description</li>
+                    <li>(LSCR) Load Screen: Info Text shown while loading</li>
+                    <li>(MGEF) Magic Effect: Description</li>
+                    <li>(SKIL) Skill: Description</li>
+                </ul>
+                <br>
+                <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
+            </td>
+        </tr>
+        <tr>
             <td>Voice-F</td>
             <td>Modifies female voice definitions.</td>
             <td>The male voice (VNAM) of Race (RACE) records.</td>
@@ -3268,6 +3306,61 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="TextFO3">Text</td>
+            <td>Modifies the long-form text (e.g. the text in a book or the text on a loading screen) of things.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(AVIF) Actor Value Information:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>(DESC) Book Text</li>
+                        </ul>
+                    </li>
+                    <li>(CLAS) Class:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(LSCR) Loading Screen:
+                        <ul>
+                            <li>(DESC) Info Text shown while loading</li>
+                        </ul>
+                    </li>
+                    <li>(MESG) Message:
+                        <ul>
+                            <li>(DESC) Message Text</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Magic Effect:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(NOTE) Note:
+                        <ul>
+                            <li>(TNAM) Note Text</li>
+                        </ul>
+                    </li>
+                    <li>(PERK) Perk:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(TERM) Terminal:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                </ul>
+                <br>
+                <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
             </td>
         </tr>
     </tbody>
@@ -4026,6 +4119,71 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td id="TextFNV">Text</td>
+            <td>Modifies the long-form text (e.g. the text in a book or the text on a loading screen) of things.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(AVIF) Actor Value Information:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>(DESC) Book Text</li>
+                        </ul>
+                    </li>
+                    <li>(CHAL) Challenge:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(CLAS) Class:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(IMOD) Item Mod:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(LSCR) Loading Screen:
+                        <ul>
+                            <li>(DESC) Info Text shown while loading</li>
+                        </ul>
+                    </li>
+                    <li>(MESG) Message:
+                        <ul>
+                            <li>(DESC) Message Text</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Magic Effect:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(NOTE) Note:
+                        <ul>
+                            <li>(TNAM) Note Text</li>
+                        </ul>
+                    </li>
+                    <li>(PERK) Perk:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(TERM) Terminal:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                </ul>
+                <br>
+                <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
+            </td>
+        </tr>
+        <tr>
             <td>WeaponMods</td>
             <td>Changes Weapon Modifications.</td>
             <td>The following Weapon (WEAP) subrecords:
@@ -4490,6 +4648,87 @@ C.Location, -C.LockList
                         </ul>
                     </li>
                 </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="TextSkyrim">Text</td>
+            <td>Modifies the long-form text (e.g. the text in a book or the description of a weapon, armor, spell, etc.) of things.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(ALCH) Ingestible:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(AMMO) Ammunition:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(APPA) Alchemical Apparatus:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(ARMO) Armor:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(AVIF) Actor Value Information:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(BOOK) Book:
+                        <ul>
+                            <li>(DESC) Book Text</li>
+                            <li>(CNAM) Description</li>
+                        </ul>
+                    </li>
+                    <li>(CLAS) Class:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(LSCR) Loading Screen:
+                        <ul>
+                            <li>(DESC) Info Text shown while loading</li>
+                        </ul>
+                    </li>
+                    <li>(MESG) Message:
+                        <ul>
+                            <li>(DESC) Message Text</li>
+                        </ul>
+                    </li>
+                    <li>(MGEF) Magic Effect:
+                        <ul>
+                            <li>(DNAM) Magic Item Description</li>
+                        </ul>
+                    </li>
+                    <li>(SCRL) Scroll:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(SHOU) Shout:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(SPEL) Spell:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                    <li>(WEAP) Weapon:
+                        <ul>
+                            <li>(DESC) Description</li>
+                        </ul>
+                    </li>
+                </ul>
+                <br>
+                <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
             </td>
         </tr>
     </tbody>

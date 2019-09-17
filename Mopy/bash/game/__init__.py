@@ -396,6 +396,12 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     keywords_types = ()
 
+    #--------------------------------------------------------------------------
+    # Text Patcher
+    #--------------------------------------------------------------------------
+    text_long_types = set()
+    text_types = {}
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -438,7 +444,8 @@ class GameInfo(object):
         'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes',
         'keywords_types', 'listTypes', 'namesTypes', 'pricesTypes',
         'record_type_name', 'save_rec_types', 'soundsLongsTypes',
-        'soundsTypes', 'statsHeaders', 'statsTypes', 'xEdit_expert',
+        'soundsTypes', 'statsHeaders', 'statsTypes', 'text_long_types',
+        'text_types', 'xEdit_expert',
     }
 
     @classmethod

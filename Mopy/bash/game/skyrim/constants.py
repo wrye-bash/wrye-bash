@@ -2449,6 +2449,30 @@ keywords_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'FLOR', 'FURN',
                   'INGR', 'KEYM', 'LCTN', 'MGEF', 'MISC', 'NPC_', 'SCRL',
                   'SLGM', 'SPEL', 'TACT', 'WEAP',)
 
+#------------------------------------------------------------------------------
+# Text Patcher
+#------------------------------------------------------------------------------
+text_long_types = set()
+text_types = {
+    'ALCH': ('description',),
+    'AMMO': ('description',),
+    'APPA': ('description',),
+    'ARMO': ('description',),
+    'AVIF': ('description',),
+    'BOOK': ('description','bookText',),
+    'CLAS': ('description',),
+    #'COLL': ('description',), # seems fairly useless to patch this
+    'LSCR': ('description',),
+    'MESG': ('description',),
+    'MGEF': ('magicItemDescription',),
+    #'PERK': ('description',), # no other patchers right now
+    #'QUST': ('description',), # no other patchers and seems unused
+    'SCRL': ('description',),
+    'SHOU': ('description',),
+    'SPEL': ('description',),
+    'WEAP': ('description',),
+}
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

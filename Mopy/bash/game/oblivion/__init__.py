@@ -142,7 +142,7 @@ class OblivionGameInfo(GameInfo):
                u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells',
                u'Actors.SpellsForceAdd', u'NPC.Race', u'Actors.Skeleton',
                u'NpcFacesForceFullImport', u'MustBeActiveIfImported',
-               u'Npc.HairOnly', u'Npc.EyesOnly'}  # , 'ForceMerge'
+               u'Npc.HairOnly', u'Npc.EyesOnly', u'Text',}  # , 'ForceMerge'
 
     patchers = (
         'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',
@@ -153,6 +153,7 @@ class OblivionGameInfo(GameInfo):
         'ImportActorsSpells', 'ListsMerger', 'MFactMarker', 'NamesPatcher',
         'NamesTweaker', 'NpcFacePatcher', 'RacePatcher', 'RoadImporter',
         'SoundPatcher', 'StatsPatcher', 'SEWorldEnforcer', 'ContentsChecker',
+        'TextImporter',
         )
 
     CBash_patchers = (

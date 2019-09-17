@@ -871,6 +871,23 @@ graphicsModelAttrs = ('model','shellCasingModel','scopeModel','worldModel')
 #------------------------------------------------------------------------------
 inventoryTypes = ('CREA','NPC_','CONT',)
 
+#------------------------------------------------------------------------------
+# Text Patcher
+#------------------------------------------------------------------------------
+text_long_types = {'NOTE',}
+text_types = {
+    'AVIF': ('description',),
+    'BOOK': ('text',),
+    'CLAS': ('description',),
+    'LSCR': ('text',),
+    'MESG': ('description',),
+    'MGEF': ('text',),
+    'NOTE': ('textTopic',),
+    'PERK': ('description',),
+    # omit RACE - covered by R.Description
+    'TERM': ('description',),
+}
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

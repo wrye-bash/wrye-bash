@@ -1659,7 +1659,7 @@ class MreBook(MelRecord):
         MelFull(),
         MelModel(),
         MelIcons(),
-        MelLString('DESC','description'),
+        MelLString('DESC','bookText'),
         MelDestructible(),
         MelOptFid('YNAM', 'pickupSound'),
         MelOptFid('ZNAM', 'dropSound'),
@@ -1678,7 +1678,7 @@ class MreBook(MelRecord):
             decider=FlagDecider('book_flags', 'teaches_spell'),
         )),
         MelFid('INAM','inventoryArt'),
-        MelLString('CNAM','text'),
+        MelLString('CNAM','description'),
     )
     __slots__ = melSet.getSlotsUsed() + ['modb']
 

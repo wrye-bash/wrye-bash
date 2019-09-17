@@ -1046,6 +1046,25 @@ default_eyes = {
 # Clean this up, no need to keep it around now
 del _fnv
 
+#------------------------------------------------------------------------------
+# Text Patcher
+#------------------------------------------------------------------------------
+text_long_types = {'NOTE',}
+text_types = {
+    'AVIF': ('description',),
+    'BOOK': ('text',),
+    'CHAL': ('description',),
+    'CLAS': ('description',),
+    'IMOD': ('description',),
+    'LSCR': ('text',),
+    'MESG': ('description',),
+    'MGEF': ('text',),
+    'NOTE': ('textTopic',),
+    'PERK': ('description',),
+    # omit RACE - covered by R.Description
+    'TERM': ('description',),
+}
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

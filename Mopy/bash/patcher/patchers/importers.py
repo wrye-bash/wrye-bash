@@ -3108,3 +3108,12 @@ class KeywordsImporter(_SimpleImporter):
     autoKey = {u'Keywords'}
     rec_attrs = {x: ('keywords',) for x in bush.game.keywords_types}
     # Keywords are all fids, so default to long_types == rec_attrs
+
+#------------------------------------------------------------------------------
+class TextImporter(_SimpleImporter):
+    name = _(u'Import Text')
+    text = _(u'Import various types of long-form text like book texts, effect '
+             u'descriptions, etc. from source mods.')
+    autoKey = {u'Text'}
+    rec_attrs = bush.game.text_types
+    long_types = bush.game.text_long_types

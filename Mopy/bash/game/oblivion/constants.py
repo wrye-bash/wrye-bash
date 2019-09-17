@@ -1661,6 +1661,19 @@ default_eyes = {
 # Clean these up, no need to keep them around now
 del _cobl, _ob
 
+#------------------------------------------------------------------------------
+# Text Patcher
+#------------------------------------------------------------------------------
+text_types = {
+    'BOOK': ('text',),
+    'BSGN': ('text',),
+    'CLAS': ('description',),
+    'LSCR': ('text',),
+    'MGEF': ('text',),
+    # omit RACE - covered by R.Description
+    'SKIL': ('description',),
+}
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

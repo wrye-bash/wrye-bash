@@ -144,13 +144,13 @@ class SkyrimGameInfo(GameInfo):
                u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
                u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate',
                u'Delev', u'Filter', u'Graphics', u'Invent', u'Keywords',
-               u'Names', u'NoMerge', u'Relev', u'Sound', u'Stats',}
+               u'Names', u'NoMerge', u'Relev', u'Sound', u'Stats', u'Text',}
 
     patchers = (
         u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
         u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
-        u'StatsPatcher', u'NamesPatcher', u'KeywordsImporter',
-        )
+        u'StatsPatcher', u'NamesPatcher', u'KeywordsImporter', u'TextImporter',
+    )
 
     weaponTypes = (
         _(u'Blade (1 Handed)'),
