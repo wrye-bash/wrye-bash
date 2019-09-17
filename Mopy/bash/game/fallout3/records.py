@@ -2191,6 +2191,7 @@ class MreMgef(MelRecord):
             'counterEffectCount',('unused1',null2),(FID,'light',0),'projectileSpeed',
             (FID,'effectShader',0),(FID,'objectDisplayShader',0),
             (FID,'castingSound',0),(FID,'boltSound',0),(FID,'hitSound',0),
+            # cefEnchantment and cefBarter are unused
             (FID,'areaSound',0),('cefEnchantment',0.0),('cefBarter',0.0),
             'archType','actorValue'),
         MelGroups('counterEffects',
@@ -4077,8 +4078,8 @@ class MreWeap(MelRecord):
         MelString('ICON','iconPath'),
         MelString('MICO','smallIconPath'),
         MelFid('SCRI','script'),
-        MelFid('EITM','enchantment'),
-        MelOptStruct('EAMT','H', 'enchantPoints'),
+        MelFid('EITM','objectEffect'),
+        MelOptStruct('EAMT','H','objectEffectPoints'),
         MelFid('NAM0','ammo'),
         MelDestructible(),
         MelFid('REPL','repairList'),
