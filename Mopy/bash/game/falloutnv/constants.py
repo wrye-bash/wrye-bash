@@ -1056,9 +1056,10 @@ listTypes = ('LVLC','LVLI','LVLN')
 # NamesPatcher
 #------------------------------------------------------------------------------
 namesTypes = {
-    'ACTI','ALCH','AMMO','ARMO','BOOK','CCRD','CHIP','CLAS','CMNY','CONT','CREA',
-    'CSNO','DOOR','EYES','FACT','HAIR','IMOD','INGR','KEYM','LIGH','MISC','NOTE',
-    'NPC_','RACE','RCCT','RCPE','REPU','SPEL','TACT','TERM','WEAP',
+    'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CCRD', 'CHAL', 'CHIP',
+    'CLAS', 'CMNY', 'CONT', 'CREA', 'CSNO', 'DOOR', 'EYES', 'FACT', 'HAIR',
+    'IMOD', 'INGR', 'KEYM', 'LIGH', 'MESG', 'MGEF', 'MISC', 'NOTE', 'NPC_',
+    'PERK', 'RACE', 'RCCT', 'RCPE', 'REPU', 'SPEL', 'TACT', 'TERM', 'WEAP',
 }
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
