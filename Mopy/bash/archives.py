@@ -191,7 +191,7 @@ def fix_png(png_path):
         if line == u'pngcrush: iCCP: known incorrect sRGB profile':
             # We have to rewrite the PNG
             # Note that pngcrush *loves* being loud, so we silence it here
-            # TODO(inf) in py3, use subprocess.DEVNULL here
+            # PY3: use subprocess.DEVNULL here
             silent_out = open(os.devnull)
             subprocess.call(
                 u'"%s" -ow -rem allb -q "%s"' % (pngcrush, png_path),

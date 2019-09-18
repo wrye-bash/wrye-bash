@@ -279,7 +279,7 @@ def format_date(secs): # type: (float) -> unicode
     return bolt.decode(time.strftime('%c', local),
                        locale.getpreferredencoding(do_setlocale=False))
 
-# TODO(inf) Probably drop in py3
+# PY3: Probably drop in py3?
 def unformat_date(date_str, format_str):
     """Basically a wrapper around time.strptime. Exists to get around bug in
     strptime for Japanese locale.

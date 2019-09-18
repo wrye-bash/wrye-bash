@@ -149,40 +149,24 @@ def PositiveIsErrorCheck(result, function, cArguments, *args):
     return result
 
 _CBash = None
-# path to compiled dir hardcoded since importing bosh would be circular
-# TODO: refactor to avoid circular deps
-if CBashEnabled == 0: #regular depends on the filepath existing.
-    paths = [join(u'bash', u'compiled', u'CBash.dll'),join(u'compiled', u'CBash.dll')]
-elif CBashEnabled == 1: #force python mode
-    paths = []
-elif CBashEnabled == 2: #attempt to force CBash mode
-    paths = [join(u'bash',u'compiled',filename) for filename in [u'CBash.dll',u'rename_CBash.dll',u'_CBash.dll']]
-else: #attempt to force path to CBash dll
-    paths = [join(path,u'CBash.dll') for path in CBashEnabled]
-
-try:
-    for path in paths:
-        if exists(path):
-            # CDLL doesn't play with unicode path strings nicely on windows :(
-            # Use this workaround
-            handle = None
-            if isinstance(path,unicode) and os.name in ('nt','ce'):
-                LoadLibrary = windll.kernel32.LoadLibraryW
-                handle = LoadLibrary(path)
-            from env import get_file_version
-            if get_file_version(path) < (0, 7):
-                raise ImportError(u'Bundled CBash version is too old for this '
-                                  u'Wrye Bash version. Only 0.7.0+ is '
-                                  u'supported.')
-            _CBash = CDLL(path,handle=handle)
-            break
-    del paths
-except (AttributeError,ImportError,OSError) as error:
-    _CBash = None
-    deprint(u'Failed to import CBash.', traceback=True)
-except:
-    _CBash = None
-    raise
+# Have to hardcode this relative to the cwd, because passing any non-unicode
+# characters to CDLL tries to encode them as ASCII and crashes
+# PY3: fixed in py3, remove this on upgrade
+cb_path = join(u'bash', u'compiled', u'CBash.dll')
+if CBashEnabled != 1 and exists(cb_path):
+    try:
+        from .env import get_file_version
+        if get_file_version(cb_path) < (0, 7):
+            raise ImportError(u'Bundled CBash version is too old for this '
+                              u'Wrye Bash version. Only 0.7.0+ is '
+                              u'supported.')
+        _CBash = CDLL(cb_path)
+    except (AttributeError, ImportError, OSError):
+        _CBash = None
+        deprint(u'Failed to import CBash.', traceback=True)
+    except:
+        _CBash = None
+        raise
 
 if _CBash:
     def LoggingCB(logString):
