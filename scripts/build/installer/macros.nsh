@@ -571,6 +571,7 @@
         Delete "${Path}\scripts\WBReleaseBuild.bat"
         Delete "${Path}\Wrye Bash.nsi"
         ; As of 307, the following are obsolete:
+        Delete "${Path}\Mopy\bash.ico"
         Delete "${Path}\Mopy\bash\images\check.png"
         Delete "${Path}\Mopy\bash\images\readme\error.jpg"
         Delete "${Path}\Mopy\bash\images\readme\installers-wizard-1.jpg"

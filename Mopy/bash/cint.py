@@ -37,7 +37,9 @@
 #
 ####### END LICENSE BLOCK ######
 
-from ctypes import *
+from ctypes import byref, cast, c_bool, c_byte, c_char, c_char_p, c_float, \
+    CFUNCTYPE, c_long, c_short, c_ubyte, c_uint32, c_ushort, c_ulong, CDLL, \
+    POINTER, string_at, windll
 import math
 import os
 from os.path import exists, join
@@ -125,9 +127,6 @@ except:
                 pass
         raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
     _enc = _encode
-
-
-_CBashRequiredVersion = (0,6,0)
 
 class CBashError(Exception):
     def __init__(self, value):
@@ -217,8 +216,6 @@ if _CBash:
     _CGetVersionMajor.restype = c_ulong
     _CGetVersionMinor.restype = c_ulong
     _CGetVersionRevision.restype = c_ulong
-    if (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision()) < _CBashRequiredVersion:
-        raise ImportError(_("cint.py requires CBash v%d.%d.%d or higher! (found v%d.%d.%d)") % (_CBashRequiredVersion + (_CGetVersionMajor(),_CGetVersionMinor(),_CGetVersionRevision())))
     _CCreateCollection = _CBash.cb_CreateCollection
     _CCreateCollection.errcheck = ZeroIsErrorCheck
     _CDeleteCollection = _CBash.cb_DeleteCollection
