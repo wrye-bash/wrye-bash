@@ -601,9 +601,17 @@ class ModInfo(FileInfo):
                         bashTags]) & bush.game.allTags - oldTagsSet
 
     def reloadBashTags(self):
-        """Reloads bash tags from mod description and LOOT"""
-        tags, removed, _userlist = configHelpers.getTagsInfoCache(self.name)
+        """Reloads bash tags from mod description, LOOT and Data/BashTags."""
+        tags = set()
         tags |= self.getBashTagsDesc()
+        # Tags from LOOT take precendence over the description
+        added, removed, _userlist = configHelpers.getTagsInfoCache(self.name)
+        tags |= added
+        tags -= removed
+        # Tags from Data/BashTags/{self.name}.txt take precedence over both
+        # the description and LOOT
+        added, removed = configHelpers.get_tags_from_dir(self.name)
+        tags |= added
         tags -= removed
         # Filter and remove old tags
         tags &= bush.game.allTags
@@ -2193,22 +2201,31 @@ class ModInfos(FileInfos):
         mname = modInfo.name
         def _tags(msg, iterable, tagsList):
             return tagsList + u'  * ' + msg + u', '.join(iterable) + u'\n'
-        if not modInfos.table.getItem(mname, 'autoBashTags') and \
-               modInfos.table.getItem(mname, 'bashTags', u''):
-            tagList = _tags(_(u'From Manual (if any this overrides '
-                u'Description/LOOT sourced tags): '), sorted(
-                modInfos.table.getItem(mname, 'bashTags', u'')), tagList)
         tags_desc = modInfo.getBashTagsDesc()
         if tags_desc:
-            tagList = _tags(_(u'From Description: '), sorted(tags_desc),
+            tagList = _tags(_(u'From Plugin Description: '), sorted(tags_desc),
                             tagList)
         tags, removed, _userlist = configHelpers.getTagsInfoCache(mname)
         if tags:
-            tagList = _tags(_(u'From LOOT Masterlist and or userlist: '),
+            tagList = _tags(_(u'From LOOT Masterlist and / or Userlist: '),
                             sorted(tags), tagList)
         if removed:
-            tagList = _tags(_(u'Removed by LOOT Masterlist and or userlist: '),
-                            sorted(removed), tagList)
+            tagList = _tags(_(u'Removed by LOOT Masterlist and / or '
+                              u'Userlist: '), sorted(removed), tagList)
+        dir_added, dir_removed = configHelpers.get_tags_from_dir(mname)
+        tags_file = u"'Data/BashTags/%s'" % (mname.body + u'.txt')
+        if dir_added:
+            tagList = _tags(_(u'Added by %s: ') % tags_file, sorted(dir_added),
+                            tagList)
+        if dir_removed:
+            tagList = _tags(_(u'Removed by %s: ') % tags_file,
+                            sorted(dir_removed), tagList)
+        if not modInfos.table.getItem(mname, 'autoBashTags') and \
+               modInfos.table.getItem(mname, 'bashTags', u''):
+            tagList = _tags(
+                _(u'From Manual (overrides all other sources): '),
+                sorted(modInfos.table.getItem(mname, 'bashTags', u'')),
+                tagList)
         return _tags(_(u'Result: '), sorted(modInfo.getBashTags()), tagList)
 
     @staticmethod
@@ -2218,6 +2235,9 @@ class ModInfos(FileInfos):
         or if specified for one specific mod."""
         tagList = u'=== '+_(u'Current Bash Tags')+u':\n'
         tagList += u'[spoiler][xml]\n'
+        tagList += _(u'Note: Sources are processed from top to bottom, '
+                     u'meaning that lower-ranking sources override '
+                     u'higher-ranking ones.\n')
         if mod_list:
             for modInfo in mod_list:
                 tagList += u'\n* ' + modInfo.name.s + u'\n'

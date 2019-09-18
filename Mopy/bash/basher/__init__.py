@@ -1527,10 +1527,31 @@ class ModDetails(_SashDetailsPanel):
                 _setAuto(not _isAuto()) # toggle
                 if _isAuto(): mod_info.reloadBashTags()
                 _refreshUI()
-        # Copy tags to mod description
+        # Copy tags to various places
         bashTagsDesc = mod_info.getBashTagsDesc()
+        class _CopyBashTagsDir(EnabledLink):
+            _text = _(u'Copy to Data/BashTags')
+            _help = _(u'Copies currently applied tags to %s.') % (
+                bass.dirs['tag_files'].join(mod_info.name.body + u'.txt'))
+            def _enable(self): return not is_auto and mod_tags != bashTagsDesc
+            def Execute(self):
+                """Copy manually assigned bash tags into the Data/BashTags
+                folder."""
+                # We need to grab both the ones from the description and from
+                # LOOT, since we need to save a diff
+                plugin_name = mod_info.name
+                added, removed, _userlist_modified = \
+                    bosh.configHelpers.getTagsInfoCache(plugin_name)
+                # Emulate the effects of applying the LOOT tags
+                old_tags = bashTagsDesc.copy()
+                old_tags |= added
+                old_tags -= removed
+                bosh.configHelpers.save_tags_to_dir(plugin_name, mod_tags,
+                                                    old_tags)
+                _refreshUI()
         class _CopyDesc(EnabledLink):
             _text = _(u'Copy to Description')
+            _help = _(u'Copies currently applied tags to the mod description.')
             def _enable(self): return not is_auto and mod_tags != bashTagsDesc
             def Execute(self):
                 """Copy manually assigned bash tags into the mod description"""
@@ -1561,7 +1582,8 @@ class ModDetails(_SashDetailsPanel):
             choiceLinkType = _TagLink
             def __init__(self):
                 super(_TagLinks, self).__init__()
-                self.extraItems = [_TagsAuto(), _CopyDesc(), SeparatorLink()]
+                self.extraItems = [_TagsAuto(), _CopyBashTagsDir(),
+                                   _CopyDesc(), SeparatorLink()]
             @property
             def _choices(self): return sorted(bush.game.allTags)
         ##: Popup the menu - ChoiceLink should really be a Links subclass

@@ -1177,21 +1177,51 @@ tab. The directories skipped are:
 <p>As the Bashed Patch commonly has .esp files as masters, viewing and editing it can be more complicated than for the average plugin. If you wish to view its contents, it is easiest to use <a href="https://www.nexusmods.com/oblivion/mods/11536">TES4Edit</a>, which can also be used to edit most types of data in plugins. To edit it using the Construction Set or Creation Kit (required when editing scripts), you'll need to first use the <a href="#modsEsmifyMasters">Add ESM Flag To Masters</a> command on it. Be sure to use <q>Remove ESM Flag From Masters</q> before attempting to play the game.
 
 <h3 id="patch-tags">Bash Tags <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, or are applied using data from LOOT's masterlist and userlist files.
+<p>Wrye Bash uses a tagging system to determine what mods can and should have which records available for importing into the Bashed Patch. These Bash Tags are specified by mod authors in the header descriptions of their plugins, are applied using data from LOOT's masterlist and userlist files, and are read from text files in the <code>[GAME]\Data\BashTags</code> folder.
 In decreasing priority the Bash tags sources are:
 
 <ol>
-    <li>Manual Bash tags set by user in the Bash mod list
-    <li>Header of ESP or ESM file (also can be edited in bash)
-    <li>userlist.yaml (LOOT)
-    <li>masterlist.yaml (LOOT)
-    <li>taglist.yaml (LOOT)
+    <li>Manual Bash tags set by user in the Bash mod list</li>
+    <li>Header of ESP or ESM file (also can be edited in bash)</li>
+    <li>userlist.yaml (LOOT)</li>
+    <li>masterlist.yaml (LOOT)</li>
+    <li>taglist.yaml (LOOT)</li>
+    <li><code>[GAME]\Data\BashTags\[PLUGIN NAME].txt</code></li>
+    <li>Tags that were manually set in Wrye Bash</li>
 </ol>
 
 <p>Bash comes with the LOOT API Python Module bundled, currently version 1.2.0. It will try and parse the masterlist and userlist files, if it finds them in
     <code>C:\Users\USER\AppData\Local\LOOT\GAME</code> directory. If that fails (the files are not there or come from a different LOOT version than
     the one Bash bundles) it will fallback to the <code>Mopy\Bash Patches\GAME\taglist.yaml</code> file, also bundled, keep it there. For userlist
 and masterlist relative priority and role see the LOOT docs.
+
+<p>For each plugin, Wrye Bash will read the file <code>[GAME]\Data\BashTags\[PLUGIN NAME].txt</code>, if it exists.
+    Tags specified in this file will override ones in the description and the LOOT masterlist.
+    These files are intended for people besides the mod author to share plugin suggestions.
+    For example, a guide creator could create files with fitting Bash Tags and package the <code>BashTags</code> folder as an archive,
+    distribute the archive as a download with the guide, and users can then simply install the archive with BAIN to get the right Bash Tags.</p>
+<p>Wrye Bash has the ability to create these files through its GUI too - right click on a plugin's Bash Tags field in the Mods Tab sidebar and click <q>Copy to Data/BashTags</q> to create or rewrite the matching file, placing all currently active Bash Tags in there.</p>
+<p>The format for these files is simple - each line can specify one or more tags to be added or removed, in which case a minus should be prepended to the tag, separated by commas.
+    An example to demonstrate their usage follows:</p>
+
+<code class="box"># Everything after a '#' is a comment
+# Every line that is not a comment
+# or empty will add or remove tags
+# from the plugin
+
+Delev, Relev # This line will add two
+             # new tags to the plugin...
+
+-C.Water     # ...while this line removes
+             # a tag from the plugin
+
+# Addition and removal can also be
+# done in one line:
+C.Location, -C.LockList
+
+# The result of this file would be:
+# Added: C.Location, Delev, Relev
+# Removed: C.LockList, C.Water</code>
 
 <p>Bash Tags may also be set manually, by right-clicking a plugin's Bash Tags field in the Mods Tab sidebar and checking or unchecking tags in the list displayed. If you wish to revert to automatic tagging, choose <q>Automatic</q> in the right-click list. If you are a mod author, you may wish to use <q>Copy to Description</q> for your mod's plugins before releasing it to ensure that users have the tags applied automatically.
 
@@ -5075,7 +5105,8 @@ and masterlist relative priority and role see the LOOT docs.
                 <li>Your application and UI settings.
                 <li>Your people from the People tab.
                 <li>Any translation files you have.
-                <li>All files in the <code>Data\Bashed Patches</code> directory.
+                <li>All files in the <code>Data\Bash Patches</code> directory.
+                <li>All files in the <code>Data\BashTags</code> directory.</li>
                 <li>All INI Tweaks.
             </ul>
         <tr><td colspan="2" id="settingsRestore">Restore Settings...<td>Restores your settings from a backup of your choice. This will force

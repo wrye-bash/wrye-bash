@@ -75,11 +75,13 @@ def _init_settings_files(fsName_):
         (dirs['saveBase'], jo(u'My Games', fsName_)): {
             u'BashProfiles.dat', u'BashSettings.dat', u'BashLoadOrders.dat',
             u'People.dat', },
-        # backup all files in Mopy\bash\l10n, Data\Bash Patches\ and
-        # Data\INI Tweaks\
+        # backup all files in Mopy\bash\l10n, Data\Bash Patches\,
+        # Data\BashTags\ and Data\INI Tweaks\
         (dirs['l10n'], jo(fsName_, u'Mopy', u'bash', u'l10n')): {},
         (dirs['mods'].join(u'Bash Patches'),
          jo(fsName_, u'Data', u'Bash Patches')): {},
+        (dirs['mods'].join(u'BashTags'),
+         jo(fsName_, u'Data', u'BashTags')): {},
         (dirs['mods'].join(u'INI Tweaks'),
          jo(fsName_, u'Data', u'INI Tweaks')): {},
     }

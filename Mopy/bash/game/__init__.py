@@ -225,7 +225,7 @@ class GameInfo(object):
     wryeBashDataFiles = {u'Docs\\Bash Readme Template.html',
                          u'Docs\\wtxt_sand_small.css', u'Docs\\wtxt_teal.css',
                          u'Docs\\Bash Readme Template.txt'}
-    wryeBashDataDirs = {u'Bash Patches', u'INI Tweaks'}
+    wryeBashDataDirs = {u'Bash Patches', u'BashTags', u'INI Tweaks'}
     ignoreDataFiles = set()
     ignoreDataFilePrefixes = set()
     ignoreDataDirs = set()

@@ -167,6 +167,7 @@ def init_dirs(bashIni_, personal, localAppData, game_info):
                 u'SLocalMasterPath') or u'Data')
     # these are relative to the mods path so they must be set here
     dirs['patches'] = dirs['mods'].join(u'Bash Patches')
+    dirs['tag_files'] = dirs['mods'].join(u'BashTags')
     dirs['tweaks'] = dirs['mods'].join(u'INI Tweaks')
     #--Mod Data, Installers
     oblivionMods, oblivionModsSrc = getOblivionModsPath(bashIni_, game_info)

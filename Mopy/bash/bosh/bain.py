@@ -83,7 +83,8 @@ class Installer(object):
     scriptExts = {u'.txt', u'.ini', u'.cfg'}
     commonlyEditedExts = scriptExts | {u'.xml'}
     #--Regular game directories - needs update after bush.game has been set
-    dataDirsPlus = docDirs | {u'bash patches', u'ini tweaks', u'docs'}
+    dataDirsPlus = docDirs | {u'bash patches', u'bashtags', u'ini tweaks',
+                              u'docs'}
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
