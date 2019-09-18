@@ -188,13 +188,14 @@
 <p>If you are installing the Python version of Wrye Bash and wish to install the Python dependencies separately, the following must be installed.</p>
 <p>Installation is easiest by just using pip, which comes with Python (see below). Simply run <code>path/to/python.exe -m pip install -r requirements.txt</code>
     (obviously replacing <code>path/to/python.exe</code> with the actual path to your python.exe).</p>
-<p class="emphasis">Note that the 32-bit versions are required even if you are on a 64-bit operating system.</p>
+<p class="emphasis">Note that the 64-bit versions are <em>required</em> - we no longer support 32-bit operating systems.</p>
 <ul>
-    <li><a href="https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi">Python 2.7.18</a>: Versions prior to 2.7.18 may work with Wrye Bash, but have not been tested. Updating is recommended for bug and security fixes.
-    <li><a href="https://pypi.org/project/wxPython">wxPython 4.0.7.post2</a>: Newer versions may work, older ones will not</li>
+    <li><a href="https://www.python.org/ftp/python/2.7.18/python-2.7.18.msi">Python 2.7.18</a>: Versions prior to 2.7.18 may work with Wrye Bash,
+        but have not been tested. Updating is recommended for bug and security fixes.</li>
+    <li><a href="https://pypi.org/project/wxPython">wxPython 4.0.7.post2</a>: Newer versions may work, older ones will not.</li>
     <li><a href="https://pypi.org/project/chardet/">Mozilla's chardet library</a>: Wrye Bash uses this library to help in detecting
-        character encodings used when reading and writing encoded Unicode strings.
-    <li><a href="https://pypi.python.org/pypi/pywin32">PyWin32</a>: This component is required for Wizards to function. If you do not wish to use Wizards, then it need not be installed.
+        character encodings used when reading and writing encoded Unicode strings.</li>
+    <li><a href="https://pypi.org/project/pywin32/">PyWin32</a>: Wrye Bash uses this library to interact with Windows in various ways.</li>
     <li><a href="https://pypi.python.org/pypi/scandir">scandir</a>: Optional but highly recommended module (in the standard library since
         python 3.5). Scandir speeds up disk I/O operations (namely os. walk) by 5-50x on the Windows operating system family.</li>
 </ul>

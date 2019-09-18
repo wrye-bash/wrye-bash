@@ -7,9 +7,9 @@ wxPython==4.0.7.post2
 # Runtime, recommended
 scandir==1.10.0
 # Compile/Build-time
-https://bintray.com/loot/snapshots/download_file?file_path=libloot-python-4.0.2-13-g01a8567_fix-logging-gil-python2.7-win32.zip
+https://bintray.com/loot/snapshots/download_file?file_path=libloot-python-4.0.2-13-g01a8567_fix-logging-gil-python2.7-win64.zip
 pygit2==0.28.2
 pyfiglet==0.8.post1
 pytest==4.6.11
-https://github.com/wrye-bash/dev-tools/raw/master/wheels/py2exe-0.6.9-cp27-cp27m-win32.whl
+https://github.com/wrye-bash/dev-tools/raw/64bit-wheels/wheels/py2exe-0.6.10a1-cp27-none-win_amd64.whl
 toml==0.10.1

@@ -107,6 +107,7 @@ class MAINICON(Union):
                 ("pszMainIcon", c_ushort)]
 
 class TASKDIALOGCONFIG(Structure):
+    _pack_ = 1
     _fields_ = [("cbSize", c_uint),
                 ("hwndParent", c_void_p),
                 ("hInstance", c_void_p),
@@ -129,7 +130,7 @@ class TASKDIALOGCONFIG(Structure):
                 ('uFooterIcon', FOOTERICON),
                 ('pszFooter', c_wchar_p),
                 ('pfCallback', PFTASKDIALOGCALLBACK),
-                ('lpCallbackData', c_long),
+                ('lpCallbackData', c_longlong),
                 ('cxWidth', c_uint)]
 
     _anonymous_ = ("uMainIcon", "uFooterIcon",)

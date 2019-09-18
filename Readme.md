@@ -55,10 +55,10 @@ To run Wrye Bash from the latest `dev` code (download from [here][12])
 you need:
 
 * A game to manage from the supported games.
-* [Python 2.7 32-bit](http://www.python.org/) (latest 2.7 is recommended)
+* [Python 2.7 64-bit](http://www.python.org/) (latest 2.7 is recommended)
 
-**NB**: the 32-bit version is required even if you are on a 64-bit
-operating system.
+**NB**: the 64-bit version is **required**. 32-bit operating systems are no
+longer supported.
 
 Once you have those, install the required packages by running:
 

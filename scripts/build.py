@@ -237,16 +237,15 @@ def download_redists():
         LOGGER.debug(u'MSVC 2010 x86 redistributable downloaded successfully')
     else:
         LOGGER.debug(u'MSVC 2010 x86 redistributable found')
-    ##: Commented out for now, uncomment once we switch to 64bit
-    # msvc_2010_x64 = os.path.join(REDIST_PATH, u'vcredist_2010_x64.exe')
-    # if not os.path.isfile(msvc_2010_x64):
-    #     LOGGER.info(u'MSVC 2010 x64 redistributable not found, downloading')
-    #     utils.download_file(u'https://download.microsoft.com/download/3/2/2/'
-    #                         u'3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/'
-    #                         u'vcredist_x64.exe', msvc_2010_x64)
-    #     LOGGER.debug(u'MSVC 2010 x64 redistributable downloaded successfully')
-    # else:
-    #     LOGGER.debug(u'MSVC 2010 x64 redistributable found')
+    msvc_2010_x64 = os.path.join(REDIST_PATH, u'vcredist_2010_x64.exe')
+    if not os.path.isfile(msvc_2010_x64):
+        LOGGER.info(u'MSVC 2010 x64 redistributable not found, downloading')
+        utils.download_file(u'https://download.microsoft.com/download/3/2/2/'
+                            u'3224B87F-CFA0-4E70-BDA3-3DE650EFEBA5/'
+                            u'vcredist_x64.exe', msvc_2010_x64)
+        LOGGER.debug(u'MSVC 2010 x64 redistributable downloaded successfully')
+    else:
+        LOGGER.debug(u'MSVC 2010 x64 redistributable found')
 
 
 def pack_manual(version):

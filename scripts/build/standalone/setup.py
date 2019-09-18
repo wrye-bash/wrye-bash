@@ -81,8 +81,6 @@ dll_excludes = [
     "MSVCP90.dll",
     "MSVCR90.dll",
     "MSVCM90.dll",
-    "mswsock.dll",  # Prevent x64 versions (for win32api)
-    "powrprof.dll",  # Prevent x64 versions (for win32api)
     "api-ms-win-core-atoms-l1-1-0.dll",
     "api-ms-win-core-com-midlproxystub-l1-1-0.dll",
     "api-ms-win-core-debug-l1-1-0.dll",
@@ -124,6 +122,8 @@ dll_excludes = [
     "api-ms-win-security-base-l1-1-0.dll",
     "MSVCP140.dll",
     "VCRUNTIME140.dll",
+    "mfc90.dll",
+    "MSVCR100.dll",
     "MPR.dll",
     "OLEACC.dll",
 ]
