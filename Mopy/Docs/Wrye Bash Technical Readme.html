@@ -93,20 +93,33 @@
 <p>There is a similar <a href="https://www.nexusmods.com/oblivion/mods/34240">BAIN Wizard Syntax for EmEditor</a> syntax highlighter for EmEditor created by broken85.
 
 <h3 id="wizards-dialog">Dialogues</h3>
-<p>You may use a number of different dialogues in a wizard. The available dialogs are described in this section.
-
-<p><dfn>SelectOne</dfn> - This <a href="../bash/images/readme/selectone.jpg">dialog</a> gives you a list of options, with the option to select one of them.  It will be shown when a <a href="#wizardsSelectOne">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.
-
-<p><dfn>SelectMany</dfn> - This <a href="../bash/images/readme/selectmany.jpg">dialog</a> gives you a list of options, with the option to select one or more of them, or even none of them.  It will be shown when a <a href="#wizardsSelectMany">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.
-
-<p><dfn>Cancel</dfn> - This <a href="../bash/images/readme/cancel.png">dialog</a> will be shown if the wizard cancels execution for some reason, activated by the <a href="#wizardsCancel">Cancel</a> keyword.  If a reason is given, it will be displayed.
-
-<p><dfn>Error</dfn> - This <a href="../bash/images/readme/error.jpg">dialog</a> will be shown if the wizard encounters an error in the wizard file.  The wizard will then quit.
-
-<p><dfn>Finish</dfn> - This <a href="../bash/images/readme/finish.png">dialog</a> will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#wizardsReturn">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod author to be displayed.
-
-<p><dfn>Version Warning</dfn> - This <a href="../bash/images/readme/versions.png">dialog</a> is displayed if the user's system doesn't meet the package's game, script extender or graphics extender requirements.
-
+    <p>You may use a number of different dialogues in a wizard. The available dialogs are described in this section.</p>
+    <ul>
+        <li>
+            <p><dfn>SelectOne</dfn> - This dialog displays a list of options, but only one can be selected. It will be shown when a <a href="#wizardsSelectOne">SelectOne</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify a default answer, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default option.</p>
+            <img alt="SelectOne Dialog" src="../bash/images/readme/selectone.png"/>
+        </li>
+        <li>
+            <p><dfn>SelectMany</dfn> - This dialog displays a list of options, and any combination can be selected (including none at all). It will be shown when a <a href="#wizardsSelectMany">SelectMany</a> keyword is used.  Each option can display an image associated with it, and a description as well.  To see a larger version of the image displayed, either right click or middle click on the image.  The wizard can specify default options, and if you are running it as an Auto-Wizard, then this page will be skipped, using the default options.</p>
+            <img alt="SelectMany Dialog" src="../bash/images/readme/selectmany.png"/>
+        </li>
+        <li>
+            <p><dfn>Cancel</dfn> - This dialog will be shown if the wizard cancels execution for some reason, activated by the <a href="#wizardsCancel">Cancel</a> keyword. If a reason is given, it will be displayed.</p>
+            <img alt="Cancel Dialog" src="../bash/images/readme/cancel.png"/>
+        </li>
+        <li>
+            <p><dfn>Error</dfn> - This dialog will be shown if the wizard encounters an error in the wizard file. The wizard will then quit.</p>
+            <img alt="Error Dialog" src="../bash/images/readme/error.png"/>
+        </li>
+        <li>
+            <p><dfn>Finish</dfn> - This dialog will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#wizardsReturn">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod author to be displayed.</p>
+            <img alt="Finish Dialog" src="../bash/images/readme/finish.png"/>
+        </li>
+        <li>
+            <p><dfn>Version Warning</dfn> - This dialog is displayed if the user's system doesn't meet the package's game, script extender or graphics extender requirements. These can be specified via the <a href="#wizardsRequireVersions">RequireVersions</a> keyword.</p>
+            <img alt="Version Warning Dialog" src="../bash/images/readme/versions.png"/>
+        </li>
+    </ul>
 
 <h3 id="wizards-language">Language Structure</h3>
 <p>Each line of a Wizard contains one statement. To carry a statement across multiple lines, end each line of the statement with a backslash <code>\</code>. This will cause BAIN to read the next line as if it were part of the first.

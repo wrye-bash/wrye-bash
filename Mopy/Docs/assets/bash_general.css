@@ -40,14 +40,14 @@ img.monkeygod {
 ********************/
 
 /* Figure Captions */
-.bain-overview-figcap, .ini-overview-figcap {
-  padding-top: 39.6875rem;		/* 635px */
+.bain-overview-figcap, .ini-overview-figcap, .mods-overview-figcap {
+  padding-top: 41.6875rem;		/* 635px */
 }
 .patch-overview-figcap {
-  padding-top: 38.3125rem;		/* 613px */
+  padding-top: 42.3125rem;		/* 613px */
 }
 .launchers-figcap {
-  padding-top: 5rem;				/* 80px */
+  padding-top: 2.5rem;				/* 80px */
 }
 
 /* Consistency Formatting */

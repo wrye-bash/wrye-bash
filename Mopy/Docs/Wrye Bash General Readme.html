@@ -174,14 +174,20 @@
 <p>The simplest way to install Wrye Bash is using the installer, as it installs Wrye Bash and its dependencies automatically. However, the instructions below are provided if a manual install method is preferred.
 <p><strong>Note:</strong> There are two versions of Wrye Bash available: the Python version and the Standalone version. Both are the same program, but the Standalone version has fewer dependencies and so is recommended for most people.
 <p><strong>Windows Vista, 7, 8 &amp; 10 users:</strong> Windows' User Account Control feature may interfere with the running of Wrye Bash and other utilities. See the <a href="#trouble-permissions">File Permissions</a> section for solutions.
-<p>Manual Standalone Version Install:
+<p>Manual Standalone Version Installation:
 <ol>
     <li>Download and install the <a href="https://download.microsoft.com/download/6/A/A/6AA4EDFF-645B-48C5-81CC-ED5963AEAD48/vc_redist.x86.exe">MSVC 2015 Redistributable (x86)</a>.
-    <li>Extract the downloaded Wrye Bash archive into the game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
+    <li>You now have a choice:</li>
+    <ul>
+        <li>Extract the downloaded Wrye Bash archive into any folder.</li>
+        <li>Extract the downloaded Wrye Bash archive into the game folder (e.g. <q>Oblivion</q>, <q>Skyrim</q> or <q>Fallout</q>, depending on the game) so that the Mopy
         directory appears in the game folder.
-    <li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder.
+    </ul>
+    <li>Run Wrye Bash by double-clicking <q>Wrye Bash.exe</q> in the new Mopy folder. If you chose the second option above, Wrye Bash will now simply open. However, you will have to repeat the procedure for each new game you install.
+        If you chose the second option, you will see a game select screen. Simply select one of the listed games to continue:</li>
+    <img alt="Game Select Screen" src="../bash/images/readme/game-select.png"/>
 </ol>
-<p>Manual Python Version Install:
+<p>Manual Python Version Installation:
 <ol>
     <li>Download and install all the required Python libraries and python itself.
         See the <a href="Wrye%20Bash%20Advanced%20Readme.html#install-components">Python Components</a> section of the Advanced readme
@@ -475,9 +481,11 @@ from other packages previously overridden by the uninstalled package's
 
 
 <h2 id="load">Setting Up Load Order <a class="back2top" href="#contents">Back to top</a></h2>
-<figure>
-<img alt="Mods Tab" src="../bash/images/readme/mods-1.png"/>
-<figcaption>Wrye Bash's Mods tab.</figcaption>
+<figure class="slideshow">
+    <img alt="Mods Tab" src="../bash/images/readme/mods-1.png"/>
+    <img alt="Mods Tab" src="../bash/images/readme/mods-2.png"/>
+    <img alt="Mods Tab" src="../bash/images/readme/mods-3.png"/>
+    <figcaption class="mods-overview-figcap">Wrye Bash's Mods tab.</figcaption>
 </figure>
 <h3 id="load-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Wrye Bash displays your installed plugins in its <q>Mods</q> tab. Your load order of active installed plugins, which Wrye Bash marks with a
@@ -610,7 +618,7 @@ from other packages previously overridden by the uninstalled package's
 <h2 id="patch">Setting Up A Bashed Patch <a class="back2top" href="#contents">Back to top</a></h2>
 <h3 id="patch-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
 <div class="prlflex tap clearf">
-    <figure class="slideshow" style="width:657px; min-height:610px;">
+    <figure class="slideshow" style="width:657px; min-height:676px;">
     <img alt="Bashed Patch" src="../bash/images/readme/bashed-patch-dialogue-1.png"/>
     <img alt="Bashed Patch" src="../bash/images/readme/bashed-patch-dialogue-2.png"/>
     <img alt="Bashed Patch" src="../bash/images/readme/bashed-patch-dialogue-3.png"/>
@@ -713,9 +721,10 @@ from other packages previously overridden by the uninstalled package's
 <h3 id="ini-overview">Overview <a class="back2top" href="#contents">Back to top</a></h3>
 <figure class="slideshow">
 <img alt="INI Edits Tab" src="../bash/images/readme/ini-edits-1.png"/>
+<img alt="INI Edits Tab" src="../bash/images/readme/ini-edits-2.png"/>
 <img alt="INI Edits Tab" src="../bash/images/readme/ini-oblivion.png"/>
 <img alt="INI Edits Tab" src="../bash/images/readme/ini-all_natural.png"/>
-<figcaption class="ini-overview-figcap">Wrye Bash's INI Edits tab, editing Oblivion.ini, Oblivion's configuration file, and All Natural.ini, a mod's configuration file. (Animated slideshow.)</figcaption>
+<figcaption class="ini-overview-figcap">Wrye Bash's INI Edits tab, editing SkyrimPrefs.ini, Oblivion.ini, and All Natural.ini, a mod's configuration file.</figcaption>
 </figure>
 
 <p>The Ini Edits tab allows the user to quickly apply edits to the games's INI file (e.g. Oblivion.ini, Skyrim.ini, Fallout4Custom.ini, etc.) depending on your game, and mod-added ini files, including those containing scripts used to configure mods. Edits are applied from ini tweak files, which are just a text file that contains only the lines of the ini that you wish to change. Ini tweaks are stored in the <code>Data\Ini Tweaks</code> folder, and may be installed through BAIN or placed there manually.
@@ -741,6 +750,45 @@ from other packages previously overridden by the uninstalled package's
         <tr><td class="ini-symbols-grnbg">Green Background<td>The specific variable value matches the value in the current ini file.
 </table>
 <h3 id="ini-commands">Buttons &amp; Context Menu Commands <a class="back2top" href="#contents">Back to top</a></h3>
+<div class="prlflex clearf">
+    <figure class="slideshow" style="width: 432px; min-height: 152px">
+        <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-1.png">
+        <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-2.png">
+        <img alt="INI Edits Header Menu" src="../bash/images/readme/ini-edits-rclick-ini-header-menu-3.png">
+    </figure>
+    <table id="iniHeaderCommands">
+        <thead>
+            <tr><th colspan="2">Column Header Context Menu
+            <tr><th>Command<th>Description
+        <tbody>
+            <tr><td>Sort By<td>This submenu allows you to choose by which column the ini list is sorted. This is equivalent to clicking on a column header.
+            <tr><td>Columns<td>This submenu allows you to choose which columns are visible in the ini list.
+            <tr><td id="allowTweaksWithNewSettings">Allow Tweaks with New Settings<td>Allows tweaks which have new sections and/or settings to
+                be installed. Use carefully as you might inadvertently add bogus sections/settings to your ini.
+            <tr><td>Open...<td>Open the <code>Data/INI Tweaks</code> folder
+            <tr><td>List Active INIs...<td>Lists all currently applied INI tweaks to the selected INI.
+    </table>
+</div>
+<div class="prlflex clearf">
+    <figure style="width: 279px; min-height: 123px"> <!-- Add class="slideshow" if we ever have more than one here -->
+        <img alt="INI Edits Menu" src="../bash/images/readme/ini-edits-rclick-ini-menu.png">
+    </figure>
+    <table id="iniMenuCommands">
+        <thead>
+            <tr><th colspan="2">Tweak Context Menu
+            <tr><th>Command<th>Description
+        <tbody>
+            <tr><td id="tweakApply">Apply<td>Applies the tweak to the current ini file.
+            <tr><td>Create Tweak with current settings...<td>Creates a new tweak with the same settings as the selected tweak, but uses the values in the current ini file.
+            <tr><td>List Errors...<td>Lists invalid tweaks (for instance OBSE ini tweaks are invalid if current target ini is Oblivion ini), and
+                also lists section headers and/or individual settings that are present in selected tweak(s) but are missing from the current
+                target ini. These tweaks may be installed however - depending on <a href="#allowTweaksWithNewSettings">Allow Tweaks with New
+                    Settings</a> setting.
+            <tr><td>Open/Copy...<td>If the (single) selected item is a default Bash tweak this menu item copies it to the
+                <code>Data/INI Tweaks</code> folder, otherwise it opens the tweak with the default text editor for .ini files.
+            <tr><td>Delete<td>Delete the tweak. Default (hardcoded) Bash ini tweaks can't be deleted.
+    </table>
+</div>
 <table>
     <thead>
         <tr><th colspan="2">Ini Edits Tab
@@ -749,33 +797,6 @@ from other packages previously overridden by the uninstalled package's
         <tr><td>Remove<td>Removes the selected ini file from the drop-down selection box. This will not remove game default INI files.
         <tr><td>Edit...<td>Opens the current ini file for editing in the default text editor.
 </table>
-<table>
-    <thead>
-        <tr><th colspan="2">Column Header Context Menu
-        <tr><th>Command<th>Description
-    <tbody>
-        <tr><td>Sort By<td>This submenu allows you to choose by which column the ini list is sorted. This is equivalent to clicking on a column header.
-        <tr><td>Columns<td>This submenu allows you to choose which columns are visible in the ini list.
-        <tr><td id="allowTweaksWithNewSettings">Allow Tweaks with New Settings<td>Allows tweaks which have new sections and/or settings to
-            be installed. Use carefully as you might inadvertently add bogus sections/settings to your ini.
-        <tr><td>Open...<td>Open the <code>Data/INI Tweaks</code> folder
-        <tr><td>List Active INIs...<td>Lists all currently applied INI tweaks to the selected INI.
-</table>
-<table>
-    <thead>
-        <tr><th colspan="2">Tweak Context Menu
-        <tr><th>Command<th>Description
-    <tbody>
-        <tr><td id="tweakApply">Apply<td>Applies the tweak to the current ini file.
-        <tr><td>Create Tweak with current settings...<td>Creates a new tweak with the same settings as the selected tweak, but uses the values in the current ini file.
-        <tr><td>List Errors...<td>Lists invalid tweaks (for instance OBSE ini tweaks are invalid if current target ini is Oblivion ini), and
-            also lists section headers and/or individual settings that are present in selected tweak(s) but are missing from the current
-            target ini. These tweaks may be installed however - depending on <a href="#allowTweaksWithNewSettings">Allow Tweaks with New
-                Settings</a> setting.
-        <tr><td>Open/Copy...<td>If the (single) selected item is a default Bash tweak this menu item copies it to the
-            <code>Data/INI Tweaks</code> folder, otherwise it opens the tweak with the default text editor for .ini files.
-        <tr><td>Delete<td>Delete the tweak. Default (hardcoded) Bash ini tweaks can't be deleted.
-</table>
 
 <h2 id="launchers">Launching Applications <a class="back2top" href="#contents">Back to top</a></h2>
 <figure class="slideshow">
@@ -783,6 +804,7 @@ from other packages previously overridden by the uninstalled package's
 <img alt="launcher" src="../bash/images/readme/toolbar-9-hover-autoquit.png"/>
 <img alt="launcher" src="../bash/images/readme/toolbar-8-hover-launchgameviaobse.png"/>
 <img alt="launcher" src="../bash/images/readme/toolbar-7-hover-launchgame.png"/>
+<img alt="launcher" src="../bash/images/readme/toolbar-5-hover-creationkit.png"/>
 <img alt="launcher" src="../bash/images/readme/toolbar-6-hover-launchboss.png"/>
 <img alt="launcher" src="../bash/images/readme/toolbar-4-hover-docbrowser.png"/>
 <img alt="launcher" src="../bash/images/readme/toolbar-3-hover-modchecker.png"/>
