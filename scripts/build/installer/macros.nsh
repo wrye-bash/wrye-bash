@@ -582,6 +582,7 @@
         Delete "${Path}\Mopy\bash\images\readme\selectmany.jpg"
         Delete "${Path}\Mopy\bash\images\readme\selectone.jpg"
         Delete "${Path}\Mopy\bash\images\readme\settings-7-check_for_updates_highlighted.png"
+        Delete "${Path}\Mopy\bash\images\readme\toolbar-5-hover-launchbashmon.png"
         Delete "${Path}\Mopy\bash\images\readme\wryebash_01.png"
         Delete "${Path}\Mopy\bash\images\readme\wryebash_02.png"
         Delete "${Path}\Mopy\bash\images\readme\wryebash_03.png"
