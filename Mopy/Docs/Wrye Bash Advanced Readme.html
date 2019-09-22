@@ -359,12 +359,12 @@ tab. The directories skipped are:
 <h3 id="bain-se">Script Extender Plugin Installation <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Script Extender (e.g. OBSE, SKSE, F4SE) plugins (.dll, .dlx extensions) may be installed through BAIN if the following conditions are met:
 <ul>
-    <li>The package (or subpackage in the case of a Complex Bain) contains the OBSE plugin file inside <code>**SE\Plugins\</code> (e.g. OBSE for
+    <li>The package (or subpackage in the case of a Complex Bain) contains the **SE plugin file inside <code>**SE\Plugins\</code> (e.g. OBSE for
         Oblivion) sub-folders.
     <li>The <a href="#bainSkipSEPlugins">Skip (**SE) Plugins</a> option found in the Installers tab column header context menu is disabled.
 </ul>
 <p>When attempting to install a specific Script Extender plugin for the first time, Wrye Bash will display a warning dialogue and ask you to confirm or deny the plugin's installation. Thereafter you can uninstall and install the plugin as you like without seeing the warning. These additional requirements are due to the significant (though currently theoretical) dangers of installing executable files.
-<p>The list of allowed and disallowed Script Extender plugins can be imported and exported using the <a href="#settingsImportList">Import list of allowed/disallowed OBSE plugin dlls</a> and <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a> options in Wrye Bash's <a href="#tools-settings">Settings</a> menu.
+<p>The list of allowed and disallowed Script Extender plugins can be imported and exported using the <a href="#settingsImportList">Import list of allowed/disallowed **SE plugin DLLs</a> and <a href="#settingsExportList">Export list of allowed/disallowed **SE plugin DLLs</a> options in Wrye Bash's <a href="#tools-settings">Settings</a> menu.
 
 
 <h3 id="bain-omod">OMOD Conversion Data <a class="back2top" href="#contents">Back to top</a></h3>
@@ -4633,8 +4633,8 @@ and masterlist relative priority and role see the LOOT docs.
             settings. Note that if you have a bash.ini this will be copied in the Mopy folder to a file named as in
             <code>bash(YEAR-MONTH-DAY hh.mm.sec).ini</code> so you do not lose your precious ini settings in case something goes wrong.
         <tr><td colspan="2">Save Settings<td>Normally, Wrye Bash saves its settings to disc only on closing. Use this to force a save right now.
-        <tr><td colspan="2" id="settingsExportList">Export list of allowed/disallowed OBSE plugin dlls<td>This will save the Good/Bad OBSE dll definitions to a text file, either for editing or for backup purposes.
-        <tr><td colspan="2" id="settingsImportList">Import list of allowed/disallowed OBSE plugin dlls<td>This will import the list of Good/Bad OBSE dll definitions from a text file previously exported using <a href="#settingsExportList">Export list of allowed/disallowed OBSE plugin dlls</a>.
+        <tr><td colspan="2" id="settingsExportList">Export list of allowed/disallowed **SE plugin DLLs<td>This will save the Good/Bad **SE DLL definitions to a text file, either for editing or for backup purposes.
+        <tr><td colspan="2" id="settingsImportList">Import list of allowed/disallowed **SE plugin DLLs<td>This will import the list of Good/Bad **SE DLL definitions from a text file previously exported using <a href="#settingsExportList">Export list of allowed/disallowed **SE plugin DLLs</a>.
         <tr><td colspan="2" id="settingsColors">Colors...<td>Brings up the <a href="#tools-colors">Colors dialog</a>. This dialog can be used to change the colors that Wrye Bash uses to communicate various bits of information.
             <br><br>The drop-down list is used to select the item for which you want to change the color. The square box next to the drop-down list opens a color picker, allowing you to choose a
             new color. The function of the other buttons is described in the table below.

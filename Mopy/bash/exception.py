@@ -85,11 +85,6 @@ class FileEditError(BoltError):
         super(FileEditError, self).__init__(message)
         self.filePath = file_path
 
-class PermissionError(BoltError):
-    """Wrye Bash doesn't have permission to access the specified file/directory."""
-    def __init__(self, message=u'Access is denied.'):
-        super(PermissionError, self).__init__(message)
-
 # Mod I/O Errors --------------------------------------------------------------
 class ModError(FileError):
     """Mod Error: File is corrupted."""

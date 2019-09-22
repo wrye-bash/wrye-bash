@@ -174,7 +174,7 @@ class Settings_ExportDllInfo(AppendableLink, ItemLink):
 #------------------------------------------------------------------------------
 class Settings_ImportDllInfo(AppendableLink, ItemLink):
     """Imports list of good and bad dll's."""
-    _text = _(u"Import list of allowed/disallowed %s plugin dlls") % \
+    _text = _(u"Import list of allowed/disallowed %s plugin DLLs") % \
         bush.game.se.se_abbrev
     _help = _(u"Import list of allowed/disallowed plugin DLLs from a txt file"
         u" (for BAIN).")

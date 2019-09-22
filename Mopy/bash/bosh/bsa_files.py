@@ -134,16 +134,16 @@ class SkyrimSeBsaHeader(BsaHeader):
 
 # Records ---------------------------------------------------------------------
 class _HashedRecord(object):
-    __slots__ = ('hash',)
+    __slots__ = ('record_hash',)
     formats = [('Q', struct.calcsize('Q'))]
 
     def load_record(self, ins):
         fmt, fmt_siz = _HashedRecord.formats[0]
-        self.hash, = struct_unpack(fmt, ins.read(fmt_siz))
+        self.record_hash, = struct_unpack(fmt, ins.read(fmt_siz))
 
     def load_record_from_buffer(self, memview, start):
         fmt, fmt_siz = _HashedRecord.formats[0]
-        self.hash, = struct.unpack_from(fmt, memview, start)
+        self.record_hash, = struct.unpack_from(fmt, memview, start)
         return start + fmt_siz
 
     @classmethod
@@ -151,20 +151,23 @@ class _HashedRecord(object):
         return _HashedRecord.formats[0][1]
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__): return self.hash == other.hash
+        if isinstance(other, self.__class__):
+            return self.record_hash == other.record_hash
         return NotImplemented
     def __ne__(self, other): return not (self == other)
-    def __hash__(self): return self.hash
+    def __hash__(self): return self.record_hash
     def __lt__(self, other):
-        if isinstance(other, self.__class__): return self.hash < other.hash
+        if isinstance(other, self.__class__):
+            return self.record_hash < other.record_hash
         return NotImplemented
     def __ge__(self, other): return not (self < other)
     def __gt__(self, other):
-        if isinstance(other, self.__class__): return self.hash > other.hash
+        if isinstance(other, self.__class__):
+            return self.record_hash > other.record_hash
         return NotImplemented
     def __le__(self, other): return not (self > other)
 
-    def __repr__(self): return repr(hex(self.hash))
+    def __repr__(self): return repr(hex(self.record_hash))
 
 # BSAs
 class _BsaHashedRecord(_HashedRecord):
@@ -238,7 +241,7 @@ class _B2aFileRecordCommon(_HashedRecord):
     formats = list((f, struct.calcsize(f)) for f in formats)
 
     def load_record(self, ins):
-        self.hash = unpack_int(ins) # hash is I not Q !
+        self.record_hash = unpack_int(ins) # record_hash is I not Q !
         for fmt, attr in zip(_B2aFileRecordCommon.formats,
                              _B2aFileRecordCommon.__slots__):
             self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
@@ -464,7 +467,7 @@ class BSA(ABsa):
                 folder_records.append(rec)
             # load the file record block
             for folder_record in folder_records:
-                folder_path = u'?%d' % folder_record.hash # hack - untested
+                folder_path = u'?%d' % folder_record.record_hash # hack - untested
                 if self.bsa_header.has_names_for_folders():
                     name_size = unpack_byte(bsa_file)
                     folder_path = _decode_path(
@@ -580,9 +583,9 @@ class OblivionBsa(BSA):
     # A dictionary mapping file extensions to hash components. Used by Oblivion
     # when hashing file names for its BSAs.
     _bsa_ext_lookup = collections.defaultdict(int)
-    for ext, hash in [('.kf', 0x80), ('.nif', 0x8000), ('.dds', 0x8080),
-                      ('.wav', 0x80000000)]:
-        _bsa_ext_lookup[ext] = hash
+    for ext, hash_part in [('.kf', 0x80), ('.nif', 0x8000), ('.dds', 0x8080),
+                           ('.wav', 0x80000000)]:
+        _bsa_ext_lookup[ext] = hash_part
 
     @staticmethod
     def calculate_hash(file_name):
@@ -595,16 +598,16 @@ class OblivionBsa(BSA):
         #--NOTE: fileName is NOT a Path object!
         root, ext = os.path.splitext(file_name.lower())
         chars = map(ord, root)
-        hash1 = chars[-1] | ((len(chars) > 2 and chars[-2]) or 0) << 8 | len(
-            chars) << 16 | chars[0] << 24
-        hash1 |= OblivionBsa._bsa_ext_lookup[ext]
-        uint_mask, hash2, hash3 = 0xFFFFFFFF, 0, 0
+        hash_part_1 = chars[-1] | ((len(chars) > 2 and chars[-2]) or 0) << 8 \
+                      | len(chars) << 16 | chars[0] << 24
+        hash_part_1 |= OblivionBsa._bsa_ext_lookup[ext]
+        uint_mask, hash_part_2, hash_part_3 = 0xFFFFFFFF, 0, 0
         for char in chars[1:-2]:
-            hash2 = ((hash2 * 0x1003F) + char) & uint_mask
+            hash_part_2 = ((hash_part_2 * 0x1003F) + char) & uint_mask
         for char in map(ord, ext):
-            hash3 = ((hash3 * 0x1003F) + char) & uint_mask
-        hash2 = (hash2 + hash3) & uint_mask
-        return (hash2 << 32) + hash1
+            hash_part_3 = ((hash_part_3 * 0x1003F) + char) & uint_mask
+        hash_part_2 = (hash_part_2 + hash_part_3) & uint_mask
+        return (hash_part_2 << 32) + hash_part_1
 
     def undo_alterations(self, progress=Progress()):
         """Undoes any alterations that previously applied BSA Alteration may
@@ -626,7 +629,7 @@ class OblivionBsa(BSA):
             for folder_name, folder in self.bsa_folders.iteritems():
                 for file_name, file_info in folder.folder_assets.iteritems():
                     rebuilt_hash = self.calculate_hash(file_name)
-                    if file_info.hash != rebuilt_hash:
+                    if file_info.record_hash != rebuilt_hash:
                         bsa_file.seek(file_info.file_pos)
                         bsa_file.write(struct_pack('Q', rebuilt_hash))
                         reset_count += 1

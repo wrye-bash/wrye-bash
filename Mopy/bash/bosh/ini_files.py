@@ -450,7 +450,6 @@ class OBSEIniFile(IniFile):
         ci_settings, deletedSettings = self.get_ci_settings(with_deleted=True)
         reDeleted = self.reDeleted
         reComment = self.reComment
-        section = u''
         tweak_lines = tweak_file.read_ini_content()  # type: list[unicode]
         for line in tweak_lines:
             # Check for deleted lines
@@ -459,7 +458,7 @@ class OBSEIniFile(IniFile):
             else: stripped = line
             stripped = reComment.sub(u'',stripped).strip()
             # Check which kind it is - 'set' or 'setGS' or 'SetNumericGameSetting'
-            match, section_key, _fmt = self._parse_obse_line(stripped)
+            match, section, _fmt = self._parse_obse_line(stripped)
             if match:
                 groups = match.groups()
             else:

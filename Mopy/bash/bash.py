@@ -31,6 +31,7 @@ import atexit
 import codecs
 import os
 import platform
+import shutil
 import sys
 import traceback
 from ConfigParser import ConfigParser
@@ -264,11 +265,10 @@ def _main(opts):
         if not bush_game: return
         if restore_:
             try:
-                # TODO(ut) error checks - limit except Exception below
                 restore_.restore_settings(bush_game.fsName)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
-            except Exception:
+            except (exception.BoltError, OSError, shutil.Error):
                 bolt.deprint(u'Failed to restore backup', traceback=True)
                 restore_.restore_ini()
                 # reset the game and ini
@@ -280,8 +280,7 @@ def _main(opts):
         env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
         global basher, balt
         import basher, balt
-    except (exception.PermissionError,
-            exception.BoltError, ImportError, OSError, IOError) as e:
+    except (exception.BoltError, ImportError, OSError, IOError) as e:
         msg = u'\n'.join([_(u'Error! Unable to start Wrye Bash.'), u'\n', _(
             u'Please ensure Wrye Bash is correctly installed.'), u'\n',
                           traceback.format_exc(e)])
