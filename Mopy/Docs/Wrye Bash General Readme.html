@@ -128,6 +128,7 @@
     <li>Fallout 3</li>
     <li>Fallout&colon; New Vegas</li>
     <li>Skyrim</li>
+    <li>Enderal&colon; Forgotten Stories</li>
     <li>Fallout 4</li>
     <li>Skyrim&colon; Special Edition</li>
 </ul>
@@ -157,6 +158,7 @@
             <tr><td>Fallout 3</td><td>Fallout3.esm</td></tr>
             <tr><td>Fallout&colon; New Vegas</td><td>FalloutNV.esm</td></tr>
             <tr><td>Skyrim</td><td>Skyrim.esm</td></tr>
+            <tr><td>Enderal&colon; Forgotten Stories</td><td>Skyrim.esm</td></tr>
             <tr><td>Fallout 4</td><td>Fallout4.esm</td></tr>
             <tr><td>Skyrim&colon; Special Edition</td><td>Skyrim.esm</td></tr>
         </tbody>
@@ -285,6 +287,7 @@ but there are game specific directories as well (all directory detection is <em>
         <tr><td>Fallout 3<td>facegen, lodsettings, menus, shaders<td>ini, fose, scripts
         <tr><td>Fallout&colon; New Vegas<td>facegen, lodsettings, menus, shaders<td>ini, nvse, scripts
         <tr><td>Skyrim<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (Bodyslide, FNIS), dyndolod
+        <tr><td>Enderal&colon; Forgotten Stories</td><td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings</td><td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (Bodyslide, FNIS), dyndolod</td></tr>
         <tr><td>Fallout 4<td>interface, lodsettings, materials, misc, programs, scripts, seq, shadersfx, strings, vis<td>f4se, ini, mcm (Fallout 4 MCM), tools (BodySlide, FNIS)
         <tr><td>Skyrim&colon; Special Edition<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (BodySlide, FNIS), dyndolod
 </table>
@@ -452,8 +455,8 @@ from other packages previously overridden by the uninstalled package's
         The files are not deleted, but moved to the <code>[Game] Mods\Bash Installers\Bash\Data Folder Contents [timestamp]</code> folder instead, where <code>[timestamp]</code> is the date and time the command was run.
         <tr><td id="bainAnnealAll">Anneal All<td>Installs any missing files for active installers and corrects all install order errors.
         <tr><td>Unhide...<td>Opens a dialogue window allowing you to select which hidden packages to unhide.
-        <tr><td>Skip OBSE Plugins<td><em>Oblivion only.</em> If this is checked, files in the Data\OBSE\Plugins folder will not be installed.
-        <tr><td>Skip SKSE/Script Dragon Plugins<td><em>Skyrim only.</em> If this is checked, files to go in the Data\SKSE\Plugins or Data\asi folder will not be installed.
+        <tr><td>Skip **SE Plugins</td><td><em>All but Skyrim and Enderal&colon; Forgotten Stories.</em> If this is checked, files in the script extender plugins folder (e.g. <code>Data\OBSE\Plugins</code> for OBSE, <code>Data\SKSE\Plugins</code> for SKSE, etc.) will not be installed.</td></tr>
+        <tr><td>Skip SKSE/Script Dragon Plugins</td><td><em>Skyrim and Enderal&colon; Forgotten Stories only.</em> If this is checked, files to go in the <code>Data\SKSE\Plugins</code> or <code>Data\asi</code> folder will not be installed.
 </table>
 <table>
     <thead>
@@ -494,9 +497,10 @@ from other packages previously overridden by the uninstalled package's
     if there's a conflict with a mod loading earlier (which will have a lower number). <strong>Load order is not the same thing as BAIN install
         order!</strong> Install order determines which package's files overwrite other packages files when they conflict.
 <p>Although in general "Load Order" stands for the load order of the <em>active</em> plugins, all installed plugins have a load order assigned
-    to them. In Oblivion this is based on the modification time of the plugin, in Skyrim based to an agreed upon text-file based standard,
-    while Fallout 4 finally dumps all installed plugins in its plugins.txt, marking active ones with an asterisk. Bash needs plugins load
-    order even for inactive plugins to correctly merge inactive mods in the bashed patch, for instance.
+    to them. In Oblivion, Fallout 3 and Fallout&colon; New Vegas this is based on the modification time of the plugin,
+    in Skyrim and Enderal&colon; Forgotten Stories it is based to a text-file based standard the community agreed on,
+    while Fallout 4 and all later games dump all installed plugins in its plugins.txt, marking active ones with an asterisk.
+    Bash needs plugin load order even for inactive plugins to correctly merge inactive mods in the Bashed Patch, for instance.
 <p>Plugins may be activated by clicking their checkbox so that it is ticked, or by selecting a plugin or group of plugins and pressing the
     space bar on your keyboard. Plugins may be deactivated by again clicking their checkbox or pressing the spacebar. If a group of selected
     plugins contains a mix of active and inactive plugins, pressing the space bar once will activate them all, thereafter it will function as normal.
@@ -504,13 +508,18 @@ from other packages previously overridden by the uninstalled package's
 <p>When setting the load order, make sure that Wrye Bash is displaying your plugins sorted by Load Order. Do so by clicking on the <q>Load Order</q> column header near the top of the tab. You can also display the plugins sorted by other attributes by clicking on any of the other column headers. Clicking twice will reverse the display order for any column but Load Order. The load order of plugins is given in hexadecimal digits, from 00 to FE, which is 0 to 254 in decimal. (This number also forms the first two digits of a record's Form ID.)
 <p>Note that you can only have a maximum of 255 plugins active at any one time, including your game's master file.
     Wrye Bash displays a plugin count in its status bar, to the right hand side, in the format <code>Mods: [active]/[installed]</code>.
-<p>With the advent of <strong>esl files</strong> the load order system was modified - exactly how it is still unclear. Bash makes two assumptions when
-    calculating load order of esl files:
+<p>With the advent of <strong>ESL files</strong>, the load order system was modified.
+The following list contains the most important facts you need to know about how Wrye Bash handles ESL files:</p>
 <ol>
-    <li> esls load among esms in the order of the plugins txt.
-    <li> only extension matters - Bash does not look at the esl flag. Name your esls esls.
+    <li>.esl files implicitly receive the ESM flag, so they load among masters in the order of the plugins txt.</li>
+    <li>.esl files implicitly recieve the ESL flag, so they are always treated as light plugins.</li>
+    <li>ESPs with the ESL flag are also treated as light plugins.</li>
+    <li>ESLs can surpass the 255 mod limit - Wrye Bash allows up to 4096, the theoretical limit,
+        but your game will likely give up long before that number is reached.</li>
 </ol>
-<p>Special cc** .esl files are read from Fallout4/Skyrim.ccc file</p>
+<p>Creation Club ESL files (of the form <code>cc*.esl</code>) are read from the game's <code>.ccc</code> file, if the game has Creation Club support.
+For example, Skyrim&colon; Special Edition uses <code>[GAME]\Skyrim.ccc</code>, while Fallout 4 uses <code>[GAME]\Fallout4.ccc</code>.
+Just like the game's masters, this load order is hardcoded, and so it cannot be changed - Wrye Bash will show an error message when an attempt is made.</p>
 
 <h3 id="load-set">Setting The Load Order <a class="back2top" href="#contents">Back to top</a></h3>
 <p>Setting up a correct load order that minimises detrimental conflicts that could cause issues in-game can be a difficult and time-consuming process. Effective load-ordering often requires a knowledge of what each plugin in your load order contains so that you can position the plugins to minimise these conflicts. For simple mods, the description in the mod's readme will usually be sufficient to determine the records it contains, but to be sure a utility such as TES4Edit is required.
@@ -527,8 +536,8 @@ from other packages previously overridden by the uninstalled package's
     option in the column header right-click menu. Note that this will prevent other utilities from changing the load order, so uncheck this option if you use such a
     utility to set your load order. If you use BOSS/LOOT to manage your load order and you also use Lock Load Order, ensure
     <a href="#launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</a> is also enabled to allow BOSS/LOOT to function correctly.
-<p>Note that for Skyrim Wrye Bash will automatically undo any changes to load order done made by the Skyrim launcher or any utility that does not follow the textfile-based
-    load order standard in order to maintain a fully coherent load order. This effectively means that unintended changes are prevented.
+<p>Note that for Skyrim and later games Wrye Bash will automatically undo any changes to load order done made by the game's launcher or any utility that does not follow the textfile-based
+    load order standard in order to maintain a fully coherent load order. This effectively means that unintended changes are prevented.</p>
 <figure>
 <img alt="toolbar hide launcher" src="../bash/images/readme/toolbar-12-rclick-hide-boss.png"/>
 <figcaption>BOSS's Launch Using GUI option.</figcaption>
@@ -840,10 +849,12 @@ from other packages previously overridden by the uninstalled package's
             <th colspan="2">Fallout 3</th>
             <th colspan="2">Fallout&colon; New Vegas</th>
             <th colspan="2">Skyrim</th>
+            <th colspan="2">Enderal&colon; Forgotten Stories</th>
             <th colspan="2">Fallout 4</th>
             <th colspan="2">Skyrim&colon; Special Edition</th>
         </tr>
         <tr>
+            <th>Icon</th><th>Application</th>
             <th>Icon</th><th>Application</th>
             <th>Icon</th><th>Application</th>
             <th>Icon</th><th>Application</th>
@@ -858,6 +869,7 @@ from other packages previously overridden by the uninstalled package's
             <td><img alt="Fallout 3 Icon" src="../bash/images/fallout332.png" width="32" height="32"/></td><td>Fallout 3</td>
             <td><img alt="Fallout&colon; New Vegas Icon" src="../bash/images/falloutnv32.png" width="32" height="32"/></td><td>Fallout&colon; New Vegas</td>
             <td><img alt="Skyrim Icon" src="../bash/images/skyrim32.png" width="32" height="32"/></td><td>Skyrim</td>
+            <td><img alt="Enderal Icon" src="../bash/images/enderal32.png" width="32" height="32"/></td><td>Enderal&colon; Forgotten Stories</td>
             <td><img alt="Fallout 4 Icon" src="../bash/images/fallout432.png" width="32" height="32"/></td><td>Fallout 4</td>
             <td><img alt="Skyrim&colon; Special Edition Icon" src="../bash/images/Skyrim Special Edition32.png" width="32" height="32"/></td><td>Skyrim&colon; Special Edition</td>
         </tr>
@@ -866,13 +878,23 @@ from other packages previously overridden by the uninstalled package's
             <td><img alt="Fallout 3 GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td><td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
             <td><img alt="Fallout&colon; New Vegas GECK Icon" src="../bash/images/geck32.png" width="32" height="32"/></td><td><a href="https://geck.bethsoft.com/index.php?title=Main_Page">Garden of Eden Creation Kit</a></td>
             <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
+            <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Skyrim Creation Kit</a></td>
             <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Fallout 4 Creation Kit</a></td>
             <td><img alt="Creation Kit Icon" src="../bash/images/creationkit32.png" width="32" height="32"/></td><td><a href="https://www.creationkit.com/">Skyrim&colon; Special Edition Creation Kit</a></td>
         </tr>
     </tbody>
 </table>
 <h3 id="launchers-utils">Game-Specific Utilities <a class="back2top" href="#contents">Back to top</a></h3>
-<p>Tes4Edit, Tes4Trans and Tes4view are just different modes of Tes4Edit.exe and will be available if Tes4Edit.exe is available. Tes4Gecko &amp; Oblivion Book Creator will be available if the windows path variable <code>JAVA_HOME</code> points to a valid java install (or the javaw.exe is present in Windows\System32) and their .jar file is present in Oblivion install directory or for OBC in the data directory (you can override those default paths in bash.ini). The BOSS launcher has some options if BOSS v2 is installed:
+<p>xEdit, xTrans and xView are just different modes of xEdit and will be available if the appropriate xEdit executable (e.g. Tes4Edit.exe) is available.
+   The xEdit launchers have an extra option:</p>
+<ul>
+    <li>xEdit Expert - If checked, this option runs xEdit with the <code>-IKnowWhatImDoing</code> argument,
+        activating more advanced functionality whenever xEdit is run from its launcher in the status bar.</li>
+</ul>
+<p>Tes4Gecko &amp; Oblivion Book Creator will be available if the windows path variable <code>JAVA_HOME</code> points to a valid
+   Java install (or the javaw.exe is present in Windows\System32) and their .jar file is present in Oblivion install directory
+   or for OBC in the data directory (you can override those default paths in bash.ini).</p>
+<p>The BOSS launcher has some options if BOSS v2 is installed:</p>
 <ul>
  <li>Right-clicking the BOSS icon and selecting <q id="launchersBOSSDisableLockLoadOrder">BOSS Disable Lock Load Order</q> will cause Wrye Bash to temporarily disable Lock Load Order
      when BOSS is run from its application launcher in the status bar, to allow BOSS to set the load order, re-enabling it after BOSS has finished running. It has no effect when BOSS
