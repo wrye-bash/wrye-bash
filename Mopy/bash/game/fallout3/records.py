@@ -2191,6 +2191,7 @@ class MreMgef(MelRecord):
             'counterEffectCount',('unused1',null2),(FID,'light',0),'projectileSpeed',
             (FID,'effectShader',0),(FID,'objectDisplayShader',0),
             (FID,'castingSound',0),(FID,'boltSound',0),(FID,'hitSound',0),
+            # cefEnchantment and cefBarter are unused
             (FID,'areaSound',0),('cefEnchantment',0.0),('cefBarter',0.0),
             'archType','actorValue'),
         MelGroups('counterEffects',
@@ -3859,42 +3860,6 @@ class MreTerm(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreTes4(MelRecord):
-    """TES4 Record. File header."""
-    classType = 'TES4' #--Used by LoadFactory
-    #--Masters array element
-    class MelTes4Name(MelBase):
-        def setDefault(self,record):
-            record.masters = []
-        def loadData(self, record, ins, sub_type, size_, readId):
-            name = GPath(ins.readString(size_, readId))
-            record.masters.append(name)
-        def dumpData(self,record,out):
-            pack1 = out.packSub0
-            pack2 = out.packSub
-            for name in record.masters:
-                pack1('MAST',name.s)
-                pack2('DATA','Q',0)
-    #--Data elements
-    melSet = MelSet(
-        MelStruct('HEDR','f2I',('version',0.8),'numRecords',('nextObject',0xCE6)),
-        MelBase('OFST','ofst_p',), #--Obsolete?
-        MelBase('DELE','dele_p'), #--Obsolete?
-        MelString('CNAM','author','',512),
-        MelString('SNAM','description','',512),
-        MelTes4Name('MAST','masters'),
-        MelBase('ONAM','onam'),
-        MelNull('DATA'),
-        )
-    __slots__ = melSet.getSlotsUsed()
-
-    def getNextObject(self):
-        """Gets next object index and increments it for next time."""
-        self.changed = True
-        self.nextObject += 1
-        return self.nextObject - 1
-
-#------------------------------------------------------------------------------
 class MreTree(MelRecord):
     """Tree record."""
     classType = 'TREE'
@@ -4113,8 +4078,8 @@ class MreWeap(MelRecord):
         MelString('ICON','iconPath'),
         MelString('MICO','smallIconPath'),
         MelFid('SCRI','script'),
-        MelFid('EITM','enchantment'),
-        MelOptStruct('EAMT','H', 'enchantPoints'),
+        MelFid('EITM','objectEffect'),
+        MelOptStruct('EAMT','H','objectEffectPoints'),
         MelFid('NAM0','ammo'),
         MelDestructible(),
         MelFid('REPL','repairList'),

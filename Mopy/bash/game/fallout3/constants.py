@@ -769,9 +769,11 @@ listTypes = ('LVLC','LVLI','LVLN')
 #------------------------------------------------------------------------------
 # NamesPatcher
 #------------------------------------------------------------------------------
-namesTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CLAS', 'CONT', 'CREA',
-              'DOOR', 'EYES', 'FACT', 'HAIR', 'INGR', 'KEYM', 'LIGH', 'MISC',
-              'NOTE', 'NPC_', 'RACE', 'SPEL', 'TACT', 'TERM', 'WEAP'}
+namesTypes = {
+    'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CLAS', 'CONT', 'CREA',
+    'DOOR', 'EYES', 'FACT', 'HAIR', 'INGR', 'KEYM', 'LIGH', 'MESG', 'MGEF',
+    'MISC', 'NOTE', 'NPC_', 'PERK', 'RACE', 'SPEL', 'TACT', 'TERM', 'WEAP',
+}
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
 #------------------------------------------------------------------------------
@@ -922,22 +924,30 @@ cellRecFlags = {
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------
-graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'BOOK', 'CLAS',
-                      'CREA', 'DOOR', 'EFSH', 'EXPL', 'FURN', 'GRAS', 'INGR',
-                      'KEYM', 'LIGH', 'LSCR', 'LTEX', 'MISC', 'NPC_', 'STAT',
-                      'TREE', 'WEAP', 'MGEF'}
+graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'AVIF', 'BOOK',
+                      'BPTD', 'CLAS', 'CREA', 'DOOR', 'EFSH', 'EXPL', 'FURN',
+                      'GRAS', 'HDPT', 'INGR', 'IPCT', 'IPDS', 'KEYM', 'LIGH',
+                      'LSCR', 'MISC', 'MSTT', 'NPC_', 'NOTE', 'PROJ', 'PWAT',
+                      'STAT', 'TACT', 'TERM', 'TREE', 'TXST', 'WEAP', 'MGEF',}
 graphicsTypes = {
     "ACTI": ('model',),
-    "ALCH": ('iconPath','model',),
-    "AMMO": ('iconPath','model',),
-    "ARMA": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath',),
-    "ARMO": ('maleBody','maleWorld','maleIconPath','femaleBody','femaleWorld','femaleIconPath',
-             'objectEffect',),
-    "BOOK": ('iconPath','model',),
+    "ALCH": ('iconPath','smallIconPath','model',),
+    "AMMO": ('iconPath','smallIconPath','model',),
+    "ARMA": ('maleBody','maleWorld','maleIconPath','maleSmallIconPath',
+             'femaleBody','femaleWorld','femaleIconPath','femaleSmallIconPath',
+             'dnamFlags',),
+    "ARMO": ('maleBody','maleWorld','maleIconPath','maleSmallIconPath',
+             'femaleBody','femaleWorld','femaleIconPath','femaleSmallIconPath',
+             'dnamFlags','objectEffect',),
+    "AVIF": ('iconPath','smallIconPath',),
+    "BOOK": ('iconPath','smallIconPath','model',),
+    "BPTD": ('model',),
     "CLAS": ('iconPath',),
-    "CREA": ('bodyParts','nift_p','effect',),
+    "CREA": ('model','bodyParts','nift_p','bodyPartData','impactDataset',
+             'effect',),
     "DOOR": ('model',),
-    "EFSH": ('flags','unused1','memSBlend',
+    "EFSH": ('flags','particleTexture','fillTexture','holesTexture',
+    'unused1','memSBlend',
     'memBlendOp','memZFunc','fillRed','fillGreen','fillBlue',
     'unused2','fillAIn','fillAFull','fillAOut','fillAPRatio',
     'fillAAmp','fillAFreq','fillAnimSpdU','fillAnimSpdV','edgeOff',
@@ -966,23 +976,47 @@ graphicsTypes = {
     'addonModelsFadeInTime','addonModelsFadeOutTime',
     'addonModelsScaleStart','addonModelsScaleEnd',
     'addonModelsScaleInTime','addonModelsScaleOutTime',),
-    "EXPL": ('model','objectEffect',),
+    "EXPL": ('model','objectEffect','imageSpaceModifier','light',
+             'impactDataset','placedImpactObject',),
     "FURN": ('model',),
     "GRAS": ('model',),
+    "HDPT": ('model',),
     "INGR": ('iconPath','model',),
-    "KEYM": ('iconPath','model',),
-    "LIGH": ('iconPath','model',),
+    "IPCT": ('model','effectDuration','effectOrientation','angleThreshold',
+             'placementRadius','flags','minWidth','maxWidth','minHeight',
+             'maxHeight','depth','shininess','parallaxScale','parallaxPasses',
+             'decalFlags','red','green','blue','textureSet',),
+    "IPDS": ('stone','dirt','grass','metal','wood','organic','cloth','water',
+             'hollowMetal','organicBug','organicGlow',),
+    "KEYM": ('iconPath','smallIconPath','model',),
+    "LIGH": ('iconPath','model','duration','radius','red','green','blue',
+             'flags','falloff','fade'),
     "LSCR": ('iconPath',),
-    "LTEX": ('iconPath',),
-    "MGEF": ('iconPath','model',),
-    "MISC": ('iconPath','model',),
+    "MGEF": ('iconPath','model','light','effectShader','objectDisplayShader',),
+    "MICN": ('iconPath','smallIconPath',),
+    "MISC": ('iconPath','smallIconPath','model',),
+    "MSTT": ('model',),
+    "NOTE": ('iconPath','smallIconPath','model','texture',),
     "NPC_": ('unarmedAttackEffect',),
+    "PERK": ('iconPath','smallIconPath',),
+    "PROJ": ('model','light','muzzleFlash','explosion','muzzleFlashDuration',
+             'fadeDuration','muzzleFlashPath'),
+    "PWAT": ('model',),
     "STAT": ('model',),
+    "TACT": ('model',),
+    "TERM": ('model',),
     "TREE": ('iconPath','model',),
-    "WEAP": ('iconPath','model','enchantment',),
+    "TXST": ('baseImage','normalMap','environmentMapMask','growMap',
+             'parallaxMap','environmentMap','minWidth','maxWidth',
+             'minHeight','maxHeight','depth','shininess','parallaxScale',
+             'parallaxPasses','decalFlags','red','green','blue','flags',),
+    "WEAP": ('iconPath','smallIconPath','model','objectEffect',
+             'shellCasingModel','scopeModel','scopeEffect','worldModel',
+             'impactDataset','firstPersonModel','animationType',
+             'gripAnimation','reloadAnimation',),
 }
 graphicsFidTypes = {
-    "MGEF": ('effectShader','light','objectDisplayShader','cefEnchantment',)
+    "MGEF": ('effectShader','light','objectDisplayShader',)
 }
 graphicsModelAttrs = ('model','shellCasingModel','scopeModel','worldModel')
 #------------------------------------------------------------------------------
