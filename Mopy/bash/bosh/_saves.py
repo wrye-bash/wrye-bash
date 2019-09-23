@@ -541,7 +541,7 @@ class SaveFile:
         changeHisto = [0]*256
         modHisto = [0]*256
         typeModHisto = {}
-        knownTypes = set(bush.saveRecTypes.keys())
+        knownTypes = set(bush.game.save_rec_types.keys())
         lostChanges = {}
         objRefBases = {}
         objRefNullBases = 0
@@ -574,7 +574,7 @@ class SaveFile:
                 objRefBases[iref] = (count,cumSize)
                 if iref >> 24 != 255 and fids[iref] == 0:
                     objRefNullBases += 1
-        saveRecTypes = bush.saveRecTypes
+        rec_type_map = bush.game.save_rec_types
         #--Fids log
         log.setHeader(_(u'Fids'))
         log(u'  Refed\tChanged\tMI    Mod Name')
@@ -587,10 +587,11 @@ class SaveFile:
             log.setHeader(_(u'LostChanges'))
             for id in sorted(lostChanges.keys()):
                 type = lostChanges[id][1]
-                log(hex(id)+saveRecTypes.get(type,unicode(type)))
+                log(hex(id) + rec_type_map.get(type, unicode(type)))
         for type in sorted(typeModHisto.keys()):
             modHisto = typeModHisto[type]
-            log.setHeader(u'%d %s' % (type,saveRecTypes.get(type,_(u'Unknown')),))
+            log.setHeader(u'%d %s' % (
+                type, rec_type_map.get(type, _(u'Unknown'))))
             for modIndex,count in enumerate(modHisto):
                 if count: log(u'  %d\t%s' % (count,getMaster(modIndex)))
             log(u'  %d\tTotal' % (sum(modHisto),))

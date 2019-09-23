@@ -1320,6 +1320,60 @@ graphicsModelAttrs = ('model','shellCasingModel','scopeModel','worldModel')
 #------------------------------------------------------------------------------
 inventoryTypes = ('CREA','NPC_','CONT',)
 
+#------------------------------------------------------------------------------
+# Race Patcher
+#------------------------------------------------------------------------------
+# Note that we use _x to avoid exposing these to the dynamic importer
+def _fnv(_x): return u'FalloutNV.esm', _x
+_standard_eyes = [_fnv(_x) for _x in (0x4252, 0x4253, 0x4254, 0x4255, 0x4256)]
+default_eyes = {
+    #--FalloutNV.esm
+    # Caucasian
+    _fnv(0x000019): _standard_eyes,
+    # Hispanic
+    _fnv(0x0038e5): _standard_eyes,
+    # Asian
+    _fnv(0x0038e6): _standard_eyes,
+    # Ghoul
+    _fnv(0x003b3e): [_fnv(0x35e4f)],
+    # AfricanAmerican
+    _fnv(0x00424a): _standard_eyes,
+    # AfricanAmerican Child
+    _fnv(0x0042be): _standard_eyes,
+    # AfricanAmerican Old
+    _fnv(0x0042bf): _standard_eyes,
+    # Asian Child
+    _fnv(0x0042c0): _standard_eyes,
+    # Asian Old
+    _fnv(0x0042c1): _standard_eyes,
+    # Caucasian Child
+    _fnv(0x0042c2): _standard_eyes,
+    # Caucasian Old
+    _fnv(0x0042c3): _standard_eyes,
+    # Hispanic Child
+    _fnv(0x0042c4): _standard_eyes,
+    # Hispanic Old
+    _fnv(0x0042c5): _standard_eyes,
+    # Caucasian Raider
+    _fnv(0x04bb8d): [_fnv(0x4cb10)],
+    # Hispanic Raider
+    _fnv(0x04bf70): [_fnv(0x4cb10)],
+    # Asian Raider
+    _fnv(0x04bf71): [_fnv(0x4cb10)],
+    # AfricanAmerican Raider
+    _fnv(0x04bf72): [_fnv(0x4cb10)],
+    # Hispanic Old Aged
+    _fnv(0x0987dc): _standard_eyes,
+    # Asian Old Aged
+    _fnv(0x0987dd): _standard_eyes,
+    # AfricanAmerican Old Aged
+    _fnv(0x0987de): _standard_eyes,
+    # Caucasian Old Aged
+    _fnv(0x0987df): _standard_eyes,
+}
+# Clean this up, no need to keep it around now
+del _fnv
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

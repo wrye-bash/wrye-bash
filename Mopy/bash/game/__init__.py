@@ -293,6 +293,10 @@ class GameInfo(object):
     fid5Conditions = set(
         entry[0] for entry in conditionFunctionData if entry[4] == 2)
 
+    # Known record types - maps integers from the save format to human-readable
+    # names for the record types. Used in save editing code.
+    save_rec_types = {}
+
     #--List of GMST's in the main plugin (Oblivion.esm) that have 0x00000000
     #  as the form id.  Any GMST as such needs it Editor Id listed here.
     gmstEids = []
@@ -384,11 +388,22 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     inventoryTypes = ()
 
+    #--------------------------------------------------------------------------
+    # Race Patcher
+    #--------------------------------------------------------------------------
+    default_eyes = {}
+
     # Record type to name dictionary
     record_type_name = {}
 
     # xEdit menu string and key for expert setting
     xEdit_expert = ()
+
+    # Set in game/*/default_tweaks.py, this is a dictionary mapping names for
+    # 'default' INI tweaks (i.e. ones that we ship with WB and that can't be
+    # deleted) to OrderedDicts that implement the actual tweaks. See
+    # DefaultIniFile.__init__ for how the tweaks are parsed.
+    default_tweaks = {}
 
     @classmethod
     def init(cls):
@@ -408,21 +423,27 @@ class GameInfo(object):
     _constants_members = {
         'GlobalsTweaks', 'GmstTweaks', 'allBethFiles', 'allConditions',
         'bethDataFiles', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
-        'conditionFunctionData', 'fid1Conditions', 'fid2Conditions',
-        'fid5Conditions', 'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
-        'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes', 'listTypes',
-        'namesTypes', 'pricesTypes', 'record_type_name', 'soundsLongsTypes',
+        'conditionFunctionData', 'default_eyes', 'fid1Conditions',
+        'fid2Conditions', 'fid5Conditions', 'gmstEids', 'graphicsFidTypes',
+        'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
+        'inventoryTypes', 'listTypes', 'namesTypes', 'pricesTypes',
+        'record_type_name', 'save_rec_types', 'soundsLongsTypes',
         'soundsTypes', 'statsHeaders', 'statsTypes', 'xEdit_expert',
     }
     @classmethod
-    def _dynamic_import_constants(cls, package_name):
-        """Dynamically import package's 'constants' module, we need to pass
-        the package name in. Populate class namespace with those constants."""
+    def _dynamic_import_modules(cls, package_name):
+        """Dynamically import package modules to avoid importing them for every
+        game. We need to pass the package name in for importlib to work.
+        Currently populates the GameInfo namespace with the members defined in
+        the relevant constants.py and imports default_tweaks."""
         constants = importlib.import_module('.constants', package=package_name)
         for k in dir(constants):
             if k.startswith('_'): continue
             if k not in cls._constants_members:
                 raise RuntimeError(u'Unexpected game constant %s' % k)
             setattr(cls, k, getattr(constants, k))
+        tweaks_module = importlib.import_module('.default_tweaks',
+                                                package=package_name)
+        cls.default_tweaks = tweaks_module.default_tweaks
 
 GAME_TYPE = None

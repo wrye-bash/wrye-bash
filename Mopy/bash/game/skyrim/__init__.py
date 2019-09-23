@@ -23,7 +23,6 @@
 # =============================================================================
 """GameInfo override for TES V: Skyrim."""
 
-from .default_tweaks import default_tweaks
 from .. import GameInfo
 from ... import brec
 from ...brec import MreGlob
@@ -216,7 +215,7 @@ class SkyrimGameInfo(GameInfo):
 
     @classmethod
     def init(cls):
-        cls._dynamic_import_constants(__name__)
+        cls._dynamic_import_modules(__name__)
         from .records import MreCell, MreWrld, MreFact, MreAchr, MreDial, \
             MreInfo, MreCams, MreWthr, MreDual, MreMato, MreVtyp, MreMatt, \
             MreLvsp, MreEnch, MreProj, MreDlbr, MreRfct, MreMisc, MreActi, \
