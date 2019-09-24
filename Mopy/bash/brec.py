@@ -1905,21 +1905,20 @@ class MreDial(MelRecord):
         self.infoStamp2 = 0 #--Stamp for info GRUP
         self.infos = []
 
-    def loadInfos(self,ins,endPos,infoClass):
+    def loadInfos(self, ins, endPos, infoClass):
         """Load infos from ins. Called from MobDials."""
-        infos = self.infos
-        recHead = ins.unpackRecHeader
-        infosAppend = infos.append
-        while not ins.atEnd(endPos,'INFO Block'):
+        read_header = ins.unpackRecHeader
+        ins_at_end = ins.atEnd
+        append_info = self.infos.append
+        while not ins_at_end(endPos, 'INFO Block'):
             #--Get record info and handle it
-            header = recHead()
-            recType = header.recType
-            if recType == 'INFO':
-                info = infoClass(header,ins,True)
-                infosAppend(info)
+            header = read_header()
+            if header.recType == 'INFO':
+                append_info(infoClass(header, ins, True))
             else:
                 raise exception.ModError(ins.inName,
-                  _(u'Unexpected %s record in %s group.') % (recType, "INFO"))
+                  _(u'Unexpected %s record in %s group.') % (
+                                             header.recType, u'INFO'))
 
     def dump(self,out):
         """Dumps self., then group header and then records."""

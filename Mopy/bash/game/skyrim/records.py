@@ -2206,6 +2206,11 @@ class MreDial(brec.MreDial):
         )
     __slots__ = melSet.getSlotsUsed()
 
+    def dumpData(self, out):
+        # Update the TIFC counter - unknown if needed, but can't hurt
+        self.infoCount = len(self.infos)
+        super(MreDial, self).dumpData(out)
+
 # Verified for 305
 #------------------------------------------------------------------------------
 class MreDlbr(MelRecord):
