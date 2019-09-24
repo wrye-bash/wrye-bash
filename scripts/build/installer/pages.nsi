@@ -99,6 +99,26 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_Enderal != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 30% 13u "Install for Enderal"
+                Pop $Check_Enderal
+                ${NSD_SetState} $Check_Enderal $CheckState_Enderal
+            ${NSD_CreateCheckBox} 30% $0u 40% 13u "Wrye Bash [Standalone]"
+                Pop $Check_Enderal_Exe
+                ${NSD_AddStyle} $Check_Enderal_Exe ${WS_GROUP}
+                ${NSD_SetState} $Check_Enderal_Exe $CheckState_Enderal_Exe
+            ${NSD_CreateCheckBox} 70% $0u 30% 13u "Wrye Bash [Python]"
+                Pop $Check_Enderal_Py
+;                ${NSD_SetState} $Check_Enderal_Py $CheckState_Enderal_Py
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Enderal"
+                Pop $PathDialogue_Enderal
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Enderal
+                nsDialogs::OnClick $Browse_Enderal $Function_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         nsDialogs::Show
     FunctionEnd
 
@@ -112,18 +132,21 @@
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
         ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
+        ${NSD_GetText} $PathDialogue_Enderal $Path_Enderal
 
         ; Game states
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+        ${NSD_GetState} $Check_Enderal $CheckState_Enderal
 
         ; Python states
         ${NSD_GetState} $Check_OB_Py $CheckState_OB_Py
         ${NSD_GetState} $Check_Nehrim_Py $CheckState_Nehrim_Py
         ${NSD_GetState} $Check_Skyrim_Py $CheckState_Skyrim_Py
         ${NSD_GetState} $Check_SkyrimSE_Py $CheckState_SkyrimSE_Py
+        ${NSD_GetState} $Check_Enderal_Py $CheckState_Enderal_Py
 
         ${If} $CheckState_OB_Py == ${BST_CHECKED}
         ${AndIf} $CheckState_OB == ${BST_CHECKED}
@@ -145,11 +168,17 @@
             StrCpy $PythonVersionInstall $True
         ${EndIf}
 
+        ${If} $CheckState_Enderal_Py == ${BST_CHECKED}
+        ${AndIf} $CheckState_Enderal == ${BST_CHECKED}
+            StrCpy $PythonVersionInstall $True
+        ${EndIf}
+
         ; Standalone states
         ${NSD_GetState} $Check_OB_Exe $CheckState_OB_Exe
         ${NSD_GetState} $Check_Nehrim_Exe $CheckState_Nehrim_Exe
         ${NSD_GetState} $Check_Skyrim_Exe $CheckState_Skyrim_Exe
         ${NSD_GetState} $Check_SkyrimSE_Exe $CheckState_SkyrimSE_Exe
+        ${NSD_GetState} $Check_Enderal_Exe $CheckState_Enderal_Exe
 
         ${If} $CheckState_OB_Exe == ${BST_CHECKED}
         ${AndIf} $CheckState_OB == ${BST_CHECKED}
@@ -168,6 +197,11 @@
 
         ${If} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
         ${AndIf} $CheckState_SkyrimSE == ${BST_CHECKED}
+            StrCpy $ExeVersionInstall $True
+        ${EndIf}
+
+        ${If} $CheckState_Enderal_Exe == ${BST_CHECKED}
+        ${AndIf} $CheckState_Enderal == ${BST_CHECKED}
             StrCpy $ExeVersionInstall $True
         ${EndIf}
 
@@ -468,6 +502,13 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Enderal == ${BST_CHECKED}
+            ${StrLoc} $0 $Path_Enderal "$PROGRAMFILES\" ">"
+            ${If} "0" == $0
+                StrCpy $1 $True
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Fallout3 == ${BST_CHECKED}
             ${StrLoc} $0 $Path_Fallout3 "$PROGRAMFILES\" ">"
             ${If} "0" == $0
@@ -563,6 +604,12 @@
             IntOp $0 $0 + 9
         ${EndIf}
 
+        ${If} $Path_Enderal != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 8u "Enderal"
+                Pop $Check_Enderal
+            IntOp $0 $0 + 9
+        ${EndIf}
+
         ${If} $Path_Fallout3 != $Empty
             ${NSD_CreateCheckBox} 0 $0u 100% 8u "Fallout3"
                 Pop $Check_Fallout3
@@ -615,6 +662,7 @@
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_Fallout4 $CheckState_Fallout4
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+        ${NSD_GetState} $Check_Enderal $CheckState_Enderal
         ${NSD_GetState} $Check_Fallout3 $CheckState_Fallout3
         ${NSD_GetState} $Check_FalloutNV $CheckState_FalloutNV
         ${NSD_GetState} $Check_Ex1 $CheckState_Ex1
@@ -662,6 +710,15 @@
                 ExecShell "open" '"$Path_SkyrimSE\Mopy\Wrye Bash Launcher.pyw"'
             ${ElseIf} $CheckState_SkyrimSE_Exe == ${BST_CHECKED}
                 ExecShell "open" "$Path_SkyrimSE\Mopy\Wrye Bash.exe"
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_Enderal == ${BST_CHECKED}
+            SetOutPath "$Path_Enderal\Mopy"
+            ${If} $CheckState_Enderal_Py == ${BST_CHECKED}
+                ExecShell "open" '"$Path_Enderal\Mopy\Wrye Bash Launcher.pyw"'
+            ${ElseIf} $CheckState_Enderal_Exe == ${BST_CHECKED}
+                ExecShell "open" "$Path_Enderal\Mopy\Wrye Bash.exe"
             ${EndIf}
         ${EndIf}
 
@@ -714,6 +771,8 @@
                 ExecShell "open" "$Path_Fallout4\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_SkyrimSE != $Empty
                 ExecShell "open" "$Path_SkyrimSE\Mopy\Docs\Wrye Bash General Readme.html"
+            ${ElseIf} $Path_Enderal != $Empty
+                ExecShell "open" "$Path_Enderal\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_Fallout3 != $Empty
                 ExecShell "open" "$Path_Fallout3\Mopy\Docs\Wrye Bash General Readme.html"
             ${ElseIf} $Path_FalloutNV != $Empty
@@ -742,6 +801,9 @@
             ${EndIf}
             ${If} $Path_SkyrimSE != $Empty
                 !insertmacro RemoveOldFiles "$Path_SkyrimSE"
+            ${EndIf}
+            ${If} $Path_Enderal != $Empty
+                !insertmacro RemoveOldFiles "$Path_Enderal"
             ${EndIf}
             ${If} $Path_Fallout3 != $Empty
                 !insertmacro RemoveOldFiles "$Path_Fallout3"
@@ -827,6 +889,19 @@
             IntOp $0 $0 + 13
         ${EndIf}
 
+        ${If} $Path_Enderal != $Empty
+            ${NSD_CreateCheckBox} 0 $0u 100% 13u "&Enderal"
+                Pop $Check_Enderal
+                ${NSD_SetState} $Check_Enderal $CheckState_Enderal
+            IntOp $0 $0 + 13
+            ${NSD_CreateDirRequest} 0 $0u 90% 13u "$Path_Enderal"
+                Pop $PathDialogue_Enderal
+            ${NSD_CreateBrowseButton} -10% $0u 5% 13u "..."
+                Pop $Browse_Enderal
+                nsDialogs::OnClick $Browse_Enderal $unFunction_Browse
+            IntOp $0 $0 + 13
+        ${EndIf}
+
         ;${NSD_CreateCheckBox} 0 $0u 100% 13u "Uninstall userfiles/Bash data."
         ;    Pop $Check_RemoveUserFiles
         ;    ${NSD_SetState} $Check_RemoveUserFiles ${BST_CHECKED}
@@ -838,10 +913,12 @@
         ${NSD_GetText} $PathDialogue_Nehrim $Path_Nehrim
         ${NSD_GetText} $PathDialogue_Skyrim $Path_Skyrim
         ${NSD_GetText} $PathDialogue_SkyrimSE $Path_SkyrimSE
+        ${NSD_GetText} $PathDialogue_Enderal $Path_Enderal
         ${NSD_GetState} $Check_OB $CheckState_OB
         ${NSD_GetState} $Check_Nehrim $CheckState_Nehrim
         ${NSD_GetState} $Check_Skyrim $CheckState_Skyrim
         ${NSD_GetState} $Check_SkyrimSE $CheckState_SkyrimSE
+        ${NSD_GetState} $Check_Enderal $CheckState_Enderal
     FunctionEnd
 
     Function un.PAGE_SELECT_GAMES_FALLOUT

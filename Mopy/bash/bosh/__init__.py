@@ -703,7 +703,8 @@ class ModInfo(FileInfo):
         """Return bsas from bsaInfos, that match plugin's name."""
         pattern = re.escape(self._modname)
         # games other than skyrim accept more general bsa names
-        if bush.game.fsName != u'Skyrim': pattern +=  u'.*'
+        if bush.game.fsName not in (u'Enderal', u'Skyrim'):
+            pattern +=  u'.*'
         reg = re.compile(pattern, re.I | re.U)
         # bsaInfos must be updated and contain all existing bsas
         if bsa_infos is None: bsa_infos = bsaInfos
@@ -2989,6 +2990,7 @@ def initDefaultTools():
     tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
     tooldirs['Tes4EditPath'] = dirs['app'].join(u'TES4Edit.exe')
     tooldirs['Tes5EditPath'] = dirs['app'].join(u'TES5Edit.exe')
+    tooldirs['EnderalEditPath'] = dirs['app'].join(u'EnderalEdit.exe')
     tooldirs['SSEEditPath'] = dirs['app'].join(u'SSEEdit.exe')
     tooldirs['Fo4EditPath'] = dirs['app'].join(u'FO4Edit.exe')
     tooldirs['Fo3EditPath'] = dirs['app'].join(u'FO3Edit.exe')

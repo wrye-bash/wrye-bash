@@ -112,6 +112,11 @@ def InitStatusBar():
                      imageList(u'tools/tes4edit%s.png'),
                      _(u"Launch TES5Edit"),
                      uid=u'TES5Edit'))
+    BashStatusBar.buttons.append( #EnderalEdit
+        App_Tes4View((bass.tooldirs['EnderalEditPath'], u'-Enderal -edit'),
+                     imageList(u'tools/tes4edit%s.png'),
+                     _(u"Launch EnderalEdit"),
+                     uid=u'EnderalEdit'))
     BashStatusBar.buttons.append( #SSEEdit
         App_Tes4View((bass.tooldirs['SSEEditPath'], u'-SSE -edit'),
                      imageList(u'tools/tes4edit%s.png'),
@@ -490,7 +495,7 @@ def InitModLinks():
             exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
             exportMenu.links.append(Mod_EditorIds_Export())
             ## exportMenu.links.append(Mod_ItemData_Export())
-            if bush.game.fsName == u'Skyrim':
+            if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 exportMenu.links.append(Mod_FullNames_Export())
                 exportMenu.links.append(Mod_Prices_Export())
                 exportMenu.links.append(Mod_Stats_Export())
@@ -525,7 +530,7 @@ def InitModLinks():
             importMenu = MenuLink(_(u"Import"))
             importMenu.links.append(Mod_EditorIds_Import())
             ## importMenu.links.append(Mod_ItemData_Import())
-            if bush.game.fsName == u'Skyrim':
+            if bush.game.fsName in (u'Enderal', u'Skyrim'):
                 importMenu.links.append(Mod_FullNames_Import())
                 importMenu.links.append(Mod_Prices_Import())
                 importMenu.links.append(Mod_Stats_Import())

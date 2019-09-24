@@ -907,7 +907,7 @@ class SkyrimSE(AsteriskGame):
 
 # Game factory
 def game_factory(name, mod_infos, plugins_txt_path, loadorder_txt_path=None):
-    if name == u'Skyrim':
+    if name in (u'Enderal', u'Skyrim'):
         return TextfileGame(mod_infos, plugins_txt_path, loadorder_txt_path)
     elif name == u'Skyrim Special Edition':
         return SkyrimSE(mod_infos, plugins_txt_path)

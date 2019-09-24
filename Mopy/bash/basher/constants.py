@@ -394,6 +394,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'fo4View.iKnowWhatImDoing':False,
     'fo3View.iKnowWhatImDoing':False,
     'fnvView.iKnowWhatImDoing':False,
+    'enderalView.iKnowWhatImDoing':False,
     #--BOSS:
     'BOSS.ClearLockTimes':True,
     'BOSS.AlwaysUpdate':True,

@@ -321,7 +321,8 @@ class ConfigHelpers:
             return None
         if fsName == 'Oblivion':
             return loot_api.GameType.tes4
-        elif fsName == 'Skyrim':
+        # TODO See if LOOT adds a new GameType for Enderal
+        elif fsName in ('Enderal', 'Skyrim'):
             return loot_api.GameType.tes5
         elif fsName == 'Skyrim Special Edition':
             return loot_api.GameType.tes5se

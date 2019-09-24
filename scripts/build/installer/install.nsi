@@ -238,6 +238,13 @@
             ${EndIf}
         ${EndIf}
 
+        ${If} $CheckState_Enderal == ${BST_CHECKED}
+            ; Install resources:
+            ${If} $Path_Enderal != $Empty
+                !insertmacro InstallBashFiles "Enderal" "Enderal" "$Path_Enderal" $Reg_Value_Enderal_Py $Reg_Value_Enderal_Exe "Enderal Path" $CheckState_Enderal_Py $CheckState_Enderal_Exe false
+            ${EndIf}
+        ${EndIf}
+
         ${If} $CheckState_Ex1 == ${BST_CHECKED}
             ; Install resources:
             ${If} $Path_Ex1 != $Empty
@@ -386,6 +393,23 @@
                 ${ElseIf} $CheckState_FalloutNV_Exe == ${BST_CHECKED}
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV.lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe"
                     CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - FalloutNV (Debug Log).lnk" "$Path_FalloutNV\Mopy\Wrye Bash.exe" "-d"
+                ${EndIf}
+            ${EndIf}
+        ${EndIf}
+
+        ${If} $CheckState_Enderal == ${BST_CHECKED}
+            ${If} $Path_Enderal != $Empty
+                SetOutPath $Path_Enderal\Mopy
+                ${If} $CheckState_Enderal_Py == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal.lnk" "$Path_Enderal\Mopy\Wrye Bash Launcher.pyw" "" "$Path_Enderal\Mopy\bash\images\bash_32.ico" 0
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal (Debug Log).lnk" "$Path_Enderal\Mopy\Wrye Bash Debug.bat" "" "$Path_Enderal\Mopy\bash\images\bash_32.ico" 0
+                    ${If} $CheckState_Enderal_Exe == ${BST_CHECKED}
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Enderal.lnk" "$Path_Enderal\Mopy\Wrye Bash.exe"
+                        CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash (Standalone) - Enderal (Debug Log).lnk" "$Path_Enderal\Mopy\Wrye Bash.exe" "-d"
+                    ${EndIf}
+                ${ElseIf} $CheckState_Enderal_Exe == ${BST_CHECKED}
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal.lnk" "$Path_Enderal\Mopy\Wrye Bash.exe"
+                    CreateShortCut "$SMPROGRAMS\Wrye Bash\Wrye Bash - Enderal (Debug Log).lnk" "$Path_Enderal\Mopy\Wrye Bash.exe" "-d"
                 ${EndIf}
             ${EndIf}
         ${EndIf}

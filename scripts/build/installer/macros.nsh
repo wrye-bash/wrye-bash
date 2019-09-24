@@ -744,6 +744,11 @@
             ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Path"
         ${EndIf}
 
+        ReadRegStr $Path_Enderal HKLM "SOFTWARE\Wrye Bash" "Enderal Path"
+        ${If} $Path_Enderal == $Empty
+            ReadRegStr $Path_Enderal HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Path"
+        ${EndIf}
+
         ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
         ${If} $Path_Ex1 == $Empty
             ReadRegStr $Path_Ex1 HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1"
@@ -789,6 +794,11 @@
             ReadRegStr $Reg_Value_FalloutNV_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Python Version"
         ${EndIf}
 
+        ReadRegStr $Reg_Value_Enderal_Py HKLM "SOFTWARE\Wrye Bash" "Enderal Python Version"
+        ${If} $Reg_Value_Enderal_Py == $Empty
+            ReadRegStr $Reg_Value_Enderal_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Python Version"
+        ${EndIf}
+
         ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Python Version"
         ${If} $Reg_Value_Ex1_Py == $Empty
             ReadRegStr $Reg_Value_Ex1_Py HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Extra Path 1 Python Version"
@@ -832,6 +842,11 @@
         ReadRegStr $Reg_Value_FalloutNV_Exe HKLM "SOFTWARE\Wrye Bash" "FalloutNV Standalone Version"
         ${If} $Reg_Value_FalloutNV_Exe == $Empty
             ReadRegStr $Reg_Value_FalloutNV_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Standalone Version"
+        ${EndIf}
+
+        ReadRegStr $Reg_Value_Enderal_Exe HKLM "SOFTWARE\Wrye Bash" "Enderal Standalone Version"
+        ${If} $Reg_Value_Enderal_Exe == $Empty
+            ReadRegStr $Reg_Value_Enderal_Exe HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Standalone Version"
         ${EndIf}
 
         ReadRegStr $Reg_Value_Ex1_Exe HKLM "SOFTWARE\Wrye Bash" "Extra Path 1 Standalone Version"
@@ -880,6 +895,11 @@
         ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\Wrye Bash" "FalloutNV Path"
         ${If} $Path_FalloutNV == $Empty
             ReadRegStr $Path_FalloutNV HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "FalloutNV Path"
+        ${EndIf}
+
+        ReadRegStr $Path_Enderal HKLM "SOFTWARE\Wrye Bash" "Enderal Path"
+        ${If} $Path_Enderal == $Empty
+            ReadRegStr $Path_Enderal HKLM "SOFTWARE\WOW6432Node\Wrye Bash" "Enderal Path"
         ${EndIf}
 
         ReadRegStr $Path_Ex1 HKLM "SOFTWARE\Wrye Bash" "Extra Path 1"
