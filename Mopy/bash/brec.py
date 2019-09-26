@@ -1741,21 +1741,23 @@ class MreGmstBase(MelRecord):
     classType = 'GMST'
     class MelGmstValue(MelBase):
         def loadData(self, record, ins, sub_type, size_, readId):
-            format = encode(record.eid[0]) #-- s|i|f|b
-            if format == u's':
+            # Possibles values: s|i|f|b; If empty, default to int
+            gmst_type = encode(record.eid[0]) if record.eid else u'I'
+            if gmst_type == u's':
                 record.value = ins.readLString(size_, readId)
                 return
-            elif format == u'b':
-                format = u'I'
-            record.value, = ins.unpack(format, size_, readId)
+            elif gmst_type == u'b':
+                gmst_type = u'I'
+            record.value, = ins.unpack(gmst_type, size_, readId)
         def dumpData(self,record,out):
-            format = encode(record.eid[0]) #-- s|i|f
-            if format == u's':
-                out.packSub0(self.subType,record.value)
+            # Possibles values: s|i|f|b; If empty, default to int
+            gmst_type = encode(record.eid[0]) if record.eid else u'I'
+            if gmst_type == u's':
+                out.packSub0(self.subType, record.value)
                 return
-            elif format == u'b':
-                format = u'I'
-            out.packSub(self.subType,format,record.value)
+            elif gmst_type == u'b':
+                gmst_type = u'I'
+            out.packSub(self.subType,gmst_type, record.value)
     melSet = MelSet(
         MelString('EDID','eid'),
         MelGmstValue('DATA','value'),
