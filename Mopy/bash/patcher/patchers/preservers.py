@@ -387,7 +387,7 @@ class ImportFactions(_APreserver):
         self._process_csv_sources(
             {r: {f: {u'factions': [make_obj(r, o) for o in a]}
                  for f, a in d.iteritems()}
-             for r, d in fact_parser.type_id_factions.iteritems()})
+             for r, d in fact_parser.id_stored_info.iteritems()})
 
 #------------------------------------------------------------------------------
 class ImportScripts(_APreserver):
