@@ -34,6 +34,7 @@ import copy
 import itertools
 import StringIO
 import struct
+import zlib
 from collections import OrderedDict
 from functools import partial
 from .. import bolt
@@ -230,9 +231,16 @@ class SkyrimSaveHeader(SaveFileHeader):
 
     def load_masters(self, ins):
         sse_offset = 0
-        if self.__is_sse():
+        # If on SSE, check _compressType and respond accordingly:
+        #  0 means uncompressed
+        #  1 means zlib
+        #  2 means lz4
+        if self.__is_sse() and self._compressType in (1, 2):
             sse_offset = ins.tell() + 8 # decompressed/compressed size
-            ins = self._decompress_masters_sse(ins)
+            decompressor = (self._decompress_masters_sse_lz4
+                           if self._compressType == 2
+                           else self._decompress_masters_sse_zlib)
+            ins = decompressor(ins)
         self._formVersion = unpack_byte(ins)
         self._mastersStart = ins.tell() + sse_offset
         #--Masters
@@ -256,7 +264,19 @@ class SkyrimSaveHeader(SaveFileHeader):
                     ins.tell() + sse_offset - self._mastersStart - 4,
                     mastersSize))
 
-    def _decompress_masters_sse(self, ins):
+    @staticmethod
+    def _decompress_masters_sse_zlib(ins):
+        decompressed_size = unpack_int(ins)
+        compressed_size = unpack_int(ins)
+        decompressed_data = zlib.decompress(ins.read(compressed_size))
+        if len(decompressed_data) != decompressed_size:
+            raise SaveHeaderError(_(u'zlib-decompressed header size incorrect '
+                                    u'- expected %u, but got %u.') %
+                                  (decompressed_size, len(decompressed_data)))
+        return StringIO.StringIO(decompressed_data)
+
+    @staticmethod
+    def _decompress_masters_sse_lz4(ins):
         """Read the start of the LZ4 compressed data in the SSE savefile and
         stop when the whole master table is found.
         Return a file-like object that can be read by _load_masters_16
