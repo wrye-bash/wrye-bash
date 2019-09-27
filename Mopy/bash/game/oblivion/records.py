@@ -23,7 +23,7 @@
 # =============================================================================
 """This module contains the oblivion record classes."""
 import struct
-from .constants import allConditions, fid1Conditions, fid2Conditions
+from .constants import condition_function_data
 from ... import brec
 from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, DataDict, struct_pack
@@ -122,10 +122,12 @@ class MelConditions(MelStructs):
         unpacked1 = ins.unpack('B3sfI',12,readId)
         (target.operFlag,target.unused1,target.compValue,ifunc) = unpacked1
         #--Get parameters
-        if ifunc not in allConditions:
-            raise BoltError(u'Unknown condition function: %d' % ifunc)
-        form1 = 'iI'[ifunc in fid1Conditions]
-        form2 = 'iI'[ifunc in fid2Conditions]
+        if ifunc not in condition_function_data:
+            raise BoltError(u'Unknown condition function: %d\nparam1: '
+                            u'%08X\nparam2: %08X' % (ifunc, ins.unpackRef(),
+                                                     ins.unpackRef()))
+        form1 = 'iI'[condition_function_data[ifunc][1] == 2] # 2 means fid
+        form2 = 'iI'[condition_function_data[ifunc][2] == 2]
         form12 = form1+form2
         unpacked2 = ins.unpack(form12,8,readId)
         (target.param1,target.param2) = unpacked2

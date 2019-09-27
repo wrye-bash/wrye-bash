@@ -27,10 +27,9 @@ file must be imported till then."""
 import itertools
 import struct
 from operator import attrgetter
-from ... import brec
-from ... import bush
+from ... import bush, brec
 from ...bass import null1, null2, null3, null4
-from ...bolt import Flags, DataDict, GPath, struct_unpack, struct_pack
+from ...bolt import Flags, DataDict, struct_unpack, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreGmstBase, \
@@ -126,12 +125,14 @@ class MelConditions(MelStructs):
         unpacked1 = ins.unpack('=B3sfH2s',12,readId)
         (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
         #--Get parameters
-        if ifunc not in bush.game.allConditions:
-            raise BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
-        # Form1 is Param1
-        form1 = 'I' if ifunc in bush.game.fid1Conditions else 'i'
+        if ifunc not in bush.game.condition_function_data:
+            raise BoltError(u'Unknown condition function: %d\nparam1: '
+                            u'%08X\nparam2: %08X' % (ifunc, ins.unpackRef(),
+                                                     ins.unpackRef()))
+        # Form1 is Param1 - 2 means fid
+        form1 = 'I' if bush.game.condition_function_data[ifunc][1] == 2 else 'i'
         # Form2 is Param2
-        form2 = 'I' if ifunc in bush.game.fid2Conditions else 'i'
+        form2 = 'I' if bush.game.condition_function_data[ifunc][2] == 2 else 'i'
         # Form3 is runOn
         form3 = 'I'
         # Form4 is reference, this is a formID when runOn = 2

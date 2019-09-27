@@ -25,8 +25,7 @@
 import itertools
 import struct
 
-from .constants import allConditions, fid1Conditions, fid2Conditions, \
-    fid5Conditions
+from .constants import condition_function_data
 from ... import brec
 from ...bass import null1, null2, null3, null4
 from ...bolt import Flags, DataDict, winNewLines, encode, struct_pack, \
@@ -248,18 +247,20 @@ class MelCTDAHandler(MelStructs):
         unpacked1 = ins.unpack('=B3sfH2s',12,readId)
         (target.operFlag,target.unused1,target.compValue,ifunc,target.unused2) = unpacked1
         #--Get parameters
-        if ifunc not in allConditions:
-            raise BoltError(u'Unknown condition function: %d\nparam1: %08X\nparam2: %08X' % (ifunc,ins.unpackRef(), ins.unpackRef()))
-        # Form1 is Param1
-        form1 = 'I' if ifunc in fid1Conditions else 'i'
+        if ifunc not in condition_function_data:
+            raise BoltError(u'Unknown condition function: %d\nparam1: '
+                            u'%08X\nparam2: %08X' % (ifunc, ins.unpackRef(),
+                                                     ins.unpackRef()))
+        # Form1 is Param1 - 2 means fid
+        form1 = 'I' if condition_function_data[ifunc][1] == 2 else 'i'
         # Form2 is Param2
-        form2 = 'I' if ifunc in fid2Conditions else 'i'
+        form2 = 'I' if condition_function_data[ifunc][2] == 2 else 'i'
         # Form3 is runOn
         form3 = 'I'
         # Form4 is reference, this is a formID when runOn = 2
         form4 = 'I'
         # Form5 is Param3
-        form5 = 'I' if ifunc in fid5Conditions else 'i'
+        form5 = 'I' if condition_function_data[ifunc][3] == 2 else 'i'
         if size_ == 32:
             form12345 = form1+form2+form3+form4+form5
             unpacked2 = ins.unpack(form12345,20,readId)

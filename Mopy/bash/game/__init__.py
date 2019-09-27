@@ -282,16 +282,10 @@ class GameInfo(object):
     allBethFiles = set()  # initialize with literal
 
     # Function Info -----------------------------------------------------------
-    conditionFunctionData = (  #--0: no param; 1: int param; 2: formid param
-    )
-    allConditions = set(entry[0] for entry in conditionFunctionData)
-    fid1Conditions = set(
-        entry[0] for entry in conditionFunctionData if entry[2] == 2)
-    fid2Conditions = set(
-        entry[0] for entry in conditionFunctionData if entry[3] == 2)
-    # Skip 3 and 4 because it needs to be set per runOn
-    fid5Conditions = set(
-        entry[0] for entry in conditionFunctionData if entry[4] == 2)
+    # CTDA Data for the game. Maps function ID to tuple with name of function
+    # and the parameter types of the function.
+    # 0: no param; 1: int param; 2: formid param; 3: float param
+    condition_function_data = {}
 
     # Known record types - maps integers from the save format to human-readable
     # names for the record types. Used in save editing code.
@@ -421,15 +415,16 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'allBethFiles', 'allConditions',
-        'bethDataFiles', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
-        'conditionFunctionData', 'default_eyes', 'fid1Conditions',
-        'fid2Conditions', 'fid5Conditions', 'gmstEids', 'graphicsFidTypes',
-        'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
-        'inventoryTypes', 'listTypes', 'namesTypes', 'pricesTypes',
-        'record_type_name', 'save_rec_types', 'soundsLongsTypes',
-        'soundsTypes', 'statsHeaders', 'statsTypes', 'xEdit_expert',
+        'GlobalsTweaks', 'GmstTweaks', 'allBethFiles', 'bethDataFiles',
+        'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
+        'condition_function_data', 'default_eyes', 'gmstEids',
+        'graphicsFidTypes', 'graphicsLongsTypes', 'graphicsModelAttrs',
+        'graphicsTypes', 'inventoryTypes', 'listTypes', 'namesTypes',
+        'pricesTypes', 'record_type_name', 'save_rec_types',
+        'soundsLongsTypes', 'soundsTypes', 'statsHeaders', 'statsTypes',
+        'xEdit_expert',
     }
+
     @classmethod
     def _dynamic_import_modules(cls, package_name):
         """Dynamically import package modules to avoid importing them for every
