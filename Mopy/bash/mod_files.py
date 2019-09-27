@@ -344,29 +344,33 @@ class ModFile(object):
             return (_master_index(modName, object_id) << 24) | object_id
         return mapper
 
-    def convertToLongFids(self,types=None):
-        """Convert fids to long format (modname,objectindex).
-        :type types: list[str] | tuple[str] | set[str]
-        """
-        mapper = self.getLongMapper()
-        if types is None: types = self.tops.keys()
-        else: assert isinstance(types, (list, tuple, set))
-        selfTops = self.tops
-        for type in types:
-            if type in selfTops:
-                selfTops[type].convertFids(mapper,True)
-        #--Done
-        self.longFids = True
-
     ##: Ideally we'd encapsulate all the long/short fid handling in load/save
+    def _convert_fids(self, target_types, mapper, to_long):
+        """Convert fids using the target mapper and the specified format - long
+        FormIDs if to_long is True, short FormIDs otherwise."""
+        if target_types is None:
+            target_types = self.tops.keys()
+        else:
+            assert isinstance(target_types, (list, tuple, set))
+        for target_type in target_types:
+            if target_type in self.tops:
+                self.tops[target_type].convertFids(mapper, to_long)
+        self.longFids = to_long
+
+    def convertToLongFids(self, target_types=None):
+        """Convert fids to long format (mod name, object index).
+
+        :type target_types: list[str] | tuple[str] | set[str]"""
+        self._convert_fids(target_types, self.getLongMapper(), to_long=True)
+
     def convertToShortFids(self):
-        """Convert fids to short (numeric) format."""
-        mapper = self.getShortMapper()
-        selfTops = self.tops
-        for type in selfTops:
-            selfTops[type].convertFids(mapper,False)
-        #--Done
-        self.longFids = False
+        """Convert fids to short (numeric) format. Has no types parameter,
+        since this function is only needed when writing out - so the IO
+        operations would dwarf any performance improvement gained from the
+        types parameter.
+
+        :type target_types: list[str] | tuple[str] | set[str]"""
+        self._convert_fids(None, self.getShortMapper(), to_long=False)
 
     def getMastersUsed(self):
         """Updates set of master names according to masters actually used."""
