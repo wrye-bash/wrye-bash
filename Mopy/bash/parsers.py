@@ -1093,52 +1093,66 @@ class CBash_EditorIds(object):
                     out.write(rowFormat % (group,fid[0].s,fid[1],fid_eid[fid]))
 
 #------------------------------------------------------------------------------
-class FactionRelations(object):
-    """Faction relations."""
+class FactionRelations(_PBashParser):
+    """Parses the relations between factions. Can read and write both plugins
+    and CSV, and uses two passes to do so."""
 
-    def __init__(self,aliases=None):
-        self.id_relations = {} #--(otherLongid,otherDisp) = id_relation[longid]
-        self.id_eid = {} #--For all factions.
-        self.aliases = aliases or {}
-        self.gotFactions = set()
+    def __init__(self):
+        super(FactionRelations, self).__init__()
+        self._fp_types = (b'FACT',) if not self.called_from_patcher else ()
+        self._sp_types = (b'FACT',)
+        self._needs_fp_master_sort = True
 
-    def readFactionEids(self,modInfo):
-        """Extracts faction editor ids from modInfo and its masters."""
-        from . import bosh
-        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        for modName in (modInfo.masterNames + (modInfo.name,)):
-            if modName in self.gotFactions: continue
-            modFile = ModFile(bosh.modInfos[modName],loadFactory)
-            modFile.load(True)
-            mapper = modFile.getLongMapper()
-            for record in modFile.FACT.getActiveRecords():
-                self.id_eid[mapper(record.fid)] = record.eid
-            self.gotFactions.add(modName)
+    def _read_record_fp(self, record):
+        # Gather the latest value for the EID matching the FID
+        return record.eid
 
-    def readFromMod(self,modInfo):
-        """Imports faction relations from specified mod."""
-        self.readFactionEids(modInfo)
-        loadFactory = LoadFactory(False,MreRecord.type_class['FACT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        modFile.convertToLongFids(('FACT',))
-        for record in modFile.FACT.getActiveRecords():
-            #--Following is a bit messy. If already have relations for a
-            # given mod, want to do an in-place update. Otherwise do an append.
-            relations = self.id_relations.get(record.fid)
-            if relations is None:
-                relations = self.id_relations[record.fid] = []
-            other_index = dict((y[0],x) for x,y in enumerate(relations))
-            for relation in record.relations:
-                other,disp = relation.faction,relation.mod
-                if other in other_index:
-                    relations[other_index[other]] = (other,disp)
-                else:
-                    relations.append((other,disp))
+    def _is_record_useful(self, _record):
+        # We want all records - even ones that have no relations, since those
+        # may have still deleted original relations.
+        return True
+
+    def _read_record_sp(self, record):
+        # Look if we already have relations and base ourselves on those,
+        # otherwise make a new list
+        relations = self.id_stored_info[b'FACT'].get(record.fid, [])
+        other_index = dict((y[0], x) for x, y in enumerate(relations))
+        # Merge added relations, preserve changed relations
+        for relation in record.relations:
+            # Note: This is silly, but we do it to make adding support for
+            # games other than Oblivion a breeze in a follow-up commit
+            rel_attrs = tuple(getattr(relation, a) for a
+                              in (u'faction', u'mod',))
+            other_fac = rel_attrs[0]
+            if other_fac in other_index:
+                # This is just a change, preserve the latest value
+                relations[other_index[other_fac]] = rel_attrs
+            else:
+                # This is an addition, merge it
+                relations.append(rel_attrs)
+        return relations
+
+    def _write_record(self, record, new_info, cur_info):
+        for relation in set(new_info) - set(cur_info):
+            rel_fac = relation[0]
+            # See if this is a new relation or a change to an existing one
+            for entry in record.relations:
+                if rel_fac == entry.faction:
+                    # Just a change, change the attributes
+                    target_entry = entry
+                    break
+            else:
+                # It's an addition, we need to make a new relation object
+                target_entry = MelObject()
+                record.relations.append(target_entry)
+            # Note: This is silly, but we do it to make adding support for
+            # games other than Oblivion a breeze in a follow-up commit
+            for rel_attr, rel_val in zip((u'faction', u'mod'), relation):
+                setattr(target_entry, rel_attr, rel_val)
 
     def readFromText(self,textPath):
         """Imports faction relations from specified text file."""
-        id_relations = self.id_relations
+        id_relations = self.id_stored_info[b'FACT']
         aliases = self.aliases
         with CsvReader(textPath) as ins:
             for fields in ins:
@@ -1159,56 +1173,22 @@ class FactionRelations(object):
                 else:
                     relations.append((oid,disp))
 
-    def writeToMod(self,modInfo):
-        """Exports faction relations to specified mod."""
-        id_relations = self.id_relations
-        loadFactory= LoadFactory(True,MreRecord.type_class['FACT'])
-        modFile = ModFile(modInfo,loadFactory)
-        modFile.load(True)
-        mapper = modFile.getLongMapper()
-        shortMapper = modFile.getShortMapper()
-        changed = 0
-        for record in modFile.FACT.getActiveRecords():
-            longid = mapper(record.fid)
-            if longid not in id_relations: continue
-            newRelations = set(id_relations[longid])
-            curRelations = set(
-                (mapper(x.faction),x.mod) for x in record.relations)
-            changes = newRelations - curRelations
-            if not changes: continue
-            for faction,mod in changes:
-                faction = shortMapper(faction)
-                for entry in record.relations:
-                    if entry.faction == faction:
-                        entry.mod = mod
-                        break
-                else:
-                    entry = MelObject()
-                    entry.faction = faction
-                    entry.mod = mod
-                    record.relations.append(entry)
-                record.setChanged()
-            changed += 1
-        #--Done
-        if changed: modFile.safeSave()
-        return changed
-
     def writeToText(self,textPath):
         """Exports faction relations to specified text file."""
-        id_relations,id_eid = self.id_relations, self.id_eid
+        id_relations,id_eid = self.id_stored_info[b'FACT'], self.id_context
         headFormat = u'"%s","%s","%s","%s","%s","%s","%s"\n'
         rowFormat = u'"%s","%s","0x%06X","%s","%s","0x%06X","%s"\n'
-        with textPath.open('w',encoding='utf-8-sig') as out:
+        with textPath.open(u'w',encoding=u'utf-8-sig') as out:
             out.write(headFormat % (
                 _(u'Main Eid'),_(u'Main Mod'),_(u'Main Object'),
                 _(u'Other Eid'),_(u'Other Mod'),_(u'Other Object'),_(u'Disp')))
             for main in sorted(id_relations,
                                key=lambda x:id_eid.get(x).lower()):
-                mainEid = id_eid.get(main,u'Unknown')
-                for other,disp in sorted(id_relations[main],
-                                         key=lambda x:id_eid.get(
-                                                 x[0]).lower()):
-                    otherEid = id_eid.get(other,u'Unknown')
+                mainEid = id_eid.get(main, u'Unknown')
+                for other,disp in sorted(
+                        id_relations[main],
+                        key=lambda x:id_eid.get(x[0]).lower()):
+                    otherEid = id_eid.get(other, u'Unknown')
                     out.write(rowFormat % (
                         mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],
                         disp))
