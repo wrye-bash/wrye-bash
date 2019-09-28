@@ -379,7 +379,7 @@ class ActorFactions(_PBashParser):
 
     def __init__(self):
         super(ActorFactions, self).__init__()
-        a_types = (b'CREA', b'NPC_',)
+        a_types = bush.game.actor_types
         # We don't need the first pass if we're used by the parser
         self._fp_types = (a_types + (b'FACT',) if not self.called_from_patcher
                           else ())
