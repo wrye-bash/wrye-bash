@@ -148,7 +148,8 @@ class Fallout3GameInfo(GameInfo):
         u'Graphics', u'Invent.Add', u'Invent.Change', u'Invent.Remove',
         u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
         u'NPC.Eyes', u'NPC.FaceGen', u'NPC.Hair', u'NPC.Race',
-        u'NpcFacesForceFullImport', u'ObjectBounds', u'Relev', u'Scripts',
+        u'NpcFacesForceFullImport', u'ObjectBounds', u'Relations.Add',
+        u'Relations.Change', u'Relations.Remove', u'Relev', u'Scripts',
         u'Sound', u'SpellStats', u'Stats', u'Text',
     }
 
@@ -164,10 +165,10 @@ class Fallout3GameInfo(GameInfo):
         u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
         u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
         u'ImportActorsSpells', u'ImportFactions', u'ImportInventory',
-        u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'NpcFacePatcher', u'ObjectBoundsImporter',
-        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
-        u'TweakActors',
+        u'ImportRelations', u'ImportScripts', u'KFFZPatcher', u'ListsMerger',
+        u'NamesPatcher', u'NPCAIPackagePatcher', u'NpcFacePatcher',
+        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
+        u'StatsPatcher', u'TextImporter', u'TweakActors',
     )
 
     weaponTypes = (

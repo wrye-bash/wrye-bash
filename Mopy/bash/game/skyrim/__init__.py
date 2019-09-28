@@ -161,17 +161,19 @@ class SkyrimGameInfo(GameInfo):
         u'Invent.Change', u'Invent.Remove', u'Keywords',
         u'MustBeActiveIfImported', u'Names', u'NoMerge',
         u'NPC.AIPackageOverrides', u'NPC.Class', u'NPC.Race', u'ObjectBounds',
-        u'Outfits.Add', u'Outfits.Remove', u'Relev', u'Sound', u'SpellStats',
-        u'Stats', u'Text',
+        u'Outfits.Add', u'Outfits.Remove', u'Relations.Add',
+        u'Relations.Change', u'Relations.Remove', u'Relev', u'Sound',
+        u'SpellStats', u'Stats', u'Text',
     }
 
     patchers = (u'PatchMerger', # PatchMerger must come first!
         u'ActorImporter', u'CellImporter', u'ContentsChecker',
         u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
         u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
-        u'ImportOutfits', u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter', u'TweakActors',
+        u'ImportOutfits', u'ImportRelations', u'KeywordsImporter',
+        u'ListsMerger', u'NamesPatcher', u'NPCAIPackagePatcher',
+        u'ObjectBoundsImporter', u'SoundPatcher', u'SpellsPatcher',
+        u'StatsPatcher', u'TextImporter', u'TweakActors',
     )
 
     weaponTypes = (

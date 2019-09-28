@@ -561,6 +561,13 @@ class GameInfo(object):
     # Human-readable names for each actor value
     actor_values = []
 
+    #--------------------------------------------------------------------------
+    # Relations Patcher
+    #--------------------------------------------------------------------------
+    relations_attrs = ()
+    relations_csv_header = u''
+    relations_csv_row_format = u''
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -589,19 +596,20 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs', 'actor_tweaks',
-        'actor_types', 'actor_values', 'bethDataFiles', 'body_tags',
-        'cc_valid_types', 'cc_passes', 'cellAutoKeys', 'cellRecAttrs',
-        'cellRecFlags', 'condition_function_data', 'default_eyes',
-        'destructible_types', 'generic_av_effects', 'getvatsvalue_index',
-        'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
-        'graphicsModelAttrs', 'graphicsTypes', 'hostile_effects',
-        'inventoryTypes', 'keywords_types', 'listTypes', 'mgef_basevalue',
-        'mgef_name', 'mgef_school', 'namesTypes', 'nirnroots',
-        'object_bounds_types', 'pricesTypes', 'record_type_name',
-        'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
-        'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
-        'text_types',
+        u'GlobalsTweaks', u'GmstTweaks', u'actor_importer_attrs',
+        u'actor_tweaks', u'actor_types', u'actor_values', u'bethDataFiles',
+        u'body_tags', u'cc_valid_types', u'cc_passes', u'cellAutoKeys',
+        u'cellRecAttrs', u'cellRecFlags', u'condition_function_data',
+        u'default_eyes', u'destructible_types', u'generic_av_effects',
+        u'getvatsvalue_index', u'gmstEids', u'graphicsFidTypes',
+        u'graphicsLongsTypes', u'graphicsModelAttrs', u'graphicsTypes',
+        u'hostile_effects', u'inventoryTypes', u'keywords_types', u'listTypes',
+        u'mgef_basevalue', u'mgef_name', u'mgef_school', u'namesTypes',
+        u'nirnroots', u'object_bounds_types', u'pricesTypes',
+        u'record_type_name', u'relations_attrs', u'relations_csv_header',
+        u'relations_csv_row_format', u'save_rec_types', u'scripts_types',
+        u'soundsLongsTypes', u'soundsTypes', u'spell_stats_attrs',
+        u'statsHeaders', u'statsTypes', u'text_long_types', u'text_types',
     }
 
     @classmethod
