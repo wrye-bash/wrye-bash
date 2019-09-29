@@ -242,7 +242,7 @@ def InitInstallerLinks():
     #--Actions
     InstallersList.mainMenu.append(SeparatorLink())
     InstallersList.mainMenu.append(UIList_OpenStore())
-    InstallersList.mainMenu.append(Installers_Refresh(full_refresh=False))
+    InstallersList.mainMenu.append(Installers_Refresh())
     InstallersList.mainMenu.append(Installers_Refresh(full_refresh=True))
     InstallersList.mainMenu.append(Installers_AddMarker())
     InstallersList.mainMenu.append(Installers_CreateNewProject())
@@ -382,7 +382,7 @@ def InitModLinks():
     """Initialize Mods tab menus."""
     #--ModList: Column Links
     if True: #--Load
-        loadMenu = MenuLink(_(u"Active Mods"))
+        loadMenu = MenuLink(_(u'Load Order'))
         loadMenu.links.append(Mods_LoadList())
         ModList.mainMenu.append(loadMenu)
     if True: #--Sort by
@@ -480,19 +480,20 @@ def InitModLinks():
     ModList.itemMenu.append(Mod_Ghost())
     if bush.game.esp.canBash:
         ModList.itemMenu.append(SeparatorLink())
-        ModList.itemMenu.append(Mod_MarkMergeable(False))
+        ModList.itemMenu.append(Mod_MarkMergeable())
         if CBashApi.Enabled:
-            ModList.itemMenu.append(Mod_MarkMergeable(True))
-        ModList.itemMenu.append(Mod_Patch_Update(False))
+            ModList.itemMenu.append(Mod_MarkMergeable(doCBash=True))
+        ModList.itemMenu.append(Mod_Patch_Update())
         if CBashApi.Enabled:
-            ModList.itemMenu.append(Mod_Patch_Update(True))
+            ModList.itemMenu.append(Mod_Patch_Update(doCBash=True))
         ModList.itemMenu.append(Mod_ListPatchConfig())
         ModList.itemMenu.append(Mod_ExportPatchConfig())
         #--Advanced
         ModList.itemMenu.append(SeparatorLink())
         if True: #--Export
             exportMenu = MenuLink(_(u"Export"))
-            exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
+            if CBashApi.Enabled:
+                exportMenu.links.append(CBash_Mod_CellBlockInfo_Export())
             exportMenu.links.append(Mod_EditorIds_Export())
             ## exportMenu.links.append(Mod_ItemData_Export())
             if bush.game.fsName in (u'Enderal', u'Skyrim'):

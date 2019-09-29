@@ -852,7 +852,7 @@ class Mod_AllowGhosting(TransLink):
 #------------------------------------------------------------------------------
 class Mod_MarkMergeable(ItemLink):
     """Returns true if can act as patch mod."""
-    def __init__(self,doCBash):
+    def __init__(self, doCBash=False):
         Link.__init__(self)
         self.doCBash = doCBash
         if bush.game.check_esl:
@@ -908,7 +908,7 @@ class _Mod_BP_Link(OneItemLink):
 
 class _Mod_Patch_Update(_Mod_BP_Link):
     """Updates a Bashed Patch."""
-    def __init__(self,doCBash=False):
+    def __init__(self, doCBash=False):
         super(_Mod_Patch_Update, self).__init__()
         self.doCBash = doCBash
         self.CBashMismatch = False

@@ -140,9 +140,11 @@ def dump_environment():
     msg = u'\n'.join([
         u'Wrye Bash starting',
         u'Using Wrye Bash Version %s%s' % (bass.AppVersion,
-            (u' ' + _(u'(Standalone)')) if is_standalone else u''
+            u' (Standalone)' if is_standalone else u''),
+        u'OS info: %s (%s) running on %s' % (
+            platform.platform(), platform.architecture()[0],
+            platform.processor()
         ),
-        u'OS info: %s' % platform.platform(),
         u'Python version: %d.%d.%d' % (
             sys.version_info[0],sys.version_info[1],sys.version_info[2]
         ),
@@ -150,9 +152,11 @@ def dump_environment():
             u'wxPython not found',
         # Standalone: stdout will actually be pointing to stderr, which has no
         # 'encoding' attribute
-        u'input encoding: %s; output encoding: %s; locale: %s' % (
-            sys.stdin.encoding,getattr(sys.stdout,'encoding',None),
-            locale.getdefaultlocale()
+        u'input encoding: %s; output encoding: %s' % (
+            sys.stdin.encoding, getattr(sys.stdout, 'encoding', None),
+        ),
+        u'default locale: %s; current locale: %s' % (
+            locale.getdefaultlocale(), locale.getlocale()
         ),
         u'filesystem encoding: %s%s' % (fse,
             (u' - using %s' % bolt.Path.sys_fs_enc) if bolt is not None

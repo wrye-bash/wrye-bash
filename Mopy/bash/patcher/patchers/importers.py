@@ -257,7 +257,7 @@ class _ACellImporter(AImportPatcher):
 
 class CellImporter(_ACellImporter, ImportPatcher):
     autoKey = bush.game.cellAutoKeys
-    logMsg = _(u'Cells/Worlds Patched')
+    logMsg = u'\n=== ' + _(u'Cells/Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -1029,7 +1029,7 @@ class _ANPCAIPackagePatcher(AImportPatcher):
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
 
 class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
-    logMsg = _(u'AI Package Lists Changed') + u': %d'
+    logMsg = u'\n=== ' + _(u'AI Package Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -1341,7 +1341,7 @@ class _AImportFactions(AImportPatcher):
     autoKey = {u'Factions'}
 
 class ImportFactions(_SimpleImporter, _AImportFactions):
-    logMsg = _(u'Refactioned Actors')
+    logMsg = u'\n=== ' + _(u'Refactioned Actors')
     srcsHeader = u'=== ' + _(u'Source Mods/Files')
 
     #--Patch Phase ------------------------------------------------------------
@@ -1731,7 +1731,7 @@ class _AImportInventory(AImportPatcher):
     iiMode = True
 
 class ImportInventory(ImportPatcher, _AImportInventory):
-    logMsg = _(u'Inventories Changed') + u': %d'
+    logMsg = u'\n=== ' + _(u'Inventories Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -1949,7 +1949,7 @@ class _AImportActorsSpells(AImportPatcher):
     autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
 
 class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
-    logMsg = _(u'Spell Lists Changed') + u': %d'
+    logMsg = u'\n=== ' + _(u'Spell Lists Changed') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -2551,7 +2551,7 @@ class _ARoadImporter(AImportPatcher):
     autoKey = {u'Roads'}
 
 class RoadImporter(ImportPatcher, _ARoadImporter):
-    logMsg = _(u'Worlds Patched')
+    logMsg = u'\n=== ' + _(u'Worlds Patched')
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
