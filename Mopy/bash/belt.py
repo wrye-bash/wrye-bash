@@ -787,6 +787,7 @@ class WryeParser(ScriptParser.Parser):
         self.SetFunction(u'CompareWBVersion', self.fnCompareWBVersion, 1)
         self.SetFunction(u'DataFileExists', self.fnDataFileExists, 1, ScriptParser.KEY.NO_MAX)
         self.SetFunction(u'GetEspmStatus', self.fn_get_plugin_status, 1)
+        self.SetFunction(u'GetPluginStatus', self.fn_get_plugin_status, 1)       # Retained for compatibility
         self.SetFunction(u'EditINI', self.fnEditINI, 4, 5)
         self.SetFunction(u'DisableINILine',self.fnDisableINILine, 3)
         self.SetFunction(u'Exec', self.fnExec, 1)
@@ -807,15 +808,24 @@ class WryeParser(ScriptParser.Parser):
         #--Keywords
         self.SetKeyword(u'SelectSubPackage', self.kwdSelectSubPackage, 1)
         self.SetKeyword(u'DeSelectSubPackage', self.kwdDeSelectSubPackage, 1)
+        # The keyowrds with 'espm' in their name are retained for backwards
+        # compatibility only - use their 'plugin' equivalents instead
         self.SetKeyword(u'SelectEspm', self.kwd_select_plugin, 1)
+        self.SetKeyword(u'SelectPlugin', self.kwd_select_plugin, 1)
         self.SetKeyword(u'DeSelectEspm', self.kwd_de_select_plugin, 1)
+        self.SetKeyword(u'DeSelectPlugin', self.kwd_de_select_plugin, 1)
         self.SetKeyword(u'SelectAll', self.kwdSelectAll)
         self.SetKeyword(u'DeSelectAll', self.kwdDeSelectAll)
         self.SetKeyword(u'SelectAllEspms', self.kwd_select_all_plugins)
+        self.SetKeyword(u'SelectAllPlugins', self.kwd_select_all_plugins)
         self.SetKeyword(u'DeSelectAllEspms', self.kwd_de_select_all_plugins)
+        self.SetKeyword(u'DeSelectAllPlugins', self.kwd_de_select_all_plugins)
         self.SetKeyword(u'RenameEspm', self.kwd_rename_plugin, 2)
+        self.SetKeyword(u'RenamePlugin', self.kwd_rename_plugin, 2)
         self.SetKeyword(u'ResetEspmName', self.kwd_reset_plugin_name, 1)
+        self.SetKeyword(u'ResetPluginName', self.kwd_reset_plugin_name, 1)
         self.SetKeyword(u'ResetAllEspmNames', self.kwd_reset_all_plugin_names)
+        self.SetKeyword(u'ResetAllPluginNames',self.kwd_reset_all_plugin_names)
         self.SetKeyword(u'Note', self.kwdNote, 1)
         self.SetKeyword(u'If', self.kwdIf, 1 )
         self.SetKeyword(u'Elif', self.kwdElif, 1)

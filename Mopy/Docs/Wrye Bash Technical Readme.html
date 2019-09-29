@@ -88,7 +88,7 @@
 
 <h2 id="wizards">BAIN Wizards</h2>
 <h3 id="wizards-overview">Overview</h3>
-<p>Bain Wizards allow mod authors to include a simple configuration script with their packages. Wizards run on a simple scripting language similar to OBMM script, contained in a <code>wizard.txt</code> file in the package. When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and esps/esms will be selected, and any INI tweaks that will be applied.
+<p>Bain Wizards allow mod authors to include a simple configuration script with their packages. Wizards run on a simple scripting language similar to OBMM script, contained in a <code>wizard.txt</code> file in the package. When run, the wizard will run through a series of windows to allow you to select options, then show a summary page at the end telling you which sub-packages and plugins will be selected, and any INI tweaks that will be applied.</p>
 <p>Those using Notepad++ to write their install scripts may want to use Utumno's <a href="https://www.nexusmods.com/oblivion/mods/32654">BAIN wizard Script Highlighter for Notepad plus plus</a> as it features code folding and syntax highlighting to make spotting mistakes easier.
 <p>There is a similar <a href="https://www.nexusmods.com/oblivion/mods/34240">BAIN Wizard Syntax for EmEditor</a> syntax highlighter for EmEditor created by broken85.
 
@@ -112,7 +112,9 @@
             <img alt="Error Dialog" src="../bash/images/readme/error.png"/>
         </li>
         <li>
-            <p><dfn>Finish</dfn> - This dialog will be shown at the end of the wizard, to show you which sub-packages, esps, and esms will be selected.  It will be shown either when the end of a wizard file is reached, or if the <a href="#wizardsReturn">Return</a> keyword is used.  It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod author to be displayed.</p>
+            <p><dfn>Finish</dfn> - This dialog will be shown at the end of the wizard, to show you which sub-packages and plugins will be selected.
+				It will be shown either when the end of a wizard file is reached, or if the <a href="#wizardsReturn">Return</a> keyword is used.
+				It also shows what INI Tweaks will be applied, and also serves as a place for any extra notes from the mod author to be displayed.</p>
             <img alt="Finish Dialog" src="../bash/images/readme/finish.png"/>
         </li>
         <li>
@@ -144,7 +146,7 @@
 
 
 <h3 id="wizards-functions">Functions</h3>
-<p><dfn id="CompareObVersion">CompareObVersion</dfn> - Used to test the installed version of Oblivion against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareGameVersion">CompareGameVersion</a> instead.
+<p><dfn id="CompareObVersion">CompareObVersion</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsCompareGameVersion">CompareGameVersion</a> instead.
 <p><dfn id="wizardsCompareGameVersion">CompareGameVersion</dfn> - Used to test the installed version of the game Wrye Bash is running for against the version you specify.
 <code class="box">CompareGameVersion(version_string)</code>
 <ul>
@@ -156,7 +158,7 @@
 	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
-<p><dfn id="wizardsCompareOBSEVersion">CompareOBSEVersion</dfn> - Used to test the installed version of OBSE against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareSEVersion">CompareSEVersion</a> instead.
+<p><dfn id="wizardsCompareOBSEVersion">CompareOBSEVersion</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsCompareSEVersion">CompareSEVersion</a> instead.
 <p><dfn id="wizardsCompareSEVersion">CompareSEVersion</dfn> - Used to test the installed version of the Script Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareSEVersion(version_string)</code>
 <ul>
@@ -168,7 +170,7 @@
 	<li><code>0</code> - Installed version is equal to the version specified in <var>version_string</var>.
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>, or there is no Script Extender available for the game.
 </ul>
-<p><dfn id="wizardsCompareOBGEVersion">CompareOBGEVersion</dfn> - Used to test the installed version of OBGE against the one you specify. <strong>Deprecated</strong>. Use <a href="#wizardsCompareGEVersion">CompareGEVersion</a> instead.
+<p><dfn id="wizardsCompareOBGEVersion">CompareOBGEVersion</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsCompareGEVersion">CompareGEVersion</a> instead.
 <p><dfn id="wizardsCompareGEVersion">CompareGEVersion</dfn> - Used to test the installed version of the Graphics Extender of the game that Wrye Bash is running for against the one you specify.
 <code class="box">CompareGEVersion(version_string)</code>
 <ul>
@@ -192,7 +194,7 @@
 	<li><code>1</code> - Installed version is greater than the version specified in <var>version_string</var>.
 </ul>
 <p><dfn id="wizardsDataFileExists">DataFileExists</dfn> - Tests for the existence of a file in the Data directory. If the file you are
-	testing for is an ESP or ESM, this will also detect ghosted versions of the file.
+	testing for is a plugin, this will also detect ghosted versions of the file.</p>
 <code class="box">DataFileExists(file_name [, ..., file_name_n])</code>
 <ul>
 	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory to test. For example
@@ -212,18 +214,19 @@
 	<li><code>True</code> - All of the files exist.
 	<li><code>False</code> - One or more of the files do not exist.
 </ul>
-<p><dfn id="wizardsGetEspmStatus">GetEspmStatus</dfn> - Tests the current status of an ESP or ESM in the Data directory.  This function takes esp/m ghosting into account when testing the status.
-<code class="box">GetEspmStatus(file_name)</code>
+<p><dfn id="wizardsGetEspmStatus">GetEspmStatus</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsGetPluginStatus">GetPluginStatus</a> instead.</p>
+<p><dfn id="wizardsGetPluginStatus">GetPluginStatus</dfn> - Tests the current status of a plugin in the Data directory. Takes ghosting into account when testing the status.</p>
+<code class="box">GetPluginStatus(file_name)</code>
 <ul>
-	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory for the esp or esm to test.
+	<li><var>file_name</var> - A string or variable holding a string, specifying the path relative to the Data directory for the plugin to test.</li>
 </ul>
-<p class="indent">Return values:
+<p class="indent">Return values:</p>
 <ul class="indent">
-	<li><code>-1</code> - The esp/m does not exist.
-	<li><code>0</code> - The esp/m is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img alt="Inactive" src="../bash/images/checkbox_green_off.png"/>.
-	<li><code>1</code> - The esp/m is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Imported" src="../bash/images/checkbox_green_imp.png"/>.
-	<li><code>2</code> - The esp/m is active. Its checkbox in Wrye Bash's Mods tab is <img alt="Active" src="../bash/images/checkbox_green_on.png"/>.
-	<li><code>3</code> - The esp/m is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Merged" src="../bash/images/checkbox_green_inc.png"/>.
+	<li><code>-1</code> - The plugin does not exist.</li>
+	<li><code>0</code> - The plugin is not active, imported, or merged. Its checkbox in Wrye Bash's Mods tab is <img alt="Inactive" src="../bash/images/checkbox_green_off.png"/>.</li>
+	<li><code>1</code> - The plugin is not active, but has portions imported into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Imported" src="../bash/images/checkbox_green_imp.png"/>.</li>
+	<li><code>2</code> - The plugin is active. Its checkbox in Wrye Bash's Mods tab is <img alt="Active" src="../bash/images/checkbox_green_on.png"/>.</li>
+	<li><code>3</code> - The plugin is merged into the Bashed Patch. Its checkbox in Wrye Bash's Mods tab is <img alt="Merged" src="../bash/images/checkbox_green_inc.png"/>.</li>
 </ul>
 <p><dfn id="wizardsDisableINILine">DisableINILine</dfn> - Tells Wrye Bash to create an ini tweak file that disables the specified setting by commenting it out. Otherwise, behaves identically to <a href="#wizardsEditINI">EditINI</a>.</p>
 <code class="box">DisableINILine(file_name, section, setting)</code>
@@ -371,7 +374,7 @@
 
 <h3 id="wizards-keywords">Keywords</h3>
 <p>Keywords are like functions, but don't require brackets around their arguments, and are used for controlling the flow of a wizard or performing special tasks.
-<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivalent to checking the sub-package and all the esps or esms in that subpackage in the BAIN window.
+<p><dfn id="wizardsSelectSubPackage">SelectSubPackage</dfn> - Cause the specified sub-package to be selected for installation. This is equivalent to checking the sub-package and all the plugins in that subpackage in the BAIN window.</p>
 <code class="box">SelectSubPackage name</code>
 <ul>
 	<li><var>name</var> - A string or variable holding the name of the sub-package to select.
@@ -381,37 +384,44 @@
 <ul>
 	<li><code>name</code> - A string or variable holding the name of the sub-package to de-select.
 </ul>
-<p><dfn>SelectEspm</dfn> - Cause the specified esp or esm to be selected for installation. This is equivalent to checking the esp or esm from the BAIN window.
-<code class="box">SelectEspm name</code>
+<p><dfn>SelectEspm</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsSelectPlugin">SelectPlugin</a> instead.</p>
+<p><dfn id="wizardsSelectPlugin">SelectPlugin</dfn> - Cause the specified plugin to be selected for installation. This is equivalent to checking the plugin in the Plugin Filter of the BAIN window.</p>
+<code class="box">SelectPlugin plugin_name</code>
 <ul>
-	<li><var>name</var> - A string or variable holding the name of the esp or esm to select.
+	<li><var>plugin_name</var> - A string or variable holding the name of the plugin to select.</li>
 </ul>
-<p><dfn>DeSelectEspm</dfn> - Cause the specified esp or esm to be deselected from installation. This is equivalent to un-checking the esp or esm from the BAIN window.
-<code class="box">DeSelectEspm name</code>
+<p><dfn>DeSelectEspm</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsDeSelectPlugin">DeSelectPlugin</a> instead.</p>
+<p><dfn id="wizardsDeSelectPlugin">DeSelectPlugin</dfn> - Cause the specified plugin to be deselected from installation. This is equivalent to un-checking the plugin in the Plugin Filter of the BAIN window.</p>
+<code class="box">DeSelectPlugin plugin_name</code>
 <ul>
-	<li><var>name</var> - A string or variable holding the name of the esp or esm to de-select.
+	<li><var>plugin_name</var> - A string or variable holding the name of the plugin to de-select.</li>
 </ul>
-<p><dfn>SelectAll</dfn> - Cause all sub-packages, esps, and esms to be selected for installation. This is equivalent to first checking all sub-packages in the BAIN window, then checking all esps and esms in the BAIN window.
+<p><dfn>SelectAll</dfn> - Cause all sub-packages and plugins to be selected for installation. This is equivalent to first checking all sub-packages in the BAIN window, then checking all plugins in the Plugin Filter of the BAIN window.</p>
 <code class="box">SelectAll</code>
-<p><dfn>DeSelectAll</dfn> - Cause all sub-packages, esps, and esms to be de-selected from installation. This is equivalent to first un-checking all esps and esms in the BAIN window, then un-checking all sub-packages in the BAIN window.
+<p><dfn>DeSelectAll</dfn> - Cause all sub-packages and plugins to be de-selected from installation. This is equivalent to first un-checking all plugins in the Plugin Filter of the BAIN window, then un-checking all sub-packages in the BAIN window.</p>
 <code class="box">DeSelectAll</code>
-<p><dfn>SelectAllEspms</dfn> - Cause all esps and esms to be selected for installation. This is equivalent to checking all esps and esms in the BAIN window.
-<code class="box">SelectAllEspms</code>
-<p><dfn>DeSelectAllEspms</dfn> - Cause all esps and esms to be de-selected from installation. This is equivalent to un-checking all esps and esms in the BAIN window.
-<code class="box">DeSelectAllEspms</code>
-<p><dfn id="wizardsRenameEspm">RenameEspm</dfn> - Change the installed name of an esp or esm.
-<code class="box">RenameEspm original_name, new_name</code>
+<p><dfn>SelectAllEspms</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsSelectAllPlugins"> SelectAllPlugins</a> instead.</p>
+<p><dfn id="wizardsSelectAllPlugins">SelectAllPlugins</dfn> - Cause all plugins to be selected for installation. This is equivalent to checking all plugins in the Plugin Filter of the BAIN window.</p>
+<code class="box">SelectAllPlugins</code>
+<p><dfn>DeSelectAllEspms</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsDeSelectAllPlugins">DeSelectAllPlugins</a> instead.</p>
+<p><dfn id="wizardsDeSelectAllPlugins">DeSelectAllPlugins</dfn> - Cause all plugins to be de-selected from installation. This is equivalent to un-checking all plugins in the Plugin Filter of the BAIN window.</p>
+<code class="box">DeSelectAllPlugins</code>
+<p><dfn id="wizardsRenameEspm">RenameEspm</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsRenamePlugin">RenamePlugin</a> instead.</p>
+<p><dfn id="wizardsRenamePlugin">RenamePlugin</dfn> - Change the installed name of a plugin. Note that the file extension must stay the same.</p>
+<code class="box">RenamePlugin original_name, new_name</code>
 <ul>
-	<li><var>original_name</var> - The name of the esp or esm, as it appears in the BAIN package.
-	<li><var>new_name</var> - The new name you want to have the esp or esm installed as.
+	<li><var>original_name</var> - The name of the plugin, as it appears in the BAIN package.</li>
+	<li><var>new_name</var> - The new name you want to have the plugin installed as.</li>
 </ul>
-<p><dfn>ResetEspmName</dfn> - Resets the name of an esp or esm back to its default name.
-<code class="box">ResetEspmName original_name</code>
+<p><dfn>ResetEspmName</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsResetPluginName">ResetPluginName</a> instead.</p>
+<p><dfn id="wizardsResetPluginName">ResetPluginName</dfn> - Resets the name of a plugin back to its default name.</p>
+<code class="box">ResetPluginName original_name</code>
 <ul>
-	<li><var>original_name</var> - The name of the esp or esm, as it appears in the BAIN package.
+	<li><var>original_name</var> - The name of the plugin, as it appears in the BAIN package.</li>
 </ul>
-<p><dfn>ResetAllEspmNames</dfn> - Resets the names of all the esps and esms back to their default names.
-<code class="box">ResetAllEspmNames</code>
+<p><dfn>ResetAllEspmNames</dfn> - <strong>Deprecated</strong>. Use <a href="#wizardsResetAllPluginNames">ResetAllPluginNames</a> instead.</p>
+<p><dfn id="wizardsResetAllPluginNames">ResetAllPluginNames</dfn> - Resets the names of all plugins back to their default names.</p>
+<code class="box">ResetAllPluginNames</code>
 <p><dfn>Note</dfn> - Add a note to the user to be displayed at the end of the wizard, on the finish page. The <code>'- '</code> will be added automatically.
 <code class="box">Note text</code>
 <ul>
@@ -766,9 +776,9 @@ EndSelect
 <p>Lets say that you want to check the users data folder for a specific plugin, to check if a patch (you might have created) should apply.
 <code class="box">If DataFileExists("ExamplePlugin.esp")
     Note "ExamplePlugin Detected." ;;;Action/No Action
-    SelectEspm "PatchPlugin.esp"   ;;;Action/No Action
+    SelectPlugin "PatchPlugin.esp" ;;;Action/No Action
 Else ; ExamplePlugin.esp wasn't detected
-    ;No Plugin                     ;;;Action/No Action
+    ; No Plugin                    ;;;Action/No Action
 EndIf
 </code>
 <h4>Use New BAIN Wizard Features Safely</h4>
@@ -880,10 +890,10 @@ EndFor</code>
 			<td><code class="box">Return</code>
 		<tr><td><code class="box">DontInstallPlugin &lt;Plugin&gt;
 InstallPlugin &lt;Plugin&gt;</code>
-			<td><code class="box">DeSelectEspm plugin
-SelectEspm plugin</code>
+			<td><code class="box">DeSelectPlugin plugin
+SelectPlugin plugin</code>
 		<tr><td><code class="box">CopyPlugin &lt;CopyFrom&gt; &lt;CopyTo&gt;</code>
-			<td><code class="box">RenameEspm original_name new_name</code>
+			<td><code class="box">RenamePlugin original_name new_name</code>
 		<tr><td><code class="box">EditINI &lt;section&gt; &lt;key&gt; &lt;value&gt;</code>
 			<td><code class="box">EditINI("Oblivion.ini", section, setting, value)</code>
 		<tr><td><code class="box">FatalError</code>
@@ -975,15 +985,15 @@ EditXMLReplace &lt;file&gt; &lt;text to find&gt; &lt;text to replace&gt;
 </code>
 <h4>Functions in Wizards without equivalent methods in OBMM</h4>
 <code class="box">CompareWBVersion(version)
-GetEspmStatus(plugin)
+GetPluginStatus(plugin)
 DisableINILine(file_name, section, setting)
 str(value)
 int(value)
 float(value)
 SelectAll
 DeSelectAll
-SelectAllEspms
-DeSelectAllEspms
+SelectAllPlugins
+DeSelectAllPlugins
 While expression
     Continue
     Break
