@@ -493,10 +493,10 @@ class AAssortedTweak_DarnBooks(AMultiTweakItem):
     reFont1 = re.compile(u'(<?<font face=1( ?color=[0-9a-zA]+)?>)+', re.I|re.M)
     reDiv = re.compile(u'<div', re.I + re.M)
     reFont = re.compile(u'<font', re.I + re.M)
-    reHead2 = re.compile(ur'^(<<|\^\^|>>|)==\s*(\w[^=]+?)==\s*\r\n',re.M)
-    reHead3 = re.compile(ur'^(<<|\^\^|>>|)===\s*(\w[^=]+?)\r\n',re.M)
-    reBold = re.compile(ur'(__|\*\*|~~)')
-    reAlign = re.compile(ur'^(<<|\^\^|>>)',re.M)
+    reHead2 = re.compile(u'^(<<|\\^\\^|>>|)==\\s*(\\w[^=]+?)==\\s*\\r\\n',re.M)
+    reHead3 = re.compile(u'^(<<|\\^\\^|>>|)===\\s*(\\w[^=]+?)\\r\\n',re.M)
+    reBold = re.compile(u'(__|\\*\\*|~~)')
+    reAlign = re.compile(u'^(<<|\\^\\^|>>)',re.M)
     tweak_read_classes = 'BOOK',
 
     #--Config Phase -----------------------------------------------------------
@@ -553,15 +553,15 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
                 if reHead2.match(rec_text):
                     self.inBold = False
                     rec_text = reHead2.sub(
-                        ur'\1<font face=1 color=220000>\2<font face=3 '
-                        ur'color=444444>\r\n', rec_text)
+                        u'\\1<font face=1 color=220000>\\2<font face=3 '
+                        u'color=444444>\\r\\n', rec_text)
                     rec_text = reHead3.sub(
-                        ur'\1<font face=3 color=220000>\2<font face=3 '
-                        ur'color=444444>\r\n',
+                        u'\\1<font face=3 color=220000>\\2<font face=3 '
+                        u'color=444444>\\r\\n',
                         rec_text)
                     rec_text = reAlign.sub(replaceAlign,rec_text)
                     rec_text = reBold.sub(replaceBold,rec_text)
-                    rec_text = re.sub(ur'\r\n',ur'<br>\r\n',rec_text)
+                    rec_text = re.sub(u'\\r\\n',u'<br>\\r\\n',rec_text)
                 else:
                     maColor = reColor.search(rec_text)
                     if maColor:
@@ -571,7 +571,7 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
                     else:
                         color = u'444444'
                     fontFace = u'<font face=3 color='+color+u'>'
-                    rec_text = reTagInWord.sub(ur'\1',rec_text)
+                    rec_text = reTagInWord.sub(u'\\1',rec_text)
                     rec_text.lower()
                     if reDiv.search(rec_text) and not reFont.search(rec_text):
                         rec_text = fontFace+rec_text
@@ -616,14 +616,14 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
             self.inBold = False
             if reHead2.match(rec_text):
                 rec_text = reHead2.sub(
-                    ur'\1<font face=1 color=220000>\2<font face=3 '
-                    ur'color=444444>\r\n', rec_text)
+                    u'\\1<font face=1 color=220000>\\2<font face=3 '
+                    u'color=444444>\\r\\n', rec_text)
                 rec_text = reHead3.sub(
-                    ur'\1<font face=3 color=220000>\2<font face=3 '
-                    ur'color=444444>\r\n', rec_text)
+                    u'\\1<font face=3 color=220000>\\2<font face=3 '
+                    u'color=444444>\\r\\n', rec_text)
                 rec_text = reAlign.sub(replaceAlign,rec_text)
                 rec_text = reBold.sub(replaceBold,rec_text)
-                rec_text = re.sub(ur'\r\n',r'<br>\r\n',rec_text)
+                rec_text = re.sub(u'\\r\\n',r'<br>\\r\\n',rec_text)
             else:
                 maColor = reColor.search(rec_text)
                 if maColor:
@@ -633,7 +633,7 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
                 else:
                     color = u'444444'
                 fontFace = u'<font face=3 color='+color+u'>'
-                rec_text = reTagInWord.sub(ur'\1',rec_text)
+                rec_text = reTagInWord.sub(u'\\1',rec_text)
                 rec_text.lower()
                 if reDiv.search(rec_text) and not reFont.search(rec_text):
                     rec_text = fontFace+rec_text

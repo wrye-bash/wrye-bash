@@ -360,7 +360,7 @@ class Save_Renumber(EnabledLink):
     _text = _(u'Re-number Save(s)...')
     _help = _(u'Renumber a whole lot of save files') + u'.  ' + _(
         u'Savename must be "Save <some number><optional text>"')
-    _re_numbered_save = re.compile(ur'^(save )(\d*)(.*)', re.I | re.U)
+    _re_numbered_save = re.compile(u'^(save )(\\d*)(.*)', re.I | re.U)
 
     def _enable(self):
         self._matches = []

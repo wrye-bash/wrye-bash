@@ -84,15 +84,15 @@ configHelpers = None # type: mods_metadata.ConfigHelpers
 
 #--Header tags
 reVersion = re.compile(
-  ur'^(version[:.]*|ver[:.]*|rev[:.]*|r[:.\s]+|v[:.\s]+) *([-0-9a-zA-Z.]*\+?)',
+  u'^(version[:.]*|ver[:.]*|rev[:.]*|r[:.\\s]+|v[:.\\s]+) *([-0-9a-zA-Z.]*\\+?)',
   re.M | re.I | re.U)
 
 #--Mod Extensions
-__exts = ur'((\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
-reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
-    ur'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
+__exts = u'((\\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
+reTesNexus = re.compile(u'(.*?)(?:-(\\d{1,6})(?:\\.tessource)?(?:-bain)'
+    u'?(?:-\\d{0,6})?(?:-\\d{0,6})?(?:-\\d{0,6})?(?:-\\w{0,16})?(?:\\w)?)?'
     + __exts, re.I | re.U)
-reTESA = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?'
+reTESA = re.compile(u'(.*?)(?:-(\\d{1,6})(?:\\.tessource)?(?:-bain)?)?'
     + __exts, re.I | re.U)
 del __exts
 imageExts = {u'.gif', u'.jpg', u'.png', u'.jpeg', u'.bmp', u'.tif'}
@@ -1443,7 +1443,7 @@ def ini_info_factory(fullpath, load_cache='Ignored'):
 class INIInfos(TableFileInfos):
     """:type _ini: IniFile
     :type data: dict[bolt.Path, IniInfo]"""
-    file_pattern = re.compile(ur'\.ini$', re.I | re.U)
+    file_pattern = re.compile(u'\\.ini$', re.I | re.U)
 
     def __init__(self):
         INIInfos._default_tweaks = dict(
@@ -1690,7 +1690,7 @@ class ModInfos(FileInfos):
 
     def __init__(self):
         self.__class__.file_pattern = re.compile(u'(' + u'|'.join(
-            map(re.escape, bush.game.espm_extensions)) + ur')(\.ghost)?$',
+            map(re.escape, bush.game.espm_extensions)) + u')(\\.ghost)?$',
                                                  re.I | re.U)
         FileInfos.__init__(self, dirs['mods'], factory=ModInfo)
         #--Info lists/sets
@@ -2564,7 +2564,7 @@ class ModInfos(FileInfos):
     def getVersionFloat(self,fileName):
         """Extracts and returns version number for fileName from header.hedr.description."""
         version = self.getVersion(fileName)
-        maVersion = re.search(ur'(\d+\.?\d*)',version,flags=re.U)
+        maVersion = re.search(u'(\\d+\\.?\\d*)',version,flags=re.U)
         if maVersion:
             return float(maVersion.group(1))
         else:
@@ -2680,7 +2680,7 @@ class ModInfos(FileInfos):
 class SaveInfos(FileInfos):
     """SaveInfo collection. Represents save directory and related info."""
     _bain_notify = False
-    bak_file_pattern = re.compile(ur'(quick|auto)save(\.bak)+', re.I | re.U)
+    bak_file_pattern = re.compile(u'(quick|auto)save(\\.bak)+', re.I | re.U)
 
     def _setLocalSaveFromIni(self):
         """Read the current save profile from the oblivion.ini file and set
@@ -2695,7 +2695,7 @@ class SaveInfos(FileInfos):
     def __init__(self):
         _ext = re.escape(bush.game.ess.ext)
         self.__class__.file_pattern = re.compile(
-            ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...)
+            u'((quick|auto)save(\\.bak)+|(' + # quick or auto save.bak(.bak...)
             _ext + u'|' + _ext[:-1] + u'r' + u'))$', # enabled/disabled save
             re.I | re.U)
         self.localSave = bush.game.save_prefix
@@ -2803,7 +2803,7 @@ class BSAInfos(FileInfos):
 
     def __init__(self):
         self.__class__.file_pattern = re.compile(
-            ur'\.' + bush.game.bsa_extension + u'$', re.I | re.U)
+            u'\\.' + bush.game.bsa_extension + u'$', re.I | re.U)
         _bsa_type = bsa_files.get_bsa_type(bush.game.fsName)
 
         class BSAInfo(FileInfo, _bsa_type):
@@ -2933,7 +2933,7 @@ class PeopleData(DataStore):
 #------------------------------------------------------------------------------
 class ScreensData(DataStore):
     reImageExt = re.compile(
-        ur'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
+        u'\\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
         re.I | re.U)
 
     def __init__(self):

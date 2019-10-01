@@ -492,7 +492,7 @@ class PatchDialog(balt.Dialog):
             pass # will be set to defaultTipText
         if 0 <= mouseItem < len(self.patchers):
             patcherClass = self.patchers[mouseItem].__class__
-            tip = patcherClass.tip or re.sub(ur'\..*', u'.',
+            tip = patcherClass.tip or re.sub(u'\\..*', u'.',
                             patcherClass.text.split(u'\n')[0], flags=re.U)
             self.gTipText.SetLabel(tip)
         else:

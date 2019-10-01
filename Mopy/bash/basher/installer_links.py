@@ -657,7 +657,7 @@ class Installer_OpenSearch(_Installer_OpenAt):
 
     def _url(self):
         return u'http://www.google.com/search?hl=en&q=' + u'+'.join(
-            re.split(ur'\W+|_+', self.mod_url_id))
+            re.split(u'\\W+|_+', self.mod_url_id))
 
 class Installer_OpenTESA(_Installer_OpenAt):
     regexp = bosh.reTESA

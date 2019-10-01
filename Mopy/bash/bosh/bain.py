@@ -74,7 +74,7 @@ class Installer(object):
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
     reReadMe = re.compile(
-        ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
+        u'^.*?([^\\\\]*)(read[ _]?me|lisez[ _]?moi)([^\\\\]*)'
         u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',
@@ -217,7 +217,7 @@ class Installer(object):
         """Files that may be installed in top Data/ directory - espml,
         bsa/ba2, ini."""
         if self.__class__._reDataFile is None:
-            _reDataFile = ur'(\.(' + u'|'.join(
+            _reDataFile = u'(\\.(' + u'|'.join(
                 {x[1:] for x in bush.game.espm_extensions} | {
                     bush.game.bsa_extension, u'ini'}) + u'))$'
             self.__class__._reDataFile = re.compile(_reDataFile, re.I | re.U)

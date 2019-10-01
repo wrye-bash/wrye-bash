@@ -4019,7 +4019,7 @@ class ModFile(object):
         and then save if the answer is yes. If hasSaved == False, then does nothing."""
         if not hasChanged: return
         fileName = self.fileInfo.name
-        if re.match(ur'\s*[yY]',raw_input(u'\nSave changes to '+fileName.s+u' [y/n]?: '),flags=re.U):
+        if re.match(u'\\s*[yY]',raw_input(u'\nSave changes to '+fileName.s+u' [y/n]?: '),flags=re.U):
             self.safeSave()
             print fileName.s,u'saved.'
         else:
