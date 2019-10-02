@@ -946,19 +946,19 @@ class _ANamesTweaker(AMultiTweaker):
                          (_(u'P. Grey Trousers'), u'%s. '),
                          (_(u'P - Grey Trousers'),u'%s - '),
                          (_(u'(P) Grey Trousers'),u'(%s) '),),)
-    _txtReplacer = ((u'\\b(d|D)(?:warven|warf)\\b', u'\\1wemer',
+    _txtReplacer = ((ur'\b(d|D)(?:warven|warf)\b', ur'\1wemer',
                      _(u"Lore Friendly Text: Dwarven -> Dwemer"),
                      _(u'Replace any occurrences of the words "Dwarf" or'
                        u' "Dwarven" with "Dwemer" to better follow lore.'),
                      u'Dwemer',
                      (u'Lore Friendly Text: Dwarven -> Dwemer', u'Dwemer'),),
-                    (u'\\b(d|D)(?:warfs)\\b',u'\\1warves',
+                    (ur'\b(d|D)(?:warfs)\b',ur'\1warves',
                      _(u"Proper English Text: Dwarfs -> Dwarves"),
                      _(u'Replace any occurrences of the words "Dwarfs" with '
                        u'"Dwarves" to better follow proper English.'),
                      u'Dwarfs',
                      (u'Proper English Text: Dwarfs -> Dwarves', u'Dwarves'),),
-                    (u'\\b(s|S)(?:taffs)\\b',u'\\1taves',
+                    (ur'\b(s|S)(?:taffs)\b',ur'\1taves',
                      _(u"Proper English Text: Staffs -> Staves"),
                      _(u'Replace any occurrences of the words "Staffs" with'
                        u' "Staves" to better follow proper English.'),

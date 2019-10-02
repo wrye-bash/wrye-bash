@@ -127,7 +127,7 @@ class DocBrowser(BaltFrame):
             return False
         try:
             with docPath.open('r',encoding='utf-8-sig') as textFile:
-                maText = re.match(u'^=.+=#\\s*$',textFile.readline(),re.U)
+                maText = re.match(ur'^=.+=#\s*$',textFile.readline(),re.U)
             return maText is not None
         except UnicodeDecodeError:
             return False
@@ -412,7 +412,7 @@ class ModChecker(BaltFrame):
     def OnCopyText(self):
         """Copies text of report to clipboard."""
         text_ = u'[spoiler]\n' + self.check_mods_text + u'[/spoiler]'
-        text_ = re.sub(u'\\[\\[.+?\\|\\s*(.+?)\\]\\]', u'\\1', text_, re.U)
+        text_ = re.sub(ur'\[\[.+?\|\s*(.+?)\]\]', ur'\1', text_, re.U)
         text_ = re.sub(u'(__|\*\*|~~)', u'', text_, re.U)
         text_ = re.sub(u'&bull; &bull;', u'**', text_, re.U)
         text_ = re.sub(u'<[^>]+>', '', text_, re.U)
@@ -526,7 +526,7 @@ class InstallerProject_OmodConfigDialog(BaltFrame):
         config.email = self.gEmail.GetValue().strip()
         config.abstract = self.gAbstract.GetValue().strip()
         #--Version
-        maVersion = re.match(u'(\\d+)\\.(\\d+)',
+        maVersion = re.match(ur'(\d+)\.(\d+)',
                              self.gVersion.GetValue().strip(), flags=re.U)
         if maVersion:
             config.vMajor,config.vMinor = map(int,maVersion.groups())

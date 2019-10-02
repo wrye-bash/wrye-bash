@@ -2203,7 +2203,7 @@ class InstallersList(balt.UIList):
             event.Skip()
 
     __ext_group = \
-        u'(\.(' + u'|'.join(ext[1:] for ext in archives.readExts) + u')+)'
+        u'(\.(' + ur'|'.join(ext[1:] for ext in archives.readExts) + u')+)'
     def OnLabelEdited(self, event):
         """Renamed some installers"""
         selected = self.GetSelected()
@@ -3040,7 +3040,7 @@ class ScreensList(balt.UIList):
     _shellUI = True
     _editLabels = True
     __ext_group = \
-        u'(\.(' + u'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
+        u'(\.(' + ur'|'.join(ext[1:] for ext in bosh.imageExts) + u')+)'
     def _order_by_number(self, items):
         if self.sort_column != 'File': return
         regex = re.compile(u'(.*?)(\d*)' + self.__ext_group + u'$')

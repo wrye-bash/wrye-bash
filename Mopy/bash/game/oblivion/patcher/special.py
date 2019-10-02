@@ -391,7 +391,7 @@ class CoblExhaustion(_ACoblExhaustion,ListPatcher):
         id_exhaustion = self.id_exhaustion
         textPath = GPath(textPath)
         with CsvReader(textPath) as ins:
-            reNum = re.compile(u'\\d+',re.U)
+            reNum = re.compile(ur'\d+',re.U)
             for fields in ins:
                 if len(fields) < 4 or fields[1][:2] != u'0x' or \
                         not reNum.match(fields[3]):
@@ -500,7 +500,7 @@ class CBash_CoblExhaustion(_ACoblExhaustion, _DefaultDictLog):
         id_exhaustion = self.id_exhaustion
         textPath = GPath(textPath)
         with CsvReader(textPath) as ins:
-            reNum = re.compile(u'\\d+',re.U)
+            reNum = re.compile(ur'\d+',re.U)
             for fields in ins:
                 if len(fields) < 4 or fields[1][:2] != u'0x' or \
                         not reNum.match(fields[3]):

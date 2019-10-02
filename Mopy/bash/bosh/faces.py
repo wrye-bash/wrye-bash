@@ -449,7 +449,7 @@ class PCFaces:
         #--Eid
         npcEids = set([record.eid for record in modFile.NPC_.records])
         eidForm = u''.join((u"sg", bush.game.raceShortNames.get(face.race,u'Unk'),
-            (face.gender and u'a' or u'u'), re.sub(u'\\W',u'',face.pcName),u'%02d'))
+            (face.gender and u'a' or u'u'), re.sub(ur'\W',u'',face.pcName),u'%02d'))
         count,eid = 0, eidForm % 0
         while eid in npcEids:
             count += 1
