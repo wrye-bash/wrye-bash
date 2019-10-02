@@ -688,6 +688,8 @@ def InitBSALinks():
         sortMenu.links.append(Files_SortBy('Size'))
         BSAList.mainMenu.append(sortMenu)
     BSAList.mainMenu.append(SeparatorLink())
+    BSAList.mainMenu.append(ColumnsMenu())
+    BSAList.mainMenu.append(SeparatorLink())
     BSAList.mainMenu.append(UIList_OpenStore())
     #--BSAList: Item Links
     if True: #--File
@@ -705,10 +707,16 @@ def InitBSALinks():
 def InitScreenLinks():
     """Initialize screens tab menus."""
     #--SaveList: Column Links
-    ScreensList.mainMenu.append(UIList_OpenStore())
+    if True: # Sort
+        sortMenu = MenuLink(_(u'Sort by'))
+        sortMenu.links.append(Files_SortBy('File'))
+        sortMenu.links.append(Files_SortBy('Modified'))
+        sortMenu.links.append(Files_SortBy('Size'))
+        ScreensList.mainMenu.append(sortMenu)
     ScreensList.mainMenu.append(SeparatorLink())
     ScreensList.mainMenu.append(ColumnsMenu())
     ScreensList.mainMenu.append(SeparatorLink())
+    ScreensList.mainMenu.append(UIList_OpenStore())
     ScreensList.mainMenu.append(Screens_NextScreenShot())
     #--JPEG Quality
     if True:

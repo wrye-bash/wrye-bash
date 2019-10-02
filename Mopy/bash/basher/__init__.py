@@ -510,7 +510,8 @@ class MasterList(_ModsUIList):
             self.SetMasterlistEdited()
             settings.getChanged('bash.mods.renames')[
                 masterInfo.oldName] = newName
-            self.PopulateItem(itemDex) # populate, refresh must be called last
+            # populate, refresh must be called last
+            self.PopulateItem(itemDex=itemDex)
         elif newName == u'':
             event.Veto()
         else:
@@ -3081,11 +3082,13 @@ class ScreensList(balt.UIList):
 
     _sort_keys = {'File'    : None,
                   'Modified': lambda self, a: self.data_store[a][1],
+                  'Size'    : lambda self, a: self.data_store[a][2],
                  }
     #--Labels
     labels = OrderedDict([
         ('File',     lambda self, p: p.s),
-        # ('Modified', lambda self, path: formatDate(self.data_store[path][1])), # unused
+        ('Modified', lambda self, p: formatDate(self.data_store[p][1])),
+        ('Size',     lambda self, p: round_size(self.data_store[p][2])),
     ])
     _extra_sortings = [_order_by_number]
 

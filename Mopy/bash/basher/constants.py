@@ -366,7 +366,7 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
         },
     'bash.BSAs.sort': 'File',
     #--Wrye Bash: Screens
-    'bash.screens.cols': ['File'],
+    'bash.screens.cols': ['File', 'Modified', 'Size'],
     'bash.screens.sort': 'File',
     'bash.screens.colReverse': {
         'Modified':1,
