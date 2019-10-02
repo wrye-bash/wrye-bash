@@ -73,6 +73,11 @@ class _AParser(object):
         # Internal variable, keeps track of mods we've already processed during
         # the first pass to avoid repeating work
         self._fp_mods = set()
+        # The name of the mod that is currently being loaded. Some parsers need
+        # this to change their behavior when loading a mod file. This is a
+        # unicode string matching the name of the mod being loaded, or None if
+        # no mod is being loaded.
+        self._current_mod = None
         # True if id_context needs another round of processing during the
         # second pass
         self._context_needs_followup = False
@@ -95,6 +100,13 @@ class _AParser(object):
         self.aliases = {}
 
     # Plugin-related utilities
+    def _mod_has_tag(self, tag_name):
+        """Returns True if the current mod has a Bash Tag with the specified
+        name."""
+        from . import bosh
+        return self._current_mod and tag_name in bosh.modInfos[
+            self._current_mod].getBashTags()
+
     def _load_plugin(self, mod_info, target_types):
         """Loads the specified record types in the specified ModInfo and
         returns the result. Abstract because it may be implemented by either
@@ -162,15 +174,21 @@ class _AParser(object):
         automatically clear id_stored_info to allow combining multiple sources.
 
         :param mod_info: The ModInfo instance to read from."""
+        self._current_mod = mod_info.name
         # Check if we need to read at all
         all_types = set(self._fp_types) | set(self._sp_types)
-        if not all_types: return
+        if not all_types:
+            # We need to unset _current_mod since we're no longer loading a mod
+            self._current_mod = None
+            return
         # Load mod_info once and for all, then execute every needed pass
         loaded_mod = self._load_plugin(mod_info, all_types)
         if self._fp_types:
             self._read_plugin_fp(loaded_mod)
         if self._sp_types:
             self._read_plugin_sp(loaded_mod)
+        # We need to unset _current_mod since we're no longer loading a mod
+        self._current_mod = None
 
     # Writing to plugins
     def _do_write_plugin(self, loaded_mod):
@@ -228,6 +246,44 @@ class _AParser(object):
         return self._do_write_plugin(self._load_plugin(
             mod_info, self.id_stored_info.keys()))
 
+    # Reading from CSV
+    def _get_read_format(self, csv_fields):
+        """Determines the _ACsvFormat to use when reading the specified CSV
+        line. We need to be dynamic here since some parsers need to support
+        multiple formats (e.g. for backwards compatibility).
+
+        :param csv_fields: A line in a CSV file, already split into fields.
+        :return: An _ACsvFormat instance (*not* a class!)."""
+        raise AbstractError()
+
+    def readFromText(self, csv_path):
+        """Reads information from the specified CSV file and stores the result
+        in id_stored_info. You must override _get_format for this method to
+        work.
+
+        :param csv_path: The path to the CSV file that should be read."""
+        with CsvReader(csv_path) as ins:
+            for csv_fields in ins:
+                # Figure out which format to use, then ask the format to parse
+                # the line
+                cur_format = self._get_read_format(csv_fields)
+                rec_type, source_mod, fid_key, rec_info = \
+                    cur_format.parse_line(csv_fields)
+                self.id_stored_info[rec_type][source_mod][fid_key] = rec_info
+
+# CSV Formats
+class _ACsvFormat(object):
+    """A format determines how lines in a CSV file are parsed and written."""
+    def parse_line(self, csv_fields):
+        """Parses the specified CSV line and returns a tuple containing the
+        result.
+
+        :param csv_fields: A line in a CSV file, already split into fields.
+        :return: A tuple containing the following, in order: The type of record
+            described by this line, the name of the plugin from which this line
+            originated, the (short) FormID of this"""
+
+# PBash / CBash implementations of the parsers
 # TODO(inf) Should this really be based on _AParser? Would object be better? If
 #  we do that, we will lose typing though...
 class _PBashParser(_AParser):
