@@ -3660,7 +3660,7 @@ class MreLgtm(MelRecord):
     classType = 'LGTM'
 
     class MelLgtmDalc(MelStruct):
-        """Handle older truncated DALC for LGTM subrecord."""
+        """Handle older truncated DALC subrecord for LGTM."""
         def loadData(self, record, ins, sub_type, size_, readId):
             if size_ == 32:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
@@ -3676,17 +3676,35 @@ class MreLgtm(MelRecord):
                 setter(attr,value)
             if self._debug: print unpacked
 
+    class MelLgtmData(MelStruct):
+        """Handle older truncated DATA subrecord for LGTM."""
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 92:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+                return
+            elif size_ == 84:
+                # Pad it with 8 null bytes in the middle
+                unpacked = ins.unpack('3Bs3Bs3Bs2f2i3f24s', 64, readId)
+                unpacked += null4 + null4
+                unpacked += ins.unpack('3Bs3f4s', 20, readId)
+            else:
+                raise ModSizeError(record.inName, readId, 92, size_, True)
+            setter = record.__setattr__
+            for attr, value, action in zip(self.attrs, unpacked, self.actions):
+                if callable(action):
+                    value = action(value)
+                setter(attr, value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        # 92 Bytes
-        # WindhelmLightingTemplate [LGTM:0007BA87] unknown1 only 24 Bytes
-        MelStruct('DATA','3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
+        MelLgtmData('DATA','3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
             'redLigh','greenLigh','blueLigh','unknownLigh',
             'redDirect','greenDirect','blueDirect','unknownDirect',
             'redFog','greenFog','blueFog','unknownFog',
             'fogNear','fogFar','dirRotXY','dirRotZ',
             'directionalFade','fogClipDist','fogPower',
-            ('unknownData',null4+null4+null4+null4+null4+null4+null4+null4),
+            ('ambientColors',null4+null4+null4+null4+null4+null4+null4+null4),
             'redFogFar','greenFogFar','blueFogFar','unknownFogFar',
             'fogMax','lightFaceStart','lightFadeEnd',
             ('unknownData2',null4),
