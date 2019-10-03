@@ -1119,6 +1119,24 @@ class MelStructA(MelStructs):
             for target in record.__getattribute__(self.attr):
                 melMap(self,target,function,save)
 
+class MelColorInterpolator(MelStructA):
+    """Wrapper around MelStructA that defines a time interpolator - an array
+    of two floats, where each entry in the array describes a point on a curve,
+    with 'time' as the X axis and 'red', 'green', 'blue' and 'alpha' as the Y
+    axis."""
+    def __init__(self, sub_type, attr):
+        MelStructA.__init__(self, sub_type, '5f', attr, 'time', 'red', 'green',
+                            'blue', 'alpha',)
+
+# xEdit calls this 'time interpolator', but that name doesn't really make sense
+# Both this class and the color interpolator above interpolate over time
+class MelValueInterpolator(MelStructA):
+    """Wrapper around MelStructA that defines a value interpolator - an array
+    of two floats, where each entry in the array describes a point on a curve,
+    with 'time' as the X axis and 'value' as the Y axis."""
+    def __init__(self, sub_type, attr):
+        MelStructA.__init__(self, sub_type, '2f', attr, 'time', 'value')
+
 #------------------------------------------------------------------------------
 class MelTuple(MelBase):
     """Represents a fixed length array that maps to a single subrecord.

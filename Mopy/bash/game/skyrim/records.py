@@ -33,8 +33,9 @@ from ...bolt import Flags, DataDict, winNewLines, encode, struct_pack, \
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
-    MelStructA, MreRecord, MreGmstBase, MelLString, MelCountedFidList, \
-    MelCountedFids, MelSortedFidList, MelStrings, MelMODS, MreHasEffects
+    MelStructA, MreGmstBase, MelLString, MelCountedFidList, MelCountedFids, \
+    MelSortedFidList, MelStrings, MelMODS, MreHasEffects, \
+    MelColorInterpolator, MelValueInterpolator
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -3263,123 +3264,112 @@ class MreImad(MelRecord):
     """Image Space Adapter"""
     classType = 'IMAD'
 
-    # {0x00000001}'Use Target',
-    # {0x00000002}'Unknown 2',
-    # {0x00000004}'Unknown 3',
-    # {0x00000008}'Unknown 4',
-    # {0x00000010}'Unknown 5',
-    # {0x00000020}'Unknown 6',
-    # {0x00000040}'Unknown 7',
-    # {0x00000080}'Unknown 8',
-    # {0x00000100}'Mode - Front',
-    # {0x00000200}'Mode - Back',
-    # {0x00000400}'No Sky',
-    # {0x00000800}'Blur Radius Bit 2',
-    # {0x00001000}'Blur Radius Bit 1',
-    # {0x00002000}'Blur Radius Bit 0'
-    ImadDoFFlags = Flags(0L,Flags.getNames(
-            (0, 'useTarget'),
-            (1, 'unknown2'),
-            (2, 'unknown3'),
-            (3, 'unknown4'),
-            (4, 'unknown5'),
-            (5, 'unknown6'),
-            (6, 'unknown7'),
-            (7, 'unknown8'),
-            (8, 'modeFront'),
-            (9, 'modeBack'),
-            (10, 'noSky'),
-            (11, 'blurRadiusBit2'),
-            (12, 'blurRadiusBit1'),
-            (13, 'blurRadiusBit0'),
-        ))
+    _ImadDofFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget'),
+        (1, 'unknown2'),
+        (2, 'unknown3'),
+        (3, 'unknown4'),
+        (4, 'unknown5'),
+        (5, 'unknown6'),
+        (6, 'unknown7'),
+        (7, 'unknown8'),
+        (8, 'modeFront'),
+        (9, 'modeBack'),
+        (10, 'noSky'),
+        (11, 'blurRadiusBit2'),
+        (12, 'blurRadiusBit1'),
+        (13, 'blurRadiusBit0'),
+    ))
 
-    ImadUseTargetFlags = Flags(0L,Flags.getNames(
-            (0, 'useTarget'),
-        ))
+    _ImadAnimatableFlags = Flags(0L, Flags.getNames(
+        (0, 'animatable'),
+    ))
 
-    ImadAnimatableFlags = Flags(0L,Flags.getNames(
-            (0, 'animatable'),
-        ))
+    _ImadRadialBlurFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget')
+    ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
-        # 'unknown' is 192 bytes in TES5Edit
-        # 'unknown1' is 4 bytes repeated 3 times for 12 bytes in TES5Edit
-        MelStruct('DNAM','If192sI2f12sI',(ImadAnimatableFlags,'aniFlags',0L),'duration',
-                  'unknown',(ImadUseTargetFlags,'flags',0L),'radialBlurCenterX',
-                  'radialBlurCenterY','unknown1',(ImadDoFFlags,'dofFlags',0L),
-                  dumpExtra='unknownExtra1',),
-        # Blur
-        MelStruct('BNAM','2f','blurUnknown','blurRadius',dumpExtra='unknownExtra2',),
-        # Double Vision
-        MelStruct('VNAM','2f','dvUnknown','dvStrength',dumpExtra='unknownExtra3',),
-        # Cinematic Colors
-        MelStruct('TNAM','5f','unknown4','tintRed','tintGreen','tintBlue',
-                  'tintAlpha',dumpExtra='unknownExtra4',),
-        MelStruct('NAM3','5f','unknown5','fadeRed','fadeGreen','fadeBlue',
-                  'fadeAlpha',dumpExtra='unknownExtra5',),
-        # {<<<< Begin Radial Blur >>>>}
-        MelStruct('RNAM','2f','unknown6','rnamStrength',dumpExtra='unknownExtra6',),
-        MelStruct('SNAM','2f','unknown7','rampup',dumpExtra='unknownExtra7',),
-        MelStruct('UNAM','2f','unknown8','start',dumpExtra='unknownExtra8',),
-        MelStruct('NAM1','2f','unknown9','rampdown',dumpExtra='unknownExtra9',),
-        MelStruct('NAM2','2f','unknown10','downstart',dumpExtra='unknownExtra10',),
-        # {<<<< End Radial Blur >>>>}
-        # {<<<< Begin Depth of Field >>>>}
-        MelStruct('WNAM','2f','unknown11','wnamStrength',dumpExtra='unknownExtra11',),
-        MelStruct('XNAM','2f','unknown12','distance',dumpExtra='unknownExtra12',),
-        MelStruct('YNAM','2f','unknown13','range',dumpExtra='unknownExtra13',),
-        # {<<<< FullScreen Motion Blur >>>>}
-        MelStruct('NAM4','2f','unknown14','nam4Strength',dumpExtra='unknownExtra14',),
-        # {<<<< End Depth of Field >>>>}
-        # {<<<< Begin HDR >>>>}
-        MelStructA('\x00IAD','2f','eyeAdaptSpeedMult','time1','value1'),
-        MelStructA('\x40IAD','2f','eyeAdaptSpeedAdd','time2','value2'),
-        MelStructA('\x01IAD','2f','bloomBlurRadiusMult','time3','value3'),
-        MelStructA('\x41IAD','2f','bloomBlurRadiusAdd','time4','value4'),
-        MelStructA('\x02IAD','2f','bloomThresholdMult','time5','value5'),
-        MelStructA('\x42IAD','2f','bloomThresholdAdd','time6','value6'),
-        MelStructA('\x03IAD','2f','bloomScaleMult','time7','value7'),
-        MelStructA('\x43IAD','2f','bloomScaleAdd','time8','value8'),
-        MelStructA('\x04IAD','2f','targetLumMinMult','time9','value9'),
-        MelStructA('\x44IAD','2f','targetLumMinAdd','time10','value10'),
-        MelStructA('\x05IAD','2f','targetLumMaxMult','time11','value11'),
-        MelStructA('\x45IAD','2f','targetLumMaxAdd','time12','value12'),
-        MelStructA('\x06IAD','2f','sunlightScaleMult','time13','value13'),
-        MelStructA('\x46IAD','2f','sunlightScaleAdd','time14','value14'),
-        MelStructA('\x07IAD','2f','skyScaleMult','time15','value15'),
-        MelStructA('\x47IAD','2f','skyScaleAdd','time16','value16'),
-        # {<<<< End HDR >>>>}
-        MelBase('\x08IAD','isd08IAD_p'),
-        MelBase('\x48IAD','isd48IAD_p'),
-        MelBase('\x09IAD','isd09IAD_p'),
-        MelBase('\x49IAD','isd49IAD_p'),
-        MelBase('\x0AIAD','isd0aIAD_p'),
-        MelBase('\x4AIAD','isd4aIAD_p'),
-        MelBase('\x0BIAD','isd0bIAD_p'),
-        MelBase('\x4BIAD','isd4bIAD_p'),
-        MelBase('\x0CIAD','isd0cIAD_p'),
-        MelBase('\x4CIAD','isd4cIAD_p'),
-        MelBase('\x0DIAD','isd0dIAD_p'),
-        MelBase('\x4DIAD','isd4dIAD_p'),
-        MelBase('\x0EIAD','isd0eIAD_p'),
-        MelBase('\x4EIAD','isd4eIAD_p'),
-        MelBase('\x0FIAD','isd0fIAD_p'),
-        MelBase('\x4FIAD','isd4fIAD_p'),
-        MelBase('\x10IAD','isd10IAD_p'),
-        MelBase('\x50IAD','isd50IAD_p'),
-        # {<<<< Begin Cinematic >>>>}
-        MelStructA('\x11IAD','2f','saturationMult','time17','value17'),
-        MelStructA('\x51IAD','2f','saturationAdd','time18','value18'),
-        MelStructA('\x12IAD','2f','brightnessMult','time19','value19'),
-        MelStructA('\x52IAD','2f','brightnessAdd','time20','value20'),
-        MelStructA('\x13IAD','2f','contrastMult','time21','value21'),
-        MelStructA('\x53IAD','2f','contrastAdd','time22','value22'),
-        # {<<<< End Cinematic >>>>}
-        MelBase('\x14IAD','isd14IAD_p'),
-        MelBase('\x54IAD','isd54IAD_p'),
-        )
+        MelString('EDID', 'eid'),
+        MelStruct('DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0L),
+                  'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
+                  'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
+                  'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
+                  'bloomScaleAdd', 'targetLumMinMult', 'targetLumMinAdd',
+                  'targetLumMaxMult', 'targetLumMaxAdd', 'sunlightScaleMult',
+                  'sunlightScaleAdd', 'skyScaleMult', 'skyScaleAdd',
+                  'unknown08Mult', 'unknown48Add', 'unknown09Mult',
+                  'unknown49Add', 'unknown0AMult', 'unknown4AAdd',
+                  'unknown0BMult', 'unknown4BAdd', 'unknown0CMult',
+                  'unknown4CAdd', 'unknown0DMult', 'unknown4DAdd',
+                  'unknown0EMult', 'unknown4EAdd', 'unknown0FMult',
+                  'unknown4FAdd', 'unknown10Mult', 'unknown50Add',
+                  'saturationMult', 'saturationAdd', 'brightnessMult',
+                  'brightnessAdd', 'contrastMult', 'contrastAdd',
+                  'unknown14Mult', 'unknown54Add',
+                  'tintColor', 'blurRadius', 'doubleVisionStrength',
+                  'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
+                  (_ImadRadialBlurFlags, 'radialBlurFlags', 0L),
+                  'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
+                  'dofDistance', 'dofRange', (_ImadDofFlags, 'dofFlags', 0L),
+                  'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
+                  'motionBlurStrength'),
+        MelValueInterpolator('BNAM', 'blurRadiusInterp'),
+        MelValueInterpolator('VNAM', 'doubleVisionStrengthInterp'),
+        MelColorInterpolator('TNAM', 'tintColorInterp'),
+        MelColorInterpolator('NAM3', 'fadeColorInterp'),
+        MelValueInterpolator('RNAM', 'radialBlurStrengthInterp'),
+        MelValueInterpolator('SNAM', 'radialBlurRampUpInterp'),
+        MelValueInterpolator('UNAM', 'radialBlurStartInterp'),
+        MelValueInterpolator('NAM1', 'radialBlurRampDownInterp'),
+        MelValueInterpolator('NAM2', 'radialBlurDownStartInterp'),
+        MelValueInterpolator('WNAM', 'dofStrengthInterp'),
+        MelValueInterpolator('XNAM', 'dofDistanceInterp'),
+        MelValueInterpolator('YNAM', 'dofRangeInterp'),
+        MelValueInterpolator('NAM4', 'motionBlurStrengthInterp'),
+        MelValueInterpolator('\x00IAD', 'eyeAdaptSpeedMultInterp'),
+        MelValueInterpolator('\x40IAD', 'eyeAdaptSpeedAddInterp'),
+        MelValueInterpolator('\x01IAD', 'bloomBlurRadiusMultInterp'),
+        MelValueInterpolator('\x41IAD', 'bloomBlurRadiusAddInterp'),
+        MelValueInterpolator('\x02IAD', 'bloomThresholdMultInterp'),
+        MelValueInterpolator('\x42IAD', 'bloomThresholdAddInterp'),
+        MelValueInterpolator('\x03IAD', 'bloomScaleMultInterp'),
+        MelValueInterpolator('\x43IAD', 'bloomScaleAddInterp'),
+        MelValueInterpolator('\x04IAD', 'targetLumMinMultInterp'),
+        MelValueInterpolator('\x44IAD', 'targetLumMinAddInterp'),
+        MelValueInterpolator('\x05IAD', 'targetLumMaxMultInterp'),
+        MelValueInterpolator('\x45IAD', 'targetLumMaxAddInterp'),
+        MelValueInterpolator('\x06IAD', 'sunlightScaleMultInterp'),
+        MelValueInterpolator('\x46IAD', 'sunlightScaleAddInterp'),
+        MelValueInterpolator('\x07IAD', 'skyScaleMultInterp'),
+        MelValueInterpolator('\x47IAD', 'skyScaleAddInterp'),
+        MelBase('\x08IAD', 'unknown08IAD'),
+        MelBase('\x48IAD', 'unknown48IAD'),
+        MelBase('\x09IAD', 'unknown09IAD'),
+        MelBase('\x49IAD', 'unknown49IAD'),
+        MelBase('\x0AIAD', 'unknown0aIAD'),
+        MelBase('\x4AIAD', 'unknown4aIAD'),
+        MelBase('\x0BIAD', 'unknown0bIAD'),
+        MelBase('\x4BIAD', 'unknown4bIAD'),
+        MelBase('\x0CIAD', 'unknown0cIAD'),
+        MelBase('\x4CIAD', 'unknown4cIAD'),
+        MelBase('\x0DIAD', 'unknown0dIAD'),
+        MelBase('\x4DIAD', 'unknown4dIAD'),
+        MelBase('\x0EIAD', 'unknown0eIAD'),
+        MelBase('\x4EIAD', 'unknown4eIAD'),
+        MelBase('\x0FIAD', 'unknown0fIAD'),
+        MelBase('\x4FIAD', 'unknown4fIAD'),
+        MelBase('\x10IAD', 'unknown10IAD'),
+        MelBase('\x50IAD', 'unknown50IAD'),
+        MelValueInterpolator('\x11IAD', 'saturationMultInterp'),
+        MelValueInterpolator('\x51IAD', 'saturationAddInterp'),
+        MelValueInterpolator('\x12IAD', 'brightnessMultInterp'),
+        MelValueInterpolator('\x52IAD', 'brightnessAddInterp'),
+        MelValueInterpolator('\x13IAD', 'contrastMultInterp'),
+        MelValueInterpolator('\x53IAD', 'contrastAddInterp'),
+        MelBase('\x14IAD', 'unknown14IAD'),
+        MelBase('\x54IAD', 'unknown54IAD'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
