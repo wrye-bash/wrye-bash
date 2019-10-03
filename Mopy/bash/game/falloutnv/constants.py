@@ -1065,6 +1065,25 @@ text_types = {
     'TERM': ('description',),
 }
 
+#------------------------------------------------------------------------------
+# Contents Checker
+#------------------------------------------------------------------------------
+# Entry types used for CONT, CREA, LVLI and NPC_
+_common_entry_types = {'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CCRD', 'CHIP', 'CMNY',
+                       'IMOD', 'KEYM', 'LIGH', 'LVLI', 'MISC', 'NOTE', 'WEAP'}
+cc_valid_types = {
+    'CONT': _common_entry_types,
+    'CREA': _common_entry_types,
+    'LVLC': {'CREA', 'LVLC'},
+    'LVLN': {'LVLN', 'NPC_'},
+    'LVLI': _common_entry_types,
+    'NPC_': _common_entry_types,
+}
+cc_passes = (
+    (('LVLC', 'LVLN', 'LVLI'), 'entries', 'listId'),
+    (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
+)
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

@@ -888,6 +888,28 @@ text_types = {
     'TERM': ('description',),
 }
 
+#------------------------------------------------------------------------------
+# Contents Checker
+#------------------------------------------------------------------------------
+# Entry types used for CONT, CREA, LVLI and NPC_
+_common_entry_types = {'ALCH', 'AMMO', 'ARMO', 'BOOK', 'KEYM', 'LVLI', 'MISC',
+                       'NOTE', 'WEAP'}
+# These are marked as {?} in xEdit for FO3, absent for FO3's LVLI, and
+# completely commented out in xEdit for FNV. Included for now just to be safe.
+_common_entry_types |= {'MSTT', 'STAT'}
+cc_valid_types = {
+    'CONT': _common_entry_types,
+    'CREA': _common_entry_types,
+    'LVLC': {'CREA', 'LVLC'},
+    'LVLN': {'LVLN', 'NPC_'},
+    'LVLI': _common_entry_types - {'MSTT', 'STAT'},
+    'NPC_': _common_entry_types,
+}
+cc_passes = (
+    (('LVLC', 'LVLN', 'LVLI'), 'entries', 'listId'),
+    (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
+)
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

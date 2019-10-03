@@ -1674,6 +1674,25 @@ text_types = {
     'SKIL': ('description',),
 }
 
+#------------------------------------------------------------------------------
+# Contents Checker
+#------------------------------------------------------------------------------
+# Entry types used for CONT, CREA, LVLI and NPC_
+_common_entry_types = {'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'INGR',
+                       'KEYM', 'LIGH', 'LVLI', 'MISC', 'SGST', 'SLGM', 'WEAP'}
+cc_valid_types = {
+    'CONT': _common_entry_types,
+    'CREA': _common_entry_types,
+    'LVLC': {'CREA', 'LVLC', 'NPC_'},
+    'LVLI': _common_entry_types,
+    'LVSP': {'LVSP', 'SPEL'},
+    'NPC_': _common_entry_types,
+}
+cc_passes = (
+    (('LVLC', 'LVLI', 'LVSP'), 'entries', 'listId'),
+    (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
+)
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

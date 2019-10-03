@@ -402,6 +402,14 @@ class GameInfo(object):
     text_long_types = set()
     text_types = {}
 
+    #--------------------------------------------------------------------------
+    # Contents Checker
+    #--------------------------------------------------------------------------
+    cc_valid_types = {}
+    # (targeted types, structs/groups name, entry/item name)
+    # OR (targeted types, fid list name)
+    cc_passes = ()
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -438,14 +446,14 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'bethDataFiles', 'cellAutoKeys',
-        'cellRecAttrs', 'cellRecFlags', 'condition_function_data',
-        'default_eyes', 'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
-        'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes',
-        'keywords_types', 'listTypes', 'namesTypes', 'pricesTypes',
-        'record_type_name', 'save_rec_types', 'soundsLongsTypes',
-        'soundsTypes', 'statsHeaders', 'statsTypes', 'text_long_types',
-        'text_types', 'xEdit_expert',
+        'GlobalsTweaks', 'GmstTweaks', 'bethDataFiles', 'cc_valid_types',
+        'cc_passes', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
+        'condition_function_data', 'default_eyes', 'gmstEids',
+        'graphicsFidTypes', 'graphicsLongsTypes', 'graphicsModelAttrs',
+        'graphicsTypes', 'inventoryTypes', 'keywords_types', 'listTypes',
+        'namesTypes', 'pricesTypes', 'record_type_name', 'save_rec_types',
+        'soundsLongsTypes', 'soundsTypes', 'statsHeaders', 'statsTypes',
+        'text_long_types', 'text_types', 'xEdit_expert',
     }
 
     @classmethod

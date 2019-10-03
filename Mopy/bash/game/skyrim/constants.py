@@ -2473,6 +2473,27 @@ text_types = {
     'WEAP': ('description',),
 }
 
+#------------------------------------------------------------------------------
+# Contents Checker
+#------------------------------------------------------------------------------
+# Entry types used for COBJ, CONT, LVLI and NPC_
+_common_entry_types = {'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'INGR', 'KEYM',
+                       'LIGH', 'LVLI', 'MISC', 'SLGM', 'SCRL', 'WEAP'}
+cc_valid_types = {
+    'COBJ': _common_entry_types,
+    'CONT': _common_entry_types,
+    'LVLN': {'LVLN', 'NPC_'},
+    'LVLI': _common_entry_types,
+    'LVSP': {'LVSP', 'SPEL'},
+    'NPC_': _common_entry_types,
+    'OTFT': {'ARMO', 'LVLI'},
+}
+cc_passes = (
+    (('LVLN', 'LVLI', 'LVSP'), 'entries', 'listId'),
+    (('COBJ', 'CONT', 'NPC_'), 'items', 'item'),
+    (('OTFT',), 'items'),
+)
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

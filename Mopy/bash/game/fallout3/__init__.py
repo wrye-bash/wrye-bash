@@ -139,6 +139,7 @@ class Fallout3GameInfo(GameInfo):
         u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
         u'ImportFactions', u'ImportInventory', u'ListsMerger', u'NamesPatcher',
         u'PatchMerger', u'SoundPatcher', u'StatsPatcher', u'TextImporter',
+        u'ContentsChecker',
     )
 
     weaponTypes = (
