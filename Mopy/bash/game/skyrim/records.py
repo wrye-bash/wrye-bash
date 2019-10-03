@@ -4765,10 +4765,10 @@ class MrePerk(MelRecord):
 
     # 'Run Immediately',
     # 'Replace Default'
-    PerkScriptFlagsFlags = Flags(0L,Flags.getNames(
-            (0, 'runImmediately'),
-            (1, 'replaceDefault'),
-        ))
+    _PerkScriptFlags = Flags(0L,Flags.getNames(
+        (0, 'runImmediately'),
+        (1, 'replaceDefault'),
+    ))
 
     class MelPerkData(MelStruct):
         """Handle older truncated DATA for PERK subrecord."""
@@ -4793,11 +4793,11 @@ class MrePerk(MelRecord):
         def loadData(self, record, ins, sub_type, size_, readId):
             target = MelObject()
             record.__setattr__(self.attr,target)
-            if record.type == 0:
+            if record.type == 0: # quest + stage
                 format,attrs = ('II',('quest','queststage'))
-            elif record.type == 1:
+            elif record.type == 1: # ability
                 format,attrs = ('I',('ability',))
-            elif record.type == 2:
+            elif record.type == 2: # entry point
                 format,attrs = ('HB',('entrypoint','function'))
             else:
                 raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
@@ -4809,11 +4809,11 @@ class MrePerk(MelRecord):
         def dumpData(self,record,out):
             target = record.__getattribute__(self.attr)
             if not target: return
-            if record.type == 0:
+            if record.type == 0: # quest + stage
                 format,attrs = ('II',('quest','queststage'))
-            elif record.type == 1:
+            elif record.type == 1: # ability
                 format,attrs = ('I',('ability',))
-            elif record.type == 2:
+            elif record.type == 2: # entry point
                 format,attrs = ('HB',('entrypoint','function'))
             else:
                 raise ModError(record.inName, # untested
@@ -4832,10 +4832,10 @@ class MrePerk(MelRecord):
         def mapFids(self,record,function,save=False):
             target = record.__getattribute__(self.attr)
             if not target: return
-            if record.type == 0:
+            if record.type == 0: # quest + stage
                 result = function(target.quest)
                 if save: target.quest = result
-            elif record.type == 1:
+            elif record.type == 1: # ability
                 result = function(target.ability)
                 if save: target.ability = result
 
@@ -4881,6 +4881,78 @@ class MrePerk(MelRecord):
                         'Unexpected type: %d') % target.recordType)
                 element.dumpData(target,out)
 
+    class MelPerkEpfd(MelBase):
+        """EPFD needs to check EPFT and adjust its loading / dumping behavior
+        accordingly."""
+        def __init__(self):
+            MelBase.__init__(self, 'EPFD', 'function_parameter_data')
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            target = MelObject()
+            # EPFT has the following meanings:
+            #  0: Unknown
+            #  1: EPFD=float
+            #  2: EPFD=float, float
+            #  3: EPFD=fid (LVLI)
+            #  4: EPFD=fid (SPEL), EPF2=string, EPF3=uint16 (flags)
+            #  5: EPFD=fid (SPEL)
+            #  6: EPFD=string
+            #  7: EPFD=lstring
+            # TODO(inf) there is a special case: If EPFT is 2 and
+            #  DATA/function is one of 5, 12, 13 or 14, then:
+            #  EPFD=uint32, float
+            record.__setattribute__(self.attr, target)
+            if record.function_parameter_type == 0:
+                # Read the entire subrecord, probably empty but just in case
+                target.params = ins.read(size_, readId)
+            elif record.function_parameter_type == 1:
+                target.params = ins.unpack('f', 4, readId)
+            elif record.function_parameter_type == 2:
+                # TODO(inf) See above - this is a special case, the first one
+                #  may either be uint32 or float. Using uint32 to not lose any
+                #  data due to precision issues here
+                target.params = ins.unpack('If', 8, readId)
+            elif record.function_parameter_type in (3, 4, 5):
+                target.params = ins.unpack('I', 4, readId)
+            elif record.function_parameter_type == 6:
+                target.params = ins.readString(size_, readId)
+            elif record.function_parameter_type == 7:
+                target.params = ins.readLString(size_, readId)
+            else:
+                raise ModError(ins.inName, _(u'Unexpected function parameter '
+                                             u'type: %d') %
+                               record.function_parameter_type)
+
+        def dumpData(self, record, out):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.function_parameter_type == 0:
+                # In this case, params is a binary dump
+                out.packSub(self.subType, target.params)
+                return
+            elif record.function_parameter_type == 1:
+                target_format = 'f'
+            elif record.function_parameter_type == 2:
+                target_format = 'If' # see TODOs in loadData above
+            elif record.function_parameter_type in (3, 4, 5):
+                target_format = 'I'
+            elif record.function_parameter_type in (6, 7):
+                out.write_string(self.subType, target.params[0])
+                return
+            else:
+                # TODO(inf) We need to hand the mod name to dumpData -
+                #  otherwise these errors are worthless
+                raise ModError(u'', _(u'Unexpected type: %d') % record.type)
+            out.packSub(self.subType, target_format, *target.params)
+
+        def hasFids(self, formElements):
+            formElements.add(self)
+
+        def mapFids(self, record, function, save=False):
+            if record.function_parameter_type in (3, 4, 5):
+                result = map(function, record.params)
+                if save: record.params = tuple(result)
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -4900,10 +4972,10 @@ class MrePerk(MelRecord):
                 MelConditions(),
             ),
             MelPerkEffectParams('effectParams',
-                MelStruct('EPFT','B','_epft'),
-                MelString('EPF2','buttonLabel'),
-                MelStruct('EPF3','H','scriptFlag'),
-                MelBase('EPFD', 'floats'), # [Float] or [Float,Float], todo rewrite specific class
+                MelStruct('EPFT','B','function_parameter_type'),
+                MelLString('EPF2','buttonLabel'),
+                MelStruct('EPF3','H',(_PerkScriptFlags, 'script_flags', 0L)),
+                MelPerkEpfd(),
             ),
             MelBase('PRKF','footer'),
             ),

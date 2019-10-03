@@ -431,6 +431,33 @@ class ModWriter:
         else:
             self.pack('=4s4I','GRUP',size,label,groupType,stamp)
 
+    def write_string(self, sub_type, string_val, max_size=0,
+                     preferred_encoding=None):
+        """Writes out a string subrecord, properly encoding it beforehand and
+        respecting max_size and preferred_encoding if they are set."""
+        preferred_encoding = preferred_encoding or bolt.pluginEncoding
+        if max_size:
+            string_val = bolt.winNewLines(string_val.rstrip())
+            truncated_size = min(max_size, len(string_val))
+            test, tested_encoding = encode(string_val,
+                                           firstEncoding=preferred_encoding,
+                                           returnEncoding=True)
+            extra_encoded = len(test) - max_size
+            if extra_encoded > 0:
+                total = 0
+                i = -1
+                while total < extra_encoded:
+                    total += len(string_val[i].encode(tested_encoding))
+                    i -= 1
+                truncated_size += i + 1
+                string_val = string_val[:truncated_size]
+                string_val = encode(string_val, firstEncoding=tested_encoding)
+            else:
+                string_val = test
+        else:
+            string_val = encode(string_val, firstEncoding=preferred_encoding)
+        self.packSub0(sub_type, string_val)
+
 # Mod Record Elements ---------------------------------------------------------
 #------------------------------------------------------------------------------
 # Constants
@@ -861,29 +888,9 @@ class MelString(MelBase):
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
-        value = record.__getattribute__(self.attr)
-        if value is not None:
-            firstEncoding = bolt.pluginEncoding
-            if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
-                size = min(self.maxSize,len(value))
-                test, encoding_ = encode(value, firstEncoding=firstEncoding,
-                                         returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding_))
-                        i -= 1
-                    size += i + 1
-                    value = value[:size]
-                    value = encode(value,firstEncoding=encoding_)
-                else:
-                    value = test
-            else:
-                value = encode(value,firstEncoding=firstEncoding)
-            out.packSub0(self.subType,value)
+        string_val = record.__getattribute__(self.attr)
+        if string_val is not None:
+            out.write_string(self.subType, string_val, max_size=self.maxSize)
 
 #------------------------------------------------------------------------------
 class MelUnicode(MelString):
@@ -900,28 +907,10 @@ class MelUnicode(MelString):
         record.__setattr__(self.attr,value)
 
     def dumpData(self,record,out):
-        value = record.__getattribute__(self.attr)
-        if value is not None:
-            firstEncoding = self.encoding
-            if self.maxSize:
-                value = bolt.winNewLines(value.strip())
-                size = min(self.maxSize,len(value))
-                test,encoding = encode(value,firstEncoding=firstEncoding,returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
-                        i -= 1
-                    size += i + 1
-                    value = value[:size]
-                    value = encode(value,firstEncoding=encoding)
-                else:
-                    value = test
-            else:
-                value = encode(value,firstEncoding=firstEncoding)
-            out.packSub0(self.subType,value)
+        string_val = record.__getattribute__(self.attr)
+        if string_val is not None:
+            out.write_string(self.subType, string_val, max_size=self.maxSize,
+                             preferred_encoding=self.encoding)
 
 #------------------------------------------------------------------------------
 class MelLString(MelString):
