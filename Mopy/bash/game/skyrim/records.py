@@ -2244,12 +2244,42 @@ class MreDlvw(MelRecord):
 class MreDobj(MelRecord):
     """Default Object Manager"""
     classType = 'DOBJ'
+
+    class MelDobjDnam(MelStructA):
+        """This DNAM can have < 8 bytes of noise at the end, so store those
+        in a variable and dump them out again when writing."""
+        def __init__(self):
+            MelStructA.__init__(self, 'DNAM', '2I', 'objects', 'objectUse',
+                                (FID, 'objectID'))
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            # Load everything but the noise
+            start_pos = ins.tell()
+            MelStructA.loadData(self, record, ins, sub_type, size_, readId)
+            # Now, read the remainder of the subrecord and store it
+            read_size = ins.tell() - start_pos
+            record.unknownDNAM = ins.read(size_ - read_size)
+
+        def dumpData(self, record, out):
+            # We need to fully override this to attach unknownDNAM to the data
+            # we'll be writing out
+            if record.__getattribute__(self.attr) is not None:
+                to_write = ''
+                attrs = self.attrs
+                format = self.format
+                for x in record.objects:
+                    to_write += struct_pack(
+                        format, *[getattr(x, item) for item in attrs])
+                to_write += record.unknownDNAM
+                out.packSub(self.subType, to_write)
+
+        def getSlotsUsed(self):
+            return MelStructA.getSlotsUsed(self) + ('unknownDNAM',)
+
     melSet = MelSet(
-        MelString('EDID','eid'),
-        MelGroups('objects',
-            MelStruct('DNAM','2I','objectUse',(FID,'objectID',None),),
-            ),
-        )
+        MelString('EDID', 'eid'),
+        MelDobjDnam(),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305

@@ -1080,11 +1080,11 @@ class MelStructA(MelStructs):
             setattr(record, self.attr, None)
             return
         selfDefault = self.getDefault
-        getter = record.__getattribute__
         recordAppend = record.__getattribute__(self.attr).append
         selfAttrs = self.attrs
         itemSize = struct.calcsize(self.format)
         melLoadData = MelStruct.loadData
+        # Note for py3: we want integer division here!
         for x in xrange(size_/itemSize):
             target = selfDefault()
             recordAppend(target)
