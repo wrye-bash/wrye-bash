@@ -1544,15 +1544,14 @@ class MreFlst(MelRecord):
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
         Requires that: self.items, other.deflsts be defined."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        if not other.longFids: raise StateError(_("Fids not in long format"))
+        if not self.longFids or not other.longFids:
+            raise StateError(_("Fids not in long format"))
         #--Remove items based on other.removes
         if other.deflsts:
             removeItems = self.items & other.deflsts
             #self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
             self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
             self.items = (self.items | other.deflsts)
-        hasOldItems = bool(self.items)
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append
@@ -1564,7 +1563,7 @@ class MreFlst(MelRecord):
         if newItems:
             self.items |= newItems
             #self.fids.sort(key=attrgetter('level'))
-            self.formIDInList.sort
+            self.formIDInList.sort()
         #--Is merged list different from other? (And thus written to patch.)
         if len(self.formIDInList) != len(other.formIDInList):
             self.mergeOverLast = True
