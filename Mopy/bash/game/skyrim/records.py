@@ -711,7 +711,10 @@ class MelVmad(MelBase):
                 Type, = insUnpack('=B',1,readId)
                 self.status = 1
             # Data
-            if Type == 1:
+            if Type == 0:
+                # Null
+                return
+            elif Type == 1:
                 # Object (8 Bytes)
                 if objFormat == 1:
                     fid,aid,nul = insUnpack('=IHH',8,readId)
@@ -765,8 +768,11 @@ class MelVmad(MelBase):
             data = struct_pack('=H', len(name)) + name
             # Property Type
             value = self.value
+            # Type 0 - Null
+            if value is None:
+                pass
             # Type 1 - Object Reference
-            if isinstance(value,tuple):
+            elif isinstance(value,tuple):
                 # Object Format 1 - (Fid, Aid, NULL)
                 #data += structPack('=BBIHH',1,self.status,value[0],value[1],0)
                 # Object Format 2 - (NULL, Aid, Fid)
