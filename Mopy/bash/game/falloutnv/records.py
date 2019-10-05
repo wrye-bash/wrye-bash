@@ -1891,7 +1891,9 @@ class MreRegn(MelRecord):
             MelFid('RDSI','incidentalMediaSet'),
             MelFids('RDSB','battleMediaSets'),
             MelRegnStructA('RDSD', '3I', 'sounds', (FID, 'sound'), (sdflags, 'flags'), 'chance'),
-            MelRegnStructA('RDWT', '3I', 'weather', (FID, 'weather', None), 'chance', (FID, 'global', None)),
+            MelRegnStructA('RDWT', '3I', 'weatherTypes',
+                           (FID, 'weather', None), 'chance',
+                           (FID, 'global', None)),
             MelFidList('RDID','imposters')),
     )
     __slots__ = melSet.getSlotsUsed()

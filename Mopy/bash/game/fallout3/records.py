@@ -3702,7 +3702,9 @@ class MreRegn(MelRecord):
             MelRegnOptStruct('RDMD', 'I', 'musicType'),
             MelFid('RDMO','music'),
             MelRegnStructA('RDSD', '3I', 'sounds', (FID, 'sound'), (sdflags, 'flags'), 'chance'),
-            MelRegnStructA('RDWT', '3I', 'weather', (FID, 'weather', None), 'chance', (FID, 'global', None)),
+            MelRegnStructA('RDWT', '3I', 'weatherTypes',
+                           (FID, 'weather', None), 'chance',
+                           (FID, 'global', None)),
             ),
         )
     __slots__ = melSet.getSlotsUsed()
