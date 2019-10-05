@@ -2790,6 +2790,10 @@ class MrePerk(MelRecord):
     """Perk record."""
     classType = 'PERK'
 
+    _PerkScriptFlags = Flags(0L, Flags.getNames(
+        (0, 'runImmediately'),
+    ))
+
     class MelPerkData(MelStruct):
         """Handle older truncated DATA for PERK subrecord."""
 
@@ -2906,6 +2910,60 @@ class MrePerk(MelRecord):
                     raise ModError(record.inName, _('Unexpected type: %d') % target.recordType)
                 element.dumpData(target, out)
 
+    class MelPerkEpfd(MelBase):
+        """EPFD needs to check EPFT and adjust its loading / dumping behavior
+        accordingly."""
+        def __init__(self):
+            MelBase.__init__(self, 'EPFD', 'function_parameter_data')
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            target = MelObject()
+            # EPFT has the following meanings:
+            #  0: Unknown
+            #  1: EPFD=float
+            #  2: EPFD=float, float
+            #  3: EPFD=fid (LVLI)
+            #  4: EPFD=Null (Script)
+            # TODO(inf) there is a special case: If EPFT is 2 and
+            #  DATA/function is 5, then:
+            #  EPFD=uint32, float
+            record.__setattribute__(self.attr, target)
+            if record.function_parameter_type in (0, 4):
+                # Read the entire subrecord, probably empty but just in case
+                target.params = ins.read(size_, readId)
+            elif record.function_parameter_type == 1:
+                target.params = ins.unpack('f', 4, readId)
+            elif record.function_parameter_type == 2:
+                # TODO(inf) See above - this is a special case, the first one
+                #  may either be uint32 or float. Using uint32 to not lose any
+                #  data due to precision issues here
+                target.params = ins.unpack('If', 8, readId)
+            elif record.function_parameter_type == 3:
+                target.params = ins.unpack('I', 4, readId)
+            else:
+                raise ModError(ins.inName, _(u'Unexpected function parameter '
+                                             u'type: %d') %
+                               record.function_parameter_type)
+
+        def dumpData(self, record, out):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.function_parameter_type in (0, 4):
+                # In this case, params is a binary dump
+                out.packSub(self.subType, target.params)
+                return
+            elif record.function_parameter_type == 1:
+                target_format = 'f'
+            elif record.function_parameter_type == 2:
+                target_format = 'If' # see TODOs in loadData above
+            elif record.function_parameter_type == 3:
+                target_format = 'I'
+            else:
+                # TODO(inf) We need to hand the mod name to dumpData -
+                #  otherwise these errors are worthless
+                raise ModError(u'', _(u'Unexpected type: %d') % record.type)
+            out.packSub(self.subType, target_format, *target.params)
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -2924,10 +2982,10 @@ class MrePerk(MelRecord):
                 MelConditions(),
             ),
             MelPerkEffectParams('effectParams',
-                MelBase('EPFD', 'floats'), # [Float] or [Float,Float], todo rewrite specific class
-                MelStruct('EPFT','B','_epft'),
+                MelStruct('EPFT', 'B', 'function_parameter_type'),
+                MelPerkEpfd(),
                 MelString('EPF2','buttonLabel'),
-                MelStruct('EPF3','H','scriptFlag'),
+                MelStruct('EPF3', 'H', (_PerkScriptFlags, 'script_flags', 0L)),
                 MelGroup('embeddedScript',
                     MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
                     MelBase('SCDA','compiled_p'),
