@@ -27,7 +27,9 @@
 bethDataFiles = {
     #--Vanilla
     u'falloutnv.esm',
+    u'fallout - invalidation.bsa',
     u'fallout - meshes.bsa',
+    u'fallout - meshes2.bsa',
     u'fallout - misc.bsa',
     u'fallout - sound.bsa',
     u'fallout - textures.bsa',
@@ -65,7 +67,9 @@ allBethFiles = {
     # Section 1: Vanilla files
     u'Credits.txt',
     u'CreditsWacky.txt',
+    u'Fallout - Invalidation.bsa',
     u'Fallout - Meshes.bsa',
+    u'Fallout - Meshes2.bsa',
     u'Fallout - Misc.bsa',
     u'Fallout - Sounds.bsa',
     u'Fallout - Textures.bsa',
