@@ -278,9 +278,6 @@ class GameInfo(object):
     ## These filenames need to be in lowercase,
     bethDataFiles = set()  # initialize with literal
 
-    #--Every file in the Data directory from Bethsoft
-    allBethFiles = set()  # initialize with literal
-
     # Function Info -----------------------------------------------------------
     # CTDA Data for the game. Maps function ID to tuple with name of function
     # and the parameter types of the function.
@@ -399,6 +396,13 @@ class GameInfo(object):
     # DefaultIniFile.__init__ for how the tweaks are parsed.
     default_tweaks = {}
 
+    # Set in game/*/vanilla_files.py, this is a set listing every file that
+    # exists in the Data directory of the game in a purely vanilla
+    # installation. Set in a separate file because this can be *very* large,
+    # and would make editing the constants a miserable experience if included
+    # (see e.g. skyrim/vanilla_files.py).
+    vanilla_files = set()
+
     @classmethod
     def init(cls):
         # Setting RecordHeader class variables --------------------------------
@@ -415,12 +419,11 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'allBethFiles', 'bethDataFiles',
-        'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
-        'condition_function_data', 'default_eyes', 'gmstEids',
-        'graphicsFidTypes', 'graphicsLongsTypes', 'graphicsModelAttrs',
-        'graphicsTypes', 'inventoryTypes', 'listTypes', 'namesTypes',
-        'pricesTypes', 'record_type_name', 'save_rec_types',
+        'GlobalsTweaks', 'GmstTweaks', 'bethDataFiles', 'cellAutoKeys',
+        'cellRecAttrs', 'cellRecFlags', 'condition_function_data',
+        'default_eyes', 'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
+        'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes', 'listTypes',
+        'namesTypes', 'pricesTypes', 'record_type_name', 'save_rec_types',
         'soundsLongsTypes', 'soundsTypes', 'statsHeaders', 'statsTypes',
         'xEdit_expert',
     }
@@ -430,7 +433,8 @@ class GameInfo(object):
         """Dynamically import package modules to avoid importing them for every
         game. We need to pass the package name in for importlib to work.
         Currently populates the GameInfo namespace with the members defined in
-        the relevant constants.py and imports default_tweaks."""
+        the relevant constants.py and imports default_tweaks.py and
+        vanilla_files.py."""
         constants = importlib.import_module('.constants', package=package_name)
         for k in dir(constants):
             if k.startswith('_'): continue
@@ -440,5 +444,8 @@ class GameInfo(object):
         tweaks_module = importlib.import_module('.default_tweaks',
                                                 package=package_name)
         cls.default_tweaks = tweaks_module.default_tweaks
+        vf_module = importlib.import_module('.vanilla_files',
+                                            package=package_name)
+        cls.vanilla_files = vf_module.vanilla_files
 
 GAME_TYPE = None

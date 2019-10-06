@@ -2508,7 +2508,7 @@ class InstallersData(DataStore):
             if installer.isActive:
                 keepFiles.update(installer.ci_dest_sizeCrc) # relative to Data/
         from . import modInfos
-        keepFiles.update((bolt.CIstr(f) for f in bush.game.allBethFiles))
+        keepFiles.update((bolt.CIstr(f) for f in bush.game.vanilla_files))
         for f in modInfos.bashed_patches: # type: bolt.Path
             keepFiles.add(bolt.CIstr(f.s))
             bp_doc = modInfos.table.getItem(f, 'doc')
