@@ -991,7 +991,7 @@ class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
 class _ANPCAIPackagePatcher(AImportPatcher):
     """Merges changes to the AI Packages of Actors."""
     name = _(u'Import Actors: AI Packages')
-    text = _(u"Import Actor AI Package links from source mods.")
+    text = _(u'Import actor AI Package links from source mods.')
     tip = text
     autoKey = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd'}
 
@@ -1003,7 +1003,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         super(NPCAIPackagePatcher, self).initPatchFile(patchFile)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self.longTypes = {'CREA', 'NPC_'}
+        self.target_rec_types = bush.game.actor_types
 
     def _insertPackage(self, data, fid, index, pkg, recordData):
         if index == 0: data[fid]['merged'].insert(0, pkg)# insert as first item
@@ -1032,9 +1032,9 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        longTypes = self.longTypes
-        loadFactory = LoadFactory(False,MreRecord.type_class['CREA'],
-                                        MreRecord.type_class['NPC_'])
+        target_rec_types = self.target_rec_types
+        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
+                                           in target_rec_types])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -1046,9 +1046,9 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
             masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
+            srcFile.convertToLongFids(target_rec_types)
             mapper = srcFile.getLongMapper()
-            for recClass in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
+            for recClass in (MreRecord.type_class[x] for x in target_rec_types):
                 if recClass.classType not in srcFile.tops: continue
                 for record in srcFile.tops[
                     recClass.classType].getActiveRecords():
@@ -1062,10 +1062,10 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
                     masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
+                    masterFile.convertToLongFids(target_rec_types)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                blocks = (MreRecord.type_class[x] for x in ('NPC_', 'CREA'))
+                blocks = (MreRecord.type_class[x] for x in target_rec_types)
                 for block in blocks:
                     if block.classType not in srcFile.tops: continue
                     if block.classType not in masterFile.tops: continue
@@ -1125,18 +1125,18 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile2: loop, LongTypes..
         """Add record from modFile."""
         if not self.isActive: return
         merged_deleted = self.id_merged_deleted
         mapper = modFile.getLongMapper()
-        for rec_type in ('NPC_','CREA'):
+        for rec_type in self.target_rec_types:
             patchBlock = getattr(self.patchFile,rec_type)
             for record in getattr(modFile,rec_type).getActiveRecords():
                 fid = mapper(record.fid)
@@ -1150,7 +1150,7 @@ class NPCAIPackagePatcher(ImportPatcher, _ANPCAIPackagePatcher):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for rec_type in ('NPC_','CREA'):
+        for rec_type in self.target_rec_types:
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
                 if fid not in merged_deleted: continue

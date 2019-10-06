@@ -3823,7 +3823,7 @@ class MreNpc(MelRecord):
                   'engergy', 'responsibility', 'mood', 'assistance',
                   'aggroRadiusBehavior',
                   'aidtUnknown', 'warn', 'warnAttack', 'attack'),
-        MelFids('PKID', 'packages',),
+        MelFids('PKID', 'aiPackages',),
         MelKeywords(),
         MelFid('CNAM', 'class'),
         MelFull(),

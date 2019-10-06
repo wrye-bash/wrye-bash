@@ -1346,6 +1346,34 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td>Actors.AIPackages</td>
+            <td>Modifies AI packages lists of actors.</td>
+            <td>Addition or removal of an (PKID) AI Package in the AI Packages subrecord in the following records:
+                <ul>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.AIPackagesForceAdd</td>
+            <td>Adds to actor package lists. This tag forces the addition of packages even if they are removed by later-loading plugins tagged with Actors.AIPackages.</td>
+            <td>Addition of an (PKID) AI Package in the AI Packages subrecord in the following records:
+                <ul>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>Actors.DeathItem</td>
             <td>Modifies actor death items.</td>
             <td>Modification of the (INAM) Death Item subrecord in the following records:
@@ -1964,16 +1992,6 @@ C.Location, -C.LockList
                     </li>
                 </ul>
             </td>
-        </tr>
-        <tr>
-            <td>Actors.AIPackages</td>
-            <td>Modifies AI packages lists of Creatures or NPCs.</td>
-            <td>Addition or removal of an (PKID) AI Package in the AI Packages subrecord.</td>
-        </tr>
-        <tr>
-            <td>Actors.AIPackagesForceAdd</td>
-            <td>Adds to creature or NPC AI package list. This tag forces the addition of packages even if they are removed by later-loading plugins tagged with Actors.AIPackages.</td>
-            <td>Addition of an (PKID) AI Package in the AI Packages subrecord.</td>
         </tr>
         <tr>
             <td>Actors.Anims</td>

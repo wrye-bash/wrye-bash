@@ -139,7 +139,8 @@ class SkyrimGameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.94, 1.70,)
 
-    allTags = {u'Actors.DeathItem', u'Actors.Spells', u'Actors.SpellsForceAdd',
+    allTags = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd',
+               u'Actors.DeathItem', u'Actors.Spells', u'Actors.SpellsForceAdd',
                u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ForceHideLand',
                u'C.ImageSpace', u'C.Light', u'C.Location', u'C.LockList',
                u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
@@ -153,7 +154,7 @@ class SkyrimGameInfo(GameInfo):
         u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
         u'StatsPatcher', u'NamesPatcher', u'KeywordsImporter', u'TextImporter',
         u'ContentsChecker', u'DestructiblePatcher', u'DeathItemPatcher',
-        u'ImportActorsSpells',
+        u'ImportActorsSpells', u'NPCAIPackagePatcher',
     )
 
     weaponTypes = (
