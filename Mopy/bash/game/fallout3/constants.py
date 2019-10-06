@@ -919,6 +919,17 @@ cc_passes = (
     (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
 )
 
+#------------------------------------------------------------------------------
+# Scripts Patcher
+#------------------------------------------------------------------------------
+# In valda's version: 'WEAP', 'ACTI', 'ALCH', 'ARMO', 'BOOK', 'CONT', 'CREA',
+#                     'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
+#                     'QUST', 'TERM', 'TACT'
+# INGR and COBJ are unused - still including them, see e.g. APPA in Skyrim
+scripts_types = ('ACTI', 'ALCH', 'ARMO', 'BOOK', 'COBJ', 'CONT', 'CREA',
+                 'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
+                 'QUST', 'TACT', 'TERM', 'WEAP')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

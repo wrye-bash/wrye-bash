@@ -1093,6 +1093,17 @@ cc_passes = (
     (('CONT', 'CREA', 'NPC_'), 'items', 'item'),
 )
 
+#------------------------------------------------------------------------------
+# Scripts Patcher
+#------------------------------------------------------------------------------
+# In valda's version: 'WEAP', 'ACTI', 'ALCH', 'ARMO', 'BOOK', 'CONT', 'CREA',
+#                     'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
+#                     'QUST', 'TERM', 'TACT', 'CCRD' - basically fo3 + CCRD
+scripts_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CCRD', 'CHAL',
+                 'COBJ', 'CONT', 'CREA', 'DOOR', 'FURN', 'INGR', 'IMOD',
+                 'KEYM', 'LIGH', 'MISC', 'NPC_', 'QUST', 'TACT', 'TERM',
+                 'WEAP')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

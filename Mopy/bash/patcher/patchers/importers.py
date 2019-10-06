@@ -1638,16 +1638,12 @@ class CBash_ImportRelations(CBash_ImportPatcher, _AImportRelations):
 class _AImportScripts(AImportPatcher):
     """Imports attached scripts on objects."""
     name = _(u'Import Scripts')
-    text = _(u"Import Scripts on containers, plants, misc, weapons etc from "
-             u"source mods.")
-    tip = text
+    text = _(u'Import scripts on various objects (e.g. containers, weapons, '
+             u'etc.) from source mods.')
     autoKey = {u'Scripts'}
 
 class ImportScripts(_SimpleImporter, _AImportScripts):
-    rec_attrs = dict((x, ('script',)) for x in
-                     {'WEAP', 'ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT',
-                      'CONT', 'CREA', 'DOOR', 'FLOR', 'FURN', 'INGR', 'KEYM',
-                      'LIGH', 'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM'})
+    rec_attrs = {x: ('script',) for x in bush.game.scripts_types}
 
 class CBash_ImportScripts(_RecTypeModLogging, _AImportScripts):
 
