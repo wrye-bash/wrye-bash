@@ -33,8 +33,9 @@ from ...bolt import Flags, DataDict, winNewLines, encode, struct_pack, \
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
-    MelStructA, MreRecord, MreGmstBase, MelLString, MelCountedFidList, \
-    MelCountedFids, MelSortedFidList, MelStrings, MelMODS, MreHasEffects
+    MelStructA, MreGmstBase, MelLString, MelCountedFidList, MelCountedFids, \
+    MelSortedFidList, MelStrings, MelMODS, MreHasEffects, \
+    MelColorInterpolator, MelValueInterpolator
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset, otherwise we are being imported from
 # fallout4.records
@@ -710,7 +711,10 @@ class MelVmad(MelBase):
                 Type, = insUnpack('=B',1,readId)
                 self.status = 1
             # Data
-            if Type == 1:
+            if Type == 0:
+                # Null
+                return
+            elif Type == 1:
                 # Object (8 Bytes)
                 if objFormat == 1:
                     fid,aid,nul = insUnpack('=IHH',8,readId)
@@ -764,8 +768,11 @@ class MelVmad(MelBase):
             data = struct_pack('=H', len(name)) + name
             # Property Type
             value = self.value
+            # Type 0 - Null
+            if value is None:
+                pass
             # Type 1 - Object Reference
-            if isinstance(value,tuple):
+            elif isinstance(value,tuple):
                 # Object Format 1 - (Fid, Aid, NULL)
                 #data += structPack('=BBIHH',1,self.status,value[0],value[1],0)
                 # Object Format 2 - (NULL, Aid, Fid)
@@ -2199,6 +2206,11 @@ class MreDial(brec.MreDial):
         )
     __slots__ = melSet.getSlotsUsed()
 
+    def dumpData(self, out):
+        # Update the TIFC counter - unknown if needed, but can't hurt
+        self.infoCount = len(self.infos)
+        super(MreDial, self).dumpData(out)
+
 # Verified for 305
 #------------------------------------------------------------------------------
 class MreDlbr(MelRecord):
@@ -2243,12 +2255,42 @@ class MreDlvw(MelRecord):
 class MreDobj(MelRecord):
     """Default Object Manager"""
     classType = 'DOBJ'
+
+    class MelDobjDnam(MelStructA):
+        """This DNAM can have < 8 bytes of noise at the end, so store those
+        in a variable and dump them out again when writing."""
+        def __init__(self):
+            MelStructA.__init__(self, 'DNAM', '2I', 'objects', 'objectUse',
+                                (FID, 'objectID'))
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            # Load everything but the noise
+            start_pos = ins.tell()
+            MelStructA.loadData(self, record, ins, sub_type, size_, readId)
+            # Now, read the remainder of the subrecord and store it
+            read_size = ins.tell() - start_pos
+            record.unknownDNAM = ins.read(size_ - read_size)
+
+        def dumpData(self, record, out):
+            # We need to fully override this to attach unknownDNAM to the data
+            # we'll be writing out
+            if record.__getattribute__(self.attr) is not None:
+                to_write = ''
+                attrs = self.attrs
+                format = self.format
+                for x in record.objects:
+                    to_write += struct_pack(
+                        format, *[getattr(x, item) for item in attrs])
+                to_write += record.unknownDNAM
+                out.packSub(self.subType, to_write)
+
+        def getSlotsUsed(self):
+            return MelStructA.getSlotsUsed(self) + ('unknownDNAM',)
+
     melSet = MelSet(
-        MelString('EDID','eid'),
-        MelGroups('objects',
-            MelStruct('DNAM','2I','objectUse',(FID,'objectID',None),),
-            ),
-        )
+        MelString('EDID', 'eid'),
+        MelDobjDnam(),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
@@ -3181,28 +3223,11 @@ class MreInfo(MelRecord):
     # 2 :'Medium',
     # 3 :'Large'
 
-    # 'Use Emotion Animation'
-    InfoResponsesFlags = Flags(0L,Flags.getNames(
+    _InfoResponsesFlags = Flags(0L, Flags.getNames(
             (0, 'useEmotionAnimation'),
         ))
 
-    # {0x0001} 'Goodbye',
-    # {0x0002} 'Random',
-    # {0x0004} 'Say once',
-    # {0x0008} 'Unknown 4',
-    # {0x0010} 'Unknown 5',
-    # {0x0020} 'Random end',
-    # {0x0040} 'Invisible continue',
-    # {0x0080} 'Walk Away',
-    # {0x0100} 'Walk Away Invisible in Menu',
-    # {0x0200} 'Force subtitle',
-    # {0x0400} 'Can move while greeting',
-    # {0x0800} 'No LIP File',
-    # {0x1000} 'Requires post-processing',
-    # {0x2000} 'Audio Output Override',
-    # {0x4000} 'Spends favor points',
-    # {0x8000} 'Unknown 16'
-    EnamResponseFlags = Flags(0L,Flags.getNames(
+    _EnamResponseFlags = Flags(0L, Flags.getNames(
             (0, 'goodbye'),
             (1, 'random'),
             (2, 'sayonce'),
@@ -3224,37 +3249,38 @@ class MreInfo(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
-        MelBase('DATA','data_p'),
-        MelStruct('ENAM','2H',(EnamResponseFlags,'flags',0L),'resetHours',),
+        MelBase('DATA','unknownDATA'),
+        MelStruct('ENAM','2H', (_EnamResponseFlags, 'flags', 0L),
+                  'resetHours',),
         MelFid('TPIC','topic',),
         MelFid('PNAM','prevInfo',),
-        MelStruct('CNAM','I','favorLevel',),
-        MelFids('TCLT','response',),
+        MelStruct('CNAM','B','favorLevel',),
+        MelFids('TCLT','linkTo',),
         MelFid('DNAM','responseData',),
         # {>>> Unordered, CTDA can appear before or after LNAM <- REQUIRES CONFIRMATION <<<}
         MelGroups('responses',
-            MelStruct('TRDT','II4sB3sIB3s','emotionType','emotionValue',
-                      'unused','responsenumber','unused',(FID,'sound'),
-                      (InfoResponsesFlags,'flags',0L),'unused',),
+            MelStruct('TRDT', '2I4sB3sIB3s', 'emotionType', 'emotionValue',
+                      ('unused1', null4), 'responseNumber', ('unused2', null3),
+                      (FID, 'sound', None),
+                      (_InfoResponsesFlags, 'responseFlags', 0L),
+                      ('unused3', null3),),
             MelLString('NAM1','responseText'),
             MelString('NAM2','scriptNotes'),
             MelString('NAM3','edits'),
             MelFid('SNAM','idleAnimationsSpeaker',),
             MelFid('LNAM','idleAnimationsListener',),
-            ),
-
+        ),
         MelConditions(),
-
         MelGroups('leftOver',
             MelBase('SCHR','unknown1'),
             MelFid('QNAM','unknown2'),
             MelNull('NEXT'),
-            ),
+        ),
         MelLString('RNAM','prompt'),
         MelFid('ANAM','speaker',),
         MelFid('TWAT','walkAwayTopic',),
         MelFid('ONAM','audioOutputOverride',),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
@@ -3263,123 +3289,112 @@ class MreImad(MelRecord):
     """Image Space Adapter"""
     classType = 'IMAD'
 
-    # {0x00000001}'Use Target',
-    # {0x00000002}'Unknown 2',
-    # {0x00000004}'Unknown 3',
-    # {0x00000008}'Unknown 4',
-    # {0x00000010}'Unknown 5',
-    # {0x00000020}'Unknown 6',
-    # {0x00000040}'Unknown 7',
-    # {0x00000080}'Unknown 8',
-    # {0x00000100}'Mode - Front',
-    # {0x00000200}'Mode - Back',
-    # {0x00000400}'No Sky',
-    # {0x00000800}'Blur Radius Bit 2',
-    # {0x00001000}'Blur Radius Bit 1',
-    # {0x00002000}'Blur Radius Bit 0'
-    ImadDoFFlags = Flags(0L,Flags.getNames(
-            (0, 'useTarget'),
-            (1, 'unknown2'),
-            (2, 'unknown3'),
-            (3, 'unknown4'),
-            (4, 'unknown5'),
-            (5, 'unknown6'),
-            (6, 'unknown7'),
-            (7, 'unknown8'),
-            (8, 'modeFront'),
-            (9, 'modeBack'),
-            (10, 'noSky'),
-            (11, 'blurRadiusBit2'),
-            (12, 'blurRadiusBit1'),
-            (13, 'blurRadiusBit0'),
-        ))
+    _ImadDofFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget'),
+        (1, 'unknown2'),
+        (2, 'unknown3'),
+        (3, 'unknown4'),
+        (4, 'unknown5'),
+        (5, 'unknown6'),
+        (6, 'unknown7'),
+        (7, 'unknown8'),
+        (8, 'modeFront'),
+        (9, 'modeBack'),
+        (10, 'noSky'),
+        (11, 'blurRadiusBit2'),
+        (12, 'blurRadiusBit1'),
+        (13, 'blurRadiusBit0'),
+    ))
 
-    ImadUseTargetFlags = Flags(0L,Flags.getNames(
-            (0, 'useTarget'),
-        ))
+    _ImadAnimatableFlags = Flags(0L, Flags.getNames(
+        (0, 'animatable'),
+    ))
 
-    ImadAnimatableFlags = Flags(0L,Flags.getNames(
-            (0, 'animatable'),
-        ))
+    _ImadRadialBlurFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget')
+    ))
 
     melSet = MelSet(
-        MelString('EDID','eid'),
-        # 'unknown' is 192 bytes in TES5Edit
-        # 'unknown1' is 4 bytes repeated 3 times for 12 bytes in TES5Edit
-        MelStruct('DNAM','If192sI2f12sI',(ImadAnimatableFlags,'aniFlags',0L),'duration',
-                  'unknown',(ImadUseTargetFlags,'flags',0L),'radialBlurCenterX',
-                  'radialBlurCenterY','unknown1',(ImadDoFFlags,'dofFlags',0L),
-                  dumpExtra='unknownExtra1',),
-        # Blur
-        MelStruct('BNAM','2f','blurUnknown','blurRadius',dumpExtra='unknownExtra2',),
-        # Double Vision
-        MelStruct('VNAM','2f','dvUnknown','dvStrength',dumpExtra='unknownExtra3',),
-        # Cinematic Colors
-        MelStruct('TNAM','5f','unknown4','tintRed','tintGreen','tintBlue',
-                  'tintAlpha',dumpExtra='unknownExtra4',),
-        MelStruct('NAM3','5f','unknown5','fadeRed','fadeGreen','fadeBlue',
-                  'fadeAlpha',dumpExtra='unknownExtra5',),
-        # {<<<< Begin Radial Blur >>>>}
-        MelStruct('RNAM','2f','unknown6','rnamStrength',dumpExtra='unknownExtra6',),
-        MelStruct('SNAM','2f','unknown7','rampup',dumpExtra='unknownExtra7',),
-        MelStruct('UNAM','2f','unknown8','start',dumpExtra='unknownExtra8',),
-        MelStruct('NAM1','2f','unknown9','rampdown',dumpExtra='unknownExtra9',),
-        MelStruct('NAM2','2f','unknown10','downstart',dumpExtra='unknownExtra10',),
-        # {<<<< End Radial Blur >>>>}
-        # {<<<< Begin Depth of Field >>>>}
-        MelStruct('WNAM','2f','unknown11','wnamStrength',dumpExtra='unknownExtra11',),
-        MelStruct('XNAM','2f','unknown12','distance',dumpExtra='unknownExtra12',),
-        MelStruct('YNAM','2f','unknown13','range',dumpExtra='unknownExtra13',),
-        # {<<<< FullScreen Motion Blur >>>>}
-        MelStruct('NAM4','2f','unknown14','nam4Strength',dumpExtra='unknownExtra14',),
-        # {<<<< End Depth of Field >>>>}
-        # {<<<< Begin HDR >>>>}
-        MelStructA('\x00IAD','2f','eyeAdaptSpeedMult','time1','value1'),
-        MelStructA('\x40IAD','2f','eyeAdaptSpeedAdd','time2','value2'),
-        MelStructA('\x01IAD','2f','bloomBlurRadiusMult','time3','value3'),
-        MelStructA('\x41IAD','2f','bloomBlurRadiusAdd','time4','value4'),
-        MelStructA('\x02IAD','2f','bloomThresholdMult','time5','value5'),
-        MelStructA('\x42IAD','2f','bloomThresholdAdd','time6','value6'),
-        MelStructA('\x03IAD','2f','bloomScaleMult','time7','value7'),
-        MelStructA('\x43IAD','2f','bloomScaleAdd','time8','value8'),
-        MelStructA('\x04IAD','2f','targetLumMinMult','time9','value9'),
-        MelStructA('\x44IAD','2f','targetLumMinAdd','time10','value10'),
-        MelStructA('\x05IAD','2f','targetLumMaxMult','time11','value11'),
-        MelStructA('\x45IAD','2f','targetLumMaxAdd','time12','value12'),
-        MelStructA('\x06IAD','2f','sunlightScaleMult','time13','value13'),
-        MelStructA('\x46IAD','2f','sunlightScaleAdd','time14','value14'),
-        MelStructA('\x07IAD','2f','skyScaleMult','time15','value15'),
-        MelStructA('\x47IAD','2f','skyScaleAdd','time16','value16'),
-        # {<<<< End HDR >>>>}
-        MelBase('\x08IAD','isd08IAD_p'),
-        MelBase('\x48IAD','isd48IAD_p'),
-        MelBase('\x09IAD','isd09IAD_p'),
-        MelBase('\x49IAD','isd49IAD_p'),
-        MelBase('\x0AIAD','isd0aIAD_p'),
-        MelBase('\x4AIAD','isd4aIAD_p'),
-        MelBase('\x0BIAD','isd0bIAD_p'),
-        MelBase('\x4BIAD','isd4bIAD_p'),
-        MelBase('\x0CIAD','isd0cIAD_p'),
-        MelBase('\x4CIAD','isd4cIAD_p'),
-        MelBase('\x0DIAD','isd0dIAD_p'),
-        MelBase('\x4DIAD','isd4dIAD_p'),
-        MelBase('\x0EIAD','isd0eIAD_p'),
-        MelBase('\x4EIAD','isd4eIAD_p'),
-        MelBase('\x0FIAD','isd0fIAD_p'),
-        MelBase('\x4FIAD','isd4fIAD_p'),
-        MelBase('\x10IAD','isd10IAD_p'),
-        MelBase('\x50IAD','isd50IAD_p'),
-        # {<<<< Begin Cinematic >>>>}
-        MelStructA('\x11IAD','2f','saturationMult','time17','value17'),
-        MelStructA('\x51IAD','2f','saturationAdd','time18','value18'),
-        MelStructA('\x12IAD','2f','brightnessMult','time19','value19'),
-        MelStructA('\x52IAD','2f','brightnessAdd','time20','value20'),
-        MelStructA('\x13IAD','2f','contrastMult','time21','value21'),
-        MelStructA('\x53IAD','2f','contrastAdd','time22','value22'),
-        # {<<<< End Cinematic >>>>}
-        MelBase('\x14IAD','isd14IAD_p'),
-        MelBase('\x54IAD','isd54IAD_p'),
-        )
+        MelString('EDID', 'eid'),
+        MelStruct('DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0L),
+                  'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
+                  'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
+                  'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
+                  'bloomScaleAdd', 'targetLumMinMult', 'targetLumMinAdd',
+                  'targetLumMaxMult', 'targetLumMaxAdd', 'sunlightScaleMult',
+                  'sunlightScaleAdd', 'skyScaleMult', 'skyScaleAdd',
+                  'unknown08Mult', 'unknown48Add', 'unknown09Mult',
+                  'unknown49Add', 'unknown0AMult', 'unknown4AAdd',
+                  'unknown0BMult', 'unknown4BAdd', 'unknown0CMult',
+                  'unknown4CAdd', 'unknown0DMult', 'unknown4DAdd',
+                  'unknown0EMult', 'unknown4EAdd', 'unknown0FMult',
+                  'unknown4FAdd', 'unknown10Mult', 'unknown50Add',
+                  'saturationMult', 'saturationAdd', 'brightnessMult',
+                  'brightnessAdd', 'contrastMult', 'contrastAdd',
+                  'unknown14Mult', 'unknown54Add',
+                  'tintColor', 'blurRadius', 'doubleVisionStrength',
+                  'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
+                  (_ImadRadialBlurFlags, 'radialBlurFlags', 0L),
+                  'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
+                  'dofDistance', 'dofRange', (_ImadDofFlags, 'dofFlags', 0L),
+                  'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
+                  'motionBlurStrength'),
+        MelValueInterpolator('BNAM', 'blurRadiusInterp'),
+        MelValueInterpolator('VNAM', 'doubleVisionStrengthInterp'),
+        MelColorInterpolator('TNAM', 'tintColorInterp'),
+        MelColorInterpolator('NAM3', 'fadeColorInterp'),
+        MelValueInterpolator('RNAM', 'radialBlurStrengthInterp'),
+        MelValueInterpolator('SNAM', 'radialBlurRampUpInterp'),
+        MelValueInterpolator('UNAM', 'radialBlurStartInterp'),
+        MelValueInterpolator('NAM1', 'radialBlurRampDownInterp'),
+        MelValueInterpolator('NAM2', 'radialBlurDownStartInterp'),
+        MelValueInterpolator('WNAM', 'dofStrengthInterp'),
+        MelValueInterpolator('XNAM', 'dofDistanceInterp'),
+        MelValueInterpolator('YNAM', 'dofRangeInterp'),
+        MelValueInterpolator('NAM4', 'motionBlurStrengthInterp'),
+        MelValueInterpolator('\x00IAD', 'eyeAdaptSpeedMultInterp'),
+        MelValueInterpolator('\x40IAD', 'eyeAdaptSpeedAddInterp'),
+        MelValueInterpolator('\x01IAD', 'bloomBlurRadiusMultInterp'),
+        MelValueInterpolator('\x41IAD', 'bloomBlurRadiusAddInterp'),
+        MelValueInterpolator('\x02IAD', 'bloomThresholdMultInterp'),
+        MelValueInterpolator('\x42IAD', 'bloomThresholdAddInterp'),
+        MelValueInterpolator('\x03IAD', 'bloomScaleMultInterp'),
+        MelValueInterpolator('\x43IAD', 'bloomScaleAddInterp'),
+        MelValueInterpolator('\x04IAD', 'targetLumMinMultInterp'),
+        MelValueInterpolator('\x44IAD', 'targetLumMinAddInterp'),
+        MelValueInterpolator('\x05IAD', 'targetLumMaxMultInterp'),
+        MelValueInterpolator('\x45IAD', 'targetLumMaxAddInterp'),
+        MelValueInterpolator('\x06IAD', 'sunlightScaleMultInterp'),
+        MelValueInterpolator('\x46IAD', 'sunlightScaleAddInterp'),
+        MelValueInterpolator('\x07IAD', 'skyScaleMultInterp'),
+        MelValueInterpolator('\x47IAD', 'skyScaleAddInterp'),
+        MelBase('\x08IAD', 'unknown08IAD'),
+        MelBase('\x48IAD', 'unknown48IAD'),
+        MelBase('\x09IAD', 'unknown09IAD'),
+        MelBase('\x49IAD', 'unknown49IAD'),
+        MelBase('\x0AIAD', 'unknown0aIAD'),
+        MelBase('\x4AIAD', 'unknown4aIAD'),
+        MelBase('\x0BIAD', 'unknown0bIAD'),
+        MelBase('\x4BIAD', 'unknown4bIAD'),
+        MelBase('\x0CIAD', 'unknown0cIAD'),
+        MelBase('\x4CIAD', 'unknown4cIAD'),
+        MelBase('\x0DIAD', 'unknown0dIAD'),
+        MelBase('\x4DIAD', 'unknown4dIAD'),
+        MelBase('\x0EIAD', 'unknown0eIAD'),
+        MelBase('\x4EIAD', 'unknown4eIAD'),
+        MelBase('\x0FIAD', 'unknown0fIAD'),
+        MelBase('\x4FIAD', 'unknown4fIAD'),
+        MelBase('\x10IAD', 'unknown10IAD'),
+        MelBase('\x50IAD', 'unknown50IAD'),
+        MelValueInterpolator('\x11IAD', 'saturationMultInterp'),
+        MelValueInterpolator('\x51IAD', 'saturationAddInterp'),
+        MelValueInterpolator('\x12IAD', 'brightnessMultInterp'),
+        MelValueInterpolator('\x52IAD', 'brightnessAddInterp'),
+        MelValueInterpolator('\x13IAD', 'contrastMultInterp'),
+        MelValueInterpolator('\x53IAD', 'contrastAddInterp'),
+        MelBase('\x14IAD', 'unknown14IAD'),
+        MelBase('\x54IAD', 'unknown54IAD'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
@@ -3567,33 +3582,6 @@ class MreKywd(MelRecord):
         )
     __slots__ = melSet.getSlotsUsed()
 
-# Verified for 305
-#------------------------------------------------------------------------------
-# Commented out for performance reasons. Slows down loading quite a bit.
-# If Bash ever wants to be able to add masters to a mod, this minimal definition is required
-# It has to be able to convert the formIDs found in BTXT, ATXT, and VTEX to not break the mod
-#
-#class MreLand(MelRecord):
-#    """Land structure. Part of exterior cells."""
-#
-#    classType = 'LAND'
-#    melSet = MelSet(
-#        MelBase('DATA','data_p'),
-#        MelBase('VNML','normals_p'),
-#        MelBase('VHGT','heights_p'),
-#        MelBase('VCLR','vertexColors_p'),
-#        # wbRUnion Needed (BTXT) or ('ATXT' and 'VTXT'), not both
-#        MelStructs('BTXT','IBsh','baseTextures', (FID,'texture'), 'quadrant', 'unknown', 'layer'),
-#        MelGroups('alphaLayers',
-#            MelStruct('ATXT','IBsh',(FID,'texture'), 'quadrant', 'unknown', 'layer'),
-#            MelStructA('VTXT','H2Bf', 'opacities', 'position', 'unknown', 'opacity'),
-#        ),
-#        MelFidList('VTEX','vertexTextures'),
-#    )
-#    __slots__ = melSet.getSlotsUsed()
-# --
-# Likely not a good idea to use because of performance
-#------------------------------------------------------------------------------
 class MreLcrt(MelRecord):
     """Location Reference Type record."""
     classType = 'LCRT'
@@ -3670,7 +3658,7 @@ class MreLgtm(MelRecord):
     classType = 'LGTM'
 
     class MelLgtmDalc(MelStruct):
-        """Handle older truncated DALC for LGTM subrecord."""
+        """Handle older truncated DALC subrecord for LGTM."""
         def loadData(self, record, ins, sub_type, size_, readId):
             if size_ == 32:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
@@ -3686,17 +3674,35 @@ class MreLgtm(MelRecord):
                 setter(attr,value)
             if self._debug: print unpacked
 
+    class MelLgtmData(MelStruct):
+        """Handle older truncated DATA subrecord for LGTM."""
+        def loadData(self, record, ins, sub_type, size_, readId):
+            if size_ == 92:
+                MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+                return
+            elif size_ == 84:
+                # Pad it with 8 null bytes in the middle
+                unpacked = ins.unpack('3Bs3Bs3Bs2f2i3f24s', 64, readId)
+                unpacked += null4 + null4
+                unpacked += ins.unpack('3Bs3f4s', 20, readId)
+            else:
+                raise ModSizeError(record.inName, readId, 92, size_, True)
+            setter = record.__setattr__
+            for attr, value, action in zip(self.attrs, unpacked, self.actions):
+                if callable(action):
+                    value = action(value)
+                setter(attr, value)
+            if self._debug: print unpacked
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        # 92 Bytes
-        # WindhelmLightingTemplate [LGTM:0007BA87] unknown1 only 24 Bytes
-        MelStruct('DATA','3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
+        MelLgtmData('DATA','3Bs3Bs3Bs2f2i3f32s3Bs3f4s',
             'redLigh','greenLigh','blueLigh','unknownLigh',
             'redDirect','greenDirect','blueDirect','unknownDirect',
             'redFog','greenFog','blueFog','unknownFog',
             'fogNear','fogFar','dirRotXY','dirRotZ',
             'directionalFade','fogClipDist','fogPower',
-            ('unknownData',null4+null4+null4+null4+null4+null4+null4+null4),
+            ('ambientColors',null4+null4+null4+null4+null4+null4+null4+null4),
             'redFogFar','greenFogFar','blueFogFar','unknownFogFar',
             'fogMax','lightFaceStart','lightFadeEnd',
             ('unknownData2',null4),
@@ -4757,10 +4763,10 @@ class MrePerk(MelRecord):
 
     # 'Run Immediately',
     # 'Replace Default'
-    PerkScriptFlagsFlags = Flags(0L,Flags.getNames(
-            (0, 'runImmediately'),
-            (1, 'replaceDefault'),
-        ))
+    _PerkScriptFlags = Flags(0L,Flags.getNames(
+        (0, 'runImmediately'),
+        (1, 'replaceDefault'),
+    ))
 
     class MelPerkData(MelStruct):
         """Handle older truncated DATA for PERK subrecord."""
@@ -4785,11 +4791,11 @@ class MrePerk(MelRecord):
         def loadData(self, record, ins, sub_type, size_, readId):
             target = MelObject()
             record.__setattr__(self.attr,target)
-            if record.type == 0:
+            if record.type == 0: # quest + stage
                 format,attrs = ('II',('quest','queststage'))
-            elif record.type == 1:
+            elif record.type == 1: # ability
                 format,attrs = ('I',('ability',))
-            elif record.type == 2:
+            elif record.type == 2: # entry point
                 format,attrs = ('HB',('entrypoint','function'))
             else:
                 raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
@@ -4801,11 +4807,11 @@ class MrePerk(MelRecord):
         def dumpData(self,record,out):
             target = record.__getattribute__(self.attr)
             if not target: return
-            if record.type == 0:
+            if record.type == 0: # quest + stage
                 format,attrs = ('II',('quest','queststage'))
-            elif record.type == 1:
+            elif record.type == 1: # ability
                 format,attrs = ('I',('ability',))
-            elif record.type == 2:
+            elif record.type == 2: # entry point
                 format,attrs = ('HB',('entrypoint','function'))
             else:
                 raise ModError(record.inName, # untested
@@ -4824,10 +4830,10 @@ class MrePerk(MelRecord):
         def mapFids(self,record,function,save=False):
             target = record.__getattribute__(self.attr)
             if not target: return
-            if record.type == 0:
+            if record.type == 0: # quest + stage
                 result = function(target.quest)
                 if save: target.quest = result
-            elif record.type == 1:
+            elif record.type == 1: # ability
                 result = function(target.ability)
                 if save: target.ability = result
 
@@ -4873,6 +4879,78 @@ class MrePerk(MelRecord):
                         'Unexpected type: %d') % target.recordType)
                 element.dumpData(target,out)
 
+    class MelPerkEpfd(MelBase):
+        """EPFD needs to check EPFT and adjust its loading / dumping behavior
+        accordingly."""
+        def __init__(self):
+            MelBase.__init__(self, 'EPFD', 'function_parameter_data')
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            target = MelObject()
+            # EPFT has the following meanings:
+            #  0: Unknown
+            #  1: EPFD=float
+            #  2: EPFD=float, float
+            #  3: EPFD=fid (LVLI)
+            #  4: EPFD=fid (SPEL), EPF2=string, EPF3=uint16 (flags)
+            #  5: EPFD=fid (SPEL)
+            #  6: EPFD=string
+            #  7: EPFD=lstring
+            # TODO(inf) there is a special case: If EPFT is 2 and
+            #  DATA/function is one of 5, 12, 13 or 14, then:
+            #  EPFD=uint32, float
+            record.__setattribute__(self.attr, target)
+            if record.function_parameter_type == 0:
+                # Read the entire subrecord, probably empty but just in case
+                target.params = ins.read(size_, readId)
+            elif record.function_parameter_type == 1:
+                target.params = ins.unpack('f', 4, readId)
+            elif record.function_parameter_type == 2:
+                # TODO(inf) See above - this is a special case, the first one
+                #  may either be uint32 or float. Using uint32 to not lose any
+                #  data due to precision issues here
+                target.params = ins.unpack('If', 8, readId)
+            elif record.function_parameter_type in (3, 4, 5):
+                target.params = ins.unpack('I', 4, readId)
+            elif record.function_parameter_type == 6:
+                target.params = ins.readString(size_, readId)
+            elif record.function_parameter_type == 7:
+                target.params = ins.readLString(size_, readId)
+            else:
+                raise ModError(ins.inName, _(u'Unexpected function parameter '
+                                             u'type: %d') %
+                               record.function_parameter_type)
+
+        def dumpData(self, record, out):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.function_parameter_type == 0:
+                # In this case, params is a binary dump
+                out.packSub(self.subType, target.params)
+                return
+            elif record.function_parameter_type == 1:
+                target_format = 'f'
+            elif record.function_parameter_type == 2:
+                target_format = 'If' # see TODOs in loadData above
+            elif record.function_parameter_type in (3, 4, 5):
+                target_format = 'I'
+            elif record.function_parameter_type in (6, 7):
+                out.write_string(self.subType, target.params[0])
+                return
+            else:
+                # TODO(inf) We need to hand the mod name to dumpData -
+                #  otherwise these errors are worthless
+                raise ModError(u'', _(u'Unexpected type: %d') % record.type)
+            out.packSub(self.subType, target_format, *target.params)
+
+        def hasFids(self, formElements):
+            formElements.add(self)
+
+        def mapFids(self, record, function, save=False):
+            if record.function_parameter_type in (3, 4, 5):
+                result = map(function, record.params)
+                if save: record.params = tuple(result)
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -4892,10 +4970,10 @@ class MrePerk(MelRecord):
                 MelConditions(),
             ),
             MelPerkEffectParams('effectParams',
-                MelStruct('EPFT','B','_epft'),
-                MelString('EPF2','buttonLabel'),
-                MelStruct('EPF3','H','scriptFlag'),
-                MelBase('EPFD', 'floats'), # [Float] or [Float,Float], todo rewrite specific class
+                MelStruct('EPFT','B','function_parameter_type'),
+                MelLString('EPF2','buttonLabel'),
+                MelStruct('EPF3','H',(_PerkScriptFlags, 'script_flags', 0L)),
+                MelPerkEpfd(),
             ),
             MelBase('PRKF','footer'),
             ),

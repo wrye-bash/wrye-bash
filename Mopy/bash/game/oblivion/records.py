@@ -791,7 +791,8 @@ class MreDial(brec.MreDial):
     """Dialog record."""
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelFids('QSTI','quests'), ### QSTRs?
+        MelFids('QSTI','quests'),
+        MelFids('QSTR','quests2'), # xEdit calls it 'Quests?'
         MelString('FULL','full'),
         MelStruct('DATA','B','dialType'),
     )
@@ -1069,29 +1070,7 @@ class MreKeym(MelRecord):
         MelStruct('DATA','if','value','weight'),
         )
     __slots__ = melSet.getSlotsUsed()
-#------------------------------------------------------------------------------
-## Commented out for performance reasons. Slows down loading quite a bit.
-## If Bash ever wants to be able to add masters to a mod, this minimal definition is required
-## It has to be able to convert the formIDs found in BTXT, ATXT, and VTEX to not break the mod
-##class MreLand(MelRecord):
-##    """Land structure. Part of exterior cells."""
-##    ####Could probably be loaded via MelStructA,
-##    ####but little point since it is too complex to manipulate
-##    classType = 'LAND'
-##    melSet = MelSet(
-##        MelBase('DATA','data_p'),
-##        MelBase('VNML','normals_p'),
-##        MelBase('VHGT','heights_p'),
-##        MelBase('VCLR','vertexColors_p'),
-##        MelStructs('BTXT','IBBh','baseTextures', (FID,'texture'), 'quadrant', 'unused1', 'layer'),
-##        MelGroups('alphaLayers',
-##            MelStruct('ATXT','IBBh',(FID,'texture'), 'quadrant', 'unused1', 'layer'),
-##            MelStructA('VTXT','H2Bf', 'opacities', 'position', 'unused1', 'opacity'),
-##        ),
-##        MelFidList('VTEX','vertexTextures'),
-##    )
-##    __slots__ = melSet.getSlotsUsed()
-#------------------------------------------------------------------------------
+
 class MreLigh(MelRecord):
     """Light source record."""
     classType = 'LIGH'

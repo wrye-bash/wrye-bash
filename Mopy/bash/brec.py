@@ -431,6 +431,33 @@ class ModWriter:
         else:
             self.pack('=4s4I','GRUP',size,label,groupType,stamp)
 
+    def write_string(self, sub_type, string_val, max_size=0,
+                     preferred_encoding=None):
+        """Writes out a string subrecord, properly encoding it beforehand and
+        respecting max_size and preferred_encoding if they are set."""
+        preferred_encoding = preferred_encoding or bolt.pluginEncoding
+        if max_size:
+            string_val = bolt.winNewLines(string_val.rstrip())
+            truncated_size = min(max_size, len(string_val))
+            test, tested_encoding = encode(string_val,
+                                           firstEncoding=preferred_encoding,
+                                           returnEncoding=True)
+            extra_encoded = len(test) - max_size
+            if extra_encoded > 0:
+                total = 0
+                i = -1
+                while total < extra_encoded:
+                    total += len(string_val[i].encode(tested_encoding))
+                    i -= 1
+                truncated_size += i + 1
+                string_val = string_val[:truncated_size]
+                string_val = encode(string_val, firstEncoding=tested_encoding)
+            else:
+                string_val = test
+        else:
+            string_val = encode(string_val, firstEncoding=preferred_encoding)
+        self.packSub0(sub_type, string_val)
+
 # Mod Record Elements ---------------------------------------------------------
 #------------------------------------------------------------------------------
 # Constants
@@ -861,29 +888,9 @@ class MelString(MelBase):
 
     def dumpData(self,record,out):
         """Dumps data from record to outstream."""
-        value = record.__getattribute__(self.attr)
-        if value is not None:
-            firstEncoding = bolt.pluginEncoding
-            if self.maxSize:
-                value = bolt.winNewLines(value.rstrip())
-                size = min(self.maxSize,len(value))
-                test, encoding_ = encode(value, firstEncoding=firstEncoding,
-                                         returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding_))
-                        i -= 1
-                    size += i + 1
-                    value = value[:size]
-                    value = encode(value,firstEncoding=encoding_)
-                else:
-                    value = test
-            else:
-                value = encode(value,firstEncoding=firstEncoding)
-            out.packSub0(self.subType,value)
+        string_val = record.__getattribute__(self.attr)
+        if string_val is not None:
+            out.write_string(self.subType, string_val, max_size=self.maxSize)
 
 #------------------------------------------------------------------------------
 class MelUnicode(MelString):
@@ -900,28 +907,10 @@ class MelUnicode(MelString):
         record.__setattr__(self.attr,value)
 
     def dumpData(self,record,out):
-        value = record.__getattribute__(self.attr)
-        if value is not None:
-            firstEncoding = self.encoding
-            if self.maxSize:
-                value = bolt.winNewLines(value.strip())
-                size = min(self.maxSize,len(value))
-                test,encoding = encode(value,firstEncoding=firstEncoding,returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding))
-                        i -= 1
-                    size += i + 1
-                    value = value[:size]
-                    value = encode(value,firstEncoding=encoding)
-                else:
-                    value = test
-            else:
-                value = encode(value,firstEncoding=firstEncoding)
-            out.packSub0(self.subType,value)
+        string_val = record.__getattribute__(self.attr)
+        if string_val is not None:
+            out.write_string(self.subType, string_val, max_size=self.maxSize,
+                             preferred_encoding=self.encoding)
 
 #------------------------------------------------------------------------------
 class MelLString(MelString):
@@ -1091,11 +1080,11 @@ class MelStructA(MelStructs):
             setattr(record, self.attr, None)
             return
         selfDefault = self.getDefault
-        getter = record.__getattribute__
         recordAppend = record.__getattribute__(self.attr).append
         selfAttrs = self.attrs
         itemSize = struct.calcsize(self.format)
         melLoadData = MelStruct.loadData
+        # Note for py3: we want integer division here!
         for x in xrange(size_/itemSize):
             target = selfDefault()
             recordAppend(target)
@@ -1118,6 +1107,24 @@ class MelStructA(MelStructs):
             melMap = MelStruct.mapFids
             for target in record.__getattribute__(self.attr):
                 melMap(self,target,function,save)
+
+class MelColorInterpolator(MelStructA):
+    """Wrapper around MelStructA that defines a time interpolator - an array
+    of two floats, where each entry in the array describes a point on a curve,
+    with 'time' as the X axis and 'red', 'green', 'blue' and 'alpha' as the Y
+    axis."""
+    def __init__(self, sub_type, attr):
+        MelStructA.__init__(self, sub_type, '5f', attr, 'time', 'red', 'green',
+                            'blue', 'alpha',)
+
+# xEdit calls this 'time interpolator', but that name doesn't really make sense
+# Both this class and the color interpolator above interpolate over time
+class MelValueInterpolator(MelStructA):
+    """Wrapper around MelStructA that defines a value interpolator - an array
+    of two floats, where each entry in the array describes a point on a curve,
+    with 'time' as the X axis and 'value' as the Y axis."""
+    def __init__(self, sub_type, attr):
+        MelStructA.__init__(self, sub_type, '2f', attr, 'time', 'value')
 
 #------------------------------------------------------------------------------
 class MelTuple(MelBase):
@@ -1789,6 +1796,74 @@ class MreGmstBase(MelRecord):
         return bosh.modInfos.masterName,cls.Ids[self.eid]
 
 #------------------------------------------------------------------------------
+# WARNING: This is implemented and (should be) functional, but we do not import
+# it! The reason is that LAND records are numerous and very big, so importing
+# and adding this to mergeClasses would slow us down quite a bit.
+class MreLand(MelRecord):
+    """Land structure. Part of exterior cells."""
+    classType = 'LAND'
+
+    class MelLandLayers(MelBase):
+        """The ATXT/BTXT/VTXT subrecords of land occur in a group, but only as
+        either BTXT or both ATXT and VTXT. So we must manually handle this.
+        Additionally, this class is optimized for loading and memory
+        performance, since LAND records are numerous and big."""
+
+        def __init__(self):
+            self.attr = 'layers'
+            self.btxt = MelStruct('BTXT', 'IBsh', (FID, 'blTexture'),
+                                  'blQuadrant', 'blUnknown', 'blLayer')
+            self.atxt = MelStruct('ATXT', 'IBsh', (FID, 'alTexture'),
+                                  'alQuadrant', 'alUnknown', 'alLayer')
+            self.vtxt = MelBase('VTXT', 'alphaLayerData')
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            # Optimized for performance, that's why some code is copy-pasted
+            layer = MelObject()
+            record.layers.append(layer)
+            if sub_type == 'BTXT': # read only BTXT
+                layer.use_btxt = True
+                layer.__slots__ = self.btxt.getSlotsUsed()
+                self.btxt.loadData(layer, ins, sub_type, size_, readId)
+            else: # sub_type == 'ATXT': read both ATXT and VTXT
+                layer.use_btxt = False
+                layer.__slots__ = self.atxt.getSlotsUsed() + \
+                                  self.vtxt.getSlotsUsed()
+                self.atxt.loadData(layer, ins, sub_type, size_, readId)
+                self.vtxt.loadData(layer, ins, sub_type, size_, readId)
+            layer.__slots__ += ('use_btxt',)
+
+        def dumpData(self, record, out):
+            for layer in record.layers:
+                if layer.use_btxt:
+                    self.btxt.dumpData(layer, out)
+                else:
+                    self.atxt.dumpData(layer, out)
+                    self.vtxt.dumpData(layer, out)
+
+        def getLoaders(self, loaders):
+            for loader_type in ('ATXT', 'BTXT', 'VTXT'):
+                loaders[loader_type] = self
+
+        def hasFids(self, formElements):
+            formElements.add(self)
+
+        def mapFids(self, record, function, save=False):
+            for layer in record.layers:
+                map_target = self.btxt if layer.use_btxt else self.atxt
+                map_target.mapFids(layer, function, save)
+
+    melSet = MelSet(
+        MelBase('DATA', 'unknown1'),
+        MelBase('VNML', 'vertexNormals'),
+        MelBase('VHGT', 'vertexHeightMap'),
+        MelBase('VCLR', 'vertexColors'),
+        MelLandLayers(),
+        MelFidList('VTEX', 'vertexTextures'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreLeveledListBase(MelRecord):
     """Base type for leveled item/creature/npc/spells.
        it requires the base class to use the following:
@@ -1898,21 +1973,20 @@ class MreDial(MelRecord):
         self.infoStamp2 = 0 #--Stamp for info GRUP
         self.infos = []
 
-    def loadInfos(self,ins,endPos,infoClass):
+    def loadInfos(self, ins, endPos, infoClass):
         """Load infos from ins. Called from MobDials."""
-        infos = self.infos
-        recHead = ins.unpackRecHeader
-        infosAppend = infos.append
-        while not ins.atEnd(endPos,'INFO Block'):
+        read_header = ins.unpackRecHeader
+        ins_at_end = ins.atEnd
+        append_info = self.infos.append
+        while not ins_at_end(endPos, 'INFO Block'):
             #--Get record info and handle it
-            header = recHead()
-            recType = header.recType
-            if recType == 'INFO':
-                info = infoClass(header,ins,True)
-                infosAppend(info)
+            header = read_header()
+            if header.recType == 'INFO':
+                append_info(infoClass(header, ins, True))
             else:
                 raise exception.ModError(ins.inName,
-                  _(u'Unexpected %s record in %s group.') % (recType, "INFO"))
+                  _(u'Unexpected %s record in %s group.') % (
+                                             header.recType, u'INFO'))
 
     def dump(self,out):
         """Dumps self., then group header and then records."""

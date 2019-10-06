@@ -28,12 +28,12 @@ import struct
 from ..fallout3.records import MelScrxen, MelOwnership, MelDestructible, \
     MelBipedFlags, MelEffects, MelConditions, MreHasEffects
 from ...bass import null1, null2, null3, null4
-from ...bolt import Flags, GPath
+from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MelBase, MelFidList, MelStructA, MreGmstBase, MelFull0, MreHeaderBase, \
-    MelUnicode, MreDial
+    MelUnicode, MreDial, MelColorInterpolator, MelValueInterpolator
 from ...exception import ModError, ModSizeError
 
 # Those are unused here, but need be in this file as are accessed via it
@@ -842,66 +842,101 @@ class MreHung(MelRecord):
 class MreImad(MelRecord):
     """Image space modifier record."""
     classType = 'IMAD'
+
+    _ImadDofFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget'),
+    ))
+
+    _ImadAnimatableFlags = Flags(0L, Flags.getNames(
+        (0, 'animatable'),
+    ))
+
+    _ImadRadialBlurFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget')
+    ))
+
     melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBase('DNAM','dnam_p'),
-        MelBase('BNAM','bnam_p'),
-        MelBase('VNAM','vnam_p'),
-        MelBase('TNAM','tnam_p'),
-        MelBase('NAM3','nam3_p'),
-        MelBase('RNAM','rnam_p'),
-        MelBase('SNAM','snam_p'),
-        MelBase('UNAM','unam_p'),
-        MelBase('NAM1','nam1_p'),
-        MelBase('NAM2','nam2_p'),
-        MelBase('WNAM','wnam_p'),
-        MelBase('XNAM','xnam_p'),
-        MelBase('YNAM','ynam_p'),
-        MelBase('NAM4','nam4_p'),
-        MelBase('\x00IAD','_00IAD'),
-        MelBase('\x40IAD','_atiad_p'),
-        MelBase('\x01IAD','_01IAD'),
-        MelBase('AIAD','aiad_p'),
-        MelBase('\x02IAD','_02IAD'),
-        MelBase('BIAD','biad_p'),
-        MelBase('\x03IAD','_03IAD'),
-        MelBase('CIAD','ciad_p'),
-        MelBase('\x04IAD','_04IAD'),
-        MelBase('DIAD','diad_p'),
-        MelBase('\x05IAD','_05IAD'),
-        MelBase('EIAD','eiad_p'),
-        MelBase('\x06IAD','_06IAD'),
-        MelBase('FIAD','fiad_p'),
-        MelBase('\x07IAD','_07IAD'),
-        MelBase('GIAD','giad_p'),
-        MelBase('\x08IAD','_08IAD'),
-        MelBase('HIAD','hiad_p'),
-        MelBase('\x09IAD','_09IAD'),
-        MelBase('IIAD','iiad_p'),
-        MelBase('\x0aIAD','_0aIAD'),
-        MelBase('JIAD','jiad_p'),
-        MelBase('\x0bIAD','_0bIAD'),
-        MelBase('KIAD','kiad_p'),
-        MelBase('\x0cIAD','_0cIAD'),
-        MelBase('LIAD','liad_p'),
-        MelBase('\x0dIAD','_0dIAD'),
-        MelBase('MIAD','miad_p'),
-        MelBase('\x0eIAD','_0eIAD'),
-        MelBase('NIAD','niad_p'),
-        MelBase('\x0fIAD','_0fIAD'),
-        MelBase('OIAD','oiad_p'),
-        MelBase('\x10IAD','_10IAD'),
-        MelBase('PIAD','piad_p'),
-        MelBase('\x11IAD','_11IAD'),
-        MelBase('QIAD','qiad_p'),
-        MelBase('\x12IAD','_12IAD'),
-        MelBase('RIAD','riad_p'),
-        MelBase('\x13IAD','_13iad_p'),
-        MelBase('SIAD','siad_p'),
-        MelBase('\x14IAD','_14iad_p'),
-        MelBase('TIAD','tiad_p'),
-        MelFid('RDSD','soundIntro'),
-        MelFid('RDSI','soundOutro'),
+        MelString('EDID', 'eid'),
+        MelStruct('DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0L),
+                  'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
+                  'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
+                  'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
+                  'bloomScaleAdd', 'targetLumMinMult', 'targetLumMinAdd',
+                  'targetLumMaxMult', 'targetLumMaxAdd', 'sunlightScaleMult',
+                  'sunlightScaleAdd', 'skyScaleMult', 'skyScaleAdd',
+                  'unknown08Mult', 'unknown48Add', 'unknown09Mult',
+                  'unknown49Add', 'unknown0AMult', 'unknown4AAdd',
+                  'unknown0BMult', 'unknown4BAdd', 'unknown0CMult',
+                  'unknown4CAdd', 'unknown0DMult', 'unknown4DAdd',
+                  'unknown0EMult', 'unknown4EAdd', 'unknown0FMult',
+                  'unknown4FAdd', 'unknown10Mult', 'unknown50Add',
+                  'saturationMult', 'saturationAdd', 'brightnessMult',
+                  'brightnessAdd', 'contrastMult', 'contrastAdd',
+                  'unknown14Mult', 'unknown54Add',
+                  'tintColor', 'blurRadius', 'doubleVisionStrength',
+                  'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
+                  (_ImadRadialBlurFlags, 'radialBlurFlags', 0L),
+                  'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
+                  'dofDistance', 'dofRange', (_ImadDofFlags, 'dofFlags', 0L),
+                  'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
+                  'motionBlurStrength'),
+        MelValueInterpolator('BNAM', 'blurRadiusInterp'),
+        MelValueInterpolator('VNAM', 'doubleVisionStrengthInterp'),
+        MelColorInterpolator('TNAM', 'tintColorInterp'),
+        MelColorInterpolator('NAM3', 'fadeColorInterp'),
+        MelValueInterpolator('RNAM', 'radialBlurStrengthInterp'),
+        MelValueInterpolator('SNAM', 'radialBlurRampUpInterp'),
+        MelValueInterpolator('UNAM', 'radialBlurStartInterp'),
+        MelValueInterpolator('NAM1', 'radialBlurRampDownInterp'),
+        MelValueInterpolator('NAM2', 'radialBlurDownStartInterp'),
+        MelValueInterpolator('WNAM', 'dofStrengthInterp'),
+        MelValueInterpolator('XNAM', 'dofDistanceInterp'),
+        MelValueInterpolator('YNAM', 'dofRangeInterp'),
+        MelValueInterpolator('NAM4', 'motionBlurStrengthInterp'),
+        MelValueInterpolator('\x00IAD', 'eyeAdaptSpeedMultInterp'),
+        MelValueInterpolator('\x40IAD', 'eyeAdaptSpeedAddInterp'),
+        MelValueInterpolator('\x01IAD', 'bloomBlurRadiusMultInterp'),
+        MelValueInterpolator('\x41IAD', 'bloomBlurRadiusAddInterp'),
+        MelValueInterpolator('\x02IAD', 'bloomThresholdMultInterp'),
+        MelValueInterpolator('\x42IAD', 'bloomThresholdAddInterp'),
+        MelValueInterpolator('\x03IAD', 'bloomScaleMultInterp'),
+        MelValueInterpolator('\x43IAD', 'bloomScaleAddInterp'),
+        MelValueInterpolator('\x04IAD', 'targetLumMinMultInterp'),
+        MelValueInterpolator('\x44IAD', 'targetLumMinAddInterp'),
+        MelValueInterpolator('\x05IAD', 'targetLumMaxMultInterp'),
+        MelValueInterpolator('\x45IAD', 'targetLumMaxAddInterp'),
+        MelValueInterpolator('\x06IAD', 'sunlightScaleMultInterp'),
+        MelValueInterpolator('\x46IAD', 'sunlightScaleAddInterp'),
+        MelValueInterpolator('\x07IAD', 'skyScaleMultInterp'),
+        MelValueInterpolator('\x47IAD', 'skyScaleAddInterp'),
+        MelValueInterpolator('\x08IAD', 'lumRampNoTexMultInterp'),
+        MelValueInterpolator('\x48IAD', 'lumRampNoTexAddInterp'),
+        MelValueInterpolator('\x09IAD', 'lumRampMinMultInterp'),
+        MelValueInterpolator('\x49IAD', 'lumRampMinAddInterp'),
+        MelValueInterpolator('\x0AIAD', 'lumRampMaxMultInterp'),
+        MelValueInterpolator('\x4AIAD', 'lumRampMaxAddInterp'),
+        MelValueInterpolator('\x0BIAD', 'sunlightDimmerMultInterp'),
+        MelValueInterpolator('\x4BIAD', 'sunlightDimmerAddInterp'),
+        MelValueInterpolator('\x0CIAD', 'grassDimmerMultInterp'),
+        MelValueInterpolator('\x4CIAD', 'grassDimmerAddInterp'),
+        MelValueInterpolator('\x0DIAD', 'treeDimmerMultInterp'),
+        MelValueInterpolator('\x4DIAD', 'treeDimmerAddInterp'),
+        MelValueInterpolator('\x0EIAD', 'blurRadiusMultInterp'),
+        MelValueInterpolator('\x4EIAD', 'blurRadiusAddInterp'),
+        MelValueInterpolator('\x0FIAD', 'alphaMultInteriorMultInterp'),
+        MelValueInterpolator('\x4FIAD', 'alphaMultInteriorAddInterp'),
+        MelValueInterpolator('\x10IAD', 'alphaMultExteriorMultInterp'),
+        MelValueInterpolator('\x50IAD', 'alphaMultExteriorAddInterp'),
+        MelValueInterpolator('\x11IAD', 'saturationMultInterp'),
+        MelValueInterpolator('\x51IAD', 'saturationAddInterp'),
+        MelValueInterpolator('\x12IAD', 'contrastMultInterp'),
+        MelValueInterpolator('\x52IAD', 'contrastAddInterp'),
+        MelValueInterpolator('\x13IAD', 'contrastAvgMultInterp'),
+        MelValueInterpolator('\x53IAD', 'contrastAvgAddInterp'),
+        MelValueInterpolator('\x14IAD', 'brightnessMultInterp'),
+        MelValueInterpolator('\x54IAD', 'brightnessAddInterp'),
+        MelFid('RDSD', 'soundIntro'),
+        MelFid('RDSI', 'soundOutro'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1856,7 +1891,9 @@ class MreRegn(MelRecord):
             MelFid('RDSI','incidentalMediaSet'),
             MelFids('RDSB','battleMediaSets'),
             MelRegnStructA('RDSD', '3I', 'sounds', (FID, 'sound'), (sdflags, 'flags'), 'chance'),
-            MelRegnStructA('RDWT', '3I', 'weather', (FID, 'weather', None), 'chance', (FID, 'global', None)),
+            MelRegnStructA('RDWT', '3I', 'weatherTypes',
+                           (FID, 'weather', None), 'chance',
+                           (FID, 'global', None)),
             MelFidList('RDID','imposters')),
     )
     __slots__ = melSet.getSlotsUsed()

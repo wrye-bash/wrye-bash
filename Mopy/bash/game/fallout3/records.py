@@ -33,7 +33,8 @@ from ...bolt import Flags, DataDict, struct_unpack, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MreHeaderBase, MelBase, MelUnicode, MelFidList, MelStructA, MreGmstBase, \
-    MelStrings, MelFull0, MelTuple, MelMODS, MreHasEffects
+    MelStrings, MelFull0, MelTuple, MelMODS, MreHasEffects, \
+    MelColorInterpolator, MelValueInterpolator
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set MelModel in brec but only if unset
 if brec.MelModel is None:
@@ -1543,15 +1544,14 @@ class MreFlst(MelRecord):
     def mergeWith(self,other,otherMod):
         """Merges newLevl settings and entries with self.
         Requires that: self.items, other.deflsts be defined."""
-        if not self.longFids: raise StateError(_("Fids not in long format"))
-        if not other.longFids: raise StateError(_("Fids not in long format"))
+        if not self.longFids or not other.longFids:
+            raise StateError(_("Fids not in long format"))
         #--Remove items based on other.removes
         if other.deflsts:
             removeItems = self.items & other.deflsts
             #self.entries = [entry for entry in self.entries if entry.listId not in removeItems]
             self.formIDInList = [fid for fid in self.formIDInList if fid not in removeItems]
             self.items = (self.items | other.deflsts)
-        hasOldItems = bool(self.items)
         #--Add new items from other
         newItems = set()
         formIDInListAppend = self.formIDInList.append
@@ -1563,7 +1563,7 @@ class MreFlst(MelRecord):
         if newItems:
             self.items |= newItems
             #self.fids.sort(key=attrgetter('level'))
-            self.formIDInList.sort
+            self.formIDInList.sort()
         #--Is merged list different from other? (And thus written to patch.)
         if len(self.formIDInList) != len(other.formIDInList):
             self.mergeOverLast = True
@@ -1724,64 +1724,99 @@ class MreIdlm(MelRecord):
 class MreImad(MelRecord):
     """Image space modifier record."""
     classType = 'IMAD'
+
+    _ImadDofFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget'),
+    ))
+
+    _ImadAnimatableFlags = Flags(0L, Flags.getNames(
+        (0, 'animatable'),
+    ))
+
+    _ImadRadialBlurFlags = Flags(0L, Flags.getNames(
+        (0, 'useTarget')
+    ))
+
     melSet = MelSet(
-        MelString('EDID','eid'),
-        MelBase('DNAM','dnam_p'),
-        MelBase('BNAM','bnam_p'),
-        MelBase('VNAM','vnam_p'),
-        MelBase('TNAM','tnam_p'),
-        MelBase('NAM3','nam3_p'),
-        MelBase('RNAM','rnam_p'),
-        MelBase('SNAM','snam_p'),
-        MelBase('UNAM','unam_p'),
-        MelBase('NAM1','nam1_p'),
-        MelBase('NAM2','nam2_p'),
-        MelBase('WNAM','wnam_p'),
-        MelBase('XNAM','xnam_p'),
-        MelBase('YNAM','ynam_p'),
-        MelBase('NAM4','nam4_p'),
-        MelBase('\x00IAD','_00IAD'),
-        MelBase('\x40IAD','_atiad_p'),
-        MelBase('\x01IAD','_01IAD'),
-        MelBase('AIAD','aiad_p'),
-        MelBase('\x02IAD','_02IAD'),
-        MelBase('BIAD','biad_p'),
-        MelBase('\x03IAD','_03IAD'),
-        MelBase('CIAD','ciad_p'),
-        MelBase('\x04IAD','_04IAD'),
-        MelBase('DIAD','diad_p'),
-        MelBase('\x05IAD','_05IAD'),
-        MelBase('EIAD','eiad_p'),
-        MelBase('\x06IAD','_06IAD'),
-        MelBase('FIAD','fiad_p'),
-        MelBase('\x07IAD','_07IAD'),
-        MelBase('GIAD','giad_p'),
-        MelBase('\x08IAD','_08IAD'),
-        MelBase('HIAD','hiad_p'),
-        MelBase('\x09IAD','_09IAD'),
-        MelBase('IIAD','iiad_p'),
-        MelBase('\x0aIAD','_0aIAD'),
-        MelBase('JIAD','jiad_p'),
-        MelBase('\x0bIAD','_0bIAD'),
-        MelBase('KIAD','kiad_p'),
-        MelBase('\x0cIAD','_0cIAD'),
-        MelBase('LIAD','liad_p'),
-        MelBase('\x0dIAD','_0dIAD'),
-        MelBase('MIAD','miad_p'),
-        MelBase('\x0eIAD','_0eIAD'),
-        MelBase('NIAD','niad_p'),
-        MelBase('\x0fIAD','_0fIAD'),
-        MelBase('OIAD','oiad_p'),
-        MelBase('\x10IAD','_10IAD'),
-        MelBase('PIAD','piad_p'),
-        MelBase('\x11IAD','_11IAD'),
-        MelBase('QIAD','qiad_p'),
-        MelBase('\x12IAD','_12IAD'),
-        MelBase('RIAD','riad_p'),
-        MelBase('\x13IAD','_13iad_p'),
-        MelBase('SIAD','siad_p'),
-        MelBase('\x14IAD','_14iad_p'),
-        MelBase('TIAD','tiad_p'),
+        MelString('EDID', 'eid'),
+        MelStruct('DNAM', 'If49I2f8I', (_ImadAnimatableFlags, 'aniFlags', 0L),
+                  'duration', 'eyeAdaptSpeedMult', 'eyeAdaptSpeedAdd',
+                  'bloomBlurRadiusMult', 'bloomBlurRadiusAdd',
+                  'bloomThresholdMult', 'bloomThresholdAdd', 'bloomScaleMult',
+                  'bloomScaleAdd', 'targetLumMinMult', 'targetLumMinAdd',
+                  'targetLumMaxMult', 'targetLumMaxAdd', 'sunlightScaleMult',
+                  'sunlightScaleAdd', 'skyScaleMult', 'skyScaleAdd',
+                  'unknown08Mult', 'unknown48Add', 'unknown09Mult',
+                  'unknown49Add', 'unknown0AMult', 'unknown4AAdd',
+                  'unknown0BMult', 'unknown4BAdd', 'unknown0CMult',
+                  'unknown4CAdd', 'unknown0DMult', 'unknown4DAdd',
+                  'unknown0EMult', 'unknown4EAdd', 'unknown0FMult',
+                  'unknown4FAdd', 'unknown10Mult', 'unknown50Add',
+                  'saturationMult', 'saturationAdd', 'brightnessMult',
+                  'brightnessAdd', 'contrastMult', 'contrastAdd',
+                  'unknown14Mult', 'unknown54Add',
+                  'tintColor', 'blurRadius', 'doubleVisionStrength',
+                  'radialBlurStrength', 'radialBlurRampUp', 'radialBlurStart',
+                  (_ImadRadialBlurFlags, 'radialBlurFlags', 0L),
+                  'radialBlurCenterX', 'radialBlurCenterY', 'dofStrength',
+                  'dofDistance', 'dofRange', (_ImadDofFlags, 'dofFlags', 0L),
+                  'radialBlurRampDown', 'radialBlurDownStart', 'fadeColor',
+                  'motionBlurStrength'),
+        MelValueInterpolator('BNAM', 'blurRadiusInterp'),
+        MelValueInterpolator('VNAM', 'doubleVisionStrengthInterp'),
+        MelColorInterpolator('TNAM', 'tintColorInterp'),
+        MelColorInterpolator('NAM3', 'fadeColorInterp'),
+        MelValueInterpolator('RNAM', 'radialBlurStrengthInterp'),
+        MelValueInterpolator('SNAM', 'radialBlurRampUpInterp'),
+        MelValueInterpolator('UNAM', 'radialBlurStartInterp'),
+        MelValueInterpolator('NAM1', 'radialBlurRampDownInterp'),
+        MelValueInterpolator('NAM2', 'radialBlurDownStartInterp'),
+        MelValueInterpolator('WNAM', 'dofStrengthInterp'),
+        MelValueInterpolator('XNAM', 'dofDistanceInterp'),
+        MelValueInterpolator('YNAM', 'dofRangeInterp'),
+        MelValueInterpolator('NAM4', 'motionBlurStrengthInterp'),
+        MelValueInterpolator('\x00IAD', 'eyeAdaptSpeedMultInterp'),
+        MelValueInterpolator('\x40IAD', 'eyeAdaptSpeedAddInterp'),
+        MelValueInterpolator('\x01IAD', 'bloomBlurRadiusMultInterp'),
+        MelValueInterpolator('\x41IAD', 'bloomBlurRadiusAddInterp'),
+        MelValueInterpolator('\x02IAD', 'bloomThresholdMultInterp'),
+        MelValueInterpolator('\x42IAD', 'bloomThresholdAddInterp'),
+        MelValueInterpolator('\x03IAD', 'bloomScaleMultInterp'),
+        MelValueInterpolator('\x43IAD', 'bloomScaleAddInterp'),
+        MelValueInterpolator('\x04IAD', 'targetLumMinMultInterp'),
+        MelValueInterpolator('\x44IAD', 'targetLumMinAddInterp'),
+        MelValueInterpolator('\x05IAD', 'targetLumMaxMultInterp'),
+        MelValueInterpolator('\x45IAD', 'targetLumMaxAddInterp'),
+        MelValueInterpolator('\x06IAD', 'sunlightScaleMultInterp'),
+        MelValueInterpolator('\x46IAD', 'sunlightScaleAddInterp'),
+        MelValueInterpolator('\x07IAD', 'skyScaleMultInterp'),
+        MelValueInterpolator('\x47IAD', 'skyScaleAddInterp'),
+        MelBase('\x08IAD', 'unknown08IAD'),
+        MelBase('\x48IAD', 'unknown48IAD'),
+        MelBase('\x09IAD', 'unknown09IAD'),
+        MelBase('\x49IAD', 'unknown49IAD'),
+        MelBase('\x0AIAD', 'unknown0aIAD'),
+        MelBase('\x4AIAD', 'unknown4aIAD'),
+        MelBase('\x0BIAD', 'unknown0bIAD'),
+        MelBase('\x4BIAD', 'unknown4bIAD'),
+        MelBase('\x0CIAD', 'unknown0cIAD'),
+        MelBase('\x4CIAD', 'unknown4cIAD'),
+        MelBase('\x0DIAD', 'unknown0dIAD'),
+        MelBase('\x4DIAD', 'unknown4dIAD'),
+        MelBase('\x0EIAD', 'unknown0eIAD'),
+        MelBase('\x4EIAD', 'unknown4eIAD'),
+        MelBase('\x0FIAD', 'unknown0fIAD'),
+        MelBase('\x4FIAD', 'unknown4fIAD'),
+        MelBase('\x10IAD', 'unknown10IAD'),
+        MelBase('\x50IAD', 'unknown50IAD'),
+        MelValueInterpolator('\x11IAD', 'saturationMultInterp'),
+        MelValueInterpolator('\x51IAD', 'saturationAddInterp'),
+        MelValueInterpolator('\x12IAD', 'brightnessMultInterp'),
+        MelValueInterpolator('\x52IAD', 'brightnessAddInterp'),
+        MelValueInterpolator('\x13IAD', 'contrastMultInterp'),
+        MelValueInterpolator('\x53IAD', 'contrastAddInterp'),
+        MelBase('\x14IAD', 'unknown14IAD'),
+        MelBase('\x54IAD', 'unknown54IAD'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2754,6 +2789,10 @@ class MrePerk(MelRecord):
     """Perk record."""
     classType = 'PERK'
 
+    _PerkScriptFlags = Flags(0L, Flags.getNames(
+        (0, 'runImmediately'),
+    ))
+
     class MelPerkData(MelStruct):
         """Handle older truncated DATA for PERK subrecord."""
 
@@ -2870,6 +2909,60 @@ class MrePerk(MelRecord):
                     raise ModError(record.inName, _('Unexpected type: %d') % target.recordType)
                 element.dumpData(target, out)
 
+    class MelPerkEpfd(MelBase):
+        """EPFD needs to check EPFT and adjust its loading / dumping behavior
+        accordingly."""
+        def __init__(self):
+            MelBase.__init__(self, 'EPFD', 'function_parameter_data')
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            target = MelObject()
+            # EPFT has the following meanings:
+            #  0: Unknown
+            #  1: EPFD=float
+            #  2: EPFD=float, float
+            #  3: EPFD=fid (LVLI)
+            #  4: EPFD=Null (Script)
+            # TODO(inf) there is a special case: If EPFT is 2 and
+            #  DATA/function is 5, then:
+            #  EPFD=uint32, float
+            record.__setattribute__(self.attr, target)
+            if record.function_parameter_type in (0, 4):
+                # Read the entire subrecord, probably empty but just in case
+                target.params = ins.read(size_, readId)
+            elif record.function_parameter_type == 1:
+                target.params = ins.unpack('f', 4, readId)
+            elif record.function_parameter_type == 2:
+                # TODO(inf) See above - this is a special case, the first one
+                #  may either be uint32 or float. Using uint32 to not lose any
+                #  data due to precision issues here
+                target.params = ins.unpack('If', 8, readId)
+            elif record.function_parameter_type == 3:
+                target.params = ins.unpack('I', 4, readId)
+            else:
+                raise ModError(ins.inName, _(u'Unexpected function parameter '
+                                             u'type: %d') %
+                               record.function_parameter_type)
+
+        def dumpData(self, record, out):
+            target = record.__getattribute__(self.attr)
+            if not target: return
+            if record.function_parameter_type in (0, 4):
+                # In this case, params is a binary dump
+                out.packSub(self.subType, target.params)
+                return
+            elif record.function_parameter_type == 1:
+                target_format = 'f'
+            elif record.function_parameter_type == 2:
+                target_format = 'If' # see TODOs in loadData above
+            elif record.function_parameter_type == 3:
+                target_format = 'I'
+            else:
+                # TODO(inf) We need to hand the mod name to dumpData -
+                #  otherwise these errors are worthless
+                raise ModError(u'', _(u'Unexpected type: %d') % record.type)
+            out.packSub(self.subType, target_format, *target.params)
+
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -2888,10 +2981,10 @@ class MrePerk(MelRecord):
                 MelConditions(),
             ),
             MelPerkEffectParams('effectParams',
-                MelBase('EPFD', 'floats'), # [Float] or [Float,Float], todo rewrite specific class
-                MelStruct('EPFT','B','_epft'),
+                MelStruct('EPFT', 'B', 'function_parameter_type'),
+                MelPerkEpfd(),
                 MelString('EPF2','buttonLabel'),
-                MelStruct('EPF3','H','scriptFlag'),
+                MelStruct('EPF3', 'H', (_PerkScriptFlags, 'script_flags', 0L)),
                 MelGroup('embeddedScript',
                     MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
                     MelBase('SCDA','compiled_p'),
@@ -3608,7 +3701,9 @@ class MreRegn(MelRecord):
             MelRegnOptStruct('RDMD', 'I', 'musicType'),
             MelFid('RDMO','music'),
             MelRegnStructA('RDSD', '3I', 'sounds', (FID, 'sound'), (sdflags, 'flags'), 'chance'),
-            MelRegnStructA('RDWT', '3I', 'weather', (FID, 'weather', None), 'chance', (FID, 'global', None)),
+            MelRegnStructA('RDWT', '3I', 'weatherTypes',
+                           (FID, 'weather', None), 'chance',
+                           (FID, 'global', None)),
             ),
         )
     __slots__ = melSet.getSlotsUsed()
