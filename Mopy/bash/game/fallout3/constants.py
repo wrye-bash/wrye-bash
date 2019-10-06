@@ -617,35 +617,41 @@ listTypes = ('LVLC','LVLI','LVLN')
 # NamesPatcher
 #------------------------------------------------------------------------------
 namesTypes = {
-    'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CLAS', 'CONT', 'CREA',
-    'DOOR', 'EYES', 'FACT', 'HAIR', 'INGR', 'KEYM', 'LIGH', 'MESG', 'MGEF',
-    'MISC', 'NOTE', 'NPC_', 'PERK', 'RACE', 'SPEL', 'TACT', 'TERM', 'WEAP',
+    'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CLAS', 'COBJ', 'CONT',
+    'CREA', 'DOOR', 'EYES', 'FACT', 'HAIR', 'INGR', 'KEYM', 'LIGH', 'MESG',
+    'MGEF', 'MISC', 'NOTE', 'NPC_', 'PERK', 'RACE', 'SPEL', 'TACT', 'TERM',
+    'WEAP',
 }
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
 #------------------------------------------------------------------------------
-pricesTypes = {'ALCH':{},'AMMO':{},'ARMO':{},'ARMA':{},'BOOK':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'WEAP':{}}
+pricesTypes = {'ALCH': {}, 'AMMO': {}, 'ARMO': {}, 'ARMA': {}, 'BOOK': {},
+               'INGR': {}, 'KEYM': {}, 'LIGH': {}, 'MISC': {}, 'WEAP': {}}
 
 #------------------------------------------------------------------------------
 # StatsImporter
 #------------------------------------------------------------------------------
 statsTypes = {
-        'ALCH':('eid', 'weight', 'value'),
-        'AMMO':('eid', 'value', 'speed', 'clipRounds'),
-        'ARMA':('eid', 'weight', 'value', 'health', 'ar'),
-        'ARMO':('eid', 'weight', 'value', 'health', 'ar'),
-        'BOOK':('eid', 'weight', 'value'),
-        'INGR':('eid', 'weight', 'value'),
-        'KEYM':('eid', 'weight', 'value'),
-        'LIGH':('eid', 'weight', 'value', 'duration'),
-        'MISC':('eid', 'weight', 'value'),
-        'WEAP':('eid', 'weight', 'value', 'health', 'damage','clipsize',
-                'animationMultiplier','reach','ammoUse','minSpread','spread','sightFov','baseVatsToHitChance','projectileCount',
-                'minRange','maxRange','animationAttackMultiplier','fireRate','overrideActionPoint','rumbleLeftMotorStrength',
-                'rumbleRightMotorStrength','rumbleDuration','overrideDamageToWeaponMult','attackShotsPerSec',
-                'reloadTime','jamTime','aimArc','rambleWavelangth','limbDmgMult','sightUsage',
-                'semiAutomaticFireDelayMin','semiAutomaticFireDelayMax',
-                'criticalDamage','criticalMultiplier'),
+        'ALCH': ('eid', 'weight', 'value'),
+        'AMMO': ('eid', 'value', 'speed', 'clipRounds'),
+        'ARMA': ('eid', 'weight', 'value', 'health', 'ar'),
+        'ARMO': ('eid', 'weight', 'value', 'health', 'ar'),
+        'BOOK': ('eid', 'weight', 'value'),
+        'INGR': ('eid', 'weight', 'value'),
+        'KEYM': ('eid', 'weight', 'value'),
+        'LIGH': ('eid', 'weight', 'value', 'duration'),
+        'MISC': ('eid', 'weight', 'value'),
+        'WEAP': ('eid', 'weight', 'value', 'health', 'damage','clipsize',
+                 'animationMultiplier','reach','ammoUse','minSpread','spread',
+                 'sightFov','baseVatsToHitChance','projectileCount','minRange',
+                 'maxRange','animationAttackMultiplier','fireRate',
+                 'overrideActionPoint','rumbleLeftMotorStrength',
+                 'rumbleRightMotorStrength','rumbleDuration',
+                 'overrideDamageToWeaponMult','attackShotsPerSec','reloadTime',
+                 'jamTime','aimArc','rambleWavelangth','limbDmgMult',
+                 'sightUsage','semiAutomaticFireDelayMin',
+                 'semiAutomaticFireDelayMax','criticalDamage',
+                 'criticalMultiplier'),
         }
 statsHeaders = (
         #--Alch
@@ -705,14 +711,15 @@ statsHeaders = (
 # SoundPatcher
 #------------------------------------------------------------------------------
 # Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'CONT', 'CREA', 'DOOR',
-                    'EXPL', 'IPCT', 'LIGH', 'MGEF', 'PROJ', 'SOUN', 'TACT',
-                    'WATR', 'WEAP', 'WTHR'}
+soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'COBJ', 'CONT', 'CREA',
+                    'DOOR', 'EXPL', 'IPCT', 'LIGH', 'MGEF', 'PROJ', 'SOUN',
+                    'TACT', 'WATR', 'WEAP', 'WTHR'}
 soundsTypes = {
     "ACTI": ('soundLooping','soundActivation',),
     "ADDN": ('ambientSound',),
     "ALCH": ('dropSound','pickupSound','soundConsume',),
     "ASPC": ('soundLooping','useSoundFromRegion',),
+    "COBJ": ('pickupSound','dropSound',),
     "CONT": ('soundOpen','soundClose',),
     "CREA": ('footWeight','inheritsSoundsFrom','sounds'),
     "DOOR": ('soundOpen','soundClose','soundLoop',),
@@ -772,10 +779,11 @@ cellRecFlags = {
 # GraphicsPatcher
 #------------------------------------------------------------------------------
 graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'AVIF', 'BOOK',
-                      'BPTD', 'CLAS', 'CREA', 'DOOR', 'EFSH', 'EXPL', 'FURN',
-                      'GRAS', 'HDPT', 'INGR', 'IPCT', 'IPDS', 'KEYM', 'LIGH',
-                      'LSCR', 'MISC', 'MSTT', 'NPC_', 'NOTE', 'PROJ', 'PWAT',
-                      'STAT', 'TACT', 'TERM', 'TREE', 'TXST', 'WEAP', 'MGEF',}
+                      'BPTD', 'CLAS', 'COBJ', 'CREA', 'DOOR', 'EFSH', 'EXPL',
+                      'FURN', 'GRAS', 'HDPT', 'INGR', 'IPCT', 'IPDS', 'KEYM',
+                      'LIGH', 'LSCR', 'MISC', 'MSTT', 'NPC_', 'NOTE', 'PROJ',
+                      'PWAT', 'STAT', 'TACT', 'TERM', 'TREE', 'TXST', 'WEAP',
+                      'MGEF',}
 graphicsTypes = {
     "ACTI": ('model',),
     "ALCH": ('iconPath','smallIconPath','model',),
@@ -790,6 +798,7 @@ graphicsTypes = {
     "BOOK": ('iconPath','smallIconPath','model',),
     "BPTD": ('model',),
     "CLAS": ('iconPath',),
+    "COBJ": ('iconPath','smallIconPath','model',),
     "CREA": ('model','bodyParts','nift_p','bodyPartData','impactDataset',
              'effect',),
     "DOOR": ('model',),

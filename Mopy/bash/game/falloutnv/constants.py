@@ -729,36 +729,42 @@ listTypes = ('LVLC','LVLI','LVLN')
 #------------------------------------------------------------------------------
 namesTypes = {
     'ACTI', 'ALCH', 'AMMO', 'ARMO', 'AVIF', 'BOOK', 'CCRD', 'CHAL', 'CHIP',
-    'CLAS', 'CMNY', 'CONT', 'CREA', 'CSNO', 'DOOR', 'EYES', 'FACT', 'HAIR',
-    'IMOD', 'INGR', 'KEYM', 'LIGH', 'MESG', 'MGEF', 'MISC', 'NOTE', 'NPC_',
-    'PERK', 'RACE', 'RCCT', 'RCPE', 'REPU', 'SPEL', 'TACT', 'TERM', 'WEAP',
+    'CLAS', 'CMNY', 'COBJ', 'CONT', 'CREA', 'CSNO', 'DOOR', 'EYES', 'FACT',
+    'HAIR', 'IMOD', 'INGR', 'KEYM', 'LIGH', 'MESG', 'MGEF', 'MISC', 'NOTE',
+    'NPC_', 'PERK', 'RACE', 'RCCT', 'RCPE', 'REPU', 'SPEL', 'TACT', 'TERM',
+    'WEAP',
 }
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
 #------------------------------------------------------------------------------
-pricesTypes = {'ALCH':{},'AMMO':{},'ARMO':{},'ARMA':{},'BOOK':{},'INGR':{},'KEYM':{},'LIGH':{},'MISC':{},'WEAP':{}}
+pricesTypes = {'ALCH': {}, 'AMMO': {}, 'ARMO': {}, 'ARMA': {}, 'BOOK': {},
+               'INGR': {}, 'KEYM': {}, 'LIGH': {}, 'MISC': {}, 'WEAP': {}}
 #------------------------------------------------------------------------------
 # StatsImporter
 #------------------------------------------------------------------------------
 statsTypes = {
-        'ALCH':('eid', 'weight', 'value'),
-        'AMMO':('eid', 'weight', 'value', 'speed', 'clipRounds','projPerShot'),
-        'ARMA':('eid', 'weight', 'value', 'health', 'ar','dt'),
-        'ARMO':('eid', 'weight', 'value', 'health', 'ar','dt'),
-        'BOOK':('eid', 'weight', 'value'),
-        'INGR':('eid', 'weight', 'value'),
-        'KEYM':('eid', 'weight', 'value'),
-        'LIGH':('eid', 'weight', 'value', 'duration'),
-        'MISC':('eid', 'weight', 'value'),
-        'WEAP':('eid', 'weight', 'value', 'health', 'damage','clipsize',
-                'animationMultiplier','reach','ammoUse','minSpread','spread','sightFov','baseVatsToHitChance','projectileCount',
-                'minRange','maxRange','animationAttackMultiplier','fireRate','overrideActionPoint','rumbleLeftMotorStrength',
-                'rumbleRightMotorStrength','rumbleDuration','overrideDamageToWeaponMult','attackShotsPerSec',
-                'reloadTime','jamTime','aimArc','rambleWavelangth','limbDmgMult','sightUsage',
-                'semiAutomaticFireDelayMin','semiAutomaticFireDelayMax',
-                'strengthReq','regenRate','killImpulse','impulseDist','skillReq',
-                'criticalDamage','criticalMultiplier',
-                'vatsSkill','vatsDamMult','vatsAp'),
+        'ALCH': ('eid', 'weight', 'value'),
+        'AMMO': ('eid', 'weight', 'value', 'speed', 'clipRounds',
+                 'projPerShot'),
+        'ARMA': ('eid', 'weight', 'value', 'health', 'ar','dt'),
+        'ARMO': ('eid', 'weight', 'value', 'health', 'ar','dt'),
+        'BOOK': ('eid', 'weight', 'value'),
+        'INGR': ('eid', 'weight', 'value'),
+        'KEYM': ('eid', 'weight', 'value'),
+        'LIGH': ('eid', 'weight', 'value', 'duration'),
+        'MISC': ('eid', 'weight', 'value'),
+        'WEAP': ('eid', 'weight', 'value', 'health', 'damage','clipsize',
+                 'animationMultiplier','reach','ammoUse','minSpread','spread',
+                 'sightFov','baseVatsToHitChance','projectileCount','minRange',
+                 'maxRange','animationAttackMultiplier','fireRate',
+                 'overrideActionPoint','rumbleLeftMotorStrength',
+                 'rumbleRightMotorStrength','rumbleDuration',
+                 'overrideDamageToWeaponMult','attackShotsPerSec','reloadTime',
+                 'jamTime','aimArc','rambleWavelangth','limbDmgMult',
+                 'sightUsage','semiAutomaticFireDelayMin',
+                 'semiAutomaticFireDelayMax','strengthReq','regenRate',
+                 'killImpulse','impulseDist','skillReq','criticalDamage',
+                 'criticalMultiplier','vatsSkill','vatsDamMult','vatsAp'),
     }
 statsHeaders = (
         #--Alch
@@ -820,13 +826,15 @@ statsHeaders = (
 # SoundPatcher
 #------------------------------------------------------------------------------
 # Needs longs in SoundPatcher
-soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'CONT', 'CREA', 'DOOR',
-                    'LIGH', 'MGEF', 'SOUN', 'WATR', 'WTHR', 'WEAP', 'TACT'}
+soundsLongsTypes = {'ACTI', 'ADDN', 'ALCH', 'ASPC', 'COBJ', 'CONT', 'CREA',
+                    'DOOR', 'LIGH', 'MGEF', 'SOUN', 'WATR', 'WTHR', 'WEAP',
+                    'TACT'}
 soundsTypes = {
     "ACTI": ('soundLooping','soundActivation',),
     "ADDN": ('ambientSound',),
     "ALCH": ('dropSound','pickupSound','soundConsume',),
     "ASPC": ('soundLooping','useSoundFromRegion',),
+    "COBJ": ('pickupSound','dropSound',),
     "CONT": ('soundOpen','soundClose','soundRandomLooping',),
     "CREA": ('footWeight','inheritsSoundsFrom','sounds'),
     "DOOR": ('soundOpen','soundClose','soundLoop',),
@@ -882,12 +890,12 @@ cellRecFlags = {
 # GraphicsPatcher
 #------------------------------------------------------------------------------
 graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'AVIF', 'BOOK',
-                      'BPTD', 'CCRD', 'CHIP', 'CLAS', 'CMNY', 'CREA', 'CSNO',
-                      'DOOR', 'EFSH', 'EXPL', 'FURN', 'GRAS', 'HDPT', 'IMOD',
-                      'INGR', 'IPCT', 'IPDS', 'KEYM', 'LIGH', 'LSCR', 'MICN',
-                      'MISC', 'MSTT', 'NOTE', 'NPC_', 'PERK', 'PROJ', 'PWAT',
-                      'REPU', 'STAT', 'TACT', 'TERM', 'TREE', 'TXST', 'WEAP',
-                      'MGEF',}
+                      'BPTD', 'CCRD', 'CHIP', 'CLAS', 'CMNY', 'COBJ', 'CREA',
+                      'CSNO', 'DOOR', 'EFSH', 'EXPL', 'FURN', 'GRAS', 'HDPT',
+                      'IMOD', 'INGR', 'IPCT', 'IPDS', 'KEYM', 'LIGH', 'LSCR',
+                      'MICN', 'MISC', 'MSTT', 'NOTE', 'NPC_', 'PERK', 'PROJ',
+                      'PWAT', 'REPU', 'STAT', 'TACT', 'TERM', 'TREE', 'TXST',
+                      'WEAP', 'MGEF',}
 graphicsTypes = {
     "ACTI": ('model',),
     "ALCH": ('iconPath','smallIconPath','model',),
@@ -905,6 +913,7 @@ graphicsTypes = {
     "CHIP": ('iconPath','smallIconPath','model',),
     "CLAS": ('iconPath',),
     "CMNY": ('iconPath','smallIconPath','model',),
+    "COBJ": ('iconPath','smallIconPath','model',),
     "CREA": ('model','bodyParts','nift_p','bodyPartData','impactDataset',
              'effect',),
     "CSNO": ('chipModels','slotMachineModel','blackjackTableModel',

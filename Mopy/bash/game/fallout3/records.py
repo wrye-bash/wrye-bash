@@ -265,8 +265,6 @@ class MreLeveledList(MreLeveledListBase):
         MelBounds(),
         MelLevListLvld('LVLD','B','chanceNone'),
         MelUInt8('LVLF', (MreLeveledListBase._flags, 'flags', 0L)),
-        MelFid('SCRI','script'),
-        MelFid('TNAM','template'),
         MelFid('LVLG','glob'),
         MelGroups('entries',
             MelLevListLvlo('LVLO', 'h2sIh2s', 'level', ('unused1', null2),
