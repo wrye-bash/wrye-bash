@@ -64,6 +64,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         u'ImportInventory', u'ListsMerger', u'SoundPatcher', u'StatsPatcher',
         u'NamesPatcher', u'KeywordsImporter', u'TextImporter',
         u'ContentsChecker', u'DestructiblePatcher', u'DeathItemPatcher',
+        u'ImportActorsSpells',
     )
 
     # MreScpt is Oblivion/FO3/FNV Only

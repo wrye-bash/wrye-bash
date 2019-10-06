@@ -1360,6 +1360,34 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>Actors.Spells</td>
+            <td>Modifies the Spells (also called Actor Effects) list of actors.</td>
+            <td>Addition, modification or removal of spells to the (SPLO) Spells subrecord in the following records:
+                <ul>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.SpellsForceAdd</td>
+            <td>Modifies the Spells (also called Actor Effects) list of actors. This tag forces the addition of spells even if they are removed by other plugins tagged with Actors.Spells.</td>
+            <td>Addition of (SPLO) spells to the Spells subrecord in the following records:
+                <ul>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>C.Acoustic</td>
             <td>Modifies cell Acoustic Space.</td>
             <td>The Acoustic Space (XCAS) subrecord in Cell (CELL) records.
@@ -1967,16 +1995,6 @@ C.Location, -C.LockList
                     <li>(MODT) Texture File Hashes.</li>
                 </ul>
             </td>
-        </tr>
-        <tr>
-            <td>Actors.Spells</td>
-            <td>Modifies the Spells list of (NPC_) Non-Player Character or (CREA) Creature.</td>
-            <td>Addition or removal of (SPLO) Spell to the Spells list.</td>
-        </tr>
-        <tr>
-            <td>Actors.SpellsForceAdd</td>
-            <td>Modifies Creature or Non-Player Character spell lists. This tag forces the addition of spells even if they are removed by other plugins tagged with Actors.Spells.</td>
-            <td>Addition of (SPLO) Spell to the Spells list.</td>
         </tr>
         <tr>
             <td>Actors.Stats</td>

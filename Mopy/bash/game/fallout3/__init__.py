@@ -121,10 +121,10 @@ class Fallout3GameInfo(GameInfo):
     # 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton',
     # 'NpcFacesForceFullImport', 'MustBeActiveIfImported', 'Deflst',
     # 'Destructible'
-    allTags = {u'Actors.DeathItem', u'C.Acoustic', u'C.Climate',
-               u'C.Encounter', u'C.ImageSpace', u'C.Light', u'C.Music',
-               u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Water',
-               u'Deactivate', u'Deflst', u'Delev', u'Destructible',
+    allTags = {u'Actors.DeathItem', u'Actors.Spells', u'Actors.SpellsForceAdd',
+               u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace',
+               u'C.Light', u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
+               u'C.Water', u'Deactivate', u'Deflst', u'Delev', u'Destructible',
                u'Factions', u'Filter', u'Graphics', u'Invent', u'Names',
                u'NoMerge', u'Relev', u'Sound', u'Stats', u'Text', u'Scripts',}
 
@@ -141,6 +141,7 @@ class Fallout3GameInfo(GameInfo):
         u'ImportFactions', u'ImportInventory', u'ListsMerger', u'NamesPatcher',
         u'PatchMerger', u'SoundPatcher', u'StatsPatcher', u'TextImporter',
         u'ContentsChecker', u'ImportScripts', u'DeathItemPatcher',
+        u'ImportActorsSpells',
     )
 
     weaponTypes = (

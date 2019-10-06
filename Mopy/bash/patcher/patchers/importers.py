@@ -1904,7 +1904,7 @@ class CBash_ImportInventory(_RecTypeModLogging, _AImportInventory):
 class _AImportActorsSpells(AImportPatcher):
     """Merges changes to the spells lists of Actors."""
     name = _(u'Import Actors: Spells')
-    text = _(u"Merges changes to NPC and creature spell lists.")
+    text = _(u'Merges changes to actor spell / effect lists.')
     tip = text
     autoKey = {u'Actors.Spells', u'Actors.SpellsForceAdd'}
 
@@ -1916,14 +1916,14 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         super(ImportActorsSpells, self).initPatchFile(patchFile)
         # long_fid -> {'merged':list[long_fid], 'deleted':list[long_fid]}
         self.id_merged_deleted = {}
-        self.longTypes = {'CREA', 'NPC_'}
+        self.target_rec_types = bush.game.actor_types
 
     def initData(self,progress):
         """Get data from source files."""
         if not self.isActive: return
-        longTypes = self.longTypes
-        loadFactory = LoadFactory(False,MreRecord.type_class['CREA'],
-                                        MreRecord.type_class['NPC_'])
+        target_rec_types = self.target_rec_types
+        loadFactory = LoadFactory(False, *[MreRecord.type_class[x] for x
+                                           in target_rec_types])
         progress.setFull(len(self.srcs))
         cachedMasters = {}
         mer_del = self.id_merged_deleted
@@ -1935,9 +1935,9 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
             masters = srcInfo.get_masters()
             bashTags = srcInfo.getBashTags()
             srcFile.load(True)
-            srcFile.convertToLongFids(longTypes)
+            srcFile.convertToLongFids(target_rec_types)
             mapper = srcFile.getLongMapper()
-            for recClass in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
+            for recClass in (MreRecord.type_class[x] for x in target_rec_types):
                 if recClass.classType not in srcFile.tops: continue
                 for record in srcFile.tops[recClass.classType].getActiveRecords():
                     fid = mapper(record.fid)
@@ -1950,10 +1950,10 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
                     masterInfo = bosh.modInfos[master]
                     masterFile = ModFile(masterInfo,loadFactory)
                     masterFile.load(True)
-                    masterFile.convertToLongFids(longTypes)
+                    masterFile.convertToLongFids(target_rec_types)
                     cachedMasters[master] = masterFile
                 mapper = masterFile.getLongMapper()
-                for block in (MreRecord.type_class[x] for x in ('NPC_','CREA')):
+                for block in (MreRecord.type_class[x] for x in target_rec_types):
                     if block.classType not in srcFile.tops: continue
                     if block.classType not in masterFile.tops: continue
                     for record in masterFile.tops[block.classType].getActiveRecords():
@@ -2033,18 +2033,18 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
 
     def getReadClasses(self):
         """Returns load factory classes needed for reading."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def getWriteClasses(self):
         """Returns load factory classes needed for writing."""
-        return ('NPC_','CREA',) if self.isActive else ()
+        return bush.game.actor_types if self.isActive else ()
 
     def scanModFile(self, modFile, progress): # scanModFile2
         """Add record from modFile."""
         if not self.isActive: return
         merged_deleted = self.id_merged_deleted
         mapper = modFile.getLongMapper()
-        for type in ('NPC_','CREA'):
+        for type in self.target_rec_types:
             patchBlock = getattr(self.patchFile,type)
             for record in getattr(modFile,type).getActiveRecords():
                 fid = mapper(record.fid)
@@ -2058,7 +2058,7 @@ class ImportActorsSpells(ImportPatcher, _AImportActorsSpells):
         keep = self.patchFile.getKeeper()
         merged_deleted = self.id_merged_deleted
         mod_count = Counter()
-        for rec_type in ('NPC_','CREA'):
+        for rec_type in self.target_rec_types:
             for record in getattr(self.patchFile,rec_type).records:
                 fid = record.fid
                 if fid not in merged_deleted: continue

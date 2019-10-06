@@ -139,19 +139,21 @@ class SkyrimGameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.94, 1.70,)
 
-    allTags = {u'Actors.DeathItem', u'C.Acoustic', u'C.Climate',
-               u'C.Encounter', u'C.ForceHideLand', u'C.ImageSpace', u'C.Light',
-               u'C.Location', u'C.LockList', u'C.Music', u'C.Name', u'C.Owner',
-               u'C.RecordFlags', u'C.Regions', u'C.SkyLighting', u'C.Water',
-               u'Deactivate', u'Delev', u'Destructible', u'Filter',
-               u'Graphics', u'Invent', u'Keywords', u'Names', u'NoMerge',
-               u'Relev', u'Sound', u'Stats', u'Text',}
+    allTags = {u'Actors.DeathItem', u'Actors.Spells', u'Actors.SpellsForceAdd',
+               u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ForceHideLand',
+               u'C.ImageSpace', u'C.Light', u'C.Location', u'C.LockList',
+               u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
+               u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate',
+               u'Delev', u'Destructible', u'Filter', u'Graphics', u'Invent',
+               u'Keywords', u'Names', u'NoMerge', u'Relev', u'Sound', u'Stats',
+               u'Text',}
 
     patchers = (
         u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
         u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
         u'StatsPatcher', u'NamesPatcher', u'KeywordsImporter', u'TextImporter',
         u'ContentsChecker', u'DestructiblePatcher', u'DeathItemPatcher',
+        u'ImportActorsSpells',
     )
 
     weaponTypes = (
