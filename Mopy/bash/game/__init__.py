@@ -415,6 +415,11 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     scripts_types = ()
 
+    #--------------------------------------------------------------------------
+    # Destructible Patcher
+    #--------------------------------------------------------------------------
+    destructible_types = ()
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -453,12 +458,13 @@ class GameInfo(object):
     _constants_members = {
         'GlobalsTweaks', 'GmstTweaks', 'bethDataFiles', 'cc_valid_types',
         'cc_passes', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
-        'condition_function_data', 'default_eyes', 'gmstEids',
-        'graphicsFidTypes', 'graphicsLongsTypes', 'graphicsModelAttrs',
-        'graphicsTypes', 'inventoryTypes', 'keywords_types', 'listTypes',
-        'namesTypes', 'pricesTypes', 'record_type_name', 'save_rec_types',
-        'scripts_types' 'soundsLongsTypes', 'soundsTypes', 'statsHeaders',
-        'statsTypes', 'text_long_types', 'text_types', 'xEdit_expert',
+        'condition_function_data', 'default_eyes', 'destructible_types',
+        'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
+        'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes',
+        'keywords_types', 'listTypes', 'namesTypes', 'pricesTypes',
+        'record_type_name', 'save_rec_types', 'scripts_types',
+        'soundsLongsTypes', 'soundsTypes', 'statsHeaders', 'statsTypes',
+        'text_long_types', 'text_types', 'xEdit_expert',
     }
 
     @classmethod

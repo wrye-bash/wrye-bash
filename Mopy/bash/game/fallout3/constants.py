@@ -930,6 +930,13 @@ scripts_types = ('ACTI', 'ALCH', 'ARMO', 'BOOK', 'COBJ', 'CONT', 'CREA',
                  'DOOR', 'FURN', 'INGR', 'KEYM', 'LIGH', 'MISC', 'NPC_',
                  'QUST', 'TACT', 'TERM', 'WEAP')
 
+#------------------------------------------------------------------------------
+# Destructible Patcher
+#------------------------------------------------------------------------------
+destructible_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CONT', 'CREA',
+                      'DOOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT', 'NPC_',
+                      'PROJ', 'TACT', 'TERM', 'WEAP')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),

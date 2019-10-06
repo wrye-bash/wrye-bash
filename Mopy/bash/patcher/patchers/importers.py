@@ -527,22 +527,13 @@ class CBash_CellImporter(_ACellImporter,CBash_ImportPatcher):
 #------------------------------------------------------------------------------
 class DestructiblePatcher(_SimpleImporter):
     """Merges changes to destructible records for Fallout3/FalloutNV."""
-    name = _(u"Import Destructible")
-    text = _(u"Merges changes to destructible records.\n\nWill have to use if "
-             u"Destruction Environment mod is installed and active.")
-    tip = text
+    name = _(u'Import Destructible')
+    text = _(u'Preserves changes to destructible records.\n\nWill have to use '
+             u'if a mod that allows you to destroy part of the environment is '
+             u'installed and active.')
     autoKey = {u'Destructible'}
-    if bush.game.fsName == u'Fallout3':
-        longTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CONT', 'CREA',
-                     'DOOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT', 'NPC_',
-                     'PROJ', 'TACT', 'TERM', 'WEAP'}
-    elif bush.game.fsName == u'FalloutNV':
-        longTypes = {'ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CHIP', 'CONT',
-                     'CREA', 'DOOR', 'FURN', 'IMOD', 'KEYM', 'LIGH', 'MISC',
-                     'MSTT', 'NPC_', 'PROJ', 'TACT', 'TERM', 'WEAP'}
-    else:
-        longTypes = set()
-    rec_attrs = dict((x, ('destructible',)) for x in longTypes)
+    # All destructibles may contain FIDs, so let longTypes be set automatically
+    rec_attrs = {x: ('destructible',) for x in bush.game.destructible_types}
 
     #--Patch Phase ------------------------------------------------------------
     def _inner_loop(self, keep, records, top_mod_rec, type_count):

@@ -2494,6 +2494,13 @@ cc_passes = (
     (('OTFT',), 'items'),
 )
 
+#------------------------------------------------------------------------------
+# Destructible Patcher
+#------------------------------------------------------------------------------
+destructible_types = ('ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CONT',
+                      'DOOR', 'FLOR', 'FURN', 'KEYM', 'LIGH', 'MISC', 'MSTT',
+                      'NPC_', 'PROJ', 'SCRL', 'SLGM', 'TACT', 'WEAP')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),
