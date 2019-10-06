@@ -3223,28 +3223,11 @@ class MreInfo(MelRecord):
     # 2 :'Medium',
     # 3 :'Large'
 
-    # 'Use Emotion Animation'
-    InfoResponsesFlags = Flags(0L,Flags.getNames(
+    _InfoResponsesFlags = Flags(0L, Flags.getNames(
             (0, 'useEmotionAnimation'),
         ))
 
-    # {0x0001} 'Goodbye',
-    # {0x0002} 'Random',
-    # {0x0004} 'Say once',
-    # {0x0008} 'Unknown 4',
-    # {0x0010} 'Unknown 5',
-    # {0x0020} 'Random end',
-    # {0x0040} 'Invisible continue',
-    # {0x0080} 'Walk Away',
-    # {0x0100} 'Walk Away Invisible in Menu',
-    # {0x0200} 'Force subtitle',
-    # {0x0400} 'Can move while greeting',
-    # {0x0800} 'No LIP File',
-    # {0x1000} 'Requires post-processing',
-    # {0x2000} 'Audio Output Override',
-    # {0x4000} 'Spends favor points',
-    # {0x8000} 'Unknown 16'
-    EnamResponseFlags = Flags(0L,Flags.getNames(
+    _EnamResponseFlags = Flags(0L, Flags.getNames(
             (0, 'goodbye'),
             (1, 'random'),
             (2, 'sayonce'),
@@ -3266,37 +3249,38 @@ class MreInfo(MelRecord):
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
-        MelBase('DATA','data_p'),
-        MelStruct('ENAM','2H',(EnamResponseFlags,'flags',0L),'resetHours',),
+        MelBase('DATA','unknownDATA'),
+        MelStruct('ENAM','2H', (_EnamResponseFlags, 'flags', 0L),
+                  'resetHours',),
         MelFid('TPIC','topic',),
         MelFid('PNAM','prevInfo',),
-        MelStruct('CNAM','I','favorLevel',),
-        MelFids('TCLT','response',),
+        MelStruct('CNAM','B','favorLevel',),
+        MelFids('TCLT','linkTo',),
         MelFid('DNAM','responseData',),
         # {>>> Unordered, CTDA can appear before or after LNAM <- REQUIRES CONFIRMATION <<<}
         MelGroups('responses',
-            MelStruct('TRDT','II4sB3sIB3s','emotionType','emotionValue',
-                      'unused','responsenumber','unused',(FID,'sound'),
-                      (InfoResponsesFlags,'flags',0L),'unused',),
+            MelStruct('TRDT', '2I4sB3sIB3s', 'emotionType', 'emotionValue',
+                      ('unused1', null4), 'responseNumber', ('unused2', null3),
+                      (FID, 'sound', None),
+                      (_InfoResponsesFlags, 'responseFlags', 0L),
+                      ('unused3', null3),),
             MelLString('NAM1','responseText'),
             MelString('NAM2','scriptNotes'),
             MelString('NAM3','edits'),
             MelFid('SNAM','idleAnimationsSpeaker',),
             MelFid('LNAM','idleAnimationsListener',),
-            ),
-
+        ),
         MelConditions(),
-
         MelGroups('leftOver',
             MelBase('SCHR','unknown1'),
             MelFid('QNAM','unknown2'),
             MelNull('NEXT'),
-            ),
+        ),
         MelLString('RNAM','prompt'),
         MelFid('ANAM','speaker',),
         MelFid('TWAT','walkAwayTopic',),
         MelFid('ONAM','audioOutputOverride',),
-        )
+    )
     __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305
