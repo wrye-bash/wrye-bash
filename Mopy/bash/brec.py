@@ -1796,6 +1796,74 @@ class MreGmstBase(MelRecord):
         return bosh.modInfos.masterName,cls.Ids[self.eid]
 
 #------------------------------------------------------------------------------
+# WARNING: This is implemented and (should be) functional, but we do not import
+# it! The reason is that LAND records are numerous and very big, so importing
+# and adding this to mergeClasses would slow us down quite a bit.
+class MreLand(MelRecord):
+    """Land structure. Part of exterior cells."""
+    classType = 'LAND'
+
+    class MelLandLayers(MelBase):
+        """The ATXT/BTXT/VTXT subrecords of land occur in a group, but only as
+        either BTXT or both ATXT and VTXT. So we must manually handle this.
+        Additionally, this class is optimized for loading and memory
+        performance, since LAND records are numerous and big."""
+
+        def __init__(self):
+            self.attr = 'layers'
+            self.btxt = MelStruct('BTXT', 'IBsh', (FID, 'blTexture'),
+                                  'blQuadrant', 'blUnknown', 'blLayer')
+            self.atxt = MelStruct('ATXT', 'IBsh', (FID, 'alTexture'),
+                                  'alQuadrant', 'alUnknown', 'alLayer')
+            self.vtxt = MelBase('VTXT', 'alphaLayerData')
+
+        def loadData(self, record, ins, sub_type, size_, readId):
+            # Optimized for performance, that's why some code is copy-pasted
+            layer = MelObject()
+            record.layers.append(layer)
+            if sub_type == 'BTXT': # read only BTXT
+                layer.use_btxt = True
+                layer.__slots__ = self.btxt.getSlotsUsed()
+                self.btxt.loadData(layer, ins, sub_type, size_, readId)
+            else: # sub_type == 'ATXT': read both ATXT and VTXT
+                layer.use_btxt = False
+                layer.__slots__ = self.atxt.getSlotsUsed() + \
+                                  self.vtxt.getSlotsUsed()
+                self.atxt.loadData(layer, ins, sub_type, size_, readId)
+                self.vtxt.loadData(layer, ins, sub_type, size_, readId)
+            layer.__slots__ += ('use_btxt',)
+
+        def dumpData(self, record, out):
+            for layer in record.layers:
+                if layer.use_btxt:
+                    self.btxt.dumpData(layer, out)
+                else:
+                    self.atxt.dumpData(layer, out)
+                    self.vtxt.dumpData(layer, out)
+
+        def getLoaders(self, loaders):
+            for loader_type in ('ATXT', 'BTXT', 'VTXT'):
+                loaders[loader_type] = self
+
+        def hasFids(self, formElements):
+            formElements.add(self)
+
+        def mapFids(self, record, function, save=False):
+            for layer in record.layers:
+                map_target = self.btxt if layer.use_btxt else self.atxt
+                map_target.mapFids(layer, function, save)
+
+    melSet = MelSet(
+        MelBase('DATA', 'unknown1'),
+        MelBase('VNML', 'vertexNormals'),
+        MelBase('VHGT', 'vertexHeightMap'),
+        MelBase('VCLR', 'vertexColors'),
+        MelLandLayers(),
+        MelFidList('VTEX', 'vertexTextures'),
+    )
+    __slots__ = melSet.getSlotsUsed()
+
+#------------------------------------------------------------------------------
 class MreLeveledListBase(MelRecord):
     """Base type for leveled item/creature/npc/spells.
        it requires the base class to use the following:
