@@ -2439,9 +2439,9 @@ class InstallersList(balt.UIList):
                               sizes_dict=balt.sizes) as dialog:
                 gCheckBox = CheckBox(dialog,
                                      _(u"Don't show this in the future."))
-                move_button = Button(dialog, label=_(u'Move'))
+                move_button = Button(dialog, btn_label=_(u'Move'))
                 move_button.on_clicked.subscribe(lambda: dialog.exit_modal(1))
-                copy_button = Button(dialog, label=_(u'Copy'))
+                copy_button = Button(dialog, btn_label=_(u'Copy'))
                 copy_button.on_clicked.subscribe(lambda: dialog.exit_modal(2))
                 VLayout(border=6, spacing=6, items=[
                     HLayout(spacing=6, item_border=6, items=[

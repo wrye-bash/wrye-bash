@@ -1825,14 +1825,14 @@ class MelSet(object):
                 self._handle_load_error(error, record, ins, sub_type, sub_size)
 
     def _handle_load_error(self, error, record, ins, sub_type, sub_size):
-        eid = getattr(record, 'eid', u'<<NO EID>>')
+        eid = getattr(record, u'eid', u'<<NO EID>>')
         bolt.deprint(u'Error loading %r record and/or subrecord: %08X' %
                      (record.recType, record.fid))
         bolt.deprint(u'  eid = %r' % eid)
         bolt.deprint(u'  subrecord = %r' % sub_type)
         bolt.deprint(u'  subrecord size = %d' % sub_size)
-        bolt.deprint(u'  file pos = %d' % ins.tell())
-        raise error
+        bolt.deprint(u'  file pos = %d' % ins.tell(), traceback=True)
+        raise exception.ModError(ins.inName, repr(error))
 
     def dumpData(self,record, out):
         """Dumps state into out. Called by getSize()."""

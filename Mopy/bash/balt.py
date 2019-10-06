@@ -2136,8 +2136,8 @@ class ListBoxes(DialogWindow):
             layout.add((HBoxedLayout(self, item_expand=True, title=title,
                                      item_weight=1, items=[checksCtrl]),
                         LayoutOptions(expand=True, weight=1)))
-        btns = [OkButton(self, label=bOk, default=True),
-                CancelButton(self, label=bCancel) if canCancel else None]
+        btns = [OkButton(self, btn_label=bOk, default=True),
+                CancelButton(self, btn_label=bCancel) if canCancel else None]
         layout.add((HLayout(spacing=5, items=btns),
                     LayoutOptions(h_align=RIGHT)))
         layout.apply_to(self)

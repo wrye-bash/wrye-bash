@@ -286,7 +286,7 @@ class ImportFaceDialog(DialogWindow):
         self.statsText  = Label(self,u'')
         self.classText  = Label(self,u'')
         #--Other
-        importButton = Button(self, label=_(u'Import'), default=True)
+        importButton = Button(self, btn_label=_(u'Import'), default=True)
         importButton.on_clicked.subscribe(self.DoImport)
         self.picture = Picture(self, 350, 210, scaling=2) ##: unused
         GridLayout(border=4, stretch_cols=[0, 1], stretch_rows=[0], items=[

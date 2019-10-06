@@ -45,13 +45,13 @@ class Button(_AComponent):
     # The label to use when no label was explicitly specified. Set per class.
     default_label = u''
 
-    def __init__(self, parent, label=u'', btn_tooltip=None, default=False,
+    def __init__(self, parent, btn_label=u'', btn_tooltip=None, default=False,
                  exact_fit=False, no_border=False):
         """Creates a new Button with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
-        :param label: The text shown on this button.
+        :param btn_label: The text shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
                             button.
         :param default: If set to True, this button will be the 'default',
@@ -61,15 +61,15 @@ class Button(_AComponent):
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
                           hidden."""
-        if not label and self.__class__.default_label:
-            label = self.__class__.default_label
+        if not btn_label and self.__class__.default_label:
+            btn_label = self.__class__.default_label
         btn_style = 0
         if exact_fit:
             btn_style |= _wx.BU_EXACTFIT
         if no_border:
             btn_style |= _wx.BORDER_NONE
-        super(Button, self).__init__(parent, self.__class__._id, label=label,
-                                     style=btn_style)
+        super(Button, self).__init__(parent, self.__class__._id,
+                                     label=btn_label, style=btn_style)
         if default:
             self._native_widget.SetDefault()
         if btn_tooltip:
@@ -164,14 +164,14 @@ class ImageButton(Button):
     See Button for documentation on button events. Note: this implementation
     locks us into wx 2.9+, since wx 2.8 can't do bitmaps with a regular button.
     """
-    def __init__(self, parent, image, label=u'', btn_tooltip=None,
+    def __init__(self, parent, image, btn_label=u'', btn_tooltip=None,
                  default=False, exact_fit=False, no_border=False):
         """Creates a new _AImageButton with the specified properties.
 
         :param parent: The object that this button belongs to. May be a wx
                        object or a component.
         :param image: The image shown on this button.
-        :param label: The text shown on this button.
+        :param btn_label: The text shown on this button.
         :param btn_tooltip: A tooltip to show when the user hovers over this
                             button.
         :param default: If set to True, this button will be the 'default',
@@ -181,7 +181,7 @@ class ImageButton(Button):
                           exactly to its contents.
         :param no_border: If set to True, the borders of this button will be
                           hidden."""
-        super(ImageButton, self).__init__(parent, label=label,
+        super(ImageButton, self).__init__(parent, btn_label=btn_label,
                                           btn_tooltip=btn_tooltip,
                                           default=default, exact_fit=exact_fit,
                                           no_border=no_border)

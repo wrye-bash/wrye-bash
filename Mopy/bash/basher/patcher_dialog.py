@@ -91,7 +91,7 @@ class PatchDialog(DialogWindow):
         self.currentPatcher = None
         patcherNames = [patcher.patcher_name for patcher in self._gui_patchers]
         #--GUI elements
-        self.gExecute = OkButton(self, label=_(u'Build Patch'))
+        self.gExecute = OkButton(self, btn_label=_(u'Build Patch'))
         self.gExecute.on_clicked.subscribe(self.PatchExecute)
         # TODO(nycz): somehow move setUAC further into env?
         # Note: for this to work correctly, it needs to be run BEFORE
@@ -109,14 +109,14 @@ class PatchDialog(DialogWindow):
         self.gPatchers = CheckListBox(self, choices=patcherNames,
                                       isSingle=True, onSelect=self.OnSelect,
                                       onCheck=self.OnCheck)
-        self.gExportConfig = SaveAsButton(self, label=_(u'Export'))
+        self.gExportConfig = SaveAsButton(self, btn_label=_(u'Export'))
         self.gExportConfig.on_clicked.subscribe(self.ExportConfig)
-        self.gImportConfig = OpenButton(self, label=_(u'Import'))
+        self.gImportConfig = OpenButton(self, btn_label=_(u'Import'))
         self.gImportConfig.on_clicked.subscribe(self.ImportConfig)
         self.gRevertConfig = RevertToSavedButton(self)
         self.gRevertConfig.on_clicked.subscribe(self.RevertConfig)
         self.gRevertToDefault = RevertButton(self,
-                                             label=_(u'Revert To Default'))
+                                             btn_label=_(u'Revert To Default'))
         self.gRevertToDefault.on_clicked.subscribe(self.DefaultConfig)
         for index,patcher in enumerate(self._gui_patchers):
             self.gPatchers.lb_check_at_index(index, patcher.isEnabled)

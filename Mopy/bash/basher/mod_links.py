@@ -30,6 +30,7 @@ import StringIO
 import collections
 import copy
 import re
+import traceback
 # Local
 from .constants import settingDefaults
 from .files_links import File_Redate
@@ -87,9 +88,17 @@ class Mod_FullLoad(OneItemLink):
             loadFactory = mod_files.LoadFactory(False, *readClasses.values())
             modFile = mod_files.ModFile(self._selected_info, loadFactory)
             try:
-                modFile.load(True, progress)
+                modFile.load(True, progress, catch_errors=False)
             except:
+                failed_msg = (_(u'File failed to verify using current record '
+                                u'definitions. The original traceback is '
+                                u'available in the BashBugDump.') + u'\n\n' +
+                              traceback.format_exc())
+                self._showError(failed_msg, title=_(u'Verification Failed'))
                 bolt.deprint(u'exception:\n', traceback=True)
+                return
+        self._showOk(_(u'File fully verified using current record '
+                       u'definitions.'), title=_(u'Verification Succeeded'))
 
 # File submenu ----------------------------------------------------------------
 # the rest of the File submenu links come from file_links.py

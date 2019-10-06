@@ -189,7 +189,8 @@ class ModFile(object):
         else:
             raise ArgumentError(u'Invalid top group type: '+topType)
 
-    def load(self, do_unpack=False, progress=None, loadStrings=True):
+    def load(self, do_unpack=False, progress=None, loadStrings=True,
+             catch_errors=True):
         """Load file."""
         from . import bosh
         progress = progress or bolt.Progress()
@@ -237,9 +238,14 @@ class ModFile(object):
                         insSeek(size - header.__class__.rec_header_size, 1,
                                 u'%s.%s' % (type.decode(u'ascii'), label))
                 except:
-                    deprint(u'Error in %s' % self.fileInfo.name.s,
-                            traceback=True)
-                    break
+                    if catch_errors:
+                        deprint(u'Error in %s' % self.fileInfo.name.s,
+                                traceback=True)
+                        break
+                    else:
+                        # Useful for implementing custom error behavior, see
+                        # e.g. Mod_FullLoad
+                        raise
                 subProgress(insTell())
         #--Done Reading
 
