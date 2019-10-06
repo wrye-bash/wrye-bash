@@ -420,6 +420,11 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     destructible_types = ()
 
+    #--------------------------------------------------------------------------
+    # Actor Patchers
+    #--------------------------------------------------------------------------
+    actor_types = ()
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -456,13 +461,13 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'bethDataFiles', 'cc_valid_types',
-        'cc_passes', 'cellAutoKeys', 'cellRecAttrs', 'cellRecFlags',
-        'condition_function_data', 'default_eyes', 'destructible_types',
-        'gmstEids', 'graphicsFidTypes', 'graphicsLongsTypes',
-        'graphicsModelAttrs', 'graphicsTypes', 'inventoryTypes',
-        'keywords_types', 'listTypes', 'namesTypes', 'pricesTypes',
-        'record_type_name', 'save_rec_types', 'scripts_types',
+        'GlobalsTweaks', 'GmstTweaks', 'actor_types', 'bethDataFiles',
+        'cc_valid_types', 'cc_passes', 'cellAutoKeys', 'cellRecAttrs',
+        'cellRecFlags', 'condition_function_data', 'default_eyes',
+        'destructible_types', 'gmstEids', 'graphicsFidTypes',
+        'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
+        'inventoryTypes', 'keywords_types', 'listTypes', 'namesTypes',
+        'pricesTypes', 'record_type_name', 'save_rec_types', 'scripts_types',
         'soundsLongsTypes', 'soundsTypes', 'statsHeaders', 'statsTypes',
         'text_long_types', 'text_types', 'xEdit_expert',
     }

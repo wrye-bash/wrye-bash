@@ -1700,6 +1700,11 @@ scripts_types = ('ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT',
                  'CREA', 'DOOR', 'FLOR', 'FURN', 'INGR', 'KEYM', 'LIGH',
                  'MISC', 'NPC_', 'QUST', 'SGST', 'SLGM', 'WEAP')
 
+#------------------------------------------------------------------------------
+# Actor Patchers
+#------------------------------------------------------------------------------
+actor_types = ('CREA', 'NPC_')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),

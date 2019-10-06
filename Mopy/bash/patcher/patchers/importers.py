@@ -1250,12 +1250,12 @@ class CBash_NPCAIPackagePatcher(CBash_ImportPatcher, _ANPCAIPackagePatcher):
 class _ADeathItemPatcher(AImportPatcher):
     """Merges changes to actor death items."""
     name = _(u'Import Actors: Death Items')
-    text = _(u"Import Actor death items from source mods.")
+    text = _(u'Import actor death items from source mods.')
     tip = text
     autoKey = {u'Actors.DeathItem'}
 
 class DeathItemPatcher(_SimpleImporter, _ADeathItemPatcher):
-    rec_attrs = dict((x, ('deathItem',)) for x in {'CREA', 'NPC_'})
+    rec_attrs = {x: ('deathItem',) for x in bush.game.actor_types}
 
 class CBash_DeathItemPatcher(CBash_ImportPatcher, _ADeathItemPatcher):
     logMsg = u'* ' + _(u'Imported Death Items') + u': %d'

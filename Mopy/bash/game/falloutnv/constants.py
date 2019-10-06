@@ -1111,6 +1111,11 @@ destructible_types = ('ACTI', 'ALCH', 'AMMO', 'ARMO', 'BOOK', 'CHIP', 'CONT',
                       'CREA', 'DOOR', 'FURN', 'IMOD', 'KEYM', 'LIGH', 'MISC',
                       'MSTT', 'NPC_', 'PROJ', 'TACT', 'TERM', 'WEAP')
 
+#------------------------------------------------------------------------------
+# Actor Patchers
+#------------------------------------------------------------------------------
+actor_types = ('CREA', 'NPC_')
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH':_(u'Potions'),
