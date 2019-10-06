@@ -28,7 +28,7 @@ and environment issues - do not modify or imitate (ut)."""
 
 # no imports
 
-# The name of the locale we ended up with after bash._setup_locale()
+# The name of the locale we ended up with after localize.setup_locale()
 active_locale = None
 AppVersion = u"307" # must represent a valid float
 

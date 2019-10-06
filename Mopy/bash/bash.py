@@ -29,11 +29,9 @@ loop."""
 # Imports ---------------------------------------------------------------------
 import atexit
 import codecs
-import gettext
 import os
 import platform
 import shutil
-import subprocess
 import sys
 import traceback
 from ConfigParser import ConfigParser
@@ -42,6 +40,7 @@ import bass
 import bolt
 import env
 import exception
+import localize
 # NO OTHER LOCAL IMPORTS HERE (apart from the ones above) !
 basher = balt = initialization = None
 _wx = None
@@ -91,90 +90,6 @@ def _import_wx():
                           traceback.format_exc(e), u'Exiting.'])
         _tkinter_error_dial(msg, but_kwargs)
         sys.exit(1)
-
-def _setup_locale(cli_lang):
-    """Sets up wx and Wrye Bash locales, ensuring they match or falling back
-    to English if that is impossible. Also considers cli_lang as an override,
-    installs the gettext translation and remembers the locale we end up with
-    as bass.active_locale.
-
-    :param cli_lang: The language the user specified on the command line, or
-        None.
-    :return: The wx.Locale object we ended up using."""
-    # We need a throwaway wx.App so that the calls below work
-    _temp_app = _wx.App()
-    # Set the wx language - otherwise we will crash when loading any images
-    if cli_lang and _wx.Locale.FindLanguageInfo(cli_lang):
-        # The user specified a language that wx recognizes and WB supports
-        target_language = _wx.Locale.FindLanguageInfo(cli_lang)
-    else:
-        # Fall back on the default language
-        target_language = _wx.LANGUAGE_DEFAULT
-    # We now have a language that wx supports, but we don't know if WB supports
-    # it - so check that next
-    target_locale = _wx.Locale(target_language)
-    target_name = target_locale.GetSysName().split(u'_', 1)[0]
-    # Ugly hack, carried forward from bolt.initTranslator
-    if target_name.lower() == u'german':
-        target_name = u'de'
-    # English is the default, so it doesn't have a translation file
-    # For all other languages, check if we have a translation
-    trans_path = os.path.join(os.getcwdu(), u'bash', u'l10n')
-    if target_name.lower() != u'english' and not os.path.exists(os.path.join(
-            trans_path, target_name + u'.txt')):
-        # WB does not support the default language, use English instead
-        target_locale = _wx.Locale(_wx.LANGUAGE_ENGLISH)
-        bolt.deprint(u"No translation file for language '%s', falling back to "
-                     u"English" % target_name)
-        target_name = target_locale.GetSysName().split(u'_', 1)[0]
-    bolt.deprint(u"Set wx locale to '%s' (%s)" % (
-        target_name, target_locale.GetCanonicalName()))
-    # Next, set the Wrye Bash locale based on the one we grabbed from wx
-    txt, po, mo = (os.path.join(trans_path, target_name + ext)
-                   for ext in (u'.txt', u'.po', u'.mo'))
-    if not os.path.exists(txt) and not os.path.exists(mo):
-        # We're using English or don't have a translation file - either way,
-        # prepare the English translation
-        trans = gettext.NullTranslations()
-        bolt.deprint(u"Set Wrye Bash locale to 'English'")
-    else:
-        try:
-            # We have a translation file, check if it has to be compiled
-            if not os.path.exists(mo) or (os.path.getmtime(txt) >
-                                          os.path.getmtime(mo)):
-                # Try compiling - have to do it differently if we're a
-                # standalone build
-                shutil.copy(txt, po)
-                args = [u'm', u'-o', mo, po]
-                if is_standalone:
-                    # Delayed import, since it's only present on standalone
-                    import msgfmt
-                    old_argv = sys.argv[:]
-                    sys.argv = args
-                    msgfmt.main()
-                    sys.argv = old_argv
-                else:
-                    # msgfmt is only in Tools, so call it explicitly
-                    m = os.path.join(sys.prefix, u'Tools', u'i18n',
-                                     u'msgfmt.py')
-                    subprocess.call([sys.executable, m, u'-o', mo, po],
-                                    shell=True)
-                # Clean up the temp file we created for compilation
-                os.remove(po)
-            # We've succesfully compiled the translation, read it into memory
-            with open(mo,'rb') as file:
-                trans = gettext.GNUTranslations(file)
-            bolt.deprint(u"Set Wrye Bash locale to '%s'" % target_name)
-        # TODO(inf) Tighten this except
-        except:
-            bolt.deprint(u'Error loading translation file:')
-            traceback.print_exc()
-            trans = gettext.NullTranslations()
-    # Everything has gone smoothly, install the translation and remember what
-    # we ended up with as the final locale
-    trans.install(unicode=True)
-    bass.active_locale = target_name
-    return target_locale
 
 #------------------------------------------------------------------------------
 def assure_single_instance(instance):
@@ -286,7 +201,7 @@ def main(opts):
     # wx is needed to initialize locale, so that's first
     _import_wx()
     # Next, proceed to initialize the locale using wx
-    wx_locale = _setup_locale(opts.language)
+    wx_locale = localize.setup_locale(opts.language, _wx)
     try:
         _main(opts, wx_locale)
     except Exception as e:
