@@ -4899,7 +4899,7 @@ class MrePerk(MelRecord):
             # TODO(inf) there is a special case: If EPFT is 2 and
             #  DATA/function is one of 5, 12, 13 or 14, then:
             #  EPFD=uint32, float
-            record.__setattribute__(self.attr, target)
+            record.__setattr__(self.attr, target)
             if record.function_parameter_type == 0:
                 # Read the entire subrecord, probably empty but just in case
                 target.params = ins.read(size_, readId)
