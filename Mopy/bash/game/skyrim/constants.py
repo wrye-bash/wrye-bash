@@ -2504,6 +2504,47 @@ destructible_types = ('ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'BOOK', 'CONT',
 #------------------------------------------------------------------------------
 # Actor Patchers
 #------------------------------------------------------------------------------
+actor_importer_attrs = {
+    'NPC_': {
+        u'Actors.ACBS': ('bleedoutOverride', 'calcMax', 'calcMin',
+                         'dispositionBase', 'flags.autoCalc',
+                         'flags.bleedoutOverride',
+                         'flags.doesNotAffectStealth', 'flags.doesNotBleed',
+                         'flags.essential', 'flags.female',
+                         'flags.invulnerable', 'flags.isCharGenFacePreset',
+                         'flags.isGhost', 'flags.loopedAudio',
+                         'flags.loopedScript', 'flags.oppositeGenderAnims',
+                         'flags.pcLevelMult', 'flags.protected',
+                         'flags.respawn', 'flags.simpleActor',
+                         'flags.summonable', 'flags.unique',
+                         'flags.useTemplate', 'healthOffset', 'level',
+                         'magickaOffset', 'speedMultiplier', 'staminaOffset',
+                         'templateFlags',),
+        u'Actors.AIData': ('aggression', 'aggroRadiusBehavior', 'assistance',
+                           'attack', 'confidence', 'energyLevel', 'mood',
+                           'responsibility', 'warn', 'warnAttack',),
+        u'Actors.CombatStyle': ('combatStyle',),
+        u'Actors.Stats': ('alchemySO', 'alchemySV', 'alterationSO',
+                          'alterationSV', 'blockSO', 'blockSV',
+                          'conjurationSO', 'conjurationSV', 'destructionSO',
+                          'destructionSV', 'enchantingSO', 'enchantingSV',
+                          'health', 'heavyArmorSO', 'heavyArmorSV',
+                          'illusionSO', 'illusionSV', 'lightArmorSO',
+                          'lightArmorSV', 'lockpickingSO', 'lockpickingSV',
+                          'magicka', 'marksmanSO', 'marksmanSV', 'oneHandedSO',
+                          'oneHandedSV', 'pickpocketSO', 'pickpocketSV',
+                          'restorationSO', 'restorationSV', 'smithingSO',
+                          'smithingSV', 'sneakSO', 'sneakSV', 'speechcraftSO',
+                          'speechcraftSV', 'stamina', 'twoHandedSO',
+                          'twoHandedSV',),
+        u'NPC.Class': ('iclass',),
+        u'NPC.Race': ('race',),
+    },
+}
+actor_importer_auto_key = {
+    u'Actors.ACBS', u'Actors.AIData', u'Actors.CombatStyle', u'Actors.Stats',
+    u'NPC.Class', u'NPC.Race',
+}
 actor_types = ('NPC_',)
 
 # Record type to name dictionary

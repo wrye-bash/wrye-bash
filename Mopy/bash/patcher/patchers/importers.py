@@ -714,60 +714,13 @@ class CBash_GraphicsPatcher(_RecTypeModLogging, _AGraphicsPatcher):
 class _AActorImporter(AImportPatcher):
     """Merges changes to actors."""
     name = _(u'Import Actors')
-    text = _(u"Import Actor components from source mods.")
+    text = _(u'Import various actor attributes from source mods.')
     tip = text
-    autoKey = {u'Actors.AIData', u'Actors.Stats', u'Actors.ACBS', u'NPC.Class',
-               u'Actors.CombatStyle', u'Creatures.Blood', u'NPC.Race',
-               u'Actors.Skeleton'}
+    autoKey = bush.game.actor_importer_auto_key
 
 class ActorImporter(_SimpleImporter, _AActorImporter):
     # note peculiar mapping of record type to dictionaries[tag, attributes]
-    rec_attrs = {'NPC_':{
-        u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                           'responsibility', 'services', 'trainSkill',
-                           'trainLevel'),
-        u'Actors.Stats': ('skills','health','attributes'),
-        u'Actors.ACBS': (('baseSpell', 'fatigue', 'level', 'calcMin',
-                          'calcMax', 'flags.autoCalc', 'flags.pcLevelOffset'),
-                         'barterGold', 'flags.female', 'flags.essential',
-                         'flags.respawn', 'flags.noLowLevel', 'flags.noRumors',
-                         'flags.summonable', 'flags.noPersuasion',
-                         'flags.canCorpseCheck',),
-        #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level',
-        #                 'calcMin','calcMax','flags'),
-        u'NPC.Class': ('iclass',),
-        u'NPC.Race': ('race',),
-        u'Actors.CombatStyle': ('combatStyle',),
-        u'Creatures.Blood': (),
-        u'Actors.Skeleton': ('model',),
-        },
-        'CREA':{
-            u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
-                               'responsibility', 'services', 'trainSkill',
-                               'trainLevel'),
-            u'Actors.Stats': ('combat','magic', 'stealth', 'soul', 'health',
-                              'attackDamage', 'strength', 'intelligence',
-                              'willpower', 'agility', 'speed', 'endurance',
-                              'personality','luck'),
-            u'Actors.ACBS': (('baseSpell', 'fatigue', 'level', 'calcMin',
-                              'calcMax', 'flags.pcLevelOffset',), 'barterGold',
-                             'flags.biped', 'flags.essential',
-                             'flags.weaponAndShield', 'flags.respawn',
-                             'flags.swims', 'flags.flies', 'flags.walks',
-                             'flags.noLowLevel', 'flags.noBloodSpray',
-                             'flags.noBloodDecal', 'flags.noHead',
-                             'flags.noRightArm', 'flags.noLeftArm',
-                             'flags.noCombatInWater', 'flags.noShadow',
-                             'flags.noCorpseCheck',),
-            #u'Actors.ACBS': ('baseSpell','fatigue','barterGold','level',
-            #                 'calcMin','calcMax','flags'),
-            u'NPC.Class': (),
-            u'NPC.Race': (),
-            u'Actors.CombatStyle': ('combatStyle',),
-            u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
-            u'Actors.Skeleton': ('model',),
-        }
-    }
+    rec_attrs = bush.game.actor_importer_attrs
 
     #--Patch Phase ------------------------------------------------------------
     def initData(self,progress):
@@ -891,6 +844,7 @@ class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
                 u'NPC.Race': ('race',),
                 u'Actors.CombatStyle': ('combatStyle',),
                 u'Creatures.Blood': (),
+                u'Creatures.Type': (),
                 u'Actors.Skeleton': ('modPath','modb','modt_p'),
                 }
         class_tag_attrs['CREA'] = {
@@ -907,6 +861,7 @@ class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
                 u'NPC.Race': (),
                 u'Actors.CombatStyle': ('combatStyle',),
                 u'Creatures.Blood': ('bloodSprayPath','bloodDecalPath'),
+                u'Creatures.Type': ('creatureType',),
                 u'Actors.Skeleton': ('modPath','modb','modt_p',),
                 }
 

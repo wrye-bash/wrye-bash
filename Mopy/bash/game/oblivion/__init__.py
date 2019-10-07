@@ -142,7 +142,7 @@ class OblivionGameInfo(GameInfo):
                u'Actors.CombatStyle', u'Creatures.Blood', u'Actors.Spells',
                u'Actors.SpellsForceAdd', u'NPC.Race', u'Actors.Skeleton',
                u'NpcFacesForceFullImport', u'MustBeActiveIfImported',
-               u'Npc.HairOnly', u'Npc.EyesOnly', u'Text',}  # , 'ForceMerge'
+               u'Npc.HairOnly', u'Npc.EyesOnly', u'Text', u'Creatures.Type',}
 
     patchers = (
         'AliasesPatcher', 'AssortedTweaker', 'PatchMerger', 'AlchemicalCatalogs',

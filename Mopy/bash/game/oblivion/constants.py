@@ -1703,6 +1703,56 @@ scripts_types = ('ACTI', 'ALCH', 'APPA', 'ARMO', 'BOOK', 'CLOT', 'CONT',
 #------------------------------------------------------------------------------
 # Actor Patchers
 #------------------------------------------------------------------------------
+actor_importer_attrs = {
+    'CREA': {
+        u'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
+                         'fatigue', 'flags.biped', 'flags.essential',
+                         'flags.flies', 'flags.noBloodDecal',
+                         'flags.noBloodSpray', 'flags.noCombatInWater',
+                         'flags.noCorpseCheck', 'flags.noHead',
+                         'flags.noLeftArm', 'flags.noLowLevel',
+                         'flags.noRightArm', 'flags.noShadow',
+                         'flags.pcLevelOffset', 'flags.respawn', 'flags.swims',
+                         'flags.walks', 'flags.weaponAndShield',
+                         'level'),
+        u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
+                           'responsibility', 'services', 'trainLevel',
+                           'trainSkill'),
+        u'Actors.CombatStyle': ('combatStyle',),
+        u'Actors.Skeleton': ('model',),
+        u'Actors.Stats': ('agility', 'attackDamage', 'combatSkill',
+                          'endurance', 'health', 'intelligence', 'luck',
+                          'magic', 'personality', 'soul', 'stealth', 'speed',
+                          'strength', 'willpower'),
+        u'Creatures.Blood': ('bloodDecalPath', 'bloodSprayPath'),
+        u'Creatures.Type': ('creatureType',),
+        u'NPC.Class': (),
+        u'NPC.Race': (),
+    },
+    'NPC_': {
+        u'Actors.ACBS': ('barterGold', 'baseSpell', 'calcMax', 'calcMin',
+                         'fatigue', 'flags.autoCalc', 'flags.canCorpseCheck',
+                         'flags.essential', 'flags.female', 'flags.noLowLevel',
+                         'flags.noPersuasion', 'flags.noRumors',
+                         'flags.pcLevelOffset', 'flags.respawn',
+                         'flags.summonable', 'level',),
+        u'Actors.AIData': ('aggression', 'confidence', 'energyLevel',
+                           'responsibility', 'services', 'trainSkill',
+                           'trainLevel'),
+        u'Actors.CombatStyle': ('combatStyle',),
+        u'Actors.Skeleton': ('model',),
+        u'Actors.Stats': ('attributes', 'health', 'skills',),
+        u'Creatures.Blood': (),
+        u'Creatures.Type': (),
+        u'NPC.Class': ('iclass',),
+        u'NPC.Race': ('race',),
+    },
+}
+actor_importer_auto_key = {
+    u'Actors.ACBS', u'Actors.AIData', u'Actors.CombatStyle',
+    u'Actors.Skeleton', u'Actors.Stats', u'Creatures.Blood', u'Creatures.Type',
+    u'NPC.Class', u'NPC.Race',
+}
 actor_types = ('CREA', 'NPC_')
 
 # Record type to name dictionary

@@ -139,14 +139,16 @@ class SkyrimGameInfo(GameInfo):
         canEditHeader = True
         validHeaderVersions = (0.94, 1.70,)
 
-    allTags = {u'Actors.AIPackages', u'Actors.AIPackagesForceAdd',
+    allTags = {u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
+               u'Actors.AIPackagesForceAdd', u'Actors.CombatStyle',
                u'Actors.DeathItem', u'Actors.Spells', u'Actors.SpellsForceAdd',
-               u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ForceHideLand',
-               u'C.ImageSpace', u'C.Light', u'C.Location', u'C.LockList',
-               u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
-               u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate',
-               u'Delev', u'Destructible', u'Filter', u'Graphics', u'Invent',
-               u'Keywords', u'Names', u'NoMerge', u'Relev', u'Sound', u'Stats',
+               u'Actors.Stats', u'C.Acoustic', u'C.Climate', u'C.Encounter',
+               u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Location',
+               u'C.LockList', u'C.Music', u'C.Name', u'C.Owner',
+               u'C.RecordFlags', u'C.Regions', u'C.SkyLighting', u'C.Water',
+               u'Deactivate', u'Delev', u'Destructible', u'Filter',
+               u'Graphics', u'Invent', u'Keywords', u'Names', u'NoMerge',
+               u'NPC.Class', u'NPC.Race', u'Relev', u'Sound', u'Stats',
                u'Text',}
 
     patchers = (
@@ -154,7 +156,7 @@ class SkyrimGameInfo(GameInfo):
         u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
         u'StatsPatcher', u'NamesPatcher', u'KeywordsImporter', u'TextImporter',
         u'ContentsChecker', u'DestructiblePatcher', u'DeathItemPatcher',
-        u'ImportActorsSpells', u'NPCAIPackagePatcher',
+        u'ImportActorsSpells', u'NPCAIPackagePatcher', u'ActorImporter',
     )
 
     weaponTypes = (

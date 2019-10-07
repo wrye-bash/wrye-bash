@@ -1346,6 +1346,50 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
+            <td>Actors.ACBS</td>
+            <td>Modifies the (ACBS) Configuration subrecord of actors.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#ActorsACBSOblivion">Oblivion</a> <q>Actors.ACBS</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsACBSFO3">Fallout 3</a> <q>Actors.ACBS</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsACBSFNV">Fallout&colon; New Vegas</a> <q>Actors.ACBS</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsACBSSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.ACBS</q> section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.AIData</td>
+            <td>Modifies the (AIDT) AI Data subrecord of actors.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#ActorsAIDataOblivion">Oblivion</a> <q>Actors.AIData</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsAIDataFO3">Fallout 3</a> <q>Actors.AIData</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsAIDataFNV">Fallout&colon; New Vegas</a> <q>Actors.AIData</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsAIDataSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.AIData</q> section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>Actors.AIPackages</td>
             <td>Modifies AI packages lists of actors.</td>
             <td>Addition or removal of an (PKID) AI Package in the AI Packages subrecord in the following records:
@@ -1386,6 +1430,20 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>Actors.CombatStyle</td>
+            <td>Modifies the assigned combat styles of actors.</td>
+            <td>Modification of the (ZNAM) Combat Style subrecord in the following records:
+                <ul>
+                    <li>(CREA) Creature &mdash;
+                        <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                    <li>(NPC_) Non-Player Character</li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>Actors.DeathItem</td>
             <td>Modifies actor death items.</td>
             <td>Modification of the (INAM) Death Item subrecord in the following records:
@@ -1397,6 +1455,19 @@ C.Location, -C.LockList
                 </ul>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Actors.Skeleton</td>
+            <td>Modifies actor skeletons.</td>
+            <td>The following (NPC_) Non-Player Character or (CREA) Creature subrecords:
+                <ul>
+                    <li>(MODL) Model Filename.</li>
+                    <li>(MODB) Bound Radius.</li>
+                    <li>(MODT) Texture File Hashes.</li>
+                </ul>
+                <br>
+                <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
@@ -1428,6 +1499,28 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>Actors.Stats</td>
+            <td>Modifies actor stats (e.g. health, skills, stamina, etc.).</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#ActorsStatsOblivion">Oblivion</a> <q>Actors.Stats</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsStatsFO3">Fallout 3</a> <q>Actors.Stats</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsStatsFNV">Fallout&colon; New Vegas</a> <q>Actors.Stats</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ActorsStatsSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>Actors.Stats</q> section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>C.Acoustic</td>
             <td>Modifies cell Acoustic Space.</td>
             <td>The Acoustic Space (XCAS) subrecord in Cell (CELL) records.
@@ -1438,7 +1531,7 @@ C.Location, -C.LockList
         </tr>
         <tr>
             <td>C.Climate</td>
-            <td>Modifies (CELL) cell climates.</td>
+            <td>Modifies cell climates.</td>
             <td>The following subrecords:
                 <br>
                 <br>
@@ -1486,7 +1579,7 @@ C.Location, -C.LockList
         </tr>
         <tr>
             <td>C.Light</td>
-            <td>Modifies (CELL) cell lighting or fog.</td>
+            <td>Modifies cell lighting or fog.</td>
             <td>The following subrecords:
                 <ul>
                     <strong>All but Fallout 4:</strong>
@@ -1559,7 +1652,7 @@ C.Location, -C.LockList
         </tr>
         <tr>
             <td>C.Music</td>
-            <td>Modifies (CELL) cell music type.</td>
+            <td>Modifies cell music type.</td>
             <td>The following subrecords:
                 <ul>
                     <li>(XCMT) Music &mdash;
@@ -1650,6 +1743,51 @@ C.Location, -C.LockList
                 <br>
                 <br>
                 <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Creatures.Blood</td>
+            <td>Modifies the creature blood subrecords.</td>
+            <td>The following (CREA) Creature subrecord(s):
+                <ul>
+                    <li>(NAM0) Blood Spray &mdash;
+                        <strong>Oblivion only.</strong>
+                    </li>
+                    <li>(NAM1) Blood Decal &mdash;
+                        <strong>Oblivion only.</strong>
+                    </li>
+                    <li>(CNAM) Impact Dataset &mdash;
+                        <strong>Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+                    </li>
+                </ul>
+                <br>
+                <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>Creatures.Type</td>
+            <td>Modifies the type of creatures.</td>
+            <td>The following (CREA) Creature subrecords:
+                <ul>
+                    <li>(DATA) Stats:
+                        <ul>
+                            <li>Type:
+                                <ul>
+                                    <li>Animal</li>
+                                    <li>Mutated Animal</li>
+                                    <li>Mutated Insect</li>
+                                    <li>Abomination</li>
+                                    <li>Super Mutant</li>
+                                    <li>Feral Ghoul</li>
+                                    <li>Robot</li>
+                                    <li>Giant</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                <br>
+                <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only.</strong>
             </td>
         </tr>
         <tr>
@@ -1811,6 +1949,24 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>NPC.Class</td>
+            <td>Changes the classes of NPCs.</td>
+            <td>The (CNAM) Class subrecord of (NPC_) Non-Player Character records.
+                <br>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <td>NPC.Race</td>
+            <td>Changes the races of NPCs.</td>
+            <td>The (RNAM) Race subrecord of (NPC_) Non-Player Character records.
+                <br>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>Relev</td>
             <td>Re-levels leveled list entries.</td>
             <td>Changes to the Level or Count of a (LVLO) leveled list entry in:
@@ -1928,62 +2084,62 @@ C.Location, -C.LockList
     </thead>
     <tbody>
         <tr>
-            <td>Actors.ACBS</td>
+            <td id="ActorsACBSOblivion">Actors.ACBS</td>
             <td>Modifies the (ACBS) Configuration subrecord of:
                 <ul>
                     <li>(NPC_) Non-Player Character</li>
                     <li>(CREA) Creature</li>
                 </ul>
             </td>
-            <td>Changes to the following subrecords in (ACBS) - Configuration:
+            <td>Changes to the following subrecords in (ACBS) Configuration:
                 <ul>
-                    <li>Base Spell Points</li>
-                    <li>Fatigue</li>
                     <li>Barter Gold</li>
-                    <li>Level (Offset)</li>
-                    <li>Calc Min</li>
+                    <li>Base Spell Points</li>
                     <li>Calc Max</li>
-                    <li>(NPC_ only) Flags:
-                        <ul>
-                            <li>Female</li>
-                            <li>Essential</li>
-                            <li>Respawn</li>
-                            <li>Auto-Calc Stats</li>
-                            <li>PC Level Offset</li>
-                            <li>No Low Level Processing</li>
-                            <li>No Rumors</li>
-                            <li>Summonable</li>
-                            <li>No Persuasion</li>
-                            <li>Can Corpse Check</li>
-                        </ul>
-                    </li>
+                    <li>Calc Min</li>
+                    <li>Fatigue</li>
                     <li>(CREA only) Flags:
                         <ul>
                             <li>Biped</li>
                             <li>Essential</li>
-                            <li>Weapon &amp; Shield</li>
+                            <li>Flies</li>
+                            <li>No Blood Decal</li>
+                            <li>No Blood Spray</li>
+                            <li>No Combat in Water</li>
+                            <li>No Corpse Check.</li>
+                            <li>No Head</li>
+                            <li>No Left Arm</li>
+                            <li>No Low level Processing</li>
+                            <li>No Right Arm</li>
+                            <li>No Shadow</li>
+                            <li>PC Level Offset</li>
                             <li>Respawn</li>
                             <li>Swims</li>
-                            <li>Flies</li>
                             <li>Walks</li>
-                            <li>PC Level Offset</li>
-                            <li>No Low level Processing</li>
-                            <li>No Blood Spray</li>
-                            <li>No Decal Blood</li>
-                            <li>No Head</li>
-                            <li>No Right Arm</li>
-                            <li>No Left Arm</li>
-                            <li>No Combat in Water</li>
-                            <li>No Shadow</li>
-                            <li>No Corpse Check.</li>
+                            <li>Weapon &amp; Shield</li>
                         </ul>
                     </li>
+                    <li>(NPC_ only) Flags:
+                        <ul>
+                            <li>Auto-Calc Stats</li>
+                            <li>Can Corpse Check</li>
+                            <li>Essential</li>
+                            <li>Female</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Persuasion</li>
+                            <li>No Rumors</li>
+                            <li>PC Level Offset</li>
+                            <li>Respawn</li>
+                            <li>Summonable</li>
+                        </ul>
+                    </li>
+                    <li>Level (Offset)</li>
                 </ul>
             </td>
         </tr>
         <tr>
-            <td>Actors.AIData</td>
-            <td>Modifies the AI Data of:
+            <td id="ActorsAIDataOblivion">Actors.AIData</td>
+            <td>Modifies the (AIDT) AI Data subrecord of:
                 <ul>
                     <li>(NPC_) Non-Player Character</li>
                     <li>(CREA) Creature</li>
@@ -1994,89 +2150,84 @@ C.Location, -C.LockList
                     <li>(AIDT) AI Data
                         <ul>
                             <li>Aggression</li>
+                            <li>Buys/Sells and Services</li>
                             <li>Confidence</li>
                             <li>Energy Level</li>
-                            <li>Responsibility</li>
-                            <li>Buys/Sells and Services</li>
-                            <li>Teaches</li>
                             <li>Maximum Training Level</li>
+                            <li>Responsibility</li>
+                            <li>Teaches</li>
                         </ul>
                     </li>
                 </ul>
             </td>
         </tr>
         <tr>
-            <td>Actors.CombatStyle</td>
-            <td>Modifies Creature or NPC assigned combat styles.</td>
-            <td>Modification of the Combat Style (ZNAM) subrecord.</td>
-        </tr>
-        <tr>
-            <td>Actors.Skeleton</td>
-            <td>Modifies Creature or NPC skeletons.</td>
-            <td>The following NPC (NPC_) or Creature (CREA) subrecords:
-                <ul>
-                    <li>(MODL) Model Filename.</li>
-                    <li>(MODB) Bound Radius.</li>
-                    <li>(MODT) Texture File Hashes.</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Actors.Stats</td>
-            <td>Modifies Creature or Non-Player Character stats.</td>
+            <td id="ActorsStatsOblivion">Actors.Stats</td>
+            <td>Modifies actor stats (e.g. attributes, health, skills, etc.).</td>
             <td>The following subrecords:
                 <ul>
-                    <li>Creature Data
+                    <li>(CREA) Creature:</li>
                         <ul>
-                            <li>Combat Skill</li>
-                            <li>Magic Skill</li>
-                            <li>Stealth Skill</li>
-                            <li>Soul</li>
-                            <li>Health</li>
-                            <li>Attack</li>
-                            <li>Damage</li>
-                            <li>Strength</li>
-                            <li>Intelligence</li>
-                            <li>Willpower</li>
-                            <li>Agility</li>
-                            <li>Speed</li>
-                            <li>Endurance</li>
-                            <li>Personality</li>
-                            <li>Luck</li>
+                            <li>(DATA) Stats:
+                                <ul>
+                                    <li>Agility</li>
+                                    <li>Attack</li>
+                                    <li>Combat Skill</li>
+                                    <li>Damage</li>
+                                    <li>Endurance</li>
+                                    <li>Health</li>
+                                    <li>Intelligence</li>
+                                    <li>Luck</li>
+                                    <li>Magic Skill</li>
+                                    <li>Personality</li>
+                                    <li>Soul</li>
+                                    <li>Speed</li>
+                                    <li>Stealth Skill</li>
+                                    <li>Strength</li>
+                                    <li>Willpower</li>
+                                </ul>
+                            </li>
                         </ul>
-                    </li>
-                    <li>NPC Stats
+                    <li>(DATA) NPC Stats:
                         <ul>
-                            <li>Armorer</li>
-                            <li>Athletics</li>
-                            <li>Blades</li>
-                            <li>Block</li>
-                            <li>Blunt</li>
-                            <li>Hand to Hand</li>
-                            <li>Heavy Armor</li>
-                            <li>Alchemy</li>
-                            <li>Alteration</li>
-                            <li>Conjuration</li>
-                            <li>Destruction</li>
-                            <li>Illusion</li>
-                            <li>Mysticism</li>
-                            <li>Restoration</li>
-                            <li>Acrobatics</li>
-                            <li>Light Armor</li>
-                            <li>Marksman</li>
-                            <li>Mercantile</li>
-                            <li>Security</li>
-                            <li>Sneak</li>
-                            <li>Speechcraft</li>
+                            <li>Attributes:
+                                <ul>
+                                    <li>Agility</li>
+                                    <li>Endurance</li>
+                                    <li>Intelligence</li>
+                                    <li>Luck</li>
+                                    <li>Personality</li>
+                                    <li>Speed</li>
+                                    <li>Strength</li>
+                                    <li>Willpower</li>
+                                </ul>
+                            </li>
                             <li>Health</li>
-                            <li>Strength</li>
-                            <li>Intelligence</li>
-                            <li>Willpower</li>
-                            <li>Agility</li>
-                            <li>Speed</li>
-                            <li>Endurance</li>
-                            <li>Personality</li>
-                            <li>Luck</li>
+                            <li>Skills:
+                                <ul>
+                                    <li>Acrobatics</li>
+                                    <li>Alchemy</li>
+                                    <li>Alteration</li>
+                                    <li>Armorer</li>
+                                    <li>Athletics</li>
+                                    <li>Blade</li>
+                                    <li>Block</li>
+                                    <li>Blunt</li>
+                                    <li>Conjuration</li>
+                                    <li>Destruction</li>
+                                    <li>Hand to Hand</li>
+                                    <li>Heavy Armor</li>
+                                    <li>Illusion</li>
+                                    <li>Light Armor</li>
+                                    <li>Marksman</li>
+                                    <li>Mercantile</li>
+                                    <li>Mysticism</li>
+                                    <li>Restoration</li>
+                                    <li>Security</li>
+                                    <li>Sneak</li>
+                                    <li>Speechcraft</li>
+                                </ul>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -2127,16 +2278,6 @@ C.Location, -C.LockList
                 <ul>
                     <li>(DATA): Male Height</li>
                     <li>(DATA): Male Weight</li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>Creatures.Blood</td>
-            <td>Modifies the creature blood subrecords.</td>
-            <td>The following Creature (CREA) subrecords:
-                <ul>
-                    <li>(NAM0) Blood Spray</li>
-                    <li>(NAM1) Blood Decal</li>
                 </ul>
             </td>
         </tr>
@@ -2299,11 +2440,6 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
-            <td>NPC.Class</td>
-            <td>Changes the classes of Non-Player Character.</td>
-            <td>The Class (CNAM) subrecord of Non-Player Character (NPC_) records.</td>
-        </tr>
-        <tr>
             <td>Npc.EyesOnly</td>
             <td>Modifies Non-Player Character eyes.</td>
             <td>The Eyes (ENAM) subrecord of Non-Player Character (NPC_) records.</td>
@@ -2312,11 +2448,6 @@ C.Location, -C.LockList
             <td>Npc.HairOnly</td>
             <td>Modifies Non-Player Character hair.</td>
             <td>The Hair (HNAM) subrecord of Non-Player Character (NPC_) records.</td>
-        </tr>
-        <tr>
-            <td>NPC.Race</td>
-            <td>Modifies Non-Player Character races.</td>
-            <td>The Race (RNAM) subrecord of Non-Player Character (NPC_) records.</td>
         </tr>
         <tr>
             <td>Roads</td>
@@ -2709,7 +2840,7 @@ C.Location, -C.LockList
     <thead>
         <tr>
             <th colspan="3">
-                Bash Tags details for Fallout 3
+                Bash Tags Available For Fallout 3
             </th>
         </tr>
         <tr>
@@ -2719,6 +2850,177 @@ C.Location, -C.LockList
         </tr>
     </thead>
     <tbody>
+        <tr>
+            <td id="ActorsACBSFO3">Actors.ACBS</td>
+            <td>Modifies the (ACBS) Configuration subrecord of:
+                <ul>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(CREA) Creature</li>
+                </ul>
+            </td>
+            <td>Changes to the following subrecords in (ACBS) Configuration:
+                <ul>
+                    <li>Barter Gold</li>
+                    <li>Calc Max</li>
+                    <li>Calc Min</li>
+                    <li>Disposition Base</li>
+                    <li>Fatigue</li>
+                    <li>(CREA only) Flags:
+                        <ul>
+                            <li>Allow PC Dialogue</li>
+                            <li>Allow Pickpocket</li>
+                            <li>Biped</li>
+                            <li>Can't Open Doors</li>
+                            <li>Essential</li>
+                            <li>Flies</li>
+                            <li>Immobile</li>
+                            <li>Invulnerable</li>
+                            <li>Is Ghost</li>
+                            <li>No Blood Decal</li>
+                            <li>No Blood Spray</li>
+                            <li>No Combat in Water</li>
+                            <li>No Head</li>
+                            <li>No Knockdowns</li>
+                            <li>No Left Arm</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Right Arm</li>
+                            <li>No Rotating to Head-Track</li>
+                            <li>No Shadow</li>
+                            <li>No VATS Melee</li>
+                            <li>Not Pushable</li>
+                            <li>PC Level Mult</li>
+                            <li>Respawn</li>
+                            <li>Swims</li>
+                            <li>Tilt Front/Back</li>
+                            <li>Tilt Left/Right</li>
+                            <li>Walks</li>
+                            <li>Weapon & Shield</li>
+                        </ul>
+                    </li>
+                    <li>(NPC_ only) Flags:
+                        <ul>
+                            <li>Auto-Calc Stats</li>
+                            <li>Can Be All Races</li>
+                            <li>Essential</li>
+                            <li>Female</li>
+                            <li>Is CharGen Face Preset</li>
+                            <li>No Blood Decal</li>
+                            <li>No Blood Spray</li>
+                            <li>No Knockdowns</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Rotating to Head-Track</li>
+                            <li>No VATS Melee</li>
+                            <li>Not Pushable</li>
+                            <li>PC Level Mult</li>
+                            <li>Respawn</li>
+                            <li>Use Template</li>
+                        </ul>
+                    </li>
+                    <li>Karma (Alignment)</li>
+                    <li>Level</li>
+                    <li>Speed Multiplier</li>
+                    <li>Template Flags</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="ActorsAIDataFO3">Actors.AIData</td>
+            <td>Modifies the (AIDT) AI Data subrecord of:
+                <ul>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(CREA) Creature</li>
+                </ul>
+            </td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(AIDT) AI Data
+                        <ul>
+                            <li>Aggression</li>
+                            <li>Aggro Radius</li>
+                            <li>Aggro Radius Behavior</li>
+                            <li>Assistance</li>
+                            <li>Buys/Sells and Services</li>
+                            <li>Confidence</li>
+                            <li>Energy Level</li>
+                            <li>Maximum Training Level</li>
+                            <li>Mood</li>
+                            <li>Responsibility</li>
+                            <li>Teaches</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="ActorsStatsFO3">Actors.Stats</td>
+            <td>Modifies actor stats (e.g. attributes, health, skills, etc.).</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(CREA) Creature:
+                        <ul>
+                            <li>(DATA) Stats:
+                                <ul>
+                                    <li>Attributes:
+                                        <ul>
+                                            <li>Agility</li>
+                                            <li>Charisma</li>
+                                            <li>Endurance</li>
+                                            <li>Intelligence</li>
+                                            <li>Luck</li>
+                                            <li>Perception</li>
+                                            <li>Strength</li>
+                                        </ul>
+                                    </li>
+                                    <li>Combat Skill</li>
+                                    <li>Damage</li>
+                                    <li>Health</li>
+                                    <li>Magic Skill</li>
+                                    <li>Stealth Skill</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(NPC_) Non-Player Character:
+                        <ul>
+                            <li>(DATA) Stats:
+                                <ul>
+                                    <li>Attributes:
+                                        <ul>
+                                            <li>Agility</li>
+                                            <li>Charisma</li>
+                                            <li>Endurance</li>
+                                            <li>Intelligence</li>
+                                            <li>Luck</li>
+                                            <li>Perception</li>
+                                            <li>Strength</li>
+                                        </ul>
+                                    </li>
+                                    <li>Base Health</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM) Skills (Skill Values &amp; Skill Offsets):
+                                <ul>
+                                    <li>Barter</li>
+                                    <li>Big Guns</li>
+                                    <li>Energy Weapons</li>
+                                    <li>Explosives</li>
+                                    <li>Lockpick</li>
+                                    <li>Medicine</li>
+                                    <li>Melee Weapons</li>
+                                    <li>Repair</li>
+                                    <li>Science</li>
+                                    <li>Small Guns</li>
+                                    <li>Sneak</li>
+                                    <li>Speech</li>
+                                    <li>Throwing (Unused)</li>
+                                    <li>Unarmed</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
         <tr>
             <td id="DestructibleFO3">Destructible</td>
             <td>Modifies destructible records.</td>
@@ -2832,7 +3134,6 @@ C.Location, -C.LockList
                             <li>(NIFZ) Model List</li>
                             <li>(NIFT) Texture File Hashes</li>
                             <li>(EITM) Unarmed Attack Effect</li>
-                            <li>(CNAM) Impact Dataset</li>
                         </ul>
                     </li>
                     <li>(DOOR) Door:
@@ -3502,7 +3803,7 @@ C.Location, -C.LockList
     <thead>
         <tr>
             <th colspan="3">
-                Bash Tags details for Fallout: New Vegas
+                Bash Tags Available For Fallout&colon; New Vegas
             </th>
         </tr>
         <tr>
@@ -3512,6 +3813,181 @@ C.Location, -C.LockList
         </tr>
     </thead>
     <tbody>
+        <!-- TODO(inf) This is almost identical to FO3, just one extra flag for NPC_
+        However, we currently don't have a good structure in the HTML for showing this - we may want to merge the FO3 and FNV sections? -->
+        <tr>
+            <td id="ActorsACBSFNV">Actors.ACBS</td>
+            <td>Modifies the (ACBS) Configuration subrecord of:
+                <ul>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(CREA) Creature</li>
+                </ul>
+            </td>
+            <td>Changes to the following subrecords in (ACBS) Configuration:
+                <ul>
+                    <li>Barter Gold</li>
+                    <li>Calc Max</li>
+                    <li>Calc Min</li>
+                    <li>Disposition Base</li>
+                    <li>Fatigue</li>
+                    <li>(CREA only) Flags:
+                        <ul>
+                            <li>Allow PC Dialogue</li>
+                            <li>Allow Pickpocket</li>
+                            <li>Biped</li>
+                            <li>Can't Open Doors</li>
+                            <li>Essential</li>
+                            <li>Flies</li>
+                            <li>Immobile</li>
+                            <li>Invulnerable</li>
+                            <li>Is Ghost</li>
+                            <li>No Blood Decal</li>
+                            <li>No Blood Spray</li>
+                            <li>No Combat in Water</li>
+                            <li>No Head</li>
+                            <li>No Knockdowns</li>
+                            <li>No Left Arm</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Right Arm</li>
+                            <li>No Rotating to Head-Track</li>
+                            <li>No Shadow</li>
+                            <li>No VATS Melee</li>
+                            <li>Not Pushable</li>
+                            <li>PC Level Mult</li>
+                            <li>Respawn</li>
+                            <li>Swims</li>
+                            <li>Tilt Front/Back</li>
+                            <li>Tilt Left/Right</li>
+                            <li>Walks</li>
+                            <li>Weapon & Shield</li>
+                        </ul>
+                    </li>
+                    <li>(NPC_ only) Flags:
+                        <ul>
+                            <li>Auto-Calc Stats</li>
+                            <li>Auto-Calc Services</li>
+                            <li>Can Be All Races</li>
+                            <li>Essential</li>
+                            <li>Female</li>
+                            <li>Is CharGen Face Preset</li>
+                            <li>No Blood Decal</li>
+                            <li>No Blood Spray</li>
+                            <li>No Knockdowns</li>
+                            <li>No Low Level Processing</li>
+                            <li>No Rotating to Head-Track</li>
+                            <li>No VATS Melee</li>
+                            <li>Not Pushable</li>
+                            <li>PC Level Mult</li>
+                            <li>Respawn</li>
+                            <li>Use Template</li>
+                        </ul>
+                    </li>
+                    <li>Karma (Alignment)</li>
+                    <li>Level</li>
+                    <li>Speed Multiplier</li>
+                    <li>Template Flags</li>
+                </ul>
+            </td>
+        </tr>
+        <!-- TODO(inf) This is identical to FO3's Actors.AIData - see TODO near ACBS above -->
+        <tr>
+            <td id="ActorsAIDataFNV">Actors.AIData</td>
+            <td>Modifies the (AIDT) AI Data subrecord of:
+                <ul>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(CREA) Creature</li>
+                </ul>
+            </td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(AIDT) AI Data
+                        <ul>
+                            <li>Aggression</li>
+                            <li>Aggro Radius</li>
+                            <li>Aggro Radius Behavior</li>
+                            <li>Assistance</li>
+                            <li>Buys/Sells and Services</li>
+                            <li>Confidence</li>
+                            <li>Energy Level</li>
+                            <li>Maximum Training Level</li>
+                            <li>Mood</li>
+                            <li>Responsibility</li>
+                            <li>Teaches</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="ActorsStatsFNV">Actors.Stats</td>
+            <td>Modifies actor stats (e.g. attributes, health, skills, etc.).</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(CREA) Creature:
+                        <ul>
+                            <li>(DATA) Stats:
+                                <ul>
+                                    <li>Attributes:
+                                        <ul>
+                                            <li>Agility</li>
+                                            <li>Charisma</li>
+                                            <li>Endurance</li>
+                                            <li>Intelligence</li>
+                                            <li>Luck</li>
+                                            <li>Perception</li>
+                                            <li>Strength</li>
+                                        </ul>
+                                    </li>
+                                    <li>Combat Skill</li>
+                                    <li>Damage</li>
+                                    <li>Health</li>
+                                    <li>Magic Skill</li>
+                                    <li>Stealth Skill</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li>(NPC_) Non-Player Character:
+                        <ul>
+                            <li>(DATA) Stats:
+                                <ul>
+                                    <li>Attributes:
+                                        <ul>
+                                            <li>Agility</li>
+                                            <li>Charisma</li>
+                                            <li>Endurance</li>
+                                            <li>Intelligence</li>
+                                            <li>Luck</li>
+                                            <li>Perception</li>
+                                            <li>Strength</li>
+                                        </ul>
+                                    </li>
+                                    <li>Base Health</li>
+                                </ul>
+                            </li>
+                            <li>(DNAM) Skills (Skill Values &amp; Skill Offsets):
+                                <ul>
+                                    <li>Barter</li>
+                                    <li>Big Guns</li>
+                                    <li>Energy Weapons</li>
+                                    <li>Explosives</li>
+                                    <li>Lockpick</li>
+                                    <li>Medicine</li>
+                                    <li>Melee Weapons</li>
+                                    <li>Repair</li>
+                                    <li>Science</li>
+                                    <li>Guns</li>
+                                    <li>Sneak</li>
+                                    <li>Speech</li>
+                                    <li>Survival</li>
+                                    <li>Unarmed</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
         <tr>
             <td id="DestructibleFNV">Destructible</td>
             <td>Modifies destructible records.</td>
@@ -3650,7 +4126,6 @@ C.Location, -C.LockList
                             <li>(NIFZ) Model List</li>
                             <li>(NIFT) Texture File Hashes</li>
                             <li>(EITM) Unarmed Attack Effect</li>
-                            <li>(CNAM) Impact Dataset</li>
                         </ul>
                     </li>
                     <li>(CSNO) Casino:
@@ -4383,6 +4858,114 @@ C.Location, -C.LockList
         </tr>
     </thead>
     <tbody>
+        <tr>
+            <td id="ActorsACBSSkyrim">Actors.ACBS</td>
+            <td>Modifies the (ACBS) Configuration subrecord of (NPC_) Non-Player Character records.</td>
+            <td>Changes to the following subrecords in (ACBS) Configuration:
+                <ul>
+                    <li>Bleedout Override</li>
+                    <li>Calc Max</li>
+                    <li>Calc Min</li>
+                    <li>Disposition Base</li>
+                    <li>Flags:
+                        <ul>
+                            <li>Auto-Calc Stats</li>
+                            <li>Bleedout Override</li>
+                            <li>Doesn't Affect Stealth Meter</li>
+                            <li>Doesn't Bleed</li>
+                            <li>Essential</li>
+                            <li>Female</li>
+                            <li>Invulnerable</li>
+                            <li>Is CharGen Face Preset</li>
+                            <li>Is Ghost</li>
+                            <li>Looped Audio</li>
+                            <li>Looped Script</li>
+                            <li>Opposite Gender Animations</li>
+                            <li>PC Level Mult</li>
+                            <li>Protected</li>
+                            <li>Respawn</li>
+                            <li>Simple Actor</li>
+                            <li>Summonable</li>
+                            <li>Unique</li>
+                            <li>Use Template</li>
+                        </ul>
+                    </li>
+                    <li>Health Offset</li>
+                    <li>Level</li>
+                    <li>Magicka Offset</li>
+                    <li>Speed Multiplier</li>
+                    <li>Stamina Offset</li>
+                    <li>Template Flags</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="ActorsAIDataSkyrim">Actors.AIData</td>
+            <td>Modifies the (AIDT) AI Data subrecord of (NPC_) Non-Player Character records.</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(AIDT) AI Data
+                        <ul>
+                            <li>Aggression</li>
+                            <li>Aggro:
+                                <ul>
+                                    <li>Aggro Radius Behavior</li>
+                                    <li>Attack</li>
+                                    <li>Warn</li>
+                                    <li>Warn / Attack</li>
+                                </ul>
+                            </li>
+                            <li>Assistance</li>
+                            <li>Confidence</li>
+                            <li>Energy Level</li>
+                            <li>Mood</li>
+                            <li>Responsibility</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td id="ActorsStatsSkyrim">Actors.Stats</td>
+            <td>Modifies actor stats (e.g. health, skills, stamina, etc.).</td>
+            <td>The following subrecords:
+                <ul>
+                    <li>(NPC_) Non-Player Character:
+                        <ul>
+                            <li>(DNAM) Stats
+                                <ul>
+                                    <li>Health</li>
+                                    <li>Magicka</li>
+                                    <li>Skills (Skill Values &amp; Skill Offsets):
+                                        <ul>
+                                            <li>Alchemy</li>
+                                            <li>Alteration</li>
+                                            <li>Block</li>
+                                            <li>Conjuration</li>
+                                            <li>Destruction</li>
+                                            <li>Enchanting</li>
+                                            <li>HeavyArmor</li>
+                                            <li>Illusion</li>
+                                            <li>LightArmor</li>
+                                            <li>Lockpicking</li>
+                                            <li>Marksman</li>
+                                            <li>OneHanded</li>
+                                            <li>Pickpocket</li>
+                                            <li>Restoration</li>
+                                            <li>Smithing</li>
+                                            <li>Sneak</li>
+                                            <li>Speechcraft</li>
+                                            <li>TwoHanded</li>
+                                        </ul>
+                                    </li>
+                                    <li>Stamina</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+        </tr>
         <tr>
             <td id="DestructibleSkyrim">Destructible</td>
             <td>Modifies destructible records.</td>

@@ -423,6 +423,8 @@ class GameInfo(object):
     #--------------------------------------------------------------------------
     # Actor Patchers
     #--------------------------------------------------------------------------
+    actor_importer_attrs = {}
+    actor_importer_auto_key = set()
     actor_types = ()
 
     # Record type to name dictionary
@@ -461,7 +463,8 @@ class GameInfo(object):
     # Import from the constants module ----------------------------------------
     # Class attributes moved to constants module, set dynamically at init
     _constants_members = {
-        'GlobalsTweaks', 'GmstTweaks', 'actor_types', 'bethDataFiles',
+        'GlobalsTweaks', 'GmstTweaks', 'actor_importer_attrs',
+        'actor_importer_auto_key', 'actor_types', 'bethDataFiles',
         'cc_valid_types', 'cc_passes', 'cellAutoKeys', 'cellRecAttrs',
         'cellRecFlags', 'condition_function_data', 'default_eyes',
         'destructible_types', 'gmstEids', 'graphicsFidTypes',
