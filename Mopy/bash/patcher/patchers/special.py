@@ -214,6 +214,8 @@ class ListsMerger(_AListsMerger, ListPatcher):
             levLists = self.type_list[type]
             #--Empty lists
             empties = []
+            # Build a dict mapping leveled lists to other leveled lists that
+            # they are sublists in
             sub_supers = dict((x,[]) for x in levLists.keys())
             for record in sorted(levLists.values()):
                 listId = record.fid
@@ -229,17 +231,28 @@ class ListsMerger(_AListsMerger, ListPatcher):
             while empties:
                 empty = empties.pop()
                 if empty not in sub_supers: continue
+                # We have an empty list, look if it's a sublist in any other
+                # list
                 for super in sub_supers[empty]:
                     record = levLists[super]
+                    # Remove the emtpy list from this sublist
+                    old_entries = record.entries
                     record.entries = [x for x in record.entries if
                                       x.listId != empty]
                     record.items.remove(empty)
                     patchBlock.setRecord(record)
+                    # If removing the empty list made this list empty too, then
+                    # we should investigate it as well - could clean up even
+                    # more lists
                     if not record.items:
                         empties.append(super)
-                    cleaned.add(record.eid)
                     removed.add(levLists[empty].eid)
-                    keep(super)
+                    # We don't need to write out records where another mod has
+                    # already removed the empty sublist - that would just make
+                    # an ITPO
+                    if old_entries != record.entries:
+                        cleaned.add(record.eid)
+                        keep(super)
             log.setHeader(u'=== '+_(u'Empty %s Sublists') % label)
             for eid in sorted(removed,key=string.lower):
                 log(u'* '+eid)
