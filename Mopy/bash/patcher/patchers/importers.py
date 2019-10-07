@@ -948,12 +948,12 @@ class CBash_ActorImporter(_RecTypeModLogging, _AActorImporter):
 class _AKFFZPatcher(AImportPatcher):
     """Merges changes to actor animation lists."""
     name = _(u'Import Actors: Animations')
-    text = _(u"Import Actor animations from source mods.")
+    text = _(u'Import actor animations from source mods.')
     tip = text
     autoKey = {u'Actors.Anims'}
 
 class KFFZPatcher(_SimpleImporter, _AKFFZPatcher):
-    rec_attrs = dict((x, ('animations',)) for x in {'CREA', 'NPC_'})
+    rec_attrs = {x: ('animations',) for x in bush.game.actor_types}
 
 class CBash_KFFZPatcher(CBash_ImportPatcher, _AKFFZPatcher):
     logMsg = u'* ' + _(u'Imported Animations') + u': %d'
