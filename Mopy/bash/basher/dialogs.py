@@ -440,17 +440,14 @@ class CreateNewProject(DialogWindow):
         if self.checkDocs.is_checked:
             #Create the 'Docs' Directory
             tempProject.join(u'Docs').makedirs()
-        # if self.checkScreenshot.IsChecked():
-        #     #Copy the dummy default 'Screenshot' into the New Project
-        #     extrasDir.join(u'Screenshot').copyTo(tempProject.join(u'Screenshot'))
-
+        # HACK: shellMove fails unless it has at least one file - means
+        # creating an empty project fails silently unless we make one
+        has_files = bool(tempProject.list())
+        if not has_files: tempProject.join(u'temp_hack').makedirs()
         # Move into the target location
-        try:
-            # TODO(inf) de-wx! Investigate further
-            env.shellMove(tempProject, projectDir, parent=self._native_widget)
-            # Move successful
-            BashFrame.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
-        except:
-            pass
-        finally:
-            tmpDir.rmtree(tmpDir.s)
+        # TODO(inf) de-wx! Investigate further
+        env.shellMove(tempProject, projectDir, parent=self._native_widget)
+        BashFrame.iPanel.ShowPanel(canCancel=False, scan_data_dir=True)
+        tmpDir.rmtree(tmpDir.s)
+        if not has_files:
+            projectDir.join(u'temp_hack').rmtree(safety=u'temp_hack')

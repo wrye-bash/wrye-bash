@@ -756,11 +756,12 @@ def InitSettingsLinks():
     if True:
         sbMenu = MenuLink(_(u'Status bar'))
         #--Icon size
-        if True:
-            sizeMenu = MenuLink(_(u'Icon size'))
-            for size in (16,24,32):
-                sizeMenu.links.append(Settings_IconSize(size))
-            sbMenu.links.append(sizeMenu)
+        # FIXME(inf) Either fix these or remove them entirely
+        # if True:
+        #     sizeMenu = MenuLink(_(u'Icon size'))
+        #     for size in (16,24,32):
+        #         sizeMenu.links.append(Settings_IconSize(size))
+        #     sbMenu.links.append(sizeMenu)
         sbMenu.links.append(Settings_UnHideButtons())
         sbMenu.links.append(Settings_StatusBar_ShowVersions())
         SettingsMenu.append(sbMenu)
