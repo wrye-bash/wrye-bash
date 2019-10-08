@@ -121,17 +121,19 @@ class Fallout3GameInfo(GameInfo):
     # 'Actors.CombatStyle', 'Creatures.Blood', 'NPC.Race','Actors.Skeleton',
     # 'NpcFacesForceFullImport', 'MustBeActiveIfImported', 'Deflst',
     # 'Destructible'
-    allTags = {u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
-               u'Actors.AIPackagesForceAdd', u'Actors.Anims',
-               u'Actors.CombatStyle', u'Actors.DeathItem', u'Actors.Skeleton',
-               u'Actors.Spells', u'Actors.SpellsForceAdd', u'Actors.Stats',
-               u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace',
-               u'C.Light', u'C.Music', u'C.Name', u'C.Owner', u'C.RecordFlags',
-               u'C.Water', u'Deactivate', u'Deflst', u'Delev', u'Destructible',
-               u'Factions', u'Filter', u'Graphics', u'Invent', u'Names',
-               u'NoMerge', u'Relev', u'Sound', u'Stats', u'Text', u'Scripts',
-               u'Creatures.Blood', u'Creatures.Type', u'NPC.Class',
-               u'NPC.Race', u'SpellStats',}
+    allTags = {
+        u'Actors.ACBS', u'Actors.AIData', u'Actors.AIPackages',
+        u'Actors.AIPackagesForceAdd', u'Actors.Anims', u'Actors.CombatStyle',
+        u'Actors.DeathItem', u'Actors.Skeleton', u'Actors.Spells',
+        u'Actors.SpellsForceAdd', u'Actors.Stats', u'C.Acoustic', u'C.Climate',
+        u'C.Encounter', u'C.ImageSpace', u'C.Light', u'C.Music', u'C.Name',
+        u'C.Owner', u'C.RecordFlags', u'C.Water', u'Creatures.Blood',
+        u'Creatures.Type', u'Deactivate', u'Deflst', u'Delev', u'Destructible',
+        u'Factions', u'Filter', u'Graphics', u'Invent',
+        u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
+        u'NPC.Race', u'Relev', u'Scripts', u'Sound', u'SpellStats', u'Stats',
+        u'Text',
+    }
 
     # ActorImporter, AliasesPatcher, AssortedTweaker, CellImporter, ContentsChecker,
     # DeathItemPatcher, DestructiblePatcher, FidListsMerger, GlobalsTweaker,
@@ -141,13 +143,13 @@ class Fallout3GameInfo(GameInfo):
     # RoadImporter, SoundPatcher, StatsPatcher, UpdateReferences,
     #--Patcher available when building a Bashed Patch (referenced by class name)
     patchers = (
-        u'AliasesPatcher', u'CellImporter', u'DestructiblePatcher',
+        u'ActorImporter', u'AliasesPatcher', u'CellImporter',
+        u'ContentsChecker', u'DeathItemPatcher', u'DestructiblePatcher',
         u'FidListsMerger', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportFactions', u'ImportInventory', u'ListsMerger', u'NamesPatcher',
-        u'PatchMerger', u'SoundPatcher', u'StatsPatcher', u'TextImporter',
-        u'ContentsChecker', u'ImportScripts', u'DeathItemPatcher',
-        u'ImportActorsSpells', u'NPCAIPackagePatcher', u'KFFZPatcher',
-        u'ActorImporter', u'SpellsPatcher',
+        u'ImportActorsSpells', u'ImportFactions', u'ImportInventory',
+        u'ImportScripts', u'KFFZPatcher', u'ListsMerger', u'NamesPatcher',
+        u'NPCAIPackagePatcher', u'PatchMerger', u'SoundPatcher',
+        u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
     )
 
     weaponTypes = (

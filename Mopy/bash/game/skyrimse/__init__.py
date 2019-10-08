@@ -57,15 +57,15 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
     has_achlist = True
     check_esl = True
 
-    allTags = SkyrimGameInfo.allTags - {u'NoMerge'}
+    allTags = SkyrimGameInfo.allTags - {u'MustBeActiveIfImported', u'NoMerge',}
 
     patchers = (
-        u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportInventory', u'ListsMerger', u'SoundPatcher', u'StatsPatcher',
-        u'NamesPatcher', u'KeywordsImporter', u'TextImporter',
-        u'ContentsChecker', u'DestructiblePatcher', u'DeathItemPatcher',
-        u'ImportActorsSpells', u'NPCAIPackagePatcher', u'ActorImporter',
-        u'SpellsPatcher',
+        u'ActorImporter', u'CellImporter', u'ContentsChecker',
+        u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
+        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
+        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
+        u'NPCAIPackagePatcher', u'SoundPatcher', u'SpellsPatcher',
+        u'StatsPatcher', u'TextImporter',
     )
 
     # MreScpt is Oblivion/FO3/FNV Only
