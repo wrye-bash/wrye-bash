@@ -131,7 +131,7 @@ class Fallout3GameInfo(GameInfo):
                u'Factions', u'Filter', u'Graphics', u'Invent', u'Names',
                u'NoMerge', u'Relev', u'Sound', u'Stats', u'Text', u'Scripts',
                u'Creatures.Blood', u'Creatures.Type', u'NPC.Class',
-               u'NPC.Race',}
+               u'NPC.Race', u'SpellStats',}
 
     # ActorImporter, AliasesPatcher, AssortedTweaker, CellImporter, ContentsChecker,
     # DeathItemPatcher, DestructiblePatcher, FidListsMerger, GlobalsTweaker,
@@ -147,7 +147,7 @@ class Fallout3GameInfo(GameInfo):
         u'PatchMerger', u'SoundPatcher', u'StatsPatcher', u'TextImporter',
         u'ContentsChecker', u'ImportScripts', u'DeathItemPatcher',
         u'ImportActorsSpells', u'NPCAIPackagePatcher', u'KFFZPatcher',
-        u'ActorImporter',
+        u'ActorImporter', u'SpellsPatcher',
     )
 
     weaponTypes = (

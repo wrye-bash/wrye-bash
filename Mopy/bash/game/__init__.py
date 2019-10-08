@@ -427,6 +427,11 @@ class GameInfo(object):
     actor_importer_auto_key = set()
     actor_types = ()
 
+    #--------------------------------------------------------------------------
+    # Spell Stats Patcher
+    #--------------------------------------------------------------------------
+    spell_stats_attrs = ()
+
     # Record type to name dictionary
     record_type_name = {}
 
@@ -471,8 +476,8 @@ class GameInfo(object):
         'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
         'inventoryTypes', 'keywords_types', 'listTypes', 'namesTypes',
         'pricesTypes', 'record_type_name', 'save_rec_types', 'scripts_types',
-        'soundsLongsTypes', 'soundsTypes', 'statsHeaders', 'statsTypes',
-        'text_long_types', 'text_types', 'xEdit_expert',
+        'soundsLongsTypes', 'soundsTypes', 'spell_stats_attrs', 'statsHeaders',
+        'statsTypes', 'text_long_types', 'text_types', 'xEdit_expert',
     }
 
     @classmethod

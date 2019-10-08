@@ -1733,7 +1733,7 @@ class MreSpel(MelRecord,MreHasEffects):
     classType = 'SPEL'
 
     class SpellFlags(Flags):
-        """For SpellFlags, immuneSilence activates bits 1 AND 3."""
+        """For SpellFlags, immuneToSilence activates bits 1 AND 3."""
         def __setitem__(self,index,value):
             setter = Flags.__setitem__
             setter(self,index,value)

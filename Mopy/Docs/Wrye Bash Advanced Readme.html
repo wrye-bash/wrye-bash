@@ -2026,6 +2026,39 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>SpellStats</td>
+            <td>Modifies spell stats.</td>
+            <td>The following Spell (SPEL) subrecords:
+                <ul>
+                    <strong>All but Fallout 4:</strong>
+                    <br>
+                    <br>
+                    <li>(EDID) Editor ID</li>
+                    <li>(FULL) Name</li>
+                    <li>(SPIT) Cost</li>
+                    <li>(SPIT) Spell Type</li>
+                    <br>
+                    <strong>Oblivion, Fallout 3 &amp; Fallout&colon; New Vegas only:</strong>
+                    <br>
+                    <br>
+                    <li>(SPIT) Level</li>
+                    <br>
+                    <strong>Skyrim, Enderal&colon; Forgotten Stories and Skyrim&colon; Special Edition only:</strong>
+                    <br>
+                    <br>
+                    <li>(SPIT) Cast Duration</li>
+                    <li>(SPIT) Cast Type</li>
+                    <li>(SPIT) Charge Time</li>
+                    <li>(SPIT) Half-Cost Perk</li>
+                    <li>(SPIT) Range</li>
+                    <li>(SPIT) Target Type</li>
+                </ul>
+                <br>
+                <strong>Not available for Fallout 4.</strong>
+            </td>
+        </tr>
+        <tr>
+            <!-- TODO(inf) Stats patches EDIDs. Need to edit all the game-specific ones to mention this. -->
             <td>Stats</td>
             <td>Modifies the stats (e.g. weight, value, etc.) of items and other objects.</td>
             <td>See the game-specific sections below for record types:
@@ -2698,18 +2731,6 @@ C.Location, -C.LockList
                             <li>(SNAM) Sounds</li>
                         </ul>
                     </li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td>SpellStats</td>
-            <td>Modifies spell stats.</td>
-            <td>The following Spell (SPEL) subrecords:
-                <ul>
-                    <li>Name (FULL)</li>
-                    <li>Cost</li>
-                    <li>Level Type</li>
-                    <li>Spell Type</li>
                 </ul>
             </td>
         </tr>

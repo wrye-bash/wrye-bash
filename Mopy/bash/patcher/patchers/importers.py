@@ -2789,8 +2789,9 @@ class _ASpellsPatcher(AImportPatcher):
     scanOrder = 29
     editOrder = 29 #--Run ahead of bow patcher
     name = _(u'Import Spell Stats')
-    text = _(u"Import stats from any spells from source mods/files.")
-    autoKey = {u'Spells',u'SpellStats'}
+    text = _(u'Import stats from any spells / actor effects from source '
+             u'mods/files.')
+    autoKey = {u'Spells', u'SpellStats'}
 
 class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
     logMsg = u'\n=== ' + _(u'Modified SPEL Stats')
@@ -2825,19 +2826,18 @@ class SpellsPatcher(ImportPatcher, _ASpellsPatcher):
         if not self.isActive or 'SPEL' not in modFile.tops:
             return
         id_stat = self.id_stat
-        mapper = modFile.getLongMapper()
         spell_attrs = self.spell_attrs
         patchBlock = self.patchFile.SPEL
         id_records = patchBlock.id_records
+        modFile.convertToLongFids(('SPEL',))
         for record in modFile.SPEL.getActiveRecords():
             fid = record.fid
-            if not record.longFids: fid = mapper(fid)
             if fid in id_records: continue
             spellStats = id_stat.get(fid)
             if not spellStats: continue
             oldValues = [getattr_deep(record, attr) for attr in spell_attrs]
             if oldValues != spellStats:
-                patchBlock.setRecord(record.getTypeCopy(mapper))
+                patchBlock.setRecord(record.getTypeCopy())
 
     def buildPatch(self,log,progress):# buildPatch3: one type
         """Adds merged lists to patchfile."""

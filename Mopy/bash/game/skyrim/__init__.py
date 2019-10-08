@@ -149,7 +149,7 @@ class SkyrimGameInfo(GameInfo):
                u'Deactivate', u'Delev', u'Destructible', u'Filter',
                u'Graphics', u'Invent', u'Keywords', u'Names', u'NoMerge',
                u'NPC.Class', u'NPC.Race', u'Relev', u'Sound', u'Stats',
-               u'Text',}
+               u'Text', u'SpellStats',}
 
     patchers = (
         u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
@@ -157,6 +157,7 @@ class SkyrimGameInfo(GameInfo):
         u'StatsPatcher', u'NamesPatcher', u'KeywordsImporter', u'TextImporter',
         u'ContentsChecker', u'DestructiblePatcher', u'DeathItemPatcher',
         u'ImportActorsSpells', u'NPCAIPackagePatcher', u'ActorImporter',
+        u'SpellsPatcher',
     )
 
     weaponTypes = (

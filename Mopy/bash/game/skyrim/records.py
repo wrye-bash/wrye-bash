@@ -4972,7 +4972,7 @@ class MreSpel(MelRecord,MreHasEffects):
         MelFid('ETYP', 'equipmentType'),
         MelLString('DESC','description'),
         MelStruct('SPIT','IIIfIIffI','cost',(SpelTypeFlags,'dataFlags',0L),
-                  'scrollType','chargeTime','castType','targetType',
+                  'spellType','chargeTime','castType','targetType',
                   'castDuration','range',(FID,'halfCostPerk'),),
         MelEffects(),
     )

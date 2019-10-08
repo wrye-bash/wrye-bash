@@ -1755,6 +1755,11 @@ actor_importer_auto_key = {
 }
 actor_types = ('CREA', 'NPC_')
 
+#------------------------------------------------------------------------------
+# Spell Stats Patcher
+#------------------------------------------------------------------------------
+spell_stats_attrs = ('eid', 'full', 'cost', 'level', 'spellType',)
+
 # Record type to name dictionary
 record_type_name = {
     'ALCH': _(u'Potions'),
