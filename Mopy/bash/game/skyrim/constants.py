@@ -2181,7 +2181,7 @@ namesTypes = {'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMO', 'AVIF', 'BOOK', 'CLAS',
               'CLFM', 'CONT', 'DIAL', 'DOOR', 'ENCH', 'EXPL', 'EYES',
               'FLOR', 'FURN', 'HAZD', 'HDPT', 'INGR', 'KEYM', 'LCTN', 'LIGH',
               'MESG', 'MGEF', 'MISC', 'MSTT', 'NPC_', 'PROJ', 'SCRL', 'SHOU',
-              'SLGM', 'SNCT', 'SPEL', 'TACT', 'TREE', 'WATR', 'WEAP', 'WOOP'}
+              'SLGM', 'SNCT', 'TACT', 'TREE', 'WATR', 'WEAP', 'WOOP'}
 #------------------------------------------------------------------------------
 # ItemPrices Patcher
 #------------------------------------------------------------------------------
@@ -2374,8 +2374,8 @@ cellRecFlags = {
 #------------------------------------------------------------------------------
 graphicsLongsTypes = {'ACTI', 'ALCH', 'AMMO', 'APPA', 'ARMA', 'ARMO', 'BOOK',
                       'CLAS', 'CONT', 'DOOR', 'EFSH', 'FLOR', 'FURN', 'GRAS',
-                      'INGR', 'KEYM', 'LIGH', 'LSCR', 'SLGM', 'STAT', 'TREE',
-                      'WEAP', 'WTHR', 'MGEF'}
+                      'INGR', 'KEYM', 'LIGH', 'LSCR', 'SCRL', 'SLGM', 'SPEL',
+                      'STAT', 'TREE', 'WEAP', 'WTHR', 'MGEF'}
 graphicsTypes = {
     "ACTI": ('model',),
     "ALCH": ('iconPath','model',),
@@ -2427,14 +2427,20 @@ graphicsTypes = {
     "KEYM": ('iconPath','model',),
     "LIGH": ('iconPath','model',),
     "LSCR": ('iconPath',),
+    "SCRL": ('menuDisplayObject',),
     "SLGM": ('iconPath','model',),
+    "SPEL": ('menuDisplayObject',),
     "STAT": ('model',),
     "TREE": ('model',),
     "WEAP": ('model1','model2','iconPath','firstPersonModelObject',),
     "WTHR": ('wthrAmbientColors',),
 }
+# TODO(inf) What on earth is this? Plenty of entries above have fids, but are
+#  not listed here...
 graphicsFidTypes = {
-    "MGEF": ('castingLight','hitShader','enchantShader',)
+    "MGEF": ('castingArt', 'castingLight', 'dualCastingArt', 'enchantArt',
+             'enchantShader', 'hitEffectArt', 'hitShader',
+             'menuDisplayObject',)
 }
 graphicsModelAttrs = ('model',)
 #------------------------------------------------------------------------------

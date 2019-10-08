@@ -3522,7 +3522,7 @@ class MreMgef(MelRecord):
         MelEdid(),
         MelVmad(),
         MelFull(),
-        MelFid('MDOB','harvestIngredient'),
+        MelFid('MDOB','menuDisplayObject'),
         MelKeywords(),
         MelPartialCounter(MelStruct(
             'DATA', 'IfI2iH2sIf4I4fIi4Ii3IfIfI4s4s4I2f',
