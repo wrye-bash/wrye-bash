@@ -389,17 +389,42 @@ class MreCell(MelRecord):
     """Cell."""
     classType = 'CELL'
 
-    cellFlags = Flags(0L,Flags.getNames((0, 'isInterior'),(1,'hasWater'),(2,'invertFastTravel'),
-        (3,'forceHideLand'),(5,'publicPlace'),(6,'handChanged'),(7,'behaveLikeExterior')))
-    inheritFlags = Flags(0L,Flags.getNames('ambientColor','directionalColor','fogColor','fogNear','fogFar',
-        'directionalRotation','directionalFade','clipDistance','fogPower'))
+    cellFlags = Flags(0L, Flags.getNames(
+        (0, 'isInterior'),
+        (1, 'hasWater'),
+        (2, 'invertFastTravel'),
+        (3, 'noLODWater'),
+        (5, 'publicPlace'),
+        (6, 'handChanged'),
+        (7, 'behaveLikeExterior')
+    ))
+
+    inheritFlags = Flags(0L, Flags.getNames(
+        'ambientColor',
+        'directionalColor',
+        'fogColor',
+        'fogNear',
+        'fogFar',
+        'directionalRotation',
+        'directionalFade',
+        'clipDistance',
+        'fogPower'
+    ))
+
+    # 'Force Hide Land' flags
+    CellFHLFlags = Flags(0L, Flags.getNames(
+        (0, 'quad1'),
+        (1, 'quad2'),
+        (2, 'quad3'),
+        (3, 'quad4'),
+    ))
 
     melSet = MelSet(
         MelEdid(),
         MelFull(),
         MelUInt8('DATA', (cellFlags, 'flags', 0L)),
         MelCoordinates('XCLC', '2iI', ('posX', None), ('posY', None),
-                       ('forceHideLand', 0L), is_optional=True,
+                       (CellFHLFlags, 'fhlFlags', 0L), is_optional=True,
                        old_versions={'2i'}),
         MelTruncatedStruct('XCLL', '=3Bs3Bs3Bs2f2i3f', 'ambientRed',
                            'ambientGreen', 'ambientBlue', ('unused1', null1),

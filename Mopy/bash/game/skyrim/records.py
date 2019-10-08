@@ -1782,12 +1782,12 @@ class MreCell(MelRecord):
         ))
 
     # 'Force Hide Land' flags
-    CellFHLFlags = Flags(0L,Flags.getNames(
-            (0, 'quad1'),
-            (1, 'quad2'),
-            (2, 'quad3'),
-            (3, 'quad4'),
-        ))
+    CellFHLFlags = Flags(0L, Flags.getNames(
+        (0, 'quad1'),
+        (1, 'quad2'),
+        (2, 'quad3'),
+        (3, 'quad4'),
+    ))
 
     class MelWaterHeight(MelOptFloat):
         """XCLW sometimes has $FF7FFFFF and causes invalid floating point."""

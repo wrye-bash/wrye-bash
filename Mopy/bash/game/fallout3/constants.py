@@ -743,38 +743,41 @@ soundsTypes = {
 #------------------------------------------------------------------------------
 # CellImporter
 #------------------------------------------------------------------------------
-cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter', u'C.ImageSpace',
-                u'C.Light', u'C.Music', u'C.Name', u'C.Owner',
-                u'C.RecordFlags', u'C.Water'} #,u'C.Maps'}
+cellAutoKeys = {u'C.Acoustic', u'C.Climate', u'C.Encounter',
+                u'C.ForceHideLand', u'C.ImageSpace', u'C.Light', u'C.Music',
+                u'C.Name', u'C.Owner', u'C.RecordFlags', u'C.Regions',
+                u'C.Water'} #,u'C.Maps')
 cellRecAttrs = {
-            u'C.Acoustic': ('acousticSpace',),
-            u'C.Climate': ('climate',),
-            u'C.Encounter': ('encounterZone',),
-            u'C.ImageSpace': ('imageSpace',),
-            u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
-                        'directionalRed','directionalGreen','directionalBlue','unused2',
-                        'fogRed','fogGreen','fogBlue','unused3',
-                        'fogNear','fogFar','directionalXY','directionalZ',
-                        'directionalFade','fogClip','fogPower',
-                        'lightTemplate','lightInheritFlags'),
-            u'C.Music': ('music',),
-            u'C.Name': ('full',),
-            u'C.Owner': ('ownership',),
-            u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
-            u'C.Water': ('water','waterHeight','waterNoiseTexture',),
-            }
+    u'C.Acoustic': ('acousticSpace',),
+    u'C.Climate': ('climate',),
+    u'C.Encounter': ('encounterZone',),
+    u'C.ImageSpace': ('imageSpace',),
+    u'C.Light': ('ambientRed','ambientGreen','ambientBlue','unused1',
+                'directionalRed','directionalGreen','directionalBlue','unused2',
+                'fogRed','fogGreen','fogBlue','unused3',
+                'fogNear','fogFar','directionalXY','directionalZ',
+                'directionalFade','fogClip','fogPower',
+                'lightTemplate','lightInheritFlags'),
+    u'C.Music': ('music',),
+    u'C.Name': ('full',),
+    u'C.Owner': ('ownership',),
+    u'C.RecordFlags': ('flags1',), # Yes seems funky but thats the way it is
+    u'C.Regions': ('regions',),
+    u'C.Water': ('water','waterHeight','waterNoiseTexture',),
+}
 cellRecFlags = {
-            u'C.Acoustic': '',
-            u'C.Climate': 'behaveLikeExterior',
-            u'C.Encounter': '',
-            u'C.ImageSpace': '',
-            u'C.Light': '',
-            u'C.Music': '',
-            u'C.Name': '',
-            u'C.Owner': 'publicPlace',
-            u'C.RecordFlags': '',
-            u'C.Water': 'hasWater',
-            }
+    u'C.Acoustic': '',
+    u'C.Climate': 'behaveLikeExterior',
+    u'C.Encounter': '',
+    u'C.ImageSpace': '',
+    u'C.Light': '',
+    u'C.Music': '',
+    u'C.Name': '',
+    u'C.Owner': 'publicPlace',
+    u'C.RecordFlags': '',
+    u'C.Regions': '',
+    u'C.Water': 'hasWater',
+}
 #------------------------------------------------------------------------------
 # GraphicsPatcher
 #------------------------------------------------------------------------------
