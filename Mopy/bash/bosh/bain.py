@@ -1381,8 +1381,9 @@ class InstallerProject(Installer):
             max_mtime = max_mtime if max_mtime >= get_mtime else get_mtime
             rsDir = asDir[relPos:]
             for sFile in sFiles:
-                rpFile = os.path.join(rsDir, sFile)
                 asFile = os.path.join(asDir, sFile)
+                if len(asFile) > 255: continue # FIXME(inf) hacky workaround
+                rpFile = os.path.join(rsDir, sFile)
                 # below calls may now raise even if "werr.winerror = 123"
                 lstat = os.lstat(asFile)
                 size, date = lstat.st_size, int(lstat.st_mtime)
