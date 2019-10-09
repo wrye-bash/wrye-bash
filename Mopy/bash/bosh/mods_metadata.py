@@ -119,7 +119,7 @@ class ModRuleSet:
             group = self.group
             if curBlockId is not None:
                 if curBlockId == u'HEADER':
-                    self.ruleSet.header = self.ruleSet.header.rstrip()
+                    self.ruleSet.rs_header = self.ruleSet.rs_header.rstrip()
                 elif curBlockId == u'ONLYONE':
                     self.ruleSet.onlyones.append(set(self.mods))
                 elif curBlockId == u'ASSUME':
@@ -154,8 +154,8 @@ class ModRuleSet:
             ruleSet   = self.ruleSet
 
             #--Clear info
-            ruleSet.mtime = rulePath.mtime
-            ruleSet.header = u''
+            ruleSet.rs_mtime = rulePath.mtime
+            ruleSet.rs_header = u''
             del ruleSet.onlyones[:]
             del ruleSet.modGroups[:]
 
@@ -171,7 +171,7 @@ class ModRuleSet:
                         newBlock,more = stripped(maBlock.groups())
                         self.newBlock(newBlock)
                         if newBlock == u'HEADER':
-                            self.ruleSet.header = (more or u'')+u'\n'
+                            self.ruleSet.rs_header = (more or u'')+u'\n'
                         elif newBlock in (u'ASSUME',u'IF'):
                             maModVersion = more and reModVersion.match(more)
                             if maModVersion:
@@ -182,7 +182,7 @@ class ModRuleSet:
                                 self.modNots = []
                     #--Block lists
                     elif self.curBlockId == u'HEADER':
-                        self.ruleSet.header += line.rstrip()+u'\n'
+                        self.ruleSet.rs_header += line.rstrip()+u'\n'
                     elif self.curBlockId in (u'IF',u'ASSUME'):
                         maMod = reMod.match(line)
                         if maMod:
@@ -214,8 +214,8 @@ class ModRuleSet:
     #--------------------------------------------------------------------------
     def __init__(self):
         """Initialize ModRuleSet."""
-        self.mtime = 0
-        self.header = u''
+        self.rs_mtime = 0
+        self.rs_header = u''
         self.defineKeys = []
         self.onlyones = []
         self.modGroups = []
@@ -409,7 +409,7 @@ class ConfigHelpers:
             ruleSet = name_ruleSet.get(name)
             if not ruleSet:
                 ruleSet = name_ruleSet[name] = ModRuleSet()
-            if path.mtime != ruleSet.mtime:
+            if path.mtime != ruleSet.rs_mtime:
                 ModRuleSet.RuleParser(ruleSet).parse(path)
 
     _cleaning_wiki_url = u'[[!https://tes5edit.github.io/docs/5-mod-cleaning' \
@@ -588,9 +588,8 @@ class ConfigHelpers:
                 self.refreshRuleSets()
                 for fileName in sorted(self.name_ruleSet):
                     ruleSet = self.name_ruleSet[fileName]
-                    modRules = ruleSet.modGroups
                     log.setHeader(u'= ' + fileName.s[:-4],True)
-                    if ruleSet.header: log(ruleSet.header)
+                    if ruleSet.rs_header: log(ruleSet.rs_header)
                     #--One ofs
                     for modSet in ruleSet.onlyones:
                         modSet &= activeMerged

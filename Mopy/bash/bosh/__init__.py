@@ -3008,6 +3008,8 @@ def initDefaultTools():
         path_in_registry = env.get_registry_path(u'Boss', u'Installed Path',
                                                  [u'BOSS.exe'])
         if path_in_registry:
+            if path_in_registry.isdir():
+                path_in_registry = path_in_registry.join(u'BOSS.exe')
             tooldirs['boss'] = path_in_registry
 
     tooldirs['Tes4FilesPath'] = dirs['app'].join(u'Tools', u'TES4Files.exe')
