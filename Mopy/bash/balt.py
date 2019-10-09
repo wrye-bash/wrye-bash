@@ -57,7 +57,7 @@ except ImportError:
     deprint(
         _(u'wx.WebView is missing, features utilizing HTML will be disabled'))
 
-class Resources:
+class Resources(object):
     #--Icon Bundles
     bashRed = None
     bashBlue = None
@@ -95,7 +95,7 @@ _settings = __unset # must be bound to bosh.settings - smelly, see #174
 sizes = {} #--Using applications should override this.
 
 # Colors ----------------------------------------------------------------------
-class Colors:
+class Colors(object):
     """Colour collection and wrapper for wx.ColourDatabase.
     Provides dictionary syntax access (colors[key]) and predefined colours."""
     def __init__(self):
@@ -139,7 +139,7 @@ SmallDnArrow = PyEmbeddedImage(
     "bcPlKrwugGnCFy6Mo3mBAQChDgRlP4RC7wAAAABJRU5ErkJggg==")
 
 #------------------------------------------------------------------------------
-class Image:
+class Image(object):
     """Wrapper for images, allowing access in various formats/classes.
 
     Allows image to be specified before wx.App is initialized."""
@@ -211,7 +211,7 @@ class Image:
         return bitmap
 
 #------------------------------------------------------------------------------
-class ImageBundle:
+class ImageBundle(object):
     """Wrapper for bundle of images.
 
     Allows image bundle to be specified before wx.App is initialized."""
@@ -231,7 +231,7 @@ class ImageBundle:
         return self.iconBundle
 
 #------------------------------------------------------------------------------
-class ImageList:
+class ImageList(object):
     """Wrapper for wx.ImageList.
 
     Allows ImageList to be specified before wx.App is initialized.
@@ -1123,7 +1123,7 @@ def playSound(parent,sound):
 
 # Other Windows ---------------------------------------------------------------
 #------------------------------------------------------------------------------
-class ListEditorData:
+class ListEditorData(object):
     """Data capsule for ListEditor. [Abstract]
     DEPRECATED: nest into ListEditor"""
     def __init__(self,parent):

@@ -218,7 +218,7 @@ class SreNPC(object):
             return buff.getvalue()
 
 # Save File -------------------------------------------------------------------
-class SaveFile:
+class SaveFile(object):
     """Represents a Tes4 Save file."""
     recordFlags = Flags(0L,Flags.getNames(
         'form','baseid','moved','havocMoved','scale','allExtra','lock','owner','unk8','unk9',
@@ -714,7 +714,7 @@ class SaveFile:
             self.preCreated = buff.getvalue()
 
 #------------------------------------------------------------------------------
-class SaveSpells:
+class SaveSpells(object):
     """Player spells of a savegame."""
 
     def __init__(self,saveInfo):
@@ -801,7 +801,7 @@ class SaveSpells:
             self.saveFile.safeSave()
 
 #------------------------------------------------------------------------------
-class SaveEnchantments:
+class SaveEnchantments(object):
     """Player enchantments of a savegame."""
 
     def __init__(self,saveInfo):
@@ -841,7 +841,7 @@ class SaveEnchantments:
         self.saveFile.safeSave()
 
 #------------------------------------------------------------------------------
-class Save_NPCEdits:
+class Save_NPCEdits(object):
     """General editing of NPCs/player in savegame."""
 
     def __init__(self,saveInfo):

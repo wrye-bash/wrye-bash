@@ -362,7 +362,7 @@ class _Mod_Labels(ChoiceLink):
     def _choices(self): return sorted(self.mod_labels, key=lambda a: a.lower())
 
 #--Groups ---------------------------------------------------------------------
-class _ModGroups:
+class _ModGroups(object):
     """Groups for mods with functions for importing/exporting from/to text
     file."""
 

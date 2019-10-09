@@ -43,10 +43,10 @@ lootDb = None #--LootDb singleton
 
 # Mod Config Help -------------------------------------------------------------
 #------------------------------------------------------------------------------
-class ModRuleSet:
+class ModRuleSet(object):
     """A set of rules to be used in analyzing active and/or merged mods for errors."""
 
-    class ModGroup:
+    class ModGroup(object):
         """A set of specific mods and rules that affect them."""
         def __init__(self):
             self.modAnds = []
@@ -81,7 +81,7 @@ class ModRuleSet:
                         out.append(mod)
             return out
 
-    class RuleParser:
+    class RuleParser(object):
         """A class for parsing ruleset files."""
         ruleBlockIds = (u'NOTES',u'CONFIG',u'SUGGEST',u'WARN')
         reComment = re.compile(u'##.*', re.U)
@@ -221,7 +221,7 @@ class ModRuleSet:
         self.modGroups = []
 
 #------------------------------------------------------------------------------
-class ConfigHelpers:
+class ConfigHelpers(object):
     """Encapsulates info from mod configuration helper files (LOOT masterlist, etc.)"""
 
     def __init__(self):
@@ -643,7 +643,7 @@ class ConfigHelpers:
             return log.out.getvalue()
 
 #------------------------------------------------------------------------------
-class ModCleaner:
+class ModCleaner(object):
     """Class for cleaning ITM and UDR edits from mods.
        ITM detection requires CBash to work."""
     UDR     = 0x01  # Deleted references
@@ -1118,7 +1118,7 @@ class ModCleaner:
                 path.temp.remove()
 
 #------------------------------------------------------------------------------
-class NvidiaFogFixer:
+class NvidiaFogFixer(object):
     """Fixes cells to avoid nvidia fog problem."""
     def __init__(self,modInfo):
         self.modInfo = modInfo
@@ -1178,7 +1178,7 @@ class NvidiaFogFixer:
             path.temp.remove()
 
 #------------------------------------------------------------------------------
-class ModDetails:
+class ModDetails(object):
     """Details data for a mods file. Similar to TesCS Details view."""
     def __init__(self):
         self.group_records = {} #--group_records[group] = [(fid0,eid0),(fid1,eid1),...]

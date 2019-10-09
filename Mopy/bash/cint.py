@@ -391,7 +391,7 @@ class API_FIELDS(object):
 for value, attr in enumerate(API_FIELDS.__slots__):
     setattr(API_FIELDS, attr, value)
 
-class ICASEMixin:
+class ICASEMixin(object):
     """Case insensitive string/unicode class mixin.  Performs like str/unicode,
        except comparisons are case insensitive."""
     def __eq__(self, other):

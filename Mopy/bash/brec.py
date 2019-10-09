@@ -210,7 +210,7 @@ class RecordHeader(object):
                                                   self.form_version)
 
 #------------------------------------------------------------------------------
-class ModReader:
+class ModReader(object):
     """Wrapper around a TES4 file in read mode.
     Will throw a ModReaderror if read operation fails to return correct size.
     """
@@ -361,7 +361,7 @@ class ModReader:
             return None
 
 #------------------------------------------------------------------------------
-class ModWriter:
+class ModWriter(object):
     """Wrapper around a TES4 output stream.  Adds utility functions."""
     def __init__(self,out):
         self.out = out
@@ -494,7 +494,7 @@ class MelObject(object):
         return u'<%s>' % u', '.join(sorted(to_show)) # is sorted() needed here?
 
 #-----------------------------------------------------------------------------
-class MelBase:
+class MelBase(object):
     """Represents a mod record raw element. Typically used for unknown elements.
     Also used as parent class for other element types."""
 
@@ -1812,7 +1812,7 @@ class MelWthrColors(MelStruct):
 #------------------------------------------------------------------------------
 # Mod Element Sets ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MelSet:
+class MelSet(object):
     """Set of mod record elments."""
 
     def __init__(self,*elements):
@@ -2209,7 +2209,7 @@ class _MelDistributor(MelNull):
 #------------------------------------------------------------------------------
 # Mod Records -----------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MreSubrecord:
+class MreSubrecord(object):
     """Generic Subrecord."""
     def __init__(self,type,size,ins=None):
         self.changed = False

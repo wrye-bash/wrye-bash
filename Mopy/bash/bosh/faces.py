@@ -30,7 +30,7 @@ from ._saves import SreNPC, SaveFile
 from ..parsers import LoadFactory, ModFile, MasterMap
 from ..brec import getModIndex, MreRecord, genFid, RecordHeader, null2
 
-class PCFaces:
+class PCFaces(object):
     """Package: Objects and functions for working with face data."""
     pcf_flags = Flags(0L, Flags.getNames(
         'name', 'race', 'gender', 'hair', 'eye', 'iclass', 'stats', 'factions',

@@ -49,7 +49,7 @@ from cint import ObCollection, FormID, aggregateTypes, validTypes, \
 from exception import ArgumentError, MasterMapError, ModError, StateError
 from record_groups import MobDials, MobICells, MobWorlds, MobObjects, MobBase
 
-class ActorFactions:
+class ActorFactions(object):
     """Factions for npcs and creatures with functions for
     importing/exporting from/to mod/text file."""
 
@@ -175,7 +175,7 @@ class ActorFactions:
                             type_,actorEid,id_[0].s,id_[1],factionEid,
                             faction[0].s,faction[1],rank))
 
-class CBash_ActorFactions:
+class CBash_ActorFactions(object):
     """Factions for npcs and creatures with functions for
     importing/exporting from/to mod/text file."""
 
@@ -292,7 +292,7 @@ class CBash_ActorFactions:
                             faction[0].s,faction[1],rank))
 
 #------------------------------------------------------------------------------
-class ActorLevels:
+class ActorLevels(object):
     """Package: Functions for manipulating actor levels."""
 
     def __init__(self,aliases=None):
@@ -414,7 +414,7 @@ class ActorLevels:
                         else:
                             out.write(blankExtendedRow)
 
-class CBash_ActorLevels:
+class CBash_ActorLevels(object):
     """Package: Functions for manipulating actor levels."""
 
     def __init__(self,aliases=None):
@@ -535,7 +535,7 @@ class CBash_ActorLevels:
                             out.write(blankExtendedRow)
 
 #------------------------------------------------------------------------------
-class EditorIds:
+class EditorIds(object):
     """Editor ids for records, with functions for importing/exporting
     from/to mod/text file."""
 
@@ -677,7 +677,7 @@ class EditorIds:
                 for id_ in sorted(id_eid,key = lambda a: id_eid[a].lower()):
                     out.write(rowFormat % (type_,id_[0].s,id_[1],id_eid[id_]))
 
-class CBash_EditorIds:
+class CBash_EditorIds(object):
     """Editor ids for records, with functions for importing/exporting
     from/to mod/text file."""
 
@@ -811,7 +811,7 @@ class CBash_EditorIds:
                     out.write(rowFormat % (group,fid[0].s,fid[1],fid_eid[fid]))
 
 #------------------------------------------------------------------------------
-class FactionRelations:
+class FactionRelations(object):
     """Faction relations."""
 
     def __init__(self,aliases=None):
@@ -930,7 +930,7 @@ class FactionRelations:
                         mainEid,main[0].s,main[1],otherEid,other[0].s,other[1],
                         disp))
 
-class CBash_FactionRelations:
+class CBash_FactionRelations(object):
     """Faction relations."""
 
     def __init__(self,aliases=None):
@@ -1037,7 +1037,7 @@ class CBash_FactionRelations:
                         disp))
 
 #------------------------------------------------------------------------------
-class FidReplacer:
+class FidReplacer(object):
     """Replaces one set of fids with another."""
 
     def __init__(self,types=None,aliases=None):
@@ -1117,7 +1117,7 @@ class FidReplacer:
         entries.sort(key=itemgetter(1))
         return '\n'.join(['%3d %s >> %s' % entry for entry in entries])
 
-class CBash_FidReplacer:
+class CBash_FidReplacer(object):
     """Replaces one set of fids with another."""
 
     def __init__(self,types=None,aliases=None):
@@ -1174,7 +1174,7 @@ class CBash_FidReplacer:
             return u'\n'.join([u'%3d %s >> %s' % entry for entry in entries])
 
 #------------------------------------------------------------------------------
-class FullNames:
+class FullNames(object):
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
 
@@ -1266,7 +1266,7 @@ class FullNames:
                         type_,longid[0].s,longid[1],eid,
                         name.replace(u'"',u'""')))
 
-class CBash_FullNames:
+class CBash_FullNames(object):
     """Names for records, with functions for importing/exporting from/to
     mod/text file."""
     defaultTypes = {"CLAS","FACT","HAIR","EYES","RACE","MGEF","ENCH","SPEL",
@@ -1358,7 +1358,7 @@ class CBash_FullNames:
                         name.replace(u'"',u'""')))
 
 #------------------------------------------------------------------------------
-class ItemStats:
+class ItemStats(object):
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
 
@@ -1559,7 +1559,7 @@ class ItemStats:
                     attr_value = fid_attr_value[longid]
                     write(out, attrs, map(attr_value.get, attrs))
 
-class CBash_ItemStats:
+class CBash_ItemStats(object):
     """Statistics for armor and weapons, with functions for
     importing/exporting from/to mod/text file."""
 
@@ -3618,7 +3618,7 @@ class CBash_IngredientDetails(_UsesEffectsMixin):
 #------------------------------------------------------------------------------
 # CBASH ONLY
 #------------------------------------------------------------------------------
-class CBash_MapMarkers:
+class CBash_MapMarkers(object):
     """Map marker references, with functions for importing/exporting from/to
     mod/text file."""
 
@@ -3764,7 +3764,7 @@ class CBash_MapMarkers:
                     IsCanTravelTo,posX,posY,posZ,rotX,rotY,rotZ))
 
 #------------------------------------------------------------------------------
-class CBash_CellBlockInfo:
+class CBash_CellBlockInfo(object):
     """Map marker references, with functions for importing/exporting from/to
     mod/text file."""
 
@@ -3801,7 +3801,7 @@ class CBash_CellBlockInfo:
 #------------------------------------------------------------------------------
 # Mod Blocks, File ------------------------------------------------------------
 #------------------------------------------------------------------------------
-class MasterMap:
+class MasterMap(object):
     """Serves as a map between two sets of masters."""
     def __init__(self,inMasters,outMasters):
         """Initiation."""
@@ -3841,7 +3841,7 @@ class MasterSet(set):
         """Returns masters in proper load order."""
         return load_order.get_ordered(self)
 
-class LoadFactory:
+class LoadFactory(object):
     """Factory for mod representation objects."""
     def __init__(self,keepAll,*recClasses):
         self.keepAll = keepAll

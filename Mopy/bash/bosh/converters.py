@@ -287,7 +287,7 @@ class InstallerConverter(object):
         def translate(out):
             with sio(out) as stream:
                 # translate data types to new hierarchy
-                class _Translator:
+                class _Translator(object):
                     def __init__(self, streamToWrap):
                         self._stream = streamToWrap
                     def read(self, numBytes):
