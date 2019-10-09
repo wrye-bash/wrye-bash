@@ -22,7 +22,6 @@
         File /r /x "*.bat" /x "*.py*" /x "Wrye Bash.exe" \
                         /x "basher" \
                         /x "bosh" \
-                        /x "chardet" \
                         /x "game" \
                         /x "patcher" \
                         "${WB_CLEAN_MOPY}\*.*"
@@ -600,6 +599,7 @@
         Delete "${Path}\Mopy\bash\bosh.p*"
         Delete "${Path}\Mopy\bash\bosh\msgs.p*"
         Delete "${Path}\Mopy\bash\bweb.p*"
+        RMDir /r "${Path}\Mopy\bash\chardet"
         Delete "${Path}\Mopy\bash\games.p*"
         ; As of commit 3ade2c3 INI Tweaks are removed for Skyrim and Oblivion
         Delete "${Path}\Mopy\INI Tweaks\Oblivion\Autosave, Never [Oblivion].ini"

@@ -1,4 +1,5 @@
 # Runtime, required
+chardet
 pywin32>=220,<225
 https://github.com/wrye-bash/dev-tools/raw/master/wheels/wxPython-3.0.2.0-cp27-cp27m-win32.whl
 # Runtime, recommended
