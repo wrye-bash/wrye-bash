@@ -890,7 +890,7 @@ class RacePatcher(_ARacePatcher, ListPatcher):
         racesFiltered = []
         mod_npcsFixed = {}
         reProcess = re.compile(
-            ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
+            u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
             re.I | re.U)
         #--Import race info
         for race in patchFile.RACE.records:
@@ -1648,7 +1648,7 @@ class CBash_RacePatcher_Eyes(SpecialPatcher):
                 u'Assigning random eyes and hairs to npcs missing them...')
                         + u'\n')
             reProcess = re.compile(
-                ur'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
+                u'(?:dremora)|(?:akaos)|(?:lathulet)|(?:orthe)|(?:ranyu)',
                 re.I | re.U)
             for npc in modFile.NPC_:
                 recordId = npc.fid

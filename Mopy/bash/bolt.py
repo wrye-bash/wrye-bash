@@ -552,7 +552,7 @@ class Path(object):
 
     #--Class Vars/Methods -------------------------------------------
     sys_fs_enc = sys.getfilesystemencoding() or 'mbcs'
-    invalid_chars_re = re.compile(ur'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
+    invalid_chars_re = re.compile(u'' r'(.*)([/\\:*?"<>|]+)(.*)', re.I | re.U)
 
     @staticmethod
     def getNorm(name):
@@ -1074,12 +1074,12 @@ class Path(object):
 
 def clearReadOnly(dirPath):
     """Recursively (/S) clear ReadOnly flag if set - include folders (/D)."""
-    cmd = ur'attrib -R "%s\*" /S /D' % dirPath.s
+    cmd = u'' r'attrib -R "%s\*" /S /D' % dirPath.s
     subprocess.call(cmd, startupinfo=startupinfo)
 
 # Util Constants --------------------------------------------------------------
 #--Unix new lines
-reUnixNewLine = re.compile(ur'(?<!\r)\n',re.U)
+reUnixNewLine = re.compile(u'' r'(?<!\r)\n', re.U)
 
 # Util Classes ----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -1437,8 +1437,8 @@ class MainFunctions:
         #--Separate out keywords args
         keywords = {}
         argDex = 0
-        reKeyArg  = re.compile(ur'^-(\D\w+)',re.U)
-        reKeyBool = re.compile(ur'^\+(\D\w+)',re.U)
+        reKeyArg  = re.compile(u'' r'^-(\D\w+)', re.U)
+        reKeyBool = re.compile(u'' r'^\+(\D\w+)', re.U)
         while argDex < len(args):
             arg = args[argDex]
             if reKeyArg.match(arg):
@@ -2215,18 +2215,18 @@ class WryeText:
         cssDirs = map(GPath,cssDirs)
         # Setup ---------------------------------------------------------
         #--Headers
-        reHead = re.compile(ur'(=+) *(.+)',re.U)
+        reHead = re.compile(u'(=+) *(.+)',re.U)
         headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
         headFormatNA = u"<h%d>%s</h%d>\n"
         #--List
-        reWryeList = re.compile(ur'( *)([-x!?.+*o])(.*)',re.U)
+        reWryeList = re.compile(u'( *)([-x!?.+*o])(.*)',re.U)
         #--Code
-        reCode = re.compile(ur'\[code\](.*?)\[/code\]',re.I|re.U)
-        reCodeStart = re.compile(ur'(.*?)\[code\](.*?)$',re.I|re.U)
-        reCodeEnd = re.compile(ur'(.*?)\[/code\](.*?)$',re.I|re.U)
-        reCodeBoxStart = re.compile(ur'\s*\[codebox\](.*?)',re.I|re.U)
-        reCodeBoxEnd = re.compile(ur'(.*?)\[/codebox\]\s*',re.I|re.U)
-        reCodeBox = re.compile(ur'\s*\[codebox\](.*?)\[/codebox\]\s*',re.I|re.U)
+        reCode = re.compile(u'' r'\[code\](.*?)\[/code\]', re.I | re.U)
+        reCodeStart = re.compile(u'' r'(.*?)\[code\](.*?)$', re.I | re.U)
+        reCodeEnd = re.compile(u'' r'(.*?)\[/code\](.*?)$', re.I | re.U)
+        reCodeBoxStart = re.compile(u'' r'\s*\[codebox\](.*?)', re.I | re.U)
+        reCodeBoxEnd = re.compile(u'' r'(.*?)\[/codebox\]\s*', re.I | re.U)
+        reCodeBox = re.compile(u'' r'\s*\[codebox\](.*?)\[/codebox\]\s*', re.I | re.U)
         codeLines = None
         codeboxLines = None
         def subCode(match):
@@ -2236,8 +2236,8 @@ class WryeText:
                 return match(1)
         #--Misc. text
         reHr = re.compile(u'^------+$',re.U)
-        reEmpty = re.compile(ur'\s+$',re.U)
-        reMDash = re.compile(ur' -- ',re.U)
+        reEmpty = re.compile(u'' r'\s+$', re.U)
+        reMDash = re.compile(u' -- ',re.U)
         rePreBegin = re.compile(u'<pre',re.I|re.U)
         rePreEnd = re.compile(u'</pre>',re.I|re.U)
         anchorlist = [] #to make sure that each anchor is unique.
@@ -2249,7 +2249,7 @@ class WryeText:
             # be in cp1252, due to the escapings.
             anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
             count = 0
-            if re.match(ur'\d', anchor):
+            if re.match(u'' r'\d', anchor):
                 anchor = u'_' + anchor
             while anchor in anchorlist and count < 10:
                 count += 1
@@ -2260,9 +2260,9 @@ class WryeText:
             anchorlist.append(anchor)
             return u"<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
-        reBold = re.compile(ur'__',re.U)
-        reItalic = re.compile(ur'~~',re.U)
-        reBoldItalic = re.compile(ur'\*\*',re.U)
+        reBold = re.compile(u'__',re.U)
+        reItalic = re.compile(u'~~',re.U)
+        reBoldItalic = re.compile(u'' r'\*\*',re.U)
         states = {'bold':False,'italic':False,'boldItalic':False,'code':0}
         def subBold(match):
             state = states['bold'] = not states['bold']
@@ -2275,14 +2275,14 @@ class WryeText:
             return u'<i><b>' if state else u'</b></i>'
         #--Preformatting
         #--Links
-        reLink = re.compile(ur'\[\[(.*?)\]\]',re.U)
-        reHttp = re.compile(ur' (http://[_~a-zA-Z0-9./%-]+)',re.U)
-        reWww = re.compile(ur' (www\.[_~a-zA-Z0-9./%-]+)',re.U)
-        reWd = re.compile(ur'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')),re.U)
-        rePar = re.compile(ur'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)',re.U)
-        reFullLink = re.compile(ur'(:|#|\.[a-zA-Z0-9]{2,4}$)',re.U)
-        reColor = re.compile(ur'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]',re.I|re.U)
-        reBGColor = re.compile(ur'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]',re.I|re.U)
+        reLink = re.compile(u'' r'\[\[(.*?)\]\]', re.U)
+        reHttp = re.compile(u' (http://[_~a-zA-Z0-9./%-]+)',re.U)
+        reWww = re.compile(u'' r' (www\.[_~a-zA-Z0-9./%-]+)', re.U)
+        reWd = re.compile(u'' r'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')), re.U)
+        rePar = re.compile(u'' r'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)', re.U)
+        reFullLink = re.compile(u'' r'(:|#|\.[a-zA-Z0-9]{2,4}$)', re.U)
+        reColor = re.compile(u'' r'\[\s*color\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*color\s*\]', re.I | re.U)
+        reBGColor = re.compile(u'' r'\[\s*bg\s*=[\s\"\']*(.+?)[\s\"\']*\](.*?)\[\s*/\s*bg\s*\]', re.I | re.U)
         def subColor(match):
             return u'<span style="color:%s;">%s</span>' % (match.group(1),match.group(2))
         def subBGColor(match):
@@ -2305,8 +2305,8 @@ class WryeText:
             return u'<a href="%s"%s>%s</a>' % (address,newWindow,text)
         #--Tags
         reAnchorTag = re.compile(u'{{A:(.+?)}}',re.U)
-        reContentsTag = re.compile(ur'\s*{{CONTENTS=?(\d+)}}\s*$',re.U)
-        reAnchorHeadersTag = re.compile(ur'\s*{{ANCHORHEADERS=(\d+)}}\s*$',re.U)
+        reContentsTag = re.compile(u'' r'\s*{{CONTENTS=?(\d+)}}\s*$', re.U)
+        reAnchorHeadersTag = re.compile(u'' r'\s*{{ANCHORHEADERS=(\d+)}}\s*$', re.U)
         reCssTag = re.compile(u'\s*{{CSS:(.+?)}}\s*$',re.U)
         #--Defaults ----------------------------------------------------------
         title = u''
@@ -2415,7 +2415,7 @@ class WryeText:
                 anchor = unicode(urllib.quote(reWd.sub(u'',text).encode('utf8')),'cp1252')
                 level = len(lead)
                 if anchorHeaders:
-                    if re.match(ur'\d', anchor):
+                    if re.match(u'' r'\d', anchor):
                         anchor = u'_' + anchor
                     count = 0
                     while anchor in anchorlist and count < 10:
@@ -2458,8 +2458,8 @@ class WryeText:
             line = reAnchorTag.sub(subAnchor,line)
             #--Hyperlinks
             line = reLink.sub(subLink,line)
-            line = reHttp.sub(ur' <a href="\1">\1</a>',line)
-            line = reWww.sub(ur' <a href="http://\1">\1</a>',line)
+            line = reHttp.sub(u'' r' <a href="\1">\1</a>', line)
+            line = reWww.sub(u'' r' <a href="http://\1">\1</a>', line)
             #--Save line ------------------
             #print line,
             outLines.append(line)

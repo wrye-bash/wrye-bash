@@ -35,9 +35,9 @@ writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
 noSolidExts = {u'.zip'}
-reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
-regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
-regExtractMatch = re.compile(ur'- (.+)', re.U).match
+reSolid = re.compile(u'' r'[-/]ms=[^\s]+', re.IGNORECASE)
+regCompressMatch = re.compile(u'' r'Compressing\s+(.+)', re.U).match
+regExtractMatch = re.compile(u'- (.+)', re.U).match
 regErrMatch = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',
     re.U).match
 reListArchive = re.compile(
@@ -165,7 +165,7 @@ def _extract_command(archivePath, outDirPath, recursive, filelist_to_extract):
 def list_archive(archive_path, parse_archive_line, __reList=reListArchive):
     """Client is responsible for closing the file ! See uses for
     _parse_archive_line examples."""
-    command = ur'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, archive_path.s)
+    command = u'"%s" l -slt -sccUTF-8 "%s"' % (exe7z, archive_path.s)
     ins, err = subprocess.Popen(command, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT,
                                 stdin=subprocess.PIPE,
