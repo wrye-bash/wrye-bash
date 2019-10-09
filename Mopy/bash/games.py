@@ -119,7 +119,7 @@ class FixInfo(object):
         self.lo_removed = set()
         self.lo_added = set()
         self.lo_duplicates = set()
-        self.lo_reordered = False
+        self.lo_reordered = ([], [])
         # active mods corrections
         self.act_removed = set()
         self.act_added = set()
@@ -133,7 +133,7 @@ class FixInfo(object):
 
     def lo_changed(self):
         return bool(self.lo_removed or self.lo_added or self.lo_duplicates or
-                    self.lo_reordered)
+                    any(self.lo_reordered))
 
     def act_changed(self):
         return bool(
@@ -151,7 +151,7 @@ class FixInfo(object):
         removed = _pl(self.lo_removed) or u'None'
         duplicates = (u'lo_duplicates(%s), ' % _pl(self.lo_duplicates)) \
             if self.lo_duplicates else u''
-        reordered = u'(No)' if not self.lo_reordered else _pl(
+        reordered = u'(No)' if not any(self.lo_reordered) else _pl(
             self.lo_reordered[0], u'from:\n', joint=u'\n') + _pl(
             self.lo_reordered[1], u'\nto:\n', joint=u'\n')
         msg = u'Fixed Load Order: added(%s), removed(%s), %sreordered %s' % (
@@ -194,7 +194,7 @@ class Game(object):
     def __init__(self, mod_infos, plugins_txt_path):
         super(Game, self).__init__()
         self.plugins_txt_path = plugins_txt_path # type: bolt.Path
-        self.mod_infos = mod_infos # type: bosh.ModInfos
+        self.mod_infos = mod_infos # this is bosh.ModInfos, must be up to date
         self.master_path = mod_infos.masterName # type: bolt.Path
         self.mtime_plugins_txt = 0
         self.size_plugins_txt = 0
@@ -324,7 +324,7 @@ class Game(object):
 
     # ABSTRACT ----------------------------------------------------------------
     def _fetch_load_order(self, cached_load_order, cached_active):
-        """:type cached_load_order: tuple[bolt.Path]
+        """:type cached_load_order: tuple[bolt.Path] | None
         :type cached_active: tuple[bolt.Path]"""
         raise exception.AbstractError
 
@@ -392,6 +392,8 @@ class Game(object):
         # ordering or a manually edited loadorder.txt) so move it up
         master_name = self.master_path
         master_dex = 0
+        # Tracks if fix_lo.lo_reordered needs updating
+        lo_order_changed = any(fix_lo.lo_reordered)
         try:
             master_dex = lord.index(master_name)
         except ValueError:
@@ -404,7 +406,7 @@ class Game(object):
                 u'%s has index %d (must be 0)' % (master_name, master_dex))
             lord.remove(master_name)
             lord.insert(0, master_name)
-            fix_lo.lo_reordered = True
+            lo_order_changed = True
         # below do not apply to timestamp method (on getting it)
         loadorder_set = set(lord)
         mods_set = set(self.mod_infos.keys())
@@ -416,7 +418,7 @@ class Game(object):
         # See if any esm files are loaded below an esp and reorder as necessary
         ol = lord[:]
         lord.sort(key=lambda m: not self.in_master_block(self.mod_infos[m]))
-        fix_lo.lo_reordered |= ol != lord
+        lo_order_changed |= ol != lord
         # Append new plugins to load order
         index_first_esp = self._index_of_first_esp(lord)
         for mod in fix_lo.lo_added:
@@ -430,8 +432,9 @@ class Game(object):
             else: lord.append(mod)
         # end textfile get
         fix_lo.lo_duplicates = self._check_for_duplicates(lord)
-        fix_lo.lo_reordered |= self._order_fixed(lord)
-        if fix_lo.lo_reordered: fix_lo.lo_reordered = old_lord, lord
+        lo_order_changed |= self._order_fixed(lord)
+        if lo_order_changed:
+            fix_lo.lo_reordered = old_lord, lord
 
     def _fix_active_plugins(self, acti, lord, on_disc, fix_active):
         # filter plugins not present in modInfos - this will disable

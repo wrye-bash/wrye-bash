@@ -91,6 +91,8 @@ class LoadOrder(object):
     __none = frozenset()
 
     def __init__(self, loadOrder=__empty, active=__none):
+        """:type loadOrder: list | set | tuple
+        :type active: list | set | tuple"""
         if set(active) - set(loadOrder):
             raise exception.BoltError(
                 u'Active mods with no load order: ' + u', '.join(
