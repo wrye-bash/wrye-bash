@@ -3645,7 +3645,7 @@ class MreLctn(MelRecord):
         MelFid('NAM1','music',),
         MelFid('FNAM','unreportedCrimeFaction',),
         MelFid('MNAM','worldLocationMarkerRef',),
-        MelOptStruct('RNAM','f','worldLocationRadius',),
+        MelStruct('RNAM','f','worldLocationRadius',),
         MelFid('NAM0','horseMarkerRef',),
         MelColorN(),
     )
