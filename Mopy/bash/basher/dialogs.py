@@ -76,7 +76,7 @@ class ColorDialog(balt.Dialog):
                                     onButClickEventful=self.OnExport)
         self.importConfig = Button(self, _(u'Import...'),
                                    onButClickEventful=self.OnImport)
-        self.ok = OkButton(self, onButClickEventful=self.OnApplyAll,
+        self.ok = OkButton(self, onButClickEventful=self.OnOK,
                            default=True)
         #--Events
         set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE, self.OnComboBox)
@@ -145,6 +145,10 @@ class ColorDialog(balt.Dialog):
         self.picker.SetColour(color)
         self.comboBox.SetFocusFromKbd()
 
+    def _unbind_combobox(self):
+        # TODO(inf) de-wx!, needed for wx3, check if needed in Phoenix
+        self.comboBox.Unbind(wx.EVT_SIZE)
+
     def OnDefault(self,event):
         event.Skip()
         color_key = self.GetColorKey()
@@ -179,6 +183,10 @@ class ColorDialog(balt.Dialog):
         bass.settings.setChanged('bash.colors')
         self.UpdateUIButtons()
         self.UpdateUIColors()
+
+    def OnOK(self, event):
+        self._unbind_combobox()
+        self.OnApplyAll(event)
 
     def OnExport(self,event):
         event.Skip()
@@ -254,6 +262,10 @@ class ColorDialog(balt.Dialog):
         newColor = self.picker.GetColour()
         self.changes[color_key] = newColor
         self.UpdateUIButtons()
+
+    def OnCloseWindow(self, event):
+        self._unbind_combobox()
+        super(ColorDialog, self).OnCloseWindow(event)
 
 #------------------------------------------------------------------------------
 class ImportFaceDialog(balt.Dialog):

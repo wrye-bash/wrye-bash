@@ -354,7 +354,11 @@ class TextCtrl(wx.TextCtrl):
             self.Bind(wx.EVT_SIZE, self.OnSizeChange)
         # event handlers must call event.Skip()
         if onKillFocus:
-            self.Bind(wx.EVT_KILL_FOCUS, lambda __event: onKillFocus())
+            # Wrapper to hide event, but still call Skip()
+            def handle_focus_lost(event):
+                onKillFocus()
+                event.Skip()
+            self.Bind(wx.EVT_KILL_FOCUS, handle_focus_lost)
         if onText: self.Bind(wx.EVT_TEXT, onText)
 
     def UpdateToolTip(self, text):
@@ -969,7 +973,7 @@ class Log(_Log):
         txtCtrl = RoTextCtrl(self.window, logText, special=True, autotooltip=False)
         txtCtrl.SetValue(logText)
         if fixedFont:
-            fixedFont = wx.SystemSettings_GetFont(wx.SYS_ANSI_FIXED_FONT )
+            fixedFont = wx.SystemSettings.GetFont(wx.SYS_ANSI_FIXED_FONT)
             fixedFont.SetPointSize(8)
             fixedStyle = wx.TextAttr()
             #fixedStyle.SetFlags(0x4|0x80)
@@ -3218,8 +3222,6 @@ class BaltFrame(wx.Frame):
     def OnCloseWindow(self):
         """Handle window close event.
         Remember window size, position, etc."""
-        # TODO(ut): maybe set Link.Frame.modChecker = None (compare with
-        # DocBrowser)
         _key = self.__class__._frame_settings_key
         if _key and not self.IsIconized() and not self.IsMaximized():
             _settings[_key + '.pos'] = tuple(self.GetPosition())

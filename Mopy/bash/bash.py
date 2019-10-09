@@ -155,13 +155,9 @@ def dump_environment():
         u'input encoding: %s; output encoding: %s' % (
             sys.stdin.encoding, getattr(sys.stdout, 'encoding', None),
         ),
-        u'default locale: %s; current locale: %s' % (
-            locale.getdefaultlocale(), locale.getlocale()
-        ),
         u'filesystem encoding: %s%s' % (fse,
-            (u' - using %s' % bolt.Path.sys_fs_enc) if bolt is not None
-                                                       and not fse else u''),
-        u'command line: %s' % (sys.argv, )
+            (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u''),
+        u'command line: %s' % sys.argv,
     ])
     if bolt.scandir is not None:
         msg = u'\n'.join([msg, 'Using scandir ' + bolt.scandir.__version__])

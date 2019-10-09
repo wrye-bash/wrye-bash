@@ -1741,6 +1741,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def ClosePanel(self, destroy=False):
         super(INIDetailsPanel, self).ClosePanel(destroy)
         settings['bash.ini.lastDir'] = self.lastDir
+        # TODO(inf) de-wx!, needed for wx3, check if needed in Phoenix
         if destroy: self.comboBox.Unbind(wx.EVT_SIZE)
 
 class INIPanel(BashTab):

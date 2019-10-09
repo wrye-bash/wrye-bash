@@ -978,27 +978,35 @@ class InstallerArchive_Unpack(AppendableLink, _InstallerLink):
 
     @balt.conversation
     def Execute(self):
-        #--Copy to Build
-        with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) as progress:
+        # Ask the user first to avoid the progress dialog shoving itself over
+        # any dialogs we pop up
+        to_unpack = []
+        for archive, installer in self.idata.sorted_pairs(self.selected):
+            project = archive.root
+            if self.isSingleArchive():
+                result = self._askText(_(u"Unpack %s to Project:") % archive.s,
+                                       default=project.s)
+                if not result: return
+                # Error checking
+                project = GPath(result).tail
+                if not project.s or project.cext in archives.readExts:
+                    self._showWarning(_(u"%s is not a valid project name.") %
+                                      result)
+                    return
+                if self.idata.store_dir.join(project).isfile():
+                    self._showWarning(_(u"%s is a file.") % project.s)
+                    return
+            if project in self.idata:
+                if not self._askYes(
+                    _(u"%s already exists. Overwrite it?") % project.s,
+                    default=False): continue
+            # All check passed, we can unpack this
+            to_unpack.append((installer, project))
+        # We're safe to show the progress dialog now
+        with balt.Progress(_(u"Unpacking to Project..."),u'\n'+u' '*60) \
+                as progress:
             projects = []
-            for archive, installer in self.idata.sorted_pairs(self.selected):
-                project = archive.root
-                if self.isSingleArchive():
-                    result = self._askText(_(u"Unpack %s to Project:") % archive.s,
-                                           default=project.s)
-                    if not result: return
-                    #--Error checking
-                    project = GPath(result).tail
-                    if not project.s or project.cext in archives.readExts:
-                        self._showWarning(_(u"%s is not a valid project name.") % result)
-                        return
-                    if self.idata.store_dir.join(project).isfile():
-                        self._showWarning(_(u"%s is a file.") % project.s)
-                        return
-                if project in self.idata:
-                    if not self._askYes(
-                        _(u"%s already exists. Overwrite it?") % project.s,
-                        default=False): continue
+            for installer, project in to_unpack:
                 installer.unpackToProject(project,SubProgress(progress,0,0.8))
                 self.idata.refresh_installer(project, is_project=True,
                     progress=SubProgress(progress, 0.8, 0.99),
