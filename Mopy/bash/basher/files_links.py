@@ -25,7 +25,8 @@
 import re
 from .. import bass, balt, bosh, bush, bolt, exception
 from ..balt import ItemLink, RadioLink, ChoiceLink, OneItemLink
-from ..bolt import GPath, formatDate
+from ..bolt import GPath
+from ..localize import formatDate
 
 __all__ = ['Files_SortBy', 'Files_Unhide', 'File_Backup', 'File_Duplicate',
            'File_Snapshot', 'File_RevertToBackup', 'File_RevertToSnapshot',

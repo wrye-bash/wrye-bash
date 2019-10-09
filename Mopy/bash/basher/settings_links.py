@@ -32,6 +32,7 @@ from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
     TransLink, EnabledLink, BoolLink, tooltip, Link
 from ..bolt import deprint, GPath
 from ..exception import BoltError
+from ..localize import dumpTranslator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
 __all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
@@ -496,7 +497,7 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
                                 _(u'Dump Translator')): return
         outPath = bass.dirs['l10n']
         with balt.BusyCursor():
-            outFile = bolt.dumpTranslator(outPath.s, bass.active_locale)
+            outFile = dumpTranslator(outPath.s, bass.active_locale)
         self._showOk(_(
             u'Translation keys written to ') + u'Mopy\\bash\\l10n\\' + outFile,
                      _(u'Dump Translator') + u': ' + outPath.stail)

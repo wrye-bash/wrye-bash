@@ -67,11 +67,12 @@ import wx
 
 #--Local
 from .. import bush, bosh, bolt, bass, env, load_order, archives
-from ..bolt import GPath, SubProgress, deprint, formatDate, round_size
+from ..bolt import GPath, SubProgress, deprint, round_size
 from ..bosh import omods
 from ..cint import CBashApi
 from ..exception import AbstractError, BoltError, CancelError, FileError, \
     SkipError
+from ..localize import formatDate, unformatDate
 
 startupinfo = bolt.startupinfo
 
@@ -1412,7 +1413,7 @@ class ModDetails(_SashDetailsPanel):
         modifiedStr = self.modified.GetValue()
         if modifiedStr == self.modifiedStr: return
         try:
-            newTimeTup = bolt.unformatDate(modifiedStr, u'%c')
+            newTimeTup = unformatDate(modifiedStr, u'%c')
             time.mktime(newTimeTup)
         except ValueError:
             balt.showError(self,_(u'Unrecognized date: ')+modifiedStr)
@@ -1524,7 +1525,7 @@ class ModDetails(_SashDetailsPanel):
                                     detail_item=detail_item)
 
     def _set_date(self, modInfo):
-        newTimeTup = bolt.unformatDate(self.modifiedStr, u'%c')
+        newTimeTup = unformatDate(self.modifiedStr, u'%c')
         newTimeInt = int(time.mktime(newTimeTup))
         modInfo.setmtime(newTimeInt)
 
