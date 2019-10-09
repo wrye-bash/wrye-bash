@@ -96,12 +96,12 @@ ERR_CANNOT_SET = u"Cannot set %s '%s': type is '%s'."
 ERR_TOO_FEW_ARGS = u"Too few arguments to %s '%s':  got %s, expected %s."
 ERR_TOO_MANY_ARGS = u"Too many arguments to %s '%s':  got %s, expected %s."
 
-class KEY:
+class KEY(object):
     # Constants for keyword args
     NO_MAX = -1     # No maximum arguments
     NA = 0          # Not a variable argument keyword
 
-class OP:
+class OP(object):
     # Constants for operator precedences
     PAR = 0     # Parenthesis
     EXP = 1     # Exponent
@@ -192,7 +192,7 @@ def getType(item, parser=None):
 #  Flow control object, to hold info about a flow
 #  control statement
 #--------------------------------------------------
-class FlowControl:
+class FlowControl(object):
     def __init__(self, statement_type, active, keywords=[], **attribs):
         self.type = statement_type
         self.active = active
@@ -321,7 +321,7 @@ class Parser(object):
                                                  passTokens)
             self.dotFunction = dotFunction
 
-    class Token:
+    class Token(object):
         def __init__(self, token_or_text, Type=None, parser=None, line=None,
                      pos=(None, None)):
             if isinstance(token_or_text, Parser.Token):

@@ -62,7 +62,7 @@ def extractOmodsNeeded(installers_paths=()):
             return True
     return False
 
-class OmodFile:
+class OmodFile(object):
     """Class for extracting data from OMODs."""
     def __init__(self, omod_path):
         self.omod_path = omod_path
@@ -300,7 +300,7 @@ class OmodFile:
                 sizes.append(unpack_int64_signed(crc_file))
         return fileNames,crcs,sizes
 
-class OmodConfig:
+class OmodConfig(object):
     """Tiny little omod config class."""
     def __init__(self,name):
         self.name = name.s
