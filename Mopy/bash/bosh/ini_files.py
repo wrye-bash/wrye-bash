@@ -65,9 +65,9 @@ def get_ini_type_and_encoding(abs_ini_path):
 class IniFile(AFile):
     """Any old ini file."""
     reComment = re.compile(u';.*',re.U)
-    reDeletedSetting = re.compile(ur';-\s*(\w.*?)\s*(;.*$|=.*$|$)',re.U)
-    reSection = re.compile(ur'^\[\s*(.+?)\s*\]$',re.U)
-    reSetting = re.compile(ur'(.+?)\s*=(.*)',re.U)
+    reDeletedSetting = re.compile(u'' r';-\s*(\w.*?)\s*(;.*$|=.*$|$)', re.U)
+    reSection = re.compile(u'' r'^\[\s*(.+?)\s*\]$', re.U)
+    reSetting = re.compile(u'' r'(.+?)\s*=(.*)', re.U)
     formatRes = (reSetting, reSection)
     out_encoding = 'cp1252' # when opening a file for writing force cp1252
     __empty = LowerDict()
@@ -395,10 +395,10 @@ class DefaultIniFile(IniFile):
 class OBSEIniFile(IniFile):
     """OBSE Configuration ini file.  Minimal support provided, only can
     handle 'set', 'setGS', and 'SetNumericGameSetting' statements."""
-    reDeleted = re.compile(ur';-(\w.*?)$',re.U)
-    reSet     = re.compile(ur'\s*set\s+(.+?)\s+to\s+(.*)', re.I|re.U)
-    reSetGS   = re.compile(ur'\s*setGS\s+(.+?)\s+(.*)', re.I|re.U)
-    reSetNGS   = re.compile(ur'\s*SetNumericGameSetting\s+(.+?)\s+(.*)', re.I|re.U)
+    reDeleted = re.compile(u'' r';-(\w.*?)$', re.U)
+    reSet     = re.compile(u'' r'\s*set\s+(.+?)\s+to\s+(.*)', re.I | re.U)
+    reSetGS   = re.compile(u'' r'\s*setGS\s+(.+?)\s+(.*)', re.I | re.U)
+    reSetNGS  = re.compile(u'' r'\s*SetNumericGameSetting\s+(.+?)\s+(.*)', re.I | re.U)
     out_encoding = 'utf-8' # FIXME: ask
     formatRes = (reSet, reSetGS, reSetNGS)
     defaultSection = u'' # Change the default section to something that

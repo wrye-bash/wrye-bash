@@ -85,9 +85,9 @@ class ModRuleSet:
         """A class for parsing ruleset files."""
         ruleBlockIds = (u'NOTES',u'CONFIG',u'SUGGEST',u'WARN')
         reComment = re.compile(u'##.*', re.U)
-        reBlock   = re.compile(ur'^>>\s+([A-Z]+)\s*(.*)',re.U)
-        reRule    = re.compile(ur'^(x|o|\+|-|-\+)\s+([^/]+)\s*(\[[^\]]+\])?\s*//(.*)',re.U)
-        reExists  = re.compile(ur'^(e)\s+([^/]+)//(.*)',re.U)
+        reBlock   = re.compile(u'' r'^>>\s+([A-Z]+)\s*(.*)', re.U)
+        reRule    = re.compile(u'' r'^(x|o|\+|-|-\+)\s+([^/]+)\s*(\[[^\]]+\])?\s*//(.*)', re.U)
+        reExists  = re.compile(u'' r'^(e)\s+([^/]+)//(.*)', re.U)
         reMod = reModVersion = None
 
         def __init__(self,ruleSet):
