@@ -3192,6 +3192,7 @@ def initBosh(bashIni, game_ini_path):
     Installer.init_bain_dirs()
     if os.name == u'nt': # don't add local directory to binaries on linux
         archives.exe7z = dirs['compiled'].join(archives.exe7z).s
+        archives.pngcrush = dirs['compiled'].join(archives.pngcrush).s
 
 def initSettings(readOnly=False, _dat=u'BashSettings.dat',
                  _bak=u'BashSettings.dat.bak'):

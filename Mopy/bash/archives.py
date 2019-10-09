@@ -30,6 +30,8 @@ from bolt import startupinfo, GPath, deprint, walkdir
 from exception import StateError
 
 exe7z = u'7z.exe' if os.name == u'nt' else u'7z'
+# TODO(inf) stuck it here for now - should probably go somewhere else
+pngcrush = u'pngcrush.exe' if os.name == u'nt' else u'pngcrush'
 defaultExt = u'.7z'
 writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.7z.001', u'.001'}
@@ -174,3 +176,24 @@ def list_archive(archive_path, parse_archive_line, __reList=reListArchive):
         maList = __reList.match(line)
         if maList:
             parse_archive_line(*(maList.groups()))
+
+def fix_png(png_path):
+    """Runs pngcrush on the specified PNG to remove invalid iCCP sRGB
+    profiles. See InstallerArchive._fix_pngs().
+
+    :param png_path: The absolute path to the PNG to run pngcrush on."""
+    # Check if the PNG has invalid profiles first
+    # Note that pngcrush reports all warnings on stderr
+    _out, err = subprocess.Popen(u'"%s" -n -q "%s"' % (pngcrush, png_path),
+                                 stderr=subprocess.PIPE,
+                                 startupinfo=startupinfo).communicate()
+    for line in err.splitlines():
+        if line == u'pngcrush: iCCP: known incorrect sRGB profile':
+            # We have to rewrite the PNG
+            # Note that pngcrush *loves* being loud, so we silence it here
+            # TODO(inf) in py3, use subprocess.DEVNULL here
+            silent_out = open(os.devnull)
+            subprocess.call(
+                u'"%s" -ow -rem allb -q "%s"' % (pngcrush, png_path),
+                stdout=silent_out, stderr=silent_out, startupinfo=startupinfo)
+            break

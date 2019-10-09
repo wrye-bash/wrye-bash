@@ -1448,7 +1448,8 @@ class Progress(bolt.Progress):
         elif (state == 0 or state == 1 or (message != self.prevMessage) or
             (state - self.prevState) > 0.05 or (time.time() - self.prevTime) > 0.5):
             if message != self.prevMessage:
-                ret = self.dialog.Update(int(state*100),message)
+                ret = self.dialog.Update(int(state * 100), u'\n'.join(
+                    [self._ellipsize(msg) for msg in message.split(u'\n')]))
             else:
                 ret = self.dialog.Update(int(state*100))
             if not ret[0]:
@@ -1456,6 +1457,23 @@ class Progress(bolt.Progress):
             self.prevMessage = message
             self.prevState = state
             self.prevTime = time.time()
+
+    @staticmethod
+    def _ellipsize(message):
+        """A really ugly way to ellipsize messages that would cause the
+        progress dialog to resize itself when displaying them. wx2.8's
+        ProgressDialog had this built in, but wx3.0's is native, and doesn't
+        have this feature, so we emulate it here. 50 characters was chosen as
+        the cutoff point, since that produced a reasonably good-looking
+        progress dialog at 1080p during testing.
+
+        :param message: The message to ellipsize.
+        :return: The ellipsized message."""
+        if len(message) > 50:
+            first = message[:24]
+            second = message[-26:]
+            return first + u'...' + second
+        return message
 
     def Destroy(self):
         if self.dialog:

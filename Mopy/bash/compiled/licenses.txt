@@ -1,0 +1,4 @@
+Some files in this folder are from third-party sources and are released under other licenses:
+ - 7z.dll and 7z.exe are from 7-Zip-zstd, released under the LGPL v2.1: https://github.com/mcmilk/7-Zip-zstd/blob/master/COPYING
+ - lzma.exe is from the 7-Zip LZMA SDK, released to the public domain: https://www.7-zip.org/sdk.html
+ - pngcrush.exe is a precompiled binary from https://pmt.sourceforge.io/pngcrush/, released under a libpng-like license
