@@ -33,7 +33,7 @@ from ..balt import fill, StaticText, vSizer, checkBox, Button, hsbSizer, \
 from ..bolt import GPath
 from ..patcher import patch_files
 
-reCsvExt = re.compile(ur'\.csv$', re.I | re.U)
+reCsvExt = re.compile(u'' r'\.csv$', re.I | re.U)
 
 class _PatcherPanel(object):
     """Basic patcher panel with no options."""

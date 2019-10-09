@@ -74,7 +74,7 @@ class Installer(object):
                u'.mht', u'.pdf', u'.css', u'.xls', u'.xlsx', u'.ods', u'.odp',
                u'.ppt', u'.pptx'}
     reReadMe = re.compile(
-        ur'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
+        u'' r'^.*?([^\\]*)(read[ _]?me|lisez[ _]?moi)([^\\]*)'
         u'(' + u'|'.join(docExts) + u')$', re.I | re.U)
     skipExts = {u'.exe', u'.py', u'.pyc', u'.7z', u'.zip', u'.rar', u'.db',
                 u'.ace', u'.tgz', u'.tar', u'.gz', u'.bz2', u'.omod',

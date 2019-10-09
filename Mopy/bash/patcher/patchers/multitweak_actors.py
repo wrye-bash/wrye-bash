@@ -464,7 +464,7 @@ class CBash_NoBloodCreaturesPatcher(ANoBloodCreaturesPatcher, _CreaCTweak):
 class AAsIntendedImpsPatcher(AMultiTweakItem):
     """Set all imps to have the Bethesda imp spells that were never assigned
     (discovered by the UOP team, made into a mod by Tejon)."""
-    reImpModPath  = re.compile(ur'(imp(?!erial)|gargoyle)\\.',re.I|re.U)
+    reImpModPath = re.compile(u'' r'(imp(?!erial)|gargoyle)\\.', re.I | re.U)
     reImp  = re.compile(u'(imp(?!erial)|gargoyle)',re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------
@@ -545,7 +545,7 @@ class CBash_AsIntendedImpsPatcher(AAsIntendedImpsPatcher, _CreaCTweak):
 class AAsIntendedBoarsPatcher(AMultiTweakItem):
     """Set all boars to have the Bethesda boar spells that were never
     assigned (discovered by the UOP team, made into a mod by Tejon)."""
-    reBoarModPath  = re.compile(ur'(boar)\\.',re.I|re.U)
+    reBoarModPath = re.compile(u'' r'(boar)\\.', re.I | re.U)
     reBoar  = re.compile(u'(boar)', re.I|re.U)
 
     #--Config Phase -----------------------------------------------------------

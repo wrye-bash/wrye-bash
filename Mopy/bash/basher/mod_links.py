@@ -1678,7 +1678,7 @@ class Mod_FlipMasters(OneItemLink, _Esm_Esl_Flip):
               {'csName': bush.game.cs.long_name})
 
     def _initData(self, window, selection,
-                  __reEspExt=re.compile(ur'\.esp(.ghost)?$', re.I | re.U)):
+                  __reEspExt=re.compile(u'' r'\.esp(.ghost)?$', re.I | re.U)):
         super(Mod_FlipMasters, self)._initData(window, selection)
         self._text = _(u'Add ESM Flag To Masters')
         masters = self._selected_info.get_masters()

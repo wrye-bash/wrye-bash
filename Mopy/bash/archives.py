@@ -35,8 +35,8 @@ writeExts = {u'.7z': u'7z', u'.zip': u'zip'}
 readExts = {u'.rar', u'.7z.001', u'.001'}
 readExts.update(set(writeExts))
 noSolidExts = {u'.zip'}
-reSolid = re.compile(ur'[-/]ms=[^\s]+', re.IGNORECASE)
-regCompressMatch = re.compile(ur'Compressing\s+(.+)', re.U).match
+reSolid = re.compile(u'' r'[-/]ms=[^\s]+', re.IGNORECASE)
+regCompressMatch = re.compile(u'' r'Compressing\s+(.+)', re.U).match
 regExtractMatch = re.compile(u'- (.+)', re.U).match
 regErrMatch = re.compile(u'^(Error:.+|.+     Data Error?|Sub items Errors:.+)',
     re.U).match
