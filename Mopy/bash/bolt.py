@@ -2215,11 +2215,11 @@ class WryeText:
         cssDirs = map(GPath,cssDirs)
         # Setup ---------------------------------------------------------
         #--Headers
-        reHead = re.compile(ur'(=+) *(.+)',re.U)
+        reHead = re.compile(u'(=+) *(.+)',re.U)
         headFormat = u"<h%d><a id='%s'>%s</a></h%d>\n"
         headFormatNA = u"<h%d>%s</h%d>\n"
         #--List
-        reWryeList = re.compile(ur'( *)([-x!?.+*o])(.*)',re.U)
+        reWryeList = re.compile(u'( *)([-x!?.+*o])(.*)',re.U)
         #--Code
         reCode = re.compile(ur'\[code\](.*?)\[/code\]',re.I|re.U)
         reCodeStart = re.compile(ur'(.*?)\[code\](.*?)$',re.I|re.U)
@@ -2237,7 +2237,7 @@ class WryeText:
         #--Misc. text
         reHr = re.compile(u'^------+$',re.U)
         reEmpty = re.compile(ur'\s+$',re.U)
-        reMDash = re.compile(ur' -- ',re.U)
+        reMDash = re.compile(u' -- ',re.U)
         rePreBegin = re.compile(u'<pre',re.I|re.U)
         rePreEnd = re.compile(u'</pre>',re.I|re.U)
         anchorlist = [] #to make sure that each anchor is unique.
@@ -2260,8 +2260,8 @@ class WryeText:
             anchorlist.append(anchor)
             return u"<a id='%s'>%s</a>" % (anchor,text)
         #--Bold, Italic, BoldItalic
-        reBold = re.compile(ur'__',re.U)
-        reItalic = re.compile(ur'~~',re.U)
+        reBold = re.compile(u'__',re.U)
+        reItalic = re.compile(u'~~',re.U)
         reBoldItalic = re.compile(ur'\*\*',re.U)
         states = {'bold':False,'italic':False,'boldItalic':False,'code':0}
         def subBold(match):
@@ -2276,7 +2276,7 @@ class WryeText:
         #--Preformatting
         #--Links
         reLink = re.compile(ur'\[\[(.*?)\]\]',re.U)
-        reHttp = re.compile(ur' (http://[_~a-zA-Z0-9./%-]+)',re.U)
+        reHttp = re.compile(u' (http://[_~a-zA-Z0-9./%-]+)',re.U)
         reWww = re.compile(ur' (www\.[_~a-zA-Z0-9./%-]+)',re.U)
         reWd = re.compile(ur'(<[^>]+>|\[\[[^\]]+\]\]|\s+|[%s]+)' % re.escape(string.punctuation.replace(u'_',u'')),re.U)
         rePar = re.compile(ur'^(\s*[a-zA-Z(;]|\*\*|~~|__|\s*<i|\s*<a)',re.U)
