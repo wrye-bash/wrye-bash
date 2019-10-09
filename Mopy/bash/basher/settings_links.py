@@ -32,7 +32,7 @@ from ..balt import ItemLink, AppendableLink, RadioLink, CheckLink, MenuLink, \
     TransLink, EnabledLink, BoolLink, tooltip, Link
 from ..bolt import deprint, GPath
 from ..exception import BoltError
-from ..localize import dumpTranslator
+from ..localize import dump_translator
 # TODO(ut): settings links do not seem to use Link.data attribute - it's None..
 
 __all__ = ['Settings_BackupSettings', 'Settings_RestoreSettings',
@@ -493,11 +493,11 @@ class Settings_DumpTranslator(AppendableLink, ItemLink):
             u'This function is for translating Bash itself (NOT mods) into '
             u'non-English languages.  For more info, '
             u'see Internationalization section of Bash readme.')
-        if not self._askContinue(message, 'bash.dumpTranslator.continue',
+        if not self._askContinue(message, 'bash.dump_translator.continue',
                                 _(u'Dump Translator')): return
         outPath = bass.dirs['l10n']
         with balt.BusyCursor():
-            outFile = dumpTranslator(outPath.s, bass.active_locale)
+            outFile = dump_translator(outPath.s, bass.active_locale)
         self._showOk(_(
             u'Translation keys written to ') + u'Mopy\\bash\\l10n\\' + outFile,
                      _(u'Dump Translator') + u': ' + outPath.stail)

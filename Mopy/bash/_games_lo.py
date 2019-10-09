@@ -40,7 +40,7 @@ import bass
 import bolt
 import env
 import exception
-from localize import formatDate
+from localize import format_date
 
 def _write_plugins_txt_(path, lord, active, _star):
     try:
@@ -1203,8 +1203,9 @@ class SkyrimSE(AsteriskGame):
                 dlc_mtime = self.mod_infos[dlc].mtime
                 if dlc_mtime != master_mtime:
                     self.mod_infos[dlc].setmtime(master_mtime)
-                    bolt.deprint(u'Restamped %s  from %s to %s' % (dlc,
-                    formatDate(dlc_mtime), formatDate(master_mtime)))
+                    bolt.deprint(u'Restamped %s  from %s to %s' % (
+                        dlc, format_date(dlc_mtime),
+                        format_date(master_mtime)))
         return add
 
 # Game factory

@@ -43,7 +43,7 @@ from ..bolt import GPath, SubProgress
 from ..bosh import faces
 from ..cint import CBashApi, FormID
 from ..exception import AbstractError, BoltError, CancelError
-from ..localize import formatDate, unformatDate
+from ..localize import format_date, unformat_date
 from ..patcher import configIsCBash, exportConfig, patch_files
 
 __all__ = ['Mod_FullLoad', 'Mod_CreateDummyMasters', 'Mod_OrderByName',
@@ -200,10 +200,10 @@ class Mod_Redate(AppendableLink, ItemLink):
         #--Ask user for revised time.
         newTimeStr = self._askText(
             _(u'Redate selected mods starting at...'),
-            title=_(u'Redate Mods'), default=formatDate(int(time.time())))
+            title=_(u'Redate Mods'), default=format_date(int(time.time())))
         if not newTimeStr: return
         try:
-            newTimeTup = unformatDate(newTimeStr, u'%c')
+            newTimeTup = unformat_date(newTimeStr, '%c')
             newTime = int(time.mktime(newTimeTup))
         except ValueError:
             self._showError(_(u'Unrecognized date: ') + newTimeStr)
