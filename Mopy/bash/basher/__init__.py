@@ -294,13 +294,15 @@ class MasterList(_ModsUIList):
     _default_sort_col = 'Num'
     _sort_keys = {
         'Num'          : None, # sort by master index, the key itself
-        'File'         : lambda self, a: self.data_store[a].name.s.lower(),
+        'File'         : lambda self, a:
+            self.data_store[a].curr_name.s.lower(),
+        # Missing mods sort last alphabetically
         'Current Order': lambda self, a: self.loadOrderNames.index(
-           self.data_store[a].name), #missing mods sort last alphabetically
+           self.data_store[a].curr_name),
     }
     def _activeModsFirst(self, items):
         if self.selectedFirst:
-            items.sort(key=lambda x: self.data_store[x].name not in set(
+            items.sort(key=lambda x: self.data_store[x].curr_name not in set(
                 load_order.cached_active_tuple()) | bosh.modInfos.imported
                                            | bosh.modInfos.merged)
     _extra_sortings = [_ModsUIList._sortEsmsFirst, _activeModsFirst]
@@ -308,10 +310,10 @@ class MasterList(_ModsUIList):
     #--Labels
     labels = OrderedDict([
         ('File',          lambda self, mi: bosh.modInfos.masterWithVersion(
-                                                self.data_store[mi].name.s)),
+            self.data_store[mi].curr_name.s)),
         ('Num',           lambda self, mi: u'%02X' % mi),
         ('Current Order', lambda self, mi: bosh.modInfos.hexIndexString(
-            self.data_store[mi].name)),
+            self.data_store[mi].curr_name)),
     ])
 
     @property
@@ -357,7 +359,7 @@ class MasterList(_ModsUIList):
 
     def OnDClick(self, event):
         event.Skip()
-        mod_name = self.data_store[self.mouse_index].name
+        mod_name = self.data_store[self.mouse_index].curr_name
         if not mod_name in bosh.modInfos: return
         balt.Link.Frame.notebook.SelectPage('Mods', mod_name)
 
@@ -373,15 +375,14 @@ class MasterList(_ModsUIList):
             return
         #--Fill data and populate
         for mi, masters_name in enumerate(fileInfo.get_masters()):
-            masterInfo = bosh.MasterInfo(masters_name)
-            self.data_store[mi] = masterInfo
+            self.data_store[mi] = bosh.MasterInfo(masters_name)
         self._reList()
         self.PopulateItems()
 
     #--Get Master Status
     def GetMasterStatus(self, mi):
         masterInfo = self.data_store[mi]
-        masters_name = masterInfo.name
+        masters_name = masterInfo.curr_name
         status = masterInfo.getStatus()
         if status == 30: return status # does not exist
         # current load order of master relative to other masters
@@ -398,7 +399,7 @@ class MasterList(_ModsUIList):
 
     def set_item_format(self, mi, item_format):
         masterInfo = self.data_store[mi]
-        masters_name = masterInfo.name
+        masters_name = masterInfo.curr_name
         #--Font color
         fileBashTags = masterInfo.getBashTags()
         mouseText = u''
@@ -438,10 +439,10 @@ class MasterList(_ModsUIList):
             item_format.back_key = 'mods.bkgd.doubleTime.load'
         elif masterInfo.hasTimeConflict():
             item_format.back_key = 'mods.bkgd.doubleTime.exists'
-        elif masterInfo.isGhost:
+        elif masterInfo.is_ghost:
             item_format.back_key = 'mods.bkgd.ghosted'
         if self.allowEdit:
-            if masterInfo.oldName in settings['bash.mods.renames']:
+            if masterInfo.old_name in settings['bash.mods.renames']:
                 item_format.strong = True
         #--Image
         status = self.GetMasterStatus(mi)
@@ -463,7 +464,7 @@ class MasterList(_ModsUIList):
 
     #--Relist
     def _reList(self):
-        fileOrderNames = [v.name for v in self.data_store.itervalues()]
+        fileOrderNames = [v.curr_name for v in self.data_store.itervalues()]
         self.loadOrderNames = load_order.get_ordered(fileOrderNames)
 
     #--InitEdit
@@ -471,10 +472,11 @@ class MasterList(_ModsUIList):
         #--Pre-clean
         edited = False
         for mi, masterInfo in self.data_store.items():
-            newName = settings['bash.mods.renames'].get(masterInfo.name, None)
+            newName = settings['bash.mods.renames'].get(masterInfo.curr_name,
+                                                        None)
             #--Rename?
             if newName and newName in bosh.modInfos:
-                masterInfo.setName(newName)
+                masterInfo.set_name(newName)
                 edited = True
         #--Done
         if edited: self.SetMasterlistEdited(repopulate=True)
@@ -506,10 +508,10 @@ class MasterList(_ModsUIList):
         #--No change?
         if newName in bosh.modInfos:
             masterInfo = self.data_store[self.GetItem(itemDex)]
-            masterInfo.setName(newName)
+            masterInfo.set_name(newName)
             self.SetMasterlistEdited()
             settings.getChanged('bash.mods.renames')[
-                masterInfo.oldName] = newName
+                masterInfo.old_name] = newName
             # populate, refresh must be called last
             self.PopulateItem(itemDex=itemDex)
         elif newName == u'':
@@ -521,7 +523,7 @@ class MasterList(_ModsUIList):
     #--GetMasters
     def GetNewMasters(self):
         """Returns new master list."""
-        return [v.name for k, v in
+        return [v.curr_name for k, v in
                 sorted(self.data_store.items(), key=itemgetter(0))]
 
 #------------------------------------------------------------------------------

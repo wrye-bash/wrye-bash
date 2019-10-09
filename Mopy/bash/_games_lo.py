@@ -806,7 +806,7 @@ class AsteriskGame(Game):
         """For esl games .esm and .esl files are set the master flag in
         memory even if not set on the file on disk. For esps we must check
         for the flag explicitly."""
-        return minf.name.cext in __master_exts or minf.has_esm_flag()
+        return minf.get_extension() in __master_exts or minf.has_esm_flag()
 
     def _cached_or_fetch(self, cached_load_order, cached_active):
         # read the file once

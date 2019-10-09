@@ -185,72 +185,54 @@ class AFile(object):
         self.abs_path.stail) + u">"
 
 #------------------------------------------------------------------------------
-class MasterInfo:
-
-    def _init_master_info(self):
-        if self.modInfo:
-            self.mtime = self.modInfo.mtime
-            self.masterNames = self.modInfo.masterNames
-        else:
-            self.mtime = 0
-            self.masterNames = tuple()
+class MasterInfo(object):
+    """Slight abstraction over ModInfo that allows us to represent masters that
+    are missing an active mod counterpart."""
+    __slots__ = ('is_ghost', 'curr_name', 'mod_info', 'old_name')
 
     def __init__(self, name):
-        self.oldName = self.name = GPath(name)
-        self.modInfo = modInfos.get(self.name,None)
-        self.isGhost = self.modInfo and self.modInfo.isGhost
-        self._init_master_info()
+        self.old_name = self.curr_name = GPath(name)
+        self.mod_info = modInfos.get(self.curr_name, None)
+        self.is_ghost = self.mod_info and self.mod_info.isGhost
 
-    def setName(self,name):
-        self.name = GPath(name)
-        self.modInfo = modInfos.get(self.name,None)
-        self._init_master_info()
+    def get_extension(self):
+        """Returns the file extension of this master."""
+        return self.curr_name.cext
 
-    def hasChanged(self):
-        return self.name != self.oldName
+    def set_name(self,name):
+        self.curr_name = GPath(name)
+        self.mod_info = modInfos.get(name, None)
 
     def has_esm_flag(self):
-        if self.modInfo:
-            return self.modInfo.has_esm_flag()
+        if self.mod_info:
+            return self.mod_info.has_esm_flag()
         else:
-            return self.name.cext == u'.esm'
+            return self.curr_name.cext == u'.esm'
 
     def is_esl(self):
         """Delegate to self.modInfo.is_esl if exists, else check extension."""
-        if self.modInfo:
-            return self.modInfo.is_esl()
+        if self.mod_info:
+            return self.mod_info.is_esl()
         else:
-            return self.name.cext == u'.esl'
+            return self.curr_name.cext == u'.esl'
 
     def hasTimeConflict(self):
         """True if has an mtime conflict with another mod."""
-        if self.modInfo:
-            return self.modInfo.hasTimeConflict()
-        else:
-            return False
+        return bool(self.mod_info) and self.mod_info.hasTimeConflict()
 
     def hasActiveTimeConflict(self):
         """True if has an active mtime conflict with another mod."""
-        if self.modInfo:
-            return self.modInfo.hasActiveTimeConflict()
-        else:
-            return False
+        return bool(self.mod_info) and self.mod_info.hasActiveTimeConflict()
 
     def getBashTags(self):
         """Retrieve bash tags for master info if it's present in Data."""
-        if self.modInfo:
-            return self.modInfo.getBashTags()
-        else:
-            return set()
+        return self.mod_info.getBashTags() if self.mod_info else set()
 
     def getStatus(self):
-        if not self.modInfo:
-            return 30
-        else:
-            return 0
+        return 30 if not self.mod_info else 0
 
     def __repr__(self):
-        return self.__class__.__name__ + u"<" + repr(self.name) + u">"
+        return self.__class__.__name__ + u"<" + repr(self.curr_name) + u">"
 
 #------------------------------------------------------------------------------
 class FileInfo(AFile):
@@ -452,6 +434,10 @@ class ModInfo(FileInfo):
 
     def getFileInfos(self): return modInfos
 
+    def get_extension(self):
+        """Returns the file extension of this mod."""
+        return self.name.cext
+
     def has_esm_flag(self):
         """Check if the mod info is a master file based on master flag -
         header must be set"""
@@ -460,16 +446,17 @@ class ModInfo(FileInfo):
     def is_esl(self):
         """Check if this is a light plugin - .esl files are automatically
         set the light flag, for espms check the flag."""
-        return bush.game.has_esl and (
-                self.name.cext == u'.esl' or self.header.flags1.eslFile)
+        return bush.game.has_esl and (self.get_extension() == u'.esl' or
+                                      self.header.flags1.eslFile)
 
     def isInvertedMod(self):
         """Extension indicates esp/esm, but byte setting indicates opposite."""
-        if self.name.cext not in (u'.esm', u'.esp'): # don't use for esls
+        mod_ext = self.get_extension()
+        if mod_ext not in (u'.esm', u'.esp'): # don't use for esls
             raise ArgumentError(
-                u'isInvertedMod: %s - only esm/esp allowed' % self.name.ext)
+                u'isInvertedMod: %s - only esm/esp allowed' % mod_ext)
         return (self.header and
-            self.name.cext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
+                mod_ext != (u'.esp', u'.esm')[int(self.header.flags1) & 1])
 
     def setType(self, esm_or_esp):
         """Sets the file's internal type."""
@@ -731,7 +718,7 @@ class ModInfo(FileInfo):
 
     def _string_files_paths(self, lang):
         # type: (basestring) -> Iterable[Path]
-        sbody, ext = self.name.sbody, self.name.ext
+        sbody, ext = self.name.sbody, self.get_extension()
         for join, format_str in bush.game.esp.stringsFiles:
             fname = format_str % {'body': sbody, 'ext': ext, 'language': lang}
             assetPath = empty_path.join(*join).join(fname)

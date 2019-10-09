@@ -264,7 +264,7 @@ class Master_ChangeTo(_Master_EditList):
     @balt.conversation
     def Execute(self):
         masterInfo = self._selected_info
-        master_name = masterInfo.name
+        master_name = masterInfo.curr_name
         #--File Dialog
         wildcard = bosh.modInfos.plugin_wildcard()
         newPath = self._askOpen(title=_(u'Change master name to:'),
@@ -281,7 +281,7 @@ class Master_ChangeTo(_Master_EditList):
         elif newName == master_name:
             return
         #--Save Name
-        masterInfo.setName(newName)
+        masterInfo.set_name(newName)
         bass.settings.getChanged('bash.mods.renames')[master_name] = newName
         self.window.SetMasterlistEdited(repopulate=True)
 
@@ -296,9 +296,9 @@ class Master_Disable(AppendableLink, _Master_EditList):
 
     def Execute(self):
         masterInfo = self._selected_info
-        newName = GPath(re.sub(u'[mM]$', 'p', u'XX' + masterInfo.name.s))
+        newName = GPath(re.sub(u'[mM]$', 'p', u'XX' + masterInfo.curr_name.s))
         #--Save Name
-        masterInfo.setName(newName)
+        masterInfo.set_name(newName)
         self.window.SetMasterlistEdited(repopulate=True)
 
 # Column menu -----------------------------------------------------------------
