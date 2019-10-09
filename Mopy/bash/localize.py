@@ -151,9 +151,8 @@ def _find_all_bash_modules(bash_path=None, cur_dir=None, _files=None):
                    if m.lower().endswith((u'.py', u'.pyw'))])
     # Find subpackages - returned format is (module_loader, name, is_pkg)
     for p in pkgutil.iter_modules([cur_dir]):
-        # Skip it if it's not a package or one of the ignored packages
-        # (currently only chardet)
-        if not p[2] or p[1] in (u'chardet',):
+        # Skip it if it's not a package
+        if not p[2]:
             continue
         # Recurse into the subpackage we just found
         _find_all_bash_modules(
