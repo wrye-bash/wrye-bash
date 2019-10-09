@@ -88,9 +88,9 @@ reVersion = re.compile(
   re.M | re.I | re.U)
 
 #--Mod Extensions
-__exts = ur'((\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
-reTesNexus = re.compile(ur'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
-    ur'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
+__exts = r'((\.(' + u'|'.join(ext[1:] for ext in readExts) + u'))|)$'
+reTesNexus = re.compile(u'' r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)'
+    r'?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\d{0,6})?(?:-\w{0,16})?(?:\w)?)?'
     + __exts, re.I | re.U)
 reTESA = re.compile(u'' r'(.*?)(?:-(\d{1,6})(?:\.tessource)?(?:-bain)?)?'
     + __exts, re.I | re.U)
@@ -2695,7 +2695,7 @@ class SaveInfos(FileInfos):
     def __init__(self):
         _ext = re.escape(bush.game.ess.ext)
         self.__class__.file_pattern = re.compile(
-            ur'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...)
+            r'((quick|auto)save(\.bak)+|(' + # quick or auto save.bak(.bak...)
             _ext + u'|' + _ext[:-1] + u'r' + u'))$', # enabled/disabled save
             re.I | re.U)
         self.localSave = bush.game.save_prefix
@@ -2933,7 +2933,7 @@ class PeopleData(DataStore):
 #------------------------------------------------------------------------------
 class ScreensData(DataStore):
     reImageExt = re.compile(
-        ur'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
+        r'\.(' + u'|'.join(ext[1:] for ext in imageExts) + u')$',
         re.I | re.U)
 
     def __init__(self):

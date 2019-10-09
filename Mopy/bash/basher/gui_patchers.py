@@ -418,7 +418,7 @@ class _ListPatcherPanel(_PatcherPanel):
         """Returns list of items to be used for automatic configuration."""
         autoItems = self._get_auto_mods()
         reFile = re.compile(
-            u'_(' + (u'|'.join(self.__class__.autoKey)) + ur')\.csv$', re.U)
+            u'_(' + (u'|'.join(self.__class__.autoKey)) + r')\.csv$', re.U)
         for fileName in sorted(self.patches_set):
             if reFile.search(fileName.s):
                 autoItems.append(fileName)

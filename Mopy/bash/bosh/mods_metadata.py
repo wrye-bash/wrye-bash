@@ -94,10 +94,10 @@ class ModRuleSet:
             if self.__class__.reMod is None: # bush.game must have been set
                 espmls = u'|'.join(map(re.escape, bush.game.espm_extensions))
                 self.__class__.reMod = re.compile(
-                    ur'\s*([\-|]?)(.+?(' + espmls + ur'))(\s*\[[^\]]\])?',
+                    u'' r'\s*([\-|]?)(.+?(' + espmls + r'))(\s*\[[^\]]\])?',
                     re.I | re.U)
                 self.__class__.reModVersion = re.compile(
-                    u'(.+(' + espmls + ur'))\s*(\[[^\]]+\])?', re.I | re.U)
+                    u'(.+(' + espmls + r'))\s*(\[[^\]]+\])?', re.I | re.U)
             self.ruleSet = ruleSet
             #--Temp storage while parsing.
             self.assumed = []

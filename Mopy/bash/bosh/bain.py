@@ -217,7 +217,7 @@ class Installer(object):
         """Files that may be installed in top Data/ directory - espml,
         bsa/ba2, ini."""
         if self.__class__._reDataFile is None:
-            _reDataFile = ur'(\.(' + u'|'.join(
+            _reDataFile = r'(\.(' + u'|'.join(
                 {x[1:] for x in bush.game.espm_extensions} | {
                     bush.game.bsa_extension, u'ini'}) + u'))$'
             self.__class__._reDataFile = re.compile(_reDataFile, re.I | re.U)
