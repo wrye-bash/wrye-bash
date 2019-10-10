@@ -28,7 +28,7 @@ import struct
 from .constants import condition_function_data
 from ... import brec
 from ...bass import null1, null2, null3, null4
-from ...bolt import Flags, DataDict, encode, struct_pack, struct_unpack
+from ...bolt import Flags, encode, struct_pack, struct_unpack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFidList, \
@@ -1647,21 +1647,6 @@ class MreAvif(MelRecord):
     """Actor Value Information."""
     classType = 'AVIF'
 
-    class MelCnamLoaders(DataDict):
-        """Since CNAM subrecords occur in two different places, we need
-        to replace ordinary 'loaders' dictionary with a 'dictionary' that will
-        return the correct element to handle the CNAM subrecord. 'Correct'
-        element is determined by which other subrecords have been
-        encountered."""
-        def __init__(self,loaders,actorinfo,perks):
-            self.data = loaders
-            self.type_cnam = {'EDID':actorinfo, 'PNAM':perks}
-            self.cnam = actorinfo #--Which cnam element loader to use next.
-        def __getitem__(self,key):
-            if key == 'CNAM': return self.cnam
-            self.cnam = self.type_cnam.get(key, self.cnam)
-            return self.data[key]
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelLString('FULL','full'),
@@ -1681,8 +1666,12 @@ class MreAvif(MelRecord):
             MelStructs('CNAM','I','connections','lineToIndex',),
             MelUInt32('INAM', 'index',),
         ),
-    )
-    melSet.loaders = MelCnamLoaders(melSet.loaders,melSet.elements[4],melSet.elements[6])
+    ).with_distributor({
+        'CNAM': 'cnam_p',
+        'PNAM': {
+            'CNAM': 'perkTree',
+        }
+    })
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -4212,35 +4201,6 @@ class MrePack(MelRecord):
                 result = function(record.targetId2)
                 if save: record.targetId2 = result
 
-    class MelPackDistributor(MelNull):
-        """Handles embedded script records. Distributes load
-        duties to other elements as needed."""
-        def __init__(self):
-            self._debug = False
-        def getLoaders(self,loaders):
-            """Self as loader for structure types."""
-            for subType in ('POBA','POEA','POCA'):
-                loaders[subType] = self
-        def setMelSet(self,melSet):
-            """Set parent melset. Need this so that can reassign loaders later."""
-            self.melSet = melSet
-            self.loaders = {}
-            for element in melSet.elements:
-                attr = element.__dict__.get('attr',None)
-                if attr: self.loaders[attr] = element
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type == 'POBA':
-                element = self.loaders['onBegin']
-            elif sub_type == 'POEA':
-                element = self.loaders['onEnd']
-            elif sub_type == 'POCA':
-                element = self.loaders['onChange']
-            # 'SCHR','SCDA','SCTX','SLSD','SCVR','SCRV','SCRO',
-            # All older Script records chould be discarded if found
-            for subtype in ('INAM','TNAM'):
-                self.melSet.loaders[subtype] = element
-            element.loadData(self, record, ins, sub_type, size_, readId)
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -4314,27 +4274,6 @@ class MrePerk(MelRecord):
                 setter(attr,value)
             if self._debug: print unpacked, record.flagsA.getTrueAttrs()
 
-    class MelPerkEffects(MelGroups):
-        def __init__(self,attr,*elements):
-            MelGroups.__init__(self,attr,*elements)
-        def setMelSet(self,melSet):
-            self.melSet = melSet
-            self.attrLoaders = {}
-            for element in melSet.elements:
-                attr = element.__dict__.get('attr',None)
-                if attr: self.attrLoaders[attr] = element
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type == 'DATA' or sub_type == 'CTDA':
-                effects = record.__getattribute__(self.attr)
-                if not effects:
-                    if sub_type == 'DATA':
-                        element = self.attrLoaders['_data']
-                    elif sub_type == 'CTDA':
-                        element = self.attrLoaders['conditions']
-                    element.loadData(record, ins, sub_type, size_, readId)
-                    return
-            MelGroups.loadData(self, record, ins, sub_type, size_, readId)
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -4343,13 +4282,11 @@ class MrePerk(MelRecord):
         MelString('ICON','iconPath'),
         MelString('MICO','smallIconPath'),
         MelConditions(),
-        MelGroup('_data',
-            MelPerkData('DATA', 'BBBBB', ('trait', 0), ('minLevel', 0),
-                        ('ranks', 0), ('playable', 0), ('hidden', 0)),
-        ),
+        MelPerkData('DATA', '5B', ('trait', 0), ('minLevel', 0), ('ranks', 0),
+                    ('playable', 0), ('hidden', 0)),
         MelFid('NNAM', 'next_perk'),
-        MelPerkEffects('effects',
-            MelStruct('PRKE', 'BBB', 'type', 'rank', 'priority'),
+        MelGroups('effects',
+            MelStruct('PRKE', '3B', 'type', 'rank', 'priority'),
             MelUnion({
                 0: MelStruct('DATA', 'IB3s', (FID, 'quest'), 'quest_stage',
                              'unusedDATA'),
@@ -4400,8 +4337,15 @@ class MrePerk(MelRecord):
             ),
             MelBase('PRKF','footer'),
         ),
-    )
-    melSet.elements[-1].setMelSet(melSet)
+    ).with_distributor({
+        'DESC': {
+            'CTDA|CIS1|CIS2': 'conditions',
+            'DATA': 'trait',
+        },
+        'PRKE': {
+            'CTDA|CIS1|CIS2|DATA': 'effects',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -4512,56 +4456,6 @@ class MreQust(MelRecord):
         (17,'clearsNameWhenRemoved'),
     ))
 
-    class MelQuestLoaders(DataDict):
-        """Since CTDA/CIS1/CIS2 and FNAM subrecords occur in two different places,
-        we need to replace ordinary 'loaders' dictionary with a 'dictionary' that will
-        return the correct element to handle the CTDA/CIS1/CIS2/FNAM subrecord. 'Correct'
-        element is determined by which other subrecords have been encountered."""
-        def __init__(self,loaders,
-                     dialogueConditions,
-                     eventConditions,
-                     stages,
-                     objectives,
-                     aliases,
-                     description,
-                     targets
-            ):
-            self.data = loaders
-            self.type_conditions = {
-                'EDID':dialogueConditions,
-                'NEXT':eventConditions,
-                'INDX':stages,
-                'QOBJ':objectives,
-                'ALID':aliases,
-                'ALED':targets,
-            }
-            self.conditions = dialogueConditions
-            self.type_fnam = {
-                'EDID':objectives,
-                'ANAM':aliases,
-            }
-            self.fnam = objectives
-            self.type_nnam = {
-                'EDID':objectives,
-                'ANAM':description,
-            }
-            self.nnam = objectives
-            self.type_targets = {
-                'EDID':objectives,
-                'ANAM':targets,
-            }
-            self.targets = objectives
-        def __getitem__(self,key):
-            if key in ('CTDA','CIS1','CIS2'): return self.conditions
-            if key == 'FNAM': return self.fnam
-            if key == 'NNAM': return self.nnam
-            if key == 'QSTA': return self.targets
-            self.conditions = self.type_conditions.get(key, self.conditions)
-            self.fnam = self.type_fnam.get(key, self.fnam)
-            self.nnam = self.type_nnam.get(key, self.nnam)
-            self.targets = self.type_targets.get(key, self.targets)
-            return self.data[key]
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelVmad(),
@@ -4581,11 +4475,9 @@ class MreQust(MelRecord):
                 MelConditions(),
                 MelLString('CNAM','log_text'),
                 MelFid('NAM0', 'nextQuest'),
-                MelGroup('unused',
-                    MelBase('SCHR','schr_p'),
-                    MelBase('SCTX','sctx_p'),
-                    MelBase('QNAM','qnam_p'),
-                ),
+                MelBase('SCHR', 'unusedSCHR'),
+                MelBase('SCTX', 'unusedSCTX'),
+                MelBase('QNAM', 'unusedQNAM'),
             ),
         ),
         MelGroups('objectives',
@@ -4652,16 +4544,34 @@ class MreQust(MelRecord):
                       ('unknown1', null3)),
             MelConditions(),
         ),
-    )
-    melSet.loaders = MelQuestLoaders(melSet.loaders,
-                                     melSet.elements[7],  # dialogueConditions
-                                     melSet.elements[9],  # eventConditions
-                                     melSet.elements[10], # stages
-                                     melSet.elements[11], # objectives
-                                     melSet.elements[13], # aliases
-                                     melSet.elements[14], # description
-                                     melSet.elements[15], # targets
-        )
+    ).with_distributor({
+        'DNAM': {
+            'CTDA|CIS1|CIS2': 'dialogueConditions',
+        },
+        'NEXT': {
+            'CTDA|CIS1|CIS2': 'eventConditions',
+        },
+        'INDX': {
+            'CTDA|CIS1|CIS2': 'stages',
+        },
+        'QOBJ': {
+            'CTDA|CIS1|CIS2|FNAM|QSTA': 'objectives',
+            # NNAM followed by NNAM means we've exited the objectives section
+            'NNAM': ('objectives', {
+                'NNAM': 'description',
+            }),
+        },
+        'ANAM': {
+            'CTDA|CIS1|CIS2|FNAM': 'aliases',
+            # ANAM is required, so piggyback off of it here to resolve QSTA
+            'QSTA': ('targets', {
+                'CTDA|CIS1|CIS2': 'targets',
+            }),
+        },
+        # Have to duplicate this here in case a quest has no objectives but
+        # does have a description
+        'NNAM': 'description',
+    })
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

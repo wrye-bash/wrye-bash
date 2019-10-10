@@ -712,35 +712,6 @@ class MreDial(brec.MreDial):
                 setter(attr,value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
 
-    class MelDialDistributor(MelNull):
-        def __init__(self):
-            self._debug = False
-
-        def getLoaders(self,loaders):
-            """Self as loader for structure types."""
-            for type_ in ('INFC','INFX',):
-                loaders[type_] = self
-
-        def setMelSet(self,melSet):
-            """Set parent melset. Need this so that can reassign loaders later."""
-            self.melSet = melSet
-            self.loaders = {}
-            for element in melSet.elements:
-                attr = element.__dict__.get('attr',None)
-                if attr: self.loaders[attr] = element
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type in ('INFC', 'INFX'):
-                quests = record.__getattribute__('quests')
-                if quests:
-                    element = self.loaders['quests']
-                else:
-                    if sub_type == 'INFC':
-                        element = self.loaders['bare_infc_p']
-                    elif sub_type == 'INFX':
-                        element = self.loaders['bare_infx_p']
-            element.loadData(record, ins, sub_type, size_, readId)
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('INFC','bare_infc_p'),
@@ -756,10 +727,13 @@ class MreDial(brec.MreDial):
         MelFloat('PNAM', 'priority'),
         MelString('TDUM','tdum_p'),
         MelDialData('DATA','BB','dialType',(_flags,'dialFlags',0L)),
-        MelDialDistributor(),
-    )
-    melSet.elements[-1].setMelSet(melSet)
-
+    ).with_distributor({
+        'INFC': 'bare_infc_p',
+        'INFX': 'bare_infx_p',
+        'QSTI': {
+            'INFC|INFX': 'quests',
+        }
+    })
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
@@ -1433,201 +1407,6 @@ class MreProj(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreRace(MelRecord):
-    """Race.
-
-    This record is complex to read and write. Relatively simple problems are the VNAM
-    which can be empty or zeroed depending on relationship between voices and
-    the fid for the race.
-
-    The face and body data is much more complicated, with the same subrecord types
-    mapping to different attributes depending on preceding flag subrecords (NAM0, NAM1,
-    NMAN, FNAM and INDX.) These are handled by using the MelRaceDistributor class
-    to dynamically reassign melSet.loaders[type] as the flag records are encountered.
-
-    It's a mess, but this is the shortest, clearest implementation that I could
-    think of."""
-
-    classType = 'RACE'
-
-    _flags = Flags(0L,Flags.getNames('playable', None, 'child'))
-
-    class MelRaceVoices(MelStruct):
-        """Set voices to zero, if equal race fid. If both are zero, then don't skip dump."""
-        def dumpData(self,record,out):
-            if record.maleVoice == record.fid: record.maleVoice = 0L
-            if record.femaleVoice == record.fid: record.femaleVoice = 0L
-            if (record.maleVoice,record.femaleVoice) != (0,0):
-                MelStruct.dumpData(self,record,out)
-
-    class MelRaceHeadModel(MelGroup):
-        """Most face data, like a MelModel + ICON + MICO. Load is controlled by MelRaceDistributor."""
-        def __init__(self,attr,index):
-            MelGroup.__init__(self,attr,
-                MelString('MODL','modPath'),
-                MelBase('MODB','modb_p'),
-                MelBase('MODT','modt_p'),
-                MelBase('MODS','mods_p'),
-                MelOptUInt8('MODD', 'modd_p'),
-                MelString('ICON','iconPath'),
-                MelBase('MICO','mico'))
-            self.index = index
-
-        def dumpData(self,record,out):
-            out.packSub('INDX','I',self.index)
-            MelGroup.dumpData(self,record,out)
-
-    class MelRaceBodyModel(MelGroup):
-        """Most body data, like a MelModel - MODB + ICON + MICO. Load is controlled by MelRaceDistributor."""
-        def __init__(self,attr,index):
-            MelGroup.__init__(self,attr,
-                MelString('ICON','iconPath'),
-                MelBase('MICO','mico'),
-                MelString('MODL','modPath'),
-                MelBase('MODT','modt_p'),
-                MelBase('MODS','mods_p'),
-                MelOptUInt8('MODD', 'modd_p'))
-            self.index = index
-
-        def dumpData(self,record,out):
-            out.packSub('INDX','I',self.index)
-            MelGroup.dumpData(self,record,out)
-
-    class MelRaceIcon(MelString):
-        """Most body data plus eyes for face. Load is controlled by MelRaceDistributor."""
-        def __init__(self,attr,index):
-            MelString.__init__(self,'ICON',attr)
-            self.index = index
-
-        def dumpData(self,record,out):
-            out.packSub('INDX','I',self.index)
-            MelString.dumpData(self,record,out)
-
-    class MelRaceFaceGen(MelGroup):
-        """Most fecegen data. Load is controlled by MelRaceDistributor."""
-        def __init__(self,attr):
-            MelGroup.__init__(self,attr,
-                MelBase('FGGS','fggs_p'), ####FaceGen Geometry-Symmetric
-                MelBase('FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
-                MelBase('FGTS','fgts_p'), ####FaceGen Texture-Symmetric
-                MelStruct('SNAM','2s',('snam_p',null2)))
-
-    class MelRaceDistributor(MelNull):
-        """Handles NAM0, NAM1, MNAM, FMAN and INDX records. Distributes load
-        duties to other elements as needed."""
-        def __init__(self):
-            headAttrs = ('Head', 'Ears', 'Mouth', 'TeethLower', 'TeethUpper',
-                         'Tongue', 'LeftEye', 'RightEye')
-            bodyAttrs = ('UpperBody','LeftHand','RightHand','UpperBodyTexture')
-            self.headModelAttrs = {
-                'MNAM': tuple('male' + str_ for str_ in headAttrs),
-                'FNAM': tuple('female' + str_ for str_ in headAttrs),
-                }
-            self.bodyModelAttrs = {
-                'MNAM': tuple('male' + str_ for str_ in bodyAttrs),
-                'FNAM': tuple('female' + str_ for str_ in bodyAttrs),
-                }
-            self.attrs = {
-                'NAM0':self.headModelAttrs,
-                'NAM1':self.bodyModelAttrs
-                }
-            self.facegenAttrs = {'MNAM':'maleFaceGen','FNAM':'femaleFaceGen'}
-            self._debug = False
-
-        def getSlotsUsed(self):
-            return '_loadAttrs', '_modelAttrs'
-
-        def getLoaders(self,loaders):
-            """Self as loader for structure types."""
-            for type_ in ('NAM0','NAM1','MNAM','FNAM','INDX'):
-                loaders[type_] = self
-
-        def setMelSet(self,melSet):
-            """Set parent melset. Need this so that can reassign loaders later."""
-            self.melSet = melSet
-            self.loaders = {}
-            for element in melSet.elements:
-                attr = element.__dict__.get('attr',None)
-                if attr: self.loaders[attr] = element
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type in ('NAM0', 'NAM1'):
-                record._modelAttrs = self.attrs[sub_type]
-                return
-            elif sub_type in ('MNAM', 'FNAM'):
-                record._loadAttrs = record._modelAttrs[sub_type]
-                attr = self.facegenAttrs.get(sub_type)
-                element = self.loaders[attr]
-                for sub_type in ('FGGS', 'FGGA', 'FGTS', 'SNAM'):
-                    self.melSet.loaders[sub_type] = element
-            else: #--INDX
-                index, = ins.unpack('I',4,readId)
-                attr = record._loadAttrs[index]
-                element = self.loaders[attr]
-                for sub_type in ('MODL', 'MODB', 'MODT', 'MODS', 'MODD', 'ICON', 'MICO'):
-                    self.melSet.loaders[sub_type] = element
-
-    melSet = MelSet(
-        MelString('EDID','eid'),
-        MelString('FULL','full'),
-        MelString('DESC','text'),
-        MelStructs('XNAM','I2i','relations',(FID,'faction'),'mod','groupCombatReaction'),
-        MelStruct('DATA','14b2s4fI','skill1','skill1Boost','skill2','skill2Boost',
-                  'skill3','skill3Boost','skill4','skill4Boost','skill5','skill5Boost',
-                  'skill6','skill6Boost','skill7','skill7Boost',('unused1',null2),
-                  'maleHeight','femaleHeight','maleWeight','femaleWeight',(_flags,'flags',0L)),
-        MelFid('ONAM','Older'),
-        MelFid('YNAM','Younger'),
-        MelBase('NAM2','_nam2',''),
-        MelRaceVoices('VTCK','2I',(FID,'maleVoice'),(FID,'femaleVoice')), # 0: same as race fid.
-        MelOptStruct('DNAM','2I',(FID,'defaultHairMale',0L),(FID,'defaultHairFemale',0L)),
-        # Int corresponding to GMST sHairColorNN
-        MelStruct('CNAM','2B','defaultHairColorMale','defaultHairColorFemale'),
-        MelOptFloat('PNAM', 'mainClamp'),
-        MelOptFloat('UNAM', 'faceClamp'),
-        MelStruct('ATTR','2B','maleBaseAttribute','femaleBaseAttribute'),
-        MelBase('NAM0','_nam0',''),
-        MelBase('MNAM','_mnam',''),
-        MelRaceHeadModel('maleHead',0),
-        MelRaceIcon('maleEars',1),
-        MelRaceHeadModel('maleMouth',2),
-        MelRaceHeadModel('maleTeethLower',3),
-        MelRaceHeadModel('maleTeethUpper',4),
-        MelRaceHeadModel('maleTongue',5),
-        MelRaceHeadModel('maleLeftEye',6),
-        MelRaceHeadModel('maleRightEye',7),
-        MelBase('FNAM','_fnam',''),
-        MelRaceHeadModel('femaleHead',0),
-        MelRaceIcon('femaleEars',1),
-        MelRaceHeadModel('femaleMouth',2),
-        MelRaceHeadModel('femaleTeethLower',3),
-        MelRaceHeadModel('femaleTeethUpper',4),
-        MelRaceHeadModel('femaleTongue',5),
-        MelRaceHeadModel('femaleLeftEye',6),
-        MelRaceHeadModel('femaleRightEye',7),
-        MelBase('NAM1','_nam1',''),
-        MelBase('MNAM','_mnam',''),
-        MelRaceBodyModel('maleUpperBody',0),
-        MelRaceBodyModel('maleLeftHand',1),
-        MelRaceBodyModel('maleRightHand',2),
-        MelRaceBodyModel('maleUpperBodyTexture',3),
-        MelBase('FNAM','_fnam',''),
-        MelRaceBodyModel('femaleUpperBody',0),
-        MelRaceBodyModel('femaleLeftHand',1),
-        MelRaceBodyModel('femaleRightHand',2),
-        MelRaceBodyModel('femaleUpperBodyTexture',3),
-        MelFidList('HNAM','hairs'),
-        MelFidList('ENAM','eyes'),
-        MelBase('MNAM','_mnam',''),
-        MelRaceFaceGen('maleFaceGen'),
-        MelBase('FNAM','_fnam',''),
-        MelRaceFaceGen('femaleFaceGen'),
-        MelRaceDistributor(),
-    )
-    melSet.elements[-1].setMelSet(melSet)
-    __slots__ = melSet.getSlotsUsed()
-
-#------------------------------------------------------------------------------
 class MreRcct(MelRecord):
     """Recipe Category."""
     classType = 'RCCT'
@@ -1644,32 +1423,6 @@ class MreRcpe(MelRecord):
     """Recipe."""
     classType = 'RCPE'
 
-    class MelRcpeDistributor(MelNull):
-        def __init__(self):
-            self._debug = False
-
-        def getLoaders(self,loaders):
-            """Self as loader for structure types."""
-            for type_ in ('RCQY',):
-                loaders[type_] = self
-
-        def setMelSet(self,melSet):
-            """Set parent melset. Need this so that can reassign loaders later."""
-            self.melSet = melSet
-            self.loaders = {}
-            for element in melSet.elements:
-                attr = element.__dict__.get('attr',None)
-                if attr: self.loaders[attr] = element
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type in ('RCQY',):
-                outputs = record.__getattribute__('outputs')
-                if outputs:
-                    element = self.loaders['outputs']
-                else:
-                    element = self.loaders['ingredients']
-            element.loadData(record, ins, sub_type, size_, readId)
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('FULL','full'),
@@ -1683,9 +1436,14 @@ class MreRcpe(MelRecord):
             MelFid('RCOD','item'),
             MelUInt32('RCQY', 'quantity'),
         ),
-        MelRcpeDistributor(),
-    )
-    melSet.elements[-1].setMelSet(melSet)
+    ).with_distributor({
+        'RCIL': {
+            'RCQY': 'ingredients',
+        },
+        'RCOD': {
+            'RCQY': 'outputs',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------

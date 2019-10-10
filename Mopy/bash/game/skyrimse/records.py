@@ -26,7 +26,7 @@ imported from skyrim."""
 # Set MelModel in brec, in this case it's identical to the skyrim one
 from ..skyrim.records import MelBounds, MelDestructible, MelKeywords, MelVmad
 from ...bass import null1, null2, null3, null4
-from ...bolt import Flags, DataDict
+from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/skyrim/records.py
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelString, MelSet, MelFid, MelOptStruct, MelFids, MelBase, \
@@ -590,20 +590,6 @@ class MreLens(MelRecord):
             (1, 'shrinksWhenOccluded'),
         ))
 
-    class MelDnamLoaders(DataDict):
-        """Since DNAM subrecords occur in two different places, we need
-        to replace ordinary 'loaders' dictionary with a 'dictionary' that will
-        return the correct element to handle the CNAM subrecord. 'Correct'
-        element is determined by which other subrecords have been encountered."""
-        def __init__(self,loaders,lensinfo,sprites):
-            self.data = loaders
-            self.type_dnam = {'EDID':lensinfo, 'LFSP':sprites}
-            self.dnam = lensinfo #--Which dnam element loader to use next.
-        def __getitem__(self,key):
-            if key == 'DNAM': return self.dnam
-            self.dnam = self.type_dnam.get(key, self.dnam)
-            return self.data[key]
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFloat('CNAM', 'colorInfluence'),
@@ -617,7 +603,10 @@ class MreLens(MelRecord):
                 'width', 'height', 'position', 'angularFade', 'opacity',
                 (LensFlareFlags, 'lensFlags', 0L), ),
         )
-    )
-    melSet.loaders = MelDnamLoaders(melSet.loaders, melSet.elements[2],
-                                    melSet.elements[4])
+    ).with_distributor({
+        'DNAM': 'fadeDistanceRadiusScale',
+        'LFSP': {
+            'DNAM': 'lensFlareSprites',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()

@@ -24,7 +24,6 @@
 
 """This module contains all of the basic types used to read ESP/ESM mod files.
 """
-import StringIO
 import cPickle
 import copy
 import os
@@ -35,7 +34,7 @@ from operator import attrgetter
 
 import bolt
 import exception
-from bass import null1
+from bass import null1, null2
 from bolt import decode, encode, sio, GPath, struct_pack, struct_unpack
 
 # Util Functions --------------------------------------------------------------
@@ -1706,14 +1705,297 @@ class MelSet(object):
         for element in self.formElements:
             element.mapFids(record,updater)
 
-    def getReport(self):
-        """Returns a report of structure."""
-        buff = StringIO.StringIO()
-        for element in self.elements:
-            element.report(None,buff,u'')
-        ret = buff.getvalue()
-        buff.close()
-        return ret
+    def with_distributor(self, distributor_config):
+        # type: (dict) -> MelSet
+        """Adds a distributor to this MelSet. See _MelDistributor for more
+        information. Convenience method that avoids having to import and
+        explicitly construct a _MelDistributor. This is supposed to be chained
+        immediately after MelSet.__init__.
+
+        :param distributor_config: The config to pass to the distributor.
+        :return: self, for ease of construction."""
+        # Make a copy, that way one distributor config can be used for multiple
+        # record classes. _MelDistributor may modify its parameter, so not
+        # making a copy wouldn't be safe in such a scenario.
+        distributor = _MelDistributor(distributor_config.copy())
+        self.elements += (distributor,)
+        distributor.getLoaders(self.loaders)
+        distributor.set_mel_set(self)
+        return self
+
+class _MelDistributor(MelNull):
+    """Implements a distributor that can handle duplicate record signatures.
+    See the wiki page '[dev] Plugin Format: Distributors' for a detailed
+    overview of this class and the semi-DSL it implements.
+
+    :type _attr_to_loader: dict[str, MelBase]
+    :type _sig_to_loader: dict[str, MelBase]
+    :type _target_sigs: set[str]"""
+    def __init__(self, distributor_config): # type: (dict) -> None
+        # For MelBase.debug
+        self._debug = False
+        # Maps attribute name to loader
+        self._attr_to_loader = {}
+        # Maps subrecord signature to loader
+        self._sig_to_loader = {}
+        # All signatures that this distributor targets
+        self._target_sigs = set()
+        self.distributor_config = distributor_config
+        # Validate that the distributor config we were given has valid syntax
+        # and resolve any shortcuts (e.g. the A|B syntax)
+        self._pre_process()
+
+    def _raise_syntax_error(self, error_msg):
+        raise SyntaxError(u'Invalid distributor syntax: %s' % error_msg)
+
+    def _pre_process(self):
+        """Ensures that the distributor config defined above has correct syntax
+        and resolves shortcuts (e.g. A|B syntax)."""
+        if type(self.distributor_config) != dict:
+            self._raise_syntax_error(
+                u'distributor_config must be a dict (actual type: %s)' %
+                type(self.distributor_config))
+        mappings_to_iterate = [self.distributor_config] # TODO(inf) Proper name for dicts / mappings (scopes?)
+        while mappings_to_iterate:
+            mapping = mappings_to_iterate.pop()
+            for signature_str in mapping.keys():
+                if type(signature_str) != str:
+                    self._raise_syntax_error(
+                        u'All keys must be signature strings (offending key: '
+                        u'%r)' % signature_str)
+                # Resolve 'A|B' syntax
+                signatures = signature_str.split('|')
+                resolved_entry = mapping[signature_str]
+                if not resolved_entry:
+                    self._raise_syntax_error(
+                        u'Mapped values may not be empty (offending value: '
+                        u'%s)' % resolved_entry)
+                # Delete the 'A|B' entry, not needed anymore
+                del mapping[signature_str]
+                for signature in signatures:
+                    if len(signature) != 4:
+                        self._raise_syntax_error(
+                            u'Signature strings must have length 4 (offending '
+                            u'string: %s)' % signature)
+                    if signature in mapping:
+                        self._raise_syntax_error(
+                            u'Duplicate signature string (offending string: '
+                            u'%s)' % signature)
+                    # For each option in A|B|..|Z, make a new entry
+                    mapping[signature] = resolved_entry
+                re_type = type(resolved_entry)
+                if re_type == dict:
+                    # If the signature maps to a dict, recurse into it
+                    mappings_to_iterate.append(resolved_entry)
+                elif re_type == tuple:
+                    # TODO(inf) Proper name for tuple values
+                    if (len(resolved_entry) != 2
+                            or type(resolved_entry[0]) != str
+                            or type(resolved_entry[1]) != dict):
+                        self._raise_syntax_error(
+                            u'Tuples used as values must always have two '
+                            u'elements - an attribute string and a dict '
+                            u'(offending tuple: %r)' % resolved_entry)
+                    # If the signature maps to a tuple, recurse into the
+                    # dict stored in its second element
+                    mappings_to_iterate.append(resolved_entry[1])
+                elif re_type == list:
+                    # If the signature maps to a list, ensure that each entry
+                    # is correct
+                    for seq_entry in resolved_entry:
+                        if type(seq_entry) == tuple:
+                            # Ensure that the tuple is correctly formatted
+                            if (len(seq_entry) != 2
+                                    or type(seq_entry[0]) != str
+                                    or type(seq_entry[1]) != str):
+                                self._raise_syntax_error(
+                                    u'Sequential tuples must always have two '
+                                    u'elements, both of them strings '
+                                    u'(offending sequential entry: %r)' %
+                                    seq_entry)
+                        elif type(seq_entry) != str:
+                            self._raise_syntax_error(
+                                u'Sequential entries must either be '
+                                u'tuples or strings (actual type: %r)' %
+                                type(seq_entry))
+                elif re_type != str:
+                    self._raise_syntax_error(
+                        u'Only dicts, lists, strings and tuples may occur as '
+                        u'values (offending type: %r)' % re_type)
+
+    def getLoaders(self, loaders):
+        # We need a copy of the unmodified signature-to-loader dictionary
+        self._sig_to_loader = loaders.copy()
+        # We need to recursively descend into the distributor config to find
+        # all relevant subrecord types
+        self._target_sigs = set()
+        mappings_to_iterate = [self.distributor_config]
+        while mappings_to_iterate:
+            mapping = mappings_to_iterate.pop()
+            # The keys are always subrecord signatures
+            for signature in mapping.keys():
+                # We will definitely need this signature
+                self._target_sigs.add(signature)
+                resolved_entry = mapping[signature]
+                re_type = type(resolved_entry)
+                if re_type == dict:
+                    # If the signature maps to a dict, recurse into it
+                    mappings_to_iterate.append(resolved_entry)
+                elif re_type == tuple:
+                    # If the signature maps to a tuple, recurse into the
+                    # dict stored in its second element
+                    mappings_to_iterate.append(resolved_entry[1])
+                elif re_type == list:
+                    # If the signature maps to a list, record the signatures of
+                    # each entry (str or tuple[str, str])
+                    self._target_sigs.update([t[0] if type(t) == tuple else t
+                                              for t in resolved_entry])
+                # If it's not a dict, list or tuple, then this is a leaf node,
+                # which means we've already recorded its type
+        # Register ourselves for every type in the hierarchy, overriding
+        # previous loaders when doing so
+        for subrecord_type in self._target_sigs:
+            loaders[subrecord_type] = self
+
+    def getSlotsUsed(self):
+        # _loader_state is the current state of our descent into the
+        # distributor config, this is a tuple of strings marking the
+        # subrecords we've visited.
+        # _seq_index is only used when processing a sequential and marks
+        # the index where we left off in the last loadData
+        return '_loader_state', '_seq_index'
+
+    def setDefault(self, record):
+        record._loader_state = ()
+        record._seq_index = None
+
+    def set_mel_set(self, mel_set):
+        """Sets parent MelSet. We use this to collect the attribute names
+        from each loader."""
+        self.mel_set = mel_set
+        for element in mel_set.elements:
+            ##: Ugly code, maybe make a MelBase method, register_attrs?
+            el_attr = getattr(element, 'attr', None)
+            # Guard against elements that don't conform to the standard
+            # attr/attrs setup - obviously means those can't be used in
+            # distributor configs though...
+            if el_attr:
+                self._attr_to_loader[el_attr] = element
+            else:
+                el_attrs = getattr(element, 'attrs', None)
+                if el_attrs:
+                    for a in el_attrs:
+                        self._attr_to_loader[a] = element
+
+    def _accepts_signature(self, dist_specifier, signature):
+        """Internal helper method that checks if the specified signature is
+        handled by the specified distribution specifier."""
+        to_check = (dist_specifier[0] if type(dist_specifier) == tuple
+                    else dist_specifier)
+        return to_check == signature
+
+    def _distribute_load(self, dist_specifier, record, ins, size_, readId):
+        """Internal helper method that distributes a loadData call to the
+        element loader pointed at by the specified distribution specifier."""
+        if type(dist_specifier) == tuple:
+            signature = dist_specifier[0]
+            target_loader = self._attr_to_loader[dist_specifier[1]]
+        else:
+            signature = dist_specifier
+            target_loader = self._sig_to_loader[dist_specifier]
+        target_loader.loadData(record, ins, signature, size_, readId)
+
+    def _apply_mapping(self, mapped_el, record, ins, signature, size_, readId):
+        """Internal helper method that applies a single mapping element
+        (mapped_el). This implements the correct loader state manipulations for
+        that element and also distributes the loadData call to the correct
+        loader, as specified by the mapping element and the current
+        signature."""
+        el_type = type(mapped_el)
+        if el_type == dict:
+            # Simple Scopes -----------------------------------------------
+            # A simple scope - add the signature to the load state and
+            # distribute the load by signature. That way we will descend
+            # into this scope on the next loadData call.
+            record._loader_state += (signature,)
+            self._distribute_load(signature, record, ins, size_, readId)
+        elif el_type == tuple:
+            # Mixed Scopes ------------------------------------------------
+            # A mixed scope - implement it like a simple scope, but
+            # distribute the load by attribute name.
+            record._loader_state += (signature,)
+            self._distribute_load((signature, mapped_el[0]), record, ins,
+                                  size_, readId)
+        elif el_type == list:
+            # Sequences, Pt. 2 --------------------------------------------
+            # A sequence - add the signature to the load state, set the
+            # sequence index to 1, and distribute the load to the element
+            # specified by the first sequence entry.
+            record._loader_state += (signature,)
+            record._seq_index = 1 # we'll load the first element right now
+            self._distribute_load(mapped_el[0], record, ins, size_,
+                                  readId)
+        else: # el_type == str, verified in _pre_process
+            # Targets -----------------------------------------------------
+            # A target - don't add the signature to the load state and
+            # distribute the load by attribute name.
+            self._distribute_load((signature, mapped_el), record, ins,
+                                  size_, readId)
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        loader_state = record._loader_state
+        seq_index = record._seq_index
+        # First, descend as far as possible into the mapping. However, also
+        # build up a tracker we can use to backtrack later on.
+        descent_tracker = []
+        current_mapping = self.distributor_config
+        # Scopes --------------------------------------------------------------
+        for signature in loader_state:
+            current_mapping = current_mapping[signature]
+            if type(current_mapping) == tuple: # handle mixed scopes
+                current_mapping = current_mapping[1]
+            descent_tracker.append((signature, current_mapping))
+        # Sequences -----------------------------------------------------------
+        # Then, check if we're in the middle of a sequence. If so,
+        # current_mapping will actually be a list, namely the sequence we're
+        # iterating over.
+        if seq_index is not None:
+            dist_specifier = current_mapping[seq_index]
+            if self._accepts_signature(dist_specifier, sub_type):
+                # We're good to go, call the next loader in the sequence and
+                # increment the sequence index
+                self._distribute_load(dist_specifier, record, ins, size_,
+                                      readId)
+                record._seq_index += 1
+                return
+            # The sequence is either over or we prematurely hit a non-matching
+            # type - either way, stop distributing loads to it.
+            record._seq_index = None
+        # Next, check if the current mapping depth contains a specifier that
+        # accepts our signature. If so, use that one to track and distribute.
+        # If not, we have to backtrack.
+        while descent_tracker:
+            prev_sig, prev_mapping = descent_tracker.pop()
+            # For each previous layer, check if it contains a specifier that
+            # accepts our signature and use it if so.
+            if sub_type in prev_mapping:
+                # Calculate the new loader state - contains signatures for all
+                # remaining scopes we haven't backtracked through yet plus the
+                # one we just backtrackd into
+                record._loader_state = tuple([x[0] for x in descent_tracker] +
+                                             [prev_sig])
+                self._apply_mapping(prev_mapping[sub_type], record, ins,
+                                    sub_type, size_, readId)
+                return
+        # We didn't find anything during backtracking, so it must be in the top
+        # scope. Wipe the loader state first and then apply the mapping.
+        record._loader_state = ()
+        self._apply_mapping(self.distributor_config[sub_type], record, ins,
+                            sub_type, size_, readId)
+
+    @property
+    def signatures(self):
+        return self._target_sigs
 
 # Mod Records -----------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -2388,6 +2670,82 @@ class MreDial(MelRecord):
         MelRecord.convertFids(self,mapper,toLong)
         for info in self.infos:
             info.convertFids(mapper,toLong)
+
+#------------------------------------------------------------------------------
+# Oblivion and Fallout --------------------------------------------------------
+#------------------------------------------------------------------------------
+class MelRaceParts(MelNull):
+    """Handles a subrecord array, where each subrecord is introduced by an
+    INDX subrecord, which determines the meaning of the subrecord. The
+    resulting attributes are set directly on the record.
+    :type _indx_to_loader: dict[int, MelBase]"""
+    def __init__(self, hidden_attr, indx_to_attr, group_loaders):
+        """Creates a new MelRaceParts element with the specified INDX mapping
+        and group loaders.
+
+        :param hidden_attr: An attribute used for the distributor, but
+            nothing else.
+        :type hidden_attr: str
+        :param indx_to_attr: A mapping from the INDX values to the final
+            record attributes that will be used for the subsequent
+            subrecords.
+        :type indx_to_attr: dict[int, str]
+        :param group_loaders: A callable that takes the INDX value and
+            returns an iterable with one or more MelBase-derived subrecord
+            loaders. These will be loaded and dumped directly after each
+            INDX."""
+        self.attr = hidden_attr
+        self._last_indx = None # used during loading
+        self._debug = False
+        self._indx_to_attr = indx_to_attr
+        # Create loaders for use at runtime
+        self._indx_to_loader = {
+            part_indx: MelGroup(part_attr, *group_loaders(part_indx))
+            for part_indx, part_attr in indx_to_attr.iteritems()
+        }
+        self._possible_sigs = {s for element
+                               in self._indx_to_loader.itervalues()
+                               for s in element.signatures}
+
+    def getLoaders(self, loaders):
+        temp_loaders = {}
+        for element in self._indx_to_loader.itervalues():
+            element.getLoaders(temp_loaders)
+        for signature in temp_loaders.keys():
+            loaders[signature] = self
+
+    def getSlotsUsed(self):
+        return self._indx_to_attr.values()
+
+    def setDefault(self, record):
+        for element in self._indx_to_loader.itervalues():
+            element.setDefault(record)
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        if sub_type == 'INDX':
+            self._last_indx, = ins.unpack('I', size_, readId)
+        else:
+            self._indx_to_loader[self._last_indx].loadData(
+                record, ins, sub_type, size_, readId)
+
+    def dumpData(self, record, out):
+        for part_indx, part_attr in self._indx_to_attr.iteritems():
+            if hasattr(record, part_attr): # only dump present parts
+                out.packSub('INDX', '=I', part_indx)
+                self._indx_to_loader[part_indx].dumpData(record, out)
+
+    @property
+    def signatures(self):
+        return self._possible_sigs
+
+class MelRaceVoices(MelStruct):
+    """Set voices to zero, if equal race fid. If both are zero, then skip
+    dumping."""
+    def dumpData(self, record, out):
+        if record.maleVoice == record.fid: record.maleVoice = 0L
+        if record.femaleVoice == record.fid: record.femaleVoice = 0L
+        if (record.maleVoice, record.femaleVoice) != (0, 0):
+            MelStruct.dumpData(self, record, out)
 
 #------------------------------------------------------------------------------
 # Skyrim and Fallout ----------------------------------------------------------

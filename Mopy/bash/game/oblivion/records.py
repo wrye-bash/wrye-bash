@@ -26,14 +26,14 @@ import struct
 from .constants import condition_function_data
 from ... import brec
 from ...bass import null1, null2, null3, null4
-from ...bolt import Flags, DataDict, struct_pack
+from ...bolt import Flags, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelFull0, \
     MelFidList, MelStructA, MelStrings, MreGmstBase, MelTuple, MreHasEffects, \
     MelReferences, MelRegnEntrySubrecord, MelFloat, MelSInt16, MelSInt32, \
     MelUInt8, MelUInt16, MelUInt32, MelOptFloat, MelOptSInt32, MelOptUInt8, \
-    MelOptUInt16, MelOptUInt32
+    MelOptUInt16, MelOptUInt32, MelRaceParts, MelRaceVoices
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -1479,22 +1479,6 @@ class MreQust(MelRecord):
     stageFlags = Flags(0,Flags.getNames('complete'))
     targetFlags = Flags(0,Flags.getNames('ignoresLocks'))
 
-    class MelQustLoaders(DataDict):
-        """Since CDTA subrecords occur in three different places, we need
-        to replace ordinary 'loaders' dictionary with a 'dictionary' that will
-        return the correct element to handle the CDTA subrecord. 'Correct'
-        element is determined by which other subrecords have been encountered.
-        """
-        def __init__(self,loaders,quest,stages,targets):
-            self.data = loaders
-            self.type_ctda = {'EDID':quest, 'INDX':stages, 'QSTA':targets}
-            self.ctda = quest #--Which ctda element loader to use next.
-
-        def __getitem__(self,key):
-            if key == 'CTDA': return self.ctda
-            self.ctda = self.type_ctda.get(key, self.ctda)
-            return self.data[key]
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelFid('SCRI','script'),
@@ -1520,108 +1504,24 @@ class MreQust(MelRecord):
                       (targetFlags, 'flags'), ('unused1', null3)),
             MelConditions(),
         ),
-    )
-    melSet.loaders = MelQustLoaders(melSet.loaders,*melSet.elements[5:8])
+    ).with_distributor({
+        'EDID|DATA': { # just in case one is missing
+            'CTDA': 'conditions',
+        },
+        'INDX': {
+            'CTDA': 'stages',
+        },
+        'QSTA': {
+            'CTDA': 'targets',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()
 
 class MreRace(MelRecord):
-    """Race.
-
-    This record is complex to read and write. Relatively simple problems are
-    the VNAM which can be empty or zeroed depending on relationship between
-    voices and the fid for the race.
-
-    The face and body data is much more complicated, with the same subrecord
-    types mapping to different attributes depending on preceding flag
-    subrecords (NAM0, NAM1, NMAN, FNAM and INDX.) These are handled by using
-    the MelRaceDistributor class to dynamically reassign melSet.loaders[type]
-    as the flag records are encountered.
-
-    It's a mess, but this is the shortest, clearest implementation that I could
-    think of."""
-
+    """Race."""
     classType = 'RACE'
 
     _flags = Flags(0L,Flags.getNames('playable'))
-
-    class MelRaceVoices(MelStruct):
-        """Set voices to zero, if equal race fid. If both are zero,
-        then don't skip dump."""
-        def dumpData(self,record,out):
-            if record.maleVoice == record.fid: record.maleVoice = 0L
-            if record.femaleVoice == record.fid: record.femaleVoice = 0L
-            if (record.maleVoice,record.femaleVoice) != (0,0):
-                MelStruct.dumpData(self,record,out)
-
-    class MelRaceModel(MelGroup):
-        """Most face data, like a MelModel - MODT + ICON. Load is controlled
-        by MelRaceDistributor."""
-        def __init__(self,attr,index):
-            MelGroup.__init__(self,attr,
-                MelString('MODL','modPath'),
-                MelBase('MODB','modb_p'),
-                MelBase('MODT','modt_p'),
-                MelString('ICON','iconPath'),)
-            self.index = index
-
-        def dumpData(self,record,out):
-            out.packSub('INDX','I',self.index)
-            MelGroup.dumpData(self,record,out)
-
-    class MelRaceIcon(MelString):
-        """Most body data plus eyes for face. Load is controlled by
-        MelRaceDistributor."""
-        def __init__(self,attr,index):
-            MelString.__init__(self,'ICON',attr)
-            self.index = index
-
-        def dumpData(self,record,out):
-            out.packSub('INDX','I',self.index)
-            MelString.dumpData(self,record,out)
-
-    class MelRaceDistributor(MelNull):
-        """Handles NAM0, NAM1, MNAM, FMAN and INDX records. Distributes load
-        duties to other elements as needed."""
-        def __init__(self):
-            bodyAttrs = ('UpperBodyPath', 'LowerBodyPath', 'HandPath',
-                         'FootPath', 'TailPath')
-            self.attrs = {
-                'MNAM': tuple('male' + str_ for str_ in bodyAttrs),
-                'FNAM': tuple('female' + str_ for str_ in bodyAttrs),
-                'NAM0':('head', 'maleEars', 'femaleEars', 'mouth',
-                'teethLower', 'teethUpper', 'tongue', 'leftEye', 'rightEye',)
-                }
-            self.tailModelAttrs = {'MNAM': 'maleTailModel',
-                                   'FNAM': 'femaleTailModel'}
-            self._debug = False
-
-        def getSlotsUsed(self):
-            return '_loadAttrs',
-
-        def getLoaders(self,loaders):
-            for subType in ('NAM0','MNAM','FNAM','INDX'):
-                loaders[subType] = self
-
-        def setMelSet(self,melSet):
-            """Set parent melset. Need this so that can reassign loaders
-            later."""
-            self.melSet = melSet
-            self.loaders = {}
-            for element in melSet.elements:
-                attr = element.__dict__.get('attr',None)
-                if attr: self.loaders[attr] = element
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type in ('NAM0', 'MNAM', 'FNAM'):
-                record._loadAttrs = self.attrs[sub_type]
-                attr = self.tailModelAttrs.get(sub_type)
-                if not attr: return
-            else: #--INDX
-                index, = ins.unpack('I',4,readId)
-                attr = record._loadAttrs[index]
-            element = self.loaders[attr]
-            for sub_type_ in ('MODL', 'MODB', 'MODT', 'ICON'):
-                self.melSet.loaders[sub_type_] = element
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -1635,8 +1535,7 @@ class MreRace(MelRecord):
                   'skill6Boost', 'skill7', 'skill7Boost', ('unused1', null2),
                   'maleHeight', 'femaleHeight', 'maleWeight', 'femaleWeight',
                   (_flags, 'flags', 0L)),
-        MelRaceVoices('VNAM','2I',(FID,'maleVoice'),
-                      (FID,'femaleVoice')), # 0: same as race fid.
+        MelRaceVoices('VNAM', '2I', (FID, 'maleVoice'), (FID, 'femaleVoice')),
         MelOptStruct('DNAM', '2I', (FID, 'defaultHairMale', 0L),
                      (FID, 'defaultHairFemale', 0L)),
         # Corresponds to GMST sHairColorNN
@@ -1650,31 +1549,46 @@ class MreRace(MelRecord):
                   'femaleSpeed', 'femaleEndurance', 'femalePersonality',
                   'femaleLuck'),
         # Indexed Entries
-        MelBase('NAM0','_nam0',''),
-        MelRaceModel('head',0),
-        MelRaceModel('maleEars',1),
-        MelRaceModel('femaleEars',2),
-        MelRaceModel('mouth',3),
-        MelRaceModel('teethLower',4),
-        MelRaceModel('teethUpper',5),
-        MelRaceModel('tongue',6),
-        MelRaceModel('leftEye',7),
-        MelRaceModel('rightEye',8),
-        MelBase('NAM1','_nam1',''),
-        MelBase('MNAM','_mnam',''),
+        MelBase('NAM0', 'face_data_marker', ''),
+        MelRaceParts('face_parts', {
+            0: 'head',
+            1: 'maleEars',
+            2: 'femaleEars',
+            3: 'mouth',
+            4: 'teethLower',
+            5: 'teethUpper',
+            6: 'tongue',
+            7: 'leftEye',
+            8: 'rightEye',
+        }, group_loaders=lambda _indx: (
+            # TODO(inf) Can't use MelModel here, since some patcher code
+            #  directly accesses these - MelModel would put them in a group,
+            #  which breaks that. Change this to a MelModel, then hunt down
+            #  that code and change it
+            MelString('MODL', 'modPath'),
+            MelFloat('MODB', 'modb'),
+            MelBase('MODT', 'modt_p'),
+            MelString('ICON', 'iconPath'),
+        )),
+        MelBase('NAM1', 'body_data_marker', ''),
+        MelBase('MNAM', 'male_body_data_marker', ''),
         MelModel('maleTailModel'),
-        MelRaceIcon('maleUpperBodyPath',0),
-        MelRaceIcon('maleLowerBodyPath',1),
-        MelRaceIcon('maleHandPath',2),
-        MelRaceIcon('maleFootPath',3),
-        MelRaceIcon('maleTailPath',4),
-        MelBase('FNAM','_fnam',''),
+        MelRaceParts('male_body_parts', {
+            0: 'maleUpperBodyPath',
+            1: 'maleLowerBodyPath',
+            2: 'maleHandPath',
+            3: 'maleFootPath',
+            4: 'maleTailPath',
+        }, group_loaders=lambda _indx: (MelString('ICON', 'iconPath'),)),
+        MelBase('FNAM', 'female_body_data_marker', ''),
         MelModel('femaleTailModel'),
-        MelRaceIcon('femaleUpperBodyPath',0),
-        MelRaceIcon('femaleLowerBodyPath',1),
-        MelRaceIcon('femaleHandPath',2),
-        MelRaceIcon('femaleFootPath',3),
-        MelRaceIcon('femaleTailPath',4),
+        MelRaceParts('female_body_parts', {
+            0: 'femaleUpperBodyPath',
+            1: 'femaleLowerBodyPath',
+            2: 'femaleHandPath',
+            3: 'femaleFootPath',
+            4: 'femaleTailPath',
+        }, group_loaders=lambda _indx: (MelString('ICON', 'iconPath'),)),
         # Normal Entries
         MelFidList('HNAM','hairs'),
         MelFidList('ENAM','eyes'),
@@ -1682,10 +1596,19 @@ class MreRace(MelRecord):
         MelBase('FGGA','fgga_p'), ####FaceGen Geometry-Asymmetric
         MelBase('FGTS','fgts_p'), ####FaceGen Texture-Symmetric
         MelStruct('SNAM','2s',('snam_p',null2)),
-        # Distributor for face and body entries.
-        MelRaceDistributor(),
-    )
-    melSet.elements[-1].setMelSet(melSet)
+    ).with_distributor({
+        'NAM0': {
+            'INDX|MODL|MODB|MODT|ICON': 'face_parts',
+        },
+        'MNAM': {
+            'MODL|MODB|MODT': 'maleTailModel',
+            'INDX|ICON': 'male_body_parts',
+        },
+        'FNAM': {
+            'MODL|MODB|MODT': 'femaleTailModel',
+            'INDX|ICON': 'female_body_parts',
+        },
+    })
     __slots__ = melSet.getSlotsUsed()
 
 class MreRefr(MelRecord):
