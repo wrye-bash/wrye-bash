@@ -999,9 +999,9 @@ class SpellsPatcher(importers.SpellsPatcher, _ImporterPatcherPanel): pass
 class CBash_SpellsPatcher(importers.CBash_SpellsPatcher,
                           _ImporterPatcherPanel): pass
 
-class DestructiblePatcher(importers.DestructiblePatcher, _ListPatcherPanel): pass
+class DestructiblePatcher(importers.DestructiblePatcher, _ImporterPatcherPanel): pass
 
-class WeaponModsPatcher(importers.WeaponModsPatcher, _ListPatcherPanel): pass
+class WeaponModsPatcher(importers.WeaponModsPatcher, _ImporterPatcherPanel): pass
 
 # Patchers 30 -----------------------------------------------------------------
 class AssortedTweaker(multitweak_assorted.AssortedTweaker,

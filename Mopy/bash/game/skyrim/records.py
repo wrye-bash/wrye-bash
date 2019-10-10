@@ -2836,7 +2836,6 @@ class MreFlst(MelRecord):
                 newItemsAdd(fid)
         if newItems:
             self.items |= newItems
-            # self.formIDInList.sort() # most likely shouldn't sort for skyrim
         #--Is merged list different from other? (And thus written to patch.)
         if len(self.formIDInList) != len(other.formIDInList):
             self.mergeOverLast = True

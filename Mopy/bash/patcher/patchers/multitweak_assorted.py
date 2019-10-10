@@ -572,7 +572,6 @@ class AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,MultiTweakItem):
                         color = u'444444'
                     fontFace = u'<font face=3 color='+color+u'>'
                     rec_text = reTagInWord.sub(u'' r'\1', rec_text)
-                    rec_text.lower()
                     if reDiv.search(rec_text) and not reFont.search(rec_text):
                         rec_text = fontFace+rec_text
                     else:
@@ -634,7 +633,6 @@ class CBash_AssortedTweak_DarnBooks(AAssortedTweak_DarnBooks,
                     color = u'444444'
                 fontFace = u'<font face=3 color='+color+u'>'
                 rec_text = reTagInWord.sub(u'' r'\1', rec_text)
-                rec_text.lower()
                 if reDiv.search(rec_text) and not reFont.search(rec_text):
                     rec_text = fontFace+rec_text
                 else:

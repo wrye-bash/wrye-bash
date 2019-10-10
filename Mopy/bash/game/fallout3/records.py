@@ -1562,8 +1562,6 @@ class MreFlst(MelRecord):
                 newItemsAdd(fid)
         if newItems:
             self.items |= newItems
-            #self.fids.sort(key=attrgetter('level'))
-            self.formIDInList.sort()
         #--Is merged list different from other? (And thus written to patch.)
         if len(self.formIDInList) != len(other.formIDInList):
             self.mergeOverLast = True
