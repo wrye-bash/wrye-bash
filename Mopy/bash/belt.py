@@ -83,7 +83,7 @@ class InstallerWizard(wiz.Wizard):
     """Class used by Wrye Bash, creates a wx Wizard that dynamically creates
     pages based on a script."""
 
-    def __init__(self, parentWindow, installer, bAuto, subs, pageSize, pos):
+    def __init__(self, parentWindow, installer, bAuto, pageSize, pos):
         wiz.Wizard.__init__(self, parentWindow, title=_(u'Installer Wizard'),
                             pos=pos, style=wx.DEFAULT_DIALOG_STYLE |
                                            wx.RESIZE_BORDER | wx.MAXIMIZE_BOX)
@@ -99,7 +99,7 @@ class InstallerWizard(wiz.Wizard):
         self.finishing = False
         #parser that will spit out the pages
         self.wizard_file = installer.wizard_file()
-        self.parser = WryeParser(self, installer, subs, bAuto)
+        self.parser = WryeParser(self, installer, bAuto)
         #Intercept the changing event so we can implement 'blockChange'
         set_event_hook(self, Events.WIZARD_PAGE_CHANGING, self.OnChange)
         self.ret = WizardReturn()
@@ -713,7 +713,7 @@ class WryeParser(ScriptParser.Parser):
             outLines = outLines[:lastBlank]
         return outLines
 
-    def __init__(self, parent, installer, subs, bAuto, codebox=False):
+    def __init__(self, parent, installer, bAuto, codebox=False):
         ScriptParser.Parser.__init__(self)
         if not codebox:
             self.parent = parent
