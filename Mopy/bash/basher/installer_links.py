@@ -275,15 +275,12 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
     def Execute(self):
         with balt.BusyCursor():
             installer = self._selected_info
-            subs = []
             idetails = self.iPanel.detailsPanel
             idetails.refreshCurrent(installer)
-            for index in xrange(idetails.gSubList.GetCount()):
-                subs.append(idetails.gSubList.GetString(index))
             default, pageSize, pos = self._get_size_and_pos()
             try:
                 wizard = InstallerWizard(self.window, self._selected_info,
-                                         self.bAuto, subs, pageSize, pos)
+                                         self.bAuto, pageSize, pos)
             except CancelError:
                 return
             balt.ensureDisplayed(wizard)
@@ -294,10 +291,14 @@ class Installer_Wizard(OneItemLink, _InstallerLink):
             return
         #Check the sub-packages that were selected by the wizard
         installer.resetAllEspmNames()
-        for index in xrange(idetails.gSubList.GetCount()):
-            select = installer.subNames[index + 1] in ret.select_sub_packages
+        # TODO(inf) This (the offset by 1 in the xrange) is nothing but a hack.
+        #  We shouldn't even be exposing an FOMOD subpackage. Probably do this
+        #  via a new variable in BAIN installers, and add radio buttons in the
+        #  GUI to select between BAIN subpackages and FOMOD
+        for index in xrange(1, idetails.gSubList.GetCount()):
+            select = installer.subNames[index] in ret.select_sub_packages
             idetails.gSubList.Check(index, select)
-            installer.subActives[index + 1] = select
+            installer.subActives[index] = select
         idetails.refreshCurrent(installer)
         #Check the espms that were selected by the wizard
         espms = idetails.gEspmList.GetStrings()
