@@ -467,6 +467,12 @@ class ModChecker(BaltFrame):
             ):
             self.CheckMods()
 
+    def OnCloseWindow(self):
+        # Need to unset Link.Frame.modChecker here to avoid accessing a deleted
+        # object when clicking the mod checker button again.
+        Link.Frame.modChecker = None
+        super(ModChecker, self).OnCloseWindow()
+
 #------------------------------------------------------------------------------
 class InstallerProject_OmodConfigDialog(BaltFrame):
     """Dialog for editing omod configuration data."""

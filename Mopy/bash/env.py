@@ -713,7 +713,7 @@ isUAC = False      # True if the game is under UAC protection
 
 def setUAC(handle, uac=True):
     """Calls the Windows API to set a button as UAC"""
-    if win32gui:
+    if isUAC and win32gui:
         win32gui.SendMessage(handle, 0x0000160C, None, uac)
 
 def testUAC(gameDataPath):

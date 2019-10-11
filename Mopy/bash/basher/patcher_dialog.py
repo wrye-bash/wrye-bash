@@ -34,7 +34,8 @@ from . import BashFrame ##: drop this - decouple !
 from .. import bass, bosh, bolt, balt, env, load_order
 from ..balt import StaticText, vSizer, hSizer, hspacer, Link, OkButton, \
     SelectAllButton, CancelButton, SaveAsButton, OpenButton, \
-    RevertToSavedButton, RevertButton, hspace, vspace, Resources
+    RevertToSavedButton, RevertButton, hspace, vspace, Resources, \
+    set_event_hook, Events
 from ..bolt import SubProgress, GPath, Path
 from ..exception import BoltError, CancelError, FileEditError, \
     PluginsFullError, SkipError
@@ -90,7 +91,11 @@ class PatchDialog(balt.Dialog):
         #--GUI elements
         self.gExecute = OkButton(self, label=_(u'Build Patch'),
                                  onButClick=self.PatchExecute)
-        _SetUAC(self.gExecute)
+        # TODO(nycz): somehow move setUAC further into env?
+        # Note: for this to work correctly, it needs to be run BEFORE
+        # appending a menu item to a menu (and so, needs to be enabled/
+        # disabled prior to that as well.
+        env.setUAC(self.gExecute.GetHandle(), True)
         self.gSelectAll = SelectAllButton(self, label=_(u'Select All'),
                                           onButClick=self.SelectAll)
         self.gDeselectAll = SelectAllButton(self, label=_(u'Deselect All'),
@@ -113,10 +118,10 @@ class PatchDialog(balt.Dialog):
         self.defaultTipText = _(u'Items that are new since the last time this patch was built are displayed in bold')
         self.gTipText = StaticText(self,self.defaultTipText)
         #--Events
-        self.Bind(wx.EVT_SIZE,self.OnSize) # save dialog size
-        self.gPatchers.Bind(wx.EVT_MOTION,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_LEAVE_WINDOW,self.OnMouse)
-        self.gPatchers.Bind(wx.EVT_CHAR,self.OnChar)
+        set_event_hook(self, Events.RESIZE, self.OnSize) # save dialog size
+        set_event_hook(self.gPatchers, Events.MOUSE_MOTION, self.OnMouse)
+        set_event_hook(self.gPatchers, Events.MOUSE_LEAVE_WINDOW, self.OnMouse)
+        set_event_hook(self.gPatchers, Events.CHAR_KEY_PRESSED, self.OnChar)
         self.mouse_dex = -1
         #--Layout
         self.gConfigSizer = gConfigSizer = vSizer()
@@ -571,17 +576,3 @@ otherPatcherDict = {
     'CBash_StatsPatcher' : 'StatsPatcher',
     'CBash_ContentsChecker' : 'ContentsChecker',
     }
-
-def _SetUAC(item): # item must define a GetHandle() method
-    """Helper function for creating menu items or buttons that need UAC
-       Note: for this to work correctly, it needs to be run BEFORE
-       appending a menu item to a menu (and so, needs to be enabled/
-       disabled prior to that as well."""
-    if env.isUAC:
-        if isinstance(item, wx.MenuItem):
-            pass
-            #if item.IsEnabled():
-            #    bitmap = images['uac.small'].GetBitmap()
-            #    item.SetBitmaps(bitmap,bitmap)
-        else:
-            env.setUAC(item.GetHandle(), True)

@@ -919,8 +919,7 @@ class Path(object):
         try:
             if self.exists(): os.remove(self._s)
         except OSError:
-            # Clear RO flag
-            os.chmod(self._s,stat.S_IWUSR|stat.S_IWOTH)
+            self.clearRO()
             os.remove(self._s)
     def removedirs(self):
         try:

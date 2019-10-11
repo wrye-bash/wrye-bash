@@ -146,7 +146,7 @@ def dump_environment():
             platform.processor()
         ),
         u'Python version: %d.%d.%d' % (
-            sys.version_info[0],sys.version_info[1],sys.version_info[2]
+            sys.version_info[0], sys.version_info[1], sys.version_info[2]
         ),
         u'wxPython version: %s' % _wx.version() if _wx is not None else \
             u'wxPython not found',
@@ -155,16 +155,12 @@ def dump_environment():
         u'input encoding: %s; output encoding: %s' % (
             sys.stdin.encoding, getattr(sys.stdout, 'encoding', None),
         ),
-        u'default locale: %s; current locale: %s' % (
-            locale.getdefaultlocale(), locale.getlocale()
-        ),
         u'filesystem encoding: %s%s' % (fse,
-            (u' - using %s' % bolt.Path.sys_fs_enc) if bolt is not None
-                                                       and not fse else u''),
-        u'command line: %s' % (sys.argv, )
+            (u' - using %s' % bolt.Path.sys_fs_enc) if not fse else u''),
+        u'command line: %s' % sys.argv,
     ])
     if bolt.scandir is not None:
-        msg = u'\n'.join( [msg, 'Using scandir ' + bolt.scandir.__version__])
+        msg = u'\n'.join([msg, 'Using scandir ' + bolt.scandir.__version__])
     print msg
     return msg
 
@@ -434,7 +430,7 @@ def _show_wx_error(msg):
                                           _wx.TE_READONLY | _wx.BORDER_NONE)
                 text_ctrl.SetValue(msg)
                 text_ctrl.SetBackgroundColour(_wx.SystemSettings.GetColour(4))
-                sizer.Add(text_ctrl, proportion=1, flag=_wx.GROW | _wx.ALL,
+                sizer.Add(text_ctrl, proportion=1, flag=_wx.EXPAND | _wx.ALL,
                           border=5)
                 button = _wx.Button(self, _wx.ID_CANCEL, _(u'Quit'))
                 button.SetDefault()
@@ -510,7 +506,7 @@ def _wxSelectGame(ret, msgtext):
             panel.SetScrollbars(20, 20, 50, 50)
             sizer = _wx.BoxSizer(_wx.VERTICAL)
             sizer.Add(_wx.StaticText(panel, label=msgtext,
-                                     style=_wx.ALIGN_CENTRE_HORIZONTAL),
+                                     style=_wx.ALIGN_CENTER_HORIZONTAL),
                       1, _wx.EXPAND | _wx.ALL, 5)
             for game_name in game_names:
                 sizer.Add(_wx.Button(panel, label=game_name.title()), 0,

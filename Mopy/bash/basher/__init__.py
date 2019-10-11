@@ -81,7 +81,7 @@ from .. import balt
 from ..balt import CheckLink, EnabledLink, SeparatorLink, Link, \
     ChoiceLink, RoTextCtrl, staticBitmap, AppendableLink, ListBoxes, \
     SaveButton, CancelButton, INIListCtrl, DnDStatusBar, NotebookPanel, \
-    BaltFrame
+    BaltFrame, set_event_hook, Events
 from ..balt import checkBox, StaticText, spinCtrl, TextCtrl
 from ..balt import hspacer, hSizer, vSizer, hspace, vspace
 from ..balt import colors, images, Image, Resources
@@ -501,7 +501,7 @@ class MasterList(_ModsUIList):
             super(MasterList, self).OnBeginEditLabel(event)
 
     def OnLabelEdited(self,event):
-        itemDex = event.m_itemIndex
+        itemDex = event.GetIndex()
         newName = GPath(event.GetText())
         #--No change?
         if newName in bosh.modInfos:
@@ -1322,8 +1322,8 @@ class ModDetails(_SashDetailsPanel):
         self._bottom_low_panel.SetSizer(tagsSizer)
         bottom.SetSizer(vSizer((subSplitter,1,wx.EXPAND)))
         #--Events
-        self.gTags.Bind(wx.EVT_CONTEXT_MENU,
-                        lambda __event: self.ShowBashTagsMenu())
+        set_event_hook(self.gTags, Events.CONTEXT_MENU,
+                       lambda __event: self.ShowBashTagsMenu())
 
     def _resetDetails(self):
         self.modInfo = None
@@ -1622,7 +1622,8 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
         self.comboBox = balt.ComboBox(right, value=self.ini_name,
                                       choices=self._ini_keys)
         #--Events
-        self.comboBox.Bind(wx.EVT_COMBOBOX,self.OnSelectDropDown)
+        set_event_hook(self.comboBox, Events.COMBOBOX_CHOICE,
+                       self.OnSelectDropDown)
         #--Layout
         iniSizer = vSizer(
                 (hSizer(
@@ -1740,6 +1741,7 @@ class INIDetailsPanel(_DetailsMixin, SashPanel):
     def ClosePanel(self, destroy=False):
         super(INIDetailsPanel, self).ClosePanel(destroy)
         settings['bash.ini.lastDir'] = self.lastDir
+        # TODO(inf) de-wx!, needed for wx3, check if needed in Phoenix
         if destroy: self.comboBox.Unbind(wx.EVT_SIZE)
 
 class INIPanel(BashTab):
@@ -2165,7 +2167,8 @@ class InstallersList(balt.UIList):
             elif item == last_marker:
                 event.Veto()
                 return
-        self.edit_control.Bind(wx.EVT_CHAR, self._OnEditLabelChar)
+        set_event_hook(self.edit_control, Events.CHAR_KEY_PRESSED,
+                       self._OnEditLabelChar)
         #--Markers, change the selection to not include the '=='
         if renaming_type is bosh.InstallerMarker:
             to = len(event.GetLabel()) - 2
@@ -2582,7 +2585,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.gSubList = balt.listBox(subPackagesPanel, isExtended=True,
                                      kind='checklist',
                                      onCheck=self.OnCheckSubItem)
-        self.gSubList.Bind(wx.EVT_RIGHT_UP,self.SubsSelectionMenu)
+        set_event_hook(self.gSubList, Events.MOUSE_RIGHT_UP,
+                       self.SubsSelectionMenu)
         #--Espms
         espmsPanel = wx.Panel(self.checkListSplitter)
         espmsLabel = StaticText(espmsPanel, _(u'Plugin Filter'))
@@ -2590,7 +2594,8 @@ class InstallersDetails(_DetailsMixin, SashPanel):
         self.gEspmList = balt.listBox(espmsPanel, isExtended=True,
                                       kind='checklist',
                                       onCheck=self.OnCheckEspmItem)
-        self.gEspmList.Bind(wx.EVT_RIGHT_UP,self.SelectionMenu)
+        set_event_hook(self.gEspmList, Events.MOUSE_RIGHT_UP,
+                       self.SelectionMenu)
         #--Comments
         commentsPanel = wx.Panel(bottom)
         commentsLabel = StaticText(commentsPanel, _(u'Comments'))
@@ -4131,6 +4136,8 @@ def InitSettings(): # this must run first !
     settings.loadDefaults(settingDefaults)
     bosh.bain.Installer.init_global_skips() # must be after loadDefaults - grr #178
     bosh.bain.Installer.init_attributes_process()
+    # Plugin encoding used to decode mod string fields
+    bolt.pluginEncoding = bass.settings['bash.pluginEncoding']
     #--Wrye Balt
     settings['balt.WryeLog.temp'] = bass.dirs['saveBase'].join(u'WryeLogTemp.html')
     settings['balt.WryeLog.cssDir'] = bass.dirs['mopy'].join(u'Docs')

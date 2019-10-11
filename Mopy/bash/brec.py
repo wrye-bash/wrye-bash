@@ -1711,7 +1711,7 @@ class MreHeaderBase(MelRecord):
     class MelMasterName(MelBase):
         def setDefault(self,record): record.masters = []
         def loadData(self, record, ins, sub_type, size_, readId):
-            # Don't use ins.readString, becuase it will try to use bolt.pluginEncoding
+            # Don't use ins.readString, because it will try to use bolt.pluginEncoding
             # for the filename.  This is one case where we want to use Automatic
             # encoding detection
             name = decode(bolt.cstrip(ins.read(size_, readId)), avoidEncodings=('utf8', 'utf-8'))
