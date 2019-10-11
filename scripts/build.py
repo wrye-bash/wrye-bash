@@ -41,6 +41,7 @@ import datetime
 import glob
 import logging
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -732,8 +733,38 @@ def handle_executable(release_version, version_info):
         rm(os.path.join(MOPY_PATH, u"Wrye Bash.exe"))
 
 
+# Checks whether the current nightly timestamp
+#   is the same as the previous nightly build.
+# Returns False if it's the same, True otherwise
+# Happens when a build is triggered too quickly
+#   after the previous one.
+def check_timestamp(build_version, output_folder):
+    nightly_re = re.compile(r"\d{3,}\.\d{12}")
+    # check whether we're building a nightly
+    nightly_version = nightly_re.match(build_version)
+    try:
+        # check whether the previous build is also a nightly
+        previous_version = nightly_re.search(os.listdir(output_folder)[0])
+    except (WindowsError, IndexError):
+        # if no output folder exists or nothing exists in output folder
+        previous_version = None
+    if None not in (nightly_version, previous_version):
+        nightly_version = nightly_version.group(0)
+        previous_version = previous_version.group(0)
+        if nightly_version == previous_version:
+            answer = raw_input(
+                "Current timestamp is equal to the previous build. Continue? [y/N]\n> "
+            )
+            if not answer or answer.lower().startswith("n"):
+                return False
+    return True
+
+
 def main(args):
     utils.setup_log(LOGGER, verbosity=args.verbosity, logfile=args.logfile)
+    # check nightly timestamp is different than previous
+    if not check_timestamp(args.version, args.output):
+        raise OSError("Aborting build due to equal nightly timestamps.")
     LOGGER.info("Building on Python {}".format(sys.version))
     if sys.version_info[0:3] < (2, 7, 12):
         raise OSError("You must run at least Python 2.7.12 to package Wrye Bash.")
