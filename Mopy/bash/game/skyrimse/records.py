@@ -155,9 +155,9 @@ class MreStat(MelRecord):
     """Static model record."""
     classType = 'STAT'
 
-    StatSnowFlags = Flags(0L,Flags.getNames(
-            (0, 'consideredSnow'),
-        ))
+    _StatSnowFlags = Flags(0L, Flags.getNames(
+        (0, 'consideredSnow'),
+    ))
 
     class MelStatDnam(MelStruct):
         """Handle older truncated DNAM for STAT subrecord."""
@@ -177,15 +177,16 @@ class MreStat(MelRecord):
             if self._debug: print unpacked, record.flags.getTrueAttrs()
 
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelString('EDID', 'eid'),
         MelBounds(),
         MelModel(),
-        MelStatDnam('DNAM','fIB3s','maxAngle30to120',(FID,'material'),
-                    (StatSnowFlags,'snowflag',0L),('unkStat1',null3),),
+        MelStatDnam('DNAM', 'fIB3s', 'maxAngle30to120', (FID, 'material'),
+                    (_StatSnowFlags, 'snowFlags', 0L), ('unknown1', null3),),
         # Contains null-terminated mesh filename followed by random data
         # up to 260 bytes and repeats 4 times
-        MelBase('MNAM','distantLOD'),
-        )
+        MelBase('MNAM', 'distantLOD'),
+        MelBase('ENAM', 'unknownENAM'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
