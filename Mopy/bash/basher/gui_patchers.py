@@ -210,10 +210,12 @@ class _ListPatcherPanel(_PatcherPanel):
     forceAuto = True
     forceItemCheck = False #--Force configChecked to True for all items
     canAutoItemCheck = True #--GUI: Whether new items are checked by default
+    show_empty_sublist_checkbox = False
     #--Compiled re used by getAutoItems
     autoRe = re.compile(u'^UNDEFINED$', re.I | re.U)
     # ADDITIONAL CONFIG DEFAULTS FOR LIST PATCHER
     default_autoIsChecked = True
+    default_remove_empty_sublists = bush.game.fsName == u'Oblivion'
     default_configItems   = []
     default_configChecks  = {}
     default_configChoices = {}
@@ -235,18 +237,24 @@ class _ListPatcherPanel(_PatcherPanel):
             gManualSizer = None
             self.SetItems(self.getAutoItems())
         else:
+            right_side_components = []
+            if self.show_empty_sublist_checkbox:
+                self.g_remove_empty = checkBox(
+                    gConfigPanel, _(u'Remove Empty Sublists'),
+                    onCheck=self._on_remove_empty_checked,
+                    checked=self.remove_empty_sublists)
+                right_side_components.extend([vspace(4), self.g_remove_empty])
             self.gAuto = checkBox(gConfigPanel, _(u'Automatic'),
                                   onCheck=self.OnAutomatic,
                                   checked=self.autoIsChecked)
             self.gAdd = Button(gConfigPanel, _(u'Add'), onButClick=self.OnAdd)
             self.gRemove = Button(gConfigPanel, _(u'Remove'),
                                   onButClick=self.OnRemove)
+            right_side_components.extend([vspace(4), self.gAuto, vspace(12),
+                                          self.gAdd, vspace(4), self.gRemove])
             self.OnAutomatic()
-            gManualSizer = (vSizer(
-                vspace(2), self.gAuto,
-                vspace(12), self.gAdd,
-                vspace(4), self.gRemove,
-                ),0,wx.EXPAND|wx.LEFT,4)
+            gManualSizer = (vSizer(*right_side_components), 0,
+                            wx.EXPAND | wx.LEFT, 4)
         gSelectSizer = self._get_select_sizer()
         #--Layout
         self.gSizer.AddElements(vspace(),
@@ -257,6 +265,9 @@ class _ListPatcherPanel(_PatcherPanel):
                 ),1,wx.EXPAND),
             )
         return gConfigPanel
+
+    def _on_remove_empty_checked(self):
+        self.remove_empty_sublists = self.g_remove_empty.IsChecked()
 
     def _get_select_sizer(self):
         if not self.selectCommands: return None
@@ -377,6 +388,9 @@ class _ListPatcherPanel(_PatcherPanel):
         config = super(_ListPatcherPanel, self).getConfig(configs)
         self.autoIsChecked = self.forceAuto or config.get(
             'autoIsChecked', self.__class__.default_autoIsChecked)
+        self.remove_empty_sublists = config.get(
+            'remove_empty_sublists',
+            self.__class__.default_remove_empty_sublists)
         self.configItems = copy.deepcopy(
             config.get('configItems', self.__class__.default_configItems))
         self.configChecks = copy.deepcopy(
@@ -408,6 +422,7 @@ class _ListPatcherPanel(_PatcherPanel):
              key in listSet])
         config['configItems'] = self.configItems
         config['autoIsChecked'] = self.autoIsChecked
+        config['remove_empty_sublists'] = self.remove_empty_sublists
         return config
 
     def getItemLabel(self,item):
@@ -1037,8 +1052,10 @@ class RacePatcher(races_multitweaks.RacePatcher, _DoublePatcherPanel): pass
 class CBash_RacePatcher(races_multitweaks.CBash_RacePatcher,
                         _DoublePatcherPanel): pass
 
-class ListsMerger(special.ListsMerger, _ListsMergerPanel): pass
-class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel): pass
+class ListsMerger(special.ListsMerger, _ListsMergerPanel):
+    show_empty_sublist_checkbox = True
+class CBash_ListsMerger(special.CBash_ListsMerger, _ListsMergerPanel):
+    show_empty_sublist_checkbox = True
 
 class FidListsMerger(special.FidListsMerger, _ListsMergerPanel):
     listLabel = _(u"Override Deflst Tags")

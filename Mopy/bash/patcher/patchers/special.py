@@ -202,6 +202,7 @@ class ListsMerger(_AListsMerger, ListPatcher):
                 for mod in record.mergeSources:
                     log(u'  * ' + self.getItemLabel(mod))
         #--Discard empty sublists
+        if not self.remove_empty_sublists: return
         for label, type in ((_(u'Creature'), 'LVLC'), (_(u'Actor'), 'LVLN'),
                 (_(u'Item'), 'LVLI'), (_(u'Spell'), 'LVSP')):
             if type not in self.listTypes: continue

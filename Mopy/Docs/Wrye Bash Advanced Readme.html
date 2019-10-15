@@ -4705,7 +4705,10 @@ C.Location, -C.LockList
     <li><code>Delev</code> tagged plugins can remove entries from leveled lists. Any items present in such a plugin's masters but not in the plugin itself will be removed.
     <li><code>Relev</code> tagged plugins can relevel an existing entry (ie. change its levels and/or counts in the list), and can also override previous deletions of entries from leveled lists. However, it does not prevent a later-loading <code>Delev</code> tagged plugin from then removing an entry again.
     <li><code>Delev</code> and <code>Relev</code> tagged mods simply combines the effects of the <code>Delev</code> and <code>Relev</code> Bash Tags.
-    <li>In addition to the above, the leveled list patcher removes any empty sublists from leveled lists, as these would otherwise cause the leveled list to select nothing if such a sublist was picked in-game.
+    <li>In addition to the above, if the <q>Remove Empty Sublists</q> checkbox is ticked, the leveled list patcher will remove any empty sublists from leveled lists.
+    These would otherwise cause the leveled list to select nothing if such a sublist was picked in-game.
+    However, the patcher cannot distinguish between leveled lists that are empty by mistake and ones that get filled at runtime,
+    so this option is only safe to enable if you know your load order does not contain any mods with 'leveled list injectors'.</li>
 </ul>
 <p>It's best to simply ensure that your plugins have the correct tags and leave this section on automatic. To add plugins to or remove plugins from the list, uncheck the <q>Automatic</q> checkbox, and use the <q>Add</q> or <q>Remove</q> buttons. The latter will remove the currently selected plugin.
 <p>To manually override the Delev/Relev Bash Tags for a plugin, right-click it in the section list and check or uncheck the relevant options as desired. To return to the automatic setting, select the <q>Auto</q> option in the right-click menu.
