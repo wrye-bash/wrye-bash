@@ -682,6 +682,12 @@ class TextfileGame(Game):
                 for i, (ordered, current) in enumerate(
                         zip(cached_active_copy, active_in_lo)):
                     if ordered != current:
+                        if ordered not in lo:
+                            # Mod is in plugins.txt, but not in loadorder.txt;
+                            # just drop it from the copy for now, we'll check
+                            # if it's really missing in _fix_active_plugins
+                            cached_active_copy.remove(ordered)
+                            break
                         for j, x in enumerate(active_in_lo[i:]):
                             if x == ordered: break
                             # x should be above ordered
