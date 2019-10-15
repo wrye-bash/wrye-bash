@@ -1832,25 +1832,58 @@ class MreImgs(MelRecord):
         'brightness'
     ))
 
-    # Original Size 152 Bytes, FNVEdit says it can be 132 or 148 also
     class MelDnamData(MelStruct):
-        """Handle older truncated DNAM for IMGS subrecord."""
+        """Handle older truncated DNAM for IMGS subrecord. Note that we can't
+        convert to the newer format, doing so breaks interior lighting for some
+        reason."""
+
+        def getSlotsUsed(self):
+            return MelStruct.getSlotsUsed(self) + ('_dnam_type',)
+
         def loadData(self, record, ins, sub_type, size_, readId):
             if size_ == 152:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+                record._dnam_type = 0
                 return
             elif size_ == 148:
                 unpacked = ins.unpack('33f4s4s4s4s', size_, readId)
+                record._dnam_type = 1
             elif size_ == 132:
                 unpacked = ins.unpack('33f', size_, readId)
+                record._dnam_type = 2
             else:
-                raise "Unexpected size encountered for IMGS:DNAM subrecord: %s" % size_
-            unpacked += self.defaults[len(unpacked):]
+                raise ModSizeError(ins.inName, readId, 152, size_, True)
             setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+            for attr, value, action in zip(self.attrs, unpacked, self.actions):
                 if callable(action): value = action(value)
-                setter(attr,value)
+                setter(attr, value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
+
+        def dumpData(self, record, out):
+            if record._dnam_type == 0:
+                MelStruct.dumpData(self, record, out)
+                return
+            elif record._dnam_type == 1:
+                trunc_attrs = self.attrs[:37]
+                trunc_actions = self.actions[:37]
+                trunc_fmt = '33f4s4s4s4s'
+            elif record._dnam_type == 2:
+                trunc_attrs = self.attrs[:33]
+                trunc_actions = self.actions[:33]
+                trunc_fmt = '33f'
+            else: raise ModError(u'', u'Invalid DNAM type %u' %
+                                 record._dnam_type)
+            values = []
+            getter = record.__getattribute__
+            for attr, action in zip(trunc_attrs, trunc_actions):
+                value = getter(attr)
+                if action: value = value.dump()
+                values.append(value)
+            try:
+                out.packSub(self.subType, trunc_fmt, *values)
+            except struct.error:
+                print self.subType, trunc_fmt, values
+                raise
 
     melSet = MelSet(
         MelString('EDID','eid'),
