@@ -967,12 +967,12 @@ class ModList(_ModsUIList):
             selected = self.GetSelected()
             toActivate = [item for item in selected if
                           not load_order.cached_is_active(item)]
-            if len(toActivate) == 0 or len(toActivate) == len(selected):
-                #--Check/Uncheck all
-                self._toggle_active_state(*selected)
-            else:
-                #--Check all that aren't
-                self._toggle_active_state(*toActivate)
+            # If none are checked or all are checked, then toggle the selection
+            # Otherwise, check all that aren't
+            toggle_target = (selected if len(toActivate) == 0 or
+                                         len(toActivate) == len(selected)
+                             else toActivate)
+            self._toggle_active_state(*toggle_target)
         # Ctrl+C: Copy file(s) to clipboard
         elif event.CmdDown() and code == ord('C'):
             balt.copyListToClipboard([self.data_store[mod].getPath().s
@@ -1016,10 +1016,16 @@ class ModList(_ModsUIList):
         changes = collections.defaultdict(dict)
         # Deactivate ?
         touched = set()
+        # Track illegal deactivations for the return value
+        illegal_deactivations = []
         for act in active:
             if act in touched: continue # already deactivated
             try:
                 changed = self.data_store.lo_deactivate(act, doSave=False)
+                if not changed:
+                    # Can't deactivate that mod, track this
+                    illegal_deactivations.append(act.s)
+                    continue
                 refreshNeeded += len(changed)
                 if len(changed) > (act in changed): # deactivated children
                     touched |= changed
@@ -1030,6 +1036,8 @@ class ModList(_ModsUIList):
                 balt.showError(self, u'%s' % e)
         # Activate ?
         touched = set()
+        # Track illegal activations for the return value
+        illegal_activations = []
         for inact in inactive:
             if inact in touched: continue # already activated
             ## For now, allow selecting unicode named files, for testing
@@ -1038,6 +1046,10 @@ class ModList(_ModsUIList):
             #if fileName in self.data_store.bad_names: return
             try:
                 activated = self.data_store.lo_activate(inact, doSave=False)
+                if not activated:
+                    # Can't activate that mod, track this
+                    illegal_activations.append(inact.s)
+                    continue
                 refreshNeeded += len(activated)
                 if len(activated) > (inact in activated):
                     touched |= set(activated)
@@ -1046,7 +1058,20 @@ class ModList(_ModsUIList):
             except BoltError as e:
                 balt.showError(self, u'%s' % e)
                 break
-        #--Refresh
+        # Show warnings to the user if they attempted to deactivate mods that
+        # can't be deactivated (e.g. vanilla masters on newer games) and/or
+        # attempted to activate mods that can't be activated (e.g. .esu
+        # plugins).
+        if illegal_deactivations:
+            balt.askContinue(self, u"You can't deactivate the following "
+                                   u'mods:\n%s' %
+                             u', '.join(illegal_deactivations),
+                             'bash.mods.dnd.illegal_deactivation.continue')
+        if illegal_activations:
+            balt.askContinue(self, u"You can't activate the following "
+                                   u'mods:\n%s' %
+                             u', '.join(illegal_activations),
+                             'bash.mods.dnd.illegal_activation.continue')
         if refreshNeeded:
             bosh.modInfos.cached_lo_save_active()
             self.__toggle_active_msg(changes)
