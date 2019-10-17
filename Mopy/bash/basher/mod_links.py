@@ -1475,9 +1475,11 @@ class Mod_CopyToEsmp(EnabledLink):
         self._text = _(u'Copy to .esp') if self._is_esm else _(u'Copy to .esm')
 
     def _enable(self):
-        """Disable if selected are mixed esm/p's or inverted mods."""
+        """Disable if selected are mixed esm/p's, have something but esp/m or
+        if they're inverted mods."""
         for minfo in self.iselected_infos():
-            if minfo.is_esl() or minfo.isInvertedMod() or \
+            if minfo.get_extension() not in (u'.esm', u'.esp') or \
+                    minfo.is_esl() or minfo.isInvertedMod() or \
                     minfo.has_esm_flag() != self._is_esm:
                 return False
         return True
@@ -1593,7 +1595,7 @@ class _Esm_Esl_Flip(EnabledLink):
         self.window.RefreshUI(redraw=updated, refreshSaves=True)
 
 class Mod_FlipEsm(_Esm_Esl_Flip):
-    """Flip ESM flag. Extension must be esp."""
+    """Flip ESM flag. Extension must be .esp or .esu."""
     _help = _(u'Flips the ESM flag on the selected plugin(s), turning a master'
               u' into a regular plugin and vice versa.')
 
@@ -1607,10 +1609,11 @@ class Mod_FlipEsm(_Esm_Esl_Flip):
     def _enable(self):
         """For pre esl games check if all mods are of the same type (esm or
         esp), based on the flag and if are all esp extension files. For esl
-        games the esp extension is even more important as esm and esl have
-        the master flag set in memory no matter what."""
+        games the esp extension is even more important as .esm and .esl files
+        implicitly have the master flag set no matter what."""
         for m, minfo in self.iselected_pairs():
-            if m.cext[-1] != u'p' or minfo.has_esm_flag() != self._is_esm:
+            if m.cext not in (u'.esp', u'.esu') or \
+                minfo.has_esm_flag() != self._is_esm:
                 return False
         return True
 
@@ -1645,10 +1648,11 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
                                                                   u'Flag')
 
     def _enable(self):
-        """Allow if all selected mods are .espm files, have same esl flag and
-        are esl capable if converting to esl."""
+        """Allow if all selected mods have valid extensions, have same esl flag
+        and are esl capable if converting to esl."""
         for m, minfo in self.iselected_pairs():
-            if m.cext[-1] not in u'pm' or minfo.is_esl() != self._is_esl \
+            if m.cext not in (u'.esm', u'.esp', u'.esu') \
+                    or minfo.is_esl() != self._is_esl \
                     or (not self._is_esl and not m in bosh.modInfos.mergeable):
                 return False
         return True
@@ -1660,8 +1664,8 @@ class Mod_FlipEsl(_Esm_Esl_Flip):
               u'ESP to an ESL and vice versa.  Note that it is this bit OR '
               u'the ".esl" file extension that turns a mod into a light '
               u'plugin. We therefore disallow selecting files with the .esl '
-              u'extension for converting into a light plugin (as they already'
-              u'are light plugins).'))
+              u'extension for converting into a light plugin (as they '
+              u'implicitly are light plugins already).'))
         if not self._askContinue(message, 'bash.flipToEslp.continue',
                                  _(u'Flip to ESL')): return
         for modInfo in self.iselected_infos():

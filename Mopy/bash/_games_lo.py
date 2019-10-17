@@ -166,7 +166,8 @@ class FixInfo(object):
         msg = self.act_header
         if self.act_removed:
             msg += u'Active list contains mods not present in Data/ ' \
-                   u'directory or corrupted: ' + _pl(self.act_removed) + u'\n'
+                   u'directory, invalid and/or corrupted: '
+            msg += _pl(self.act_removed) + u'\n'
         if self.master_not_active:
             msg += u'%s not present in active mods\n' % self.master_not_active
         for path in self.missing_must_be_active:
@@ -455,7 +456,10 @@ class Game(object):
         # corrupted too! Preserve acti order
         quiet = fix_active is None
         if quiet: fix_active = FixInfo() # discard fix info
-        acti_filtered = [x for x in acti if x in self.mod_infos]
+        # Throw out files that aren't on disk as well as .esu files, which must
+        # never be active
+        acti_filtered = [x for x in acti if x in self.mod_infos
+                         and x.cext != u'.esu']
         fix_active.act_removed = set(acti) - set(acti_filtered)
         if fix_active.act_removed and not quiet:
             # take note as we may need to rewrite plugins txt

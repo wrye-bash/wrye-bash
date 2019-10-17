@@ -148,6 +148,7 @@
     <li><strong>ESP</strong> (case-insensitive) refers to any file with a <code>.esp</code> extension. It is an acronym for Elder Scrolls Plugin.</li>
     <li><strong>ESL</strong> (case-sensitive) refers to any file with a flag called the ESL flag set. Files with the extension <code>.esl</code> are treated as ESLs whether they have the flag or not. Only Fallout 4 and Skyrim&colon; Special Edition currently support these. Certain restrictions apply as to which plugins can be ESL-flagged. They do not take up a regular load order slot, theoretically allowing up to 4096 plugins to be loaded.</li>
     <li><strong>.esl</strong> (case-sensitive) refers to files with the extension <code>.esl</code>. These automatically receive the ESL and ESM flags. Only Fallout 4 and Skyrim&colon; Special Edition currently support them.</li>
+    <li><strong>ESU</strong> (case-insensitive) refers to any file with a <code>.esu</code> extension. These are an unofficial type of plugin used by xEdit. It is an acronym for Elder Scrolls Update.</li>
     <li><strong>Plugin</strong> refers to any of the above file types.</li>
     <li><strong>Master</strong> refers to any plugins that another plugin is dependent on to function. (It can also refer to an ESM file, as it used to be that only ESMs could be masters, until mod authors developed methods of using ESP files as masters too. The latter definition will not be used in this documentation.)</li>
     <li><strong>The game's master file</strong> refers to the ESM that must be loaded for the game to function. A short table showing the master file for each game follows:</li>
@@ -166,7 +167,7 @@
     <li><strong>Conflicts</strong> occur when two different mods try to change the same game variable or resource, which could be anything from a specific object in game to a script or a texture. Conflicts can cause problems, including CTDs or save game corruption, but they are not inherently bad, and most modding is the result of purposeful conflicts.</li>
     <li><strong>Resource Conflicts</strong> occur when two mods contain two different files that go in the same place, so one mod's file overwrites the others's file. This type of conflict can be managed by altering the install order of mods.</li>
     <li><strong>Data Conflicts</strong> occur when two mod plugins alter the same game data. This type of conflict can be managed by altering the load order of plugins or creating patches.</li>
-    <li><strong>BSAs</strong> are Bethesda Softwork Archives, with <code>.bsa</code> file extensions. They can be used to store resource files such as textures and meshes.</li>
+    <li><strong>BSAs</strong> are Bethesda Softwork Archives, with <code>.bsa</code> (<strong>All but Fallout 4</strong>) or <code>.ba2</code> (<strong>Fallout 4</strong>) file extensions. They can be used to store resource files such as textures and meshes.</li>
     <li><strong>ITMs</strong> are Identical To Master records, ie. data in a plugin for something that is identical to the data for that thing in the plugin's master(s). Usually a type of unintended edit, known as a <q>dirty edit</q>, which can break the functionality of other mods that require the record in question to have a specific value, but which have that value overridden by an ITM record.</li>
     <li><strong>UDRs</strong> are Undeleted and Disabled References. Deleted References can cause crashes, and this can be avoided by first undeleting and then disabling them instead. A type of <q>dirty edit</q>. Note that this acronym does not refer to the deleted references themselves - it actually refers to their fixed counterparts. For example, <q>Scan For UDRs</q> will scan for deleted references, not undeleted and disabled references, and BOSS/LOOT will report the UDR count for a plugin, which is actually the number of deleted references that can be fixed.</li>
 </ul>
@@ -264,9 +265,8 @@ be restructured.</p>
 <h3 id="bain-structure">BAIN-Compatible installer layout <a class="back2top" href="#contents">Back to top</a></h3>
 
 <p>When scanning an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. BAIN
- will search for specific directories and file extensions (espml, bsa/ba2, ini). The directories BAIN is aware of, independently of the game,
-are:
-
+    will search for specific directories and file extensions (bsa/ba2, ini, all plugin extensions).
+    The directories BAIN is aware of, independently of the game, are:</p>
 <table>
     <thead><tr><th>Bash directories<th>Notes
     <tbody>

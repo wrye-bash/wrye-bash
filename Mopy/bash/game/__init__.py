@@ -92,7 +92,7 @@ class GameInfo(object):
     vanilla_string_bsas = {}
     resource_archives_keys = ()
     # plugin extensions
-    espm_extensions = {u'.esp', u'.esm'}
+    espm_extensions = {u'.esm', u'.esp', u'.esu'}
     # Extensions for external script files. Empty if this game doesn't have any
     script_extensions = {}
     # Load order info

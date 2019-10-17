@@ -53,7 +53,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         u'dragonborn.esm': [u'Skyrim - Patch.bsa', u'Skyrim - Interface.bsa'],
     }
 
-    espm_extensions = {u'.esp', u'.esm', u'.esl'}
+    espm_extensions = SkyrimGameInfo.espm_extensions | {u'.esl'}
     has_achlist = True
     check_esl = True
 

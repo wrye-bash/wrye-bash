@@ -59,7 +59,7 @@ class Fallout4GameInfo(GameInfo):
         u'sResourceArchiveListBeta'
     )
 
-    espm_extensions = {u'.esp', u'.esm', u'.esl'}
+    espm_extensions = GameInfo.espm_extensions | {u'.esl'}
     script_extensions = {u'.psc'}
     has_achlist = True
     check_esl = True
