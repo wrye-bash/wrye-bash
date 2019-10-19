@@ -3645,7 +3645,7 @@ class MreLctn(MelRecord):
         MelFid('NAM1','music',),
         MelFid('FNAM','unreportedCrimeFaction',),
         MelFid('MNAM','worldLocationMarkerRef',),
-        MelOptStruct('RNAM','f','worldLocationRadius',),
+        MelStruct('RNAM','f','worldLocationRadius',),
         MelFid('NAM0','horseMarkerRef',),
         MelColorN(),
     )
@@ -4786,33 +4786,40 @@ class MrePerk(MelRecord):
             if self._debug: print unpacked, record.flagsA.getTrueAttrs()
 
     class MelPerkEffectData(MelBase):
-        def hasFids(self,formElements):
+        def hasFids(self, formElements):
             formElements.add(self)
+
         def loadData(self, record, ins, sub_type, size_, readId):
             target = MelObject()
             record.__setattr__(self.attr,target)
             if record.type == 0: # quest + stage
-                format,attrs = ('II',('quest','queststage'))
+                perk_fmt, attrs = ('IB3s', ('quest', 'quest_stage',
+                                            'unusedDATA'))
             elif record.type == 1: # ability
-                format,attrs = ('I',('ability',))
+                perk_fmt, attrs = ('I', ('ability',))
             elif record.type == 2: # entry point
-                format,attrs = ('HB',('entrypoint','function'))
+                perk_fmt, attrs = ('3B', ('entry_point', 'function',
+                                       'perk_conditions_tab_count'))
             else:
-                raise ModError(ins.inName,_('Unexpected type: %d') % record.type)
-            unpacked = ins.unpack(format, size_, readId)
+                raise ModError(ins.inName,
+                               _('Unexpected type: %d') % record.type)
+            unpacked = ins.unpack(perk_fmt, size_, readId)
             setter = target.__setattr__
             for attr,value in zip(attrs,unpacked):
                 setter(attr,value)
             if self._debug: print unpacked
-        def dumpData(self,record,out):
+
+        def dumpData(self, record, out):
             target = record.__getattribute__(self.attr)
             if not target: return
             if record.type == 0: # quest + stage
-                format,attrs = ('II',('quest','queststage'))
+                perk_fmt, attrs = ('IB3s', ('quest', 'quest_stage',
+                                            'unusedDATA'))
             elif record.type == 1: # ability
-                format,attrs = ('I',('ability',))
+                perk_fmt, attrs = ('I', ('ability',))
             elif record.type == 2: # entry point
-                format,attrs = ('HB',('entrypoint','function'))
+                perk_fmt, attrs = ('3B', ('entry_point', 'function',
+                                          'perk_conditions_tab_count'))
             else:
                 raise ModError(record.inName, # untested
                                _('Unexpected type: %d') % record.type)
@@ -4823,10 +4830,11 @@ class MrePerk(MelRecord):
                 value = getter(attr)
                 valuesAppend(value)
             try:
-                out.packSub(self.subType,format,*values)
+                out.packSub(self.subType,perk_fmt,*values)
             except struct.error:
-                print self.subType,format,values
+                print self.subType,perk_fmt,values
                 raise
+
         def mapFids(self,record,function,save=False):
             target = record.__getattribute__(self.attr)
             if not target: return
@@ -4858,35 +4866,13 @@ class MrePerk(MelRecord):
                     return
             MelGroups.loadData(self, record, ins, sub_type, size_, readId)
 
-    class MelPerkEffectParams(MelGroups):
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type in ('EPFT', 'EPF2', 'EPF3', 'EPFD'):
-                target = self.getDefault()
-                record.__getattribute__(self.attr).append(target)
-            else:
-                target = record.__getattribute__(self.attr)[-1]
-            element = self.loaders[sub_type]
-            slots = ['recordType']
-            slots.extend(element.getSlotsUsed())
-            target.__slots__ = slots
-            target.recordType = sub_type
-            element.loadData(target, ins, sub_type, size_, readId)
-        def dumpData(self,record,out):
-            for target in record.__getattribute__(self.attr):
-                element = self.loaders[target.recordType]
-                if not element:
-                    raise ModError(record.inName, _(
-                        'Unexpected type: %d') % target.recordType)
-                element.dumpData(target,out)
-
     class MelPerkEpfd(MelBase):
         """EPFD needs to check EPFT and adjust its loading / dumping behavior
         accordingly."""
         def __init__(self):
-            MelBase.__init__(self, 'EPFD', 'function_parameter_data')
+            MelBase.__init__(self, 'EPFD', 'params')
 
         def loadData(self, record, ins, sub_type, size_, readId):
-            target = MelObject()
             # EPFT has the following meanings:
             #  0: Unknown
             #  1: EPFD=float
@@ -4899,34 +4885,31 @@ class MrePerk(MelRecord):
             # TODO(inf) there is a special case: If EPFT is 2 and
             #  DATA/function is one of 5, 12, 13 or 14, then:
             #  EPFD=uint32, float
-            record.__setattr__(self.attr, target)
             if record.function_parameter_type == 0:
                 # Read the entire subrecord, probably empty but just in case
-                target.params = ins.read(size_, readId)
+                record.params = ins.read(size_, readId)
             elif record.function_parameter_type == 1:
-                target.params = ins.unpack('f', 4, readId)
+                record.params = ins.unpack('f', 4, readId)
             elif record.function_parameter_type == 2:
                 # TODO(inf) See above - this is a special case, the first one
                 #  may either be uint32 or float. Using uint32 to not lose any
                 #  data due to precision issues here
-                target.params = ins.unpack('If', 8, readId)
+                record.params = ins.unpack('If', 8, readId)
             elif record.function_parameter_type in (3, 4, 5):
-                target.params = ins.unpack('I', 4, readId)
+                record.params = ins.unpack('I', 4, readId)
             elif record.function_parameter_type == 6:
-                target.params = ins.readString(size_, readId)
+                record.params = ins.readString(size_, readId)
             elif record.function_parameter_type == 7:
-                target.params = ins.readLString(size_, readId)
+                record.params = ins.readLString(size_, readId)
             else:
                 raise ModError(ins.inName, _(u'Unexpected function parameter '
                                              u'type: %d') %
                                record.function_parameter_type)
 
         def dumpData(self, record, out):
-            target = record.__getattribute__(self.attr)
-            if not target: return
             if record.function_parameter_type == 0:
                 # In this case, params is a binary dump
-                out.packSub(self.subType, target.params)
+                out.packSub(self.subType, record.params)
                 return
             elif record.function_parameter_type == 1:
                 target_format = 'f'
@@ -4935,13 +4918,13 @@ class MrePerk(MelRecord):
             elif record.function_parameter_type in (3, 4, 5):
                 target_format = 'I'
             elif record.function_parameter_type in (6, 7):
-                out.write_string(self.subType, target.params[0])
+                out.write_string(self.subType, record.params[0])
                 return
             else:
                 # TODO(inf) We need to hand the mod name to dumpData -
                 #  otherwise these errors are worthless
                 raise ModError(u'', _(u'Unexpected type: %d') % record.type)
-            out.packSub(self.subType, target_format, *target.params)
+            out.packSub(self.subType, target_format, *record.params)
 
         def hasFids(self, formElements):
             formElements.add(self)
@@ -4960,24 +4943,27 @@ class MrePerk(MelRecord):
         MelString('MICO','smallIconPath'),
         MelConditions(),
         MelGroup('_data',
-            MelPerkData('DATA', 'BBBBB', ('trait',0), ('minLevel',0), ('ranks',0), ('playable',0), ('hidden',0)),
-            ),
+            MelPerkData('DATA', 'BBBBB', ('trait', 0), ('minLevel', 0),
+                        ('ranks', 0), ('playable', 0), ('hidden', 0)),
+        ),
+        MelFid('NNAM', 'next_perk'),
         MelPerkEffects('effects',
             MelStruct('PRKE', 'BBB', 'type', 'rank', 'priority'),
             MelPerkEffectData('DATA','effectData'),
             MelGroups('effectConditions',
-                MelStruct('PRKC', 'B', 'runOn'),
+                MelStruct('PRKC', 'b', 'runOn'),
                 MelConditions(),
             ),
-            MelPerkEffectParams('effectParams',
+            MelGroups('effectParams',
                 MelStruct('EPFT','B','function_parameter_type'),
                 MelLString('EPF2','buttonLabel'),
-                MelStruct('EPF3','H',(_PerkScriptFlags, 'script_flags', 0L)),
+                MelStruct('EPF3','2H',(_PerkScriptFlags, 'script_flags', 0L),
+                          'fragment_index'),
                 MelPerkEpfd(),
             ),
             MelBase('PRKF','footer'),
-            ),
-        )
+        ),
+    )
     melSet.elements[-1].setMelSet(melSet)
     __slots__ = melSet.getSlotsUsed()
 
@@ -6143,7 +6129,9 @@ class MreSndr(MelRecord):
         MelBase('CNAM','cnam_p'),
         MelFid('GNAM','category',),
         MelFid('SNAM','altSoundFor',),
-        MelStrings('ANAM','sounds',),
+        MelGroups('sounds',
+            MelString('ANAM', 'sound_file_name',),
+        ),
         MelFid('ONAM','outputModel',),
         MelLString('FNAM','string'),
         MelConditions(),
@@ -6332,14 +6320,15 @@ class MreStat(MelRecord):
     """Static model record."""
     classType = 'STAT'
     melSet = MelSet(
-        MelString('EDID','eid'),
+        MelString('EDID', 'eid'),
         MelBounds(),
         MelModel(),
-        MelStruct('DNAM','fI','maxAngle30to120',(FID,'material'),),
+        MelStruct('DNAM', 'fI', 'maxAngle30to120', (FID, 'material'),),
         # Contains null-terminated mesh filename followed by random data
         # up to 260 bytes and repeats 4 times
-        MelBase('MNAM','distantLOD'),
-        )
+        MelBase('MNAM', 'distantLOD'),
+        MelBase('ENAM', 'unknownENAM'),
+    )
     __slots__ = melSet.getSlotsUsed()
 
 # Verified for 305

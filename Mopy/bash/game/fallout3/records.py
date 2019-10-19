@@ -1832,25 +1832,58 @@ class MreImgs(MelRecord):
         'brightness'
     ))
 
-    # Original Size 152 Bytes, FNVEdit says it can be 132 or 148 also
     class MelDnamData(MelStruct):
-        """Handle older truncated DNAM for IMGS subrecord."""
+        """Handle older truncated DNAM for IMGS subrecord. Note that we can't
+        convert to the newer format, doing so breaks interior lighting for some
+        reason."""
+
+        def getSlotsUsed(self):
+            return MelStruct.getSlotsUsed(self) + ('_dnam_type',)
+
         def loadData(self, record, ins, sub_type, size_, readId):
             if size_ == 152:
                 MelStruct.loadData(self, record, ins, sub_type, size_, readId)
+                record._dnam_type = 0
                 return
             elif size_ == 148:
                 unpacked = ins.unpack('33f4s4s4s4s', size_, readId)
+                record._dnam_type = 1
             elif size_ == 132:
                 unpacked = ins.unpack('33f', size_, readId)
+                record._dnam_type = 2
             else:
-                raise "Unexpected size encountered for IMGS:DNAM subrecord: %s" % size_
-            unpacked += self.defaults[len(unpacked):]
+                raise ModSizeError(ins.inName, readId, 152, size_, True)
             setter = record.__setattr__
-            for attr,value,action in zip(self.attrs,unpacked,self.actions):
+            for attr, value, action in zip(self.attrs, unpacked, self.actions):
                 if callable(action): value = action(value)
-                setter(attr,value)
+                setter(attr, value)
             if self._debug: print unpacked, record.flags.getTrueAttrs()
+
+        def dumpData(self, record, out):
+            if record._dnam_type == 0:
+                MelStruct.dumpData(self, record, out)
+                return
+            elif record._dnam_type == 1:
+                trunc_attrs = self.attrs[:37]
+                trunc_actions = self.actions[:37]
+                trunc_fmt = '33f4s4s4s4s'
+            elif record._dnam_type == 2:
+                trunc_attrs = self.attrs[:33]
+                trunc_actions = self.actions[:33]
+                trunc_fmt = '33f'
+            else: raise ModError(u'', u'Invalid DNAM type %u' %
+                                 record._dnam_type)
+            values = []
+            getter = record.__getattribute__
+            for attr, action in zip(trunc_attrs, trunc_actions):
+                value = getter(attr)
+                if action: value = value.dump()
+                values.append(value)
+            try:
+                out.packSub(self.subType, trunc_fmt, *values)
+            except struct.error:
+                print self.subType, trunc_fmt, values
+                raise
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -2793,6 +2826,10 @@ class MrePerk(MelRecord):
         (0, 'runImmediately'),
     ))
 
+    _variableFlags = Flags(0L, Flags.getNames(
+        'isLongOrShort',
+    ))
+
     class MelPerkData(MelStruct):
         """Handle older truncated DATA for PERK subrecord."""
 
@@ -2819,14 +2856,17 @@ class MrePerk(MelRecord):
             target = MelObject()
             record.__setattr__(self.attr, target)
             if record.type == 0:
-                format, attrs = ('II', ('quest', 'queststage'))
+                perk_fmt, attrs = ('IB3s', ('quest', 'quest_stage',
+                                            'unusedDATA'))
             elif record.type == 1:
-                format, attrs = ('I', ('ability',))
+                perk_fmt, attrs = ('I', ('ability',))
             elif record.type == 2:
-                format, attrs = ('HB', ('entrypoint', 'function'))
+                perk_fmt, attrs = ('3B', ('entry_point', 'function',
+                                          'perk_conditions_tab_count'))
             else:
-                raise ModError(ins.inName, _('Unexpected type: %d') % record.type)
-            unpacked = ins.unpack(format, size_, readId)
+                raise ModError(ins.inName,
+                               _('Unexpected type: %d') % record.type)
+            unpacked = ins.unpack(perk_fmt, size_, readId)
             setter = target.__setattr__
             for attr, value in zip(attrs, unpacked):
                 setter(attr, value)
@@ -2836,13 +2876,16 @@ class MrePerk(MelRecord):
             target = record.__getattribute__(self.attr)
             if not target: return
             if record.type == 0:
-                format, attrs = ('II', ('quest', 'queststage'))
+                format, attrs = ('IB3s', ('quest', 'quest_stage',
+                                          'unusedDATA'))
             elif record.type == 1:
                 format, attrs = ('I', ('ability',))
             elif record.type == 2:
-                format, attrs = ('HB', ('entrypoint', 'function'))
+                format, attrs = ('3B', ('entry_point', 'function',
+                                        'perk_conditions_tab_count'))
             else:
-                raise ModError(record.inName, _('Unexpected type: %d') % record.type)
+                raise ModError(record.inName,
+                               _('Unexpected type: %d') % record.type)
             values = []
             valuesAppend = values.append
             getter = target.__getattribute__
@@ -2888,35 +2931,13 @@ class MrePerk(MelRecord):
                     return
             MelGroups.loadData(self, record, ins, sub_type, size_, readId)
 
-    class MelPerkEffectParams(MelGroups):
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if sub_type in ('EPFD', 'EPFT', 'EPF2', 'EPF3', 'SCHR'):
-                target = self.getDefault()
-                record.__getattribute__(self.attr).append(target)
-            else:
-                target = record.__getattribute__(self.attr)[-1]
-            element = self.loaders[sub_type]
-            slots = ['recordType']
-            slots.extend(element.getSlotsUsed())
-            target.__slots__ = slots
-            target.recordType = sub_type
-            element.loadData(target, ins, sub_type, size_, readId)
-
-        def dumpData(self, record, out):
-            for target in record.__getattribute__(self.attr):
-                element = self.loaders[target.recordType]
-                if not element:
-                    raise ModError(record.inName, _('Unexpected type: %d') % target.recordType)
-                element.dumpData(target, out)
-
     class MelPerkEpfd(MelBase):
         """EPFD needs to check EPFT and adjust its loading / dumping behavior
         accordingly."""
         def __init__(self):
-            MelBase.__init__(self, 'EPFD', 'function_parameter_data')
+            MelBase.__init__(self, 'EPFD', 'params')
 
         def loadData(self, record, ins, sub_type, size_, readId):
-            target = MelObject()
             # EPFT has the following meanings:
             #  0: Unknown
             #  1: EPFD=float
@@ -2926,30 +2947,27 @@ class MrePerk(MelRecord):
             # TODO(inf) there is a special case: If EPFT is 2 and
             #  DATA/function is 5, then:
             #  EPFD=uint32, float
-            record.__setattr__(self.attr, target)
             if record.function_parameter_type in (0, 4):
                 # Read the entire subrecord, probably empty but just in case
-                target.params = ins.read(size_, readId)
+                record.params = ins.read(size_, readId)
             elif record.function_parameter_type == 1:
-                target.params = ins.unpack('f', 4, readId)
+                record.params = ins.unpack('f', 4, readId)
             elif record.function_parameter_type == 2:
                 # TODO(inf) See above - this is a special case, the first one
                 #  may either be uint32 or float. Using uint32 to not lose any
                 #  data due to precision issues here
-                target.params = ins.unpack('If', 8, readId)
+                record.params = ins.unpack('If', 8, readId)
             elif record.function_parameter_type == 3:
-                target.params = ins.unpack('I', 4, readId)
+                record.params = ins.unpack('I', 4, readId)
             else:
                 raise ModError(ins.inName, _(u'Unexpected function parameter '
                                              u'type: %d') %
                                record.function_parameter_type)
 
         def dumpData(self, record, out):
-            target = record.__getattribute__(self.attr)
-            if not target: return
             if record.function_parameter_type in (0, 4):
                 # In this case, params is a binary dump
-                out.packSub(self.subType, target.params)
+                out.packSub(self.subType, record.params)
                 return
             elif record.function_parameter_type == 1:
                 target_format = 'f'
@@ -2961,7 +2979,15 @@ class MrePerk(MelRecord):
                 # TODO(inf) We need to hand the mod name to dumpData -
                 #  otherwise these errors are worthless
                 raise ModError(u'', _(u'Unexpected type: %d') % record.type)
-            out.packSub(self.subType, target_format, *target.params)
+            out.packSub(self.subType, target_format, *record.params)
+
+        def hasFids(self, formElements):
+            formElements.add(self)
+
+        def mapFids(self, record, function, save=False):
+            if record.function_parameter_type == 3:
+                result = map(function, record.params)
+                if save: record.params = tuple(result)
 
     melSet = MelSet(
         MelString('EDID','eid'),
@@ -2971,30 +2997,39 @@ class MrePerk(MelRecord):
         MelString('MICO','smallIconPath'),
         MelConditions(),
         MelGroup('_data',
-            MelPerkData('DATA', 'BBBBB', ('trait',0), ('minLevel',0), ('ranks',0), ('playable',0), ('hidden',0)),
-            ),
+            MelPerkData('DATA', 'BBBBB', ('trait',0), ('minLevel',0),
+                        ('ranks',0), ('playable',0), ('hidden',0)),
+        ),
         MelPerkEffects('effects',
             MelStruct('PRKE', 'BBB', 'type', 'rank', 'priority'),
             MelPerkEffectData('DATA','effectData'),
             MelGroups('effectConditions',
-                MelStruct('PRKC', 'B', 'runOn'),
+                MelStruct('PRKC', 'b', 'runOn'),
                 MelConditions(),
             ),
-            MelPerkEffectParams('effectParams',
+            MelGroups('effectParams',
                 MelStruct('EPFT', 'B', 'function_parameter_type'),
                 MelPerkEpfd(),
                 MelString('EPF2','buttonLabel'),
                 MelStruct('EPF3', 'H', (_PerkScriptFlags, 'script_flags', 0L)),
                 MelGroup('embeddedScript',
-                    MelStruct('SCHR','4s4I',('unused1',null4),'numRefs','compiledSize','lastIndex','scriptType'),
+                    MelStruct('SCHR','4s4I',('unused1',null4),'numRefs',
+                              'compiledSize','lastIndex','scriptType'),
                     MelBase('SCDA','compiled_p'),
                     MelString('SCTX','scriptText'),
+                    MelGroups('vars',
+                        MelStruct('SLSD', 'I12sB7s', 'index',
+                                  ('unused1', null4 + null4 + null4),
+                                  (_variableFlags, 'flags', 0L),
+                                  ('unused2', null4 + null3)),
+                        MelString('SCVR', 'name'),
+                    ),
                     MelScrxen('SCRV/SCRO','references'),
                 ),
             ),
             MelBase('PRKF','footer'),
-            ),
-        )
+        ),
+    )
     melSet.elements[-1].setMelSet(melSet)
     __slots__ = melSet.getSlotsUsed()
 
