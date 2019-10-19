@@ -432,6 +432,8 @@ def InitModLinks():
     ModList.mainMenu.append(Mods_CleanDummyMasters())
     ModList.mainMenu.append(SeparatorLink())
     ModList.mainMenu.append(Mods_AutoGhost())
+    if bush.game.has_esl:
+        ModList.mainMenu.append(Mods_AutoESLFlagBP())
     ModList.mainMenu.append(Mods_LockLoadOrder())
     ModList.mainMenu.append(Mods_ScanDirty())
     ModList.mainMenu.append(SeparatorLink())

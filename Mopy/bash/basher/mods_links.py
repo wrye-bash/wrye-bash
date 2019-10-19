@@ -36,7 +36,7 @@ __all__ = ['Mods_EsmsFirst', 'Mods_LoadList', 'Mods_SelectedFirst',
            'Mods_OblivionVersion', 'Mods_CreateBlankBashedPatch',
            'Mods_CreateBlank', 'Mods_ListMods', 'Mods_ListBashTags',
            'Mods_CleanDummyMasters', 'Mods_AutoGhost', 'Mods_LockLoadOrder',
-           'Mods_ScanDirty', 'Mods_CrcRefresh']
+           'Mods_ScanDirty', 'Mods_CrcRefresh', 'Mods_AutoESLFlagBP']
 
 # "Load" submenu --------------------------------------------------------------
 class _Mods_LoadListData(balt.ListEditorData):
@@ -303,7 +303,14 @@ class Mods_AutoGhost(BoolLink):
         self.window.RefreshUI(redraw=bosh.modInfos.autoGhost(force=True),
                               refreshSaves=False)
 
-#------------------------------------------------------------------------------
+class Mods_AutoESLFlagBP(BoolLink):
+    """Automatically flags built Bashed Patches as ESLs. This is safe, since
+    BPs can never contain new records, only overrides."""
+    _text = _(u'ESL-Flag Bashed Patches')
+    _help = _(u'Automatically flags any built Bashed Patches as ESLs, freeing '
+              u'up a load order slot.')
+    key = 'bash.mods.auto_flag_esl'
+
 class Mods_ScanDirty(BoolLink):
     """Read mod CRC's to check for dirty mods."""
     _text = _(u"Check mods against LOOT's dirty mod list")
@@ -325,6 +332,7 @@ class Mods_LockLoadOrder(CheckLink):
 
     def Execute(self): load_order.toggle_lock_load_order()
 
+#------------------------------------------------------------------------------
 class Mods_CrcRefresh(ItemLink):
     """Recalculate crcs for all mods"""
     _text = _(u'Recalculate CRCs')

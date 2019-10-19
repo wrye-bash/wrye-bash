@@ -199,7 +199,6 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.statusbar.order': [],
     'bash.statusbar.showversion': False,
     #--Wrye Bash: Group and Rating
-    'bash.mods.autoGhost': False,
     'bash.mods.groups': [
         u'Root',
         u'Library',
@@ -317,6 +316,8 @@ settingDefaults = { ##: (178) belongs to bosh (or better to a settings package)
     'bash.ini.choice': 0,
     'bash.ini.allowNewLines': bush.game.ini.allowNewLines,
     #--Wrye Bash: Mods
+    'bash.mods.autoGhost': False,
+    'bash.mods.auto_flag_esl': True,
     'bash.mods.cols': ['File', 'Load Order', 'Installer', 'Modified', 'Size',
                        'Author', 'CRC'],
     'bash.mods.esmsFirst': 1,

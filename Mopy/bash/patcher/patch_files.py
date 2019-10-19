@@ -332,26 +332,34 @@ class PatchFile(_PFile, ModFile):
         """Completes merge process. Use this when finished using scanLoadMods."""
         if not len(self.patchers): return
         self._log_header(log, self.fileInfo.name.s)
-        #--Patchers
+        # Run buildPatch on each patcher
         self.keepIds |= self.mergeIds
         subProgress = SubProgress(progress,0,0.9,len(self.patchers))
         for index,patcher in enumerate(sorted(self.patchers,key=attrgetter('editOrder'))):
             subProgress(index,_(u'Completing')+u'\n%s...' % patcher.getName())
             patcher.buildPatch(log,SubProgress(subProgress,index))
-        #--Trim records
+        # Trim records to only keep ones we actually changed
         progress(0.9,_(u'Completing')+u'\n'+_(u'Trimming records...'))
         for block in self.tops.values():
             block.keepRecords(self.keepIds)
         progress(0.95,_(u'Completing')+u'\n'+_(u'Converting fids...'))
-        #--Convert masters to short fids
+        # Convert masters to short fids
         self.tes4.masters = self.getMastersUsed()
         self.convertToShortFids()
         progress(1.0,_(u"Compiled."))
-        #--Description
+        # Build the description
         numRecords = sum([x.getNumRecords(False) for x in self.tops.values()])
         self.tes4.description = (
             _(u'Updated: ') + bolt.formatDate(time.time()) + u'\n\n' + _(
                 u'Records Changed') + u': %d' % numRecords)
+        # Flag as ESL if the game supports them and the option is enabled
+        # Note that we can always safely mark as ESL, since the BP only ever
+        # contains overrides, no new records
+        if bush.game.has_esl and bass.settings['bash.mods.auto_flag_esl']:
+            self.tes4.flags1.eslFile = True
+            self.tes4.description += (u'\nThis patch has been automatically '
+                                      u'ESL-flagged to save a load order '
+                                      u'slot.')
 
 class CBash_PatchFile(_PFile, ObModFile):
     """Defines and executes patcher configuration."""
