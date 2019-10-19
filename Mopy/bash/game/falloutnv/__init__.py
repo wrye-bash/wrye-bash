@@ -159,7 +159,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
                 MrePack, MrePerk, MreProj, MrePwat, MreQust, MreRace, MreRads,
                 MreRcct, MreRcpe, MreRegn, MreRepu, MreRgdl, MreScol, MreScpt,
                 MreSlpd, MreSoun, MreSpel, MreStat, MreTact, MreTerm, MreTree,
-                MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr,
+                MreTxst, MreVtyp, MreWatr, MreWeap, MreWthr, MreGmst,
             )
         # Setting RecordHeader class variables --------------------------------
         brec.RecordHeader.topTypes = [
@@ -183,7 +183,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         brec.RecordHeader.plugin_form_version = 15
         brec.MreRecord.type_class = dict(
             (x.classType, x) for x in (cls.mergeClasses +  # Not Mergeable
-            (MreAchr, MreAcre, MreCell, MreDial, MreGmst, MreInfo, MreNavi,
+            (MreAchr, MreAcre, MreCell, MreDial, MreInfo, MreNavi,
              MreNavm, MrePgre, MrePmis, MreRefr, MreWrld, MreHeader,)))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {

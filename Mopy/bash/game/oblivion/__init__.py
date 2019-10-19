@@ -253,7 +253,7 @@ class OblivionGameInfo(GameInfo):
             MreLvsp, MreMgef, MreMisc, MreNpc, MrePack, MreQust, MreRace,
             MreScpt, MreSgst, MreSlgm, MreSoun, MreSpel, MreStat, MreTree,
             MreWatr, MreWeap, MreWthr, MreClmt, MreCsty, MreIdle, MreLtex,
-            MreRegn, MreSbsp, MreSkil,
+            MreRegn, MreSbsp, MreSkil, MreGmst,
         )
         cls.readClasses = (MreMgef, MreScpt,)
         cls.writeClasses = (MreMgef,)
