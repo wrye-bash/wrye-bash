@@ -73,7 +73,7 @@ class SkyrimSEGameInfo(SkyrimGameInfo):
         se_abbrev = u'SKSE64'
         long_name = u'Skyrim SE Script Extender'
         exe = u'skse64_loader.exe'
-        steam_exe = u'skse64_loader.exe'
+        ver_files = [u'skse64_loader.exe', u'skse64_steam_loader.dll']
 
     # ScriptDragon doesn't exist for SSE
     class sd(SkyrimGameInfo.sd):

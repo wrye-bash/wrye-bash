@@ -77,7 +77,7 @@ class Fallout4GameInfo(GameInfo):
         se_abbrev = u'F4SE'
         long_name = u'Fallout 4 Script Extender'
         exe = u'f4se_loader.exe'
-        steam_exe = u'f4se_steam_loader.dll'
+        ver_files = [u'f4se_loader.exe', u'f4se_steam_loader.dll']
         plugin_dir = u'F4SE'
         cosave_ext = u'.f4se'
         url = u'http://f4se.silverlock.org/'

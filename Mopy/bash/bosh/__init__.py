@@ -3098,10 +3098,6 @@ def initDefaultTools():
 def initDefaultSettings():
     #other settings from the INI:
     inisettings['EnableUnicode'] = False
-    if 'steam' in dirs['app'].cs:
-        inisettings['SteamInstall'] = True
-    else:
-        inisettings['SteamInstall'] = False
     inisettings['ScriptFileExt'] = u'.txt'
     inisettings['KeepLog'] = 0
     inisettings['LogFile'] = dirs['mopy'].join(u'bash.log')

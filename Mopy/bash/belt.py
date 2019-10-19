@@ -1061,12 +1061,11 @@ class WryeParser(ScriptParser.Parser):
 
     def fnCompareSEVersion(self, seWant):
         if bush.game.se.se_abbrev != u'':
-            if bass.inisettings['SteamInstall']:
-                se = bush.game.se.steam_exe   # User may not have obse_loader.exe, since it's only required for the CS
-            else:
-                se = bush.game.se.exe
-            ret = self._TestVersion(self._TestVersion_Want(seWant), bass.dirs['app'].join(se))
-            return ret[0]
+            ver_path = None
+            for ver_file in bush.game.se.ver_files:
+                ver_path = bass.dirs['app'].join(ver_file)
+                if ver_path.exists(): break
+            return self._TestVersion(self._TestVersion_Want(seWant), ver_path)
         else:
             # No script extender available for this game
             return 1
@@ -1585,11 +1584,11 @@ class WryeParser(ScriptParser.Parser):
         bGameOk = ret[0] >= 0
         gameHave = ret[1]
         if bush.game.se.se_abbrev != u'':
-            if bass.inisettings['SteamInstall']:
-                seName = bush.game.se.steam_exe
-            else:
-                seName = bush.game.se.exe
-            ret = self._TestVersion(seWant, bass.dirs['app'].join(seName))
+            ver_path = None
+            for ver_file in bush.game.se.ver_files:
+                ver_path = bass.dirs['app'].join(ver_file)
+                if ver_path.exists(): break
+            ret = self._TestVersion(seWant, ver_path)
             bSEOk = ret[0] >= 0
             seHave = ret[1]
         else:
@@ -1632,7 +1631,7 @@ class WryeParser(ScriptParser.Parser):
         return need
 
     def _TestVersion(self, need, file_):
-        if file_.exists():
+        if file_ and file_.exists():
             have = get_file_version(file_.s)
             ver = u'.'.join([unicode(i) for i in have])
             if need == u'None':

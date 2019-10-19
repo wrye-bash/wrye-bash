@@ -103,12 +103,13 @@ class StatusBar_Button(ItemLink):
     @property
     def obseVersion(self):
         if not bass.settings['bash.statusbar.showversion']: return u''
-        if bass.inisettings['SteamInstall']:
-            se_exe = bass.dirs['app'].join(bush.game.se.steam_exe)
+        for ver_file in bush.game.se.ver_files:
+            ver_path = bass.dirs['app'].join(ver_file)
+            if ver_path.exists():
+                return u' ' + u'.'.join([u'%s' % x for x
+                                         in ver_path.strippedVersion])
         else:
-            se_exe = bass.dirs['app'].join(bush.game.se.exe)
-        if not se_exe.isfile(): return u''
-        return u' ' + u'.'.join([u'%s' % x for x in se_exe.strippedVersion])
+            return u''
 
 #------------------------------------------------------------------------------
 # App Links -------------------------------------------------------------------
@@ -254,10 +255,9 @@ class App_Button(StatusBar_Button):
                 args = [exePath.s]
             elif self.obseArg is not None and \
                     BashStatusBar.obseButton.button_state:
-                if bass.inisettings['SteamInstall'] and self.exePath.tail == u'Oblivion.exe':
-                    exePath = self.exePath
-                else:
-                    exePath = exeObse
+                exePath = (self.exePath if not exeObse.exists() and
+                           self.exePath.tail == u'Oblivion.exe'
+                           else exeObse)
                 args = [exePath.s]
                 if self.obseArg != u'':
                     args.append(u'%s' % self.obseArg)

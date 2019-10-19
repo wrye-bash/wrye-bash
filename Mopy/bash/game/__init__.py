@@ -126,7 +126,9 @@ class GameInfo(object):
                           # cosave_ext instead.
         long_name = u''   # Full name
         exe = u''         # Exe to run
-        steam_exe = u''   # Exe to run if a steam install
+        ver_files = []    # List of file names to use for version detection.
+                          # Tried in order until one exists. Needed because
+                          # it's technically not required to install the EXE.
         plugin_dir = u''  # One level above the directory in which xSE plugins
                           # should be placed (e.g. when plugins should be in
                           # Data\OBSE\Plugins, this should be u'OBSE')

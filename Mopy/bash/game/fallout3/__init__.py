@@ -59,7 +59,12 @@ class Fallout3GameInfo(GameInfo):
         se_abbrev = u'FOSE'
         long_name = u'Fallout 3 Script Extender'
         exe = u'fose_loader.exe'
-        steam_exe = u'fose_loader.dll'
+        # There is no fose_steam_loader.dll, so we have to list all included
+        # DLLs, since people could delete any DLL not matching the game version
+        # they're using
+        ver_files = [u'fose_loader.exe', u'fose_1_7ng.dll', u'fose_1_7.dll',
+                     u'fose_1_6.dll', u'fose_1_5.dll', u'fose_1_4b.dll',
+                     u'fose_1_4.dll', u'fose_1_1.dll', u'fose_1_0.dll']
         plugin_dir = u'FOSE'
         cosave_ext = u'.fose'
         url = u'http://fose.silverlock.org/'

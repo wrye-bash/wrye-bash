@@ -64,7 +64,9 @@ class OblivionGameInfo(GameInfo):
         se_abbrev = u'OBSE'
         long_name = u'Oblivion Script Extender'
         exe = u'obse_loader.exe'
-        steam_exe = u'obse_1_2_416.dll'
+        # Not sure why we need obse_1_2_416.dll, was there before refactoring
+        ver_files = [u'obse_loader.exe', u'obse_steam_loader.dll',
+                     u'obse_1_2_416.dll']
         plugin_dir = u'OBSE'
         cosave_ext = u'.obse'
         url = u'http://obse.silverlock.org/'
