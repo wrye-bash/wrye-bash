@@ -54,11 +54,7 @@ class FalloutNVGameInfo(Fallout3GameInfo):
         url_tip = u'http://nvse.silverlock.org/'
 
     # BAIN:
-    dataDirsPlus = {
-        u'ini',
-        u'nvse',
-        u'scripts',
-        }
+    dataDirs = (Fallout3GameInfo.dataDirs - {u'fose'}) | {u'nvse'}
     SkipBAINRefresh = {u'fnvedit backups', u'fnvedit cache'}
     ignoreDataFiles = {
         #    u'NVSE\\Plugins\\Construction Set Extender.dll',

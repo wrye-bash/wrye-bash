@@ -95,23 +95,20 @@ class SkyrimGameInfo(GameInfo):
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
+        u'asi', # script dragon
+        u'calientetools', # bodyslide
         u'dialogueviews',
+        u'dyndolod',
         u'grass',
         u'interface',
         u'lodsettings',
         u'scripts',
         u'seq',
         u'shadersfx',
-        u'strings',
-    }
-    dataDirsPlus = {
-        u'asi',
-        u'calientetools', # bodyslide
-        u'dyndolod',
-        u'ini',
         u'skse',
         u'skyproc patchers',
-        u'tools', # Bodyslide, FNIS
+        u'strings',
+        u'tools', # FNIS
     }
     dontSkip = (
            # These are all in the Interface folder. Apart from the skyui_ files,

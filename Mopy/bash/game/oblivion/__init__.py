@@ -87,20 +87,17 @@ class OblivionGameInfo(GameInfo):
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
+        u'_tejon',
         u'distantlod',
         u'facegen',
         u'fonts',
         u'menus',
-        u'shaders',
-        u'trees',
-    }
-    dataDirsPlus = {
-        u'_tejon',
-        u'ini',
         u'obse',
         u'pluggy',
         u'scripts',
+        u'shaders',
         u'streamline',
+        u'trees',
     }
     SkipBAINRefresh = {
         u'tes4edit backups',

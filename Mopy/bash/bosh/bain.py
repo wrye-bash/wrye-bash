@@ -88,7 +88,7 @@ class Installer(object):
     @staticmethod
     def init_bain_dirs():
         """Initialize BAIN data directories on a per game basis."""
-        Installer.dataDirsPlus |= bush.game.dataDirs | bush.game.dataDirsPlus
+        Installer.dataDirsPlus |= bush.game.dataDirs
         InstallersData.installers_dir_skips.update(
             {bass.dirs['converters'].stail.lower(), u'bash'})
         user_skipped = bass.inisettings['SkippedBashInstallersDirs'].split(u'|')

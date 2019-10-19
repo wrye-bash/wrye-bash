@@ -212,9 +212,14 @@ class GameInfo(object):
 
     # BAIN:
     #  These are the allowed default data directories that BAIN can install to
-    dataDirs = {u'meshes', u'music', u'sound', u'textures', u'video'}
-    #  These are additional special directories that BAIN can install to
-    dataDirsPlus = set()
+    dataDirs = {
+        u'ini',
+        u'meshes',
+        u'music',
+        u'sound',
+        u'textures',
+        u'video'
+    }
     # Files BAIN shouldn't skip
     dontSkip = ()
     # Directories where specific file extensions should not be skipped by BAIN

@@ -265,32 +265,35 @@ be restructured.</p>
 <h3 id="bain-structure">BAIN-Compatible installer layout <a class="back2top" href="#contents">Back to top</a></h3>
 
 <p>When scanning an installer (package or project) BAIN follows some rules to decide what's in there and if it can be installed. BAIN
-    will search for specific directories and file extensions (bsa/ba2, ini, all plugin extensions).
-    The directories BAIN is aware of, independently of the game, are:</p>
+    will search for specific directories and file extensions (bsa/ba2, ini, all plugin extensions). All directory detection is <em>case insensitive</em>.
+    Directories BAIN is aware of, independently of the game, are:</p>
 <table>
-    <thead><tr><th>Bash directories<th>Notes
+    <thead><tr><th>Wrye Bash Directory</th><th>Notes</th></tr></thead>
     <tbody>
-        <tr><td>bash patches<td>Bash will install files in this folder from packages, usually in the form of .csv files
-        <tr><td>docs<td>Its contents will be copied inside Data/Docs
-        <tr><td>ini tweaks<td>ini tweaks inside this will be installed in Data/Ini Tweaks/ and appear on the INI Tab - do <strong>not</strong> include subfolders in ini tweaks/
-        <tr><td>screenshots<td>its contents will be copied inside Data/Docs
-        <tr class="tabttl"><th colspan="2">Vanilla game directories present on all games
+        <tr><td>bashtags</td><td>Its contents will be copied inside <code>Data/BashTags</code>.</td></tr>
+        <tr><td>bash patches</td><td>BAIN will install files in this folder from packages, usually in the form of <code>.csv</code> files.</td></tr>
+        <tr><td>docs</td><td>Its contents will be copied inside <code>Data/Docs</code>.</td></tr>
+        <tr><td>ini tweaks</td><td>INI tweaks inside this will be installed in <code>Data/Ini Tweaks/</code> and appear on the INI Tab - do <strong>not</strong> include subfolders in <code>ini tweaks</code>.</td></tr>
+        <tr><td>screenshots</td><td>Its contents will be copied inside <code>Data/Docs</code>.</td></tr>
+        <tr class="tabttl"><th colspan="2">Game Directories Supported For All Games</th>
     <tbody>
-        <tr><td colspan="2"><div class="bain-structure-txtcnt">meshes, music, sound, textures, video</div>
+        <tr><td colspan="2"><div class="bain-structure-txtcnt">ini, meshes, music, sound, textures, video</div></td></tr>
+    </tbody>
 </table>
 
-but there are game specific directories as well (all directory detection is <em>case insensitive</em>):
+<p>There are also game-specific directories:</p>
 
 <table>
-    <thead><tr><th>Game<th>Extra Game Directories<th>Bonus Directories (tools or modders)
+    <thead><tr><th>Game</th><th>Extra Game Directories</th></tr></thead>
     <tbody>
-        <tr><td>Oblivion<td>distantlod, facegen, fonts, menus, shaders, trees<td>_tejon, ini, obse, pluggy, scripts, streamline
-        <tr><td>Fallout 3<td>facegen, lodsettings, menus, shaders<td>ini, fose, scripts
-        <tr><td>Fallout&colon; New Vegas<td>facegen, lodsettings, menus, shaders<td>ini, nvse, scripts
-        <tr><td>Skyrim<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (Bodyslide, FNIS), dyndolod
-        <tr><td>Enderal&colon; Forgotten Stories</td><td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings</td><td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (Bodyslide, FNIS), dyndolod</td></tr>
-        <tr><td>Fallout 4<td>interface, lodsettings, materials, misc, programs, scripts, seq, shadersfx, strings, vis<td>f4se, ini, mcm (Fallout 4 MCM), tools (BodySlide, FNIS)
-        <tr><td>Skyrim&colon; Special Edition<td>dialogueviews, grass, interface, lodsettings, scripts, seq, shadersfx, strings<td>asi, calientetools (BodySlide), ini, skse, skyproc patchers, tools (BodySlide, FNIS), dyndolod
+        <tr><td>Oblivion</td><td>_tejon, distantlod, facegen, fonts, menus, obse, pluggy, scripts, shaders, streamline, trees</td></tr>
+        <tr><td>Fallout 3</td><td>config, distantlod, facegen, fonts, fose, menus, uio, scripts, shaders, trees</td></tr>
+        <tr><td>Fallout&colon; New Vegas</td><td>config, distantlod, facegen, fonts, menus, nvse, uio, scripts, shaders, trees</td></tr>
+        <tr><td>Skyrim</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, strings, tools</td></tr>
+        <tr><td>Enderal&colon; Forgotten Stories</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, strings, tools</td></tr>
+        <tr><td>Fallout 4</td><td>f4se, interface, lodsettings, materials, mcm, misc, programs, scripts, seq, shadersfx, strings, tools, vis</td></tr>
+        <tr><td>Skyrim&colon; Special Edition</td><td>asi, calientetools, dialogueviews, dyndolod, grass, interface, lodsettings, scripts, seq, shadersfx, skse, skyproc patchers, strings, tools</td></tr>
+    </tbody>
 </table>
 
 All these directories (either in the Global or Extra and Bonus Game directories) constitute the <strong>standard game directories</strong> for this game. If

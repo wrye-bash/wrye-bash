@@ -98,22 +98,19 @@ class Fallout4GameInfo(GameInfo):
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
+        u'f4se',
         u'interface',
         u'lodsettings',
         u'materials',
+        u'mcm', # FO4 MCM
         u'misc',
         u'programs',
         u'scripts',
         u'seq',
         u'shadersfx',
         u'strings',
-        u'vis',
-    }
-    dataDirsPlus = {
-        u'f4se',
-        u'ini',
-        u'mcm',   # FO4 MCM
         u'tools', # bodyslide
+        u'vis',
     }
     dontSkipDirs = {
         # This rule is to allow mods with string translation enabled.

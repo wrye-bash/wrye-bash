@@ -79,19 +79,18 @@ class Fallout3GameInfo(GameInfo):
 
     # BAIN:
     dataDirs = GameInfo.dataDirs | {
+        u'config', # mod config files (INIs)
         u'distantlod',
         u'docs',
         u'facegen',
         u'fonts',
+        u'fose',
         u'menus',
+        u'uio', # User Interface Organizer
+        u'scripts',
         u'shaders',
         u'trees',
-        }
-    dataDirsPlus = {
-        u'scripts',
-        u'ini',
-        u'fose',
-        }
+    }
     SkipBAINRefresh = {u'fo3edit backups', u'fo3edit cache'}
     wryeBashDataFiles = GameInfo.wryeBashDataFiles | {
         u'ArchiveInvalidationInvalidated!.bsa'
