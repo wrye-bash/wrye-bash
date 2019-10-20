@@ -834,6 +834,17 @@ class TimestampGame(Game):
                 u'Missing: ' + u', '.join(x.s for x in fix_lo.lo_added))
             lord[:] = self.__calculate_mtime_order(mods=lord)
 
+# TimestampGame overrides
+class Morrowind(INIGame, TimestampGame):
+    """Morrowind uses timestamps for specifying load order, but stores active
+    plugins in Morrowind.ini."""
+    has_plugins_txt = False
+    ini_key_actives = (u'Morrowind.ini', u'Game Files', u'GameFile%(lo_idx)s')
+
+    def in_master_block(self, minf):
+        """For Morrowind, extension seems to be the only thing that matters."""
+        return minf.get_extension() == u'.esm'
+
 class TextfileGame(Game):
 
     def __init__(self, mod_infos, plugins_txt_path, loadorder_txt_path):
@@ -1420,6 +1431,8 @@ def game_factory(game_fsName, mod_infos, plugins_txt_path,
         return SkyrimSE(mod_infos, plugins_txt_path)
     elif game_fsName == u'Fallout4':
         return Fallout4(mod_infos, plugins_txt_path)
+    elif game_fsName == u'Morrowind':
+        return Morrowind(mod_infos)
     else:
         return TimestampGame(mod_infos, plugins_txt_path)
 

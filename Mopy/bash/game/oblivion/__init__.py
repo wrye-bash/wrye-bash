@@ -41,8 +41,8 @@ class OblivionGameInfo(GameInfo):
     masterlist_dir = u'Oblivion'
     regInstallKeys = (u'Bethesda Softworks\\Oblivion', u'Installed Path')
     nexusUrl = u'https://www.nexusmods.com/oblivion/'
-    nexusName = u'TES Nexus'
-    nexusKey = 'bash.installers.openTesNexus.continue'
+    nexusName = u'Oblivion Nexus'
+    nexusKey = 'bash.installers.openOblivionNexus.continue'
 
     patchURL = u'http://www.elderscrolls.com/downloads/updates_patches.htm'
     patchTip = u'http://www.elderscrolls.com/'

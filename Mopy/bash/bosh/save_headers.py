@@ -555,3 +555,5 @@ def get_save_header_type(game_fsName):
         return FalloutNVSaveHeader
     elif game_fsName == u'Fallout3':
         return Fallout3SaveHeader
+    elif game_fsName == u'Morrowind':
+        return MorrowindSaveHeader

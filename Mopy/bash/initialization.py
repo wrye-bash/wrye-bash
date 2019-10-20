@@ -277,7 +277,7 @@ def getLocalSaveDirs():
     baseSaves = dirs['saveBase'].join(u'Saves')
     # Path.list returns [] for non existent dirs
     localSaveDirs = [x for x in baseSaves.list() if
-                     (x != u'Bash' and baseSaves.join(x).isdir())]
+                     x not in (u'Bash', u'Mash') and baseSaves.join(x).isdir()]
     # Filter out non-encodable names
     bad = set()
     for folder in localSaveDirs:

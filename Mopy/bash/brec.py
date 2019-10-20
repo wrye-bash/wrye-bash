@@ -1061,6 +1061,15 @@ class PartialLoadDecider(ADecider):
         # record has to have been loaded since then
         return self._decider.decide_dump(record)
 
+class SaveDecider(ADecider):
+    """Decider that returns True if the input file is a save."""
+    def __init__(self):
+        from . import bush
+        self._save_ext = bush.game.ess.ext
+
+    def decide_load(self, record, ins, sub_type, rec_size):
+        return ins.inName.cext == self._save_ext
+
 class SignatureDecider(ADecider):
     """Very simple decider that just returns the subrecord type (aka
     signature). This is the default decider used by MelUnion."""
