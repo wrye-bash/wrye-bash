@@ -22,9 +22,10 @@
 #
 # =============================================================================
 
-"""This package contains the Skyrim specific patchers. This module
+"""This package contains the Skyrim SE specific patchers. This module
 contains the data structures that are dynamically set on a per game basis in
 bush."""
 
 gameSpecificPatchers = {}
 gameSpecificListPatchers = {}
+game_specific_import_patchers = {}
