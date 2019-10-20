@@ -124,11 +124,11 @@ class Fallout4GameInfo(GameInfo):
         validHeaderVersions = (0.95, 1.0)
 
     allTags = {
-        u'Deactivate', u'Delev', u'Filter', u'Relev',
+        u'Deactivate', u'Delev', u'Filter', u'ObjectBounds', u'Relev',
     }
 
     patchers = (
-        u'ListsMerger',
+        u'ListsMerger', u'ObjectBoundsImporter',
     )
 
     # ---------------------------------------------------------------------

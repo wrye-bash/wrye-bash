@@ -900,6 +900,16 @@ text_types = {
 }
 
 #------------------------------------------------------------------------------
+# Object Bounds Patcher
+#------------------------------------------------------------------------------
+object_bounds_types = ('ACTI', 'ADDN', 'ALCH', 'AMMO', 'ARMA', 'ARMO', 'ASPC',
+                       'BOOK', 'COBJ', 'CONT', 'CREA', 'DOOR', 'EXPL', 'FURN',
+                       'GRAS', 'IDLM', 'INGR', 'KEYM', 'LIGH', 'LVLC', 'LVLI',
+                       'LVLN', 'MISC', 'MSTT', 'NOTE', 'NPC_', 'PROJ', 'PWAT',
+                       'SCOL', 'SOUN', 'STAT', 'TACT', 'TERM', 'TREE', 'TXST',
+                       'WEAP')
+
+#------------------------------------------------------------------------------
 # Contents Checker
 #------------------------------------------------------------------------------
 # Entry types used for CONT, CREA, LVLI and NPC_

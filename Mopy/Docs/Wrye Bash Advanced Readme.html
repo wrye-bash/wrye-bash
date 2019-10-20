@@ -2028,6 +2028,28 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td>ObjectBounds</td>
+            <td>Changes the object bounds of things.</td>
+            <td>See the game-specific sections below for record types:
+                <ul>
+                    <li>
+                        See the <a href="#ObjectBoundsFO3">Fallout 3</a> <q>ObjectBounds</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ObjectBoundsFNV">Fallout&colon; New Vegas</a> <q>ObjectBounds</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ObjectBoundsSkyrim">Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition</a> <q>ObjectBounds</q> section for more information.
+                    </li>
+                    <li>
+                        See the <a href="#ObjectBoundsFO4">Fallout 4</a> <q>ObjectBounds</q> section for more information.
+                    </li>
+                </ul>
+                <br>
+                <strong>Not available for Oblivion.</strong>
+            </td>
+        </tr>
+        <tr>
             <td>Relev</td>
             <td>Re-levels leveled list entries.</td>
             <td>Changes to the Level or Count of a (LVLO) leveled list entry in:
@@ -2037,10 +2059,10 @@ C.Location, -C.LockList
                     </li>
                     <li>(LVLI) Leveled Item</li>
                     <li>(LVLN) Leveled NPC &mdash;
-                        <strong>Not available in Oblivion.</strong>
+                        <strong>Not available for Oblivion.</strong>
                     </li>
                     <li>(LVSP) Leveled SPELL &mdash;
-                        <strong>Oblivion, Skyrim &amp; Skyrim&colon; Special Edition only.</strong>
+                        <strong>Oblivion, Skyrim, Enderal&colon; Forgotten Stories &amp; Skyrim&colon; Special Edition only.</strong>
                     </li>
                 </ul>
             </td>
@@ -3476,6 +3498,50 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td id="ObjectBoundsFO3">ObjectBounds</td>
+            <td>Changes the object bounds of things.</td>
+            <td>The (OBND) Object Bounds subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ADDN) Addon Node</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMA) Armor Addon</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(ASPC) Acoustic Space</li>
+                    <li>(BOOK) Book</li>
+                    <li>(COBJ) Constructible Object</li>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature</li>
+                    <li>(DOOR) Door</li>
+                    <li>(EXPL) Explosion</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(GRAS) Grass</li>
+                    <li>(IDLM) Idle Marker</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(LVLC) Leveled Creature</li>
+                    <li>(LVLI) Leveled Item</li>
+                    <li>(LVLN) Leveled NPC</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NOTE) Note</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(PROJ) Projectile</li>
+                    <li>(PWAT) Placeable Water</li>
+                    <li>(SCOL) Static Collection</li>
+                    <li>(SOUN) Sound</li>
+                    <li>(STAT) Static</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(TERM) Terminal</li>
+                    <li>(TREE) Tree</li>
+                    <li>(TXST) Texture Set</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td id="ScriptsFO3">Scripts</td>
             <td>Modifies scripts attached to various things.</td>
             <td>The Script (SCRI) subrecord in the following record types:
@@ -4503,6 +4569,54 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td id="ObjectBoundsFNV">ObjectBounds</td>
+            <td>Changes the object bounds of things.</td>
+            <td>The (OBND) Object Bounds subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ADDN) Addon Node</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(ARMA) Armor Addon</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(ASPC) Acoustic Space</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CCRD) Caravan Card</li>
+                    <li>(CHIP) Casino Chip</li>
+                    <li>(CMNY) Caravan Money</li>
+                    <li>(COBJ) Constructible Object</li>
+                    <li>(CONT) Container</li>
+                    <li>(CREA) Creature</li>
+                    <li>(DOOR) Door</li>
+                    <li>(EXPL) Explosion</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(GRAS) Grass</li>
+                    <li>(IDLM) Idle Marker</li>
+                    <li>(IMOD) Item Mod</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(LVLC) Leveled Creature</li>
+                    <li>(LVLI) Leveled Item</li>
+                    <li>(LVLN) Leveled NPC</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NOTE) Note</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(PROJ) Projectile</li>
+                    <li>(PWAT) Placeable Water</li>
+                    <li>(SCOL) Static Collection</li>
+                    <li>(SOUN) Sound</li>
+                    <li>(STAT) Static</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(TERM) Terminal</li>
+                    <li>(TREE) Tree</li>
+                    <li>(TXST) Texture Set</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td id="ScriptsFNV">Scripts</td>
             <td>Modifies scripts attached to various things.</td>
             <td>The Script (SCRI) subrecord in the following record types:
@@ -5132,6 +5246,52 @@ C.Location, -C.LockList
             </td>
         </tr>
         <tr>
+            <td id="ObjectBoundsSkyrim">ObjectBounds</td>
+            <td>Changes the object bounds of things.</td>
+            <td>The (OBND) Object Bounds subrecord in the following record types:
+                <ul>
+                    <li>(ACTI) Activator</li>
+                    <li>(ADDN) Addon Node</li>
+                    <li>(ALCH) Ingestible</li>
+                    <li>(AMMO) Ammunition</li>
+                    <li>(APPA) Alchemical Apparatus</li>
+                    <li>(ARMO) Armor</li>
+                    <li>(ARTO) Art Object</li>
+                    <li>(ASPC) Acoustic Space</li>
+                    <li>(BOOK) Book</li>
+                    <li>(CONT) Container</li>
+                    <li>(DOOR) Door</li>
+                    <li>(DUAL) Dual Cast Data</li>
+                    <li>(ENCH) Object Effect</li>
+                    <li>(EXPL) Explosion</li>
+                    <li>(FLOR) Flora</li>
+                    <li>(FURN) Furniture</li>
+                    <li>(GRAS) Grass</li>
+                    <li>(HAZD) Hazard</li>
+                    <li>(IDLM) Idle Marker</li>
+                    <li>(INGR) Ingredient</li>
+                    <li>(KEYM) Key</li>
+                    <li>(LIGH) Light</li>
+                    <li>(LVLI) Leveled Item</li>
+                    <li>(LVLN) Leveled NPC</li>
+                    <li>(LVSP) Leveled Spell</li>
+                    <li>(MISC) Misc. Item</li>
+                    <li>(MSTT) Moveable Static</li>
+                    <li>(NPC_) Non-Player Character</li>
+                    <li>(PROJ) Projectile</li>
+                    <li>(SCRL) Scroll</li>
+                    <li>(SLGM) Soul Gem</li>
+                    <li>(SOUN) Sound Marker</li>
+                    <li>(SPEL) Spell</li>
+                    <li>(STAT) Static</li>
+                    <li>(TACT) Talking Activator</li>
+                    <li>(TREE) Tree</li>
+                    <li>(TXST) Texture Set</li>
+                    <li>(WEAP) Weapon</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
             <td id="SoundSkyrim">Sound</td>
             <td>Replaces sounds.</td>
             <td>The following subrecords:
@@ -5549,6 +5709,31 @@ C.Location, -C.LockList
                 </ul>
                 <br>
                 <strong>Note:</strong> RACE records are not patched by this tag, use R.Description for that.
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<table>
+    <thead>
+        <tr>
+            <th colspan="3">Bash Tags Available For Fallout 4.</th>
+        </tr>
+        <tr>
+            <th>Tag</th>
+            <th>Used when the Mod</th>
+            <th>Specific Record Types/Changes Supported.</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td id="ObjectBoundsFO4">ObjectBounds</td>
+            <td>Changes the object bounds of things.</td>
+            <td>The (OBND) Object Bounds subrecord in the following record types:
+                <ul>
+                    <li>(LVLI) Leveled Item</li>
+                    <li>(LVLN) Leveled NPC</li>
+                </ul>
             </td>
         </tr>
     </tbody>

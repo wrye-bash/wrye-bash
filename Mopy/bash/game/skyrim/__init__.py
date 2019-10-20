@@ -149,7 +149,8 @@ class SkyrimGameInfo(GameInfo):
         u'C.Regions', u'C.SkyLighting', u'C.Water', u'Deactivate', u'Delev',
         u'Destructible', u'Filter', u'Graphics', u'Invent', u'Keywords',
         u'MustBeActiveIfImported', u'Names', u'NoMerge', u'NPC.Class',
-        u'NPC.Race', u'Relev', u'Sound', u'SpellStats', u'Stats', u'Text',
+        u'NPC.Race', u'Relev', u'ObjectBounds', u'Sound', u'SpellStats',
+        u'Stats', u'Text',
     }
 
     patchers = (
@@ -157,8 +158,8 @@ class SkyrimGameInfo(GameInfo):
         u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
         u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
         u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
-        u'NPCAIPackagePatcher', u'PatchMerger', u'SoundPatcher',
-        u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
+        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'PatchMerger',
+        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
     )
 
     weaponTypes = (

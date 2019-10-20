@@ -2919,3 +2919,11 @@ class TextImporter(_SimpleImporter):
     autoKey = {u'Text'}
     rec_attrs = bush.game.text_types
     long_types = bush.game.text_long_types
+
+#------------------------------------------------------------------------------
+class ObjectBoundsImporter(_SimpleImporter):
+    name = _(u'Import Object Bounds')
+    text = _(u'Import object bounds for various actors, items and objects.')
+    autoKey = {u'ObjectBounds'}
+    rec_attrs = {x: ('bounds',) for x in bush.game.object_bounds_types}
+    long_types = () # OBND never has fids

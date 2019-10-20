@@ -403,6 +403,11 @@ class GameInfo(object):
     text_types = {}
 
     #--------------------------------------------------------------------------
+    # Object Bounds Patcher
+    #--------------------------------------------------------------------------
+    object_bounds_types = ()
+
+    #--------------------------------------------------------------------------
     # Contents Checker
     #--------------------------------------------------------------------------
     cc_valid_types = {}
@@ -475,9 +480,10 @@ class GameInfo(object):
         'destructible_types', 'gmstEids', 'graphicsFidTypes',
         'graphicsLongsTypes', 'graphicsModelAttrs', 'graphicsTypes',
         'inventoryTypes', 'keywords_types', 'listTypes', 'namesTypes',
-        'pricesTypes', 'record_type_name', 'save_rec_types', 'scripts_types',
-        'soundsLongsTypes', 'soundsTypes', 'spell_stats_attrs', 'statsHeaders',
-        'statsTypes', 'text_long_types', 'text_types', 'xEdit_expert',
+        'object_bounds_types', 'pricesTypes', 'record_type_name',
+        'save_rec_types', 'scripts_types', 'soundsLongsTypes', 'soundsTypes',
+        'spell_stats_attrs', 'statsHeaders', 'statsTypes', 'text_long_types',
+        'text_types', 'xEdit_expert',
     }
 
     @classmethod
