@@ -58,6 +58,10 @@ _plugins_txt_path = _loadorder_txt_path = _lord_pickle_path = None
 locked = False
 warn_locked = False
 _lords_pickle = None # type: bolt.PickleDict
+# active mod lists were saved in BashSettings.dat - sentinel needed for moving
+# them to BashloadOrder.dat
+__active_mods_sentinel = {}
+_active_mods_lists = {}
 
 def in_master_block(minf):
     return _game_handle.in_master_block(minf) # minf is a master or mod info
@@ -84,6 +88,7 @@ def initialize_load_order_handle(mod_infos):
     _game_handle = games.game_factory(bush.game.fsName, mod_infos,
                                       _plugins_txt_path, _loadorder_txt_path)
     _game_handle.parse_ccc_file()
+    __load_pickled_load_orders()
 
 class LoadOrder(object):
     """Immutable class representing a load order."""
@@ -159,7 +164,7 @@ def _new_entry():
         lo_entry(time.time(), cached_lord)]
 
 def persist_orders(__keep_max=256):
-    _lords_pickle.vdata['_lords_pickle_version'] = 1
+    _lords_pickle.vdata['_lords_pickle_version'] = 2
     length = len(_saved_load_orders)
     if length > __keep_max:
         x, y = _keep_max(__keep_max, length)
@@ -169,6 +174,9 @@ def persist_orders(__keep_max=256):
     else:
         _lords_pickle.data['_saved_load_orders'] = _saved_load_orders
         _lords_pickle.data['_current_list_index'] = _current_list_index
+    _lords_pickle.data['_active_mods_lists'] = _active_mods_lists
+    ##: save them also in BashSettings.dat in case someone downgrades - drop !
+    bass.settings['bash.loadLists.data'] = _active_mods_lists
     _lords_pickle.save()
 
 def _keep_max(max_to_keep, length):
@@ -285,7 +293,6 @@ def refresh_lo(cached=False, cached_active=True):
     as load_order_changed returns True - that's not slow, as getting the load
     order just involves getting mtime info from modInfos cache. This last one
     **must be up to date** for correct load order/active validation."""
-    if _lords_pickle is None: __load_pickled_load_orders() # once only
     if locked and _saved_load_orders:
         saved = _saved_load_orders[_current_list_index].lord # type: LoadOrder
         lord, acti = _game_handle.set_load_order( # make sure saved lo is valid
@@ -310,13 +317,32 @@ def refresh_lo(cached=False, cached_active=True):
             warn_locked = True
 
 def __load_pickled_load_orders():
-    global _lords_pickle, _saved_load_orders, _current_list_index, locked
+    global _lords_pickle, _saved_load_orders, _current_list_index, locked, \
+        _active_mods_lists
     _lords_pickle = bolt.PickleDict(_lord_pickle_path)
     _lords_pickle.load()
-    _lords_pickle.vdata['_lords_pickle_version'] = 1
+    if _lords_pickle.vdata.get('_lords_pickle_version', 1) < 2:
+        # used to load active lists from settings
+        active_mods_list = __active_mods_sentinel
+    else:
+        active_mods_list = {}
     _saved_load_orders = _lords_pickle.data.get('_saved_load_orders', [])
     _current_list_index = _lords_pickle.data.get('_current_list_index', -1)
+    _active_mods_lists = _lords_pickle.data.get('_active_mods_lists',
+                                                active_mods_list)
     locked = bass.settings.get('bosh.modInfos.resetMTimes', False)
+
+def get_active_mods_lists():
+    """Get the user active mods lists from BashLoadOrder.dat, except if they
+    are still saved in BashSettings.dat"""
+    global _active_mods_lists
+    if _active_mods_lists is __active_mods_sentinel:
+        settings_mods_list = bass.settings.get('bash.loadLists.data',
+                                               __active_mods_sentinel)
+        # if settings_mods_list is not __active_mods_sentinel:
+        #     del bass.settings['bash.loadLists.data']
+        _active_mods_lists = settings_mods_list
+    return _active_mods_lists
 
 def undo_load_order(): return __restore(-1)
 
