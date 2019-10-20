@@ -91,13 +91,17 @@ def getFormIndices(fid):
 #------------------------------------------------------------------------------
 class RecordHeader(object):
     """Pack or unpack the record's header."""
-    rec_header_size = 24 # Record header size, 20 (Oblivion), 24 (other games)
-    # Record pack format, 4sIIII (Oblivion), 4sIIIII (other games)
+    rec_header_size = 24 # Record header size, e.g. 20 for Oblivion
+    # Record pack format, e.g. 4sIIII for Oblivion
     # Given as a list here, where each string matches one subrecord in the
     # header. See rec_pack_format_str below as well.
     rec_pack_format = ['=4s', 'I', 'I', 'I', 'I', 'I']
     # rec_pack_format as a format string. Use for pack / unpack calls.
     rec_pack_format_str = ''.join(rec_pack_format)
+    # Format used by sub-record headers. Morrowind uses a different one.
+    sub_header_fmt = u'=4sH'
+    # Size of sub-record headers. Morrowind has a different one.
+    sub_header_size = 6
     # http://en.uesp.net/wiki/Tes5Mod:Mod_File_Format#Groups
     pack_formats = {0: '=4sI4s3I'} # Top Type
     pack_formats.update({x: '=4s5I' for x in {1, 6, 7, 8, 9, 10}}) # Children
@@ -144,9 +148,7 @@ class RecordHeader(object):
 
     @staticmethod
     def unpack(ins):
-        """Return a RecordHeader object by reading the input stream.
-        Format must be either '=4s4I' 20 bytes for Oblivion or '=4s5I' 24
-        bytes for rest of games."""
+        """Return a RecordHeader object by reading the input stream."""
         # args = rec_type, size, uint0, uint1, uint2[, uint3]
         args = ins.unpack(RecordHeader.rec_pack_format_str,
                           RecordHeader.rec_header_size, 'REC_HEADER')
@@ -321,11 +323,16 @@ class ModReader(object):
         """Unpack a subrecord header.  Optionally checks for match with expected
         type and size."""
         selfUnpack = self.unpack
-        (rec_type, size) = selfUnpack('4sH', 6, recType + '.SUB_HEAD')
+        (rec_type, size) = selfUnpack(RecordHeader.sub_header_fmt,
+                                      RecordHeader.sub_header_size,
+                                      recType + u'.SUB_HEAD')
         #--Extended storage?
         while rec_type == 'XXXX':
             size = selfUnpack('I',4,recType+'.XXXX.SIZE.')[0]
-            rec_type = selfUnpack('4sH', 6, recType + '.XXXX.TYPE')[0] #--Throw away size (always == 0)
+            # Throw away size here (always == 0)
+            rec_type = selfUnpack(RecordHeader.sub_header_fmt,
+                                  RecordHeader.sub_header_size,
+                                  recType + u'.XXXX.TYPE')[0]
         #--Match expected name?
         if expType and expType != rec_type:
             raise exception.ModError(self.inName, u'%s: Expected %s subrecord, but '
@@ -335,22 +342,6 @@ class ModReader(object):
             raise exception.ModSizeError(self.inName, recType + '.' + rec_type,
                                          (expSize,), size)
         return rec_type,size
-
-    #--Find data ------------------------------------------
-    def findSubRecord(self,subType,recType='----'):
-        """Finds subrecord with specified type."""
-        atEnd = self.atEnd
-        self_unpack = self.unpack
-        seek = self.seek
-        while not atEnd():
-            (sub_type_,sub_rec_size) = self_unpack('4sH',6,recType+'.SUB_HEAD')
-            if sub_type_ == subType:
-                return self.read(sub_rec_size,recType+'.'+subType)
-            else:
-                seek(sub_rec_size,1,recType+'.'+sub_type_)
-        #--Didn't find it?
-        else:
-            return None
 
 #------------------------------------------------------------------------------
 class ModWriter(object):
@@ -385,10 +376,12 @@ class ModWriter(object):
             outWrite = self.out.write
             lenData = len(data)
             if lenData <= 0xFFFF:
-                outWrite(struct_pack('=4sH', sub_rec_type, lenData))
+                outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
+                                     lenData))
             else:
                 outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-                outWrite(struct_pack('=4sH', sub_rec_type, 0))
+                outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
+                                     0))
             outWrite(data)
         except Exception:
             bolt.deprint(u'%r: Failed packing: %s, %s, %s' % (
@@ -403,10 +396,11 @@ class ModWriter(object):
         lenData = len(data) + 1
         outWrite = self.out.write
         if lenData < 0xFFFF:
-            outWrite(struct_pack('=4sH', sub_rec_type, lenData))
+            outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type,
+                                 lenData))
         else:
             outWrite(struct_pack('=4sHI', 'XXXX', 4, lenData))
-            outWrite(struct_pack('=4sH', sub_rec_type, 0))
+            outWrite(struct_pack(RecordHeader.sub_header_fmt, sub_rec_type, 0))
         outWrite(data)
         outWrite('\x00')
 
