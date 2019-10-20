@@ -54,6 +54,9 @@ class GameInfo(object):
     version_detect_file = []
     # The main plugin Wrye Bash should look for
     masterFiles = []
+    # The directory in which mods and other data files reside. This is relative
+    # to the game directory.
+    mods_dir = u'Data'
     # INI files that should show up in the INI Edits tab
     #  Example: [u'Oblivion.ini']
     iniFiles = []

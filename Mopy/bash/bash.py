@@ -272,7 +272,8 @@ def _main(opts, wx_locale):
         if not bush_game: return
         if restore_:
             try:
-                restore_.restore_settings(bush_game.fsName)
+                restore_.restore_settings(bush_game.fsName,
+                                          bush_game.mods_dir)
                 # we currently disallow backup and restore on the same boot
                 if opts.quietquit: return
             except (exception.BoltError, OSError, shutil.Error):
@@ -284,7 +285,7 @@ def _main(opts, wx_locale):
                 bashIni, bush_game, game_ini_path = _detect_game(opts, u'bash.ini')
         from . import bosh # this imports balt (DUH) which imports wx
         bosh.initBosh(bashIni, game_ini_path)
-        env.isUAC = env.testUAC(bush_game.gamePath.join(u'Data'))
+        env.isUAC = env.testUAC(bush_game.gamePath.join(bush_game.mods_dir))
         global basher, balt
         from . import basher, balt
     except (exception.BoltError, ImportError, OSError, IOError):
@@ -351,8 +352,8 @@ def _main(opts, wx_locale):
                                          backup_filename(bush_game.fsName))
         if settings_file:
             with balt.BusyCursor():
-                backup = barb.BackupSettings(settings_file,
-                                             bush_game.fsName)
+                backup = barb.BackupSettings(settings_file, bush_game.fsName,
+                                             bush_game.mods_dir)
             try:
                 with balt.BusyCursor():
                     backup.backup_settings(balt)

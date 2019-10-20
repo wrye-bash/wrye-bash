@@ -817,6 +817,7 @@ class Installer(object):
             if rootStr.lower() in dataDirsPlus: return
             root = layout[rootStr]
             rootStr = u''.join((rootStr, _os_sep))
+            data_dir = bush.game.mods_dir.lower()
             while True:
                 if root['files']:
                     # There are files in this folder, call it the starting point
@@ -824,11 +825,11 @@ class Installer(object):
                 rootDirs = root['dirs']
                 rootDirKeys = rootDirs.keys()
                 if len(rootDirKeys) == 1:
-                    # Only one subfolder, see if it's either 'Data', or an accepted
-                    # Data sub-folder
+                    # Only one subfolder, see if it's either the data folder,
+                    # or an accepted Data sub-folder
                     rootDirKey = rootDirKeys[0]
                     rootDirKeyL = rootDirKey.lower()
-                    if rootDirKeyL in dataDirsPlus or rootDirKeyL == u'data':
+                    if rootDirKeyL in dataDirsPlus or rootDirKeyL == data_dir:
                         # Found suitable starting point
                         break
                     # Keep looking deeper
