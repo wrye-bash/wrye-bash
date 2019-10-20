@@ -43,7 +43,6 @@ import struct
 import subprocess
 import sys
 import tempfile
-import time
 import traceback
 from binascii import crc32
 from functools import partial
@@ -178,6 +177,46 @@ def encode(text_str, encodings=encodingOrder, firstEncoding=None,
         if returnEncoding: return goodEncoding
         else: return goodEncoding[0]
     raise UnicodeEncodeError(u'Text could not be encoded using any of the following encodings: %s' % encodings)
+
+def encode_complex_string(string_val, max_size=None, min_size=None,
+                          preferred_encoding=None):
+    """Handles encoding of a string that must satisfy certain conditions. Any
+    of the keyword arguments may be omitted, in which case they will simply not
+    apply.
+
+    :param string_val: The unicode string to encode.
+    :param max_size: The maximum size of the unicode string. If string_val is
+        longer than this, it will be truncated.
+    :param min_size: The minimum size of the encoded string. If the result of
+        encoding string_val is shorter than this, it will be right-padded with
+        null bytes.
+    :param preferred_encoding: The encoding to try first. Defaults to
+        bolt.pluginEncoding.
+    :return: The encoded string."""
+    preferred_encoding = preferred_encoding or pluginEncoding
+    if max_size:
+        string_val = winNewLines(string_val.rstrip())
+        truncated_size = min(max_size, len(string_val))
+        test, tested_encoding = encode(string_val,
+                                       firstEncoding=preferred_encoding,
+                                       returnEncoding=True)
+        extra_encoded = len(test) - max_size
+        if extra_encoded > 0:
+            total = 0
+            i = -1
+            while total < extra_encoded:
+                total += len(string_val[i].encode(tested_encoding))
+                i -= 1
+            truncated_size += i + 1
+            string_val = string_val[:truncated_size]
+            string_val = encode(string_val, firstEncoding=tested_encoding)
+        else:
+            string_val = test
+    else:
+        string_val = encode(string_val, firstEncoding=preferred_encoding)
+    if min_size and len(string_val) < min_size:
+        string_val += b'\x00' * (min_size - len(string_val))
+    return string_val
 
 def timestamp(): return datetime.datetime.now().strftime(u'%Y-%m-%d %H.%M.%S')
 

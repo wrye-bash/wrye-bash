@@ -417,32 +417,13 @@ class ModWriter(object):
         else:
             self.pack('=4s4I','GRUP',size,label,groupType,stamp)
 
-    def write_string(self, sub_type, string_val, max_size=0,
+    def write_string(self, sub_type, string_val, max_size=0, min_size=0,
                      preferred_encoding=None):
         """Writes out a string subrecord, properly encoding it beforehand and
-        respecting max_size and preferred_encoding if they are set."""
-        preferred_encoding = preferred_encoding or bolt.pluginEncoding
-        if max_size:
-            string_val = bolt.winNewLines(string_val.rstrip())
-            truncated_size = min(max_size, len(string_val))
-            test, tested_encoding = encode(string_val,
-                                           firstEncoding=preferred_encoding,
-                                           returnEncoding=True)
-            extra_encoded = len(test) - max_size
-            if extra_encoded > 0:
-                total = 0
-                i = -1
-                while total < extra_encoded:
-                    total += len(string_val[i].encode(tested_encoding))
-                    i -= 1
-                truncated_size += i + 1
-                string_val = string_val[:truncated_size]
-                string_val = encode(string_val, firstEncoding=tested_encoding)
-            else:
-                string_val = test
-        else:
-            string_val = encode(string_val, firstEncoding=preferred_encoding)
-        self.packSub0(sub_type, string_val)
+        respecting max_size, min_size and preferred_encoding if they are
+        set."""
+        self.packSub0(sub_type, bolt.encode_complex_string(
+            string_val, max_size, min_size, preferred_encoding))
 
 #------------------------------------------------------------------------------
 # Mod Record Elements ---------------------------------------------------------
