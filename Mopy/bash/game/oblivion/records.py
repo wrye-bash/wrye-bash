@@ -283,7 +283,7 @@ class MreTes4(MreHeaderBase):
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
-        MreHeaderBase.MelMasterName('MAST','masters'),
+        MreHeaderBase.MelMasterNames(),
         MelNull('DATA'),
     )
     __slots__ = melSet.getSlotsUsed()

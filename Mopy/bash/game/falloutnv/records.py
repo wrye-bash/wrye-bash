@@ -55,8 +55,7 @@ class MreTes4(MreHeaderBase):
         MelBase('DELE','dele_p',),  #--Obsolete?
         MelUnicode('CNAM','author',u'',512),
         MelUnicode('SNAM','description',u'',512),
-        MreHeaderBase.MelMasterName('MAST','masters'),
-        MelNull('DATA'), # 8 Bytes in Length
+        MreHeaderBase.MelMasterNames(),
         MelFidList('ONAM','overrides'),
         MelBase('SCRN', 'screenshot'),
     )
