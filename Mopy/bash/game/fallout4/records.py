@@ -26,7 +26,7 @@ imported from skyrim, but only after setting MelModel to the FO4 format."""
 from ... import brec
 from ...brec import MelBase, MelGroup, MreHeaderBase, MelSet, MelString, \
     MelStruct, MelUnicode, MelNull, MelFidList, MreLeveledListBase, MelFid, \
-    FID, MelLString, MelStructA, MelUInt8, MelOptFid, MelOptFloat
+    FID, MelLString, MelStructA, MelUInt8, MelOptFid, MelOptFloat, MelBounds
 # Set brec.MelModel to the Fallout 4 one - do not import from skyrim.records yet
 if brec.MelModel is None:
 
@@ -62,7 +62,7 @@ if brec.MelModel is None:
 
     brec.MelModel = _MelModel
 # Now we can import from parent game records file
-from ..skyrim.records import MelBounds, MreLeveledList
+from ..skyrim.records import MreLeveledList
 # Those are unused here, but need be in this file as are accessed via it
 from ..skyrim.records import MreGmst # used in basher.app_buttons.App_GenPickle#_update_pkl
 

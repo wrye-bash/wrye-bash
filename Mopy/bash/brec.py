@@ -835,6 +835,16 @@ class MelGroup(MelBase):
         return self._possible_sigs
 
 #------------------------------------------------------------------------------
+class MelBounds(MelGroup):
+    """Wrapper around MelGroup for the common task of defining OBND - Object
+    Bounds. Uses MelGroup to avoid merging them when importing."""
+    def __init__(self):
+        MelGroup.__init__(self, 'bounds',
+            MelStruct('OBND', '=6h', 'boundX1', 'boundY1', 'boundZ1',
+                      'boundX2', 'boundY2', 'boundZ2')
+        )
+
+#------------------------------------------------------------------------------
 class MelGroups(MelGroup):
     """Represents an array of group record."""
 

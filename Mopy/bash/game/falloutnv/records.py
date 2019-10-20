@@ -36,10 +36,10 @@ from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelColorInterpolator, MelValueInterpolator, MelReferences, \
     MelRegnEntrySubrecord, MelFloat, MelSInt8, MelSInt32, MelUInt8, \
     MelUInt32, MelOptFid, MelOptFloat, MelOptSInt32, MelOptUInt8, \
-    MelOptUInt16, MelOptUInt32
+    MelOptUInt16, MelOptUInt32, MelBounds
 from ...exception import ModSizeError
 
-# Those are unused here, but need be in this file as are accessed via itf
+# Those are unused here, but need be in this file as are accessed via it
 from ..fallout3.records import MreNpc ##: used in Oblivion only save code really
 
 #------------------------------------------------------------------------------
@@ -169,9 +169,7 @@ class MreActi(MelRecord):
     classType = 'ACTI'
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('SCRI','script'),
@@ -249,9 +247,7 @@ class MreAmmo(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','iconPath'),
@@ -306,9 +302,7 @@ class MreArma(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelStruct('BMDT','=2I',(_flags,'bipedFlags',0L),(_generalFlags,'generalFlags',0L)),
         MelModel('maleBody'),
@@ -359,9 +353,7 @@ class MreArmo(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelFid('SCRI','script'),
         MelFid('EITM','objectEffect'),
@@ -399,9 +391,7 @@ class MreAspc(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelFids('SNAM','soundLooping'),
         MelUInt32('WNAM', 'wallaTrigerCount'),
         MelFid('RDAT','useSoundFromRegion'),
@@ -417,9 +407,7 @@ class MreCcrd(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','iconPath'),
@@ -550,9 +538,7 @@ class MreChip(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','iconPath'),
@@ -570,9 +556,7 @@ class MreCmny(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','iconPath'),
@@ -592,9 +576,7 @@ class MreCont(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelFid('SCRI','script'),
@@ -957,9 +939,7 @@ class MreImod(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','iconPath'),
@@ -1085,9 +1065,7 @@ class MreKeym(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','iconPath'),
@@ -1111,9 +1089,7 @@ class MreLigh(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelModel(),
         MelFid('SCRI','script'),
         MelDestructible(),
@@ -1163,9 +1139,7 @@ class MreMisc(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelString('ICON','iconPath'),
@@ -1385,9 +1359,7 @@ class MreProj(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel(),
         MelDestructible(),
@@ -1737,9 +1709,7 @@ class MreSoun(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FNAM','soundFile'),
         MelUInt8('RNAM', '_rnam'),
         MelOptStruct('SNDD','=2BbsIh2B6h3i',('minDist',0), ('maxDist',0),
@@ -1763,9 +1733,7 @@ class MreStat(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelModel(),
         MelSInt8('BRUS', ('passthroughSound', -1)),
         MelFid('RNAM','soundRandomLooping'),
@@ -1779,9 +1747,7 @@ class MreTact(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel('model'),
         MelFid('SCRI','script'),
@@ -1882,9 +1848,7 @@ class MreWeap(MelRecord):
 
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelStruct('OBND','=6h',
-                  'boundX1','boundY1','boundZ1',
-                  'boundX2','boundY2','boundZ2'),
+        MelBounds(),
         MelString('FULL','full'),
         MelModel('model'),
         MelString('ICON','iconPath'),
