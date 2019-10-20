@@ -2257,7 +2257,7 @@ class _ANpcFacePatcher(AImportPatcher):
         self.patchFile.patcher_mod_skipcount[self.name][faceMod] += 1
 
 class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
-    logMsg = u'\n=== '+_(u'Faces Patched')+ u': %d'
+    logMsg = u'\n=== '+_(u'Faces Patched') + u': %d'
 
     #--Patch Phase ------------------------------------------------------------
     def initPatchFile(self, patchFile):
@@ -2278,7 +2278,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
             faceFile = ModFile(faceInfo,loadFactory)
             masters = faceInfo.get_masters()
             bashTags = faceInfo.getBashTags()
-            faceFile.load(True)
+            faceFile.load(do_unpack=True)
             faceFile.convertToLongFids(('NPC_',))
             for npc in faceFile.NPC_.getActiveRecords():
                 if npc.fid[0] in self.patchFile.loadSet:
@@ -2286,7 +2286,8 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                     if u'Npc.HairOnly' in bashTags:
                         fidattrs += ['hair']
                         attrs = ['hairLength','hairRed','hairBlue','hairGreen']
-                    if u'Npc.EyesOnly' in bashTags: fidattrs += ['eye']
+                    if u'Npc.EyesOnly' in bashTags:
+                        fidattrs += ['eye']
                     if fidattrs:
                         attr_fidvalue = dict(
                             (attr, npc.__getattribute__(attr)) for attr in
@@ -2304,8 +2305,7 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                             temp_faceData[npc.fid] = dict(
                                 (attr, npc.__getattribute__(attr)) for attr in
                                 ('fggs_p', 'fgga_p', 'fgts_p', 'hairLength',
-                                 'hairRed', 'hairBlue', 'hairGreen',
-                                 'unused3'))
+                                 'hairRed', 'hairBlue', 'hairGreen'))
                         else:
                             temp_faceData[npc.fid] = dict(
                                 (attr, npc.__getattribute__(attr)) for attr in
@@ -2325,7 +2325,6 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
                         masterFile.load(True)
                         masterFile.convertToLongFids(('NPC_',))
                         cachedMasters[master] = masterFile
-                    mapper = masterFile.getLongMapper()
                     if 'NPC_' not in masterFile.tops: continue
                     for npc in masterFile.NPC_.getActiveRecords():
                         if npc.fid not in temp_faceData: continue
@@ -2353,7 +2352,6 @@ class NpcFacePatcher(_ANpcFacePatcher,ImportPatcher):
         modName = modFile.fileInfo.name
         if not self.isActive or modName in self.srcs or 'NPC_' not in modFile.tops:
             return
-        mapper = modFile.getLongMapper()
         faceData,patchNpcs = self.faceData,self.patchFile.NPC_
         modFile.convertToLongFids(('NPC_',))
         for npc in modFile.NPC_.getActiveRecords():
@@ -2391,7 +2389,7 @@ class CBash_NpcFacePatcher(_ANpcFacePatcher,CBash_ImportPatcher):
         self.id_face = {}
         self.faceData = (
             'fggs_p', 'fgga_p', 'fgts_p', 'eye', 'hair', 'hairLength',
-            'hairRed', 'hairBlue', 'hairGreen', 'fnam')
+            'hairRed', 'hairBlue', 'hairGreen')
 
     def getTypes(self):
         """Returns the group types that this patcher checks"""
