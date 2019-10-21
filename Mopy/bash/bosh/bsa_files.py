@@ -407,7 +407,14 @@ class ABsa(AFile):
             folder_files_dict[key.lower()] = set(dest.lower() for _key, dest in val)
         return folder_files_dict
 
-    def extract_assets(self, asset_paths, dest_folder):
+    def extract_assets(self, asset_paths, dest_folder, progress=None):
+        """Extracts certain assets from this BSA into the specified folder.
+
+        :param asset_paths: An iterable specifying which files should be
+            extracted.
+        :param dest_folder: The folder into which the results should be
+            extracted.
+        :param progress: The progress callback to use. None if unwanted."""
         folder_files_dict = self._map_files_to_folders(
             imap(unicode.lower, asset_paths))
         del asset_paths # forget about this
@@ -418,8 +425,15 @@ class ABsa(AFile):
         self.bsa_folders.clear()
         # get the data from the file
         global_compression = self.bsa_header.is_compressed()
+        bsa_name = self.abs_path.tail
+        i = 0
+        if progress:
+            progress.setFull(len(folder_to_assets))
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             for folder, file_records in folder_to_assets.iteritems():
+                if progress:
+                    progress(i, u'Extracting %s...\n%s' % (bsa_name, folder))
+                    i += 1
                 target_dir = os.path.join(dest_folder, folder)
                 _makedirs_exists_ok(target_dir)
                 for filename, record in file_records:
@@ -559,7 +573,7 @@ class BSA(ABsa):
 class BA2(ABsa):
     header_type = Ba2Header
 
-    def extract_assets(self, asset_paths, dest_folder):
+    def extract_assets(self, asset_paths, dest_folder, progress=None):
         # map files to folders
         folder_files_dict = self._map_files_to_folders(asset_paths)
         del asset_paths # forget about this
@@ -572,8 +586,15 @@ class BA2(ABsa):
         # unload the bsa
         self.bsa_folders.clear()
         # get the data from the file
+        bsa_name = self.abs_path.tail
+        i = 0
+        if progress:
+            progress.setFull(len(folder_to_assets))
         with open(u'%s' % self.abs_path, 'rb') as bsa_file:
             for folder, file_records in folder_to_assets.iteritems():
+                if progress:
+                    progress(i, u'Extracting %s...\n%s' % (bsa_name, folder))
+                    i += 1
                 target_dir = os.path.join(dest_folder, folder)
                 _makedirs_exists_ok(target_dir)
                 for filename, record in file_records:
