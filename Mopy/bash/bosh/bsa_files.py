@@ -69,7 +69,8 @@ class _Header(object):
             self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
         # error checking
         if self.file_id != self.__class__.bsa_magic:
-            raise BSAError(u'Magic wrong: %r' % self.file_id)
+            raise BSAError(u'Magic wrong: got %r, expected %r' % (
+                self.file_id, self.__class__.bsa_magic))
 
 class BsaHeader(_Header):
     __slots__ = ( # in the order encountered in the header
@@ -118,6 +119,22 @@ class Ba2Header(_Header):
         if not self.b2a_files_type in self.file_types:
             raise BSAError(u'Unrecognised file types: %r. Should be %s' % (
                 self.b2a_files_type, u' or'.join(self.file_types)))
+
+class MorrowindBsaHeader(_Header):
+    __slots__ = (u'file_id', u'hash_offset', u'file_count')
+    formats = [(f, struct.calcsize(f)) for f in (u'4s', u'I', u'I')]
+    bsa_magic = b'\x00\x01\x00\x00'
+    bsa_version = None # Morrowind BSAs have no version
+
+    def load_header(self, ins):
+        for fmt, attr in zip(MorrowindBsaHeader.formats,
+                             MorrowindBsaHeader.__slots__):
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+        self.version = None # Morrowind BSAs have no version
+        # error checking
+        if self.file_id != self.__class__.bsa_magic:
+            raise BSAError(u'Magic wrong: got %r, expected %r' % (
+                self.file_id, self.__class__.bsa_magic))
 
 class OblivionBsaHeader(BsaHeader):
     __slots__ = ()
@@ -213,6 +230,60 @@ class BSAFileRecord(_BsaHashedRecord):
         if self.compression_toggle():
             return self.file_size_flags & (~0xC0000000) # negate all flags
         return self.file_size_flags
+
+class BSAMorrowindFileRecord(_HashedRecord):
+    """Morrowind BSAs have an array of sizes and offsets, then an array of name
+    lengths, then an array of names and finally an array of hashes. These must
+    all be loaded in order. Additionally, Morrowind has no folder records, so
+    all these arrays correspond to a long list of file records."""
+    # Note: We (ab)use the use of zip() here to reserve file_name without
+    # actually loading it.
+    __slots__ = (u'file_size', u'relative_offset', u'file_name')
+    formats = [(f, struct.calcsize(f)) for f in (u'I', u'I')]
+
+    def load_record(self, ins):
+        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
+            self.__setattr__(attr, struct_unpack(fmt[0], ins.read(fmt[1]))[0])
+
+    def load_record_from_buffer(self, memview, start):
+        for fmt, attr in zip(self.__class__.formats, self.__class__.__slots__):
+            self.__setattr__(attr,
+                             struct.unpack_from(fmt[0], memview, start)[0])
+            start += fmt[1]
+        return start
+
+    def load_name(self, ins):
+        """Loads the file name from the specified input stream."""
+        read_name = b''
+        while(True):
+            candidate = ins.read(1)
+            if candidate == b'\x00': break # null terminator
+            read_name += candidate
+        self.file_name = _decode_path(read_name)
+
+    def load_name_from_buffer(self, memview, start):
+        """Loads the file name from the specified memory buffer."""
+        read_name = b''
+        offset = 0
+        while(True):
+            candidate = memview[start + offset]
+            if candidate == b'\x00': break # null terminator
+            read_name += candidate
+            offset += 1
+        self.file_name = _decode_path(read_name)
+
+    def load_hash(self, ins):
+        """Loads the hash from the specified input stream."""
+        super(BSAMorrowindFileRecord, self).load_record(ins)
+
+    def load_hash_from_buffer(self, memview, start):
+        """Loads the hash from the specified memory buffer."""
+        super(BSAMorrowindFileRecord, self).load_record_from_buffer(memview,
+                                                                    start)
+
+    def __repr__(self):
+        return super(BSAMorrowindFileRecord, self).__repr__() + (
+                u': %r' % self.file_name)
 
 class BSAOblivionFileRecord(_BsaHashedRecord):
     # Note: Here, we (ab)use the usage of zip() in _BsaHashedRecord.load_record
@@ -576,6 +647,70 @@ class BA2(ABsa):
             _filenames.append(filename)
             file_names_block = file_names_block[name_size + 2:]
         self._filenames = _filenames
+
+class MorrowindBsa(ABsa):
+    header_type = MorrowindBsaHeader
+
+    def _load_bsa_light(self):
+        self.file_records = []
+        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+            # load the header from input stream
+            self.bsa_header.load_header(bsa_file)
+            # load each file record
+            for x in xrange(self.bsa_header.file_count):
+                rec = BSAMorrowindFileRecord()
+                rec.load_record(bsa_file)
+                self.file_records.append(rec)
+            # skip name offsets - we don't need them, since the strings are
+            # null-terminated. Additionally, these seem to sometimes be
+            # incorrect - perhaps created by bad tools?
+            bsa_file.seek(4 * self.bsa_header.file_count, 1)
+            # load names and hashes, also take the opportunity to fill
+            # _filenames
+            for file_record in self.file_records:
+                file_record.load_name(bsa_file)
+                self._filenames.append(file_record.file_name)
+            for file_record in self.file_records:
+                file_record.load_hash(bsa_file)
+            # remember the final offset, since the stored offsets are relative
+            # to this
+            self.final_offset = bsa_file.tell()
+
+    _load_bsa = _load_bsa_light
+
+    # We override this because Morrowind has no folder records, so we can
+    # achieve better performance with a dedicated method
+    def extract_assets(self, asset_paths, dest_folder, progress=None):
+        # Speed up target_records construction
+        if not isinstance(asset_paths, (frozenset, set)):
+            asset_paths = frozenset(asset_paths)
+        self._load_bsa()
+        # Keep only the file records that correspond to asset_paths
+        target_records = [x for x in self.file_records
+                          if x.file_name in asset_paths]
+        bsa_name = self.abs_path.tail
+        i = 0
+        if progress:
+            progress.setFull(len(target_records))
+        with open(u'%s' % self.abs_path, u'rb') as bsa_file:
+            for file_record in target_records:
+                rec_name = file_record.file_name
+                if progress:
+                    # No folder records, simulate them to avoid updating the
+                    # progress bar too frequently
+                    progress(i, u'Extracting %s...\n%s' % (
+                        bsa_name, os.path.dirname(rec_name)))
+                    i += 1
+                # There is no compression for Morrowind BSAs, but all offsets
+                # are relative to the final_offset we read earlier
+                bsa_file.seek(self.final_offset + file_record.relative_offset)
+                # Finally, simply read from the BSA file and write out the
+                # result, making sure to create any needed directories
+                raw_data = bsa_file.read(file_record.file_size)
+                out_path = os.path.join(dest_folder, rec_name)
+                _makedirs_exists_ok(os.path.dirname(out_path))
+                with open(out_path, u'wb') as out:
+                    out.write(raw_data)
 
 class OblivionBsa(BSA):
     header_type = OblivionBsaHeader
