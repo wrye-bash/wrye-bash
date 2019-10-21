@@ -594,7 +594,9 @@ class Obse_Button(_StatefulButton):
     _state_key = 'bash.obse.on'
     _state_img_key = u'checkbox.green.%s.%s'
     @property
-    def _present(self): return bass.dirs['app'].join(bush.game.se.exe).exists()
+    def _present(self):
+        return (bool(bush.game.se.se_abbrev)
+                and bass.dirs['app'].join(bush.game.se.exe).exists())
 
     def SetState(self,state=None):
         super(Obse_Button, self).SetState(state)
