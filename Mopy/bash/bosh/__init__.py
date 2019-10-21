@@ -713,7 +713,8 @@ class ModInfo(FileInfo):
         pattern = re.escape(self._modname)
         # games other than skyrim accept more general bsa names
         if bush.game.fsName not in (u'Enderal', u'Skyrim'):
-            pattern +=  u'.*'
+            pattern +=  r'(?: \- \w+)?'
+        pattern += r'\.%s' % bush.game.bsa_extension
         reg = re.compile(pattern, re.I | re.U)
         # bsaInfos must be updated and contain all existing bsas
         if bsa_infos is None: bsa_infos = bsaInfos

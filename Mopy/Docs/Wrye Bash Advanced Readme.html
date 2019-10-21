@@ -4840,7 +4840,7 @@ C.Location, -C.LockList
         <tr><th colspan="3">Save Context Menu
         <tr><th colspan="2">Command<th>Description
     <tbody>
-        <tr><td rowspan="8">File<td>Backup<td>Creates a backup of the selected save file in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up save file has <code>f</code> appended to its file extension, giving .essf.
+        <tr><td rowspan="7">File<td>Backup<td>Creates a backup of the selected save file in <code>[Game] Mods\Bash Mod Data\Backups</code>. On first run, the backed-up save file has <code>f</code> appended to its file extension, giving .essf.
         <tr><td>Duplicate...<td>Creates a duplicate of the selected save file in the saves folder.
         <tr><td>Delete<td>Permanently deletes the selected save file and any backups of it.
         <tr><td>Hide<td>Moves the selected save file to the <code>My Games\[Game]\Saves\[optional profile dir\]Bash\Hidden</code> directory.
@@ -4848,9 +4848,6 @@ C.Location, -C.LockList
         <tr><td>Revert to First Backup<td>Reverts the selected save file to the first backup made of it.
         <tr><td>Rename...<td>Rename the selected save file. bak files are not supported and you can't change the extension (specifying
             another extension will make the rename fail)
-        <tr><td>Re-number Save(s)...<td>Allows the re-numbering of the selected save file(s). If more than one file is selected, the first
-            will be renumbered to the given number and the others will be numbered in increments of one from the given number. The save name
-            must be of the form <code>&lt;Save (case insensitive)&gt;&lt;space&gt;&lt;some digits&gt;&lt;optional text&gt;.&lt;save extension&gt;</code>
         <tr><td colspan="2" id="savesMoveTo">Move To<td>This submenu allows you to specify a save profile to move the selected save(s) to from the active save profile.
         <tr><td colspan="2" id="savesCopyTo">Copy To<td>This submenu allows you to specify a save profile to copy the selected save(s) to, so that it is present in both the active and specified save profiles.
         <tr><td colspan="2" id="savesLoadMasters">Load Masters<td>Synchronizes activated plugins to savegame's masters.
@@ -4875,6 +4872,10 @@ C.Location, -C.LockList
         <tr><td colspan="2" id="savesReweighPotions">Reweigh Potions...<td><em>Oblivion only.</em> Potions created in-game are given a weight that is somewhat arbitrarily selected and potentially high. This command may be used to set all created potions to have a specific weight. Potions created after the use of this command with new names, new effects or new durations will not be affected.
         <tr><td colspan="2" id="savesUpdateNPCLevels">Update NPC Levels...<td><em>Oblivion only.</em> Updates the level information for NPCs stored in the selected savegame to reflect the active load order's NPC level settings. This is required because although NPC levels are set via plugins, once an NPC is encountered its level is stored in the save file, which overrides the plugin levels.
         <tr><td colspan="2">Export Screenshot...<td>Allows you to save the image used as the save file's screenshot as a JPEG.
+        <tr><td colspan="2">Re-number Save(s)...<td>Allows the re-numbering of the selected save file(s). If more than one file is selected,
+            the first will be renumbered to the given number and the others will be numbered in increments of one from the given number.
+            The save name must be of the form
+            <code>&lt;Save (case insensitive)&gt;&lt;space&gt;&lt;some digits&gt;&lt;optional text&gt;.&lt;save extension&gt;</code>
         <tr><td colspan="2" id="savesRemoveBloat">Remove Bloat...<td><em>Oblivion only.</em> <strong>This is an experimental command. It is recommended that saves are backed up before using it on them.</strong> It attempts to determine how much bloating there is in the selected save file and then optionally remove it. If the command reports a large number of created objects, there could be a problem with one of your mods, and such mods should be removed or updated. There are two common types of bloat:
             <ul>
                 <li>Excess created objects can occur through the use of scripting by a mod to duplicate existing objects in-game and a failure by the mod to clean up the duplicates after their use.

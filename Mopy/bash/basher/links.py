@@ -635,7 +635,6 @@ def InitSaveLinks():
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
         fileMenu.links.append(Save_Rename())
-        fileMenu.links.append(Save_Renumber())
         #fileMenu.links.append(File_RevertToSnapshot())
         SaveList.itemMenu.append(fileMenu)
     if True: #--Move to Profile
@@ -670,6 +669,7 @@ def InitSaveLinks():
     #--------------------------------------------
     SaveList.itemMenu.append(SeparatorLink())
     SaveList.itemMenu.append(Save_ExportScreenshot())
+    SaveList.itemMenu.append(Save_Renumber())
     #--------------------------------------------
     if bush.game.ess.canEditMore:
         SaveList.itemMenu.append(SeparatorLink())
