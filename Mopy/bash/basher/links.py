@@ -44,6 +44,7 @@ from .settings_links import *
 from .misc_links import *
 from .ini_links import *
 from .mod_links import *
+from .bsa_links import *
 
 #------------------------------------------------------------------------------
 def InitStatusBar():
@@ -702,6 +703,8 @@ def InitBSALinks():
         fileMenu.links.append(SeparatorLink())
         fileMenu.links.append(File_RevertToBackup())
         BSAList.itemMenu.append(fileMenu)
+        BSAList.itemMenu.append(BSA_ExtractToProject())
+        BSAList.itemMenu.append(BSA_ListContents())
 
 #------------------------------------------------------------------------------
 def InitScreenLinks():
