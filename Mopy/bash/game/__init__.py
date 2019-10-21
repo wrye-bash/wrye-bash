@@ -39,6 +39,9 @@ class GameInfo(object):
     altName = u'' ## Example: u'Wrye Smash'
     # Name of game's default ini file.
     defaultIniFile = u''
+    # True if the game uses the 'My Documents' folder, False to just use the
+    # game path
+    uses_personal_folders = True
     # The exe to use when launching the game (without xSE present)
     launch_exe = u'' ## Example: u'TESV.exe'
     # Path to a file to look for to see if this is the right game. Given as a
