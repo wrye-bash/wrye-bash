@@ -28,3 +28,4 @@ bush."""
 
 gameSpecificPatchers = {}
 gameSpecificListPatchers = {}
+game_specific_import_patchers = {}

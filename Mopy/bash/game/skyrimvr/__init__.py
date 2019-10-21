@@ -58,9 +58,13 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
 
     allTags = SkyrimSEGameInfo.allTags | {u'NoMerge'}
     patchers = (
-        u'CellImporter', u'GmstTweaker', u'GraphicsPatcher',
-        u'ImportInventory', u'ListsMerger', u'PatchMerger', u'SoundPatcher',
-        u'StatsPatcher', u'NamesPatcher',
+        u'ActorImporter', u'CellImporter', u'ContentsChecker',
+        u'DeathItemPatcher', u'DestructiblePatcher', u'GmstTweaker',
+        u'GraphicsPatcher', u'ImportActorsSpells', u'ImportInventory',
+        u'KeywordsImporter', u'ListsMerger', u'NamesPatcher',
+        u'NPCAIPackagePatcher', u'ObjectBoundsImporter', u'PatchMerger',
+        u'SoundPatcher', u'SpellsPatcher', u'StatsPatcher', u'TextImporter',
+        u'TweakActors',
     )
 
     class se(SkyrimSEGameInfo.se):
@@ -73,6 +77,7 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
 
     @classmethod
     def init(cls):
+        # Copy-pasted from Skyrim SE
         cls._dynamic_import_modules(__name__)
         # First import from skyrimse.records file
         from .records import MreWthr, MreMato, MreLtex, MreWatr, MreWeap, \
@@ -89,10 +94,11 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreInfo, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt, \
             MreLctn, MreLgtm, MreLigh, MreLscr, MreLvli, MreLvln, MreLvsp, \
             MreMatt, MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, \
-            MreMust, MreNpc, MreOtft, MreProj, MreQust, MreRegn, MreRela, \
-            MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, \
-            MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, \
-            MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld
+            MreMust, MreNpc, MreOtft, MrePerk, MreProj, MreQust, MreRegn, \
+            MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, \
+            MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, \
+            MreSpgd, MreTact, MreTree, MreTxst, MreVtyp, MreWoop, MreWrld, \
+            MrePack
         cls.mergeClasses = (
             # MreAchr, MreDial, MreInfo, MreFact,
             MreAact, MreActi, MreAddn, MreAlch, MreAmmo, MreAnio, MreAppa,
@@ -105,13 +111,12 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreImgs, MreIngr, MreIpct, MreIpds, MreKeym, MreKywd, MreLcrt,
             MreLctn, MreLgtm, MreLigh, MreLscr, MreLtex, MreLvli, MreLvln,
             MreLvsp, MreMato, MreMatt, MreMesg, MreMgef, MreMisc, MreMovt,
-            MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MreProj, MreRegn,
-            MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn,
-            MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun, MreSpel,
-            MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp, MreWatr,
-            MreWeap, MreWoop, MreWthr, MreVoli, MreLens,
-            ####### for debug
-            MreQust,
+            MreMstt, MreMusc, MreMust, MreNpc, MreOtft, MrePerk, MreProj,
+            MreRegn, MreRela, MreRevb, MreRfct, MreScrl, MreShou, MreSlgm,
+            MreSmbn, MreSmen, MreSmqn, MreSnct, MreSndr, MreSopm, MreSoun,
+            MreSpel, MreSpgd, MreStat, MreTact, MreTree, MreTxst, MreVtyp,
+            MreWatr, MreWeap, MreWoop, MreWthr, MreVoli, MreLens, MreQust,
+            MrePack,
         )
         # Setting RecordHeader class variables --------------------------------
         brec.RecordHeader.topTypes = [
@@ -148,13 +153,13 @@ class SkyrimVRGameInfo(SkyrimSEGameInfo):
             MreIpds, MreKeym, MreKywd, MreLcrt, MreLctn, MreLgtm, MreLigh,
             MreLscr, MreLtex, MreLvli, MreLvln, MreLvsp, MreMato, MreMatt,
             MreMesg, MreMgef, MreMisc, MreMovt, MreMstt, MreMusc, MreMust,
-            MreNpc, MreOtft, MreProj, MreRegn, MreRela, MreRevb, MreRfct,
-            MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn, MreSnct,
-            MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat, MreTact,
-            MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop, MreWthr,
-            MreCell, MreWrld, MreVoli, MreLens,  # MreNavm, MreNavi
-            ####### for debug
-            MreQust, MreHeader,
+            MreNpc, MreOtft, MrePerk, MreProj, MreRegn, MreRela, MreRevb,
+            MreRfct, MreScrl, MreShou, MreSlgm, MreSmbn, MreSmen, MreSmqn,
+            MreSnct, MreSndr, MreSopm, MreSoun, MreSpel, MreSpgd, MreStat,
+            MreTact, MreTree, MreTxst, MreVtyp, MreWatr, MreWeap, MreWoop,
+            MreWthr, MreCell, MreWrld, MreVoli, MreLens, MreQust, MreHeader,
+            MrePack,
+            # MreNavm, MreNavi
         ))
         brec.MreRecord.simpleTypes = (
             set(brec.MreRecord.type_class) - {'TES4', 'ACHR', 'CELL', 'DIAL',
