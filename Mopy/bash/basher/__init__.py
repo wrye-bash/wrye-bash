@@ -1982,7 +1982,7 @@ class SaveDetails(_ModsSavesDetails):
     @property
     def file_infos(self): return bosh.saveInfos
     @property
-    def allowDetailsEdit(self): return bush.game.ess.canReadBasic
+    def allowDetailsEdit(self): return self.saveInfo.header.can_edit_header
 
     def __init__(self, parent, ui_list_panel):
         super(SaveDetails, self).__init__(parent, ui_list_panel)
