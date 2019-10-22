@@ -10,6 +10,7 @@ import sys
 from contextlib import contextmanager
 from distutils.core import setup
 
+import loot_api
 import py2exe
 import py2exe.mf as modulefinder
 import win32com
@@ -29,12 +30,15 @@ MOPY_FOLDER = os.path.dirname(os.path.abspath(__file__))
 BASH_FOLDER = os.path.join(MOPY_FOLDER, u"bash")
 WBSA_FOLDER = os.path.join(MOPY_FOLDER, u"..", u"scripts", u"build", u"standalone")
 TOOL_FOLDER = os.path.join(real_sys_prefix(), u"Tools", u"i18n")
+LOOT_FOLDER = loot_api.__path__[0]
 MANIFEST_FILE = os.path.join(WBSA_FOLDER, u"manifest.xml")
 ICON_FILE = os.path.join(WBSA_FOLDER, u"bash.ico")
 I18N_FILES = [
     os.path.join(TOOL_FOLDER, u"msgfmt.py"),
     os.path.join(TOOL_FOLDER, u"pygettext.py"),
 ]
+
+sys.path.insert(0, LOOT_FOLDER)
 
 
 @contextmanager

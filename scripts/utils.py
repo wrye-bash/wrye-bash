@@ -31,13 +31,6 @@ import sys
 import urllib2
 from contextlib import contextmanager
 
-SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
-MOPY_PATH = os.path.join(SCRIPTS_PATH, u"..", u"Mopy")
-LOOT_DLLS = [
-    os.path.join(MOPY_PATH, u"loot.dll"),
-    os.path.join(MOPY_PATH, u"loot_api.pyd"),
-]
-
 
 # verbosity:
 #  quiet (warnings and above)
