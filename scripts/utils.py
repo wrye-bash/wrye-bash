@@ -23,13 +23,25 @@
 #
 # =============================================================================
 
+import contextlib
+import errno
+import io
+import json
 import logging
 import math
 import os
 import subprocess
 import sys
 import urllib2
+import webbrowser
 
+import browsercookie
+
+ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+DEPLOY_FOLDER = os.path.join(ROOT_PATH, "deploy")
+DEPLOY_LOG = os.path.join(ROOT_PATH, "deploy.log")
+DEPLOY_CONFIG = os.path.join(DEPLOY_FOLDER, "deploy_config.json")
+DIST_PATH = os.path.join(ROOT_PATH, "dist")
 
 # verbosity:
 #  quiet (warnings and above)
@@ -69,6 +81,74 @@ def setup_common_parser(parser):
         help="Do not print any output to console.",
     )
     parser.set_defaults(verbosity=logging.INFO)
+
+
+def setup_deploy_parser(parser):
+    setup_common_parser(parser)
+    parser.add_argument(
+        "-l",
+        "--logfile",
+        default=DEPLOY_LOG,
+        help="Where to store the deployment log [default: {}].".format(
+            os.path.relpath(DEPLOY_LOG, os.getcwd())
+        ),
+    )
+    parser.add_argument(
+        "--no-config",
+        action="store_false",
+        dest="save_config",
+        help="Do not save arguments to a config file.",
+    )
+    parser.add_argument(
+        "-n", "--dry-run", action="store_true", help="Perform a dry run."
+    )
+    parser.add_argument(
+        "-f",
+        "--dist-folder",
+        default=DIST_PATH,
+        dest="dist_folder",
+        help="Specifies the folder with the distributables to deploy "
+        "[default: {}].".format(os.path.relpath(DIST_PATH, os.getcwd())),
+    )
+
+
+def parse_deploy_credentials(cli_args, required_creds, save_config=True):
+    if os.path.isfile(DEPLOY_CONFIG):
+        with open(DEPLOY_CONFIG, "r") as conf_file:
+            file_dict = json.load(conf_file)
+    else:
+        file_dict = {}
+    cli_dict = vars(cli_args)
+    creds = {a: None for a in required_creds}
+    creds.update(file_dict)
+    creds.update({a: b for a, b in cli_dict.iteritems() if a in required_creds})
+
+    # nexus
+    required = all(elem in ("member_id", "pass_hash", "sid") for elem in required_creds)
+    missing = None in (creds.get("member_id"), creds.get("pass_hash"), creds.get("sid"))
+    if required and missing:
+        with silence():
+            cookies = browsercookie.load()
+        predicate = lambda x, name: x.domain == ".nexusmods.com" and x.name == name
+        creds["member_id"] = next(
+            (item.value for item in cookies if predicate(item, "member_id")), None
+        )
+        creds["pass_hash"] = next(
+            (item.value for item in cookies if predicate(item, "pass_hash")), None
+        )
+        creds["sid"] = next(
+            (item.value for item in cookies if predicate(item, "sid")), None
+        )
+        for key in ("member_id", "pass_hash", "sid"):
+            if creds[key] is None:
+                print "No {} cookie specified, please enter it now:".format(key)
+                creds[key] = raw_input("> ")
+
+    if save_config:
+        mkdir(DEPLOY_FOLDER)
+        with open(DEPLOY_CONFIG, "w") as conf_file:
+            json.dump(creds, conf_file, indent=2, separators=(",", ": "))
+    return creds
 
 
 def convert_bytes(size_bytes):
@@ -121,3 +201,23 @@ def run_subprocess(command, logger, **kwargs):
 
 def relpath(path):
     return os.path.relpath(path, os.getcwd())
+
+
+# https://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python
+def mkdir(path, exists_ok=True):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path) and exists_ok:
+            pass
+        else:
+            raise
+
+
+# https://stackoverflow.com/a/2829036
+@contextlib.contextmanager
+def silence():
+    save_stdout = sys.stdout
+    sys.stdout = io.BytesIO()
+    yield
+    sys.stdout = save_stdout
