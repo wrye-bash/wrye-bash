@@ -215,7 +215,7 @@ class GameInfo(object):
         # Always contains textures.
         facegen_dir_2 = []
         # The path to the plugin-name-specific directory for voice files
-        # This is the same for every game released thus far (sound\\voice\\%s)
+        # This is the same (sound/voice/%s) for every game but Morrowind
         voice_dir = [u'sound', u'voice']
 
     class xe(object):
@@ -230,6 +230,16 @@ class GameInfo(object):
     #  (section,key)
     saveProfilesKey = (u'General', u'SLocalSavePath')
     save_prefix = u'Saves' # base dir for save files
+
+    # INI setting used to enable or disable screenshots
+    #  (section, key, default value)
+    screenshot_enabled_key = (u'Display', u'bAllowScreenShot', u'1')
+    # INI setting used to set base screenshot name
+    #  (section, key, default value)
+    screenshot_base_key = (u'Display', u'sScreenShotBaseName', u'ScreenShot')
+    # INI setting used to set screenshot index
+    #  (section, key, default value)
+    screenshot_index_key = (u'Display', u'iScreenShotIndex', u'0')
 
     # BAIN:
     #  These are the allowed default data directories that BAIN can install to
