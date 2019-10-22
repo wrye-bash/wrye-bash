@@ -10,3 +10,4 @@ https://github.com/wrye-bash/dev-tools/raw/master/wheels/py2exe-0.6.9-cp27-cp27m
 # Deployment
 selenium~=3.141
 browsercookie~=0.6
+dropbox~=9.3

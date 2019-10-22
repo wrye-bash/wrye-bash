@@ -26,6 +26,11 @@
 """
 Deploy nightly and production builds.
 
+To deploy to dropbox you need a Dropbox account and access to the wrye bash
+shared folder in your dropbox. Optionally, you can override the regular oauth
+process with your own API access token via '--access-token'. Deploying test
+builds to a subfolder is also supported with '--branch'.
+
 To deploy to nexus you need to have Google Chrome/Chromium installed and be
 logged in to nexus in a browser [Supported: Chrome, Firefox, Safari]. The
 appropriate selenium driver and the needed auth cookies are automatically
@@ -51,6 +56,12 @@ if __name__ == "__main__":
     )
     utils.setup_deploy_parser(parser)
     parser.add_argument(
+        "--no-dropbox",
+        action="store_false",
+        dest="dropbox",
+        help="Do not deploy to dropbox.",
+    )
+    parser.add_argument(
         "--no-nexus",
         action="store_false",
         dest="nexus",
@@ -62,10 +73,15 @@ if __name__ == "__main__":
         dest="prod_rel",
         help="Deploy a production release only.",
     )
+    dropbox_parser = parser.add_argument_group("dropbox arguments")
+    deploy_dropbox.setup_parser(dropbox_parser)
     nexus_parser = parser.add_argument_group("nexus arguments")
     deploy_nexus.setup_parser(nexus_parser)
     args = parser.parse_args()
     open(args.logfile, "w").close()
+    if args.dropbox and not args.prod_rel:
+        deploy_dropbox.main(args)
+        print
     if args.nexus or args.prod_rel:
         args.release = "production"
         deploy_nexus.main(args)

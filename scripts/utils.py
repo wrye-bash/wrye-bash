@@ -36,6 +36,7 @@ import urllib2
 import webbrowser
 
 import browsercookie
+import dropbox
 
 ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 DEPLOY_FOLDER = os.path.join(ROOT_PATH, "deploy")
@@ -122,6 +123,23 @@ def parse_deploy_credentials(cli_args, required_creds, save_config=True):
     creds = {a: None for a in required_creds}
     creds.update(file_dict)
     creds.update({a: b for a, b in cli_dict.iteritems() if a in required_creds})
+
+    # dropbox
+    if "access_token" in required_creds and creds["access_token"] is None:
+        if None in (creds.get("app_id"), creds.get("app_secret")):
+            creds["app_id"] = raw_input(
+                "Please enter the Wrye Bash Dropbox App ID:\n> "
+            )
+            creds["app_secret"] = raw_input(
+                "Please enter the Wrye Bash Dropbox App Secret:\n> "
+            )
+        auth_flow = dropbox.DropboxOAuth2FlowNoRedirect(
+            creds["app_id"], creds["app_secret"]
+        )
+        authorize_url = auth_flow.start()
+        webbrowser.open_new_tab(authorize_url)
+        auth_code = raw_input("Enter the authorization code here:\n> ").strip()
+        creds["access_token"] = auth_flow.finish(auth_code).access_token
 
     # nexus
     required = all(elem in ("member_id", "pass_hash", "sid") for elem in required_creds)
