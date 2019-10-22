@@ -30,8 +30,8 @@ from ...bolt import Flags, DataDict, struct_pack
 from ...brec import MelRecord, MelStructs, MelObject, MelGroups, MelStruct, \
     FID, MelGroup, MelString, MreLeveledListBase, MelSet, MelFid, MelNull, \
     MelOptStruct, MelFids, MreHeaderBase, MelBase, MelUnicode, MelXpci, \
-    MelFull0, MelFidList, MelStructA, MelStrings, MreRecord, MreGmstBase, \
-    MelTuple, MreHasEffects
+    MelFull0, MelFidList, MelStructA, MelStrings, MreGmstBase, MelTuple, \
+    MreHasEffects, MelReferences, MelRegnEntrySubrecord
 from ...exception import BoltError, ModError, ModSizeError, StateError
 # Set brec MelModel to the one for Oblivion
 if brec.MelModel is None:
@@ -266,31 +266,6 @@ class MelOwnership(MelGroup):
         """Dumps data from record to outstream."""
         if record.ownership and record.ownership.owner:
             MelGroup.dumpData(self,record,out)
-
-class MelScrxen(MelFids):
-    """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
-
-    def getLoaders(self,loaders):
-        loaders['SCRV'] = self
-        loaders['SCRO'] = self
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        isFid = (sub_type == 'SCRO')
-        if isFid: value = ins.unpackRef()
-        else: value, = ins.unpack('I',4,readId)
-        record.__getattribute__(self.attr).append((isFid,value))
-
-    def dumpData(self,record,out):
-        for isFid,value in record.__getattribute__(self.attr):
-            if isFid: out.packRef('SCRO',value)
-            else: out.packSub('SCRV','I',value)
-
-    def mapFids(self,record,function,save=False):
-        scrxen = record.__getattribute__(self.attr)
-        for index,(isFid,value) in enumerate(scrxen):
-            if isFid:
-                result = function(value)
-                if save: scrxen[index] = (isFid,result)
 
 #------------------------------------------------------------------------------
 # Oblivion Records ------------------------------------------------------------
@@ -1038,7 +1013,7 @@ class MreInfo(MelRecord):
         MelBase('SCHD','schd_p'),
         MelBase('SCDA','compiled_p'),
         MelString('SCTX','scriptText'),
-        MelScrxen('SCRV/SCRO','references')
+        MelReferences(),
         )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1491,7 +1466,7 @@ class MreQust(MelRecord):
                           'compiledSize', 'lastIndex', 'scriptType'),
                 MelBase('SCDA','compiled_p'),
                 MelString('SCTX','scriptText'),
-                MelScrxen('SCRV/SCRO','references')
+                MelReferences()
                 ),
             ),
         MelGroups('targets', MelStruct('QSTA', 'IB3s', (FID, 'targetId'),
@@ -1782,12 +1757,8 @@ class MreRefr(MelRecord):
 class MreRegn(MelRecord):
     """Region record."""
     classType = 'REGN'
-    _flags = Flags(0L,Flags.getNames(
-        ( 2,'objects'),
-        ( 3,'weather'),
-        ( 4,'map'),
-        ( 6,'grass'),
-        ( 7,'sound'),))
+    rdatFlags = Flags(0L,Flags.getNames(
+        ( 0,'Override'),))
     obflags = Flags(0L,Flags.getNames(
         ( 0,'conform'),
         ( 1,'paintVertices'),
@@ -1803,56 +1774,6 @@ class MreRegn(MelRecord):
         ( 2,'rainy'),
         ( 3,'snowy'),))
 
-    ####Lazy hacks to correctly read/write regn data
-    class MelRegnStructA(MelStructA):
-        """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if record.entryType == 2 and self.subType == 'RDOT':
-                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
-            elif record.entryType == 3 and self.subType == 'RDWT':
-                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
-            elif record.entryType == 6 and self.subType == 'RDGS':
-                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
-            elif record.entryType == 7 and self.subType == 'RDSD':
-                MelStructA.loadData(self, record, ins, sub_type, size_, readId)
-
-        def dumpData(self,record,out):
-            """Conditionally dumps data."""
-            if record.entryType == 2 and self.subType == 'RDOT':
-                MelStructA.dumpData(self,record,out)
-            elif record.entryType == 3 and self.subType == 'RDWT':
-                MelStructA.dumpData(self,record,out)
-            elif record.entryType == 6 and self.subType == 'RDGS':
-                MelStructA.dumpData(self,record,out)
-            elif record.entryType == 7 and self.subType == 'RDSD':
-                MelStructA.dumpData(self,record,out)
-
-    class MelRegnString(MelString):
-        """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if record.entryType == 4 and self.subType == 'RDMP':
-                MelString.loadData(self, record, ins, sub_type, size_, readId)
-            elif record.entryType == 5 and self.subType == 'ICON':
-                MelString.loadData(self, record, ins, sub_type, size_, readId)
-
-        def dumpData(self,record,out):
-            """Conditionally dumps data."""
-            if record.entryType == 4 and self.subType == 'RDMP':
-                MelString.dumpData(self,record,out)
-            elif record.entryType == 5 and self.subType == 'ICON':
-                MelString.dumpData(self,record,out)
-
-    class MelRegnOptStruct(MelOptStruct):
-        """Handler for regn record. Conditionally dumps next items."""
-        def loadData(self, record, ins, sub_type, size_, readId):
-            if record.entryType == 7 and self.subType == 'RDMD':
-                MelOptStruct.loadData(self, record, ins, sub_type, size_, readId)
-
-        def dumpData(self,record,out):
-            """Conditionally dumps data."""
-            if record.entryType == 7 and self.subType == 'RDMD':
-                MelOptStruct.dumpData(self,record,out)
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelString('ICON','iconPath'),
@@ -1862,28 +1783,28 @@ class MreRegn(MelRecord):
             MelStruct('RPLI','I','edgeFalloff'),
             MelStructA('RPLD','2f','points','posX','posY')),
         MelGroups('entries',
-                  MelStruct('RDAT', 'I2B2s', 'entryType', (_flags, 'flags'),
-                            'priority', ('unused1', null2)),
-                  ####flags actually an enum...
-                  MelRegnStructA('RDOT', 'IH2sf4B2H4s4f3H2s4s', 'objects',
-                                 (FID, 'objectId'), 'parentIndex',
-            ('unused1',null2), 'density', 'clustering', 'minSlope', 'maxSlope',
-            (obflags, 'flags'), 'radiusWRTParent', 'radius', ('unk1',null4),
-            'maxHeight', 'sink', 'sinkVar', 'sizeVar', 'angleVarX',
-            'angleVarY',  'angleVarZ', ('unused2',null2), ('unk2',null4)),
-            MelRegnString('RDMP', 'mapName'),
-## Disabled support due to bug when loading.
-## Apparently group records can't contain subrecords that are also present
-# outside of the group.
-##          MelRegnString('ICON', 'iconPath'),  ####Obsolete? Only one
-# record in oblivion.esm
-            MelRegnStructA('RDGS', 'I4s', 'grasses', (FID,'grass'),
-                           ('unk1',null4)),
-            MelRegnOptStruct('RDMD', 'I', ('musicType',None)),
-            MelRegnStructA('RDSD', '3I', 'sounds', (FID, 'sound'),
-                           (sdflags, 'flags'), 'chance'),
-            MelRegnStructA('RDWT', '2I', 'weather', (FID, 'weather'),
-                           'chance')),
+            MelStruct('RDAT', 'I2B2s', 'entryType', (rdatFlags, 'flags'),
+                    'priority', ('unused1', null2)),
+            MelRegnEntrySubrecord(2, MelStructA(
+                'RDOT', 'IH2sf4B2H4s4f3H2s4s', 'objects', (FID, 'objectId'),
+                'parentIndex', ('unused1', null2), 'density', 'clustering',
+                'minSlope', 'maxSlope', (obflags, 'flags'), 'radiusWRTParent',
+                'radius', ('unk1', null4), 'maxHeight', 'sink', 'sinkVar',
+                'sizeVar', 'angleVarX', 'angleVarY',  'angleVarZ',
+                ('unused2', null2), ('unk2', null4))),
+            ##: Was disabled previously - not in xEdit either...
+            # MelRegnEntrySubrecord(5, MelString('ICON', 'iconPath')),
+            MelRegnEntrySubrecord(4, MelString('RDMP', 'mapName')),
+            MelRegnEntrySubrecord(6, MelStructA(
+                'RDGS', 'I4s', 'grasses', (FID,'grass'), ('unk1', null4))),
+            MelRegnEntrySubrecord(7, MelOptStruct(
+                'RDMD', 'I', ('musicType', None))),
+            MelRegnEntrySubrecord(7, MelStructA(
+                'RDSD', '3I', 'sounds', (FID, 'sound'), (sdflags, 'flags'),
+                'chance')),
+            MelRegnEntrySubrecord(3, MelStructA(
+                'RDWT', '2I', 'weather', (FID, 'weather'), 'chance')),
+        )
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -1920,7 +1841,7 @@ class MreScpt(MelRecord):
         MelGroups('vars',
             MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_flags,'flags',0L),('unused2',null4+null3)),
             MelString('SCVR','name')),
-        MelScrxen('SCRV/SCRO','references'),
+        MelReferences(),
     )
     __slots__ = melSet.getSlotsUsed()
 

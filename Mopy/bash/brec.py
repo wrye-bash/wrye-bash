@@ -545,6 +545,10 @@ class MelBase(object):
         """Registers self as a getDefault(attr) provider."""
         pass
 
+    def getDefault(self):
+        """Returns a default copy of object."""
+        raise exception.AbstractError()
+
     def getLoaders(self,loaders):
         """Adds self as loader for type."""
         loaders[self.subType] = self
@@ -571,6 +575,13 @@ class MelBase(object):
         """Applies function to fids. If save is True, then fid is set
         to result of function."""
         raise exception.AbstractError
+
+    @property
+    def signatures(self):
+        """Returns a set containing all the signatures (aka subTypes) that
+        could belong to this element. For most elements, this is just a single
+        one, but groups and unions return multiple here."""
+        return {self.subType}
 
 #------------------------------------------------------------------------------
 class MelFid(MelBase):
@@ -771,6 +782,8 @@ class MelGroup(MelBase):
     def __init__(self,attr,*elements):
         """Initialize."""
         self.attr,self.elements,self.formElements,self.loaders = attr,elements,set(),{}
+        self._possible_sigs = {s for element in self.elements for s
+                               in element.signatures}
 
     def debug(self,on=True):
         """Sets debug flag on self."""
@@ -812,9 +825,9 @@ class MelGroup(MelBase):
         target = record.__getattribute__(self.attr)
         if target is None:
             target = self.getDefault()
+            target.__slots__ = [s for element in self.elements for s in
+                                element.getSlotsUsed()]
             record.__setattr__(self.attr,target)
-        target.__slots__ = [s for element in self.elements for s in
-                            element.getSlotsUsed()]
         self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
@@ -832,6 +845,10 @@ class MelGroup(MelBase):
         for element in self.formElements:
             element.mapFids(target,function,save)
 
+    @property
+    def signatures(self):
+        return self._possible_sigs
+
 #------------------------------------------------------------------------------
 class MelGroups(MelGroup):
     """Represents an array of group record."""
@@ -839,7 +856,7 @@ class MelGroups(MelGroup):
     def __init__(self,attr,*elements):
         """Initialize. Must have at least one element."""
         MelGroup.__init__(self,attr,*elements)
-        self.type0 = self.elements[0].subType
+        self._init_sigs = self.elements[0].signatures
 
     def setDefault(self,record):
         """Sets default value for record instance."""
@@ -847,13 +864,15 @@ class MelGroups(MelGroup):
 
     def loadData(self, record, ins, sub_type, size_, readId):
         """Reads data from ins into record attribute."""
-        if sub_type == self.type0:
+        if sub_type in self._init_sigs:
+            # We've hit one of the initial signatures, make a new object
             target = self.getDefault()
+            target.__slots__ = [s for element in self.elements for s in
+                                element.getSlotsUsed()]
             record.__getattribute__(self.attr).append(target)
         else:
+            # Add to the existing element
             target = record.__getattribute__(self.attr)[-1]
-        target.__slots__ = [s for element in self.elements for s in
-                            element.getSlotsUsed()]
         self.loaders[sub_type].loadData(target, ins, sub_type, size_, readId)
 
     def dumpData(self,record,out):
@@ -870,6 +889,336 @@ class MelGroups(MelGroup):
         for target in record.__getattribute__(self.attr):
             for element in formElements:
                 element.mapFids(target,function,save)
+
+#------------------------------------------------------------------------------
+# Unions and Deciders
+class ADecider(object):
+    """A decider returns one of several possible values when called, based on
+    parameters such as the record instance, sub type, or record size. See
+    MelUnion's docstring for more information."""
+    # Set this to True if your decider can handle a decide_dump call -
+    # otherwise, the result of decide_load will be stored and reused during
+    # dumpData, if that is possible. If not (e.g. for a newly created record),
+    # then the union will pick some element in its dict - no guarantees made.
+    can_decide_at_dump = False
+
+    def decide_load(self, record, ins, sub_type, rec_size):
+        """Called during loadData.
+
+        :param record: The record instance we're assigning attributes to.
+        :param ins: The ModReader instance used to read the record.
+        :type ins: ModReader
+        :param sub_type: The four-character subrecord signature.
+        :type sub_type: str
+        :param rec_size: The total size of the subrecord.
+        :type rec_size: int
+        :return: Any value this decider deems fitting for the parameters it is
+            given."""
+        raise exception.AbstractError()
+
+    def decide_dump(self, record):
+        """Called during dumpData.
+
+        :param record: The record instance we're reading attributes from.
+        :return: Any value this decider deems fitting for the parameters it is
+            given."""
+        if self.__class__.can_decide_at_dump:
+            raise exception.AbstractError()
+
+class ACommonDecider(ADecider):
+    """Abstract class for deciders that can decide at both load and dump-time,
+    based only on the record. Provides a single method, _decide_common, that
+    the subclass has to implement."""
+    can_decide_at_dump = True
+
+    def decide_load(self, record, ins, sub_type, rec_size):
+        return self._decide_common(record)
+
+    def decide_dump(self, record):
+        return self._decide_common(record)
+
+    def _decide_common(self, record):
+        """Performs the actual decisions for both loading and dumping."""
+        raise exception.AbstractError()
+
+class AttrExistsDecider(ACommonDecider):
+    """Decider that returns True if an attribute with the specified name is
+    present on the record."""
+    def __init__(self, target_attr):
+        """Creates a new AttrExistsDecider with the specified attribute.
+
+        :param target_attr: The name of the attribute to check.
+        :type target_attr: str"""
+        self.target_attr = target_attr
+
+    def _decide_common(self, record):
+        return hasattr(record, self.target_attr)
+
+class AttrValDecider(ACommonDecider):
+    """Decider that returns an attribute value (may optionally apply a function
+    to it first)."""
+    # Internal sentinel value used for the assign_missing argument
+    _assign_missing_sentinel = object()
+
+    def __init__(self, target_attr, transformer=None,
+                 assign_missing=_assign_missing_sentinel):
+        """Creates a new AttrValDecider with the specified attribute and
+        optional arguments.
+
+        :param target_attr: The name of the attribute to return the value
+            for.
+        :type target_attr: str
+        :param transformer: A function that takes a single argument, the value
+            read from target_attr, and returns some other value. Can be used to
+            e.g. return only the first character of an eid.
+        :param assign_missing: Normally, an AttributeError is raised if the
+            record does not have target_attr. If this is anything other than
+            the sentinel value, an error will not be raised and this will be
+            returned instead."""
+        self.target_attr = target_attr
+        self.transformer = transformer
+        self.assign_missing = assign_missing
+
+    def _decide_common(self, record):
+        if self.assign_missing is not self._assign_missing_sentinel:
+            # We have a valid assign_missing, default to it
+            ret_val = getattr(record, self.target_attr, self.assign_missing)
+        else:
+            # Raises an AttributeError if target_attr is missing
+            ret_val = getattr(record, self.target_attr)
+        if self.transformer:
+            ret_val = self.transformer(ret_val)
+        return ret_val
+
+class FlagDecider(ACommonDecider):
+    """Decider that checks if certain flags are set."""
+    def __init__(self, flags_attr, *required_flags):
+        """Creates a new FlagDecider with the specified flag attribute and
+        required flag names.
+
+        :param flags_attr: The attribute that stores the flag value.
+        :param required_flags: The names of all flags that have to be set."""
+        self._flags_attr = flags_attr
+        self._required_flags = required_flags
+
+    def _decide_common(self, record):
+        flags_val = getattr(record, self._flags_attr)
+        check_flag = flags_val.__getattr__
+        return all(check_flag(flag_name) for flag_name in self._required_flags)
+
+class PartialLoadDecider(ADecider):
+    """Partially loads a subrecord using a given loader, then rewinds the
+    input stream and delegates to a given decider. Can decide at dump-time
+    iff the given decider can as well."""
+    def __init__(self, loader, decider):
+        """Constructs a new PartialLoadDecider with the specified loader and
+        decider.
+
+        :param loader: The MelStruct instance to use for loading.
+        :type loader: MelStruct
+        :param decider: The decider to use after loading.
+        :type decider: ADecider"""
+        self._loader = loader
+        # A bit hacky, but we need MelStruct to assign the attributes
+        self._load_size = struct.calcsize(loader.format)
+        self._decider = decider
+        # This works because MelUnion._get_element_from_record does not use
+        # self.__class__ to access can_decide_at_dump
+        self.can_decide_at_dump = decider.can_decide_at_dump
+
+    def decide_load(self, record, ins, sub_type, rec_size):
+        starting_pos = ins.tell()
+        # Make a deep copy so that no modifications from this decision will
+        # make it to the actual record
+        target = copy.deepcopy(record)
+        self._loader.loadData(target, ins, sub_type, self._load_size,
+                             'DECIDER.' + sub_type)
+        ins.seek(starting_pos)
+        # Use the modified record here to make the temporary changes visible to
+        # the delegate decider
+        return self._decider.decide_load(target, ins, sub_type, rec_size)
+
+    def decide_dump(self, record):
+        if not self.can_decide_at_dump:
+            raise exception.AbstractError()
+        # We can simply delegate here without doing anything else, since the
+        # record has to have been loaded since then
+        return self._decider.decide_dump(record)
+
+class SignatureDecider(ADecider):
+    """Very simple decider that just returns the subrecord type (aka
+    signature). This is the default decider used by MelUnion."""
+    def decide_load(self, record, ins, sub_type, rec_size):
+        return sub_type
+
+class SizeDecider(ADecider):
+    """Decider that returns the size of the target subrecord."""
+    def decide_load(self, record, ins, sub_type, rec_size):
+        return rec_size
+
+class MelUnion(MelBase):
+    """Resolves to one of several record elements based on an ADecider.
+    Defaults to a SignatureDecider.
+
+    The decider is queried for a value, which is then used to perform a lookup
+    in the element_mapping dict passed in. For example, consider this MelUnion,
+    which showcases all features:
+        MelUnion({
+            'b': MelStruct('DATA', 'I', 'value'),
+            'f': MelStruct('DATA', 'f', 'value'),
+            's': MelLString('DATA', 'value'),
+        }, decider=AttrValDecider(
+            'eid', lambda eid: eid[0] if eid else 'i'),
+            fallback=MelStruct('DATA', 'i', 'value')
+        ),
+    When a DATA subrecord is encountered, the union is asked to load it. It
+    queries its decider, which in this case reads the 'eid' attribute (i.e. the
+    EDID subrecord) and returns the first character of that attribute's value,
+    defaulting to 'i' if it's empty. The union then looks up the returned value
+    in its mapping. If it finds it (e.g. if it's 'b'), then it will delegate
+    loading to the MelBase-derived object mapped to that value. Otherwise, it
+    will check if a fallback element is available. If it is, then that one is
+    used. Otherwise, an ArgumentError is raised.
+
+    When dumping and mapping fids, a similar process occurs. The decider is
+    asked if it is capable of deciding with the (more limited) information
+    available at this time. If it can, it is queried and the result is once
+    again used to look up in the mapping. If, however, the decider can't decide
+    at this time, the union looks if this is a newly created record or one that
+    has been read. In the former case, it just picks an arbitrary element to
+    dump out. In the latter case, it reuses the previous decider result to look
+    up the mapping.
+
+    Note: This class does not (and likely won't ever be able to) support
+    getDefaulters / getDefault."""
+    # Incremented every time we construct a MelUnion - ensures we always make
+    # unique attributes on the records
+    _union_index = 0
+
+    def __init__(self, element_mapping, decider=SignatureDecider(),
+                 fallback=None):
+        """Creates a new MelUnion with the specified element mapping and
+        optional parameters. See the class docstring for extensive information
+        on MelUnion usage.
+
+        :param element_mapping: The element mapping.
+        :type element_mapping: dict[object, MelBase]
+        :param decider: An ADecider instance to use. Defaults to
+            SignatureDecider.
+        :type decider: ADecider
+        :param fallback: The fallback element to use. Defaults to None, which
+            will raise an error if the decider returns an unknown value.
+        :type fallback: MelBase"""
+        self._debug = False
+        self.element_mapping = element_mapping
+        self.fid_elements = set()
+        if not isinstance(decider, ADecider):
+            raise exception.ArgumentError(u'decider must be an ADecider')
+        self.decider = decider
+        self.decider_result_attr = '_union_type_%u' % MelUnion._union_index
+        MelUnion._union_index += 1
+        self.fallback = fallback
+        self._possible_sigs = {s for element
+                               in self.element_mapping.itervalues()
+                               for s in element.signatures}
+
+    def _get_element(self, decider_ret):
+        """Retrieves the fitting element from element_mapping for the
+        specified decider result.
+
+        :param decider_ret: The result of the decide_* method that was
+            invoked.
+        :return: The matching record element to use."""
+        element = self.element_mapping.get(decider_ret, self.fallback)
+        if not element:
+            raise exception.ArgumentError(
+                u'Specified element mapping did not handle a decider return '
+                u'value (%r) and there is no fallback' % decider_ret)
+        return element
+
+    def _get_element_from_record(self, record):
+        """Retrieves the fitting element based on the specified record instance
+        only. Small wrapper around _get_element to share code between dumpData
+        and mapFids.
+
+        :param record: The record instance we're dealing with.
+        :return: The matching record element to use."""
+        if self.decider.can_decide_at_dump:
+            # If the decider can decide at dump-time, let it
+            return self._get_element(self.decider.decide_dump(record))
+        elif not hasattr(record, self.decider_result_attr):
+            # We're dealing with a record that was just created, but the
+            # decider can't be used - default to some element
+            return next(self.element_mapping.itervalues())
+        else:
+            # We can use the result we decided earlier
+            return self._get_element(
+                getattr(record, self.decider_result_attr))
+
+    def getSlotsUsed(self):
+        # We need to reserve every possible slot, since we can't know what
+        # we'll resolve to yet. Use a set to avoid duplicates.
+        slots_ret = {self.decider_result_attr}
+        for element in self.element_mapping.itervalues():
+            slots_ret.update(element.getSlotsUsed())
+        return tuple(slots_ret)
+
+    def getLoaders(self, loaders):
+        # We need to collect all signatures and assign ourselves for them all
+        # to handle unions with different signatures
+        temp_loaders = {}
+        for element in self.element_mapping.itervalues():
+            element.getLoaders(temp_loaders)
+        for signature in temp_loaders.keys():
+            loaders[signature] = self
+
+    def hasFids(self, formElements):
+        # Ask each of our elements, and remember the ones where we'd have to
+        # actually forward the mapFids call. We can't just blindly call
+        # mapFids, since MelBase.mapFids is abstract.
+        for element in self.element_mapping.itervalues():
+            temp_elements = set()
+            element.hasFids(temp_elements)
+            if temp_elements:
+                self.fid_elements.add(element)
+        if self.fid_elements: formElements.add(self)
+
+    def setDefault(self, record):
+        # Ask each element - but we *don't* want to set our _union_type
+        # attributes here! If we did, then we'd have no way to distinguish
+        # between a loaded and a freshly constructed record.
+        for element in self.element_mapping.itervalues():
+            element.setDefault(record)
+
+    def mapFids(self, record, function, save=False):
+        element = self._get_element_from_record(record)
+        if element in self.fid_elements:
+            element.mapFids(record, function, save)
+
+    def loadData(self, record, ins, sub_type, size_, readId):
+        # Ask the decider, and save the result for later - even if the decider
+        # can decide at dump-time! Some deciders may want to have this as a
+        # backup if they can't deliver a high-quality result.
+        decider_ret = self.decider.decide_load(record, ins, sub_type, size_)
+        setattr(record, self.decider_result_attr, decider_ret)
+        self._get_element(decider_ret).loadData(record, ins, sub_type, size_,
+                                                readId)
+
+    def dumpData(self, record, out):
+        self._get_element_from_record(record).dumpData(record, out)
+
+    @property
+    def signatures(self):
+        return self._possible_sigs
+
+#------------------------------------------------------------------------------
+class MelReferences(MelGroups):
+    """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
+    def __init__(self):
+        MelGroups.__init__(self, 'references', MelUnion({
+            'SCRO': MelFid('SCRO', 'reference'),
+            'SCRV': MelStruct('SCRV', 'I', 'reference'),
+        }))
 
 #------------------------------------------------------------------------------
 class MelXpci(MelNull):
@@ -1061,9 +1410,9 @@ class MelStructs(MelStruct):
         """Returns a default copy of object."""
         target = MelObject()
         setter = target.__setattr__
-        for attr,value,action in zip(self.attrs, self.defaults, self.actions):
+        for attr_,value,action in zip(self.attrs, self.defaults, self.actions):
             if callable(action): value = action(value)
-            setter(attr,value)
+            setter(attr_,value)
         return target
 
     def loadData(self, record, ins, sub_type, size_, readId):
@@ -1769,29 +2118,18 @@ class MreGmstBase(MelRecord):
     class."""
     Ids = None
     classType = 'GMST'
-    class MelGmstValue(MelBase):
-        def loadData(self, record, ins, sub_type, size_, readId):
-            # Possibles values: s|i|f|b; If empty, default to int
-            gmst_type = encode(record.eid[0]) if record.eid else u'I'
-            if gmst_type == u's':
-                record.value = ins.readLString(size_, readId)
-                return
-            elif gmst_type == u'b':
-                gmst_type = u'I'
-            record.value, = ins.unpack(gmst_type, size_, readId)
-        def dumpData(self,record,out):
-            # Possibles values: s|i|f|b; If empty, default to int
-            gmst_type = encode(record.eid[0]) if record.eid else u'I'
-            if gmst_type == u's':
-                out.packSub0(self.subType, record.value)
-                return
-            elif gmst_type == u'b':
-                gmst_type = u'I'
-            out.packSub(self.subType,gmst_type, record.value)
+
     melSet = MelSet(
         MelString('EDID','eid'),
-        MelGmstValue('DATA','value'),
-        )
+        MelUnion({
+            'b': MelStruct('DATA', 'I', 'value'),
+            'f': MelStruct('DATA', 'f', 'value'),
+            's': MelLString('DATA', 'value'),
+        }, decider=AttrValDecider(
+            'eid', transformer=lambda eid: eid[0] if eid else 'i'),
+            fallback=MelStruct('DATA', 'i', 'value')
+        ),
+    )
     __slots__ = melSet.getSlotsUsed()
 
     def getGMSTFid(self):
@@ -1821,63 +2159,26 @@ class MreLand(MelRecord):
     """Land structure. Part of exterior cells."""
     classType = 'LAND'
 
-    class MelLandLayers(MelBase):
-        """The ATXT/BTXT/VTXT subrecords of land occur in a group, but only as
-        either BTXT or both ATXT and VTXT. So we must manually handle this.
-        Additionally, this class is optimized for loading and memory
-        performance, since LAND records are numerous and big."""
-
-        def __init__(self):
-            self.attr = 'layers'
-            self.btxt = MelStruct('BTXT', 'IBsh', (FID, 'blTexture'),
-                                  'blQuadrant', 'blUnknown', 'blLayer')
-            self.atxt = MelStruct('ATXT', 'IBsh', (FID, 'alTexture'),
-                                  'alQuadrant', 'alUnknown', 'alLayer')
-            self.vtxt = MelBase('VTXT', 'alphaLayerData')
-
-        def loadData(self, record, ins, sub_type, size_, readId):
-            # Optimized for performance, that's why some code is copy-pasted
-            layer = MelObject()
-            record.layers.append(layer)
-            if sub_type == 'BTXT': # read only BTXT
-                layer.use_btxt = True
-                layer.__slots__ = self.btxt.getSlotsUsed()
-                self.btxt.loadData(layer, ins, sub_type, size_, readId)
-            else: # sub_type == 'ATXT': read both ATXT and VTXT
-                layer.use_btxt = False
-                layer.__slots__ = self.atxt.getSlotsUsed() + \
-                                  self.vtxt.getSlotsUsed()
-                self.atxt.loadData(layer, ins, sub_type, size_, readId)
-                self.vtxt.loadData(layer, ins, sub_type, size_, readId)
-            layer.__slots__ += ('use_btxt',)
-
-        def dumpData(self, record, out):
-            for layer in record.layers:
-                if layer.use_btxt:
-                    self.btxt.dumpData(layer, out)
-                else:
-                    self.atxt.dumpData(layer, out)
-                    self.vtxt.dumpData(layer, out)
-
-        def getLoaders(self, loaders):
-            for loader_type in ('ATXT', 'BTXT', 'VTXT'):
-                loaders[loader_type] = self
-
-        def hasFids(self, formElements):
-            formElements.add(self)
-
-        def mapFids(self, record, function, save=False):
-            for layer in record.layers:
-                map_target = self.btxt if layer.use_btxt else self.atxt
-                map_target.mapFids(layer, function, save)
-
     melSet = MelSet(
-        MelBase('DATA', 'unknown1'),
-        MelBase('VNML', 'vertexNormals'),
-        MelBase('VHGT', 'vertexHeightMap'),
-        MelBase('VCLR', 'vertexColors'),
-        MelLandLayers(),
-        MelFidList('VTEX', 'vertexTextures'),
+        MelBase('DATA', 'unknown'),
+        MelBase('VNML', 'vertex_normals'),
+        MelBase('VHGT', 'vertex_height_map'),
+        MelBase('VCLR', 'vertex_colors'),
+        MelGroups('layers',
+            # Start a new layer each time we hit one of these
+            MelUnion({
+                'ATXT': MelStruct('ATXT', 'IBsh', (FID, 'atxt_texture'),
+                                  'quadrant', 'unknown', 'layer'),
+                'BTXT': MelStruct('BTXT', 'IBsh', (FID, 'btxt_texture'),
+                                  'quadrant', 'unknown', 'layer'),
+            }),
+            # VTXT only exists for ATXT layers
+            MelUnion({
+                True:  MelBase('VTXT', 'alpha_layer_data'),
+                False: MelNull('VTXT'),
+            }, decider=AttrExistsDecider('atxt_texture')),
+        ),
+        MelFidList('VTEX', 'vertex_textures'),
     )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2093,6 +2394,25 @@ class MelMODS(MelBase):
         if data is not None:
             data = [(string,function(fid),index) for (string,fid,index) in record.__getattribute__(attr)]
             if save: record.__setattr__(attr,data)
+
+class MelRegnEntrySubrecord(MelUnion):
+    """Wrapper around MelUnion to correctly read/write REGN entry data.
+    Skips loading and dumping if entryType != entry_type_val.
+
+    entry_type_val meanings:
+      - 2: Objects
+      - 3: Weather
+      - 4: Map
+      - 5: Land
+      - 6: Grass
+      - 7: Sound
+      - 8: Imposter (FNV only)"""
+    def __init__(self, entry_type_val, element):
+        """:type entry_type_val: int"""
+        MelUnion.__init__(self, {
+            entry_type_val: element,
+        }, decider=AttrValDecider('entryType'),
+            fallback=MelNull('NULL')) # ignore
 
 ##: Ripped from bush.py may belong to game/
 # Magic Info ------------------------------------------------------------------
