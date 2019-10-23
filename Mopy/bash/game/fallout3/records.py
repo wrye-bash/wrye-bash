@@ -1772,14 +1772,14 @@ class MreInfo(MelRecord):
                 MelStruct.dumpData(self,record,out)
 
     melSet = MelSet(
-        MelInfoData('DATA','HH','dialType','nextSpeaker',(_flags,'flags'),(_flags2,'flagsInfo'),),
+        MelInfoData('DATA','4B','dialType','nextSpeaker',(_flags,'flags'),(_flags2,'flagsInfo'),),
         MelFid('QSTI','quests'),
         MelFid('TPIC','topic'),
         MelFid('PNAM','prevInfo'),
         MelFids('NAME','addTopics'),
         MelGroups('responses',
-            MelStruct('TRDT','Ii4sB3sIB3s','emotionType','emotionValue',('unused1',null4),'responseNum',('unused2','0xcd0xcd0xcd'),
-                      (FID,'sound'),'flags',('unused3','0xcd0xcd0xcd')),
+            MelStruct('TRDT','Ii4sB3sIB3s','emotionType','emotionValue',('unused1',null4),'responseNum',('unused2','\xcd\xcd\xcd'),
+                      (FID,'sound'),'flags',('unused3','\xcd\xcd\xcd')),
             MelString('NAM1','responseText'),
             MelString('NAM2','actorNotes'),
             MelString('NAM3','edits'),
@@ -1808,8 +1808,8 @@ class MreInfo(MelRecord):
                 MelStruct('SLSD','I12sB7s','index',('unused1',null4+null4+null4),(_variableFlags,'flags',0L),('unused2',null4+null3)),
                 MelString('SCVR','name')),
             MelReferences(),
-            ),
-        # MelFid('SNDD','sndd_p'),
+        ),
+        MelFid('SNDD','sndd_p'),
         MelString('RNAM','prompt'),
         MelFid('ANAM','speaker'),
         MelFid('KNAM','acterValuePeak'),
@@ -2205,9 +2205,10 @@ class MreNavm(MelRecord):
         MelStructA('NVVX','3f','vertices','vertexX','vertexY','vertexZ'),
         MelStructA('NVTR','6hI','triangles','vertex0','vertex1','vertex2','triangle0','triangle1','triangle2','flags'),
         MelOptStruct('NVCA','h','nvca_p'),
-        MelStructA('NVDP','II','doors',(FID,'doorReference'),'doorUnknown'),
+        MelStructA('NVDP', 'IH2s', 'doors', (FID, 'doorReference'),
+                   'door_triangle', 'doorUnknown'),
         MelBase('NVGD','nvgd_p'),
-        MelStructA('NVEX','=IIH','externalConnections','nvexUnknown',(FID,'navigationMesh'),'triangle'),
+        MelStructA('NVEX','=4sIH','externalConnections','nvexUnknown',(FID,'navigationMesh'),'triangle'),
        )
     __slots__ = melSet.getSlotsUsed()
 
@@ -2645,9 +2646,11 @@ class MrePerk(MelRecord):
                     2: MelStruct('EPFD', 'If', 'param1', 'param2'),
 #                    2: MelUnion({
 #                        5: MelStruct('EPFD', 'If', 'param1', 'param2'),
-#                    }, decider=AttrValDecider('../function'),
+#                    }, decider=AttrValDecider('../function',
+#                                                 assign_missing=-1),
 #                        fallback=MelStruct('EPFD', '2f', 'param1', 'param2')),
                     3: MelFid('EPFD', 'param1'),
+                    4: MelBase('EPFD', 'param1'),
                 }, decider=AttrValDecider('function_parameter_type')),
                 MelString('EPF2','buttonLabel'),
                 MelStruct('EPF3', 'H', (_PerkScriptFlags, 'script_flags', 0L)),

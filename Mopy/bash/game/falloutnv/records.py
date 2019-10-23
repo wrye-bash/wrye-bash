@@ -26,14 +26,15 @@ import struct
 # Set MelModel in brec, in this case it's identical to the fallout 3 one
 from ..fallout3.records import MelOwnership, MelDestructible, MelBipedFlags, \
     MelEffects, MelConditions, MreHasEffects
+from ... import brec
 from ...bass import null1, null2, null3, null4
 from ...bolt import Flags
 from ...brec import MelModel # set in Mopy/bash/game/fallout3/records.py
 from ...brec import MelRecord, MelStructs, MelGroups, MelStruct, FID, \
     MelGroup, MelString, MelSet, MelFid, MelNull, MelOptStruct, MelFids, \
     MelBase, MelFidList, MelStructA, MreGmstBase, MelFull0, MreHeaderBase, \
-    MelUnicode, MreDial, MelColorInterpolator, MelValueInterpolator, \
-    MelReferences, MelRegnEntrySubrecord
+    MelUnicode, MelColorInterpolator, MelValueInterpolator, MelReferences, \
+    MelRegnEntrySubrecord
 from ...exception import ModError, ModSizeError
 
 # Those are unused here, but need be in this file as are accessed via it
@@ -654,7 +655,7 @@ class MreDehy(MelRecord):
     __slots__ = melSet.getSlotsUsed()
 
 #------------------------------------------------------------------------------
-class MreDial(MreDial):
+class MreDial(brec.MreDial):
     """Dialog record."""
     _flags = Flags(0,Flags.getNames('rumors','toplevel',))
     class MelDialData(MelStruct):
@@ -987,8 +988,8 @@ class MreInfo(MelRecord):
         MelFid('PNAM','prevInfo'),
         MelFids('NAME','addTopics'),
         MelGroups('responses',
-            MelStruct('TRDT','Ii4sB3sIB3s','emotionType','emotionValue',('unused1',null4),'responseNum',('unused2','0xcd0xcd0xcd'),
-                      (FID,'sound'),'flags',('unused3','0xcd0xcd0xcd')),
+            MelStruct('TRDT','Ii4sB3sIB3s','emotionType','emotionValue',('unused1',null4),'responseNum',('unused2','\xcd\xcd\xcd'),
+                      (FID,'sound'),'flags',('unused3','\xcd\xcd\xcd')),
             MelString('NAM1','responseText'),
             MelString('NAM2','actorNotes'),
             MelString('NAM3','edits'),
@@ -1018,7 +1019,7 @@ class MreInfo(MelRecord):
                 MelString('SCVR','name')),
             MelReferences(),
             ),
-        # MelFid('SNDD','sndd_p'),
+        MelFid('SNDD','sndd_p'),
         MelString('RNAM','prompt'),
         MelFid('ANAM','speaker'),
         MelFid('KNAM','acterValuePeak'),

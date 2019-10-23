@@ -68,6 +68,7 @@ from ...brec import MelModel
 #------------------------------------------------------------------------------
 # Record Elements    ----------------------------------------------------------
 #------------------------------------------------------------------------------
+# TODO(inf) Unused - use or bin (not sure if this actually works though)
 class MreActor(MelRecord):
     """Creatures and NPCs."""
 
@@ -334,12 +335,15 @@ class MelDecalData(MelOptStruct):
             (3, 'noSubtextures'),
         ))
 
-    def __init__(self,attr='decals'):
-        MelOptStruct.__init__(self,'DODT','7f2B2s3Bs','minWidth','maxWidth','minHeight',
-                  'maxHeight','depth','shininess','parallaxScale',
-                  'parallaxPasses',(MelDecalData.DecalDataFlags,'flags',0L),('unknownDecal1',null2),
-                  'redDecal','greenDecal','blueDecal',('unknownDecal2',null1),
-            )
+    def __init__(self):
+        """Initialize elements."""
+        MelOptStruct.__init__(
+            self, 'DODT', '7f2B2s3Bs', 'minWidth', 'maxWidth',
+            'minHeight', 'maxHeight', 'depth', 'shininess', 'parallaxScale',
+            'parallaxPasses', (MelDecalData.DecalDataFlags, 'flags', 0L),
+            ('unknownDecal1', null2), 'redDecal', 'greenDecal', 'blueDecal',
+            ('unknownDecal2', null1)
+        )
 
 #------------------------------------------------------------------------------
 class MelDestructible(MelGroup):
@@ -376,6 +380,7 @@ class MelEffects(MelGroups):
             )
 
 #------------------------------------------------------------------------------
+# TODO(inf) Unused - move to brec and use it everywhere!
 class MelIcons(MelGroup):
     """Handles ICON and MICO."""
 
@@ -392,6 +397,7 @@ class MelIcons(MelGroup):
             MelGroup.dumpData(self,record,out)
 
 #------------------------------------------------------------------------------
+# TODO(inf) Unused - move to brec and use it everywhere!
 class MelIcons2(MelGroup):
     """Handles ICON and MICO."""
 
@@ -430,6 +436,7 @@ class MelOwnership(MelGroup):
             MelGroup.dumpData(self,record,out)
 
 #------------------------------------------------------------------------------
+# TODO(inf) Unused - Use in NPC_?
 class MelPerks(MelStructs):
     """Handle writing PRKZ subrecord for the PRKR subrecord"""
     def dumpData(self,record,out):
@@ -437,99 +444,6 @@ class MelPerks(MelStructs):
         if perks:
             out.packSub('PRKZ','<I',len(perks))
             MelStructs.dumpData(self,record,out)
-
-#------------------------------------------------------------------------------
-class MelScrxen(MelFids):
-    """Handles mixed sets of SCRO and SCRV for scripts, quests, etc."""
-
-    def getLoaders(self,loaders):
-        loaders['SCRV'] = self
-        loaders['SCRO'] = self
-
-    def loadData(self, record, ins, sub_type, size_, readId):
-        isFid = (sub_type == 'SCRO')
-        if isFid: value = ins.unpackRef()
-        else: value, = ins.unpack('I',4,readId)
-        record.__getattribute__(self.attr).append((isFid,value))
-
-    def dumpData(self,record,out):
-        for isFid,value in record.__getattribute__(self.attr):
-            if isFid: out.packRef('SCRO',value)
-            else: out.packSub('SCRV','I',value)
-
-    def mapFids(self,record,function,save=False):
-        scrxen = record.__getattribute__(self.attr)
-        for index,(isFid,value) in enumerate(scrxen):
-            if isFid:
-                result = function(value)
-                if save: scrxen[index] = (isFid,result)
-
-# Probably obsolete.  Included for reference and testing.
-#------------------------------------------------------------------------------
-class MelString16(MelString):
-    """Represents a mod record string element."""
-    def loadData(self, record, ins, sub_type, size_, readId):
-        strLen, = ins.unpack('H',2,readId)
-        value = ins.readString(strLen,readId)
-        record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        value = record.__getattribute__(self.attr)
-        if value is not None:
-            if self.maxSize:
-                value = winNewLines(value.rstrip())
-                str_size = min(self.maxSize,len(value))
-                test,encoding_ = encode(value,returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding_))
-                        i -= 1
-                    str_size += i + 1
-                    value = value[:str_size]
-                    value = encode(value,firstEncoding=encoding_)
-                else:
-                    value = test
-            else:
-                value = encode(value)
-            value = struct_pack('H',len(value))+value
-            out.packSub0(self.subType,value)
-
-#------------------------------------------------------------------------------
-class MelString32(MelString):
-    """Represents a mod record string element."""
-    def loadData(self, record, ins, sub_type, size_, readId):
-        strLen, = ins.unpack('I',4,readId)
-        value = ins.readString(strLen,readId)
-        record.__setattr__(self.attr,value)
-        if self._debug: print u' ',record.__getattribute__(self.attr)
-
-    def dumpData(self,record,out):
-        value = record.__getattribute__(self.attr)
-        if value is not None:
-            if self.maxSize:
-                value = winNewLines(value.rstrip())
-                str_size = min(self.maxSize,len(value))
-                test,encoding_ = encode(value,returnEncoding=True)
-                extra_encoded = len(test) - self.maxSize
-                if extra_encoded > 0:
-                    total = 0
-                    i = -1
-                    while total < extra_encoded:
-                        total += len(value[i].encode(encoding_))
-                        i -= 1
-                    str_size += i + 1
-                    value = value[:str_size]
-                    value = encode(value,firstEncoding=encoding_)
-                else:
-                    value = test
-            else:
-                value = encode(value)
-            value = struct_pack('I',len(value))+value
-            out.packSub0(self.subType,value)
 
 #------------------------------------------------------------------------------
 class MelVmad(MelBase):

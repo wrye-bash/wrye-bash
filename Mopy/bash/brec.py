@@ -1378,14 +1378,15 @@ class MelStructA(MelStructs):
             target.__slots__ = selfAttrs
             melLoadData(self, target, ins, sub_type, itemSize, readId)
 
-    def dumpData(self,record,out):
-        if record.__getattribute__(self.attr) is not None:
-            data = ''
-            attrs = self.attrs
-            format = self.format
-            for x in record.__getattribute__(self.attr):
-                data += struct_pack(format, *[getattr(x, item) for item in attrs])
-            out.packSub(self.subType,data)
+    def dumpData(self, record, out):
+        array_val = record.__getattribute__(self.attr)
+        if not array_val: return # don't dump out empty arrays
+        data = ''
+        attrs = self.attrs
+        format = self.format
+        for x in record.__getattribute__(self.attr):
+            data += struct_pack(format, *[getattr(x, item) for item in attrs])
+        out.packSub(self.subType,data)
 
     def mapFids(self,record,function,save=False):
         if record.__getattribute__(self.attr) is not None:
