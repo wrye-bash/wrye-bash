@@ -1453,11 +1453,9 @@ class MreBptd(MelRecord):
         MelString('EDID','eid'),
         MelModel(),
         MelGroups('bodyParts',
-            MelUnion({
-                'BPTN': MelString('BPTN', 'partName'),
-                'BPNN': MelString('BPNN', 'nodeName'),
-            }),
+            MelString('BPTN', 'partName'),
             MelString('PNAM','poseMatching'),
+            MelString('BPNN', 'nodeName'),
             MelString('BPNT','vatsTarget'),
             MelString('BPNI','ikDataStartNode'),
             MelStruct('BPND','f3Bb2BH2I2fi2I7f2I2B2sf','damageMult',
@@ -4652,26 +4650,6 @@ class MreRegn(MelRecord):
     rdatFlags = Flags(0L,Flags.getNames(
         ( 0,'Override'),))
 
-    class MelRegnGroups(MelGroups):
-        def loadData(self, record, ins, sub_type, size_, readId):
-            """Reads data from ins into record attribute."""
-            if sub_type == self.type0:
-                target = self.getDefault()
-                record.__getattribute__(self.attr).append(target)
-            else:
-                targets = record.__getattribute__(self.attr)
-                if targets:
-                    target = targets[-1]
-                # BPNN for NVVoidBodyPartData, NVraven02
-                # What does this do?
-                elif sub_type == 'RDSA':
-                    target = self.getDefault()
-                    record.__getattribute__(self.attr).append(target)
-            target.__slots__ = [s for element in self.elements for s in
-                                element.getSlotsUsed()]
-            self.loaders[sub_type].loadData(target, ins, sub_type, size_,
-                                            readId)
-
     melSet = MelSet(
         MelString('EDID','eid'),
         MelStruct('RCLR','3Bs','mapRed','mapBlue','mapGreen',('unused1',null1)),
@@ -4679,7 +4657,7 @@ class MreRegn(MelRecord):
         MelGroups('areas',
             MelStruct('RPLI','I','edgeFalloff'),
             MelStructA('RPLD','2f','points','posX','posY')),
-        MelRegnGroups('entries',
+        MelGroups('entries',
             MelStruct('RDAT', 'I2B2s','entryType', (rdatFlags,'flags'), 'priority',
                      ('unused1',null2)),
             MelString('ICON','iconPath'),
